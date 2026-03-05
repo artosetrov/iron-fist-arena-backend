@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getAuthUser } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { generateDungeonFloor } from '@/lib/game/dungeon'
+
+const RUSH_STAMINA_COST = 30
+
+export async function POST(req: NextRequest) {
+  const user = await getAuthUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const body = await req.json()
+    const { character_id } = body
+
+    if (!character_id) {
+      return NextResponse.json(
+        { error: 'character_id is required' },
+        { status: 400 },
+      )
+    }
+
+    // Verify character belongs to user
+    const character = await prisma.character.findFirst({
+      where: { id: character_id, userId: user.id },
+    })
+    if (!character) {
+      return NextResponse.json(
+        { error: 'Character not found' },
+        { status: 404 },
+      )
+    }
+
+    // Check no active rush run exists
+    const activeRun = await prisma.dungeonRun.findFirst({
+      where: {
+        characterId: character_id,
+        difficulty: 'rush',
+      },
+    })
+    if (activeRun) {
+      return NextResponse.json(
+        { error: 'An active dungeon rush is already in progress. Finish or abandon it first.' },
+        { status: 409 },
+      )
+    }
+
+    // Check stamina
+    if (character.currentStamina < RUSH_STAMINA_COST) {
+      return NextResponse.json(
+        { error: `Not enough stamina. Need ${RUSH_STAMINA_COST}, have ${character.currentStamina}` },
+        { status: 400 },
+      )
+    }
+
+    // Deduct stamina
+    await prisma.character.update({
+      where: { id: character_id },
+      data: {
+        currentStamina: character.currentStamina - RUSH_STAMINA_COST,
+        lastStaminaUpdate: new Date(),
+      },
+    })
+
+    // Rush mode uses a scaling difficulty: floors get progressively harder
+    // We pass 'normal' as the base difficulty but scale the floor number up faster
+    const seed = Math.floor(Math.random() * 2147483647)
+    const floor = generateDungeonFloor(1, 'normal')
+
+    const run = await prisma.dungeonRun.create({
+      data: {
+        characterId: character_id,
+        difficulty: 'rush',
+        currentFloor: 1,
+        seed,
+        state: JSON.parse(JSON.stringify({
+          enemies: floor.enemies,
+          isBoss: floor.isBoss,
+          floorsCleared: 0,
+          totalGoldEarned: 0,
+          totalXpEarned: 0,
+        })),
+      },
+    })
+
+    return NextResponse.json({
+      run,
+      floor: {
+        number: 1,
+        enemies: floor.enemies,
+        isBoss: floor.isBoss,
+      },
+    }, { status: 201 })
+  } catch (error) {
+    console.error('start dungeon rush error:', error)
+    return NextResponse.json(
+      { error: 'Failed to start dungeon rush' },
+      { status: 500 },
+    )
+  }
+}
