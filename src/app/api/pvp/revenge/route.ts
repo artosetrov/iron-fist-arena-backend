@@ -12,6 +12,74 @@ import {
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
 
+/**
+ * GET /api/pvp/revenge?character_id=xxx
+ * Returns available revenge entries for the character.
+ */
+export async function GET(req: NextRequest) {
+  const user = await getAuthUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const characterId = req.nextUrl.searchParams.get('character_id')
+    if (!characterId) {
+      return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
+    }
+
+    const character = await prisma.character.findUnique({
+      where: { id: characterId },
+    })
+    if (!character) {
+      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+    }
+    if (character.userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const now = new Date()
+
+    // Find active (not used, not expired) revenge entries where this character is the victim
+    const revengeEntries = await prisma.revengeQueue.findMany({
+      where: {
+        victimId: characterId,
+        isUsed: false,
+        expiresAt: { gt: now },
+      },
+      include: {
+        attacker: {
+          select: {
+            id: true,
+            characterName: true,
+            class: true,
+            origin: true,
+            level: true,
+            pvpRating: true,
+            maxHp: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    })
+
+    const entries = revengeEntries.map((r) => ({
+      id: r.id,
+      matchId: r.matchId,
+      attacker: r.attacker,
+      hours_left: Math.max(0, Math.round((r.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60))),
+      createdAt: r.createdAt,
+    }))
+
+    return NextResponse.json({ entries })
+  } catch (error) {
+    console.error('get revenge list error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch revenge list' },
+      { status: 500 }
+    )
+  }
+}
+
 function isFirstWinOfDay(firstWinToday: boolean, firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
   const today = new Date()

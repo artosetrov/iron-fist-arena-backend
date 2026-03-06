@@ -22,6 +22,18 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    // Ensure user record exists (handles legacy Supabase-only users)
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: {},
+      create: {
+        id: user.id,
+        email: user.email ?? null,
+        username: user.email?.split('@')[0] ?? 'player',
+        authProvider: 'email',
+      },
+    })
+
     const characters = await prisma.character.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
@@ -65,6 +77,19 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Ensure user record exists in our database (handles users created
+    // via Supabase Auth before we had prisma.user.create in auth routes)
+    await prisma.user.upsert({
+      where: { id: user.id },
+      update: { lastLogin: new Date() },
+      create: {
+        id: user.id,
+        email: user.email ?? null,
+        username: user.email?.split('@')[0] ?? 'player',
+        authProvider: 'email',
+      },
+    })
 
     const bonuses = ORIGIN_BONUSES[origin as CharacterOrigin]
     const baseStatValue = 10
