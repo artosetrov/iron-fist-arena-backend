@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 
 /**
  * POST /api/auth/register
  *
- * Registers a new user via Supabase Admin API (auto-confirms email).
- * Returns access_token, refresh_token, and user data.
+ * Registers a new user via Supabase.
+ * Sends email confirmation — user must verify before they can log in.
+ * Returns { needs_confirmation: true } so the client shows a message.
  *
  * Body: { email, password, username }
  */
@@ -29,21 +31,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const supabase = createAdminClient()
+    // Use anon key for signup — this triggers confirmation email
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
 
-    // Create user via admin API — auto-confirms email
-    const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true,
-      user_metadata: { username: username ?? email.split('@')[0] },
+      options: {
+        data: { username: username ?? email.split('@')[0] },
+      },
     })
 
-    if (signUpError || !signUpData.user) {
+    if (signUpError) {
       console.error('register error:', signUpError)
 
-      // Handle duplicate email
-      if (signUpError?.message?.includes('already been registered')) {
+      if (signUpError.message?.includes('already registered')) {
         return NextResponse.json(
           { error: 'Email already registered. Please login instead.' },
           { status: 409 }
@@ -51,47 +57,65 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json(
-        { error: signUpError?.message ?? 'Registration failed' },
+        { error: signUpError.message ?? 'Registration failed' },
         { status: 500 }
       )
     }
 
-    // Sign in to get tokens
-    const { data: signInData, error: signInError } =
-      await supabase.auth.signInWithPassword({ email, password })
+    // Check if Supabase returned a session (autoconfirm is ON)
+    // or needs email confirmation (autoconfirm is OFF — our case)
+    if (signUpData.session) {
+      // Email autoconfirm is ON — user is immediately authenticated
+      // Create user record in our database
+      const displayName = username ?? email.split('@')[0]
+      try {
+        await prisma.user.create({
+          data: {
+            id: signUpData.user!.id,
+            username: displayName,
+            email,
+            authProvider: 'email',
+          },
+        })
+      } catch (dbErr) {
+        console.warn('register db create warning:', dbErr)
+      }
 
-    if (signInError || !signInData.session) {
-      console.error('register signin error:', signInError)
-      return NextResponse.json(
-        { error: signInError?.message ?? 'Failed to sign in after registration' },
-        { status: 500 }
-      )
-    }
-
-    // Create user record in our database
-    const displayName = username ?? email.split('@')[0]
-    try {
-      await prisma.user.create({
-        data: {
-          id: signUpData.user.id,
-          username: displayName,
+      return NextResponse.json({
+        needs_confirmation: false,
+        access_token: signUpData.session.access_token,
+        refresh_token: signUpData.session.refresh_token,
+        expires_in: signUpData.session.expires_in,
+        user: {
+          id: signUpData.user!.id,
           email,
-          authProvider: 'email',
+          role: signUpData.user!.role,
         },
       })
-    } catch (dbErr) {
-      console.warn('register db create warning:', dbErr)
+    }
+
+    // Email confirmation required — store pending user info
+    // User record will be created on first login after confirmation
+    if (signUpData.user) {
+      const displayName = username ?? email.split('@')[0]
+      try {
+        await prisma.user.create({
+          data: {
+            id: signUpData.user.id,
+            username: displayName,
+            email,
+            authProvider: 'email',
+          },
+        })
+      } catch (dbErr) {
+        // May fail if user already exists (re-registration attempt)
+        console.warn('register db create warning:', dbErr)
+      }
     }
 
     return NextResponse.json({
-      access_token: signInData.session.access_token,
-      refresh_token: signInData.session.refresh_token,
-      expires_in: signInData.session.expires_in,
-      user: {
-        id: signUpData.user.id,
-        email,
-        role: signUpData.user.role,
-      },
+      needs_confirmation: true,
+      message: 'Please check your email to confirm your account.',
     })
   } catch (error) {
     console.error('register error:', error)
