@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 
 /**
  * POST /api/auth/login
  *
  * Logs in a user via Supabase Auth (email + password).
+ * Auto-confirms unverified emails so users don't get stuck.
  * Returns access_token, refresh_token, and user data.
  *
  * Body: { email, password }
@@ -23,16 +25,58 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient()
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // First attempt to sign in
+    let { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error || !data.session) {
+    // If email not confirmed, auto-confirm and retry
+    if (error && error.message?.toLowerCase().includes('not confirmed')) {
+      console.log('login: email not confirmed for', email, '— auto-confirming...')
+
+      // Look up user in our DB to get their Supabase user ID
+      const dbUser = await prisma.user.findFirst({ where: { email } })
+      if (dbUser) {
+        await supabase.auth.admin.updateUserById(dbUser.id, { email_confirm: true })
+        // Retry sign in
+        const retry = await supabase.auth.signInWithPassword({ email, password })
+        data = retry.data
+        error = retry.error
+      } else {
+        // User not in our DB — try listing Supabase users directly
+        const { data: listData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+        const matchUser = listData?.users?.find(u => u.email === email)
+        if (matchUser) {
+          await supabase.auth.admin.updateUserById(matchUser.id, { email_confirm: true })
+          const retry = await supabase.auth.signInWithPassword({ email, password })
+          data = retry.data
+          error = retry.error
+        }
+      }
+    }
+
+    if (error || !data?.session) {
       return NextResponse.json(
         { error: error?.message ?? 'Invalid credentials' },
         { status: 401 }
       )
+    }
+
+    // Ensure user record exists in our database
+    try {
+      await prisma.user.upsert({
+        where: { id: data.user.id },
+        update: { lastLogin: new Date() },
+        create: {
+          id: data.user.id,
+          email: data.user.email ?? email,
+          username: email.split('@')[0],
+          authProvider: 'email',
+        },
+      })
+    } catch (dbErr) {
+      console.warn('login db upsert warning:', dbErr)
     }
 
     return NextResponse.json({
