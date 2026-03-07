@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
         include: { item: true },
       }),
     ])
+
+    // Update daily quest progress
+    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', item.buyPrice)
 
     // gems live on User, not Character
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })

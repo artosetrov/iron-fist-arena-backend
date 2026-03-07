@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
         data: { gold: { increment: win_amount } },
       })
     }
+
+    // Update daily quest progress
+    await updateDailyQuestProgress(prisma, session.characterId, 'shell_game_play')
 
     return NextResponse.json({
       won,

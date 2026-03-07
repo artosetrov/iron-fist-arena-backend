@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 const MIN_BET = 50
 const MAX_BET = 1000
@@ -65,6 +66,9 @@ export async function POST(req: NextRequest) {
         },
       }),
     ])
+
+    // Update daily quest progress for gold spent
+    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', bet_amount)
 
     return NextResponse.json({
       session_id: session.id,

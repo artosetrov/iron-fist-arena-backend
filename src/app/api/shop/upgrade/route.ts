@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { UPGRADE_CHANCES } from '@/lib/game/balance'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -74,6 +75,10 @@ export async function POST(req: NextRequest) {
     const updateData: { gold: { decrement: number } } = {
       gold: { decrement: upgradeCost },
     }
+
+    // Update daily quest progress (item_upgrade counts the attempt, gold_spent counts gold)
+    await updateDailyQuestProgress(prisma, character_id, 'item_upgrade')
+    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', upgradeCost)
 
     if (success) {
       // Upgrade succeeded: deduct gold and increment upgrade level

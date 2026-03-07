@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { STAMINA } from '@/lib/game/balance'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 // How much stamina each potion restores
 const STAMINA_RESTORE: Record<ConsumableType, number> = {
@@ -91,6 +92,9 @@ export async function POST(req: NextRequest) {
         },
       }),
     ])
+
+    // Update daily quest progress
+    await updateDailyQuestProgress(prisma, character_id, 'consumable_use')
 
     return NextResponse.json({
       consumable_type,
