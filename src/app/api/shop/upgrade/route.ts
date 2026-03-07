@@ -92,7 +92,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         inventoryItem: updatedItem,
-        gold: updatedCharacter.gold,
+        character: {
+          gold: updatedCharacter.gold,
+          gems: updatedCharacter.gems,
+        },
         upgradeCost,
         newLevel: currentLevel + 1,
       })
@@ -106,7 +109,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         inventoryItem: { ...inventoryItem },
-        gold: updatedCharacter.gold,
+        character: {
+          gold: updatedCharacter.gold,
+          gems: updatedCharacter.gems,
+        },
         upgradeCost,
         newLevel: currentLevel,
       })

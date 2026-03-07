@@ -34,7 +34,23 @@ export async function GET(req: NextRequest) {
       orderBy: [{ itemLevel: 'asc' }, { itemName: 'asc' }],
     })
 
-    return NextResponse.json({ items })
+    // Transform to snake_case format expected by iOS client
+    const shopItems = items.map((item) => ({
+      id: item.id,
+      catalog_id: item.catalogId,
+      item_name: item.itemName,
+      item_type: item.itemType.toLowerCase(),
+      rarity: item.rarity.toLowerCase(),
+      required_level: item.itemLevel,
+      gold_price: item.buyPrice,
+      gem_price: 0,
+      sell_price: item.sellPrice,
+      description: item.description,
+      image_url: item.imageUrl,
+      special_effect: item.specialEffect,
+    }))
+
+    return NextResponse.json({ items: shopItems })
   } catch (error) {
     console.error('list shop items error:', error)
     return NextResponse.json(

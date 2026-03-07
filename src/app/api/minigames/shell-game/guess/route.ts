@@ -8,18 +8,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { session_id, guess } = body
+    const { session_id, chosen_cup } = body
 
-    if (!session_id || guess == null) {
+    if (!session_id || chosen_cup == null) {
       return NextResponse.json(
-        { error: 'session_id and guess are required' },
+        { error: 'session_id and chosen_cup are required' },
         { status: 400 }
       )
     }
 
-    if (![0, 1, 2].includes(guess)) {
+    if (![0, 1, 2].includes(chosen_cup)) {
       return NextResponse.json(
-        { error: 'guess must be 0, 1, or 2' },
+        { error: 'chosen_cup must be 0, 1, or 2' },
         { status: 400 }
       )
     }
@@ -45,31 +45,32 @@ export async function POST(req: NextRequest) {
     }
 
     const secretData = session.secretData as { correctShell: number }
-    const won = guess === secretData.correctShell
-    const reward = won ? session.betAmount * 2 : 0
+    const won = chosen_cup === secretData.correctShell
+    const win_amount = won ? session.betAmount * 2 : 0
 
     // Update session status
     await prisma.minigameSession.update({
       where: { id: session_id },
       data: {
         status: 'completed',
-        result: { won, guess, correctShell: secretData.correctShell, reward },
+        result: { won, chosen_cup, correctShell: secretData.correctShell, win_amount },
       },
     })
 
+    let updatedCharacter = session.character
     // Award gold if won
     if (won) {
-      await prisma.character.update({
+      updatedCharacter = await prisma.character.update({
         where: { id: session.characterId },
-        data: { gold: { increment: reward } },
+        data: { gold: { increment: win_amount } },
       })
     }
 
     return NextResponse.json({
       won,
-      guess,
-      correctShell: secretData.correctShell,
-      reward,
+      winning_cup: secretData.correctShell,
+      win_amount,
+      gold: updatedCharacter.gold,
     })
   } catch (error) {
     console.error('shell-game guess error:', error)

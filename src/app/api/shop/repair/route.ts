@@ -72,7 +72,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       inventoryItem: updatedItem,
-      gold: updatedCharacter.gold,
+      character: {
+        gold: updatedCharacter.gold,
+        gems: updatedCharacter.gems,
+      },
       repairCost,
     })
   } catch (error) {

@@ -68,7 +68,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       inventoryItem,
-      gold: updatedCharacter.gold,
+      character: {
+        gold: updatedCharacter.gold,
+        gems: updatedCharacter.gems,
+      },
     })
   } catch (error) {
     console.error('buy item error:', error)

@@ -70,8 +70,10 @@ export async function POST(req: NextRequest) {
     ])
 
     return NextResponse.json({
-      gems: updatedUser.gems,
-      gold: updatedCharacter.gold,
+      character: {
+        gold: updatedCharacter.gold,
+        gems: updatedUser.gems,
+      },
       gemsSpent: gems_amount,
       goldReceived: goldToAdd,
     })
