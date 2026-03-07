@@ -8,6 +8,40 @@ import { PRESTIGE } from './balance';
 // Re-export for convenience
 export { xpForLevel };
 
+// --- Apply Level Up (DB helper) ---
+
+/**
+ * After XP has been incremented on a character, call this to check
+ * and apply any pending level-ups. Works with both PrismaClient and
+ * transaction contexts.
+ *
+ * @returns LevelUpResult or null if character not found
+ */
+export async function applyLevelUp(
+  tx: { character: { findUnique: Function; update: Function } },
+  characterId: string,
+): Promise<LevelUpResult | null> {
+  const character = await tx.character.findUnique({
+    where: { id: characterId },
+    select: { currentXp: true, level: true },
+  });
+  if (!character) return null;
+
+  const result = checkLevelUp(character);
+  if (!result.leveledUp) return result;
+
+  await tx.character.update({
+    where: { id: characterId },
+    data: {
+      level: result.newLevel,
+      currentXp: result.remainingXp,
+      statPointsAvailable: { increment: result.statPointsAwarded },
+    },
+  });
+
+  return result;
+}
+
 // --- Types ---
 
 export interface LevelUpResult {

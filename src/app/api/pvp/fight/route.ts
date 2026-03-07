@@ -12,6 +12,8 @@ import {
   XP_REWARDS,
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
+import { applyLevelUp } from '@/lib/game/progression'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 function isFirstWinOfDay(firstWinToday: boolean, firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -238,6 +240,9 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, attacker.id)
+
     // Create revenge entry for the loser (so they can take revenge)
     if (attackerWon) {
       const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours
@@ -249,6 +254,11 @@ export async function POST(req: NextRequest) {
           expiresAt,
         },
       })
+    }
+
+    // Update daily quest progress
+    if (attackerWon) {
+      await updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins')
     }
 
     // Build loot response from drop roll
@@ -304,7 +314,9 @@ export async function POST(req: NextRequest) {
         turns_taken: combatResult.totalTurns,
         rating_change: ratingChange,
         first_win_bonus: firstWin,
-        leveled_up: false,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+        new_level: levelUpResult?.newLevel,
+        stat_points_awarded: levelUpResult?.statPointsAwarded,
       },
       rewards: { gold: goldReward, xp: xpReward },
       loot,

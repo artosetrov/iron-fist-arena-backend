@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { applyLevelUp } from '@/lib/game/progression'
 
 const BOSS_FLOOR_INTERVAL = 5
 
@@ -137,12 +139,19 @@ export async function POST(req: NextRequest) {
     }> = []
 
     let playerWon = true
+    let primaryCombatResult: ReturnType<typeof runCombat> | null = null
+    const primaryEnemy = state.enemies[0]
 
     // Fight each enemy sequentially
     for (const enemy of state.enemies) {
       const enemyStats = enemyToCharacterStats(enemy)
       const result = runCombat(playerStats, enemyStats)
       const won = result.winnerId === playerStats.id
+
+      // Keep the first fight's full combat data for the client animation
+      if (!primaryCombatResult) {
+        primaryCombatResult = result
+      }
 
       combatResults.push({
         enemyName: enemy.name,
@@ -156,11 +165,54 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Build combat_log in the format the iOS client expects (from first enemy fight)
+    const combat_log = (primaryCombatResult?.turns ?? []).map((t) => ({
+      attacker_id: t.attackerId,
+      action: 'attack',
+      damage: t.damage,
+      is_crit: t.isCrit,
+      is_miss: false,
+      is_dodge: false,
+      target_zone: null,
+      status_applied: null,
+      heal: null,
+    }))
+
+    // Build CombatData for the client animation
+    const combatDataPayload = {
+      player: {
+        id: character.id,
+        character_name: character.characterName,
+        class: character.class,
+        origin: character.origin,
+        level: character.level,
+        max_hp: character.maxHp,
+      },
+      enemy: {
+        id: primaryEnemy?.id ?? 'enemy',
+        character_name: primaryEnemy?.name ?? 'Enemy',
+        class: 'warrior' as const,
+        origin: 'demon',
+        level: primaryEnemy?.level ?? 1,
+        max_hp: primaryEnemy?.maxHp ?? 100,
+      },
+      combat_log,
+      source: 'dungeon',
+    }
+
     if (!playerWon) {
       // Player lost -- dungeon run fails, delete it
       await prisma.dungeonRun.delete({ where: { id: run.id } })
 
       return NextResponse.json({
+        ...combatDataPayload,
+        result: {
+          is_win: false,
+          winner_id: primaryCombatResult?.winnerId ?? '',
+          gold_reward: state.totalGoldEarned,
+          xp_reward: state.totalXpEarned,
+          turns_taken: primaryCombatResult?.totalTurns ?? 0,
+        },
         victory: false,
         combatResults,
         message: 'You have been defeated. The dungeon run is over.',
@@ -188,6 +240,9 @@ export async function POST(req: NextRequest) {
         currentXp: character.currentXp + xpReward,
       },
     })
+
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, character_id)
 
     // Check if this was a boss floor
     const wasBossFloor = currentFloor % BOSS_FLOOR_INTERVAL === 0
@@ -233,7 +288,21 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Update daily quest progress
+    await updateDailyQuestProgress(prisma, character_id, 'dungeons_complete')
+
     return NextResponse.json({
+      ...combatDataPayload,
+      result: {
+        is_win: true,
+        winner_id: character.id,
+        gold_reward: goldReward,
+        xp_reward: xpReward,
+        turns_taken: primaryCombatResult?.totalTurns ?? 0,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+        new_level: levelUpResult?.newLevel,
+        stat_points_awarded: levelUpResult?.statPointsAwarded,
+      },
       victory: true,
       combatResults,
       floorCleared: currentFloor,

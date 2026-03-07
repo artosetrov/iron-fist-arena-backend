@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { applyLevelUp } from '@/lib/game/progression'
 
 const BOSS_FLOOR_INTERVAL = 5
 
@@ -167,6 +169,9 @@ export async function POST(
       },
     })
 
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, character_id)
+
     const wasBossFloor = currentFloor % BOSS_FLOOR_INTERVAL === 0
     if (wasBossFloor) {
       const dungeonId = run.difficulty
@@ -200,6 +205,9 @@ export async function POST(
       },
     })
 
+    // Update daily quest progress
+    await updateDailyQuestProgress(prisma, character_id, 'dungeons_complete')
+
     return NextResponse.json({
       victory: true,
       combatResults,
@@ -217,6 +225,9 @@ export async function POST(
         enemies: nextFloorData.enemies,
         isBoss: nextFloorData.isBoss,
       },
+      leveled_up: levelUpResult?.leveledUp ?? false,
+      new_level: levelUpResult?.newLevel,
+      stat_points_awarded: levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
     console.error('dungeon run fight error:', error)

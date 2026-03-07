@@ -11,6 +11,7 @@ import {
   XP_REWARDS,
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
+import { applyLevelUp } from '@/lib/game/progression'
 
 /**
  * GET /api/pvp/revenge?character_id=xxx
@@ -315,6 +316,9 @@ export async function POST(req: NextRequest) {
         data: { isUsed: true },
       }),
     ])
+
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, attacker.id)
 
     const ratingChange = attackerWon
       ? attackerNewRating - attacker.pvpRating

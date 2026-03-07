@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { QuestType } from '@prisma/client'
+import { applyLevelUp } from '@/lib/game/progression'
 
 // Quest generation config
 const QUEST_POOL: {
@@ -161,21 +162,39 @@ export async function POST(req: NextRequest) {
       }
 
       // Mark claimed + award rewards
-      await prisma.$transaction([
-        prisma.dailyQuest.update({
+      await prisma.$transaction(async (tx) => {
+        await tx.dailyQuest.update({
           where: { id: quest_id },
           data: { completed: true },
-        }),
-        prisma.character.update({
+        })
+        await tx.character.update({
           where: { id: character_id },
           data: {
             gold: { increment: quest.rewardGold },
             currentXp: { increment: quest.rewardXp },
           },
-        }),
-      ])
+        })
+        // Award gems if quest has gem reward (gems live on User, not Character)
+        if (quest.rewardGems > 0) {
+          await tx.user.update({
+            where: { id: user.id },
+            data: { gems: { increment: quest.rewardGems } },
+          })
+        }
+      })
 
-      return NextResponse.json({ success: true, reward_gold: quest.rewardGold, reward_xp: quest.rewardXp })
+      // Check for level-up after XP award
+      const levelUpResult = await applyLevelUp(prisma, character_id)
+
+      return NextResponse.json({
+        success: true,
+        reward_gold: quest.rewardGold,
+        reward_xp: quest.rewardXp,
+        reward_gems: quest.rewardGems,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+        new_level: levelUpResult?.newLevel,
+        stat_points_awarded: levelUpResult?.statPointsAwarded,
+      })
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

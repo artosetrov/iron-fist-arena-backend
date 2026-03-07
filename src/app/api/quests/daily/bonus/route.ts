@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { applyLevelUp } from '@/lib/game/progression'
 
 const BONUS_GOLD = 500
 const BONUS_XP = 300
@@ -73,11 +74,17 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, character_id)
+
     return NextResponse.json({
       success: true,
       reward_gold: BONUS_GOLD,
       reward_xp: BONUS_XP,
       reward_gems: BONUS_GEMS,
+      leveled_up: levelUpResult?.leveledUp ?? false,
+      new_level: levelUpResult?.newLevel,
+      stat_points_awarded: levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
     console.error('daily bonus error:', error)

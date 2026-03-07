@@ -11,6 +11,8 @@ import {
   XP_REWARDS,
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { applyLevelUp } from '@/lib/game/progression'
 
 function isFirstWinOfDay(firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -232,6 +234,14 @@ export async function POST(
         data: { isUsed: true },
       }),
     ])
+
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, attacker.id)
+
+    // Update daily quest progress
+    if (attackerWon) {
+      await updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins')
+    }
 
     return NextResponse.json({
       combat: {

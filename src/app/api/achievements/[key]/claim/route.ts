@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ACHIEVEMENT_CATALOG } from '@/lib/game/achievement-catalog'
+import { applyLevelUp } from '@/lib/game/progression'
 
 /**
  * POST /api/achievements/[key]/claim
@@ -80,12 +81,21 @@ export async function POST(
       data: { rewardClaimed: true },
     })
 
+    // Check for level-up if XP was awarded
+    let levelUpResult = null
+    if (def.rewardType === 'xp') {
+      levelUpResult = await applyLevelUp(prisma, character_id)
+    }
+
     return NextResponse.json({
       achievement_key,
       reward: {
         type: def.rewardType,
         amount: def.rewardAmount,
       },
+      leveled_up: levelUpResult?.leveledUp ?? false,
+      new_level: levelUpResult?.newLevel,
+      stat_points_awarded: levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
     console.error('claim achievement [key] error:', error)

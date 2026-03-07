@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { bpXpForLevel } from '@/lib/game/balance'
+import { applyLevelUp } from '@/lib/game/progression'
 
 function calculateBpLevel(totalXp: number): number {
   let remaining = totalXp
@@ -147,6 +148,10 @@ export async function POST(
       })
     }
 
+    // Check for level-up if any XP was awarded
+    const hasXpReward = claimedRewards.some((r) => r.rewardType === 'xp')
+    const levelUpResult = hasXpReward ? await applyLevelUp(prisma, character_id) : null
+
     if (claimedRewards.length === 0) {
       return NextResponse.json(
         { error: 'No claimable rewards at this level (already claimed or premium required)' },
@@ -157,6 +162,9 @@ export async function POST(
     return NextResponse.json({
       level: targetLevel,
       rewards: claimedRewards,
+      leveled_up: levelUpResult?.leveledUp ?? false,
+      new_level: levelUpResult?.newLevel,
+      stat_points_awarded: levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
     console.error('claim battle pass reward error:', error)

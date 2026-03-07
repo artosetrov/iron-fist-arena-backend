@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
+import { applyLevelUp } from '@/lib/game/progression'
 
 /** Rush mode gold reward -- higher than normal, scales with floor. */
 function rushGoldReward(floor: number): number {
@@ -194,6 +195,9 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, character_id)
+
     // Generate next floor -- rush floors scale faster
     const nextFloor = currentFloor + 1
     const effectiveFloor = rushEffectiveFloor(nextFloor)
@@ -229,6 +233,9 @@ export async function POST(req: NextRequest) {
         enemies: nextFloorData.enemies,
         isBoss: nextFloorData.isBoss,
       },
+      leveled_up: levelUpResult?.leveledUp ?? false,
+      new_level: levelUpResult?.newLevel,
+      stat_points_awarded: levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
     console.error('dungeon rush fight error:', error)

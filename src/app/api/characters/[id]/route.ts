@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { applyLevelUp } from '@/lib/game/progression'
 
 export async function GET(
   req: NextRequest,
@@ -11,6 +12,9 @@ export async function GET(
 
   try {
     const { id } = await params
+
+    // Apply any pending level-ups from accumulated XP
+    await applyLevelUp(prisma, id)
 
     const character = await prisma.character.findUnique({
       where: { id },

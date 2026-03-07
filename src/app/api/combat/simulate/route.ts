@@ -11,6 +11,7 @@ import {
   XP_REWARDS,
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
+import { applyLevelUp } from '@/lib/game/progression'
 
 /**
  * Determine whether this is the character's first win of the current UTC day.
@@ -246,6 +247,9 @@ export async function POST(req: NextRequest) {
       return { updatedAttacker: txAttacker, pvpMatch: txMatch }
     })
 
+    // Check for level-up after XP award
+    const levelUpResult = await applyLevelUp(prisma, attacker.id)
+
     const ratingChange = attackerNewRating - attacker.pvpRating
 
     // Map turns to iOS CombatLog snake_case format
@@ -290,6 +294,9 @@ export async function POST(req: NextRequest) {
         turns_taken: combatResult.totalTurns,
         rating_change: ratingChange,
         first_win_bonus: firstWin,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+        new_level: levelUpResult?.newLevel,
+        stat_points_awarded: levelUpResult?.statPointsAwarded,
       },
       // iOS CombatRewards
       rewards: {
