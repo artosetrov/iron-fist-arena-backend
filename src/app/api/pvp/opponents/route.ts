@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 const MATCHMAKING_RANGE = 200
-const MAX_OPPONENTS = 3
+const MAX_OPPONENTS = 5
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)

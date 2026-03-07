@@ -5,83 +5,13 @@ import { rateLimit } from '@/lib/rate-limit'
 import { runCombat, CharacterStats } from '@/lib/game/combat'
 import { calculateElo, getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { rollDropChance } from '@/lib/game/loot'
 import {
   STAMINA,
   GOLD_REWARDS,
   XP_REWARDS,
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
-
-/**
- * GET /api/pvp/revenge?character_id=xxx
- * Returns available revenge entries for the character.
- */
-export async function GET(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  try {
-    const characterId = req.nextUrl.searchParams.get('character_id')
-    if (!characterId) {
-      return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
-    }
-
-    const character = await prisma.character.findUnique({
-      where: { id: characterId },
-    })
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const now = new Date()
-
-    // Find active (not used, not expired) revenge entries where this character is the victim
-    const revengeEntries = await prisma.revengeQueue.findMany({
-      where: {
-        victimId: characterId,
-        isUsed: false,
-        expiresAt: { gt: now },
-      },
-      include: {
-        attacker: {
-          select: {
-            id: true,
-            characterName: true,
-            class: true,
-            origin: true,
-            level: true,
-            pvpRating: true,
-            maxHp: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    })
-
-    const entries = revengeEntries.map((r) => ({
-      id: r.id,
-      attacker_id: r.attacker.id,
-      attacker_name: r.attacker.characterName,
-      attacker_class: r.attacker.class,
-      attacker_level: r.attacker.level,
-      attacker_rating: r.attacker.pvpRating,
-      rating_lost: 0,
-      created_at: r.createdAt.toISOString(),
-    }))
-
-    return NextResponse.json({ revenge_list: entries })
-  } catch (error) {
-    console.error('get revenge list error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch revenge list' },
-      { status: 500 }
-    )
-  }
-}
 
 function isFirstWinOfDay(firstWinToday: boolean, firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -92,68 +22,51 @@ function isFirstWinOfDay(firstWinToday: boolean, firstWinDate: Date | null): boo
   return winDate.getTime() < today.getTime()
 }
 
+/**
+ * POST /api/pvp/fight
+ * Body: { character_id, opponent_id }
+ * Runs a PvP fight, updates ELO/stats/rewards, returns CombatData for client.
+ */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`revenge:${user.id}`, 10, 60_000)) {
+  if (!rateLimit(`pvp-fight:${user.id}`, 10, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   try {
     const body = await req.json()
-    const { character_id, revenge_id } = body
+    const { character_id, opponent_id } = body
 
-    if (!character_id || !revenge_id) {
+    if (!character_id || !opponent_id) {
       return NextResponse.json(
-        { error: 'character_id and revenge_id are required' },
+        { error: 'character_id and opponent_id are required' },
         { status: 400 }
       )
     }
 
-    // Load revenge entry
-    const revenge = await prisma.revengeQueue.findUnique({
-      where: { id: revenge_id },
-    })
-
-    if (!revenge) {
-      return NextResponse.json({ error: 'Revenge entry not found' }, { status: 404 })
-    }
-
-    // Verify the caller is the victim (the one who lost and can take revenge)
-    if (revenge.victimId !== character_id) {
+    if (character_id === opponent_id) {
       return NextResponse.json(
-        { error: 'This revenge does not belong to your character' },
-        { status: 403 }
-      )
-    }
-
-    if (revenge.isUsed) {
-      return NextResponse.json(
-        { error: 'Revenge has already been used' },
+        { error: 'Cannot fight yourself' },
         { status: 400 }
       )
     }
 
-    if (new Date() > revenge.expiresAt) {
-      return NextResponse.json(
-        { error: 'Revenge has expired' },
-        { status: 400 }
-      )
-    }
-
-    // Load both characters (victim = attacker in revenge, attacker = defender)
+    // Load both characters
     const [attacker, defender] = await Promise.all([
-      prisma.character.findUnique({ where: { id: revenge.victimId } }),
-      prisma.character.findUnique({ where: { id: revenge.attackerId } }),
+      prisma.character.findUnique({ where: { id: character_id } }),
+      prisma.character.findUnique({ where: { id: opponent_id } }),
     ])
 
-    if (!attacker || !defender) {
+    if (!attacker) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
-
     if (attacker.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (!defender) {
+      return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
     }
 
     // Calculate current stamina with regen
@@ -164,7 +77,11 @@ export async function POST(req: NextRequest) {
     )
     const currentStamina = staminaResult.stamina
 
-    if (currentStamina < STAMINA.PVP_COST) {
+    // Check free PvP or stamina
+    const hasFreePvp = attacker.freePvpToday < STAMINA.FREE_PVP_PER_DAY
+    const staminaCost = hasFreePvp ? 0 : STAMINA.PVP_COST
+
+    if (!hasFreePvp && currentStamina < STAMINA.PVP_COST) {
       return NextResponse.json(
         { error: 'Not enough stamina', currentStamina, required: STAMINA.PVP_COST },
         { status: 400 }
@@ -212,7 +129,6 @@ export async function POST(req: NextRequest) {
 
     // Run combat
     const combatResult = runCombat(attackerStats, defenderStats)
-
     const attackerWon = combatResult.winnerId === attacker.id
     const winnerId = combatResult.winnerId
     const loserId = combatResult.loserId
@@ -220,14 +136,14 @@ export async function POST(req: NextRequest) {
     // ELO calculation
     const winnerRatingBefore = attackerWon ? attacker.pvpRating : defender.pvpRating
     const loserRatingBefore = attackerWon ? defender.pvpRating : attacker.pvpRating
-    const winnerCalibration = attackerWon ? attacker.pvpCalibrationGames : defender.pvpCalibrationGames
+    const winnerCalibration = attackerWon
+      ? attacker.pvpCalibrationGames
+      : defender.pvpCalibrationGames
     const kFactor = getKFactor(winnerCalibration)
     const eloResult = calculateElo(winnerRatingBefore, loserRatingBefore, kFactor)
 
-    // Calculate rewards with REVENGE_MULTIPLIER for gold
-    let goldReward = attackerWon
-      ? Math.floor(GOLD_REWARDS.PVP_WIN_BASE * GOLD_REWARDS.REVENGE_MULTIPLIER)
-      : GOLD_REWARDS.PVP_LOSS_BASE
+    // Calculate rewards
+    let goldReward = attackerWon ? GOLD_REWARDS.PVP_WIN_BASE : GOLD_REWARDS.PVP_LOSS_BASE
     let xpReward = attackerWon ? XP_REWARDS.PVP_WIN_XP : XP_REWARDS.PVP_LOSS_XP
 
     // First win of the day bonus
@@ -239,7 +155,7 @@ export async function POST(req: NextRequest) {
       xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
     }
 
-    const newStamina = currentStamina - STAMINA.PVP_COST
+    const newStamina = currentStamina - staminaCost
     const now = new Date()
 
     // Build attacker update
@@ -252,6 +168,10 @@ export async function POST(req: NextRequest) {
       gold: { increment: goldReward },
       currentXp: { increment: xpReward },
       lastPlayed: now,
+    }
+
+    if (hasFreePvp) {
+      attackerUpdate.freePvpToday = { increment: 1 }
     }
 
     if (attackerWon) {
@@ -291,16 +211,13 @@ export async function POST(req: NextRequest) {
       defenderUpdate.pvpWinStreak = 0
     }
 
+    // Roll for loot drop
+    const drop = attackerWon ? rollDropChance(attacker.level, 'pvp') : null
+
     // Execute all DB writes in a transaction
     const [updatedAttacker, , pvpMatch] = await prisma.$transaction([
-      prisma.character.update({
-        where: { id: attacker.id },
-        data: attackerUpdate,
-      }),
-      prisma.character.update({
-        where: { id: defender.id },
-        data: defenderUpdate,
-      }),
+      prisma.character.update({ where: { id: attacker.id }, data: attackerUpdate }),
+      prisma.character.update({ where: { id: defender.id }, data: defenderUpdate }),
       prisma.pvpMatch.create({
         data: {
           player1Id: attacker.id,
@@ -315,21 +232,39 @@ export async function POST(req: NextRequest) {
           turnsTaken: combatResult.totalTurns,
           goldReward,
           xpReward,
-          matchType: 'revenge',
-          isRevenge: true,
+          matchType: 'ranked',
+          isRevenge: false,
         },
-      }),
-      // Mark revenge as used
-      prisma.revengeQueue.update({
-        where: { id: revenge_id },
-        data: { isUsed: true },
       }),
     ])
 
-    const ratingChange = attackerWon
-      ? attackerNewRating - attacker.pvpRating
-      : -(attacker.pvpRating - attackerNewRating)
+    // Create revenge entry for the loser (so they can take revenge)
+    if (attackerWon) {
+      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours
+      await prisma.revengeQueue.create({
+        data: {
+          victimId: defender.id,
+          attackerId: attacker.id,
+          matchId: pvpMatch.id,
+          expiresAt,
+        },
+      })
+    }
 
+    // Build loot response from drop roll
+    const loot: Array<Record<string, unknown>> = []
+    if (drop) {
+      loot.push({
+        item_type: drop.itemType,
+        rarity: drop.rarity,
+        item_level: drop.itemLevel,
+        upgrade_level: 0,
+      })
+    }
+
+    const ratingChange = attackerNewRating - attacker.pvpRating
+
+    // Build combat_log in the format the iOS client expects
     const combat_log = combatResult.turns.map((t) => ({
       attacker_id: t.attackerId,
       action: 'attack',
@@ -342,6 +277,7 @@ export async function POST(req: NextRequest) {
       heal: null,
     }))
 
+    // Return CombatData format matching iOS CombatData.swift
     return NextResponse.json({
       player: {
         id: attacker.id,
@@ -368,8 +304,10 @@ export async function POST(req: NextRequest) {
         turns_taken: combatResult.totalTurns,
         rating_change: ratingChange,
         first_win_bonus: firstWin,
+        leveled_up: false,
       },
       rewards: { gold: goldReward, xp: xpReward },
+      loot,
       source: 'pvp',
       matchId: pvpMatch.id,
       stamina: {
@@ -378,9 +316,9 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('pvp revenge error:', error)
+    console.error('pvp fight error:', error)
     return NextResponse.json(
-      { error: 'Failed to process revenge match' },
+      { error: 'Failed to process PvP fight' },
       { status: 500 }
     )
   }

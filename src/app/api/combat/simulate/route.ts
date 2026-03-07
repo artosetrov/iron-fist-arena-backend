@@ -246,32 +246,58 @@ export async function POST(req: NextRequest) {
       return { updatedAttacker: txAttacker, pvpMatch: txMatch }
     })
 
+    const ratingChange = attackerNewRating - attacker.pvpRating
+
+    // Map turns to iOS CombatLog snake_case format
+    const combat_log = combatResult.turns.map((t) => ({
+      attacker_id: t.attackerId,
+      action: 'attack',
+      damage: t.damage,
+      is_crit: t.isCrit,
+      is_miss: false,
+      is_dodge: false,
+      target_zone: null,
+      status_applied: null,
+      heal: null,
+    }))
+
     return NextResponse.json({
-      combat: {
-        winnerId: combatResult.winnerId,
-        loserId: combatResult.loserId,
-        totalTurns: combatResult.totalTurns,
-        turns: combatResult.turns,
+      // iOS CombatFighter (snake_case keys)
+      player: {
+        id: attacker.id,
+        character_name: attacker.characterName,
+        class: attacker.class,
+        origin: attacker.origin,
+        level: attacker.level,
+        max_hp: attacker.maxHp,
       },
+      enemy: {
+        id: defender.id,
+        character_name: defender.characterName,
+        class: defender.class,
+        origin: defender.origin,
+        level: defender.level,
+        max_hp: defender.maxHp,
+      },
+      // iOS CombatLog array
+      combat_log,
+      // iOS CombatResultInfo (snake_case keys)
+      result: {
+        is_win: attackerWon,
+        winner_id: winnerId,
+        gold_reward: goldReward,
+        xp_reward: xpReward,
+        turns_taken: combatResult.totalTurns,
+        rating_change: ratingChange,
+        first_win_bonus: firstWin,
+      },
+      // iOS CombatRewards
       rewards: {
         gold: goldReward,
         xp: xpReward,
-        firstWinBonus: firstWin,
       },
-      ratings: {
-        attacker: {
-          before: attacker.pvpRating,
-          after: attackerNewRating,
-          change: attackerNewRating - attacker.pvpRating,
-        },
-        defender: {
-          before: defender.pvpRating,
-          after: defenderNewRating,
-          change: defenderNewRating - defender.pvpRating,
-        },
-      },
+      source: 'pvp',
       matchId: pvpMatch.id,
-      attackerWon,
       stamina: {
         current: newStamina,
         max: updatedAttacker.maxStamina,

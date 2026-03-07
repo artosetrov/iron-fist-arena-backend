@@ -53,14 +53,35 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    // Enrich with catalog metadata
+    // Enrich with catalog metadata and transform to iOS-compatible format
     const enriched = achievements.map((a) => {
       const def = ACHIEVEMENT_CATALOG[a.achievementKey]
+      const rewardType = def?.rewardType ?? 'gold'
+      const rewardAmount = def?.rewardAmount ?? 0
+      const reward =
+        rewardType === 'gold'
+          ? { gold: rewardAmount }
+          : rewardType === 'gems'
+          ? { gems: rewardAmount }
+          : rewardType === 'title'
+          ? { title: def?.rewardId ?? 'unknown' }
+          : rewardType === 'frame'
+          ? { frame: def?.rewardId ?? 'unknown' }
+          : null
+
+      const key = a.achievementKey
+      const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
       return {
-        ...a,
+        key,
         category: def?.category ?? 'unknown',
-        rewardType: def?.rewardType ?? 'gold',
-        rewardAmount: def?.rewardAmount ?? 0,
+        title: label,
+        description: `Reach ${a.target} ${key.replace(/_/g, ' ')}`,
+        target: a.target,
+        progress: a.progress,
+        completed: a.completed || a.progress >= a.target,
+        rewardClaimed: a.rewardClaimed,
+        reward,
       }
     })
 

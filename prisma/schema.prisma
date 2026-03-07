@@ -570,3 +570,25 @@ model Event {
   @@index([isActive, startAt, endAt])
   @@map("events")
 }
+
+model GameConfig {
+  key         String   @id
+  value       Json
+  category    String   @default("general")
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedBy   String?  @map("updated_by")
+
+  @@map("game_config")
+}
+
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String   @map("admin_id")
+  action    String
+  target    String?
+  details   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admin_logs")
+}
