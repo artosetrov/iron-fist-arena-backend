@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-
-const MINE_DURATION_HOURS = 4
-const MINE_REWARD_MIN = 200
-const MINE_REWARD_MAX = 500
+import {
+  buildSlotsArray,
+  MINE_DURATION_HOURS,
+  MINE_REWARD_MIN,
+  MINE_REWARD_MAX,
+} from '@/lib/game/gold-mine'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
       Math.random() * (MINE_REWARD_MAX - MINE_REWARD_MIN + 1) + MINE_REWARD_MIN
     )
 
-    const session = await prisma.goldMineSession.create({
+    await prisma.goldMineSession.create({
       data: {
         characterId: character_id,
         slotIndex: slot_index,
@@ -72,16 +74,9 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({
-      session: {
-        id: session.id,
-        slotIndex: session.slotIndex,
-        startedAt: session.startedAt,
-        endsAt: session.endsAt,
-        collected: session.collected,
-        boosted: session.boosted,
-      },
-    })
+    const slots = await buildSlotsArray(prisma, character_id, character.goldMineSlots)
+
+    return NextResponse.json({ slots })
   } catch (error) {
     console.error('gold-mine start error:', error)
     return NextResponse.json(

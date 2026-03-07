@@ -18,20 +18,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character ownership
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-    })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Find the item in the catalog
+    // Find the item in the catalog (read-only, no race concern)
     const item = await prisma.item.findUnique({
       where: { catalogId: item_catalog_id },
     })
@@ -40,21 +27,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Item not found in catalog' }, { status: 404 })
     }
 
-    // Check gold
-    if (character.gold < item.buyPrice) {
-      return NextResponse.json(
-        { error: 'Not enough gold', required: item.buyPrice, current: character.gold },
-        { status: 400 }
+    // Use interactive transaction with row-level lock to prevent TOCTOU
+    const result = await prisma.$transaction(async (tx) => {
+      // Lock the character row for update
+      const [character] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
+        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
+        character_id
       )
-    }
 
-    // Deduct gold and create inventory entry in a transaction
-    const [updatedCharacter, inventoryItem] = await prisma.$transaction([
-      prisma.character.update({
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
+      if (character.gold < item.buyPrice) throw new Error('NOT_ENOUGH_GOLD')
+
+      const updatedCharacter = await tx.character.update({
         where: { id: character_id },
         data: { gold: { decrement: item.buyPrice } },
-      }),
-      prisma.equipmentInventory.create({
+      })
+
+      const inventoryItem = await tx.equipmentInventory.create({
         data: {
           characterId: character_id,
           itemId: item.id,
@@ -64,27 +54,30 @@ export async function POST(req: NextRequest) {
           isEquipped: false,
         },
         include: { item: true },
-      }),
-    ])
+      })
 
-    // Update daily quest progress
+      return { updatedCharacter, inventoryItem }
+    })
+
+    // Update daily quest progress (outside transaction, non-critical)
     await updateDailyQuestProgress(prisma, character_id, 'gold_spent', item.buyPrice)
 
-    // gems live on User, not Character
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
 
     return NextResponse.json({
-      inventoryItem,
+      inventoryItem: result.inventoryItem,
       character: {
-        gold: updatedCharacter.gold,
+        gold: result.updatedCharacter.gold,
         gems: dbUser?.gems ?? 0,
       },
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+    }
     console.error('buy item error:', error)
-    return NextResponse.json(
-      { error: 'Failed to buy item' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to buy item' }, { status: 500 })
   }
 }

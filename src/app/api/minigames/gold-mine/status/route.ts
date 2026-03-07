@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { buildSlotsArray } from '@/lib/game/gold-mine'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -27,31 +28,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get all uncollected sessions + recently collected ones (last 24h)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-
-    const sessions = await prisma.goldMineSession.findMany({
-      where: {
-        characterId,
-        OR: [
-          { collected: false },
-          { collected: true, createdAt: { gte: oneDayAgo } },
-        ],
-      },
-      orderBy: { startedAt: 'desc' },
-    })
+    const slots = await buildSlotsArray(prisma, characterId, character.goldMineSlots)
 
     return NextResponse.json({
-      sessions: sessions.map((s) => ({
-        id: s.id,
-        slotIndex: s.slotIndex,
-        startedAt: s.startedAt,
-        endsAt: s.endsAt,
-        collected: s.collected,
-        reward: s.collected ? s.reward : undefined,
-        boosted: s.boosted,
-      })),
-      totalSlots: character.goldMineSlots,
+      slots,
+      max_slots: character.goldMineSlots,
     })
   } catch (error) {
     console.error('gold-mine status error:', error)

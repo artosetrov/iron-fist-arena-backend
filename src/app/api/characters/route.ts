@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { CharacterClass, CharacterOrigin } from '@prisma/client'
+import { CharacterClass, CharacterOrigin, CharacterGender } from '@prisma/client'
+
+const VALID_AVATARS: Record<CharacterGender, string[]> = {
+  male: ['warlord', 'knight', 'barbarian', 'shadow'],
+  female: ['valkyrie', 'sorceress', 'enchantress', 'huntress'],
+}
 
 const ORIGIN_BONUSES: Record<CharacterOrigin, Partial<Record<string, number>>> = {
   human:    { cha: 2, wis: 1 },
@@ -55,7 +60,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { character_name, class: charClass, origin } = body
+    const { character_name, class: charClass, origin, gender, avatar } = body
 
     if (!character_name || !charClass || !origin) {
       return NextResponse.json(
@@ -77,6 +82,15 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Gender validation (optional for backwards compatibility, defaults to male)
+    const charGender: CharacterGender = gender && Object.values(CharacterGender).includes(gender)
+      ? gender as CharacterGender
+      : CharacterGender.male
+
+    // Avatar validation
+    const validAvatars = VALID_AVATARS[charGender]
+    const charAvatar = avatar && validAvatars.includes(avatar) ? avatar : validAvatars[0]
 
     // Ensure user record exists in our database (handles users created
     // via Supabase Auth before we had prisma.user.create in auth routes)
@@ -107,6 +121,8 @@ export async function POST(req: NextRequest) {
         characterName: character_name,
         class: charClass as CharacterClass,
         origin: origin as CharacterOrigin,
+        gender: charGender,
+        avatar: charAvatar,
         str: stats.str,
         agi: stats.agi,
         vit: stats.vit,

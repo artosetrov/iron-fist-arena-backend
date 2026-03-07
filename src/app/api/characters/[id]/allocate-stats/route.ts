@@ -16,17 +16,7 @@ export async function POST(
     const { id } = await params
     const body = await req.json()
 
-    const character = await prisma.character.findUnique({ where: { id } })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Validate allocation values
+    // Validate allocation values from body first (no DB needed)
     let totalPoints = 0
     const allocation: Record<string, number> = {}
 
@@ -51,34 +41,51 @@ export async function POST(
       )
     }
 
-    if (totalPoints > character.statPointsAvailable) {
-      return NextResponse.json(
-        {
-          error: `Not enough stat points. Requested: ${totalPoints}, Available: ${character.statPointsAvailable}`,
-        },
-        { status: 400 }
+    // Use interactive transaction with row-level lock to prevent TOCTOU
+    await prisma.$transaction(async (tx) => {
+      // Lock the character row for update
+      const rows = await tx.$queryRawUnsafe<Array<{
+        id: string; user_id: string; stat_points_available: number;
+        str: number; agi: number; vit: number; end: number;
+        int: number; wis: number; luk: number; cha: number
+      }>>(
+        `SELECT id, user_id, stat_points_available, str, agi, vit, "end", "int", wis, luk, cha FROM characters WHERE id = $1 FOR UPDATE`,
+        id
       )
-    }
 
-    // Calculate new stat values
-    const newStats: Record<string, number> = {}
-    for (const key of STAT_KEYS) {
-      newStats[key] = character[key] + (allocation[key] ?? 0)
-    }
+      const character = rows[0]
+      if (!character) {
+        throw new Error('NOT_FOUND')
+      }
 
-    await prisma.character.update({
-      where: { id },
-      data: {
-        str: newStats.str,
-        agi: newStats.agi,
-        vit: newStats.vit,
-        end: newStats.end,
-        int: newStats.int,
-        wis: newStats.wis,
-        luk: newStats.luk,
-        cha: newStats.cha,
-        statPointsAvailable: character.statPointsAvailable - totalPoints,
-      },
+      if (character.user_id !== user.id) {
+        throw new Error('FORBIDDEN')
+      }
+
+      if (totalPoints > character.stat_points_available) {
+        throw new Error('NOT_ENOUGH_POINTS')
+      }
+
+      // Calculate new stat values
+      const newStats: Record<string, number> = {}
+      for (const key of STAT_KEYS) {
+        newStats[key] = (character as unknown as Record<string, number>)[key] + (allocation[key] ?? 0)
+      }
+
+      await tx.character.update({
+        where: { id },
+        data: {
+          str: newStats.str,
+          agi: newStats.agi,
+          vit: newStats.vit,
+          end: newStats.end,
+          int: newStats.int,
+          wis: newStats.wis,
+          luk: newStats.luk,
+          cha: newStats.cha,
+          statPointsAvailable: { decrement: totalPoints },
+        },
+      })
     })
 
     // Recalculate derived stats (maxHp, armor, magicResist) including equipment
@@ -87,6 +94,17 @@ export async function POST(
     const updated = await prisma.character.findUnique({ where: { id } })
     return NextResponse.json({ character: updated })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') {
+        return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      }
+      if (error.message === 'FORBIDDEN') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (error.message === 'NOT_ENOUGH_POINTS') {
+        return NextResponse.json({ error: 'Not enough stat points' }, { status: 400 })
+      }
+    }
     console.error('allocate-stats error:', error)
     return NextResponse.json(
       { error: 'Failed to allocate stats' },

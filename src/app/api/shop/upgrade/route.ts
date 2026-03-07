@@ -20,20 +20,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character ownership
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-    })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Get the inventory item
+    // Get the inventory item (read-only, no race concern on item data)
     const inventoryItem = await prisma.equipmentInventory.findUnique({
       where: { id: inventory_id },
       include: { item: true },
@@ -42,103 +29,75 @@ export async function POST(req: NextRequest) {
     if (!inventoryItem) {
       return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 })
     }
-
     if (inventoryItem.characterId !== character_id) {
       return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
     }
 
     const currentLevel = inventoryItem.upgradeLevel
-
-    // Check if already at max upgrade level
     if (currentLevel >= UPGRADE_CHANCES.length) {
-      return NextResponse.json(
-        { error: 'Item is already at maximum upgrade level' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Item is already at maximum upgrade level' }, { status: 400 })
     }
 
-    // Calculate cost: (upgradeLevel + 1) * 100 gold
     const upgradeCost = (currentLevel + 1) * 100
-
-    if (character.gold < upgradeCost) {
-      return NextResponse.json(
-        { error: 'Not enough gold', required: upgradeCost, current: character.gold },
-        { status: 400 }
-      )
-    }
-
-    // Roll for success
     const successChance = UPGRADE_CHANCES[currentLevel]
     const roll = Math.random() * 100
     const success = roll < successChance
 
-    // Deduct gold regardless of success
-    const updateData: { gold: { decrement: number } } = {
-      gold: { decrement: upgradeCost },
-    }
+    // Use interactive transaction with row-level lock to prevent TOCTOU
+    const result = await prisma.$transaction(async (tx) => {
+      const [character] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
+        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
+        character_id
+      )
 
-    // Update daily quest progress (item_upgrade counts the attempt, gold_spent counts gold)
-    await updateDailyQuestProgress(prisma, character_id, 'item_upgrade')
-    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', upgradeCost)
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
+      if (character.gold < upgradeCost) throw new Error('NOT_ENOUGH_GOLD')
 
-    if (success) {
-      // Upgrade succeeded: deduct gold and increment upgrade level
-      const [updatedCharacter, updatedItem] = await prisma.$transaction([
-        prisma.character.update({
-          where: { id: character_id },
-          data: updateData,
-        }),
-        prisma.equipmentInventory.update({
+      const updatedCharacter = await tx.character.update({
+        where: { id: character_id },
+        data: { gold: { decrement: upgradeCost } },
+      })
+
+      let updatedItem = inventoryItem
+      if (success) {
+        updatedItem = await tx.equipmentInventory.update({
           where: { id: inventory_id },
           data: { upgradeLevel: { increment: 1 } },
           include: { item: true },
-        }),
-      ])
-
-      // Recalculate derived stats if equipped item was upgraded
-      if (updatedItem.isEquipped) {
-        await recalculateDerivedStats(character_id)
+        })
       }
 
-      // gems live on User, not Character
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
+      return { updatedCharacter, updatedItem }
+    })
 
-      return NextResponse.json({
-        success: true,
-        inventoryItem: updatedItem,
-        character: {
-          gold: updatedCharacter.gold,
-          gems: dbUser?.gems ?? 0,
-        },
-        upgradeCost,
-        newLevel: currentLevel + 1,
-      })
-    } else {
-      // Upgrade failed: deduct gold only
-      const updatedCharacter = await prisma.character.update({
-        where: { id: character_id },
-        data: updateData,
-      })
+    // Non-critical post-transaction work
+    await updateDailyQuestProgress(prisma, character_id, 'item_upgrade')
+    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', upgradeCost)
 
-      // gems live on User, not Character
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
-
-      return NextResponse.json({
-        success: false,
-        inventoryItem: { ...inventoryItem },
-        character: {
-          gold: updatedCharacter.gold,
-          gems: dbUser?.gems ?? 0,
-        },
-        upgradeCost,
-        newLevel: currentLevel,
-      })
+    if (success && result.updatedItem.isEquipped) {
+      await recalculateDerivedStats(character_id)
     }
+
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
+
+    return NextResponse.json({
+      success,
+      inventoryItem: result.updatedItem,
+      character: {
+        gold: result.updatedCharacter.gold,
+        gems: dbUser?.gems ?? 0,
+      },
+      upgradeCost,
+      newLevel: success ? currentLevel + 1 : currentLevel,
+    })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+    }
     console.error('upgrade item error:', error)
-    return NextResponse.json(
-      { error: 'Failed to upgrade item' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to upgrade item' }, { status: 500 })
   }
 }

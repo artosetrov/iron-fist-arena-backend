@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
     const maxRating = character.pvpRating + MATCHMAKING_RANGE
 
     // Find opponents within ELO range, excluding own character
-    // Note: avoid explicit select with 'class' field (reserved SQL keyword, no @map)
     const rawOpponents = await prisma.character.findMany({
       where: {
         id: { not: character_id },
@@ -53,6 +52,7 @@ export async function POST(req: NextRequest) {
       orderBy: {
         pvpRating: 'asc',
       },
+      take: 50,
     })
 
     const opponents = rawOpponents.map((opp) => ({

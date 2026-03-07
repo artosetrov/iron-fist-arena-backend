@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
-import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
+import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
-
-const BOSS_FLOOR_INTERVAL = 5
+import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
+import { awardBattlePassXp } from '@/lib/game/battle-pass'
+import { BATTLE_PASS } from '@/lib/game/balance'
 
 function floorGoldReward(floor: number, difficulty: string): number {
   const base = 30 + floor * 10
@@ -172,41 +173,60 @@ export async function POST(
     // Check for level-up after XP award
     const levelUpResult = await applyLevelUp(prisma, character_id)
 
-    const wasBossFloor = currentFloor % BOSS_FLOOR_INTERVAL === 0
-    if (wasBossFloor) {
-      const dungeonId = run.difficulty
-      const bossIndex = Math.floor(currentFloor / BOSS_FLOOR_INTERVAL)
+    // Update dungeon progress — each floor = one boss defeated
+    const dungeonId = run.dungeonId
+    const bossIndex = currentFloor
+    const totalBosses = getDungeonBossCount(dungeonId)
+    const isDungeonComplete = bossIndex >= totalBosses
 
-      await prisma.dungeonProgress.upsert({
-        where: {
-          characterId_dungeonId: { characterId: character_id, dungeonId },
-        },
-        create: { characterId: character_id, dungeonId, bossIndex, completed: true },
-        update: { bossIndex: Math.max(bossIndex), completed: true },
-      })
+    await prisma.dungeonProgress.upsert({
+      where: {
+        characterId_dungeonId: { characterId: character_id, dungeonId },
+      },
+      create: { characterId: character_id, dungeonId, bossIndex, completed: isDungeonComplete },
+      update: { bossIndex: { set: bossIndex }, completed: isDungeonComplete },
+    })
+
+    const wasBossFloor = true // every floor is a boss floor now
+
+    if (isDungeonComplete) {
+      await prisma.dungeonRun.delete({ where: { id: run.id } })
     }
 
     const nextFloor = currentFloor + 1
-    const nextFloorData = generateDungeonFloor(nextFloor, run.difficulty)
+    const nextFloorData = isDungeonComplete
+      ? { enemies: [], isBoss: false }
+      : generateDungeonFloor(nextFloor, run.difficulty, dungeonId)
 
-    await prisma.dungeonRun.update({
-      where: { id: run.id },
-      data: {
-        currentFloor: nextFloor,
-        state: JSON.parse(
-          JSON.stringify({
-            enemies: nextFloorData.enemies,
-            isBoss: nextFloorData.isBoss,
-            floorsCleared: newFloorsCleared,
-            totalGoldEarned: newTotalGold,
-            totalXpEarned: newTotalXp,
-          })
-        ),
-      },
-    })
+    if (!isDungeonComplete) {
+      await prisma.dungeonRun.update({
+        where: { id: run.id },
+        data: {
+          currentFloor: nextFloor,
+          state: JSON.parse(
+            JSON.stringify({
+              enemies: nextFloorData.enemies,
+              isBoss: nextFloorData.isBoss,
+              floorsCleared: newFloorsCleared,
+              totalGoldEarned: newTotalGold,
+              totalXpEarned: newTotalXp,
+            })
+          ),
+        },
+      })
+    }
 
     // Update daily quest progress
     await updateDailyQuestProgress(prisma, character_id, 'dungeons_complete')
+
+    // Award Battle Pass XP per dungeon floor
+    await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR)
+
+    // Roll for loot drop — boss floors have 75% chance, regular floors scale with difficulty
+    const lootDifficulty = wasBossFloor ? 'boss' : `dungeon_${run.difficulty}`
+    const loot: LootResponseItem[] = []
+    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty)
+    if (lootItem) loot.push(lootItem)
 
     return NextResponse.json({
       victory: true,
@@ -220,6 +240,7 @@ export async function POST(
         totalXp: newTotalXp,
         floorsCleared: newFloorsCleared,
       },
+      loot,
       nextFloor: {
         number: nextFloor,
         enemies: nextFloorData.enemies,

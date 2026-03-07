@@ -27,10 +27,17 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch all dungeon progress records for this character
-    const progress = await prisma.dungeonProgress.findMany({
+    const progressRecords = await prisma.dungeonProgress.findMany({
       where: { characterId },
       orderBy: { dungeonId: 'asc' },
     })
+
+    // Convert to dictionary: { dungeonId: bossIndex }
+    // bossIndex = number of bosses defeated (e.g. 5 means bosses 1-5 are beaten)
+    const progress: Record<string, number> = {}
+    for (const p of progressRecords) {
+      progress[p.dungeonId] = p.bossIndex
+    }
 
     // Fetch any active dungeon run (non-rush)
     const activeRun = await prisma.dungeonRun.findFirst({
@@ -41,7 +48,17 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ progress, activeRun })
+    return NextResponse.json({
+      progress,
+      activeRun: activeRun
+        ? {
+            id: activeRun.id,
+            dungeon_id: activeRun.dungeonId,
+            difficulty: activeRun.difficulty,
+            current_floor: activeRun.currentFloor,
+          }
+        : null,
+    })
   } catch (error) {
     console.error('list dungeon progress error:', error)
     return NextResponse.json(

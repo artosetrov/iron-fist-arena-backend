@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
 import { applyLevelUp } from '@/lib/game/progression'
+import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 
 /** Rush mode gold reward -- higher than normal, scales with floor. */
 function rushGoldReward(floor: number): number {
@@ -217,6 +218,12 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Roll for loot drop — boss floors get 75% chance, regular get dungeon_normal rate
+    const lootDifficulty = state.isBoss ? 'boss' : 'dungeon_normal'
+    const loot: LootResponseItem[] = []
+    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty)
+    if (lootItem) loot.push(lootItem)
+
     return NextResponse.json({
       victory: true,
       combatResults,
@@ -228,6 +235,7 @@ export async function POST(req: NextRequest) {
         totalXp: newTotalXp,
         floorsCleared: newFloorsCleared,
       },
+      loot,
       nextFloor: {
         number: nextFloor,
         enemies: nextFloorData.enemies,

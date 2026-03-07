@@ -1,16 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { buildSlotsArray, MAX_GOLD_MINE_SLOTS, SLOT_COST_GEMS } from '@/lib/game/gold-mine'
 import { rateLimit } from '@/lib/rate-limit'
 
-const MAX_GOLD_MINE_SLOTS = 3
-const SLOT_COST_GEMS = 50
-
-/**
- * POST /api/minigames/gold-mine/buy-slot
- * Body: { character_id }
- * Buys an additional gold mine slot for SLOT_COST_GEMS gems.
- */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -65,10 +58,12 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
+    const slots = await buildSlotsArray(prisma, character_id, updatedCharacter.goldMineSlots)
+
     return NextResponse.json({
-      gold_mine_slots: updatedCharacter.goldMineSlots,
-      gems_spent: SLOT_COST_GEMS,
-      gems_remaining: userRecord.gems - SLOT_COST_GEMS,
+      slots,
+      max_slots: updatedCharacter.goldMineSlots,
+      gems: userRecord.gems - SLOT_COST_GEMS,
     })
   } catch (error) {
     console.error('gold-mine buy-slot error:', error)

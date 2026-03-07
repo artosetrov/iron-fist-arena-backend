@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
-// ── In-memory ban list (populated via admin endpoints) ──
-const bannedUsers = new Set<string>()
+// ── Ban cache (refreshed from DB periodically) ──
+let bannedUsers = new Set<string>()
+let lastBanRefresh = 0
+const BAN_REFRESH_INTERVAL_MS = 60_000 // refresh every 1 min
+
+async function refreshBanList() {
+  const now = Date.now()
+  if (now - lastBanRefresh < BAN_REFRESH_INTERVAL_MS) return
+  lastBanRefresh = now
+  try {
+    const banned = await prisma.user.findMany({
+      where: { isBanned: true },
+      select: { id: true },
+    })
+    bannedUsers = new Set(banned.map((u) => u.id))
+  } catch {
+    // If DB is unavailable, keep using the existing set
+  }
+}
 
 // ── Rate limiting store ──
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -27,12 +45,15 @@ function cleanupRateLimits() {
   }
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // ── Preflight ──
   if (request.method === 'OPTIONS') {
     const res = new NextResponse(null, { status: 204 })
     return applyCorsHeaders(res)
   }
+
+  // ── Refresh ban list from DB ──
+  await refreshBanList()
 
   // ── Ban check ──
   const userId = request.headers.get('x-user-id')

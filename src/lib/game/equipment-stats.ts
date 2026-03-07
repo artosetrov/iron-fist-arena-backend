@@ -3,6 +3,9 @@
 // =============================================================================
 
 import { prisma } from '@/lib/prisma'
+import type { PrismaClient } from '@prisma/client'
+
+type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
 const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
 
@@ -70,8 +73,9 @@ function sumEquipmentBonuses(
  * Recalculate and persist maxHp, armor, magicResist for a character.
  * Call after: stat allocation, equip, unequip, upgrade, level-up.
  */
-export async function recalculateDerivedStats(characterId: string): Promise<DerivedStats> {
-  const character = await prisma.character.findUnique({
+export async function recalculateDerivedStats(characterId: string, tx?: TransactionClient): Promise<DerivedStats> {
+  const db = tx ?? prisma
+  const character = await db.character.findUnique({
     where: { id: characterId },
     select: {
       str: true,
@@ -111,7 +115,7 @@ export async function recalculateDerivedStats(characterId: string): Promise<Deri
 
   const derived = calculateDerived(totalStats)
 
-  await prisma.character.update({
+  await db.character.update({
     where: { id: characterId },
     data: {
       maxHp: derived.maxHp,

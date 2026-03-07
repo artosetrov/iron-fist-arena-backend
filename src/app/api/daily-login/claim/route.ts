@@ -59,43 +59,44 @@ export async function POST(req: NextRequest) {
     // Get the reward for the current day
     const reward = getDailyReward(newDay)
 
-    // Apply reward based on type
-    if (reward.type === 'gold') {
-      await prisma.character.update({
-        where: { id: character_id },
-        data: { gold: { increment: reward.amount } },
-      })
-    } else if (reward.type === 'gems') {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { gems: { increment: reward.amount } },
-      })
-    } else if (reward.type === 'consumable' && reward.itemId) {
-      await prisma.consumableInventory.upsert({
-        where: {
-          characterId_consumableType: {
+    // Apply reward + update record atomically
+    const updatedLogin = await prisma.$transaction(async (tx) => {
+      if (reward.type === 'gold') {
+        await tx.character.update({
+          where: { id: character_id },
+          data: { gold: { increment: reward.amount } },
+        })
+      } else if (reward.type === 'gems') {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { gems: { increment: reward.amount } },
+        })
+      } else if (reward.type === 'consumable' && reward.itemId) {
+        await tx.consumableInventory.upsert({
+          where: {
+            characterId_consumableType: {
+              characterId: character_id,
+              consumableType: reward.itemId as any,
+            },
+          },
+          update: { quantity: { increment: reward.amount } },
+          create: {
             characterId: character_id,
             consumableType: reward.itemId as any,
+            quantity: reward.amount,
           },
-        },
-        update: { quantity: { increment: reward.amount } },
-        create: {
-          characterId: character_id,
-          consumableType: reward.itemId as any,
-          quantity: reward.amount,
+        })
+      }
+
+      return tx.dailyLoginReward.update({
+        where: { characterId: character_id },
+        data: {
+          currentDay: newDay + 1,
+          lastClaimDate: new Date(),
+          streak: newStreak,
+          totalClaims: { increment: 1 },
         },
       })
-    }
-
-    // Update the daily login record
-    const updatedLogin = await prisma.dailyLoginReward.update({
-      where: { characterId: character_id },
-      data: {
-        currentDay: newDay + 1,
-        lastClaimDate: new Date(),
-        streak: newStreak,
-        totalClaims: { increment: 1 },
-      },
     })
 
     return NextResponse.json({

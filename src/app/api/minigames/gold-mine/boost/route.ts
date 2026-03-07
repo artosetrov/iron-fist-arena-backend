@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { buildSlotsArray, BOOST_COST_GEMS } from '@/lib/game/gold-mine'
 import { rateLimit } from '@/lib/rate-limit'
 
-const BOOST_COST_GEMS = 10
-
-/**
- * POST /api/minigames/gold-mine/boost
- * Body: { character_id, session_id }
- * Boosts a gold mine session: doubles the reward for BOOST_COST_GEMS gems.
- */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -20,11 +14,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { character_id, session_id } = body
+    const { character_id, slot_index } = body
 
-    if (!character_id || !session_id) {
+    if (!character_id || slot_index == null) {
       return NextResponse.json(
-        { error: 'character_id and session_id are required' },
+        { error: 'character_id and slot_index are required' },
         { status: 400 }
       )
     }
@@ -41,12 +35,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Find the active session for this slot
     const session = await prisma.goldMineSession.findFirst({
-      where: { id: session_id, characterId: character_id, collected: false },
+      where: {
+        characterId: character_id,
+        slotIndex: slot_index,
+        collected: false,
+      },
     })
 
     if (!session) {
-      return NextResponse.json({ error: 'Active mining session not found' }, { status: 404 })
+      return NextResponse.json({ error: 'No active mining session for this slot' }, { status: 404 })
     }
 
     if (session.boosted) {
@@ -69,17 +68,16 @@ export async function POST(req: NextRequest) {
         data: { gems: { decrement: BOOST_COST_GEMS } },
       }),
       prisma.goldMineSession.update({
-        where: { id: session_id },
+        where: { id: session.id },
         data: { boosted: true, reward: boostedReward },
       }),
     ])
 
+    const slots = await buildSlotsArray(prisma, character_id, character.goldMineSlots)
+
     return NextResponse.json({
-      session_id,
-      boosted: true,
-      reward: boostedReward,
-      gems_spent: BOOST_COST_GEMS,
-      gems_remaining: userRecord.gems - BOOST_COST_GEMS,
+      slots,
+      gems: userRecord.gems - BOOST_COST_GEMS,
     })
   } catch (error) {
     console.error('gold-mine boost error:', error)

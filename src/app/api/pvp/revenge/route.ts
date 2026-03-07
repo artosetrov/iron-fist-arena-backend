@@ -12,6 +12,7 @@ import {
   FIRST_WIN_BONUS,
 } from '@/lib/game/balance'
 import { applyLevelUp } from '@/lib/game/progression'
+import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 
 /**
  * GET /api/pvp/revenge?character_id=xxx
@@ -320,6 +321,13 @@ export async function POST(req: NextRequest) {
     // Check for level-up after XP award
     const levelUpResult = await applyLevelUp(prisma, attacker.id)
 
+    // Roll for loot drop and persist to inventory
+    const loot: LootResponseItem[] = []
+    if (attackerWon) {
+      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp')
+      if (lootItem) loot.push(lootItem)
+    }
+
     const ratingChange = attackerWon
       ? attackerNewRating - attacker.pvpRating
       : -(attacker.pvpRating - attackerNewRating)
@@ -362,8 +370,12 @@ export async function POST(req: NextRequest) {
         turns_taken: combatResult.totalTurns,
         rating_change: ratingChange,
         first_win_bonus: firstWin,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+        new_level: levelUpResult?.newLevel,
+        stat_points_awarded: levelUpResult?.statPointsAwarded,
       },
       rewards: { gold: goldReward, xp: xpReward },
+      loot,
       source: 'pvp',
       matchId: pvpMatch.id,
       stamina: {

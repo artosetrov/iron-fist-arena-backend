@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ACHIEVEMENT_CATALOG } from '@/lib/game/achievement-catalog'
 import { applyLevelUp } from '@/lib/game/progression'
+import { awardBattlePassXp } from '@/lib/game/battle-pass'
+import { BATTLE_PASS } from '@/lib/game/balance'
 
 /**
  * POST /api/achievements/[key]/claim
@@ -80,6 +82,9 @@ export async function POST(
       where: { id: achievement.id },
       data: { rewardClaimed: true },
     })
+
+    // Award Battle Pass XP for achievement claim
+    await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_ACHIEVEMENT)
 
     // Check for level-up if XP was awarded
     let levelUpResult = null

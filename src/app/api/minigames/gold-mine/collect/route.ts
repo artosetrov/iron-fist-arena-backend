@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { buildSlotsArray } from '@/lib/game/gold-mine'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
 export async function POST(req: NextRequest) {
@@ -9,33 +10,38 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { session_id } = body
+    const { character_id, slot_index } = body
 
-    if (!session_id) {
+    if (!character_id || slot_index == null) {
       return NextResponse.json(
-        { error: 'session_id is required' },
+        { error: 'character_id and slot_index are required' },
         { status: 400 }
       )
     }
 
-    const session = await prisma.goldMineSession.findUnique({
-      where: { id: session_id },
-      include: { character: true },
+    const character = await prisma.character.findUnique({
+      where: { id: character_id },
     })
 
-    if (!session) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 })
+    if (!character) {
+      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
 
-    if (session.character.userId !== user.id) {
+    if (character.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    if (session.collected) {
-      return NextResponse.json(
-        { error: 'Reward already collected' },
-        { status: 400 }
-      )
+    // Find the active session for this slot
+    const session = await prisma.goldMineSession.findFirst({
+      where: {
+        characterId: character_id,
+        slotIndex: slot_index,
+        collected: false,
+      },
+    })
+
+    if (!session) {
+      return NextResponse.json({ error: 'No active session for this slot' }, { status: 404 })
     }
 
     const now = new Date()
@@ -47,23 +53,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Collect reward: mark collected and add gold
-    await prisma.$transaction([
+    const [, updatedCharacter] = await prisma.$transaction([
       prisma.goldMineSession.update({
-        where: { id: session_id },
+        where: { id: session.id },
         data: { collected: true },
       }),
       prisma.character.update({
-        where: { id: session.characterId },
+        where: { id: character_id },
         data: { gold: { increment: session.reward } },
       }),
     ])
 
     // Update daily quest progress
-    await updateDailyQuestProgress(prisma, session.characterId, 'gold_mine_collect')
+    await updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect')
+
+    const slots = await buildSlotsArray(prisma, character_id, character.goldMineSlots)
 
     return NextResponse.json({
-      reward: session.reward,
-      collected: true,
+      slots,
+      gold_collected: session.reward,
+      gold: updatedCharacter.gold,
     })
   } catch (error) {
     console.error('gold-mine collect error:', error)

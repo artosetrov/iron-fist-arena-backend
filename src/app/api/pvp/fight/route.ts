@@ -5,23 +5,29 @@ import { rateLimit } from '@/lib/rate-limit'
 import { runCombat, CharacterStats } from '@/lib/game/combat'
 import { calculateElo, getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { rollDropChance } from '@/lib/game/loot'
+import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import {
   STAMINA,
   GOLD_REWARDS,
   XP_REWARDS,
   FIRST_WIN_BONUS,
+  BATTLE_PASS,
 } from '@/lib/game/balance'
 import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { awardBattlePassXp } from '@/lib/game/battle-pass'
 
-function isFirstWinOfDay(firstWinToday: boolean, firstWinDate: Date | null): boolean {
-  if (!firstWinDate) return true
+function isNewUtcDay(date: Date | null): boolean {
+  if (!date) return true
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
-  const winDate = new Date(firstWinDate)
-  winDate.setUTCHours(0, 0, 0, 0)
-  return winDate.getTime() < today.getTime()
+  const d = new Date(date)
+  d.setUTCHours(0, 0, 0, 0)
+  return d.getTime() < today.getTime()
+}
+
+function isFirstWinOfDay(firstWinToday: boolean, firstWinDate: Date | null): boolean {
+  return isNewUtcDay(firstWinDate)
 }
 
 /**
@@ -79,8 +85,9 @@ export async function POST(req: NextRequest) {
     )
     const currentStamina = staminaResult.stamina
 
-    // Check free PvP or stamina
-    const hasFreePvp = attacker.freePvpToday < STAMINA.FREE_PVP_PER_DAY
+    // Check free PvP or stamina (reset counter if new UTC day)
+    const freePvpUsed = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
+    const hasFreePvp = freePvpUsed < STAMINA.FREE_PVP_PER_DAY
     const staminaCost = hasFreePvp ? 0 : STAMINA.PVP_COST
 
     if (!hasFreePvp && currentStamina < STAMINA.PVP_COST) {
@@ -173,7 +180,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (hasFreePvp) {
-      attackerUpdate.freePvpToday = { increment: 1 }
+      attackerUpdate.freePvpToday = freePvpUsed + 1
+      attackerUpdate.freePvpDate = now
     }
 
     if (attackerWon) {
@@ -212,9 +220,6 @@ export async function POST(req: NextRequest) {
       defenderUpdate.pvpLossStreak = { increment: 1 }
       defenderUpdate.pvpWinStreak = 0
     }
-
-    // Roll for loot drop
-    const drop = attackerWon ? rollDropChance(attacker.level, 'pvp') : null
 
     // Execute all DB writes in a transaction
     const [updatedAttacker, , pvpMatch] = await prisma.$transaction([
@@ -261,15 +266,14 @@ export async function POST(req: NextRequest) {
       await updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins')
     }
 
-    // Build loot response from drop roll
-    const loot: Array<Record<string, unknown>> = []
-    if (drop) {
-      loot.push({
-        item_type: drop.itemType,
-        rarity: drop.rarity,
-        item_level: drop.itemLevel,
-        upgrade_level: 0,
-      })
+    // Award Battle Pass XP
+    await awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP)
+
+    // Roll for loot drop and persist to inventory
+    const loot: LootResponseItem[] = []
+    if (attackerWon) {
+      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp')
+      if (lootItem) loot.push(lootItem)
     }
 
     const ratingChange = attackerNewRating - attacker.pvpRating

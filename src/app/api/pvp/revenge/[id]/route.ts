@@ -13,6 +13,7 @@ import {
 } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
+import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 
 function isFirstWinOfDay(firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -243,7 +244,15 @@ export async function POST(
       await updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins')
     }
 
+    // Roll for loot drop and persist to inventory
+    const loot: LootResponseItem[] = []
+    if (attackerWon) {
+      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp')
+      if (lootItem) loot.push(lootItem)
+    }
+
     return NextResponse.json({
+      loot,
       combat: {
         winnerId: combatResult.winnerId,
         loserId: combatResult.loserId,

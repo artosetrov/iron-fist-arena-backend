@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { QuestType } from '@prisma/client'
 import { applyLevelUp } from '@/lib/game/progression'
+import { awardBattlePassXp } from '@/lib/game/battle-pass'
+import { BATTLE_PASS } from '@/lib/game/balance'
 
 // Quest generation config
 const QUEST_POOL: {
@@ -182,6 +184,9 @@ export async function POST(req: NextRequest) {
           })
         }
       })
+
+      // Award Battle Pass XP for quest completion
+      await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_QUEST)
 
       // Check for level-up after XP award
       const levelUpResult = await applyLevelUp(prisma, character_id)
