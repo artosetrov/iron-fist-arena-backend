@@ -66,11 +66,14 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
+    // gems live on User, not Character
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
+
     return NextResponse.json({
       inventoryItem,
       character: {
         gold: updatedCharacter.gold,
-        gems: updatedCharacter.gems,
+        gems: dbUser?.gems ?? 0,
       },
     })
   } catch (error) {

@@ -3,8 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { EquippedSlot, ItemType } from '@prisma/client'
 
-// Map item types to the equipment slot they occupy
-const ITEM_TYPE_TO_SLOT: Record<ItemType, EquippedSlot> = {
+// Map item types to the equipment slot they occupy (consumable items are not equippable)
+const ITEM_TYPE_TO_SLOT: Partial<Record<ItemType, EquippedSlot>> = {
   weapon: 'weapon',
   helmet: 'helmet',
   chest: 'chest',
