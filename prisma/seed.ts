@@ -192,6 +192,11 @@ async function main() {
     { catalogId: 'relic_old_coin', itemName: 'Ancient Coin', itemType: 'relic', rarity: 'uncommon', itemLevel: 3, buyPrice: 300, sellPrice: 75, baseStats: { luk: 4 }, description: 'Brings good fortune.' },
     { catalogId: 'relic_skull', itemName: 'Crystal Skull', itemType: 'relic', rarity: 'rare', itemLevel: 7, buyPrice: 1000, sellPrice: 250, baseStats: { int: 6, wis: 4 }, description: 'Whispers forgotten knowledge.', specialEffect: '+5% XP gain' },
     { catalogId: 'relic_orb_of_ages', itemName: 'Orb of Ages', itemType: 'relic', rarity: 'legendary', itemLevel: 15, buyPrice: 7500, sellPrice: 1875, baseStats: { int: 15, wis: 12, luk: 8 }, description: 'Contains the wisdom of millennia.', specialEffect: '+15% all magic, +10% XP' },
+
+    // ── CONSUMABLES (Stamina Potions) ───────────────────────
+    { catalogId: 'stamina_potion_small', itemName: 'Small Stamina Potion', itemType: 'consumable', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: {}, description: 'Restores 20 stamina.', specialEffect: '+20 stamina' },
+    { catalogId: 'stamina_potion_medium', itemName: 'Medium Stamina Potion', itemType: 'consumable', rarity: 'uncommon', itemLevel: 1, buyPrice: 250, sellPrice: 63, baseStats: {}, description: 'Restores 50 stamina.', specialEffect: '+50 stamina' },
+    { catalogId: 'stamina_potion_large', itemName: 'Large Stamina Potion', itemType: 'consumable', rarity: 'rare', itemLevel: 1, buyPrice: 500, sellPrice: 125, baseStats: {}, description: 'Fully restores stamina to maximum.', specialEffect: 'Full stamina restore' },
   ]
 
   let itemsCreated = 0

@@ -38,6 +38,7 @@ enum ItemType {
   relic
   necklace
   ring
+  consumable
 }
 
 enum Rarity {
