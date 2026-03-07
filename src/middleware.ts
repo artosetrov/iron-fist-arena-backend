@@ -1,27 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
-// ── Ban cache (refreshed from DB periodically) ──
-let bannedUsers = new Set<string>()
-let lastBanRefresh = 0
-const BAN_REFRESH_INTERVAL_MS = 60_000 // refresh every 1 min
-
-async function refreshBanList() {
-  const now = Date.now()
-  if (now - lastBanRefresh < BAN_REFRESH_INTERVAL_MS) return
-  lastBanRefresh = now
-  try {
-    const banned = await prisma.user.findMany({
-      where: { isBanned: true },
-      select: { id: true },
-    })
-    bannedUsers = new Set(banned.map((u) => u.id))
-  } catch {
-    // If DB is unavailable, keep using the existing set
-  }
-}
-
-// ── Rate limiting store ──
+// ── Rate limiting store (in-memory, per-instance) ──
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
 const RATE_LIMIT_MAX = 120 // requests per window
@@ -45,25 +24,16 @@ function cleanupRateLimits() {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   // ── Preflight ──
   if (request.method === 'OPTIONS') {
     const res = new NextResponse(null, { status: 204 })
     return applyCorsHeaders(res)
   }
 
-  // ── Refresh ban list from DB ──
-  await refreshBanList()
-
-  // ── Ban check ──
-  const userId = request.headers.get('x-user-id')
-  if (userId && bannedUsers.has(userId)) {
-    const res = NextResponse.json({ error: 'Account suspended' }, { status: 403 })
-    return applyCorsHeaders(res)
-  }
-
   // ── Rate limiting ──
   cleanupRateLimits()
+  const userId = request.headers.get('x-user-id')
   const rateLimitKey = userId || request.headers.get('x-forwarded-for') || 'anon'
   const now = Date.now()
   let entry = rateLimitMap.get(rateLimitKey)

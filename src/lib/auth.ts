@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 export async function getAuthUser(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -17,5 +18,13 @@ export async function getAuthUser(req: NextRequest) {
 
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return null
+
+  // Ban check (runs in Node.js runtime, not Edge)
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { isBanned: true },
+  })
+  if (dbUser?.isBanned) return null
+
   return user
 }
