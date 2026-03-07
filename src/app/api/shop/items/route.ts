@@ -52,9 +52,10 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ items: shopItems })
   } catch (error) {
-    console.error('list shop items error:', error)
+    const msg = error instanceof Error ? error.message : String(error)
+    console.error('list shop items error:', msg)
     return NextResponse.json(
-      { error: 'Failed to fetch shop items' },
+      { error: 'Failed to fetch shop items', detail: msg },
       { status: 500 }
     )
   }
