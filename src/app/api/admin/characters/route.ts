@@ -28,30 +28,33 @@ export async function GET(req: NextRequest) {
       ? { characterName: { contains: search, mode: 'insensitive' as const } }
       : {}
 
-    const [characters, total] = await Promise.all([
+    // Note: avoid explicit select with 'class' field (reserved SQL keyword, no @map)
+    const [rawCharacters, total] = await Promise.all([
       prisma.character.findMany({
         where,
-        select: {
-          id: true,
-          characterName: true,
-          class: true,
-          origin: true,
-          level: true,
-          prestigeLevel: true,
-          pvpRating: true,
-          pvpWins: true,
-          pvpLosses: true,
-          gold: true,
-          createdAt: true,
-          lastPlayed: true,
-          user: { select: { email: true, username: true } },
-        },
+        include: { user: { select: { email: true, username: true } } },
         orderBy: { pvpRating: 'desc' },
         take: limit,
         skip: offset,
       }),
       prisma.character.count({ where }),
     ])
+
+    const characters = rawCharacters.map((c) => ({
+      id: c.id,
+      characterName: c.characterName,
+      class: c.class,
+      origin: c.origin,
+      level: c.level,
+      prestigeLevel: c.prestigeLevel,
+      pvpRating: c.pvpRating,
+      pvpWins: c.pvpWins,
+      pvpLosses: c.pvpLosses,
+      gold: c.gold,
+      createdAt: c.createdAt,
+      lastPlayed: c.lastPlayed,
+      user: c.user,
+    }))
 
     return NextResponse.json({ characters, total, limit, offset })
   } catch (error) {

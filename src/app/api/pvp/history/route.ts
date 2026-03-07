@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       MAX_LIMIT
     )
 
+    // Note: avoid explicit select with 'class' field (reserved SQL keyword, no @map)
     const matches = await prisma.pvpMatch.findMany({
       where: {
         OR: [
@@ -47,22 +48,8 @@ export async function GET(req: NextRequest) {
       orderBy: { playedAt: 'desc' },
       take: limit,
       include: {
-        player1: {
-          select: {
-            id: true,
-            characterName: true,
-            class: true,
-            level: true,
-          },
-        },
-        player2: {
-          select: {
-            id: true,
-            characterName: true,
-            class: true,
-            level: true,
-          },
-        },
+        player1: true,
+        player2: true,
       },
     })
 

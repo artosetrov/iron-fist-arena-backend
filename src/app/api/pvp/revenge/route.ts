@@ -46,17 +46,7 @@ export async function GET(req: NextRequest) {
         expiresAt: { gt: now },
       },
       include: {
-        attacker: {
-          select: {
-            id: true,
-            characterName: true,
-            class: true,
-            origin: true,
-            level: true,
-            pvpRating: true,
-            maxHp: true,
-          },
-        },
+        attacker: true,
       },
       orderBy: { createdAt: 'desc' },
       take: 20,

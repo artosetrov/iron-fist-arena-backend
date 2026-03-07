@@ -8,23 +8,25 @@ export async function GET(
   try {
     const { id } = await params
 
-    const character = await prisma.character.findUnique({
+    // Note: avoid explicit select with 'class' field (reserved SQL keyword, no @map)
+    const raw = await prisma.character.findUnique({
       where: { id },
-      select: {
-        id: true,
-        characterName: true,
-        class: true,
-        origin: true,
-        level: true,
-        pvpRating: true,
-        pvpWins: true,
-        pvpLosses: true,
-        prestigeLevel: true,
-      },
     })
 
-    if (!character) {
+    if (!raw) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+    }
+
+    const character = {
+      id: raw.id,
+      characterName: raw.characterName,
+      class: raw.class,
+      origin: raw.origin,
+      level: raw.level,
+      pvpRating: raw.pvpRating,
+      pvpWins: raw.pvpWins,
+      pvpLosses: raw.pvpLosses,
+      prestigeLevel: raw.prestigeLevel,
     }
 
     return NextResponse.json({ profile: character })
