@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 
 const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
-
-function calculateMaxHp(vit: number, end: number): number {
-  return 80 + vit * 5 + end * 3
-}
 
 export async function POST(
   req: NextRequest,
@@ -69,9 +66,7 @@ export async function POST(
       newStats[key] = character[key] + (allocation[key] ?? 0)
     }
 
-    const maxHp = calculateMaxHp(newStats.vit, newStats.end)
-
-    const updated = await prisma.character.update({
+    await prisma.character.update({
       where: { id },
       data: {
         str: newStats.str,
@@ -82,11 +77,14 @@ export async function POST(
         wis: newStats.wis,
         luk: newStats.luk,
         cha: newStats.cha,
-        maxHp,
         statPointsAvailable: character.statPointsAvailable - totalPoints,
       },
     })
 
+    // Recalculate derived stats (maxHp, armor, magicResist) including equipment
+    await recalculateDerivedStats(id)
+
+    const updated = await prisma.character.findUnique({ where: { id } })
     return NextResponse.json({ character: updated })
   } catch (error) {
     console.error('allocate-stats error:', error)

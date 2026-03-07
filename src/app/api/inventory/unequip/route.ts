@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -55,6 +56,9 @@ export async function POST(req: NextRequest) {
         equippedSlot: null,
       },
     })
+
+    // Recalculate derived stats (maxHp, armor, magicResist)
+    await recalculateDerivedStats(character_id)
 
     // Return updated inventory
     const equipment = await prisma.equipmentInventory.findMany({

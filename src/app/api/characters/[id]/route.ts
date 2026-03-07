@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { applyLevelUp } from '@/lib/game/progression'
+import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 
 export async function GET(
   req: NextRequest,
@@ -15,6 +16,9 @@ export async function GET(
 
     // Apply any pending level-ups from accumulated XP
     await applyLevelUp(prisma, id)
+
+    // Recalculate derived stats (maxHp, armor, magicResist) from base stats + equipment
+    await recalculateDerivedStats(id)
 
     const character = await prisma.character.findUnique({
       where: { id },

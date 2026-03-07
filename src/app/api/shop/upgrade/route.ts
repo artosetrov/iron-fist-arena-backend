@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { UPGRADE_CHANCES } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -93,6 +94,11 @@ export async function POST(req: NextRequest) {
           include: { item: true },
         }),
       ])
+
+      // Recalculate derived stats if equipped item was upgraded
+      if (updatedItem.isEquipped) {
+        await recalculateDerivedStats(character_id)
+      }
 
       // gems live on User, not Character
       const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { EquippedSlot, ItemType } from '@prisma/client'
+import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 
 // Map item types to the equipment slot they occupy (consumable items are not equippable)
 const ITEM_TYPE_TO_SLOT: Partial<Record<ItemType, EquippedSlot>> = {
@@ -91,6 +92,9 @@ export async function POST(req: NextRequest) {
         },
       }),
     ])
+
+    // Recalculate derived stats (maxHp, armor, magicResist)
+    await recalculateDerivedStats(character_id)
 
     // Return updated inventory
     const equipment = await prisma.equipmentInventory.findMany({
