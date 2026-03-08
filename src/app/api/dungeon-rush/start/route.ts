@@ -47,30 +47,37 @@ export async function POST(req: NextRequest) {
     })
     if (activeRun) {
       const state = activeRun.state as unknown as RushState
-      const currentRoom = state.rooms[state.currentRoomIndex]
-      const enemy = (currentRoom && (currentRoom.type === 'combat' || currentRoom.type === 'elite' || currentRoom.type === 'miniboss'))
-        ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
-        : undefined
 
-      return NextResponse.json({
-        run_id: activeRun.id,
-        current_floor: activeRun.currentFloor,
-        current_enemy: enemy
-          ? { name: enemy.name, level: enemy.level }
-          : undefined,
-        resumed: true,
-        // New room system data
-        rooms: state.rooms,
-        currentRoomIndex: state.currentRoomIndex,
-        buffs: state.buffs,
-        currentHpPercent: state.currentHpPercent,
-        totalRooms: TOTAL_RUSH_ROOMS,
-        rewards: {
-          totalGold: state.totalGoldEarned,
-          totalXp: state.totalXpEarned,
-          floorsCleared: state.floorsCleared,
-        },
-      })
+      // Legacy run without new room system — delete and start fresh
+      if (!state.rooms || !Array.isArray(state.rooms)) {
+        await prisma.dungeonRun.delete({ where: { id: activeRun.id } })
+        // Fall through to create a new rush below
+      } else {
+        const currentRoom = state.rooms[state.currentRoomIndex]
+        const enemy = (currentRoom && (currentRoom.type === 'combat' || currentRoom.type === 'elite' || currentRoom.type === 'miniboss'))
+          ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
+          : undefined
+
+        return NextResponse.json({
+          run_id: activeRun.id,
+          current_floor: activeRun.currentFloor,
+          current_enemy: enemy
+            ? { name: enemy.name, level: enemy.level }
+            : undefined,
+          resumed: true,
+          // New room system data
+          rooms: state.rooms,
+          currentRoomIndex: state.currentRoomIndex,
+          buffs: state.buffs ?? [],
+          currentHpPercent: state.currentHpPercent ?? 100,
+          totalRooms: TOTAL_RUSH_ROOMS,
+          rewards: {
+            totalGold: state.totalGoldEarned ?? 0,
+            totalXp: state.totalXpEarned ?? 0,
+            floorsCleared: state.floorsCleared ?? 0,
+          },
+        })
+      }
     }
 
     // Check stamina (account for time-based regeneration)

@@ -49,7 +49,18 @@ export async function GET(req: NextRequest) {
     }
 
     const state = run.state as unknown as RushState
-    const currentRoom = state.rooms?.[state.currentRoomIndex]
+
+    // Legacy run without new room system
+    if (!state.rooms || !Array.isArray(state.rooms)) {
+      // Delete legacy run and report no active rush
+      await prisma.dungeonRun.delete({ where: { id: run.id } })
+      return NextResponse.json({
+        active: false,
+        message: 'Legacy rush run cleaned up. Start a new rush.',
+      })
+    }
+
+    const currentRoom = state.rooms[state.currentRoomIndex]
     const currentEnemy = currentRoom && isCombatRoom(currentRoom.type)
       ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
       : undefined
@@ -59,16 +70,16 @@ export async function GET(req: NextRequest) {
       run_id: run.id,
       rooms: state.rooms,
       currentRoomIndex: state.currentRoomIndex,
-      buffs: state.buffs,
-      currentHpPercent: state.currentHpPercent,
+      buffs: state.buffs ?? [],
+      currentHpPercent: state.currentHpPercent ?? 100,
       totalRooms: TOTAL_RUSH_ROOMS,
       currentEnemy: currentEnemy
         ? { name: currentEnemy.name, level: currentEnemy.level }
         : undefined,
       rewards: {
-        totalGold: state.totalGoldEarned,
-        totalXp: state.totalXpEarned,
-        floorsCleared: state.floorsCleared,
+        totalGold: state.totalGoldEarned ?? 0,
+        totalXp: state.totalXpEarned ?? 0,
+        floorsCleared: state.floorsCleared ?? 0,
       },
     })
   } catch (error) {

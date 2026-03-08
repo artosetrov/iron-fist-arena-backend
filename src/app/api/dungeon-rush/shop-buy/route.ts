@@ -57,6 +57,16 @@ export async function POST(req: NextRequest) {
     }
 
     const state = run.state as unknown as RushState
+
+    // Legacy run without new room system
+    if (!state.rooms || !Array.isArray(state.rooms)) {
+      await prisma.dungeonRun.delete({ where: { id: run.id } })
+      return NextResponse.json(
+        { error: 'Legacy rush run cleaned up. Please start a new rush.' },
+        { status: 400 },
+      )
+    }
+
     const currentRoom = state.rooms[state.currentRoomIndex]
 
     if (!currentRoom || currentRoom.type !== 'shop') {
