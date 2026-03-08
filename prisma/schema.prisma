@@ -100,6 +100,20 @@ enum EventType {
   tournament
 }
 
+enum DungeonDifficulty {
+  easy
+  normal
+  hard
+  nightmare
+}
+
+enum DungeonType {
+  story
+  side
+  event
+  endgame
+}
+
 enum SkillDamageType {
   physical
   magical
@@ -268,6 +282,7 @@ model Item {
   createdAt       DateTime  @default(now()) @map("created_at")
 
   equipment       EquipmentInventory[]
+  dungeonDrops    DungeonDrop[]
 
   @@map("items")
 }
@@ -777,4 +792,116 @@ model CharacterPassive {
   @@unique([characterId, nodeId])
   @@index([characterId])
   @@map("character_passives")
+}
+
+// --- Dungeon System ---
+
+model Dungeon {
+  id              String            @id @default(uuid())
+  slug            String            @unique
+  name            String
+  description     String?
+  lore            String?
+  levelReq        Int               @default(1) @map("level_req")
+  difficulty      DungeonDifficulty @default(normal)
+  dungeonType     DungeonType       @default(story) @map("dungeon_type")
+  energyCost      Int               @default(20) @map("energy_cost")
+  imageUrl        String?           @map("image_url")
+  backgroundUrl   String?           @map("background_url")
+  imagePrompt     String?           @map("image_prompt")
+  imageStyle      String?           @map("image_style")
+  isActive        Boolean           @default(true) @map("is_active")
+  sortOrder       Int               @default(0) @map("sort_order")
+  goldReward      Int               @default(0) @map("gold_reward")
+  xpReward        Int               @default(0) @map("xp_reward")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  bosses          DungeonBoss[]
+  waves           DungeonWave[]
+  drops           DungeonDrop[]
+
+  @@map("dungeons")
+}
+
+model DungeonBoss {
+  id            String        @id @default(uuid())
+  dungeonId     String        @map("dungeon_id")
+  name          String
+  bossType      String?       @map("boss_type")
+  level         Int
+  hp            Int
+  damage        Int           @default(0)
+  defense       Int           @default(0)
+  speed         Int           @default(0)
+  critChance    Float         @default(0) @map("crit_chance")
+  description   String?
+  lore          String?
+  imageUrl      String?       @map("image_url")
+  imagePrompt   String?       @map("image_prompt")
+  floorNumber   Int           @map("floor_number")
+  sortOrder     Int           @default(0) @map("sort_order")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  dungeon       Dungeon       @relation(fields: [dungeonId], references: [id], onDelete: Cascade)
+  abilities     BossAbility[]
+
+  @@map("dungeon_bosses")
+}
+
+model BossAbility {
+  id            String      @id @default(uuid())
+  bossId        String      @map("boss_id")
+  name          String
+  abilityType   String      @map("ability_type")
+  damage        Int         @default(0)
+  cooldown      Int         @default(0)
+  specialEffect String?     @map("special_effect")
+  description   String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  boss          DungeonBoss @relation(fields: [bossId], references: [id], onDelete: Cascade)
+
+  @@map("boss_abilities")
+}
+
+model DungeonWave {
+  id            String              @id @default(uuid())
+  dungeonId     String              @map("dungeon_id")
+  waveNumber    Int                 @map("wave_number")
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  dungeon       Dungeon             @relation(fields: [dungeonId], references: [id], onDelete: Cascade)
+  enemies       DungeonWaveEnemy[]
+
+  @@unique([dungeonId, waveNumber])
+  @@map("dungeon_waves")
+}
+
+model DungeonWaveEnemy {
+  id            String      @id @default(uuid())
+  waveId        String      @map("wave_id")
+  enemyType     String      @map("enemy_type")
+  level         Int
+  count         Int         @default(1)
+
+  wave          DungeonWave @relation(fields: [waveId], references: [id], onDelete: Cascade)
+
+  @@map("dungeon_wave_enemies")
+}
+
+model DungeonDrop {
+  id            String      @id @default(uuid())
+  dungeonId     String      @map("dungeon_id")
+  itemId        String      @map("item_id")
+  dropChance    Float       @map("drop_chance")
+  minQuantity   Int         @default(1) @map("min_quantity")
+  maxQuantity   Int         @default(1) @map("max_quantity")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  dungeon       Dungeon     @relation(fields: [dungeonId], references: [id], onDelete: Cascade)
+  item          Item        @relation(fields: [itemId], references: [id])
+
+  @@map("dungeon_drops")
 }
