@@ -135,48 +135,71 @@ export async function POST(req: NextRequest) {
     }
 
     const playerStats = characterToStats(character)
-    const combatResults: Array<{
-      enemyName: string
-      won: boolean
-      turns: number
-    }> = []
+    const primaryEnemy = state.enemies[0]
+    const enemyStats = enemyToCharacterStats(primaryEnemy)
+    const combatResult = runCombat(playerStats, enemyStats)
+    const playerWon = combatResult.winnerId === playerStats.id
 
-    let playerWon = true
+    // Build combat_log for the iOS client animation (same format as standard dungeon)
+    const combat_log = combatResult.turns.map((t) => ({
+      attacker_id: t.attackerId,
+      action: 'attack',
+      damage: t.damage,
+      is_crit: t.isCrit,
+      is_miss: false,
+      is_dodge: t.isDodge,
+      is_blocked: false,
+      target_zone: null,
+      defend_zone: null,
+      status_applied: null,
+      heal: null,
+    }))
 
-    // Fight each enemy sequentially
-    for (const enemy of state.enemies) {
-      const enemyStats = enemyToCharacterStats(enemy)
-      const result = runCombat(playerStats, enemyStats)
-      const won = result.winnerId === playerStats.id
-
-      combatResults.push({
-        enemyName: enemy.name,
-        won,
-        turns: result.totalTurns,
-      })
-
-      if (!won) {
-        playerWon = false
-        break
-      }
+    // Build CombatData payload for the client animation
+    const combatDataPayload = {
+      player: {
+        id: character.id,
+        character_name: character.characterName,
+        class: character.class,
+        origin: character.origin,
+        level: character.level,
+        max_hp: character.maxHp,
+      },
+      enemy: {
+        id: primaryEnemy.id,
+        character_name: primaryEnemy.name,
+        class: 'warrior' as const,
+        origin: 'demon',
+        level: primaryEnemy.level,
+        max_hp: primaryEnemy.maxHp,
+      },
+      combat_log,
+      source: 'dungeon_rush',
     }
 
     const currentFloor = run.currentFloor
-    // CHA gold bonus: +0.5% per CHA point
     const goldReward = chaGoldBonus(rushGoldReward(currentFloor), character.cha)
     const xpReward = rushXpReward(currentFloor)
 
     if (!playerWon) {
       // Player lost -- rush ends. Keep rewards earned so far.
-      // Grant partial rewards for this floor (none, since they lost)
       await prisma.dungeonRun.delete({ where: { id: run.id } })
 
       return NextResponse.json({
+        ...combatDataPayload,
+        result: {
+          is_win: false,
+          winner_id: combatResult.winnerId,
+          gold_reward: 0,
+          xp_reward: 0,
+          turns_taken: combatResult.totalTurns,
+        },
         victory: false,
-        combatResults,
         message: 'You have been defeated. The dungeon rush is over.',
         finalFloor: currentFloor,
         rewards: {
+          gold: 0,
+          xp: 0,
           totalGold: state.totalGoldEarned,
           totalXp: state.totalXpEarned,
           floorsCleared: state.floorsCleared,
@@ -227,8 +250,16 @@ export async function POST(req: NextRequest) {
     if (lootItem) loot.push(lootItem)
 
     return NextResponse.json({
+      ...combatDataPayload,
+      result: {
+        is_win: true,
+        winner_id: character.id,
+        gold_reward: goldReward,
+        xp_reward: xpReward,
+        turns_taken: combatResult.totalTurns,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+      },
       victory: true,
-      combatResults,
       floorCleared: currentFloor,
       rewards: {
         gold: goldReward,
