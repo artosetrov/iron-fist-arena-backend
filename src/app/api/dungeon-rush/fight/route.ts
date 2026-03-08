@@ -2,41 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
-import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { chaGoldBonus } from '@/lib/game/balance'
-
-/** Rush mode gold reward -- higher than normal, scales with floor. */
-function rushGoldReward(floor: number): number {
-  return Math.round(50 + floor * 15)
-}
-
-/** Rush mode XP reward -- higher than normal, scales with floor. */
-function rushXpReward(floor: number): number {
-  return Math.round(35 + floor * 12)
-}
-
-/** Convert a dungeon Enemy into CharacterStats for combat. */
-function enemyToCharacterStats(enemy: Enemy): CharacterStats {
-  return {
-    id: enemy.id,
-    name: enemy.name,
-    class: 'warrior',
-    level: enemy.level,
-    str: enemy.str,
-    agi: enemy.agi,
-    vit: Math.round(enemy.maxHp / 8),
-    end: Math.round(enemy.armor / 2),
-    int: Math.round(enemy.magicResist),
-    wis: 5,
-    luk: 5,
-    cha: 1,
-    maxHp: enemy.maxHp,
-    armor: enemy.armor,
-    magicResist: enemy.magicResist,
-  }
-}
+import {
+  generateRushEnemy,
+  getRoomRewards,
+  applyRushBuffs,
+  effectiveHp,
+  hpPercentAfterCombat,
+  isCombatRoom,
+  TOTAL_RUSH_ROOMS,
+  type RushState,
+} from '@/lib/game/dungeon-rush'
 
 /** Convert a Prisma Character record into CharacterStats for combat. */
 function characterToStats(c: {
@@ -75,14 +53,6 @@ function characterToStats(c: {
     magicResist: c.magicResist,
     combatStance: c.combatStance as Record<string, unknown> | null,
   }
-}
-
-/**
- * Rush mode uses a scaled effective floor for generation.
- * The effective floor is higher than the actual floor so difficulty ramps quickly.
- */
-function rushEffectiveFloor(floor: number): number {
-  return Math.round(floor * 1.5)
 }
 
 export async function POST(req: NextRequest) {
@@ -126,21 +96,67 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const state = run.state as unknown as {
-      enemies: Enemy[]
-      isBoss: boolean
-      floorsCleared: number
-      totalGoldEarned: number
-      totalXpEarned: number
+    const state = run.state as unknown as RushState
+    const currentRoom = state.rooms[state.currentRoomIndex]
+
+    if (!currentRoom) {
+      return NextResponse.json(
+        { error: 'No more rooms in dungeon rush' },
+        { status: 400 },
+      )
     }
 
-    const playerStats = characterToStats(character)
-    const primaryEnemy = state.enemies[0]
-    const enemyStats = enemyToCharacterStats(primaryEnemy)
-    const combatResult = runCombat(playerStats, enemyStats)
-    const playerWon = combatResult.winnerId === playerStats.id
+    if (!isCombatRoom(currentRoom.type)) {
+      return NextResponse.json(
+        { error: `Current room is ${currentRoom.type}, not a combat room. Use /resolve endpoint.` },
+        { status: 400 },
+      )
+    }
 
-    // Build combat_log for the iOS client animation (same format as standard dungeon)
+    if (currentRoom.resolved) {
+      return NextResponse.json(
+        { error: 'This room is already resolved' },
+        { status: 400 },
+      )
+    }
+
+    // Generate the enemy for this room
+    const enemy = generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
+
+    // Prepare player stats with buffs applied
+    let playerStats = characterToStats(character)
+    playerStats = applyRushBuffs(playerStats, state.buffs)
+
+    // Apply HP persistence: use current HP% instead of full HP
+    const playerEffectiveMaxHp = playerStats.maxHp
+    const playerCurrentHp = effectiveHp(playerEffectiveMaxHp, state.currentHpPercent)
+    // We temporarily set maxHp to currentHp so combat starts with reduced HP
+    // But keep actual maxHp for percentage calculation after combat
+    const playerStatsForCombat = { ...playerStats, maxHp: playerCurrentHp }
+
+    // Enemy stats for combat (same conversion as before)
+    const enemyStats: CharacterStats = {
+      id: enemy.id,
+      name: enemy.name,
+      class: 'warrior',
+      level: enemy.level,
+      str: enemy.str,
+      agi: enemy.agi,
+      vit: Math.round(enemy.maxHp / 8),
+      end: Math.round(enemy.armor / 2),
+      int: Math.round(enemy.magicResist),
+      wis: 5,
+      luk: 5,
+      cha: 1,
+      maxHp: enemy.maxHp,
+      armor: enemy.armor,
+      magicResist: enemy.magicResist,
+    }
+
+    const combatResult = runCombat(playerStatsForCombat, enemyStats)
+    const playerWon = combatResult.winnerId === playerStatsForCombat.id
+
+    // Build combat_log for iOS client animation
     const combat_log = combatResult.turns.map((t) => ({
       attacker_id: t.attackerId,
       action: 'attack',
@@ -163,26 +179,27 @@ export async function POST(req: NextRequest) {
         class: character.class,
         origin: character.origin,
         level: character.level,
-        max_hp: character.maxHp,
+        max_hp: playerCurrentHp,
       },
       enemy: {
-        id: primaryEnemy.id,
-        character_name: primaryEnemy.name,
+        id: enemy.id,
+        character_name: enemy.name,
         class: 'warrior' as const,
         origin: 'demon',
-        level: primaryEnemy.level,
-        max_hp: primaryEnemy.maxHp,
+        level: enemy.level,
+        max_hp: enemy.maxHp,
       },
       combat_log,
       source: 'dungeon_rush',
     }
 
-    const currentFloor = run.currentFloor
-    const goldReward = chaGoldBonus(rushGoldReward(currentFloor), character.cha)
-    const xpReward = rushXpReward(currentFloor)
+    // Get rewards for this room type
+    const roomRewards = getRoomRewards(currentRoom.index, currentRoom.type)
+    const goldReward = chaGoldBonus(roomRewards.gold, character.cha)
+    const xpReward = roomRewards.xp
 
     if (!playerWon) {
-      // Player lost -- rush ends. Keep rewards earned so far.
+      // Player lost — rush ends, delete run. Rewards earned so far are kept.
       await prisma.dungeonRun.delete({ where: { id: run.id } })
 
       return NextResponse.json({
@@ -196,7 +213,8 @@ export async function POST(req: NextRequest) {
         },
         victory: false,
         message: 'You have been defeated. The dungeon rush is over.',
-        finalFloor: currentFloor,
+        roomIndex: currentRoom.index,
+        roomType: currentRoom.type,
         rewards: {
           gold: 0,
           xp: 0,
@@ -207,7 +225,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Player won the floor
+    // Player won — grant rewards
     const newTotalGold = state.totalGoldEarned + goldReward
     const newTotalXp = state.totalXpEarned + xpReward
     const newFloorsCleared = state.floorsCleared + 1
@@ -224,30 +242,86 @@ export async function POST(req: NextRequest) {
     // Check for level-up after XP award
     const levelUpResult = await applyLevelUp(prisma, character_id)
 
-    // Generate next floor -- rush floors scale faster
-    const nextFloor = currentFloor + 1
-    const effectiveFloor = rushEffectiveFloor(nextFloor)
-    const nextFloorData = generateDungeonFloor(effectiveFloor, 'normal')
+    // Calculate new HP% after combat
+    // Find player's remaining HP from combat turns
+    let remainingHp = playerCurrentHp
+    for (const turn of combatResult.turns) {
+      if (turn.attackerId !== playerStatsForCombat.id) {
+        // Enemy attacked player
+        remainingHp = Math.max(0, remainingHp - turn.damage)
+      }
+    }
+    // But player won, so remainingHp > 0. Convert to % of actual maxHp.
+    const newHpPercent = hpPercentAfterCombat(remainingHp, playerEffectiveMaxHp)
+
+    // Roll for loot
+    const loot: LootResponseItem[] = []
+    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, roomRewards.lootDifficulty, character.luk)
+    if (lootItem) loot.push(lootItem)
+
+    // Mark room as resolved and advance
+    const updatedRooms = [...state.rooms]
+    updatedRooms[state.currentRoomIndex] = { ...currentRoom, resolved: true }
+    const nextRoomIndex = state.currentRoomIndex + 1
+    const isRushComplete = nextRoomIndex >= TOTAL_RUSH_ROOMS
+
+    if (isRushComplete) {
+      // Rush complete — delete run
+      await prisma.dungeonRun.delete({ where: { id: run.id } })
+
+      return NextResponse.json({
+        ...combatDataPayload,
+        result: {
+          is_win: true,
+          winner_id: character.id,
+          gold_reward: goldReward,
+          xp_reward: xpReward,
+          turns_taken: combatResult.totalTurns,
+          leveled_up: levelUpResult?.leveledUp ?? false,
+        },
+        victory: true,
+        rushComplete: true,
+        roomIndex: currentRoom.index,
+        roomType: currentRoom.type,
+        currentHpPercent: newHpPercent,
+        rewards: {
+          gold: goldReward,
+          xp: xpReward,
+          totalGold: newTotalGold,
+          totalXp: newTotalXp,
+          floorsCleared: newFloorsCleared,
+        },
+        loot,
+        leveled_up: levelUpResult?.leveledUp ?? false,
+        new_level: levelUpResult?.newLevel,
+        stat_points_awarded: levelUpResult?.statPointsAwarded,
+      })
+    }
+
+    // Update state for next room
+    const newState: RushState = {
+      ...state,
+      rooms: updatedRooms,
+      currentRoomIndex: nextRoomIndex,
+      currentHpPercent: newHpPercent,
+      floorsCleared: newFloorsCleared,
+      totalGoldEarned: newTotalGold,
+      totalXpEarned: newTotalXp,
+    }
 
     await prisma.dungeonRun.update({
       where: { id: run.id },
       data: {
-        currentFloor: nextFloor,
-        state: JSON.parse(JSON.stringify({
-          enemies: nextFloorData.enemies,
-          isBoss: nextFloorData.isBoss,
-          floorsCleared: newFloorsCleared,
-          totalGoldEarned: newTotalGold,
-          totalXpEarned: newTotalXp,
-        })),
+        currentFloor: nextRoomIndex + 1,
+        state: JSON.parse(JSON.stringify(newState)),
       },
     })
 
-    // Roll for loot drop — boss floors get 75% chance, regular get dungeon_normal rate
-    const lootDifficulty = state.isBoss ? 'boss' : 'dungeon_normal'
-    const loot: LootResponseItem[] = []
-    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty, character.luk)
-    if (lootItem) loot.push(lootItem)
+    // Build next room info
+    const nextRoom = newState.rooms[nextRoomIndex]
+    const nextEnemy = isCombatRoom(nextRoom.type)
+      ? generateRushEnemy(nextRoom.index, nextRoom.type, nextRoom.seed)
+      : undefined
 
     return NextResponse.json({
       ...combatDataPayload,
@@ -260,7 +334,10 @@ export async function POST(req: NextRequest) {
         leveled_up: levelUpResult?.leveledUp ?? false,
       },
       victory: true,
-      floorCleared: currentFloor,
+      rushComplete: false,
+      roomIndex: currentRoom.index,
+      roomType: currentRoom.type,
+      currentHpPercent: newHpPercent,
       rewards: {
         gold: goldReward,
         xp: xpReward,
@@ -269,14 +346,18 @@ export async function POST(req: NextRequest) {
         floorsCleared: newFloorsCleared,
       },
       loot,
-      nextFloor: {
-        number: nextFloor,
-        enemies: nextFloorData.enemies,
-        isBoss: nextFloorData.isBoss,
-      },
       leveled_up: levelUpResult?.leveledUp ?? false,
       new_level: levelUpResult?.newLevel,
       stat_points_awarded: levelUpResult?.statPointsAwarded,
+      nextRoom: {
+        index: nextRoom.index,
+        type: nextRoom.type,
+        seed: nextRoom.seed,
+      },
+      nextEnemy: nextEnemy
+        ? { name: nextEnemy.name, level: nextEnemy.level }
+        : undefined,
+      buffs: newState.buffs,
     })
   } catch (error) {
     console.error('dungeon rush fight error:', error)

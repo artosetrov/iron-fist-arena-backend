@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { type Enemy } from '@/lib/game/dungeon'
+import {
+  generateRushEnemy,
+  isCombatRoom,
+  TOTAL_RUSH_ROOMS,
+  type RushState,
+} from '@/lib/game/dungeon-rush'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -43,31 +48,27 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const state = run.state as unknown as {
-      enemies: Enemy[]
-      isBoss: boolean
-      floorsCleared: number
-      totalGoldEarned: number
-      totalXpEarned: number
-    }
+    const state = run.state as unknown as RushState
+    const currentRoom = state.rooms?.[state.currentRoomIndex]
+    const currentEnemy = currentRoom && isCombatRoom(currentRoom.type)
+      ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
+      : undefined
 
     return NextResponse.json({
       active: true,
-      run: {
-        id: run.id,
-        currentFloor: run.currentFloor,
-        createdAt: run.createdAt,
-      },
-      floor: {
-        number: run.currentFloor,
-        enemyCount: state.enemies.length,
-        enemies: state.enemies,
-        isBoss: state.isBoss,
-      },
-      progress: {
+      run_id: run.id,
+      rooms: state.rooms,
+      currentRoomIndex: state.currentRoomIndex,
+      buffs: state.buffs,
+      currentHpPercent: state.currentHpPercent,
+      totalRooms: TOTAL_RUSH_ROOMS,
+      currentEnemy: currentEnemy
+        ? { name: currentEnemy.name, level: currentEnemy.level }
+        : undefined,
+      rewards: {
+        totalGold: state.totalGoldEarned,
+        totalXp: state.totalXpEarned,
         floorsCleared: state.floorsCleared,
-        totalGoldEarned: state.totalGoldEarned,
-        totalXpEarned: state.totalXpEarned,
       },
     })
   } catch (error) {

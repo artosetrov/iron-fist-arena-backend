@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import {
+  createInitialRushState,
+  generateRushEnemy,
+  generateShopItems,
+  TOTAL_RUSH_ROOMS,
+  type RushState,
+} from '@/lib/game/dungeon-rush'
 
 const RUSH_STAMINA_COST = 30
 
@@ -40,27 +46,30 @@ export async function POST(req: NextRequest) {
       },
     })
     if (activeRun) {
-      const state = activeRun.state as unknown as {
-        enemies: Enemy[]
-        isBoss: boolean
-        floorsCleared: number
-        totalGoldEarned: number
-        totalXpEarned: number
-      }
-      const firstEnemy = state.enemies?.[0]
+      const state = activeRun.state as unknown as RushState
+      const currentRoom = state.rooms[state.currentRoomIndex]
+      const enemy = (currentRoom && (currentRoom.type === 'combat' || currentRoom.type === 'elite' || currentRoom.type === 'miniboss'))
+        ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
+        : undefined
 
       return NextResponse.json({
         run_id: activeRun.id,
         current_floor: activeRun.currentFloor,
-        current_enemy: firstEnemy
-          ? { name: firstEnemy.name, level: firstEnemy.level }
+        current_enemy: enemy
+          ? { name: enemy.name, level: enemy.level }
           : undefined,
-        floor: {
-          number: activeRun.currentFloor,
-          enemies: state.enemies,
-          isBoss: state.isBoss,
-        },
         resumed: true,
+        // New room system data
+        rooms: state.rooms,
+        currentRoomIndex: state.currentRoomIndex,
+        buffs: state.buffs,
+        currentHpPercent: state.currentHpPercent,
+        totalRooms: TOTAL_RUSH_ROOMS,
+        rewards: {
+          totalGold: state.totalGoldEarned,
+          totalXp: state.totalXpEarned,
+          floorsCleared: state.floorsCleared,
+        },
       })
     }
 
@@ -87,38 +96,35 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Rush mode uses a scaling difficulty: floors get progressively harder
-    // We pass 'normal' as the base difficulty but scale the floor number up faster
-    const seed = Math.floor(Math.random() * 2147483647)
-    const floor = generateDungeonFloor(1, 'normal')
-    const firstEnemy = floor.enemies[0]
+    // Create fresh rush state with 12 rooms
+    const rushState = createInitialRushState()
+    const firstRoom = rushState.rooms[0]
+    const firstEnemy = generateRushEnemy(firstRoom.index, firstRoom.type, firstRoom.seed)
 
     const run = await prisma.dungeonRun.create({
       data: {
         characterId: character_id,
         difficulty: 'rush',
         currentFloor: 1,
-        seed,
-        state: JSON.parse(JSON.stringify({
-          enemies: floor.enemies,
-          isBoss: floor.isBoss,
-          floorsCleared: 0,
-          totalGoldEarned: 0,
-          totalXpEarned: 0,
-        })),
+        seed: Math.floor(Math.random() * 2147483647),
+        state: JSON.parse(JSON.stringify(rushState)),
       },
     })
 
     return NextResponse.json({
       run_id: run.id,
       current_floor: 1,
-      current_enemy: firstEnemy
-        ? { name: firstEnemy.name, level: firstEnemy.level }
-        : undefined,
-      floor: {
-        number: 1,
-        enemies: floor.enemies,
-        isBoss: floor.isBoss,
+      current_enemy: { name: firstEnemy.name, level: firstEnemy.level },
+      // New room system data
+      rooms: rushState.rooms,
+      currentRoomIndex: 0,
+      buffs: [],
+      currentHpPercent: 100,
+      totalRooms: TOTAL_RUSH_ROOMS,
+      rewards: {
+        totalGold: 0,
+        totalXp: 0,
+        floorsCleared: 0,
       },
     }, { status: 201 })
   } catch (error) {
