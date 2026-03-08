@@ -17,11 +17,12 @@ export function canClaimDailyLogin(lastClaimDate: Date | null): boolean {
     return true;
   }
 
-  const now = Date.now();
-  const last = lastClaimDate.getTime();
-  const hoursSinceLast = (now - last) / (1000 * 60 * 60);
+  // Compare calendar days in UTC — claim resets at midnight UTC
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const lastUTC = Date.UTC(lastClaimDate.getUTCFullYear(), lastClaimDate.getUTCMonth(), lastClaimDate.getUTCDate());
 
-  return hoursSinceLast >= 24;
+  return todayUTC > lastUTC;
 }
 
 /**
@@ -36,11 +37,13 @@ export function shouldResetStreak(lastClaimDate: Date | null): boolean {
     return true;
   }
 
-  const now = Date.now();
-  const last = lastClaimDate.getTime();
-  const hoursSinceLast = (now - last) / (1000 * 60 * 60);
+  // Streak resets if the player missed a full calendar day (2+ days gap)
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const lastUTC = Date.UTC(lastClaimDate.getUTCFullYear(), lastClaimDate.getUTCMonth(), lastClaimDate.getUTCDate());
+  const daysDiff = (todayUTC - lastUTC) / (1000 * 60 * 60 * 24);
 
-  return hoursSinceLast >= 48;
+  return daysDiff >= 2;
 }
 
 /**

@@ -3,8 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 
-const MATCHMAKING_RANGE_CALIBRATION = 150
-const MATCHMAKING_RANGE_DEFAULT = 100
+const LEVEL_RANGE = 3
 const MAX_OPPONENTS = 3
 
 export async function POST(req: NextRequest) {
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: character_id },
-      select: { userId: true, pvpRating: true, pvpCalibrationGames: true },
+      select: { userId: true, pvpRating: true, pvpCalibrationGames: true, level: true },
     })
 
     if (!character) {
@@ -39,18 +38,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const isCalibrating = character.pvpCalibrationGames < 10
-    const matchmakingRange = isCalibrating ? MATCHMAKING_RANGE_CALIBRATION : MATCHMAKING_RANGE_DEFAULT
-    const minRating = character.pvpRating - matchmakingRange
-    const maxRating = character.pvpRating + matchmakingRange
+    const minLevel = Math.max(1, character.level - LEVEL_RANGE)
+    const maxLevel = character.level + LEVEL_RANGE
 
-    // Find opponents within ELO range, excluding own character
+    // Find opponents within level range, excluding own character
     const rawOpponents = await prisma.character.findMany({
       where: {
         id: { not: character_id },
-        pvpRating: {
-          gte: minRating,
-          lte: maxRating,
+        level: {
+          gte: minLevel,
+          lte: maxLevel,
         },
       },
       select: {
@@ -90,19 +87,20 @@ export async function POST(req: NextRequest) {
       magicResist: opp.magicResist,
     }))
 
-    // Sort by rating closeness and take top 3
+    // Sort by level closeness and take top 3
     const sorted = opponents
       .map((opp) => ({
         ...opp,
-        ratingDiff: Math.abs(opp.pvpRating - character.pvpRating),
+        levelDiff: Math.abs(opp.level - character.level),
       }))
-      .sort((a, b) => a.ratingDiff - b.ratingDiff)
+      .sort((a, b) => a.levelDiff - b.levelDiff)
       .slice(0, MAX_OPPONENTS)
 
     return NextResponse.json({
       opponents: sorted,
       playerRating: character.pvpRating,
-      searchRange: { min: minRating, max: maxRating },
+      playerLevel: character.level,
+      searchRange: { minLevel, maxLevel },
     })
   } catch (error) {
     console.error('find match error:', error)

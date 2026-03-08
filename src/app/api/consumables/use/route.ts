@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { STAMINA } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 
@@ -126,10 +127,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (isHealthPotion(ctEnum)) {
+      // Account for passive HP regen before applying potion
+      const hpResult = calculateCurrentHp(
+        character.currentHp,
+        character.maxHp,
+        character.lastHpUpdate ?? new Date()
+      )
+
       const percent = HP_RESTORE_PERCENT[ctEnum]!
       const restoreAmount = Math.floor(character.maxHp * percent / 100)
-      const hpBefore = character.currentHp
-      const newHp = Math.min(character.currentHp + restoreAmount, character.maxHp)
+      const hpBefore = hpResult.hp
+      const newHp = Math.min(hpBefore + restoreAmount, character.maxHp)
 
       await prisma.$transaction([
         prisma.consumableInventory.update({
@@ -138,7 +146,7 @@ export async function POST(req: NextRequest) {
         }),
         prisma.character.update({
           where: { id: character_id },
-          data: { currentHp: newHp },
+          data: { currentHp: newHp, lastHpUpdate: now },
         }),
       ])
 

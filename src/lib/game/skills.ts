@@ -2,7 +2,7 @@
 // skills.ts — Skill selection and damage calculation for combat
 // =============================================================================
 
-import type { CharacterStats } from './combat'
+import type { CharacterStats, DamageType } from './combat'
 import type { PassiveBonuses } from './passives'
 
 // --- Types ---
@@ -13,7 +13,7 @@ export interface SkillDefinition {
   name: string
   damageBase: number
   damageScaling: Record<string, number> | null // e.g. { "int": 1.8, "wis": 0.5 }
-  damageType: 'physical' | 'magical' | 'true_damage'
+  damageType: DamageType
   targetType: 'single_enemy' | 'self_buff' | 'aoe'
   cooldown: number // turns to wait before reuse (0 = usable every turn)
   effectJson: unknown
@@ -27,7 +27,7 @@ export interface SkillCooldownState {
 
 export interface SkillDamageResult {
   rawDamage: number
-  damageType: 'physical' | 'magical' | 'true_damage'
+  damageType: DamageType
   skillName: string
   skillKey: string
 }

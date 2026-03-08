@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-const MATCHMAKING_RANGE = 200
+const LEVEL_RANGE = 3
 const MAX_OPPONENTS = 5
 
 export async function GET(req: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { userId: true, pvpRating: true },
+      select: { userId: true, pvpRating: true, level: true },
     })
 
     if (!character) {
@@ -32,16 +32,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const minRating = character.pvpRating - MATCHMAKING_RANGE
-    const maxRating = character.pvpRating + MATCHMAKING_RANGE
+    const minLevel = Math.max(1, character.level - LEVEL_RANGE)
+    const maxLevel = character.level + LEVEL_RANGE
 
-    // Find opponents within ELO range, excluding own character
+    // Find opponents within level range, excluding own character
     const rawOpponents = await prisma.character.findMany({
       where: {
         id: { not: characterId },
-        pvpRating: {
-          gte: minRating,
-          lte: maxRating,
+        level: {
+          gte: minLevel,
+          lte: maxLevel,
         },
       },
       select: {
@@ -81,19 +81,20 @@ export async function GET(req: NextRequest) {
       magicResist: opp.magicResist,
     }))
 
-    // Sort by rating closeness and take top 3
+    // Sort by level closeness and take top 5
     const sorted = opponents
       .map((opp) => ({
         ...opp,
-        ratingDiff: Math.abs(opp.pvpRating - character.pvpRating),
+        levelDiff: Math.abs(opp.level - character.level),
       }))
-      .sort((a, b) => a.ratingDiff - b.ratingDiff)
+      .sort((a, b) => a.levelDiff - b.levelDiff)
       .slice(0, MAX_OPPONENTS)
 
     return NextResponse.json({
       opponents: sorted,
       playerRating: character.pvpRating,
-      searchRange: { min: minRating, max: maxRating },
+      playerLevel: character.level,
+      searchRange: { minLevel, maxLevel },
     })
   } catch (error) {
     console.error('pvp opponents error:', error)

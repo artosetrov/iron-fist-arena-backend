@@ -88,10 +88,13 @@ export async function POST(req: NextRequest) {
         })
       }
 
+      // Wrap day back to 1 after day 7 (7-day cycle)
+      const nextDay = (newDay % 7) + 1
+
       return tx.dailyLoginReward.update({
         where: { characterId: character_id },
         data: {
-          currentDay: newDay + 1,
+          currentDay: nextDay,
           lastClaimDate: new Date(),
           streak: newStreak,
           totalClaims: { increment: 1 },

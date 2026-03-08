@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { canClaimDailyLogin } from '@/lib/game/daily-login'
 import {
   STAMINA,
+  HP_REGEN,
   UPGRADE_CHANCES,
   COMBAT,
   PRESTIGE,
@@ -118,6 +120,13 @@ export async function GET(req: NextRequest) {
       character.lastStaminaUpdate ?? new Date()
     )
 
+    // Compute current HP with regen
+    const hpResult = calculateCurrentHp(
+      character.currentHp,
+      character.maxHp,
+      character.lastHpUpdate ?? new Date()
+    )
+
     // Format quests with metadata
     const formattedQuests = quests.map((q) => {
       const meta = QUEST_META[q.questType]
@@ -157,6 +166,8 @@ export async function GET(req: NextRequest) {
     const config = {
       staminaMax: STAMINA.MAX,
       staminaRegenMinutes: STAMINA.REGEN_INTERVAL_MINUTES,
+      hpRegenPercent: HP_REGEN.REGEN_RATE,
+      hpRegenMinutes: HP_REGEN.REGEN_INTERVAL_MINUTES,
       pvpStaminaCost: STAMINA.PVP_COST,
       freePvpPerDay: STAMINA.FREE_PVP_PER_DAY,
       upgradeChances: UPGRADE_CHANCES,
@@ -178,6 +189,7 @@ export async function GET(req: NextRequest) {
       character: {
         ...character,
         currentStamina: staminaResult.stamina,
+        currentHp: hpResult.hp,
       },
       equipment,
       consumables,

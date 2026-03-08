@@ -18,6 +18,7 @@ import { emptyPassiveBonuses, type PassiveBonuses } from './passives';
 // --- Types ---
 
 export type CharacterClassType = 'warrior' | 'rogue' | 'mage' | 'tank';
+export type DamageType = 'physical' | 'magical' | 'true_damage' | 'poison';
 
 export interface CharacterStats {
   id: string;
@@ -49,7 +50,7 @@ export interface Turn {
   defenderHpAfter: number;
   skillUsed?: string;
   skillKey?: string;
-  damageType?: 'physical' | 'magical' | 'true_damage';
+  damageType?: DamageType;
   healAmount?: number;
 }
 
@@ -123,16 +124,24 @@ function baseDamage(c: CharacterStats): number {
   }
 }
 
-function isMagicDamage(cls: CharacterClassType): boolean {
-  return cls === 'mage';
+function getAutoAttackDamageType(cls: CharacterClassType): DamageType {
+  switch (cls) {
+    case 'mage': return 'magical';
+    case 'rogue': return 'poison';
+    default: return 'physical';
+  }
 }
 
 function reduceDamageByType(
   raw: number,
   defender: CharacterStats,
-  damageType: 'physical' | 'magical' | 'true_damage',
+  damageType: DamageType,
 ): number {
   if (damageType === 'true_damage') return raw;
+  if (damageType === 'poison') {
+    const effectiveArmor = Math.max(0, defender.armor) * (1 - COMBAT.POISON_ARMOR_PENETRATION);
+    return raw * (100 / (100 + effectiveArmor));
+  }
   const resist = damageType === 'magical' ? defender.magicResist : defender.armor;
   const effectiveResist = Math.max(0, resist);
   return raw * (100 / (100 + effectiveResist));
@@ -211,7 +220,7 @@ function resolveAttack(
   // Try to use a skill
   const skill = selectSkill(attackerChar.equippedSkills ?? [], cooldownState);
   let raw: number;
-  let dmgType: 'physical' | 'magical' | 'true_damage';
+  let dmgType: DamageType;
   let skillName: string | undefined;
   let skillKeyStr: string | undefined;
 
@@ -252,7 +261,7 @@ function resolveAttack(
   } else {
     // Auto-attack fallback
     raw = applyVariance(baseDamage(attackerChar));
-    dmgType = isMagicDamage(attackerChar.class) ? 'magical' : 'physical';
+    dmgType = getAutoAttackDamageType(attackerChar.class);
   }
 
   // Apply passive flat/percent damage bonuses

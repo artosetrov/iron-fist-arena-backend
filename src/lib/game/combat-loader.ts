@@ -4,7 +4,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { cacheDelete } from '@/lib/cache'
-import type { CharacterStats } from './combat'
+import type { CharacterStats, DamageType } from './combat'
 import type { SkillDefinition } from './skills'
 import { aggregatePassiveBonuses, emptyPassiveBonuses, type PassiveBonuses } from './passives'
 
@@ -52,7 +52,7 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
       name: cs.skill.name,
       damageBase: cs.skill.damageBase,
       damageScaling: cs.skill.damageScaling as Record<string, number> | null,
-      damageType: cs.skill.damageType as 'physical' | 'magical' | 'true_damage',
+      damageType: cs.skill.damageType as DamageType,
       targetType: cs.skill.targetType as 'single_enemy' | 'self_buff' | 'aoe',
       cooldown: cs.skill.cooldown,
       effectJson: cs.skill.effectJson,

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { userId: true },
+      select: { userId: true, inventorySlots: true },
     })
 
     if (!character) {
@@ -52,7 +52,11 @@ export async function GET(req: NextRequest) {
       return { ...eq, effectiveStats }
     })
 
-    return NextResponse.json({ equipment: equipmentWithEffectiveStats, consumables })
+    return NextResponse.json({
+      equipment: equipmentWithEffectiveStats,
+      consumables,
+      inventorySlots: character.inventorySlots,
+    })
   } catch (error) {
     console.error('get inventory error:', error)
     return NextResponse.json(

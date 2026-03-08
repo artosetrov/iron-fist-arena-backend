@@ -68,6 +68,7 @@ enum EquippedSlot {
   relic
   necklace
   ring
+  ring2
 }
 
 enum ConsumableType {
@@ -122,6 +123,7 @@ enum SkillDamageType {
   physical
   magical
   true_damage
+  poison
 }
 
 enum SkillTargetType {
@@ -208,6 +210,7 @@ model Character {
   currentStamina    Int       @default(120) @map("current_stamina")
   maxStamina        Int       @default(120) @map("max_stamina")
   lastStaminaUpdate DateTime? @map("last_stamina_update")
+  lastHpUpdate      DateTime? @map("last_hp_update")
 
   // Training
   bonusTrainings    Int       @default(0) @map("bonus_trainings")
@@ -228,6 +231,7 @@ model Character {
   freePvpDate       DateTime? @map("free_pvp_date")
 
   goldMineSlots     Int       @default(1) @map("gold_mine_slots")
+  inventorySlots    Int       @default(28) @map("inventory_slots")
   dailyBonusDate    DateTime? @map("daily_bonus_date")
   createdAt         DateTime  @default(now()) @map("created_at")
   lastPlayed        DateTime? @map("last_played")

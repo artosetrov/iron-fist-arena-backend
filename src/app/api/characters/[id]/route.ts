@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { calculateCurrentHp } from '@/lib/game/hp-regen'
 
 export async function GET(
   req: NextRequest,
@@ -39,10 +40,18 @@ export async function GET(
       character.lastStaminaUpdate ?? new Date()
     )
 
+    // Compute current HP with regen
+    const hpResult = calculateCurrentHp(
+      character.currentHp,
+      character.maxHp,
+      character.lastHpUpdate ?? new Date()
+    )
+
     return NextResponse.json({
       character: {
         ...character,
         currentStamina: staminaResult.stamina,
+        currentHp: hpResult.hp,
         gems: dbUser?.gems ?? 0,
       },
     })

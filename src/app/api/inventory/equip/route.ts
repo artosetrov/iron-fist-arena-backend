@@ -80,10 +80,39 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine the slot from the item type
-    const slot = ITEM_TYPE_TO_SLOT[inventoryItem.item.itemType]
+    let slot = ITEM_TYPE_TO_SLOT[inventoryItem.item.itemType]
 
     if (!slot) {
       return NextResponse.json({ error: 'Item cannot be equipped' }, { status: 400 })
+    }
+
+    // Rings support two slots: ring and ring2
+    if (slot === 'ring') {
+      const equippedRings = await prisma.equipmentInventory.findMany({
+        where: {
+          characterId: character_id,
+          equippedSlot: { in: ['ring', 'ring2'] },
+          isEquipped: true,
+        },
+      })
+
+      const ring1 = equippedRings.find(r => r.equippedSlot === 'ring')
+      const ring2 = equippedRings.find(r => r.equippedSlot === 'ring2')
+
+      // If re-equipping the same item, keep its current slot
+      const alreadyEquipped = equippedRings.find(r => r.id === inventory_id)
+      if (alreadyEquipped) {
+        return NextResponse.json({ message: 'Item is already equipped' })
+      }
+
+      if (!ring1) {
+        slot = 'ring'
+      } else if (!ring2) {
+        slot = 'ring2'
+      } else {
+        // Both slots full — replace ring1 (oldest)
+        slot = 'ring'
+      }
     }
 
     // Unequip any item currently in that slot, then equip the new one
@@ -105,7 +134,7 @@ export async function POST(req: NextRequest) {
         where: { id: inventory_id },
         data: {
           isEquipped: true,
-          equippedSlot: slot,
+          equippedSlot: slot as EquippedSlot,
         },
       }),
     ])

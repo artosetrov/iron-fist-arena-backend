@@ -16,6 +16,12 @@ export const STAMINA = {
   FREE_PVP_PER_DAY: 3,
 } as const;
 
+// --- HP Regen ---
+export const HP_REGEN = {
+  REGEN_RATE: 1,              // 1% of maxHp per interval
+  REGEN_INTERVAL_MINUTES: 5,  // every 5 minutes
+} as const;
+
 // --- XP ---
 /** XP required to reach the given level (cumulative threshold). */
 export function xpForLevel(level: number): number {
@@ -121,6 +127,7 @@ export const COMBAT = {
   ROGUE_DODGE_BONUS: 5,         // rogues get +5% dodge
   TANK_DAMAGE_REDUCTION: 0.85,  // tanks take 15% less damage
   DAMAGE_VARIANCE: 0.10,        // ±10% damage variance
+  POISON_ARMOR_PENETRATION: 0.5, // poison ignores 50% of armor
 } as const;
 
 // --- Prestige ---
@@ -172,6 +179,10 @@ export const GEM_COSTS = {
 // --- Inventory ---
 export const INVENTORY = {
   MAX_SLOTS: 100,
+  BASE_SLOTS: 28,
+  EXPAND_AMOUNT: 10,
+  EXPAND_COST_GOLD: 5000,
+  MAX_EXPANSIONS: 3, // 28 + 3*10 = 58 max
 } as const;
 
 // --- Extra PvP combat ---
