@@ -189,12 +189,12 @@ export async function POST(req: NextRequest) {
     const newTotalXp = state.totalXpEarned + xpReward
     const newFloorsCleared = state.floorsCleared + 1
 
-    // Grant gold and xp to the character
+    // Grant gold and xp to the character (atomic increment)
     await prisma.character.update({
       where: { id: character_id },
       data: {
-        gold: character.gold + goldReward,
-        currentXp: character.currentXp + xpReward,
+        gold: { increment: goldReward },
+        currentXp: { increment: xpReward },
       },
     })
 
