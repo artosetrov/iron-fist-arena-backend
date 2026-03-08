@@ -24,7 +24,7 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 1,
     category: 'pvp',
     rewardType: 'gold',
-    rewardAmount: 200,
+    rewardAmount: 100,
   },
   pvp_wins_10: {
     target: 10,
@@ -36,19 +36,19 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 50,
     category: 'pvp',
     rewardType: 'gems',
-    rewardAmount: 25,
+    rewardAmount: 2,
   },
   pvp_wins_100: {
     target: 100,
     category: 'pvp',
     rewardType: 'gems',
-    rewardAmount: 50,
+    rewardAmount: 5,
   },
   pvp_wins_500: {
     target: 500,
     category: 'pvp',
     rewardType: 'gems',
-    rewardAmount: 200,
+    rewardAmount: 10,
   },
   pvp_streak_5: {
     target: 5,
@@ -60,7 +60,7 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 10,
     category: 'pvp',
     rewardType: 'gems',
-    rewardAmount: 50,
+    rewardAmount: 3,
   },
 
   // -------------------------------------------------------------------------
@@ -76,7 +76,7 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 10,
     category: 'revenge',
     rewardType: 'gems',
-    rewardAmount: 30,
+    rewardAmount: 2,
   },
 
   // -------------------------------------------------------------------------
@@ -86,19 +86,19 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 10,
     category: 'progression',
     rewardType: 'gold',
-    rewardAmount: 1000,
+    rewardAmount: 500,
   },
   reach_level_25: {
     target: 25,
     category: 'progression',
     rewardType: 'gems',
-    rewardAmount: 50,
+    rewardAmount: 2,
   },
   reach_level_50: {
     target: 50,
     category: 'progression',
     rewardType: 'gems',
-    rewardAmount: 100,
+    rewardAmount: 5,
   },
 
   // -------------------------------------------------------------------------
@@ -108,13 +108,13 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 1,
     category: 'prestige',
     rewardType: 'gems',
-    rewardAmount: 100,
+    rewardAmount: 10,
   },
   prestige_3: {
     target: 3,
     category: 'prestige',
     rewardType: 'gems',
-    rewardAmount: 300,
+    rewardAmount: 20,
   },
 
   // -------------------------------------------------------------------------
@@ -124,19 +124,19 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 1,
     category: 'equipment',
     rewardType: 'gold',
-    rewardAmount: 2000,
+    rewardAmount: 1000,
   },
   full_set: {
     target: 1,
     category: 'equipment',
     rewardType: 'gems',
-    rewardAmount: 50,
+    rewardAmount: 3,
   },
   upgrade_10: {
     target: 1,
     category: 'equipment',
     rewardType: 'gems',
-    rewardAmount: 100,
+    rewardAmount: 5,
   },
   equip_all_slots: {
     target: 1,
@@ -152,25 +152,25 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 1,
     category: 'dungeon',
     rewardType: 'gold',
-    rewardAmount: 500,
+    rewardAmount: 300,
   },
   dungeon_all_easy: {
     target: 1,
     category: 'dungeon',
-    rewardType: 'gold',
-    rewardAmount: 1000,
+    rewardType: 'gems',
+    rewardAmount: 2,
   },
   dungeon_all_hard: {
     target: 1,
     category: 'dungeon',
     rewardType: 'gems',
-    rewardAmount: 100,
+    rewardAmount: 10,
   },
   boss_no_damage: {
     target: 1,
     category: 'dungeon',
     rewardType: 'gems',
-    rewardAmount: 75,
+    rewardAmount: 5,
   },
 
   // -------------------------------------------------------------------------
@@ -180,19 +180,19 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 10000,
     category: 'economy',
     rewardType: 'gold',
-    rewardAmount: 1000,
+    rewardAmount: 500,
   },
   earn_gold_100k: {
     target: 100000,
     category: 'economy',
     rewardType: 'gems',
-    rewardAmount: 50,
+    rewardAmount: 3,
   },
   spend_gold_50k: {
     target: 50000,
     category: 'economy',
-    rewardType: 'gold',
-    rewardAmount: 2000,
+    rewardType: 'gems',
+    rewardAmount: 2,
   },
 
   // -------------------------------------------------------------------------
@@ -202,7 +202,7 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 10,
     category: 'minigame',
     rewardType: 'gold',
-    rewardAmount: 500,
+    rewardAmount: 1000,
   },
 
   // -------------------------------------------------------------------------
@@ -211,26 +211,26 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
   rank_silver: {
     target: 1200,
     category: 'ranking',
-    rewardType: 'gold',
-    rewardAmount: 500,
+    rewardType: 'gems',
+    rewardAmount: 1,
   },
   rank_gold: {
     target: 1500,
     category: 'ranking',
     rewardType: 'gems',
-    rewardAmount: 25,
+    rewardAmount: 3,
   },
   rank_diamond: {
     target: 1800,
     category: 'ranking',
     rewardType: 'gems',
-    rewardAmount: 75,
+    rewardAmount: 10,
   },
   rank_grandmaster: {
     target: 2200,
     category: 'ranking',
     rewardType: 'gems',
-    rewardAmount: 200,
+    rewardAmount: 25,
   },
 
   // -------------------------------------------------------------------------
@@ -240,19 +240,19 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     target: 7,
     category: 'daily',
     rewardType: 'gems',
-    rewardAmount: 20,
+    rewardAmount: 2,
   },
   login_30_days: {
     target: 30,
     category: 'daily',
     rewardType: 'gems',
-    rewardAmount: 100,
+    rewardAmount: 10,
   },
   daily_quest_100: {
     target: 100,
     category: 'daily',
     rewardType: 'gems',
-    rewardAmount: 75,
+    rewardAmount: 5,
   },
 } as const;
 

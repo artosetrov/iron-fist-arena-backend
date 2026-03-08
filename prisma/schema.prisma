@@ -364,6 +364,7 @@ model GoldMineSession {
   endsAt      DateTime  @map("ends_at")
   collected   Boolean   @default(false)
   reward      Int       @default(0)
+  gemReward   Int       @default(0) @map("gem_reward")
   boosted     Boolean   @default(false)
   createdAt   DateTime  @default(now()) @map("created_at")
 

@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { STAMINA } from '@/lib/game/balance'
 import { generateDungeonFloor, getDungeonBossCount } from '@/lib/game/dungeon'
+import { calculateCurrentStamina } from '@/lib/game/stamina'
 
 const STAMINA_COST: Record<string, number> = {
   easy: STAMINA.DUNGEON_EASY,
@@ -59,11 +60,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check stamina
+    // Check stamina (account for time-based regeneration)
     const cost = STAMINA_COST[difficulty]
-    if (character.currentStamina < cost) {
+    const staminaResult = calculateCurrentStamina(
+      character.currentStamina,
+      character.maxStamina,
+      character.lastStaminaUpdate ?? new Date()
+    )
+    const currentStamina = staminaResult.stamina
+    if (currentStamina < cost) {
       return NextResponse.json(
-        { error: `Not enough stamina. Need ${cost}, have ${character.currentStamina}` },
+        { error: `Not enough stamina. Need ${cost}, have ${currentStamina}` },
         { status: 400 },
       )
     }
@@ -80,7 +87,7 @@ export async function POST(req: NextRequest) {
     await prisma.character.update({
       where: { id: character_id },
       data: {
-        currentStamina: character.currentStamina - cost,
+        currentStamina: currentStamina - cost,
         lastStaminaUpdate: new Date(),
       },
     })

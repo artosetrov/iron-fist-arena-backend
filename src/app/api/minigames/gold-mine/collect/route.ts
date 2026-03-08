@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Collect reward: mark collected and add gold
-    const [, updatedCharacter] = await prisma.$transaction([
+    // Collect reward: mark collected, add gold to character, gems to user
+    const txOps = [
       prisma.goldMineSession.update({
         where: { id: session.id },
         data: { collected: true },
@@ -62,7 +62,24 @@ export async function POST(req: NextRequest) {
         where: { id: character_id },
         data: { gold: { increment: session.reward } },
       }),
-    ])
+    ]
+
+    if (session.gemReward > 0) {
+      txOps.push(
+        prisma.user.update({
+          where: { id: user.id },
+          data: { gems: { increment: session.gemReward } },
+        }) as any
+      )
+    }
+
+    const results = await prisma.$transaction(txOps)
+    const updatedCharacter = results[1] as any
+
+    // Get current user gems
+    const updatedUser = session.gemReward > 0
+      ? results[2] as any
+      : await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
 
     // Update daily quest progress
     await updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect')
@@ -72,7 +89,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       slots,
       gold_collected: session.reward,
+      gems_collected: session.gemReward,
       gold: updatedCharacter.gold,
+      gems: updatedUser?.gems ?? 0,
     })
   } catch (error) {
     console.error('gold-mine collect error:', error)

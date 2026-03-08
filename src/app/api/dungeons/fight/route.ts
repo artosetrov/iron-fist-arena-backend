@@ -7,7 +7,7 @@ import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
-import { BATTLE_PASS } from '@/lib/game/balance'
+import { BATTLE_PASS, chaGoldBonus } from '@/lib/game/balance'
 
 /** Gold reward per boss defeated, scaled by difficulty. */
 function bossGoldReward(floor: number, difficulty: string): number {
@@ -227,7 +227,8 @@ export async function POST(req: NextRequest) {
 
     // Player won the boss
     const currentFloor = run.currentFloor
-    const goldReward = bossGoldReward(currentFloor, run.difficulty)
+    // CHA gold bonus: +0.5% per CHA point
+    const goldReward = chaGoldBonus(bossGoldReward(currentFloor, run.difficulty), character.cha)
     const xpReward = bossXpReward(currentFloor, run.difficulty)
     const newTotalGold = state.totalGoldEarned + goldReward
     const newTotalXp = state.totalXpEarned + xpReward
@@ -237,8 +238,8 @@ export async function POST(req: NextRequest) {
     await prisma.character.update({
       where: { id: character_id },
       data: {
-        gold: character.gold + goldReward,
-        currentXp: character.currentXp + xpReward,
+        gold: { increment: goldReward },
+        currentXp: { increment: xpReward },
       },
     })
 
@@ -277,7 +278,7 @@ export async function POST(req: NextRequest) {
 
     // Roll for loot — every boss has 75% chance
     const loot: LootResponseItem[] = []
-    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, 'boss')
+    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, 'boss', character.luk)
     if (lootItem) loot.push(lootItem)
 
     if (isDungeonComplete) {

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { character_id, inventory_id } = body
+    const { character_id, inventory_id, use_protection } = body
 
     if (!character_id || !inventory_id) {
       return NextResponse.json(
@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
     const roll = Math.random() * 100
     const success = roll < successChance
 
+    const PROTECTION_COST = 30
+
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const result = await prisma.$transaction(async (tx) => {
       const [character] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
@@ -54,21 +56,58 @@ export async function POST(req: NextRequest) {
       if (character.user_id !== user.id) throw new Error('FORBIDDEN')
       if (character.gold < upgradeCost) throw new Error('NOT_ENOUGH_GOLD')
 
+      // If protection requested, lock user row and verify gems
+      let userRow: { id: string; gems: number } | null = null
+      if (use_protection) {
+        const [lockedUser] = await tx.$queryRawUnsafe<Array<{ id: string; gems: number }>>(
+          `SELECT id, gems FROM users WHERE id = $1 FOR UPDATE`,
+          user.id
+        )
+        if (!lockedUser || lockedUser.gems < PROTECTION_COST) {
+          throw new Error('NOT_ENOUGH_GEMS')
+        }
+        userRow = lockedUser
+      }
+
+      // Deduct gold
       const updatedCharacter = await tx.character.update({
         where: { id: character_id },
         data: { gold: { decrement: upgradeCost } },
       })
 
       let updatedItem = inventoryItem
+      let protectionUsed = false
+      let levelLost = false
+
       if (success) {
+        // Upgrade succeeded — increment level, no gem cost
         updatedItem = await tx.equipmentInventory.update({
           where: { id: inventory_id },
           data: { upgradeLevel: { increment: 1 } },
           include: { item: true },
         })
+      } else {
+        // Upgrade failed
+        if (use_protection && userRow) {
+          // Protection scroll consumed — deduct gems, level stays the same
+          await tx.user.update({
+            where: { id: user.id },
+            data: { gems: { decrement: PROTECTION_COST } },
+          })
+          protectionUsed = true
+        } else if (currentLevel >= 5) {
+          // No protection and level is +6 or above — lose one level
+          updatedItem = await tx.equipmentInventory.update({
+            where: { id: inventory_id },
+            data: { upgradeLevel: { decrement: 1 } },
+            include: { item: true },
+          })
+          levelLost = true
+        }
+        // If currentLevel < 5 and no protection, nothing extra happens (gold already spent)
       }
 
-      return { updatedCharacter, updatedItem }
+      return { updatedCharacter, updatedItem, protectionUsed, levelLost }
     })
 
     // Non-critical post-transaction work
@@ -78,8 +117,18 @@ export async function POST(req: NextRequest) {
     if (success && result.updatedItem.isEquipped) {
       await recalculateDerivedStats(character_id)
     }
+    if (!success && result.levelLost && result.updatedItem.isEquipped) {
+      await recalculateDerivedStats(character_id)
+    }
 
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
+
+    let newLevel = currentLevel
+    if (success) {
+      newLevel = currentLevel + 1
+    } else if (result.levelLost) {
+      newLevel = currentLevel - 1
+    }
 
     return NextResponse.json({
       success,
@@ -89,13 +138,16 @@ export async function POST(req: NextRequest) {
         gems: dbUser?.gems ?? 0,
       },
       upgradeCost,
-      newLevel: success ? currentLevel + 1 : currentLevel,
+      newLevel,
+      protection_used: result.protectionUsed,
+      level_lost: result.levelLost,
     })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GEMS') return NextResponse.json({ error: 'Not enough gems for protection scroll' }, { status: 400 })
     }
     console.error('upgrade item error:', error)
     return NextResponse.json({ error: 'Failed to upgrade item' }, { status: 500 })

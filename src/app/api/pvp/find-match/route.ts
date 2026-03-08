@@ -3,7 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 
-const MATCHMAKING_RANGE = 200
+const MATCHMAKING_RANGE_CALIBRATION = 150
+const MATCHMAKING_RANGE_DEFAULT = 100
 const MAX_OPPONENTS = 3
 
 export async function POST(req: NextRequest) {
@@ -37,8 +38,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const minRating = character.pvpRating - MATCHMAKING_RANGE
-    const maxRating = character.pvpRating + MATCHMAKING_RANGE
+    const isCalibrating = character.pvpCalibrationGames < 10
+    const matchmakingRange = isCalibrating ? MATCHMAKING_RANGE_CALIBRATION : MATCHMAKING_RANGE_DEFAULT
+    const minRating = character.pvpRating - matchmakingRange
+    const maxRating = character.pvpRating + matchmakingRange
 
     // Find opponents within ELO range, excluding own character
     const rawOpponents = await prisma.character.findMany({

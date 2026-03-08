@@ -4,6 +4,7 @@
 
 import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
+import { applyPrestigeBonus } from './progression'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
@@ -52,11 +53,15 @@ function sumEquipmentBonuses(
   equippedItems: Array<{
     item: { baseStats: unknown }
     upgradeLevel: number
+    durability: number
   }>
 ): StatBlock {
   const bonus: StatBlock = { str: 0, agi: 0, vit: 0, end: 0, int: 0, wis: 0, luk: 0, cha: 0 }
 
   for (const eq of equippedItems) {
+    // Broken items (durability <= 0) provide NO stat bonuses
+    if (eq.durability <= 0) continue
+
     const bs = eq.item.baseStats as Record<string, number> | null
     if (!bs) continue
     for (const key of STAT_KEYS) {
@@ -86,9 +91,14 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
       wis: true,
       luk: true,
       cha: true,
+      prestigeLevel: true,
       equipment: {
         where: { isEquipped: true },
-        include: { item: { select: { baseStats: true } } },
+        select: {
+          upgradeLevel: true,
+          durability: true,
+          item: { select: { baseStats: true } },
+        },
       },
     },
   })
@@ -99,10 +109,11 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
     character.equipment.map((e) => ({
       item: { baseStats: e.item.baseStats },
       upgradeLevel: e.upgradeLevel,
+      durability: e.durability,
     }))
   )
 
-  const totalStats: StatBlock = {
+  const rawTotalStats: StatBlock = {
     str: character.str + eqBonus.str,
     agi: character.agi + eqBonus.agi,
     vit: character.vit + eqBonus.vit,
@@ -111,6 +122,19 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
     wis: character.wis + eqBonus.wis,
     luk: character.luk + eqBonus.luk,
     cha: character.cha + eqBonus.cha,
+  }
+
+  // Apply prestige bonus: +5% per prestige level to each stat
+  const prestige = character.prestigeLevel ?? 0
+  const totalStats: StatBlock = {
+    str: applyPrestigeBonus(rawTotalStats.str, prestige),
+    agi: applyPrestigeBonus(rawTotalStats.agi, prestige),
+    vit: applyPrestigeBonus(rawTotalStats.vit, prestige),
+    end: applyPrestigeBonus(rawTotalStats.end, prestige),
+    int: applyPrestigeBonus(rawTotalStats.int, prestige),
+    wis: applyPrestigeBonus(rawTotalStats.wis, prestige),
+    luk: applyPrestigeBonus(rawTotalStats.luk, prestige),
+    cha: applyPrestigeBonus(rawTotalStats.cha, prestige),
   }
 
   const derived = calculateDerived(totalStats)

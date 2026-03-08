@@ -10,6 +10,7 @@ import {
   GOLD_REWARDS,
   XP_REWARDS,
   FIRST_WIN_BONUS,
+  chaGoldBonus,
 } from '@/lib/game/balance'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
@@ -222,6 +223,9 @@ export async function POST(req: NextRequest) {
       : GOLD_REWARDS.PVP_LOSS_BASE
     let xpReward = attackerWon ? XP_REWARDS.PVP_WIN_XP : XP_REWARDS.PVP_LOSS_XP
 
+    // CHA gold bonus: +0.5% per CHA point
+    goldReward = chaGoldBonus(goldReward, attacker.cha)
+
     // First win of the day bonus
     const firstWin =
       attackerWon && isFirstWinOfDay(attacker.firstWinToday, attacker.firstWinDate)
@@ -324,7 +328,7 @@ export async function POST(req: NextRequest) {
     // Roll for loot drop and persist to inventory
     const loot: LootResponseItem[] = []
     if (attackerWon) {
-      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp')
+      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp', attacker.luk)
       if (lootItem) loot.push(lootItem)
     }
 

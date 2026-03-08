@@ -32,6 +32,7 @@ export interface Turn {
   attackerId: string;
   damage: number;
   isCrit: boolean;
+  isDodge: boolean;
   defenderHpAfter: number;
 }
 
@@ -42,19 +43,47 @@ export interface CombatResult {
   totalTurns: number;
 }
 
+// --- Stance definitions ---
+
+/**
+ * Combat stances modify damage dealt, damage taken, crit, and dodge.
+ * Format: { offense: number, defense: number, crit: number, dodge: number }
+ * Values are additive percentages (e.g. offense: 10 means +10% damage).
+ */
+interface StanceModifiers {
+  offense: number;  // % bonus to damage dealt
+  defense: number;  // % reduction to damage taken
+  crit: number;     // flat addition to crit chance
+  dodge: number;    // flat addition to dodge chance
+}
+
+const DEFAULT_STANCE: StanceModifiers = { offense: 0, defense: 0, crit: 0, dodge: 0 };
+
+function parseStance(combatStance: Record<string, unknown> | null | undefined): StanceModifiers {
+  if (!combatStance) return DEFAULT_STANCE;
+  return {
+    offense: typeof combatStance.offense === 'number' ? combatStance.offense : 0,
+    defense: typeof combatStance.defense === 'number' ? combatStance.defense : 0,
+    crit: typeof combatStance.crit === 'number' ? combatStance.crit : 0,
+    dodge: typeof combatStance.dodge === 'number' ? combatStance.dodge : 0,
+  };
+}
+
 // --- Internal helpers ---
 
 /**
  * Calculate base damage for a character based on their class.
- * - warrior / tank: str * 1.5 + level * 2
- * - rogue:          agi * 1.5 + level * 2
- * - mage:           int * 1.5 + level * 2
+ * - warrior:  str * 1.5 + level * 2
+ * - tank:     str * 1.2 + level * 2  (lower damage, compensated by 15% damage reduction)
+ * - rogue:    agi * 1.5 + level * 2
+ * - mage:     int * 1.5 + level * 2
  */
 function baseDamage(c: CharacterStats): number {
   switch (c.class) {
     case 'warrior':
-    case 'tank':
       return c.str * 1.5 + c.level * 2;
+    case 'tank':
+      return c.str * 1.2 + c.level * 2;
     case 'rogue':
       return c.agi * 1.5 + c.level * 2;
     case 'mage':
@@ -82,16 +111,40 @@ function reduceDamage(raw: number, defender: CharacterStats, attackerClass: Char
 }
 
 /**
- * Crit chance = min(luk * 0.5 + agi * 0.3, 50)%
+ * Tank class damage reduction: takes 15% less damage from all sources.
  */
-function critChance(c: CharacterStats): number {
-  return Math.min(c.luk * 0.5 + c.agi * 0.3, COMBAT.MAX_CRIT_CHANCE);
+function applyClassReduction(damage: number, defenderClass: CharacterClassType): number {
+  if (defenderClass === 'tank') {
+    return damage * COMBAT.TANK_DAMAGE_REDUCTION;
+  }
+  return damage;
 }
 
 /**
- * Simple deterministic-seeded PRNG to keep combat reproducible when needed.
- * Falls back to Math.random() for normal use.
+ * Crit chance = min(luk * 0.5 + agi * 0.3, MAX_CRIT_CHANCE)%
  */
+function critChance(c: CharacterStats, stanceMod: StanceModifiers): number {
+  return Math.min(c.luk * 0.5 + c.agi * 0.3 + stanceMod.crit, COMBAT.MAX_CRIT_CHANCE);
+}
+
+/**
+ * Dodge chance = min(agi * 0.3, MAX_DODGE_CHANCE)%
+ * Rogues get a class bonus to dodge.
+ */
+function dodgeChance(defender: CharacterStats, stanceMod: StanceModifiers): number {
+  const classBonus = defender.class === 'rogue' ? COMBAT.ROGUE_DODGE_BONUS : 0;
+  return Math.min(defender.agi * 0.3 + classBonus + stanceMod.dodge, COMBAT.MAX_DODGE_CHANCE);
+}
+
+/**
+ * Apply damage variance: ±10% randomness to base damage.
+ */
+function applyVariance(damage: number): number {
+  const variance = COMBAT.DAMAGE_VARIANCE;
+  const multiplier = (1 - variance) + Math.random() * (variance * 2);
+  return damage * multiplier;
+}
+
 function rollPercent(): number {
   return Math.random() * 100;
 }
@@ -102,7 +155,11 @@ function rollPercent(): number {
  * Run a full turn-based combat between attacker and defender.
  *
  * - AGI determines turn order (higher AGI acts first).
- * - Each turn the acting character deals damage to the other.
+ * - Each turn the acting character attempts to damage the other.
+ * - Defender may dodge based on AGI (rogues get a bonus).
+ * - On hit, damage has ±10% variance, can crit for 1.5x.
+ * - Tanks take 15% less damage from all sources.
+ * - Combat stances modify offense/defense/crit/dodge.
  * - Combat ends when one side reaches 0 HP or after MAX_TURNS.
  * - At timeout, whoever has a higher HP% wins.
  */
@@ -113,9 +170,15 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
 
   const turns: Turn[] = [];
 
+  // Parse stance modifiers
+  const stanceA = parseStance(attacker.combatStance);
+  const stanceD = parseStance(defender.combatStance);
+
   // Determine order: higher AGI acts first. Ties favour the attacker.
   let first: CharacterStats;
   let second: CharacterStats;
+  let stanceFirst: StanceModifiers;
+  let stanceSecond: StanceModifiers;
   let hpFirst: number;
   let hpSecond: number;
   let maxHpFirst: number;
@@ -124,6 +187,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
   if (defender.agi > attacker.agi) {
     first = defender;
     second = attacker;
+    stanceFirst = stanceD;
+    stanceSecond = stanceA;
     hpFirst = hpD;
     hpSecond = hpA;
     maxHpFirst = defender.maxHp;
@@ -131,6 +196,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
   } else {
     first = attacker;
     second = defender;
+    stanceFirst = stanceA;
+    stanceSecond = stanceD;
     hpFirst = hpA;
     hpSecond = hpD;
     maxHpFirst = attacker.maxHp;
@@ -140,20 +207,40 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
   for (let t = 1; t <= COMBAT.MAX_TURNS; t++) {
     // --- First character attacks second ---
     {
-      const raw = baseDamage(first);
-      const reduced = reduceDamage(raw, second, first.class);
-      const isCrit = rollPercent() < critChance(first);
-      let dmg = isCrit ? reduced * COMBAT.CRIT_MULTIPLIER : reduced;
-      dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
-      hpSecond = Math.max(hpSecond - dmg, 0);
+      // Check dodge
+      const isDodge = rollPercent() < dodgeChance(second, stanceSecond);
 
-      turns.push({
-        turnNumber: t,
-        attackerId: first.id,
-        damage: dmg,
-        isCrit,
-        defenderHpAfter: hpSecond,
-      });
+      if (isDodge) {
+        turns.push({
+          turnNumber: t,
+          attackerId: first.id,
+          damage: 0,
+          isCrit: false,
+          isDodge: true,
+          defenderHpAfter: hpSecond,
+        });
+      } else {
+        const raw = applyVariance(baseDamage(first));
+        const reduced = reduceDamage(raw, second, first.class);
+        const withClass = applyClassReduction(reduced, second.class);
+        const isCrit = rollPercent() < critChance(first, stanceFirst);
+        let dmg = isCrit ? withClass * COMBAT.CRIT_MULTIPLIER : withClass;
+        // Apply stance offense bonus
+        dmg = dmg * (1 + stanceFirst.offense / 100);
+        // Apply stance defense bonus of defender
+        dmg = dmg * (1 - stanceSecond.defense / 100);
+        dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
+        hpSecond = Math.max(hpSecond - dmg, 0);
+
+        turns.push({
+          turnNumber: t,
+          attackerId: first.id,
+          damage: dmg,
+          isCrit,
+          isDodge: false,
+          defenderHpAfter: hpSecond,
+        });
+      }
 
       if (hpSecond <= 0) {
         return buildResult(first.id, second.id, turns);
@@ -162,20 +249,37 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
 
     // --- Second character attacks first ---
     {
-      const raw = baseDamage(second);
-      const reduced = reduceDamage(raw, first, second.class);
-      const isCrit = rollPercent() < critChance(second);
-      let dmg = isCrit ? reduced * COMBAT.CRIT_MULTIPLIER : reduced;
-      dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
-      hpFirst = Math.max(hpFirst - dmg, 0);
+      const isDodge = rollPercent() < dodgeChance(first, stanceFirst);
 
-      turns.push({
-        turnNumber: t,
-        attackerId: second.id,
-        damage: dmg,
-        isCrit,
-        defenderHpAfter: hpFirst,
-      });
+      if (isDodge) {
+        turns.push({
+          turnNumber: t,
+          attackerId: second.id,
+          damage: 0,
+          isCrit: false,
+          isDodge: true,
+          defenderHpAfter: hpFirst,
+        });
+      } else {
+        const raw = applyVariance(baseDamage(second));
+        const reduced = reduceDamage(raw, first, second.class);
+        const withClass = applyClassReduction(reduced, first.class);
+        const isCrit = rollPercent() < critChance(second, stanceSecond);
+        let dmg = isCrit ? withClass * COMBAT.CRIT_MULTIPLIER : withClass;
+        dmg = dmg * (1 + stanceSecond.offense / 100);
+        dmg = dmg * (1 - stanceFirst.defense / 100);
+        dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
+        hpFirst = Math.max(hpFirst - dmg, 0);
+
+        turns.push({
+          turnNumber: t,
+          attackerId: second.id,
+          damage: dmg,
+          isCrit,
+          isDodge: false,
+          defenderHpAfter: hpFirst,
+        });
+      }
 
       if (hpFirst <= 0) {
         return buildResult(second.id, first.id, turns);

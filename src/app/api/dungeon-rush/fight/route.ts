@@ -5,6 +5,7 @@ import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
+import { chaGoldBonus } from '@/lib/game/balance'
 
 /** Rush mode gold reward -- higher than normal, scales with floor. */
 function rushGoldReward(floor: number): number {
@@ -161,7 +162,8 @@ export async function POST(req: NextRequest) {
     }
 
     const currentFloor = run.currentFloor
-    const goldReward = rushGoldReward(currentFloor)
+    // CHA gold bonus: +0.5% per CHA point
+    const goldReward = chaGoldBonus(rushGoldReward(currentFloor), character.cha)
     const xpReward = rushXpReward(currentFloor)
 
     if (!playerWon) {
@@ -221,7 +223,7 @@ export async function POST(req: NextRequest) {
     // Roll for loot drop — boss floors get 75% chance, regular get dungeon_normal rate
     const lootDifficulty = state.isBoss ? 'boss' : 'dungeon_normal'
     const loot: LootResponseItem[] = []
-    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty)
+    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty, character.luk)
     if (lootItem) loot.push(lootItem)
 
     return NextResponse.json({

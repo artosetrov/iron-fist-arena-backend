@@ -7,7 +7,8 @@ import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
-import { BATTLE_PASS } from '@/lib/game/balance'
+import { BATTLE_PASS, chaGoldBonus } from '@/lib/game/balance'
+import { degradeEquipment } from '@/lib/game/durability'
 
 function floorGoldReward(floor: number, difficulty: string): number {
   const base = 30 + floor * 10
@@ -143,6 +144,9 @@ export async function POST(
     if (!playerWon) {
       await prisma.dungeonRun.delete({ where: { id: run.id } })
 
+      // Degrade player's equipped items even on defeat (combat still happened)
+      const durabilityResult = await degradeEquipment(prisma, character_id)
+
       return NextResponse.json({
         victory: false,
         combatResults,
@@ -152,11 +156,13 @@ export async function POST(
           xp: state.totalXpEarned,
           floorsCleared: state.floorsCleared,
         },
+        durability_changes: durabilityResult.degraded,
       })
     }
 
     const currentFloor = run.currentFloor
-    const goldReward = floorGoldReward(currentFloor, run.difficulty)
+    // CHA gold bonus: +0.5% per CHA point
+    const goldReward = chaGoldBonus(floorGoldReward(currentFloor, run.difficulty), character.cha)
     const xpReward = floorXpReward(currentFloor, run.difficulty)
     const newTotalGold = state.totalGoldEarned + goldReward
     const newTotalXp = state.totalXpEarned + xpReward
@@ -165,8 +171,8 @@ export async function POST(
     await prisma.character.update({
       where: { id: character_id },
       data: {
-        gold: character.gold + goldReward,
-        currentXp: character.currentXp + xpReward,
+        gold: { increment: goldReward },
+        currentXp: { increment: xpReward },
       },
     })
 
@@ -187,7 +193,8 @@ export async function POST(
       update: { bossIndex: { set: bossIndex }, completed: isDungeonComplete },
     })
 
-    const wasBossFloor = true // every floor is a boss floor now
+    const isFinalBoss = isDungeonComplete
+    const wasBossFloor = isFinalBoss
 
     if (isDungeonComplete) {
       await prisma.dungeonRun.delete({ where: { id: run.id } })
@@ -222,11 +229,14 @@ export async function POST(
     // Award Battle Pass XP per dungeon floor
     await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR)
 
-    // Roll for loot drop — boss floors have 75% chance, regular floors scale with difficulty
-    const lootDifficulty = wasBossFloor ? 'boss' : `dungeon_${run.difficulty}`
+    // Roll for loot drop — final boss has 75% chance, regular floors scale with difficulty
+    const lootDifficulty = isFinalBoss ? 'boss' : `dungeon_${run.difficulty}`
     const loot: LootResponseItem[] = []
-    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty)
+    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty, character.luk)
     if (lootItem) loot.push(lootItem)
+
+    // Degrade player's equipped items after combat
+    const durabilityResult = await degradeEquipment(prisma, character_id)
 
     return NextResponse.json({
       victory: true,
@@ -249,6 +259,7 @@ export async function POST(
       leveled_up: levelUpResult?.leveledUp ?? false,
       new_level: levelUpResult?.newLevel,
       stat_points_awarded: levelUpResult?.statPointsAwarded,
+      durability_changes: durabilityResult.degraded,
     })
   } catch (error) {
     console.error('dungeon run fight error:', error)

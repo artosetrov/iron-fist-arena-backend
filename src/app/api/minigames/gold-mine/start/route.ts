@@ -6,6 +6,9 @@ import {
   MINE_DURATION_HOURS,
   MINE_REWARD_MIN,
   MINE_REWARD_MAX,
+  GEM_DROP_CHANCE,
+  GEM_DROP_MIN,
+  GEM_DROP_MAX,
 } from '@/lib/game/gold-mine'
 
 export async function POST(req: NextRequest) {
@@ -64,6 +67,11 @@ export async function POST(req: NextRequest) {
       Math.random() * (MINE_REWARD_MAX - MINE_REWARD_MIN + 1) + MINE_REWARD_MIN
     )
 
+    // Roll for bonus gem drop (10% chance → 1-3 gems)
+    const gemReward = Math.random() < GEM_DROP_CHANCE
+      ? Math.floor(Math.random() * (GEM_DROP_MAX - GEM_DROP_MIN + 1) + GEM_DROP_MIN)
+      : 0
+
     await prisma.goldMineSession.create({
       data: {
         characterId: character_id,
@@ -71,6 +79,7 @@ export async function POST(req: NextRequest) {
         startedAt: now,
         endsAt,
         reward,
+        gemReward,
       },
     })
 

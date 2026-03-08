@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Achievement not found' }, { status: 404 })
     }
 
-    if (!achievement.completed) {
+    const isCompleted = achievement.completed || achievement.progress >= def.target
+    if (!isCompleted) {
       return NextResponse.json({ error: 'Achievement not yet completed' }, { status: 400 })
     }
 
@@ -77,10 +78,10 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Mark reward as claimed
+    // Mark as completed (if not already) and reward as claimed
     await prisma.achievement.update({
       where: { id: achievement.id },
-      data: { rewardClaimed: true },
+      data: { completed: true, rewardClaimed: true },
     })
 
     // Check for level-up if XP was awarded

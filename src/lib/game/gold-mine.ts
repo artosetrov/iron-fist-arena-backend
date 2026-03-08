@@ -7,6 +7,11 @@ export const BOOST_COST_GEMS = 10
 export const MAX_GOLD_MINE_SLOTS = 6
 export const SLOT_COST_GEMS = 50
 
+// Gem (crystal) random drop from mining
+export const GEM_DROP_CHANCE = 0.10 // 10% chance per collect
+export const GEM_DROP_MIN = 1
+export const GEM_DROP_MAX = 3
+
 export type SlotStatus = 'idle' | 'mining' | 'ready'
 
 export interface SlotInfo {
@@ -16,6 +21,7 @@ export interface SlotInfo {
   started_at?: string
   ends_at?: string
   reward?: number
+  gem_reward?: number
   boosted?: boolean
 }
 
@@ -57,6 +63,7 @@ export async function buildSlotsArray(
         started_at: session.startedAt.toISOString(),
         ends_at: session.endsAt.toISOString(),
         reward: isReady ? session.reward : undefined,
+        gem_reward: isReady && session.gemReward > 0 ? session.gemReward : undefined,
         boosted: session.boosted,
       })
     }

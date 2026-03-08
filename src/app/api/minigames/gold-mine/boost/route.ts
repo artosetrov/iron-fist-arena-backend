@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     const boostedReward = session.reward * 2
+    const boostedGemReward = session.gemReward * 2
 
     await prisma.$transaction([
       prisma.user.update({
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.goldMineSession.update({
         where: { id: session.id },
-        data: { boosted: true, reward: boostedReward },
+        data: { boosted: true, reward: boostedReward, gemReward: boostedGemReward },
       }),
     ])
 

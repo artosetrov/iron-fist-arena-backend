@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { runCombat, CharacterStats } from '@/lib/game/combat'
-import { calculateElo, getKFactor } from '@/lib/game/elo'
+import { getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import {
@@ -12,10 +12,12 @@ import {
   XP_REWARDS,
   FIRST_WIN_BONUS,
   BATTLE_PASS,
+  chaGoldBonus,
 } from '@/lib/game/balance'
 import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
+import { degradeEquipment } from '@/lib/game/durability'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -142,18 +144,22 @@ export async function POST(req: NextRequest) {
     const winnerId = combatResult.winnerId
     const loserId = combatResult.loserId
 
-    // ELO calculation
+    // ELO calculation — independent K-factor per player
     const winnerRatingBefore = attackerWon ? attacker.pvpRating : defender.pvpRating
     const loserRatingBefore = attackerWon ? defender.pvpRating : attacker.pvpRating
-    const winnerCalibration = attackerWon
-      ? attacker.pvpCalibrationGames
-      : defender.pvpCalibrationGames
-    const kFactor = getKFactor(winnerCalibration)
-    const eloResult = calculateElo(winnerRatingBefore, loserRatingBefore, kFactor)
+    const kWinner = getKFactor(attackerWon ? attacker.pvpCalibrationGames : defender.pvpCalibrationGames)
+    const kLoser = getKFactor(attackerWon ? defender.pvpCalibrationGames : attacker.pvpCalibrationGames)
+    const expectedWinner = 1 / (1 + Math.pow(10, (loserRatingBefore - winnerRatingBefore) / 400))
+    const expectedLoser = 1 - expectedWinner
+    const newWinnerRating = Math.max(0, Math.round(winnerRatingBefore + kWinner * (1 - expectedWinner)))
+    const newLoserRating = Math.max(0, Math.round(loserRatingBefore + kLoser * (0 - expectedLoser)))
 
     // Calculate rewards
-    let goldReward = attackerWon ? GOLD_REWARDS.PVP_WIN_BASE : GOLD_REWARDS.PVP_LOSS_BASE
+    let goldReward: number = attackerWon ? GOLD_REWARDS.PVP_WIN_BASE : GOLD_REWARDS.PVP_LOSS_BASE
     let xpReward = attackerWon ? XP_REWARDS.PVP_WIN_XP : XP_REWARDS.PVP_LOSS_XP
+
+    // CHA gold bonus: +0.5% per CHA point
+    goldReward = chaGoldBonus(goldReward, attacker.cha)
 
     // First win of the day bonus
     const firstWin =
@@ -168,7 +174,7 @@ export async function POST(req: NextRequest) {
     const now = new Date()
 
     // Build attacker update
-    const attackerNewRating = attackerWon ? eloResult.newWinner : eloResult.newLoser
+    const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
     const attackerUpdate: Record<string, unknown> = {
       currentStamina: newStamina,
       lastStaminaUpdate: now,
@@ -202,10 +208,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Build defender update
-    const defenderNewRating = attackerWon ? eloResult.newLoser : eloResult.newWinner
+    const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
+    const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
+    const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
     const defenderUpdate: Record<string, unknown> = {
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
+      gold: { increment: defenderGoldReward },
+      currentXp: { increment: defenderXpReward },
     }
 
     if (!attackerWon) {
@@ -247,19 +257,18 @@ export async function POST(req: NextRequest) {
 
     // Check for level-up after XP award
     const levelUpResult = await applyLevelUp(prisma, attacker.id)
+    await applyLevelUp(prisma, defender.id)
 
     // Create revenge entry for the loser (so they can take revenge)
-    if (attackerWon) {
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours
-      await prisma.revengeQueue.create({
-        data: {
-          victimId: defender.id,
-          attackerId: attacker.id,
-          matchId: pvpMatch.id,
-          expiresAt,
-        },
-      })
-    }
+    const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000) // 72 hours
+    await prisma.revengeQueue.create({
+      data: {
+        victimId: loserId,
+        attackerId: winnerId,
+        matchId: pvpMatch.id,
+        expiresAt,
+      },
+    })
 
     // Update daily quest progress
     if (attackerWon) {
@@ -272,20 +281,23 @@ export async function POST(req: NextRequest) {
     // Roll for loot drop and persist to inventory
     const loot: LootResponseItem[] = []
     if (attackerWon) {
-      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp')
+      const lootItem = await rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp', attacker.luk)
       if (lootItem) loot.push(lootItem)
     }
+
+    // Degrade attacker's equipped items after combat
+    const durabilityResult = await degradeEquipment(prisma, attacker.id)
 
     const ratingChange = attackerNewRating - attacker.pvpRating
 
     // Build combat_log in the format the iOS client expects
     const combat_log = combatResult.turns.map((t) => ({
       attacker_id: t.attackerId,
-      action: 'attack',
+      action: t.isDodge ? 'dodge' : 'attack',
       damage: t.damage,
       is_crit: t.isCrit,
       is_miss: false,
-      is_dodge: false,
+      is_dodge: t.isDodge,
       target_zone: null,
       status_applied: null,
       heal: null,
@@ -330,6 +342,7 @@ export async function POST(req: NextRequest) {
         current: newStamina,
         max: updatedAttacker.maxStamina,
       },
+      durability_changes: durabilityResult.degraded,
     })
   } catch (error) {
     console.error('pvp fight error:', error)

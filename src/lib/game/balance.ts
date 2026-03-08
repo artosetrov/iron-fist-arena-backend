@@ -67,13 +67,13 @@ export interface DailyLoginRewardDef {
 }
 
 export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
-  { type: 'gold', amount: 200 },              // Day 1
-  { type: 'gems', amount: 10 },               // Day 2
-  { type: 'gold', amount: 400 },              // Day 3
-  { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' }, // Day 4
-  { type: 'gold', amount: 600 },              // Day 5
-  { type: 'gems', amount: 25 },               // Day 6
-  { type: 'gold', amount: 1000 },             // Day 7
+  { type: 'gold', amount: 200 },                                          // Day 1
+  { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },      // Day 2
+  { type: 'gold', amount: 500 },                                          // Day 3
+  { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },      // Day 4
+  { type: 'gold', amount: 1000 },                                         // Day 5
+  { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },      // Day 6
+  { type: 'gems', amount: 5 },                                            // Day 7
 ] as const;
 
 // --- In-App Purchase products ---
@@ -117,6 +117,10 @@ export const COMBAT = {
   MIN_DAMAGE: 1,
   CRIT_MULTIPLIER: 1.5,
   MAX_CRIT_CHANCE: 50,
+  MAX_DODGE_CHANCE: 30,
+  ROGUE_DODGE_BONUS: 5,         // rogues get +5% dodge
+  TANK_DAMAGE_REDUCTION: 0.85,  // tanks take 15% less damage
+  DAMAGE_VARIANCE: 0.10,        // ±10% damage variance
 } as const;
 
 // --- Prestige ---
@@ -135,6 +139,11 @@ export const DROP_CHANCES: Record<string, number> = {
   dungeon_hard: 0.40,
   boss: 0.75,
 } as const;
+
+/** CHA gold bonus: +0.5% per CHA point */
+export function chaGoldBonus(baseGold: number, cha: number): number {
+  return Math.floor(baseGold * (1 + cha * 0.005));
+}
 
 // --- Rarity distribution (must sum to 100) ---
 export const RARITY_DISTRIBUTION = {

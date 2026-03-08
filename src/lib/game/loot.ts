@@ -195,13 +195,17 @@ function rollItemType(): ItemType {
  *
  * @param playerLevel  The player's current level
  * @param difficulty   Source difficulty key (e.g. 'pvp', 'training', 'dungeon_easy', 'boss')
+ * @param luk          The character's LUK stat (+0.3% drop chance per point, capped at 95%)
  * @returns            A DroppedItem if the roll succeeds, or null
  */
 export function rollDropChance(
   playerLevel: number,
   difficulty: string,
+  luk: number = 0,
 ): DroppedItem | null {
-  const chance = DROP_CHANCES[difficulty] ?? 0;
+  const baseChance = DROP_CHANCES[difficulty] ?? 0;
+  const lukBonus = luk * 0.003; // +0.3% per LUK point
+  const chance = Math.min(baseChance + lukBonus, 0.95); // cap at 95%
 
   if (Math.random() > chance) {
     return null; // No drop
@@ -290,6 +294,7 @@ export async function persistLoot(
 /**
  * Roll for loot and persist if successful. Convenience wrapper.
  *
+ * @param luk  The character's LUK stat (passed to rollDropChance for bonus drop chance)
  * @returns LootResponseItem if drop succeeded, or null
  */
 export async function rollAndPersistLoot(
@@ -297,8 +302,9 @@ export async function rollAndPersistLoot(
   characterId: string,
   playerLevel: number,
   difficulty: string,
+  luk: number = 0,
 ): Promise<LootResponseItem | null> {
-  const drop = rollDropChance(playerLevel, difficulty);
+  const drop = rollDropChance(playerLevel, difficulty, luk);
   if (!drop) return null;
   return persistLoot(prisma, characterId, drop);
 }
