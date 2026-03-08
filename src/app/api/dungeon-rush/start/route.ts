@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateDungeonFloor } from '@/lib/game/dungeon'
+import { generateDungeonFloor, type Enemy } from '@/lib/game/dungeon'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 
 const RUSH_STAMINA_COST = 30
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check no active rush run exists
+    // Check for active rush run — resume it instead of 409
     const activeRun = await prisma.dungeonRun.findFirst({
       where: {
         characterId: character_id,
@@ -40,10 +40,28 @@ export async function POST(req: NextRequest) {
       },
     })
     if (activeRun) {
-      return NextResponse.json(
-        { error: 'An active dungeon rush is already in progress. Finish or abandon it first.' },
-        { status: 409 },
-      )
+      const state = activeRun.state as unknown as {
+        enemies: Enemy[]
+        isBoss: boolean
+        floorsCleared: number
+        totalGoldEarned: number
+        totalXpEarned: number
+      }
+      const firstEnemy = state.enemies?.[0]
+
+      return NextResponse.json({
+        run_id: activeRun.id,
+        current_floor: activeRun.currentFloor,
+        current_enemy: firstEnemy
+          ? { name: firstEnemy.name, level: firstEnemy.level }
+          : undefined,
+        floor: {
+          number: activeRun.currentFloor,
+          enemies: state.enemies,
+          isBoss: state.isBoss,
+        },
+        resumed: true,
+      })
     }
 
     // Check stamina (account for time-based regeneration)
@@ -73,6 +91,7 @@ export async function POST(req: NextRequest) {
     // We pass 'normal' as the base difficulty but scale the floor number up faster
     const seed = Math.floor(Math.random() * 2147483647)
     const floor = generateDungeonFloor(1, 'normal')
+    const firstEnemy = floor.enemies[0]
 
     const run = await prisma.dungeonRun.create({
       data: {
@@ -93,6 +112,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       run_id: run.id,
       current_floor: 1,
+      current_enemy: firstEnemy
+        ? { name: firstEnemy.name, level: firstEnemy.level }
+        : undefined,
       floor: {
         number: 1,
         enemies: floor.enemies,
