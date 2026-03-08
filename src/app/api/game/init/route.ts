@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
     const staminaResult = calculateCurrentStamina(
       character.currentStamina,
       character.maxStamina,
-      character.lastStaminaUpdate
+      character.lastStaminaUpdate ?? new Date()
     )
 
     // Format quests with metadata
