@@ -100,6 +100,36 @@ enum EventType {
   tournament
 }
 
+enum SkillDamageType {
+  physical
+  magical
+  true_damage
+}
+
+enum SkillTargetType {
+  single_enemy
+  self_buff
+  aoe
+}
+
+enum PassiveBonusType {
+  flat_stat
+  percent_stat
+  flat_damage
+  percent_damage
+  flat_crit_chance
+  flat_dodge_chance
+  flat_hp
+  percent_hp
+  flat_armor
+  flat_magic_resist
+  percent_armor
+  percent_magic_resist
+  lifesteal
+  cooldown_reduction
+  damage_reduction
+}
+
 // --- Models ---
 
 model User {
@@ -135,7 +165,8 @@ model Character {
   level               Int            @default(1)
   currentXp           Int            @default(0) @map("current_xp")
   prestigeLevel       Int            @default(0) @map("prestige_level")
-  statPointsAvailable Int            @default(0) @map("stat_points_available")
+  statPointsAvailable    Int         @default(0) @map("stat_points_available")
+  passivePointsAvailable Int         @default(0) @map("passive_points_available")
 
   // Stats (default 10 each)
   str Int @default(10)
@@ -207,6 +238,9 @@ model Character {
   revengesAsVictim    RevengeQueue[] @relation("victim")
   revengesAsAttacker  RevengeQueue[] @relation("attacker")
 
+  characterSkills     CharacterSkill[]
+  characterPassives   CharacterPassive[]
+
   @@index([userId])
   @@index([pvpRating])
   @@map("characters")
@@ -228,6 +262,9 @@ model Item {
   sellPrice       Int       @default(0) @map("sell_price")
   description     String?
   imageUrl        String?   @map("image_url")
+  dropChance      Float?    @default(0) @map("drop_chance")
+  itemClass       String?   @map("item_class")
+  upgradeConfig   Json?     @map("upgrade_config")
   createdAt       DateTime  @default(now()) @map("created_at")
 
   equipment       EquipmentInventory[]
@@ -619,4 +656,125 @@ model AdminLog {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("admin_logs")
+}
+
+model ItemBalanceProfile {
+  id          String   @id @default(uuid())
+  itemType    ItemType @unique @map("item_type")
+  statWeights Json     @map("stat_weights")
+  powerWeight Float    @default(1.0) @map("power_weight")
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedBy   String?  @map("updated_by")
+
+  @@map("item_balance_profiles")
+}
+
+model BalanceSimulationRun {
+  id        String   @id @default(uuid())
+  runType   String   @map("run_type")
+  config    Json
+  results   Json
+  summary   String?
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([runType, createdAt(sort: Desc)])
+  @@map("balance_simulation_runs")
+}
+
+// --- Build System ---
+
+model Skill {
+  id               String           @id @default(uuid())
+  skillKey         String           @unique @map("skill_key")
+  name             String
+  description      String?
+  classRestriction CharacterClass?  @map("class_restriction")
+  damageBase       Int              @default(0) @map("damage_base")
+  damageScaling    Json?            @map("damage_scaling")
+  damageType       SkillDamageType  @default(physical) @map("damage_type")
+  targetType       SkillTargetType  @default(single_enemy) @map("target_type")
+  cooldown         Int              @default(0)
+  manaCost         Int              @default(0) @map("mana_cost")
+  effectJson       Json?            @map("effect_json")
+  unlockLevel      Int              @default(1) @map("unlock_level")
+  maxRank          Int              @default(5) @map("max_rank")
+  rankScaling      Float            @default(0.1) @map("rank_scaling")
+  icon             String?
+  sortOrder        Int              @default(0) @map("sort_order")
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  characterSkills  CharacterSkill[]
+
+  @@map("skills")
+}
+
+model CharacterSkill {
+  id          String   @id @default(uuid())
+  characterId String   @map("character_id")
+  skillId     String   @map("skill_id")
+  rank        Int      @default(1)
+  isEquipped  Boolean  @default(false) @map("is_equipped")
+  slotIndex   Int?     @map("slot_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill       Skill     @relation(fields: [skillId], references: [id])
+
+  @@unique([characterId, skillId])
+  @@index([characterId, isEquipped])
+  @@map("character_skills")
+}
+
+model PassiveNode {
+  id               String           @id @default(uuid())
+  nodeKey          String           @unique @map("node_key")
+  name             String
+  description      String?
+  bonusType        PassiveBonusType @map("bonus_type")
+  bonusStat        String?          @map("bonus_stat")
+  bonusValue       Float            @map("bonus_value")
+  tier             Int              @default(1)
+  positionX        Float            @default(0) @map("position_x")
+  positionY        Float            @default(0) @map("position_y")
+  cost             Int              @default(1)
+  icon             String?
+  classRestriction CharacterClass?  @map("class_restriction")
+  isStartNode      Boolean          @default(false) @map("is_start_node")
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  connectionsFrom   PassiveConnection[] @relation("from_node")
+  connectionsTo     PassiveConnection[] @relation("to_node")
+  characterPassives CharacterPassive[]
+
+  @@map("passive_nodes")
+}
+
+model PassiveConnection {
+  id     String @id @default(uuid())
+  fromId String @map("from_id")
+  toId   String @map("to_id")
+
+  fromNode PassiveNode @relation("from_node", fields: [fromId], references: [id], onDelete: Cascade)
+  toNode   PassiveNode @relation("to_node", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId])
+  @@map("passive_connections")
+}
+
+model CharacterPassive {
+  id          String   @id @default(uuid())
+  characterId String   @map("character_id")
+  nodeId      String   @map("node_id")
+  unlockedAt  DateTime @default(now()) @map("unlocked_at")
+
+  character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  node        PassiveNode @relation(fields: [nodeId], references: [id])
+
+  @@unique([characterId, nodeId])
+  @@index([characterId])
+  @@map("character_passives")
 }
