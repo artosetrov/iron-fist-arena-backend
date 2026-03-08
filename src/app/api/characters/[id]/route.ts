@@ -36,7 +36,7 @@ export async function GET(
     const staminaResult = calculateCurrentStamina(
       character.currentStamina,
       character.maxStamina,
-      character.lastStaminaUpdate
+      character.lastStaminaUpdate ?? new Date()
     )
 
     return NextResponse.json({
