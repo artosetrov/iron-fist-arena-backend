@@ -371,7 +371,6 @@ model DungeonProgress {
   completed   Boolean   @default(false)
 
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  dungeon     Dungeon   @relation(fields: [dungeonId], references: [id], onDelete: Cascade)
 
   @@unique([characterId, dungeonId])
   @@map("dungeon_progress")
@@ -388,7 +387,6 @@ model DungeonRun {
   createdAt    DateTime  @default(now()) @map("created_at")
 
   character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  dungeon      Dungeon?  @relation(fields: [dungeonId], references: [id])
 
   @@index([characterId, difficulty])
   @@map("dungeon_runs")
@@ -831,8 +829,6 @@ model Dungeon {
   bosses          DungeonBoss[]
   waves           DungeonWave[]
   drops           DungeonDrop[]
-  dungeonProgress DungeonProgress[]
-  dungeonRuns     DungeonRun[]
 
   @@map("dungeons")
 }

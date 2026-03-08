@@ -35,17 +35,6 @@ export async function POST(req: NextRequest) {
 
     const dungeonId = dungeon_id || 'training_camp'
 
-    // Validate that the dungeon exists in the database
-    const dungeon = await prisma.dungeon.findUnique({
-      where: { id: dungeonId },
-    })
-    if (!dungeon) {
-      return NextResponse.json(
-        { error: 'Invalid dungeon' },
-        { status: 400 },
-      )
-    }
-
     // Verify character belongs to user
     const character = await prisma.character.findFirst({
       where: { id: character_id, userId: user.id },
