@@ -4,6 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { UPGRADE_CHANCES } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
+import {
+  getUpgradeCost,
+  getUpgradeSuccessChance,
+  getUpgradeProtectionCost,
+  getUpgradeDowngradeThreshold,
+  getUpgradeStatBonus,
+} from '@/lib/game/item-balance'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -38,12 +45,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Item is already at maximum upgrade level' }, { status: 400 })
     }
 
-    const upgradeCost = (currentLevel + 1) * 100
-    const successChance = UPGRADE_CHANCES[currentLevel]
+    // Read upgrade parameters from config (DB-driven)
+    const upgradeCost = await getUpgradeCost(currentLevel)
+    const successChance = await getUpgradeSuccessChance(currentLevel)
+    const protectionCost = await getUpgradeProtectionCost()
+    const downgradeThreshold = await getUpgradeDowngradeThreshold()
+
     const roll = Math.random() * 100
     const success = roll < successChance
-
-    const PROTECTION_COST = 30
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const result = await prisma.$transaction(async (tx) => {
@@ -63,7 +72,7 @@ export async function POST(req: NextRequest) {
           `SELECT id, gems FROM users WHERE id = $1 FOR UPDATE`,
           user.id
         )
-        if (!lockedUser || lockedUser.gems < PROTECTION_COST) {
+        if (!lockedUser || lockedUser.gems < protectionCost) {
           throw new Error('NOT_ENOUGH_GEMS')
         }
         userRow = lockedUser
@@ -92,11 +101,11 @@ export async function POST(req: NextRequest) {
           // Protection scroll consumed — deduct gems, level stays the same
           await tx.user.update({
             where: { id: user.id },
-            data: { gems: { decrement: PROTECTION_COST } },
+            data: { gems: { decrement: protectionCost } },
           })
           protectionUsed = true
-        } else if (currentLevel >= 5) {
-          // No protection and level is +6 or above — lose one level
+        } else if (currentLevel >= downgradeThreshold) {
+          // No protection and level is at/above threshold — lose one level
           updatedItem = await tx.equipmentInventory.update({
             where: { id: inventory_id },
             data: { upgradeLevel: { decrement: 1 } },
@@ -104,7 +113,7 @@ export async function POST(req: NextRequest) {
           })
           levelLost = true
         }
-        // If currentLevel < 5 and no protection, nothing extra happens (gold already spent)
+        // If currentLevel < threshold and no protection, nothing extra happens (gold already spent)
       }
 
       return { updatedCharacter, updatedItem, protectionUsed, levelLost }
@@ -130,6 +139,22 @@ export async function POST(req: NextRequest) {
       newLevel = currentLevel - 1
     }
 
+    // Calculate effective stats (baseStats + upgrade bonus) for before and after
+    const upgradeStatBonus = await getUpgradeStatBonus()
+    const baseStats = (result.updatedItem.item.baseStats as Record<string, number>) ?? {}
+
+    const effectiveStats: Record<string, number> = {}
+    const previousEffectiveStats: Record<string, number> = {}
+    const statChanges: Record<string, { before: number; after: number; diff: number }> = {}
+
+    for (const [stat, baseValue] of Object.entries(baseStats)) {
+      const before = baseValue + currentLevel * upgradeStatBonus
+      const after = baseValue + newLevel * upgradeStatBonus
+      previousEffectiveStats[stat] = before
+      effectiveStats[stat] = after
+      statChanges[stat] = { before, after, diff: after - before }
+    }
+
     return NextResponse.json({
       success,
       inventoryItem: result.updatedItem,
@@ -141,6 +166,10 @@ export async function POST(req: NextRequest) {
       newLevel,
       protection_used: result.protectionUsed,
       level_lost: result.levelLost,
+      effectiveStats,
+      previousEffectiveStats,
+      statChanges,
+      upgradeStatBonus,
     })
   } catch (error) {
     if (error instanceof Error) {

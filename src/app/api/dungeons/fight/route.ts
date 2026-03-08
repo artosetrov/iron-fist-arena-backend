@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
+import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { BATTLE_PASS, chaGoldBonus } from '@/lib/game/balance'
+import { degradeEquipment } from '@/lib/game/durability'
 
 /** Gold reward per boss defeated, scaled by difficulty. */
 function bossGoldReward(floor: number, difficulty: string): number {
@@ -41,45 +43,6 @@ function enemyToCharacterStats(enemy: Enemy): CharacterStats {
     maxHp: enemy.maxHp,
     armor: enemy.armor,
     magicResist: enemy.magicResist,
-  }
-}
-
-/** Convert a Prisma Character record into CharacterStats for combat. */
-function characterToStats(c: {
-  id: string
-  characterName: string
-  class: string
-  level: number
-  str: number
-  agi: number
-  vit: number
-  end: number
-  int: number
-  wis: number
-  luk: number
-  cha: number
-  maxHp: number
-  armor: number
-  magicResist: number
-  combatStance: unknown
-}): CharacterStats {
-  return {
-    id: c.id,
-    name: c.characterName,
-    class: c.class as CharacterStats['class'],
-    level: c.level,
-    str: c.str,
-    agi: c.agi,
-    vit: c.vit,
-    end: c.end,
-    int: c.int,
-    wis: c.wis,
-    luk: c.luk,
-    cha: c.cha,
-    maxHp: c.maxHp,
-    armor: c.armor,
-    magicResist: c.magicResist,
-    combatStance: c.combatStance as Record<string, unknown> | null,
   }
 }
 
@@ -133,7 +96,8 @@ export async function POST(req: NextRequest) {
       totalXpEarned: number
     }
 
-    const playerStats = characterToStats(character)
+    // Load combat-ready character with skills + passives
+    const playerStats = await loadCombatCharacter(character_id)
     const combatResults: Array<{
       enemyName: string
       won: boolean
@@ -169,14 +133,17 @@ export async function POST(req: NextRequest) {
     // Build combat_log for the iOS client animation
     const combat_log = (primaryCombatResult?.turns ?? []).map((t) => ({
       attacker_id: t.attackerId,
-      action: 'attack',
+      action: t.isDodge ? 'dodge' : (t.skillUsed ? 'skill' : 'attack'),
       damage: t.damage,
       is_crit: t.isCrit,
       is_miss: false,
-      is_dodge: false,
+      is_dodge: t.isDodge,
       target_zone: null,
       status_applied: null,
-      heal: null,
+      heal: t.healAmount ?? null,
+      skill_used: t.skillUsed ?? null,
+      skill_key: t.skillKey ?? null,
+      damage_type: t.damageType ?? null,
     }))
 
     // Build CombatData for the client animation
@@ -205,6 +172,9 @@ export async function POST(req: NextRequest) {
       // Player lost — dungeon run fails, delete it
       await prisma.dungeonRun.delete({ where: { id: run.id } })
 
+      // Degrade player's equipped items even on defeat (combat still happened)
+      const durabilityResult = await degradeEquipment(prisma, character_id)
+
       return NextResponse.json({
         ...combatDataPayload,
         result: {
@@ -222,6 +192,7 @@ export async function POST(req: NextRequest) {
           xp: state.totalXpEarned,
           floorsCleared: state.floorsCleared,
         },
+        durability_changes: durabilityResult.degraded,
       })
     }
 
@@ -281,6 +252,9 @@ export async function POST(req: NextRequest) {
     const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, 'boss', character.luk)
     if (lootItem) loot.push(lootItem)
 
+    // Degrade player's equipped items after combat
+    const winDurabilityResult = await degradeEquipment(prisma, character_id)
+
     if (isDungeonComplete) {
       // Dungeon complete — delete the run
       await prisma.dungeonRun.delete({ where: { id: run.id } })
@@ -309,6 +283,7 @@ export async function POST(req: NextRequest) {
           floorsCleared: newFloorsCleared,
         },
         loot,
+        durability_changes: winDurabilityResult.degraded,
       })
     }
 
@@ -359,6 +334,7 @@ export async function POST(req: NextRequest) {
         enemies: nextFloorData.enemies,
         isBoss: nextFloorData.isBoss,
       },
+      durability_changes: winDurabilityResult.degraded,
     })
   } catch (error) {
     console.error('dungeon fight error:', error)

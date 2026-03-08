@@ -3,9 +3,9 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { STAMINA } from '@/lib/game/balance'
+import { STAMINA, GEM_COSTS } from '@/lib/game/balance'
 
-const GEMS_PER_REFILL = 30
+const GEMS_PER_REFILL = GEM_COSTS.STAMINA_REFILL
 
 /**
  * POST /api/stamina/refill

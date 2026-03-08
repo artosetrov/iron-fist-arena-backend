@@ -38,30 +38,39 @@ export async function degradeEquipment(
   const changes: DurabilityChange[] = []
   let anyBroken = false
 
-  await prisma.$transaction(async (tx) => {
-    for (const eq of equipped) {
-      const loss = Math.floor(Math.random() * 3) + 1 // 1-3
-      const newDurability = Math.max(0, eq.durability - loss)
+  // Pre-compute all durability changes in memory
+  const updates: { id: string; durability: number }[] = []
+  for (const eq of equipped) {
+    const loss = Math.floor(Math.random() * 3) + 1 // 1-3
+    const newDurability = Math.max(0, eq.durability - loss)
 
-      if (newDurability !== eq.durability) {
-        await tx.equipmentInventory.update({
-          where: { id: eq.id },
-          data: { durability: newDurability },
-        })
+    if (newDurability !== eq.durability) {
+      updates.push({ id: eq.id, durability: newDurability })
 
-        changes.push({
-          id: eq.id,
-          name: eq.item.itemName,
-          durabilityBefore: eq.durability,
-          durabilityAfter: newDurability,
-        })
+      changes.push({
+        id: eq.id,
+        name: eq.item.itemName,
+        durabilityBefore: eq.durability,
+        durabilityAfter: newDurability,
+      })
 
-        if (newDurability === 0 && eq.durability > 0) {
-          anyBroken = true
-        }
+      if (newDurability === 0 && eq.durability > 0) {
+        anyBroken = true
       }
     }
-  })
+  }
+
+  // Batch all updates in a single transaction (eliminates N+1)
+  if (updates.length > 0) {
+    await prisma.$transaction(
+      updates.map(u =>
+        prisma.equipmentInventory.update({
+          where: { id: u.id },
+          data: { durability: u.durability },
+        })
+      )
+    )
+  }
 
   // If any item broke, recalculate derived stats (broken items give 0 bonus)
   if (anyBroken) {

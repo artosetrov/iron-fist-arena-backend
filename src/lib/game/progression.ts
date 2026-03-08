@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { xpForLevel } from './balance';
-import { PRESTIGE } from './balance';
+import { PRESTIGE, PASSIVES } from './balance';
 
 // Re-export for convenience
 export { xpForLevel };
@@ -36,6 +36,7 @@ export async function applyLevelUp(
       level: result.newLevel,
       currentXp: result.remainingXp,
       statPointsAvailable: { increment: result.statPointsAwarded },
+      passivePointsAvailable: { increment: result.passivePointsAwarded },
     },
   });
 
@@ -49,6 +50,7 @@ export interface LevelUpResult {
   newLevel: number;
   remainingXp: number;
   statPointsAwarded: number;
+  passivePointsAwarded: number;
 }
 
 export interface PrestigeResult {
@@ -72,6 +74,7 @@ export function checkLevelUp(character: {
 }): LevelUpResult {
   let { currentXp, level } = character;
   let totalStatPoints = 0;
+  let totalPassivePoints = 0;
   const startLevel = level;
 
   // Allow multiple level-ups in one pass
@@ -83,6 +86,7 @@ export function checkLevelUp(character: {
     currentXp -= needed;
     level += 1;
     totalStatPoints += PRESTIGE.STAT_POINTS_PER_LEVEL;
+    totalPassivePoints += PASSIVES.POINTS_PER_LEVEL;
   }
 
   // Cap XP if at max level
@@ -96,6 +100,7 @@ export function checkLevelUp(character: {
     newLevel: level,
     remainingXp: currentXp,
     statPointsAwarded: totalStatPoints,
+    passivePointsAwarded: totalPassivePoints,
   };
 }
 

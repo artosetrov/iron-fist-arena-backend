@@ -1,10 +1,11 @@
 // =============================================================================
-// loot.ts — Item drop system
+// loot.ts — Item drop system (config-driven via item-balance engine)
 // =============================================================================
 
-import { DROP_CHANCES, RARITY_DISTRIBUTION } from './balance';
+import { DROP_CHANCES, RARITY_DISTRIBUTION, INVENTORY } from './balance';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { generateBalancedBaseStats, calculateSellPrice, getDropTuningConfig, getRarityMultipliers } from './item-balance';
 
 // --- Types ---
 
@@ -40,6 +41,9 @@ export interface LootResponseItem {
   upgrade_level: number;
   base_stats: Record<string, number>;
 }
+
+/** Maximum number of items a character can hold in their inventory. */
+export const MAX_INVENTORY_SLOTS = INVENTORY.MAX_SLOTS;
 
 // All possible equipment slot types
 const ITEM_TYPES: ItemType[] = [
@@ -101,70 +105,21 @@ export function generateItemName(itemType: ItemType, rarity: Rarity): string {
 }
 
 /**
- * Generate base stats for a dropped item based on its level and rarity.
- */
-function generateBaseStats(
-  itemType: ItemType,
-  rarity: Rarity,
-  itemLevel: number,
-): Record<string, number> {
-  const rarityMult: Record<Rarity, number> = {
-    common: 1.0,
-    uncommon: 1.3,
-    rare: 1.6,
-    epic: 2.0,
-    legendary: 2.5,
-  };
-  const mult = rarityMult[rarity];
-  const base = Math.max(1, Math.round(itemLevel * 2 * mult));
-
-  // Different item types emphasize different stats
-  switch (itemType) {
-    case 'weapon':
-      return { str: base, agi: Math.round(base * 0.3) };
-    case 'helmet':
-      return { vit: Math.round(base * 0.8), wis: Math.round(base * 0.4) };
-    case 'chest':
-      return { vit: base, end: Math.round(base * 0.5) };
-    case 'gloves':
-      return { str: Math.round(base * 0.6), agi: Math.round(base * 0.6) };
-    case 'legs':
-      return { vit: Math.round(base * 0.7), end: Math.round(base * 0.5) };
-    case 'boots':
-      return { agi: base, end: Math.round(base * 0.3) };
-    case 'accessory':
-      return { luk: base, cha: Math.round(base * 0.5) };
-    case 'amulet':
-      return { int: base, wis: Math.round(base * 0.5) };
-    case 'belt':
-      return { end: base, vit: Math.round(base * 0.3) };
-    case 'relic':
-      return { int: Math.round(base * 0.7), wis: Math.round(base * 0.7) };
-    case 'necklace':
-      return { cha: base, luk: Math.round(base * 0.4) };
-    case 'ring':
-      return { luk: Math.round(base * 0.5), str: Math.round(base * 0.5) };
-    default:
-      return { str: base };
-  }
-}
-
-/**
  * Roll a rarity taking player level into account.
- * Higher levels slightly increase the chance of rare+ drops.
- * The level bonus shifts weight from common towards rarer tiers.
+ * Now reads level rarity bonus config from the database.
  */
-function rollRarity(playerLevel: number): Rarity {
-  // Level bonus: each level above 1 gives +0.2% shift towards rare+
-  const levelBonus = Math.max(0, (playerLevel - 1) * 0.2);
+async function rollRarity(playerLevel: number): Promise<Rarity> {
+  const dropTuning = await getDropTuningConfig();
+  const levelBonus = Math.max(0, (playerLevel - 1) * dropTuning.levelRarityBonusPerLevel);
+  const distribution = dropTuning.levelRarityBonusDistribution;
 
   // Build adjusted weights
   const weights: Record<Rarity, number> = {
     common: Math.max(RARITY_DISTRIBUTION.common - levelBonus, 10),
     uncommon: RARITY_DISTRIBUTION.uncommon,
-    rare: RARITY_DISTRIBUTION.rare + levelBonus * 0.4,
-    epic: RARITY_DISTRIBUTION.epic + levelBonus * 0.35,
-    legendary: RARITY_DISTRIBUTION.legendary + levelBonus * 0.25,
+    rare: RARITY_DISTRIBUTION.rare + levelBonus * (distribution.rare ?? 0.4),
+    epic: RARITY_DISTRIBUTION.epic + levelBonus * (distribution.epic ?? 0.35),
+    legendary: RARITY_DISTRIBUTION.legendary + levelBonus * (distribution.legendary ?? 0.25),
   };
 
   // Normalise to sum
@@ -192,30 +147,28 @@ function rollItemType(): ItemType {
 
 /**
  * Attempt to generate a dropped item after an activity.
- *
- * @param playerLevel  The player's current level
- * @param difficulty   Source difficulty key (e.g. 'pvp', 'training', 'dungeon_easy', 'boss')
- * @param luk          The character's LUK stat (+0.3% drop chance per point, capped at 95%)
- * @returns            A DroppedItem if the roll succeeds, or null
+ * Now reads LUK bonus and drop cap from config.
  */
-export function rollDropChance(
+export async function rollDropChance(
   playerLevel: number,
   difficulty: string,
   luk: number = 0,
-): DroppedItem | null {
+): Promise<DroppedItem | null> {
+  const dropTuning = await getDropTuningConfig();
   const baseChance = DROP_CHANCES[difficulty] ?? 0;
-  const lukBonus = luk * 0.003; // +0.3% per LUK point
-  const chance = Math.min(baseChance + lukBonus, 0.95); // cap at 95%
+  const lukBonus = luk * dropTuning.lukBonusPerPoint;
+  const chance = Math.min(baseChance + lukBonus, dropTuning.dropChanceCap);
 
   if (Math.random() > chance) {
     return null; // No drop
   }
 
-  const rarity = rollRarity(playerLevel);
+  const rarity = await rollRarity(playerLevel);
   const itemType = rollItemType();
 
-  // Item level scales with player level (+-2 range)
-  const levelVariance = Math.floor(Math.random() * 5) - 2; // -2 to +2
+  // Item level scales with player level (configurable variance)
+  const variance = dropTuning.levelVariance;
+  const levelVariance = Math.floor(Math.random() * (variance * 2 + 1)) - variance;
   const itemLevel = Math.max(1, playerLevel + levelVariance);
 
   return {
@@ -226,29 +179,26 @@ export function rollDropChance(
 }
 
 /**
- * Persist a dropped item to the database: creates an Item record and an
- * EquipmentInventory entry for the character.
- *
- * @returns The loot response object ready to send to the client.
+ * Persist a dropped item to the database.
+ * Now uses the balance engine for stat generation and sell price.
  */
 export async function persistLoot(
   prisma: PrismaClient,
   characterId: string,
   drop: DroppedItem,
-): Promise<LootResponseItem> {
-  const name = generateItemName(drop.itemType, drop.rarity);
-  const baseStats = generateBaseStats(drop.itemType, drop.rarity, drop.itemLevel);
-  const catalogId = `loot_${randomUUID()}`;
+): Promise<LootResponseItem | null> {
+  // Check inventory capacity before creating the item
+  const inventoryCount = await prisma.equipmentInventory.count({
+    where: { characterId },
+  });
+  if (inventoryCount >= MAX_INVENTORY_SLOTS) {
+    return null; // Inventory full — drop is lost
+  }
 
-  // Rarity-based sell price
-  const sellPriceByRarity: Record<Rarity, number> = {
-    common: 10,
-    uncommon: 25,
-    rare: 60,
-    epic: 150,
-    legendary: 400,
-  };
-  const sellPrice = sellPriceByRarity[drop.rarity] * drop.itemLevel;
+  const name = generateItemName(drop.itemType, drop.rarity);
+  const baseStats = await generateBalancedBaseStats(drop.itemType, drop.rarity, drop.itemLevel);
+  const catalogId = `loot_${randomUUID()}`;
+  const sellPrice = await calculateSellPrice(drop.rarity, drop.itemLevel);
 
   // Create Item + EquipmentInventory in an interactive transaction
   const result = await prisma.$transaction(async (tx) => {
@@ -293,9 +243,6 @@ export async function persistLoot(
 
 /**
  * Roll for loot and persist if successful. Convenience wrapper.
- *
- * @param luk  The character's LUK stat (passed to rollDropChance for bonus drop chance)
- * @returns LootResponseItem if drop succeeded, or null
  */
 export async function rollAndPersistLoot(
   prisma: PrismaClient,
@@ -304,7 +251,7 @@ export async function rollAndPersistLoot(
   difficulty: string,
   luk: number = 0,
 ): Promise<LootResponseItem | null> {
-  const drop = rollDropChance(playerLevel, difficulty, luk);
+  const drop = await rollDropChance(playerLevel, difficulty, luk);
   if (!drop) return null;
   return persistLoot(prisma, characterId, drop);
 }

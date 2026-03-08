@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
+import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
@@ -39,44 +40,6 @@ function enemyToCharacterStats(enemy: Enemy): CharacterStats {
     maxHp: enemy.maxHp,
     armor: enemy.armor,
     magicResist: enemy.magicResist,
-  }
-}
-
-function characterToStats(c: {
-  id: string
-  characterName: string
-  class: string
-  level: number
-  str: number
-  agi: number
-  vit: number
-  end: number
-  int: number
-  wis: number
-  luk: number
-  cha: number
-  maxHp: number
-  armor: number
-  magicResist: number
-  combatStance: unknown
-}): CharacterStats {
-  return {
-    id: c.id,
-    name: c.characterName,
-    class: c.class as CharacterStats['class'],
-    level: c.level,
-    str: c.str,
-    agi: c.agi,
-    vit: c.vit,
-    end: c.end,
-    int: c.int,
-    wis: c.wis,
-    luk: c.luk,
-    cha: c.cha,
-    maxHp: c.maxHp,
-    armor: c.armor,
-    magicResist: c.magicResist,
-    combatStance: c.combatStance as Record<string, unknown> | null,
   }
 }
 
@@ -123,7 +86,8 @@ export async function POST(
       totalXpEarned: number
     }
 
-    const playerStats = characterToStats(character)
+    // Load combat-ready character with skills + passives
+    const playerStats = await loadCombatCharacter(character_id)
     const combatResults: Array<{ enemyName: string; won: boolean; turns: number }> = []
 
     let playerWon = true

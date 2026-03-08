@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
+import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { chaGoldBonus } from '@/lib/game/balance'
@@ -15,45 +16,6 @@ import {
   TOTAL_RUSH_ROOMS,
   type RushState,
 } from '@/lib/game/dungeon-rush'
-
-/** Convert a Prisma Character record into CharacterStats for combat. */
-function characterToStats(c: {
-  id: string
-  characterName: string
-  class: string
-  level: number
-  str: number
-  agi: number
-  vit: number
-  end: number
-  int: number
-  wis: number
-  luk: number
-  cha: number
-  maxHp: number
-  armor: number
-  magicResist: number
-  combatStance: unknown
-}): CharacterStats {
-  return {
-    id: c.id,
-    name: c.characterName,
-    class: c.class as CharacterStats['class'],
-    level: c.level,
-    str: c.str,
-    agi: c.agi,
-    vit: c.vit,
-    end: c.end,
-    int: c.int,
-    wis: c.wis,
-    luk: c.luk,
-    cha: c.cha,
-    maxHp: c.maxHp,
-    armor: c.armor,
-    magicResist: c.magicResist,
-    combatStance: c.combatStance as Record<string, unknown> | null,
-  }
-}
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -133,8 +95,8 @@ export async function POST(req: NextRequest) {
     // Generate the enemy for this room
     const enemy = generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
 
-    // Prepare player stats with buffs applied
-    let playerStats = characterToStats(character)
+    // Load combat-ready character with skills + passives, then apply rush buffs
+    let playerStats = await loadCombatCharacter(character_id)
     playerStats = applyRushBuffs(playerStats, state.buffs)
 
     // Apply HP persistence: use current HP% instead of full HP
@@ -169,7 +131,7 @@ export async function POST(req: NextRequest) {
     // Build combat_log for iOS client animation
     const combat_log = combatResult.turns.map((t) => ({
       attacker_id: t.attackerId,
-      action: 'attack',
+      action: t.isDodge ? 'dodge' : (t.skillUsed ? 'skill' : 'attack'),
       damage: t.damage,
       is_crit: t.isCrit,
       is_miss: false,
@@ -178,7 +140,10 @@ export async function POST(req: NextRequest) {
       target_zone: null,
       defend_zone: null,
       status_applied: null,
-      heal: null,
+      heal: t.healAmount ?? null,
+      skill_used: t.skillUsed ?? null,
+      skill_key: t.skillKey ?? null,
+      damage_type: t.damageType ?? null,
     }))
 
     // Build CombatData payload for the client animation

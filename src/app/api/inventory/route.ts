@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getUpgradeStatBonus } from '@/lib/game/item-balance'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -40,7 +41,18 @@ export async function GET(req: NextRequest) {
       orderBy: { consumableType: 'asc' },
     })
 
-    return NextResponse.json({ equipment, consumables })
+    // Calculate effective stats for each equipment item (baseStats + upgrade bonus)
+    const upgradeStatBonus = await getUpgradeStatBonus()
+    const equipmentWithEffectiveStats = equipment.map((eq) => {
+      const baseStats = (eq.item.baseStats as Record<string, number>) ?? {}
+      const effectiveStats: Record<string, number> = {}
+      for (const [stat, baseValue] of Object.entries(baseStats)) {
+        effectiveStats[stat] = baseValue + eq.upgradeLevel * upgradeStatBonus
+      }
+      return { ...eq, effectiveStats }
+    })
+
+    return NextResponse.json({ equipment: equipmentWithEffectiveStats, consumables })
   } catch (error) {
     console.error('get inventory error:', error)
     return NextResponse.json(

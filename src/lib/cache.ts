@@ -1,3 +1,5 @@
+const MAX_CACHE_SIZE = 10_000
+
 const store = new Map<string, { data: unknown; expiresAt: number }>()
 
 export function cacheGet<T>(key: string): T | null {
@@ -10,6 +12,11 @@ export function cacheGet<T>(key: string): T | null {
 }
 
 export function cacheSet(key: string, data: unknown, ttlMs: number): void {
+  // Evict oldest entry (first key in insertion order) if at capacity
+  if (store.size >= MAX_CACHE_SIZE && !store.has(key)) {
+    const oldest = store.keys().next().value
+    if (oldest !== undefined) store.delete(oldest)
+  }
   store.set(key, { data, expiresAt: Date.now() + ttlMs })
 }
 

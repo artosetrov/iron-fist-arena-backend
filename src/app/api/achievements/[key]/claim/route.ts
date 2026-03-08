@@ -28,60 +28,55 @@ export async function POST(
       return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
     }
 
-    const character = await prisma.character.findUnique({ where: { id: character_id } })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const def = ACHIEVEMENT_CATALOG[achievement_key]
     if (!def) {
       return NextResponse.json({ error: 'Invalid achievement key' }, { status: 400 })
     }
 
-    const achievement = await prisma.achievement.findUnique({
-      where: {
-        characterId_achievementKey: { characterId: character_id, achievementKey: achievement_key },
-      },
-    })
+    // Use interactive transaction with row-level lock to prevent double-claim
+    await prisma.$transaction(async (tx) => {
+      // Verify character ownership
+      const character = await tx.character.findUnique({ where: { id: character_id } })
 
-    if (!achievement) {
-      return NextResponse.json({ error: 'Achievement not found' }, { status: 404 })
-    }
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
-    const isCompleted = achievement.completed || achievement.progress >= def.target
-    if (!isCompleted) {
-      return NextResponse.json({ error: 'Achievement not yet completed' }, { status: 400 })
-    }
+      // Lock the achievement row for update to prevent double-claim
+      const [achievementRow] = await tx.$queryRawUnsafe<Array<{
+        id: string; completed: boolean; progress: number; reward_claimed: boolean;
+      }>>(
+        `SELECT id, completed, progress, reward_claimed FROM achievements WHERE character_id = $1 AND achievement_key = $2 FOR UPDATE`,
+        character_id,
+        achievement_key
+      )
 
-    if (achievement.rewardClaimed) {
-      return NextResponse.json({ error: 'Reward already claimed' }, { status: 400 })
-    }
+      if (!achievementRow) throw new Error('ACHIEVEMENT_NOT_FOUND')
 
-    if (def.rewardType === 'gold') {
-      await prisma.character.update({
-        where: { id: character_id },
-        data: { gold: { increment: def.rewardAmount } },
+      const isCompleted = achievementRow.completed || achievementRow.progress >= def.target
+      if (!isCompleted) throw new Error('NOT_COMPLETED')
+      if (achievementRow.reward_claimed) throw new Error('ALREADY_CLAIMED')
+
+      if (def.rewardType === 'gold') {
+        await tx.character.update({
+          where: { id: character_id },
+          data: { gold: { increment: def.rewardAmount } },
+        })
+      } else if (def.rewardType === 'gems') {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { gems: { increment: def.rewardAmount } },
+        })
+      } else if (def.rewardType === 'xp') {
+        await tx.character.update({
+          where: { id: character_id },
+          data: { currentXp: { increment: def.rewardAmount } },
+        })
+      }
+
+      await tx.achievement.update({
+        where: { id: achievementRow.id },
+        data: { completed: true, rewardClaimed: true },
       })
-    } else if (def.rewardType === 'gems') {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { gems: { increment: def.rewardAmount } },
-      })
-    } else if (def.rewardType === 'xp') {
-      await prisma.character.update({
-        where: { id: character_id },
-        data: { currentXp: { increment: def.rewardAmount } },
-      })
-    }
-
-    await prisma.achievement.update({
-      where: { id: achievement.id },
-      data: { completed: true, rewardClaimed: true },
     })
 
     // Award Battle Pass XP for achievement claim
@@ -104,6 +99,13 @@ export async function POST(
       stat_points_awarded: levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'ACHIEVEMENT_NOT_FOUND') return NextResponse.json({ error: 'Achievement not found' }, { status: 404 })
+      if (error.message === 'NOT_COMPLETED') return NextResponse.json({ error: 'Achievement not yet completed' }, { status: 400 })
+      if (error.message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Reward already claimed' }, { status: 400 })
+    }
     console.error('claim achievement [key] error:', error)
     return NextResponse.json({ error: 'Failed to claim achievement reward' }, { status: 500 })
   }

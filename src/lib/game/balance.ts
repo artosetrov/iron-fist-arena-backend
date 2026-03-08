@@ -145,6 +145,40 @@ export function chaGoldBonus(baseGold: number, cha: number): number {
   return Math.floor(baseGold * (1 + cha * 0.005));
 }
 
+// --- Active Skills ---
+export const SKILLS = {
+  MAX_EQUIPPED_SLOTS: 4,
+  UPGRADE_GOLD_BASE: 500,
+  UPGRADE_GOLD_PER_RANK: 500,
+  LEARN_GOLD_COST: 200,
+} as const;
+
+// --- Passive Tree ---
+export const PASSIVES = {
+  POINTS_PER_LEVEL: 1,
+  MAX_PASSIVE_POINTS: 50,
+  RESPEC_GEM_COST: 50,
+} as const;
+
+// --- Gem costs ---
+export const GEM_COSTS = {
+  STAMINA_REFILL: 30,
+  EXTRA_PVP_COMBAT: 50,
+  BATTLE_PASS_PREMIUM: 500,
+  GOLD_MINE_BUY_SLOT: 50,
+  GOLD_MINE_BOOST: 10,
+} as const;
+
+// --- Inventory ---
+export const INVENTORY = {
+  MAX_SLOTS: 100,
+} as const;
+
+// --- Extra PvP combat ---
+export const EXTRA_PVP = {
+  STAMINA_GRANTED: 5,
+} as const;
+
 // --- Rarity distribution (must sum to 100) ---
 export const RARITY_DISTRIBUTION = {
   common: 50,

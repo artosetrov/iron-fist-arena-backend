@@ -19,81 +19,84 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-    })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Find the active session for this slot
-    const session = await prisma.goldMineSession.findFirst({
-      where: {
-        characterId: character_id,
-        slotIndex: slot_index,
-        collected: false,
-      },
-    })
-
-    if (!session) {
-      return NextResponse.json({ error: 'No active session for this slot' }, { status: 404 })
-    }
-
-    const now = new Date()
-    if (now < session.endsAt) {
-      return NextResponse.json(
-        { error: 'Mining session not yet complete', endsAt: session.endsAt },
-        { status: 400 }
-      )
-    }
-
-    // Collect reward: mark collected, add gold to character, gems to user
-    const txOps = [
-      prisma.goldMineSession.update({
-        where: { id: session.id },
-        data: { collected: true },
-      }),
-      prisma.character.update({
+    // Use interactive transaction with row-level lock to prevent double-collect
+    const result = await prisma.$transaction(async (tx) => {
+      // Verify character ownership
+      const character = await tx.character.findUnique({
         where: { id: character_id },
-        data: { gold: { increment: session.reward } },
-      }),
-    ]
+      })
 
-    if (session.gemReward > 0) {
-      txOps.push(
-        prisma.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: session.gemReward } },
-        }) as any
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
+
+      // Lock the session row for update to prevent double-collect
+      const [sessionRow] = await tx.$queryRawUnsafe<Array<{
+        id: string; collected: boolean; reward: number; gem_reward: number; ends_at: Date;
+      }>>(
+        `SELECT id, collected, reward, gem_reward, ends_at FROM gold_mine_sessions WHERE character_id = $1 AND slot_index = $2 AND collected = false FOR UPDATE`,
+        character_id,
+        slot_index
       )
-    }
 
-    const results = await prisma.$transaction(txOps)
-    const updatedCharacter = results[1] as any
+      if (!sessionRow) throw new Error('NO_SESSION')
 
-    // Get current user gems
-    const updatedUser = session.gemReward > 0
-      ? results[2] as any
-      : await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
+      const now = new Date()
+      if (now < sessionRow.ends_at) throw new Error('NOT_READY')
 
-    // Update daily quest progress
+      // Mark collected
+      await tx.goldMineSession.update({
+        where: { id: sessionRow.id },
+        data: { collected: true },
+      })
+
+      // Add gold to character
+      const updatedCharacter = await tx.character.update({
+        where: { id: character_id },
+        data: { gold: { increment: sessionRow.reward } },
+      })
+
+      // Add gems to user if any
+      let updatedUser = null
+      if (sessionRow.gem_reward > 0) {
+        updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: { gems: { increment: sessionRow.gem_reward } },
+        })
+      }
+
+      return {
+        updatedCharacter,
+        updatedUser,
+        reward: sessionRow.reward,
+        gemReward: sessionRow.gem_reward,
+        goldMineSlots: character.goldMineSlots,
+      }
+    })
+
+    // Get current user gems if not updated in transaction
+    const userGems = result.updatedUser
+      ? result.updatedUser.gems
+      : (await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } }))?.gems ?? 0
+
+    // Update daily quest progress (outside transaction, non-critical)
     await updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect')
 
-    const slots = await buildSlotsArray(prisma, character_id, character.goldMineSlots)
+    const slots = await buildSlotsArray(prisma, character_id, result.goldMineSlots)
 
     return NextResponse.json({
       slots,
-      gold_collected: session.reward,
-      gems_collected: session.gemReward,
-      gold: updatedCharacter.gold,
-      gems: updatedUser?.gems ?? 0,
+      gold_collected: result.reward,
+      gems_collected: result.gemReward,
+      gold: result.updatedCharacter.gold,
+      gems: userGems,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'NO_SESSION') return NextResponse.json({ error: 'No active session for this slot' }, { status: 404 })
+      if (error.message === 'NOT_READY') return NextResponse.json({ error: 'Mining session not yet complete' }, { status: 400 })
+    }
     console.error('gold-mine collect error:', error)
     return NextResponse.json(
       { error: 'Failed to collect gold mine reward' },

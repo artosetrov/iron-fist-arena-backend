@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client'
+import { GEM_COSTS } from './balance'
 
 export const MINE_DURATION_HOURS = 4
 export const MINE_REWARD_MIN = 200
 export const MINE_REWARD_MAX = 500
-export const BOOST_COST_GEMS = 10
-export const MAX_GOLD_MINE_SLOTS = 6
-export const SLOT_COST_GEMS = 50
+export const BOOST_COST_GEMS = GEM_COSTS.GOLD_MINE_BOOST
+export const MAX_GOLD_MINE_SLOTS = 3
+export const SLOT_COST_GEMS = GEM_COSTS.GOLD_MINE_BUY_SLOT
 
 // Gem (crystal) random drop from mining
 export const GEM_DROP_CHANCE = 0.10 // 10% chance per collect

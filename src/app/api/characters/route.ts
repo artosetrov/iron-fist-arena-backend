@@ -105,6 +105,17 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Enforce maximum character limit per user
+    const existingCount = await prisma.character.count({
+      where: { userId: user.id },
+    })
+    if (existingCount >= 5) {
+      return NextResponse.json(
+        { error: 'Maximum characters reached (5)' },
+        { status: 400 }
+      )
+    }
+
     const bonuses = ORIGIN_BONUSES[origin as CharacterOrigin]
     const baseStatValue = 10
 

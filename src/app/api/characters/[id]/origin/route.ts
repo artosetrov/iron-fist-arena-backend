@@ -44,61 +44,60 @@ export async function PATCH(
       )
     }
 
-    const character = await prisma.character.findUnique({ where: { id } })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    if (character.origin === origin) {
-      return NextResponse.json(
-        { error: 'Character already has this origin' },
-        { status: 400 }
+    // Use interactive transaction with row-level lock to prevent TOCTOU
+    const updated = await prisma.$transaction(async (tx) => {
+      // Lock the character row for update
+      const [charRow] = await tx.$queryRawUnsafe<Array<{
+        id: string; user_id: string; gold: number; origin: string; current_hp: number;
+        str: number; agi: number; vit: number; end: number; int: number; wis: number; luk: number; cha: number;
+      }>>(
+        `SELECT id, user_id, gold, origin, current_hp, str, agi, vit, "end", "int", wis, luk, cha FROM characters WHERE id = $1 FOR UPDATE`,
+        id
       )
-    }
 
-    if (character.gold < ORIGIN_CHANGE_COST) {
-      return NextResponse.json(
-        { error: `Not enough gold. Required: ${ORIGIN_CHANGE_COST}, Current: ${character.gold}` },
-        { status: 400 }
-      )
-    }
+      if (!charRow) throw new Error('NOT_FOUND')
+      if (charRow.user_id !== user.id) throw new Error('FORBIDDEN')
+      if (charRow.origin === origin) throw new Error('SAME_ORIGIN')
+      if (charRow.gold < ORIGIN_CHANGE_COST) throw new Error('NOT_ENOUGH_GOLD')
 
-    // Remove old origin bonuses and apply new ones
-    const oldBonuses = ORIGIN_BONUSES[character.origin]
-    const newBonuses = ORIGIN_BONUSES[origin as CharacterOrigin]
+      // Remove old origin bonuses and apply new ones
+      const oldBonuses = ORIGIN_BONUSES[charRow.origin as CharacterOrigin]
+      const newBonuses = ORIGIN_BONUSES[origin as CharacterOrigin]
 
-    const newStats: Record<string, number> = {}
-    for (const key of STAT_KEYS) {
-      newStats[key] = character[key] - (oldBonuses[key] ?? 0) + (newBonuses[key] ?? 0)
-    }
+      const newStats: Record<string, number> = {}
+      for (const key of STAT_KEYS) {
+        newStats[key] = charRow[key] - (oldBonuses[key] ?? 0) + (newBonuses[key] ?? 0)
+      }
 
-    const maxHp = calculateMaxHp(newStats.vit, newStats.end)
+      const maxHp = calculateMaxHp(newStats.vit, newStats.end)
 
-    const updated = await prisma.character.update({
-      where: { id },
-      data: {
-        origin: origin as CharacterOrigin,
-        str: newStats.str,
-        agi: newStats.agi,
-        vit: newStats.vit,
-        end: newStats.end,
-        int: newStats.int,
-        wis: newStats.wis,
-        luk: newStats.luk,
-        cha: newStats.cha,
-        maxHp,
-        currentHp: Math.min(character.currentHp, maxHp),
-        gold: character.gold - ORIGIN_CHANGE_COST,
-      },
+      return tx.character.update({
+        where: { id },
+        data: {
+          origin: origin as CharacterOrigin,
+          str: newStats.str,
+          agi: newStats.agi,
+          vit: newStats.vit,
+          end: newStats.end,
+          int: newStats.int,
+          wis: newStats.wis,
+          luk: newStats.luk,
+          cha: newStats.cha,
+          maxHp,
+          currentHp: Math.min(charRow.current_hp, maxHp),
+          gold: { decrement: ORIGIN_CHANGE_COST },
+        },
+      })
     })
 
     return NextResponse.json({ character: updated })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'SAME_ORIGIN') return NextResponse.json({ error: 'Character already has this origin' }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+    }
     console.error('origin change error:', error)
     return NextResponse.json(
       { error: 'Failed to change origin' },

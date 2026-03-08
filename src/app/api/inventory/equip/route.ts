@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     // Verify character ownership
     const character = await prisma.character.findUnique({
       where: { id: character_id },
-      select: { userId: true },
+      select: { userId: true, level: true },
     })
 
     if (!character) {
@@ -61,6 +61,22 @@ export async function POST(req: NextRequest) {
 
     if (inventoryItem.characterId !== character_id) {
       return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
+    }
+
+    // Bug 4: Prevent equipping broken items
+    if (inventoryItem.durability === 0) {
+      return NextResponse.json(
+        { error: 'Cannot equip a broken item. Repair it first.' },
+        { status: 400 }
+      )
+    }
+
+    // Bug 3: Check character level meets item level requirement
+    if (character.level < inventoryItem.item.itemLevel) {
+      return NextResponse.json(
+        { error: 'Character level too low for this item' },
+        { status: 400 }
+      )
     }
 
     // Determine the slot from the item type

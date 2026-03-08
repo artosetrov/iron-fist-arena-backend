@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
-import { runCombat, CharacterStats } from '@/lib/game/combat'
+import { runCombat } from '@/lib/game/combat'
+import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
@@ -63,10 +64,37 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Load both characters
+    // Load both characters (select only the fields needed for PvP logic)
+    const pvpCharacterSelect = {
+      id: true,
+      userId: true,
+      currentStamina: true,
+      maxStamina: true,
+      lastStaminaUpdate: true,
+      pvpRating: true,
+      pvpCalibrationGames: true,
+      freePvpToday: true,
+      freePvpDate: true,
+      firstWinToday: true,
+      firstWinDate: true,
+      highestPvpRank: true,
+      cha: true,
+      level: true,
+      luk: true,
+      characterName: true,
+      class: true,
+      origin: true,
+      gold: true,
+      maxHp: true,
+      pvpWins: true,
+      pvpLosses: true,
+      pvpWinStreak: true,
+      pvpLossStreak: true,
+    } as const
+
     const [attacker, defender] = await Promise.all([
-      prisma.character.findUnique({ where: { id: character_id } }),
-      prisma.character.findUnique({ where: { id: opponent_id } }),
+      prisma.character.findUnique({ where: { id: character_id }, select: pvpCharacterSelect }),
+      prisma.character.findUnique({ where: { id: opponent_id }, select: pvpCharacterSelect }),
     ])
 
     if (!attacker) {
@@ -99,44 +127,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Build character stats for combat engine
-    const attackerStats: CharacterStats = {
-      id: attacker.id,
-      name: attacker.characterName,
-      class: attacker.class,
-      level: attacker.level,
-      str: attacker.str,
-      agi: attacker.agi,
-      vit: attacker.vit,
-      end: attacker.end,
-      int: attacker.int,
-      wis: attacker.wis,
-      luk: attacker.luk,
-      cha: attacker.cha,
-      maxHp: attacker.maxHp,
-      armor: attacker.armor,
-      magicResist: attacker.magicResist,
-      combatStance: attacker.combatStance as Record<string, unknown> | null,
-    }
-
-    const defenderStats: CharacterStats = {
-      id: defender.id,
-      name: defender.characterName,
-      class: defender.class,
-      level: defender.level,
-      str: defender.str,
-      agi: defender.agi,
-      vit: defender.vit,
-      end: defender.end,
-      int: defender.int,
-      wis: defender.wis,
-      luk: defender.luk,
-      cha: defender.cha,
-      maxHp: defender.maxHp,
-      armor: defender.armor,
-      magicResist: defender.magicResist,
-      combatStance: defender.combatStance as Record<string, unknown> | null,
-    }
+    // Load combat-ready characters with skills + passives
+    const [attackerStats, defenderStats] = await Promise.all([
+      loadCombatCharacter(attacker.id),
+      loadCombatCharacter(defender.id),
+    ])
 
     // Run combat
     const combatResult = runCombat(attackerStats, defenderStats)
@@ -293,14 +288,17 @@ export async function POST(req: NextRequest) {
     // Build combat_log in the format the iOS client expects
     const combat_log = combatResult.turns.map((t) => ({
       attacker_id: t.attackerId,
-      action: t.isDodge ? 'dodge' : 'attack',
+      action: t.isDodge ? 'dodge' : (t.skillUsed ? 'skill' : 'attack'),
       damage: t.damage,
       is_crit: t.isCrit,
       is_miss: false,
       is_dodge: t.isDodge,
       target_zone: null,
       status_applied: null,
-      heal: null,
+      heal: t.healAmount ?? null,
+      skill_used: t.skillUsed ?? null,
+      skill_key: t.skillKey ?? null,
+      damage_type: t.damageType ?? null,
     }))
 
     // Return CombatData format matching iOS CombatData.swift

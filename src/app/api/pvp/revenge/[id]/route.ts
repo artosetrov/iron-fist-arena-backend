@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
-import { runCombat, CharacterStats } from '@/lib/game/combat'
+import { runCombat } from '@/lib/game/combat'
+import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import {
@@ -92,43 +93,20 @@ export async function POST(
     )
     const currentStamina = staminaResult.stamina
 
-    const attackerStats: CharacterStats = {
-      id: attacker.id,
-      name: attacker.characterName,
-      class: attacker.class,
-      level: attacker.level,
-      str: attacker.str,
-      agi: attacker.agi,
-      vit: attacker.vit,
-      end: attacker.end,
-      int: attacker.int,
-      wis: attacker.wis,
-      luk: attacker.luk,
-      cha: attacker.cha,
-      maxHp: attacker.maxHp,
-      armor: attacker.armor,
-      magicResist: attacker.magicResist,
-      combatStance: attacker.combatStance as Record<string, unknown> | null,
+    if (currentStamina < STAMINA.PVP_COST) {
+      return NextResponse.json(
+        { error: 'Not enough stamina', current: currentStamina, required: STAMINA.PVP_COST },
+        { status: 400 }
+      )
     }
 
-    const defenderStats: CharacterStats = {
-      id: defender.id,
-      name: defender.characterName,
-      class: defender.class,
-      level: defender.level,
-      str: defender.str,
-      agi: defender.agi,
-      vit: defender.vit,
-      end: defender.end,
-      int: defender.int,
-      wis: defender.wis,
-      luk: defender.luk,
-      cha: defender.cha,
-      maxHp: defender.maxHp,
-      armor: defender.armor,
-      magicResist: defender.magicResist,
-      combatStance: defender.combatStance as Record<string, unknown> | null,
-    }
+    const newStamina = currentStamina - STAMINA.PVP_COST
+
+    // Load combat-ready characters with skills + passives
+    const [attackerStats, defenderStats] = await Promise.all([
+      loadCombatCharacter(attacker.id),
+      loadCombatCharacter(defender.id),
+    ])
 
     const combatResult = runCombat(attackerStats, defenderStats)
     const attackerWon = combatResult.winnerId === attacker.id
@@ -166,7 +144,7 @@ export async function POST(
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
 
     const attackerUpdate: Record<string, unknown> = {
-      currentStamina,
+      currentStamina: newStamina,
       lastStaminaUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
@@ -290,7 +268,7 @@ export async function POST(
       attackerWon,
       isRevenge: true,
       stamina: {
-        current: currentStamina,
+        current: newStamina,
         max: updatedAttacker.maxStamina,
       },
       durability_changes: durabilityResult.degraded,

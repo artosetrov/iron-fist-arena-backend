@@ -74,6 +74,9 @@ enum ConsumableType {
   stamina_potion_small
   stamina_potion_medium
   stamina_potion_large
+  health_potion_small
+  health_potion_medium
+  health_potion_large
 }
 
 enum QuestType {
@@ -257,6 +260,8 @@ model Character {
 
   @@index([userId])
   @@index([pvpRating])
+  @@index([level])
+  @@index([gold])
   @@map("characters")
 }
 
@@ -284,6 +289,8 @@ model Item {
   equipment       EquipmentInventory[]
   dungeonDrops    DungeonDrop[]
 
+  @@index([itemType, itemLevel])
+  @@index([rarity])
   @@map("items")
 }
 
@@ -304,6 +311,7 @@ model EquipmentInventory {
 
   @@index([characterId])
   @@index([characterId, isEquipped])
+  @@index([itemId])
   @@map("equipment_inventory")
 }
 
@@ -362,6 +370,7 @@ model DungeonProgress {
   completed   Boolean   @default(false)
 
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  dungeon     Dungeon   @relation(fields: [dungeonId], references: [id], onDelete: Cascade)
 
   @@unique([characterId, dungeonId])
   @@map("dungeon_progress")
@@ -371,15 +380,16 @@ model DungeonRun {
   id           String    @id @default(uuid())
   characterId  String    @map("character_id")
   dungeonId    String    @default("training_camp") @map("dungeon_id")
-  difficulty   String
+  difficulty   DungeonDifficulty @default(normal)
   currentFloor Int       @default(1) @map("current_floor")
   state        Json?
   seed         Int?
   createdAt    DateTime  @default(now()) @map("created_at")
 
   character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  dungeon      Dungeon?  @relation(fields: [dungeonId], references: [id])
 
-  @@index([characterId])
+  @@index([characterId, difficulty])
   @@map("dungeon_runs")
 }
 
@@ -576,7 +586,7 @@ model RevengeQueue {
 
   victim     Character @relation("victim", fields: [victimId], references: [id], onDelete: Cascade)
   attacker   Character @relation("attacker", fields: [attackerId], references: [id], onDelete: Cascade)
-  match      PvpMatch  @relation(fields: [matchId], references: [id])
+  match      PvpMatch  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@index([victimId, isUsed, expiresAt])
   @@index([attackerId])
@@ -820,6 +830,8 @@ model Dungeon {
   bosses          DungeonBoss[]
   waves           DungeonWave[]
   drops           DungeonDrop[]
+  dungeonProgress DungeonProgress[]
+  dungeonRuns     DungeonRun[]
 
   @@map("dungeons")
 }

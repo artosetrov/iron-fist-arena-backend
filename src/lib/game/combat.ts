@@ -1,8 +1,19 @@
 // =============================================================================
 // combat.ts — Turn-based combat engine
+// baseDamage now reads class scaling from GameConfig via item-balance engine.
 // =============================================================================
 
 import { COMBAT } from './balance';
+import { getClassDamageFormula } from './item-balance';
+import {
+  selectSkill,
+  calculateSkillDamage,
+  putOnCooldown,
+  tickCooldowns,
+  type SkillDefinition,
+  type SkillCooldownState,
+} from './skills';
+import { emptyPassiveBonuses, type PassiveBonuses } from './passives';
 
 // --- Types ---
 
@@ -25,6 +36,8 @@ export interface CharacterStats {
   armor: number;
   magicResist: number;
   combatStance?: Record<string, unknown> | null;
+  equippedSkills?: SkillDefinition[];
+  passiveBonuses?: PassiveBonuses;
 }
 
 export interface Turn {
@@ -34,6 +47,10 @@ export interface Turn {
   isCrit: boolean;
   isDodge: boolean;
   defenderHpAfter: number;
+  skillUsed?: string;
+  skillKey?: string;
+  damageType?: 'physical' | 'magical' | 'true_damage';
+  healAmount?: number;
 }
 
 export interface CombatResult {
@@ -45,16 +62,11 @@ export interface CombatResult {
 
 // --- Stance definitions ---
 
-/**
- * Combat stances modify damage dealt, damage taken, crit, and dodge.
- * Format: { offense: number, defense: number, crit: number, dodge: number }
- * Values are additive percentages (e.g. offense: 10 means +10% damage).
- */
 interface StanceModifiers {
-  offense: number;  // % bonus to damage dealt
-  defense: number;  // % reduction to damage taken
-  crit: number;     // flat addition to crit chance
-  dodge: number;    // flat addition to dodge chance
+  offense: number;
+  defense: number;
+  crit: number;
+  dodge: number;
 }
 
 const DEFAULT_STANCE: StanceModifiers = { offense: 0, defense: 0, crit: 0, dodge: 0 };
@@ -62,8 +74,8 @@ const DEFAULT_STANCE: StanceModifiers = { offense: 0, defense: 0, crit: 0, dodge
 function parseStance(combatStance: Record<string, unknown> | null | undefined): StanceModifiers {
   if (!combatStance) return DEFAULT_STANCE;
   return {
-    offense: typeof combatStance.offense === 'number' ? combatStance.offense : 0,
-    defense: typeof combatStance.defense === 'number' ? combatStance.defense : 0,
+    offense: Math.min(100, Math.max(0, typeof combatStance.offense === 'number' ? combatStance.offense : 0)),
+    defense: Math.min(100, Math.max(0, typeof combatStance.defense === 'number' ? combatStance.defense : 0)),
     crit: typeof combatStance.crit === 'number' ? combatStance.crit : 0,
     dodge: typeof combatStance.dodge === 'number' ? combatStance.dodge : 0,
   };
@@ -71,14 +83,32 @@ function parseStance(combatStance: Record<string, unknown> | null | undefined): 
 
 // --- Internal helpers ---
 
+// Cached class damage config (loaded once per combat call)
+let _cachedClassDamage: Record<string, { stat: string; multiplier: number; levelBonus: number }> | null = null;
+
+/**
+ * Pre-load class damage config so we don't hit DB per turn.
+ * Called once at the start of runCombat.
+ */
+async function loadClassDamageConfig(): Promise<void> {
+  const classes = ['warrior', 'tank', 'rogue', 'mage'];
+  _cachedClassDamage = {};
+  for (const cls of classes) {
+    _cachedClassDamage[cls] = await getClassDamageFormula(cls);
+  }
+}
+
 /**
  * Calculate base damage for a character based on their class.
- * - warrior:  str * 1.5 + level * 2
- * - tank:     str * 1.2 + level * 2  (lower damage, compensated by 15% damage reduction)
- * - rogue:    agi * 1.5 + level * 2
- * - mage:     int * 1.5 + level * 2
+ * Reads scaling from cached config.
  */
 function baseDamage(c: CharacterStats): number {
+  const config = _cachedClassDamage?.[c.class];
+  if (config) {
+    const statValue = (c as unknown as Record<string, number>)[config.stat] ?? c.str;
+    return statValue * config.multiplier + c.level * config.levelBonus;
+  }
+  // Fallback if config not loaded
   switch (c.class) {
     case 'warrior':
       return c.str * 1.5 + c.level * 2;
@@ -93,26 +123,21 @@ function baseDamage(c: CharacterStats): number {
   }
 }
 
-/**
- * Whether this class deals magic damage (uses magicResist) or physical (uses armor).
- */
 function isMagicDamage(cls: CharacterClassType): boolean {
   return cls === 'mage';
 }
 
-/**
- * Apply damage reduction.
- * physical: damage * (100 / (100 + armor))
- * magical:  damage * (100 / (100 + magicResist))
- */
-function reduceDamage(raw: number, defender: CharacterStats, attackerClass: CharacterClassType): number {
-  const resist = isMagicDamage(attackerClass) ? defender.magicResist : defender.armor;
-  return raw * (100 / (100 + resist));
+function reduceDamageByType(
+  raw: number,
+  defender: CharacterStats,
+  damageType: 'physical' | 'magical' | 'true_damage',
+): number {
+  if (damageType === 'true_damage') return raw;
+  const resist = damageType === 'magical' ? defender.magicResist : defender.armor;
+  const effectiveResist = Math.max(0, resist);
+  return raw * (100 / (100 + effectiveResist));
 }
 
-/**
- * Tank class damage reduction: takes 15% less damage from all sources.
- */
 function applyClassReduction(damage: number, defenderClass: CharacterClassType): number {
   if (defenderClass === 'tank') {
     return damage * COMBAT.TANK_DAMAGE_REDUCTION;
@@ -120,25 +145,15 @@ function applyClassReduction(damage: number, defenderClass: CharacterClassType):
   return damage;
 }
 
-/**
- * Crit chance = min(luk * 0.5 + agi * 0.3, MAX_CRIT_CHANCE)%
- */
 function critChance(c: CharacterStats, stanceMod: StanceModifiers): number {
   return Math.min(c.luk * 0.5 + c.agi * 0.3 + stanceMod.crit, COMBAT.MAX_CRIT_CHANCE);
 }
 
-/**
- * Dodge chance = min(agi * 0.3, MAX_DODGE_CHANCE)%
- * Rogues get a class bonus to dodge.
- */
 function dodgeChance(defender: CharacterStats, stanceMod: StanceModifiers): number {
   const classBonus = defender.class === 'rogue' ? COMBAT.ROGUE_DODGE_BONUS : 0;
   return Math.min(defender.agi * 0.3 + classBonus + stanceMod.dodge, COMBAT.MAX_DODGE_CHANCE);
 }
 
-/**
- * Apply damage variance: ±10% randomness to base damage.
- */
 function applyVariance(damage: number): number {
   const variance = COMBAT.DAMAGE_VARIANCE;
   const multiplier = (1 - variance) + Math.random() * (variance * 2);
@@ -152,33 +167,173 @@ function rollPercent(): number {
 // --- Main combat function ---
 
 /**
+ * Initialize config-driven combat. Call this before runCombat
+ * to load class damage scaling from the database.
+ */
+export async function initCombatConfig(): Promise<void> {
+  await loadClassDamageConfig();
+}
+
+/**
+ * Resolve a single attack (skill-based or auto-attack).
+ * Returns the turn data and the damage dealt.
+ */
+function resolveAttack(
+  turnNumber: number,
+  attackerChar: CharacterStats,
+  defenderChar: CharacterStats,
+  defenderHp: number,
+  stanceAtk: StanceModifiers,
+  stanceDef: StanceModifiers,
+  passivesAtk: PassiveBonuses,
+  passivesDef: PassiveBonuses,
+  cooldownState: SkillCooldownState,
+): { turn: Turn; newDefenderHp: number; healAmount: number } {
+  // Dodge check — passive dodge bonus applied
+  const totalDodge = dodgeChance(defenderChar, stanceDef) + passivesDef.flatDodgeChance;
+  const isDodge = rollPercent() < Math.min(totalDodge, COMBAT.MAX_DODGE_CHANCE);
+
+  if (isDodge) {
+    return {
+      turn: {
+        turnNumber,
+        attackerId: attackerChar.id,
+        damage: 0,
+        isCrit: false,
+        isDodge: true,
+        defenderHpAfter: defenderHp,
+      },
+      newDefenderHp: defenderHp,
+      healAmount: 0,
+    };
+  }
+
+  // Try to use a skill
+  const skill = selectSkill(attackerChar.equippedSkills ?? [], cooldownState);
+  let raw: number;
+  let dmgType: 'physical' | 'magical' | 'true_damage';
+  let skillName: string | undefined;
+  let skillKeyStr: string | undefined;
+
+  if (skill) {
+    putOnCooldown(cooldownState, skill, passivesAtk);
+
+    // Self-buff skills do NOT deal damage — they apply an effect to the caster
+    if (skill.targetType === 'self_buff') {
+      let selfHeal = 0;
+      const effect = skill.effectJson as Record<string, unknown> | null;
+      if (effect && typeof effect.heal === 'number') {
+        selfHeal = effect.heal;
+      }
+
+      return {
+        turn: {
+          turnNumber,
+          attackerId: attackerChar.id,
+          damage: 0,
+          isCrit: false,
+          isDodge: false,
+          defenderHpAfter: defenderHp,
+          skillUsed: skill.name,
+          skillKey: skill.skillKey,
+          damageType: skill.damageType,
+          healAmount: selfHeal > 0 ? selfHeal : undefined,
+        },
+        newDefenderHp: defenderHp,
+        healAmount: selfHeal,
+      };
+    }
+
+    const result = calculateSkillDamage(skill, attackerChar);
+    raw = applyVariance(result.rawDamage);
+    dmgType = result.damageType;
+    skillName = result.skillName;
+    skillKeyStr = result.skillKey;
+  } else {
+    // Auto-attack fallback
+    raw = applyVariance(baseDamage(attackerChar));
+    dmgType = isMagicDamage(attackerChar.class) ? 'magical' : 'physical';
+  }
+
+  // Apply passive flat/percent damage bonuses
+  raw += passivesAtk.flatDamage;
+  raw *= 1 + passivesAtk.percentDamage / 100;
+
+  // Resistance reduction
+  const reduced = reduceDamageByType(raw, defenderChar, dmgType);
+  const withClass = applyClassReduction(reduced, defenderChar.class);
+
+  // Crit check — passive crit bonus applied
+  const totalCrit = critChance(attackerChar, stanceAtk) + passivesAtk.flatCritChance;
+  const isCrit = rollPercent() < Math.min(totalCrit, COMBAT.MAX_CRIT_CHANCE);
+  let dmg = isCrit ? withClass * COMBAT.CRIT_MULTIPLIER : withClass;
+
+  // Stance modifiers
+  dmg = dmg * (1 + stanceAtk.offense / 100);
+  dmg = dmg * (1 - stanceDef.defense / 100);
+
+  // Defender's passive damage reduction
+  if (passivesDef.damageReduction > 0) {
+    dmg *= 1 - Math.min(passivesDef.damageReduction, 50) / 100;
+  }
+
+  dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
+  const newDefenderHp = Math.max(defenderHp - dmg, 0);
+
+  // Lifesteal
+  let healAmount = 0;
+  if (passivesAtk.lifesteal > 0) {
+    healAmount = Math.floor(dmg * passivesAtk.lifesteal / 100);
+  }
+
+  return {
+    turn: {
+      turnNumber,
+      attackerId: attackerChar.id,
+      damage: dmg,
+      isCrit,
+      isDodge: false,
+      defenderHpAfter: newDefenderHp,
+      skillUsed: skillName,
+      skillKey: skillKeyStr,
+      damageType: dmgType,
+      healAmount: healAmount > 0 ? healAmount : undefined,
+    },
+    newDefenderHp,
+    healAmount,
+  };
+}
+
+/**
  * Run a full turn-based combat between attacker and defender.
+ * NOTE: Call initCombatConfig() once before calling this in API routes.
  *
- * - AGI determines turn order (higher AGI acts first).
- * - Each turn the acting character attempts to damage the other.
- * - Defender may dodge based on AGI (rogues get a bonus).
- * - On hit, damage has ±10% variance, can crit for 1.5x.
- * - Tanks take 15% less damage from all sources.
- * - Combat stances modify offense/defense/crit/dodge.
- * - Combat ends when one side reaches 0 HP or after MAX_TURNS.
- * - At timeout, whoever has a higher HP% wins.
+ * Supports skill-based attacks and passive bonuses when present on CharacterStats.
+ * Falls back to auto-attack when no skills are equipped (backward compatible).
  */
 export function runCombat(attacker: CharacterStats, defender: CharacterStats): CombatResult {
-  // Clone HP pools so we don't mutate the originals
   let hpA = attacker.maxHp;
   let hpD = defender.maxHp;
 
   const turns: Turn[] = [];
 
-  // Parse stance modifiers
   const stanceA = parseStance(attacker.combatStance);
   const stanceD = parseStance(defender.combatStance);
+  const passivesA = attacker.passiveBonuses ?? emptyPassiveBonuses();
+  const passivesD = defender.passiveBonuses ?? emptyPassiveBonuses();
 
-  // Determine order: higher AGI acts first. Ties favour the attacker.
+  // Initialize cooldown states
+  const cooldownA: SkillCooldownState = {};
+  const cooldownD: SkillCooldownState = {};
+
   let first: CharacterStats;
   let second: CharacterStats;
   let stanceFirst: StanceModifiers;
   let stanceSecond: StanceModifiers;
+  let passivesFirst: PassiveBonuses;
+  let passivesSecond: PassiveBonuses;
+  let cooldownFirst: SkillCooldownState;
+  let cooldownSecond: SkillCooldownState;
   let hpFirst: number;
   let hpSecond: number;
   let maxHpFirst: number;
@@ -189,6 +344,10 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
     second = attacker;
     stanceFirst = stanceD;
     stanceSecond = stanceA;
+    passivesFirst = passivesD;
+    passivesSecond = passivesA;
+    cooldownFirst = cooldownD;
+    cooldownSecond = cooldownA;
     hpFirst = hpD;
     hpSecond = hpA;
     maxHpFirst = defender.maxHp;
@@ -198,6 +357,10 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
     second = defender;
     stanceFirst = stanceA;
     stanceSecond = stanceD;
+    passivesFirst = passivesA;
+    passivesSecond = passivesD;
+    cooldownFirst = cooldownA;
+    cooldownSecond = cooldownD;
     hpFirst = hpA;
     hpSecond = hpD;
     maxHpFirst = attacker.maxHp;
@@ -207,39 +370,18 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
   for (let t = 1; t <= COMBAT.MAX_TURNS; t++) {
     // --- First character attacks second ---
     {
-      // Check dodge
-      const isDodge = rollPercent() < dodgeChance(second, stanceSecond);
+      const result = resolveAttack(
+        t, first, second, hpSecond,
+        stanceFirst, stanceSecond,
+        passivesFirst, passivesSecond,
+        cooldownFirst,
+      );
+      turns.push(result.turn);
+      hpSecond = result.newDefenderHp;
 
-      if (isDodge) {
-        turns.push({
-          turnNumber: t,
-          attackerId: first.id,
-          damage: 0,
-          isCrit: false,
-          isDodge: true,
-          defenderHpAfter: hpSecond,
-        });
-      } else {
-        const raw = applyVariance(baseDamage(first));
-        const reduced = reduceDamage(raw, second, first.class);
-        const withClass = applyClassReduction(reduced, second.class);
-        const isCrit = rollPercent() < critChance(first, stanceFirst);
-        let dmg = isCrit ? withClass * COMBAT.CRIT_MULTIPLIER : withClass;
-        // Apply stance offense bonus
-        dmg = dmg * (1 + stanceFirst.offense / 100);
-        // Apply stance defense bonus of defender
-        dmg = dmg * (1 - stanceSecond.defense / 100);
-        dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
-        hpSecond = Math.max(hpSecond - dmg, 0);
-
-        turns.push({
-          turnNumber: t,
-          attackerId: first.id,
-          damage: dmg,
-          isCrit,
-          isDodge: false,
-          defenderHpAfter: hpSecond,
-        });
+      // Lifesteal heals the attacker
+      if (result.healAmount > 0) {
+        hpFirst = Math.min(hpFirst + result.healAmount, maxHpFirst);
       }
 
       if (hpSecond <= 0) {
@@ -249,42 +391,28 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats): C
 
     // --- Second character attacks first ---
     {
-      const isDodge = rollPercent() < dodgeChance(first, stanceFirst);
+      const result = resolveAttack(
+        t, second, first, hpFirst,
+        stanceSecond, stanceFirst,
+        passivesSecond, passivesFirst,
+        cooldownSecond,
+      );
+      turns.push(result.turn);
+      hpFirst = result.newDefenderHp;
 
-      if (isDodge) {
-        turns.push({
-          turnNumber: t,
-          attackerId: second.id,
-          damage: 0,
-          isCrit: false,
-          isDodge: true,
-          defenderHpAfter: hpFirst,
-        });
-      } else {
-        const raw = applyVariance(baseDamage(second));
-        const reduced = reduceDamage(raw, first, second.class);
-        const withClass = applyClassReduction(reduced, first.class);
-        const isCrit = rollPercent() < critChance(second, stanceSecond);
-        let dmg = isCrit ? withClass * COMBAT.CRIT_MULTIPLIER : withClass;
-        dmg = dmg * (1 + stanceSecond.offense / 100);
-        dmg = dmg * (1 - stanceFirst.defense / 100);
-        dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
-        hpFirst = Math.max(hpFirst - dmg, 0);
-
-        turns.push({
-          turnNumber: t,
-          attackerId: second.id,
-          damage: dmg,
-          isCrit,
-          isDodge: false,
-          defenderHpAfter: hpFirst,
-        });
+      // Lifesteal heals the attacker
+      if (result.healAmount > 0) {
+        hpSecond = Math.min(hpSecond + result.healAmount, maxHpSecond);
       }
 
       if (hpFirst <= 0) {
         return buildResult(second.id, first.id, turns);
       }
     }
+
+    // Tick cooldowns after each turn pair
+    tickCooldowns(cooldownFirst);
+    tickCooldowns(cooldownSecond);
   }
 
   // --- Timeout: whoever has higher HP% wins ---

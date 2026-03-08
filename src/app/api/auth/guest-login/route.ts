@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { rateLimit } from '@/lib/rate-limit'
 
 /**
  * POST /api/auth/guest-login
@@ -12,8 +13,16 @@ import crypto from 'crypto'
  * This endpoint does NOT require authentication —
  * it IS the authentication endpoint for guests.
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    if (!rateLimit('guest:' + ip, 5, 60_000)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const supabase = createAdminClient()
 
     // Generate a unique guest email that won't conflict

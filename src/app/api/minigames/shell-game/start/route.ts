@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { rateLimit } from '@/lib/rate-limit'
 
 const MIN_BET = 50
 const MAX_BET = 1000
@@ -14,6 +15,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { character_id, bet_amount } = body
 
+    if (!rateLimit('shell-start:' + user.id, 10, 60_000)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     if (!character_id || bet_amount == null) {
       return NextResponse.json(
         { error: 'character_id and bet_amount are required' },
@@ -21,7 +29,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (bet_amount < MIN_BET || bet_amount > MAX_BET) {
+    if (!Number.isInteger(bet_amount) || bet_amount < MIN_BET || bet_amount > MAX_BET) {
       return NextResponse.json(
         { error: `Bet must be between ${MIN_BET} and ${MAX_BET} gold` },
         { status: 400 }
@@ -73,7 +81,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       session_id: session.id,
       bet_amount: session.betAmount,
-      winning_cup: correctShell,
     })
   } catch (error) {
     console.error('shell-game start error:', error)

@@ -26,58 +26,55 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character ownership
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-    })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Check user's gems
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-    })
-
-    if (!dbUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    if (dbUser.gems < gems_amount) {
-      return NextResponse.json(
-        { error: 'Not enough gems', required: gems_amount, current: dbUser.gems },
-        { status: 400 }
-      )
-    }
-
     const goldToAdd = gems_amount * GEMS_TO_GOLD_RATE
 
-    // Deduct gems from user and add gold to character in a transaction
-    const [updatedUser, updatedCharacter] = await prisma.$transaction([
-      prisma.user.update({
+    // Use interactive transaction with row-level lock to prevent TOCTOU
+    const result = await prisma.$transaction(async (tx) => {
+      // Lock the user row for update (gems balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gems: number }>>(
+        `SELECT id, gems FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
+      )
+
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gems < gems_amount) throw new Error('NOT_ENOUGH_GEMS')
+
+      // Verify character ownership
+      const character = await tx.character.findUnique({
+        where: { id: character_id },
+      })
+
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
+
+      const updatedUser = await tx.user.update({
         where: { id: user.id },
         data: { gems: { decrement: gems_amount } },
-      }),
-      prisma.character.update({
+      })
+
+      const updatedCharacter = await tx.character.update({
         where: { id: character_id },
         data: { gold: { increment: goldToAdd } },
-      }),
-    ])
+      })
+
+      return { updatedUser, updatedCharacter }
+    })
 
     return NextResponse.json({
       character: {
-        gold: updatedCharacter.gold,
-        gems: updatedUser.gems,
+        gold: result.updatedCharacter.gold,
+        gems: result.updatedUser.gems,
       },
       gemsSpent: gems_amount,
       goldReceived: goldToAdd,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'USER_NOT_FOUND') return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      if (error.message === 'NOT_ENOUGH_GEMS') return NextResponse.json({ error: 'Not enough gems' }, { status: 400 })
+    }
     console.error('buy gold error:', error)
     return NextResponse.json(
       { error: 'Failed to buy gold' },

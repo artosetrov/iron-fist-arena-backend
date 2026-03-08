@@ -1,23 +1,16 @@
 // =============================================================================
 // equipment-stats.ts — Recalculate derived stats from base stats + equipment
+// Now reads formulas from GameConfig via item-balance engine.
 // =============================================================================
 
 import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
 import { applyPrestigeBonus } from './progression'
+import { calculateDerivedStatsFromConfig, getUpgradeStatBonus } from './item-balance'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
 const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
-
-/**
- * Derived stat formulas:
- *   maxHp       = 80 + totalVit * 5 + totalEnd * 3
- *   armor       = totalEnd * 2 + totalStr * 0.5
- *   magicResist = totalWis * 2 + totalInt * 0.5
- *
- * "total" = character base stat + sum of equipped item base_stats + upgrade bonuses
- */
 
 interface DerivedStats {
   maxHp: number
@@ -36,27 +29,20 @@ interface StatBlock {
   cha: number
 }
 
-function calculateDerived(stats: StatBlock): DerivedStats {
-  return {
-    maxHp: 80 + stats.vit * 5 + stats.end * 3,
-    armor: Math.floor(stats.end * 2 + stats.str * 0.5),
-    magicResist: Math.floor(stats.wis * 2 + stats.int * 0.5),
-  }
-}
-
 /**
  * Sum stat bonuses from all equipped items.
  * Each item's base_stats is a JSON like { str: 6, agi: 2 }.
- * Upgrade levels add +upgradeLevel per stat that exists on the item.
+ * Upgrade levels add +upgradeStatBonus per stat that exists on the item.
  */
-function sumEquipmentBonuses(
+async function sumEquipmentBonuses(
   equippedItems: Array<{
     item: { baseStats: unknown }
     upgradeLevel: number
     durability: number
   }>
-): StatBlock {
+): Promise<StatBlock> {
   const bonus: StatBlock = { str: 0, agi: 0, vit: 0, end: 0, int: 0, wis: 0, luk: 0, cha: 0 }
+  const upgradeStatBonus = await getUpgradeStatBonus()
 
   for (const eq of equippedItems) {
     // Broken items (durability <= 0) provide NO stat bonuses
@@ -66,7 +52,7 @@ function sumEquipmentBonuses(
     if (!bs) continue
     for (const key of STAT_KEYS) {
       if (typeof bs[key] === 'number') {
-        bonus[key] += bs[key] + eq.upgradeLevel
+        bonus[key] += bs[key] + eq.upgradeLevel * upgradeStatBonus
       }
     }
   }
@@ -105,7 +91,7 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
 
   if (!character) throw new Error('Character not found')
 
-  const eqBonus = sumEquipmentBonuses(
+  const eqBonus = await sumEquipmentBonuses(
     character.equipment.map((e) => ({
       item: { baseStats: e.item.baseStats },
       upgradeLevel: e.upgradeLevel,
@@ -137,7 +123,8 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
     cha: applyPrestigeBonus(rawTotalStats.cha, prestige),
   }
 
-  const derived = calculateDerived(totalStats)
+  // Use config-driven derived stat calculation
+  const derived = await calculateDerivedStatsFromConfig(totalStats)
 
   await db.character.update({
     where: { id: characterId },

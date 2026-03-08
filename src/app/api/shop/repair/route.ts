@@ -17,58 +17,44 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character ownership
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-    })
-
-    if (!character) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    if (character.userId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Get the inventory item
-    const inventoryItem = await prisma.equipmentInventory.findUnique({
-      where: { id: inventory_id },
-    })
-
-    if (!inventoryItem) {
-      return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 })
-    }
-
-    if (inventoryItem.characterId !== character_id) {
-      return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
-    }
-
-    if (inventoryItem.durability >= inventoryItem.maxDurability) {
-      return NextResponse.json({ error: 'Item is already at full durability' }, { status: 400 })
-    }
-
-    // Calculate repair cost: (maxDurability - durability) * 2 gold
-    const repairCost = (inventoryItem.maxDurability - inventoryItem.durability) * 2
-
-    if (character.gold < repairCost) {
-      return NextResponse.json(
-        { error: 'Not enough gold', required: repairCost, current: character.gold },
-        { status: 400 }
+    // Use interactive transaction with row-level lock to prevent TOCTOU
+    const { updatedCharacter, updatedItem, repairCost } = await prisma.$transaction(async (tx) => {
+      // Lock the character row for update
+      const [charRow] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
+        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
+        character_id
       )
-    }
 
-    // Deduct gold and restore durability in a transaction
-    const [updatedCharacter, updatedItem] = await prisma.$transaction([
-      prisma.character.update({
+      if (!charRow) throw new Error('NOT_FOUND')
+      if (charRow.user_id !== user.id) throw new Error('FORBIDDEN')
+
+      // Get the inventory item
+      const inventoryItem = await tx.equipmentInventory.findUnique({
+        where: { id: inventory_id },
+      })
+
+      if (!inventoryItem) throw new Error('ITEM_NOT_FOUND')
+      if (inventoryItem.characterId !== character_id) throw new Error('ITEM_FORBIDDEN')
+      if (inventoryItem.durability >= inventoryItem.maxDurability) throw new Error('FULL_DURABILITY')
+
+      // Calculate repair cost: (maxDurability - durability) * 2 gold
+      const cost = (inventoryItem.maxDurability - inventoryItem.durability) * 2
+
+      if (charRow.gold < cost) throw new Error('NOT_ENOUGH_GOLD')
+
+      const updatedCharacter = await tx.character.update({
         where: { id: character_id },
-        data: { gold: { decrement: repairCost } },
-      }),
-      prisma.equipmentInventory.update({
+        data: { gold: { decrement: cost } },
+      })
+
+      const updatedItem = await tx.equipmentInventory.update({
         where: { id: inventory_id },
         data: { durability: inventoryItem.maxDurability },
         include: { item: true },
-      }),
-    ])
+      })
+
+      return { updatedCharacter, updatedItem, repairCost: cost }
+    })
 
     // gems live on User, not Character
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
@@ -82,6 +68,14 @@ export async function POST(req: NextRequest) {
       repairCost,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'ITEM_NOT_FOUND') return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 })
+      if (error.message === 'ITEM_FORBIDDEN') return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
+      if (error.message === 'FULL_DURABILITY') return NextResponse.json({ error: 'Item is already at full durability' }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+    }
     console.error('repair item error:', error)
     return NextResponse.json(
       { error: 'Failed to repair item' },

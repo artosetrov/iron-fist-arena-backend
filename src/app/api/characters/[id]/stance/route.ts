@@ -20,6 +20,33 @@ export async function POST(
       )
     }
 
+    // Validate stance structure
+    if (
+      typeof stance !== 'object' ||
+      typeof stance.offense !== 'number' ||
+      typeof stance.defense !== 'number'
+    ) {
+      return NextResponse.json(
+        { error: 'stance must have numeric offense and defense properties' },
+        { status: 400 }
+      )
+    }
+
+    if (stance.offense < 0 || stance.offense > 100 || stance.defense < 0 || stance.defense > 100) {
+      return NextResponse.json(
+        { error: 'offense and defense must be between 0 and 100' },
+        { status: 400 }
+      )
+    }
+
+    const total = stance.offense + stance.defense
+    if (total < 95 || total > 105) {
+      return NextResponse.json(
+        { error: 'offense + defense must sum to approximately 100' },
+        { status: 400 }
+      )
+    }
+
     const character = await prisma.character.findUnique({ where: { id } })
 
     if (!character) {
