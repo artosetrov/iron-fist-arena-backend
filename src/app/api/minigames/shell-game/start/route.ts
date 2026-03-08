@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       session_id: session.id,
       bet_amount: session.betAmount,
+      winning_cup: correctShell,
     })
   } catch (error) {
     console.error('shell-game start error:', error)

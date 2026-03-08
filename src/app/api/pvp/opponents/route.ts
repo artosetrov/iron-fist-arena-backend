@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
+      select: { userId: true, pvpRating: true },
     })
 
     if (!character) {
@@ -42,6 +43,22 @@ export async function GET(req: NextRequest) {
           gte: minRating,
           lte: maxRating,
         },
+      },
+      select: {
+        id: true,
+        characterName: true,
+        class: true,
+        origin: true,
+        level: true,
+        pvpRating: true,
+        pvpWins: true,
+        pvpLosses: true,
+        pvpWinStreak: true,
+        maxHp: true,
+        armor: true,
+        magicResist: true,
+        gender: true,
+        avatar: true,
       },
       orderBy: {
         pvpRating: 'asc',

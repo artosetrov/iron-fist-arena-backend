@@ -38,6 +38,11 @@ export async function POST(req: NextRequest) {
 
     const today = getToday()
 
+    // Check if bonus already claimed today
+    if (character.dailyBonusDate && character.dailyBonusDate.toISOString().slice(0, 10) === today) {
+      return NextResponse.json({ error: 'Daily bonus already claimed today' }, { status: 400 })
+    }
+
     // All quests for today must have rewards claimed (completed = true in DB)
     const quests = await prisma.dailyQuest.findMany({
       where: { characterId: character_id, day: today },
@@ -52,20 +57,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Claim all quest rewards first' }, { status: 400 })
     }
 
-    // Check if bonus already claimed today (store in character or a separate flag)
-    // Simple approach: use a DailyQuest record with a special type or check via character field
-    // We use `freePvpToday` date field pattern — check if bonus already given today
-    // For now, track via a sentinel quest entry if needed, or just award every time quests are all claimed
-    // Using lastDailyBonusDate pattern (needs schema), so we do a simple idempotent check:
-    // We count total bonus transactions as sum of quests per day — just award and return success.
-    // Proper: add bonusClaimedDate to Character schema. For now, return success always (iOS handles state).
-
     await prisma.$transaction([
       prisma.character.update({
         where: { id: character_id },
         data: {
           gold: { increment: BONUS_GOLD },
           currentXp: { increment: BONUS_XP },
+          dailyBonusDate: new Date(),
         },
       }),
       prisma.user.update({

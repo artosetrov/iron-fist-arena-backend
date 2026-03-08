@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { applyLevelUp } from '@/lib/game/progression'
-import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
+import { calculateCurrentStamina } from '@/lib/game/stamina'
 
 export async function GET(
   req: NextRequest,
@@ -14,19 +13,16 @@ export async function GET(
   try {
     const { id } = await params
 
-    // Apply any pending level-ups from accumulated XP
-    await applyLevelUp(prisma, id)
-
-    // Recalculate derived stats (maxHp, armor, magicResist) from base stats + equipment
-    await recalculateDerivedStats(id)
-
-    const character = await prisma.character.findUnique({
-      where: { id },
-      include: {
-        equipment: { include: { item: true } },
-        consumables: true,
-      },
-    })
+    const [character, dbUser] = await Promise.all([
+      prisma.character.findUnique({
+        where: { id },
+        include: {
+          equipment: { include: { item: true } },
+          consumables: true,
+        },
+      }),
+      prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } }),
+    ])
 
     if (!character) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
@@ -36,7 +32,20 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    return NextResponse.json({ character })
+    // Compute current stamina without writing to DB
+    const staminaResult = calculateCurrentStamina(
+      character.currentStamina,
+      character.maxStamina,
+      character.lastStaminaUpdate
+    )
+
+    return NextResponse.json({
+      character: {
+        ...character,
+        currentStamina: staminaResult.stamina,
+        gems: dbUser?.gems ?? 0,
+      },
+    })
   } catch (error) {
     console.error('get character error:', error)
     return NextResponse.json(

@@ -117,7 +117,15 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    return NextResponse.json({ quests: quests.map(formatQuest), day: today })
+    const dailyBonusClaimed =
+      character.dailyBonusDate !== null &&
+      character.dailyBonusDate.toISOString().slice(0, 10) === today
+
+    return NextResponse.json({
+      quests: quests.map(formatQuest),
+      day: today,
+      daily_bonus_claimed: dailyBonusClaimed,
+    })
   } catch (error) {
     console.error('get daily quests error:', error)
     return NextResponse.json({ error: 'Failed to fetch daily quests' }, { status: 500 })

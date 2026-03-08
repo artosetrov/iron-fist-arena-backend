@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
+      select: { userId: true },
     })
 
     if (!character) {

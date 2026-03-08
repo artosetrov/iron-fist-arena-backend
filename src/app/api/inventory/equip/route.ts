@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
     // Verify character ownership
     const character = await prisma.character.findUnique({
       where: { id: character_id },
+      select: { userId: true },
     })
 
     if (!character) {

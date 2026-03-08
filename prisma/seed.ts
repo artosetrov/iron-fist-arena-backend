@@ -3,89 +3,147 @@ import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
 
-const BOT_NAMES = [
-  'IronBane', 'ShadowFist', 'CrimsonEdge', 'StormBreaker', 'VoidWalker',
-  'BloodThorn', 'AshPyre', 'FrostWarden', 'EmberClaw', 'DuskRaider',
-  'NightStalker', 'SteelVeil', 'GrimForge', 'BoneCrusher', 'WildFury',
-  'DeathMark', 'SoulReaver', 'IceBreaker', 'ThunderFang', 'DarkBlaze',
-]
-
 const CLASSES: CharacterClass[] = ['warrior', 'rogue', 'mage', 'tank']
 const ORIGINS: CharacterOrigin[] = ['human', 'orc', 'skeleton', 'demon', 'dogfolk']
+const GENDERS = ['male', 'female'] as const
+
+const NAME_PREFIXES = [
+  'Iron', 'Shadow', 'Crimson', 'Storm', 'Void', 'Blood', 'Ash', 'Frost',
+  'Ember', 'Dusk', 'Night', 'Steel', 'Grim', 'Bone', 'Wild', 'Death',
+  'Soul', 'Ice', 'Thunder', 'Dark', 'Fire', 'Stone', 'Ghost', 'War',
+  'Doom', 'Rage', 'Scar', 'Venom', 'Thorn', 'Rune',
+]
+const NAME_SUFFIXES = [
+  'Bane', 'Fist', 'Edge', 'Breaker', 'Walker', 'Thorn', 'Pyre', 'Warden',
+  'Claw', 'Raider', 'Stalker', 'Veil', 'Forge', 'Crusher', 'Fury',
+  'Mark', 'Reaver', 'Fang', 'Blaze', 'Strike', 'Guard', 'Blade', 'Horn',
+  'Maw', 'Skull', 'Heart', 'Bite', 'Shade', 'Spark', 'Grip',
+]
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-function statsByClass(cls: CharacterClass) {
-  switch (cls) {
-    case 'warrior': return { str: 18, agi: 12, vit: 14, end: 14, int: 8, wis: 8, luk: 10, cha: 10, maxHp: 130, armor: 10, magicResist: 3 }
-    case 'rogue':   return { str: 12, agi: 20, vit: 10, end: 12, int: 10, wis: 10, luk: 15, cha: 8,  maxHp: 110, armor: 5,  magicResist: 2 }
-    case 'mage':    return { str: 8,  agi: 10, vit: 8,  end: 10, int: 22, wis: 18, luk: 10, cha: 8,  maxHp: 90,  armor: 2,  magicResist: 15 }
-    case 'tank':    return { str: 14, agi: 8,  vit: 20, end: 20, int: 6,  wis: 8,  luk: 8,  cha: 10, maxHp: 160, armor: 18, magicResist: 8 }
-  }
+function randInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
+// Generate unique bot names (need 150)
+function generateBotNames(count: number): string[] {
+  const names = new Set<string>()
+  for (const p of NAME_PREFIXES) {
+    for (const s of NAME_SUFFIXES) {
+      names.add(p + s)
+      if (names.size >= count) return Array.from(names)
+    }
+  }
+  return Array.from(names).slice(0, count)
+}
+
+// Stat allocation weights by class (STR, AGI, VIT, END, INT, WIS, LUK, CHA)
+const CLASS_WEIGHTS: Record<CharacterClass, number[]> = {
+  warrior: [30, 12, 20, 18, 3, 3, 7, 7],
+  rogue:   [12, 30, 8, 8, 5, 5, 22, 10],
+  mage:    [3, 8, 12, 8, 30, 22, 10, 7],
+  tank:    [18, 5, 25, 28, 3, 5, 8, 8],
+}
+
+function botStatsForLevel(cls: CharacterClass, level: number) {
+  const base = { str: 10, agi: 10, vit: 10, end: 10, int: 10, wis: 10, luk: 10, cha: 10 }
+  const keys: (keyof typeof base)[] = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha']
+  const weights = CLASS_WEIGHTS[cls]
+  const totalWeight = weights.reduce((a, b) => a + b, 0)
+
+  // 3 stat points per level (level 1 = 0 bonus)
+  const bonusPoints = 3 * (level - 1)
+
+  // Distribute points by weight with some randomness
+  let remaining = bonusPoints
+  for (let i = 0; i < keys.length; i++) {
+    const share = Math.round((bonusPoints * weights[i]) / totalWeight)
+    const jitter = randInt(-1, 1)
+    const pts = Math.max(0, Math.min(remaining, share + jitter))
+    base[keys[i]] += pts
+    remaining -= pts
+  }
+  // Dump leftover into primary stat
+  if (remaining > 0) base[keys[weights.indexOf(Math.max(...weights))]] += remaining
+
+  // Derived stats
+  const maxHp = 80 + base.vit * 5 + base.end * 3
+  const armor = Math.floor(base.end * 2 + base.str * 0.5)
+  const magicResist = Math.floor(base.wis * 2 + base.int * 0.5)
+
+  return { ...base, maxHp, armor, magicResist }
+}
+
+function pvpRatingForLevel(level: number): number {
+  // Level 1 ~ 1000, scales ~16 per level, with jitter
+  return Math.max(100, 1000 + (level - 1) * 16 + randInt(-40, 40))
+}
+
+const MAX_LEVEL = 50
+const BOTS_PER_LEVEL = 3
+
 async function main() {
-  console.log('🌱 Seeding bot opponents...')
+  console.log('🌱 Seeding bot opponents (3 per level, levels 1–50)...')
 
-  // Rating buckets: spread bots across 800–1200 range
-  const ratings = [800, 850, 900, 920, 950, 970, 990, 1000, 1010, 1030,
-                   1050, 1070, 1100, 1120, 1150, 1170, 1190, 1200, 830, 960]
-
+  const botNames = generateBotNames(MAX_LEVEL * BOTS_PER_LEVEL)
   let created = 0
   let skipped = 0
+  let nameIdx = 0
 
-  for (let i = 0; i < BOT_NAMES.length; i++) {
-    const name = BOT_NAMES[i]
-    const cls = CLASSES[i % CLASSES.length]
-    const origin = pick(ORIGINS)
-    const rating = ratings[i]
-    const wins = Math.floor(Math.random() * 40) + 5
-    const losses = Math.floor(Math.random() * 30) + 3
-    const stats = statsByClass(cls)
+  for (let level = 1; level <= MAX_LEVEL; level++) {
+    for (let b = 0; b < BOTS_PER_LEVEL; b++) {
+      const name = botNames[nameIdx++]
+      const cls = CLASSES[(level * 3 + b) % CLASSES.length]
+      const origin = ORIGINS[(level + b) % ORIGINS.length]
+      const gender = GENDERS[(level + b) % 2]
+      const rating = pvpRatingForLevel(level)
+      const wins = randInt(level * 2, level * 5)
+      const losses = randInt(level, level * 3)
+      const stats = botStatsForLevel(cls, level)
 
-    // Check if bot character already exists
-    const existing = await prisma.character.findUnique({
-      where: { characterName: name },
-    })
-    if (existing) {
-      skipped++
-      continue
-    }
+      const existing = await prisma.character.findUnique({
+        where: { characterName: name },
+      })
+      if (existing) { skipped++; continue }
 
-    const userId = randomUUID()
+      const userId = randomUUID()
 
-    await prisma.user.create({
-      data: {
-        id: userId,
-        email: `bot_${name.toLowerCase()}@arena.bot`,
-        username: name,
-        authProvider: 'bot',
-        characters: {
-          create: {
-            characterName: name,
-            class: cls,
-            origin,
-            level: Math.floor(rating / 100),
-            pvpRating: rating,
-            pvpWins: wins,
-            pvpLosses: losses,
-            pvpWinStreak: Math.floor(Math.random() * 5),
-            highestPvpRank: rating + Math.floor(Math.random() * 50),
-            pvpCalibrationGames: 10,
-            ...stats,
-            currentHp: stats.maxHp,
+      await prisma.user.create({
+        data: {
+          id: userId,
+          email: `bot_${name.toLowerCase()}@arena.bot`,
+          username: name,
+          authProvider: 'bot',
+          characters: {
+            create: {
+              characterName: name,
+              class: cls,
+              origin,
+              gender,
+              level,
+              pvpRating: rating,
+              pvpWins: wins,
+              pvpLosses: losses,
+              pvpWinStreak: randInt(0, Math.min(level, 10)),
+              highestPvpRank: rating + randInt(0, 80),
+              pvpCalibrationGames: 10,
+              gold: 500 + level * 100,
+              ...stats,
+              currentHp: stats.maxHp,
+            },
           },
         },
-      },
-    })
+      })
 
-    created++
-    console.log(`  ✓ ${name} (${cls}, rating: ${rating})`)
+      created++
+      console.log(`  ✓ Lv${level} ${name} (${cls}, rating: ${rating})`)
+    }
   }
 
-  console.log(`\n✅ Done: ${created} bots created, ${skipped} already existed.`)
+  console.log(`\n✅ Bots: ${created} created, ${skipped} already existed.`)
 
   // =========================================================================
   // Seed shop items

@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/auth'
+import { getAuthAdmin, forbiddenResponse } from '@/lib/auth-admin'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = await getAuthAdmin(req)
+  if (!user) return forbiddenResponse()
 
   try {
-    // Verify admin role
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-    })
-
-    if (!dbUser || dbUser.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
     const body = await req.json()
     const { number, theme, startAt, endAt } = body
 

@@ -179,6 +179,7 @@ model Character {
   freePvpDate       DateTime? @map("free_pvp_date")
 
   goldMineSlots     Int       @default(1) @map("gold_mine_slots")
+  dailyBonusDate    DateTime? @map("daily_bonus_date")
   createdAt         DateTime  @default(now()) @map("created_at")
   lastPlayed        DateTime? @map("last_played")
 
@@ -371,6 +372,7 @@ model GoldMineSession {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId])
+  @@index([characterId, collected])
   @@map("gold_mine_sessions")
 }
 
@@ -401,6 +403,7 @@ model Season {
   battlePasses      BattlePass[]
   battlePassRewards BattlePassReward[]
 
+  @@index([startAt, endAt])
   @@map("seasons")
 }
 

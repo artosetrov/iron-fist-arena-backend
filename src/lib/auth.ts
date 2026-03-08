@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { cacheGet, cacheSet, cacheDelete } from '@/lib/cache'
+
+const BAN_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 export async function getAuthUser(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -19,12 +22,27 @@ export async function getAuthUser(req: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return null
 
-  // Ban check (runs in Node.js runtime, not Edge)
+  // Ban check with caching (avoids DB hit on every request)
+  const banCacheKey = `ban:${user.id}`
+  const cachedBan = cacheGet<boolean>(banCacheKey)
+
+  if (cachedBan === true) return null
+  if (cachedBan === false) return user
+
+  // Cache miss — query DB
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: { isBanned: true },
   })
-  if (dbUser?.isBanned) return null
+  if (!dbUser) return null
+
+  cacheSet(banCacheKey, dbUser.isBanned, BAN_CACHE_TTL)
+  if (dbUser.isBanned) return null
 
   return user
+}
+
+/** Invalidate ban cache when admin bans/unbans a user */
+export function invalidateBanCache(userId: string) {
+  cacheDelete(`ban:${userId}`)
 }
