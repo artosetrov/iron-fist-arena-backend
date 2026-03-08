@@ -108,6 +108,7 @@ enum DungeonDifficulty {
   normal
   hard
   nightmare
+  rush
 }
 
 enum DungeonType {
