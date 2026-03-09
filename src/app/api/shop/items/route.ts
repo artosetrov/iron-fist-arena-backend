@@ -153,10 +153,14 @@ export async function GET(req: NextRequest) {
     })
     const ownedItemIds = new Set(ownedItems.map((e) => e.itemId))
 
-    // Build filter
-    const where: { itemType?: ItemType; rarity?: Rarity; itemLevel?: { lte: number } } = {}
+    // Build filter — always exclude consumables from DB (served from CONSUMABLE_CATALOG)
+    const where: {
+      itemType?: ItemType | { not: ItemType };
+      rarity?: Rarity;
+      itemLevel?: { lte: number };
+    } = { itemType: { not: ItemType.consumable } }
 
-    if (typeParam) {
+    if (typeParam && typeParam !== 'consumable') {
       if (!Object.values(ItemType).includes(typeParam as ItemType)) {
         return NextResponse.json(
           { error: `Invalid type. Must be one of: ${Object.values(ItemType).join(', ')}` },
@@ -184,10 +188,9 @@ export async function GET(req: NextRequest) {
       orderBy: [{ itemLevel: 'asc' }, { itemName: 'asc' }],
     })
 
-    // Filter out items this character already owns (consumables are always available)
-    const consumableTypes: ItemType[] = [ItemType.consumable]
+    // Filter out items this character already owns
     const availableItems = items.filter(
-      (item) => consumableTypes.includes(item.itemType) || !ownedItemIds.has(item.id)
+      (item) => !ownedItemIds.has(item.id)
     )
 
     // Transform to snake_case format expected by iOS client
