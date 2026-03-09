@@ -180,14 +180,50 @@ export async function recalculateFullDerivedStats(
     character.prestigeLevel ?? 0,
   )
 
+  // Calculate gear score: sum of all equipment stat bonuses + upgrade levels
+  const gearScore = calculateGearScore(
+    character.equipment.map((e) => ({
+      item: { baseStats: e.item.baseStats },
+      upgradeLevel: e.upgradeLevel,
+      durability: e.durability,
+    }))
+  )
+
   await db.character.update({
     where: { id: characterId },
     data: {
       maxHp: derived.maxHp,
       armor: derived.armor,
       magicResist: derived.magicResist,
+      gearScore,
     },
   })
 
   return derived
+}
+
+/**
+ * Calculate a gear score based on total equipment bonuses.
+ * Used for matchmaking to pair similarly-geared players.
+ */
+function calculateGearScore(
+  equippedItems: Array<{
+    item: { baseStats: unknown }
+    upgradeLevel: number
+    durability: number
+  }>
+): number {
+  let score = 0
+  for (const eq of equippedItems) {
+    if (eq.durability <= 0) continue
+    const bs = eq.item.baseStats as Record<string, number> | null
+    if (!bs) continue
+    // Sum all stats on the item + upgrade bonus
+    for (const key of STAT_KEYS) {
+      if (typeof bs[key] === 'number') {
+        score += bs[key] + eq.upgradeLevel
+      }
+    }
+  }
+  return score
 }

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
-import { loadCombatCharacter } from '@/lib/game/combat-loader'
+import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { chaGoldBonus } from '@/lib/game/balance'
@@ -21,6 +22,10 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (!rateLimit(`rush-fight:${user.id}`, 20, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const body = await req.json()
     const { character_id, run_id } = body
@@ -32,10 +37,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: character_id, userId: user.id },
-    })
+    // Parallel: verify character (select only needed fields) + load run + load combat character
+    const [character, run, playerStatsRaw] = await Promise.all([
+      prisma.character.findFirst({
+        where: { id: character_id, userId: user.id },
+        select: { id: true, characterName: true, class: true, origin: true, level: true, maxHp: true, cha: true, luk: true },
+      }),
+      prisma.dungeonRun.findFirst({
+        where: {
+          id: run_id,
+          characterId: character_id,
+          difficulty: 'rush',
+        },
+      }),
+      loadCombatCharacter(character_id),
+    ])
+
     if (!character) {
       return NextResponse.json(
         { error: 'Character not found' },
@@ -43,14 +60,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Load the active rush run
-    const run = await prisma.dungeonRun.findFirst({
-      where: {
-        id: run_id,
-        characterId: character_id,
-        difficulty: 'rush',
-      },
-    })
     if (!run) {
       return NextResponse.json(
         { error: 'No active dungeon rush found' },
@@ -95,9 +104,8 @@ export async function POST(req: NextRequest) {
     // Generate the enemy for this room
     const enemy = generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
 
-    // Load combat-ready character with skills + passives, then apply rush buffs
-    let playerStats = await loadCombatCharacter(character_id)
-    playerStats = applyRushBuffs(playerStats, state.buffs)
+    // Apply rush buffs to combat-ready character
+    let playerStats = applyRushBuffs(playerStatsRaw, state.buffs)
 
     // Apply HP persistence: use current HP% instead of full HP
     const playerEffectiveMaxHp = playerStats.maxHp
@@ -216,6 +224,12 @@ export async function POST(req: NextRequest) {
 
     // Check for level-up after XP award
     const levelUpResult = await applyLevelUp(prisma, character_id)
+
+    // Invalidate caches if character leveled up
+    if (levelUpResult?.leveledUp) {
+      invalidateSkillCache(character_id)
+      invalidatePassiveCache(character_id)
+    }
 
     // Calculate new HP% after combat
     // Find player's remaining HP from combat turns

@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit'
 
 const LEVEL_RANGE = 3
 const MAX_OPPONENTS = 3
+const GEAR_SCORE_TOLERANCE = 0.3 // ±30% gear score range
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: character_id },
-      select: { userId: true, pvpRating: true, pvpCalibrationGames: true, level: true },
+      select: { userId: true, pvpRating: true, pvpCalibrationGames: true, level: true, gearScore: true },
     })
 
     if (!character) {
@@ -41,13 +42,22 @@ export async function POST(req: NextRequest) {
     const minLevel = Math.max(1, character.level - LEVEL_RANGE)
     const maxLevel = character.level + LEVEL_RANGE
 
-    // Find opponents within level range, excluding own character
+    // Gear score range: ±30% (minimum floor of 0)
+    const playerGearScore = character.gearScore ?? 0
+    const minGear = Math.max(0, Math.floor(playerGearScore * (1 - GEAR_SCORE_TOLERANCE)))
+    const maxGear = Math.ceil(playerGearScore * (1 + GEAR_SCORE_TOLERANCE)) + 10 // +10 base so ungeared players still find matches
+
+    // Find opponents within level AND gear score range
     const rawOpponents = await prisma.character.findMany({
       where: {
         id: { not: character_id },
         level: {
           gte: minLevel,
           lte: maxLevel,
+        },
+        gearScore: {
+          gte: minGear,
+          lte: maxGear,
         },
       },
       select: {
@@ -65,42 +75,54 @@ export async function POST(req: NextRequest) {
         magicResist: true,
         gender: true,
         avatar: true,
+        gearScore: true,
       },
       orderBy: {
-        pvpRating: 'asc',
+        level: 'asc',
       },
-      take: 50,
+      take: 15,
     })
 
-    const opponents = rawOpponents.map((opp) => ({
-      id: opp.id,
-      characterName: opp.characterName,
-      class: opp.class,
-      origin: opp.origin,
-      level: opp.level,
-      pvpRating: opp.pvpRating,
-      pvpWins: opp.pvpWins,
-      pvpLosses: opp.pvpLosses,
-      pvpWinStreak: opp.pvpWinStreak,
-      maxHp: opp.maxHp,
-      armor: opp.armor,
-      magicResist: opp.magicResist,
-    }))
+    // If gear-filtered results are too few, widen to level-only (fallback)
+    let candidates = rawOpponents
+    if (candidates.length < MAX_OPPONENTS) {
+      const fallback = await prisma.character.findMany({
+        where: {
+          id: { not: character_id },
+          level: { gte: minLevel, lte: maxLevel },
+        },
+        select: {
+          id: true, characterName: true, class: true, origin: true,
+          level: true, pvpRating: true, pvpWins: true, pvpLosses: true,
+          pvpWinStreak: true, maxHp: true, armor: true, magicResist: true,
+          gender: true, avatar: true, gearScore: true,
+        },
+        orderBy: { level: 'asc' },
+        take: 15,
+      })
+      // Merge without duplicates
+      const seenIds = new Set(candidates.map((c) => c.id))
+      for (const fb of fallback) {
+        if (!seenIds.has(fb.id)) candidates.push(fb)
+      }
+    }
 
-    // Sort by level closeness and take top 3
-    const sorted = opponents
+    // Sort by combined level + gear score closeness, take top 3
+    const sorted = candidates
       .map((opp) => ({
         ...opp,
         levelDiff: Math.abs(opp.level - character.level),
+        gearDiff: Math.abs((opp.gearScore ?? 0) - playerGearScore),
       }))
-      .sort((a, b) => a.levelDiff - b.levelDiff)
+      .sort((a, b) => a.levelDiff - b.levelDiff || a.gearDiff - b.gearDiff)
       .slice(0, MAX_OPPONENTS)
 
     return NextResponse.json({
       opponents: sorted,
       playerRating: character.pvpRating,
       playerLevel: character.level,
-      searchRange: { minLevel, maxLevel },
+      playerGearScore,
+      searchRange: { minLevel, maxLevel, minGear, maxGear },
     })
   } catch (error) {
     console.error('find match error:', error)

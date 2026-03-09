@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { GEM_COSTS } from '@/lib/game/balance'
+import { rateLimit } from '@/lib/rate-limit'
 
 const PREMIUM_COST_GEMS = GEM_COSTS.BATTLE_PASS_PREMIUM
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`bp-premium:${user.id}`, 3, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()

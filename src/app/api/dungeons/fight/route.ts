@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
-import { loadCombatCharacter } from '@/lib/game/combat-loader'
+import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
@@ -10,6 +10,7 @@ import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { BATTLE_PASS, chaGoldBonus } from '@/lib/game/balance'
 import { degradeEquipment } from '@/lib/game/durability'
+import { rateLimit } from '@/lib/rate-limit'
 
 /** Gold reward per boss defeated, scaled by difficulty. */
 function bossGoldReward(floor: number, difficulty: string): number {
@@ -50,6 +51,10 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (!rateLimit(`dungeon-fight:${user.id}`, 20, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const body = await req.json()
     const { character_id, run_id } = body
@@ -61,30 +66,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: character_id, userId: user.id },
-    })
-    if (!character) {
-      return NextResponse.json(
-        { error: 'Character not found' },
-        { status: 404 },
-      )
-    }
+    // Parallel: verify character + load run + load combat stats
+    const [character, run, playerStats] = await Promise.all([
+      prisma.character.findFirst({
+        where: { id: character_id, userId: user.id },
+        select: {
+          id: true, userId: true, characterName: true, class: true, origin: true,
+          level: true, maxHp: true, cha: true, luk: true,
+        },
+      }),
+      prisma.dungeonRun.findFirst({
+        where: { id: run_id, characterId: character_id, difficulty: { not: 'rush' } },
+      }),
+      loadCombatCharacter(character_id),
+    ])
 
-    // Load the active dungeon run
-    const run = await prisma.dungeonRun.findFirst({
-      where: {
-        id: run_id,
-        characterId: character_id,
-        difficulty: { not: 'rush' },
-      },
-    })
+    if (!character) {
+      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+    }
     if (!run) {
-      return NextResponse.json(
-        { error: 'No active dungeon run found' },
-        { status: 404 },
-      )
+      return NextResponse.json({ error: 'No active dungeon run found' }, { status: 404 })
     }
 
     const dungeonId = run.dungeonId
@@ -96,33 +97,20 @@ export async function POST(req: NextRequest) {
       totalXpEarned: number
     }
 
-    // Load combat-ready character with skills + passives
-    const playerStats = await loadCombatCharacter(character_id)
-    const combatResults: Array<{
-      enemyName: string
-      won: boolean
-      turns: number
-    }> = []
-
+    // Run combat
+    const combatResults: Array<{ enemyName: string; won: boolean; turns: number }> = []
     let playerWon = true
     let primaryCombatResult: ReturnType<typeof runCombat> | null = null
     const primaryEnemy = state.enemies[0]
 
-    // Fight each enemy (should be a single boss)
     for (const enemy of state.enemies) {
       const enemyStats = enemyToCharacterStats(enemy)
       const result = runCombat(playerStats, enemyStats)
       const won = result.winnerId === playerStats.id
 
-      if (!primaryCombatResult) {
-        primaryCombatResult = result
-      }
+      if (!primaryCombatResult) primaryCombatResult = result
 
-      combatResults.push({
-        enemyName: enemy.name,
-        won,
-        turns: result.totalTurns,
-      })
+      combatResults.push({ enemyName: enemy.name, won, turns: result.totalTurns })
 
       if (!won) {
         playerWon = false
@@ -146,7 +134,6 @@ export async function POST(req: NextRequest) {
       damage_type: t.damageType ?? null,
     }))
 
-    // Build CombatData for the client animation
     const combatDataPayload = {
       player: {
         id: character.id,
@@ -169,11 +156,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (!playerWon) {
-      // Player lost — dungeon run fails, delete it
-      await prisma.dungeonRun.delete({ where: { id: run.id } })
-
-      // Degrade player's equipped items even on defeat (combat still happened)
-      const durabilityResult = await degradeEquipment(prisma, character_id)
+      // Player lost — delete run + degrade equipment in parallel
+      const [, durabilityResult] = await Promise.all([
+        prisma.dungeonRun.delete({ where: { id: run.id } }),
+        degradeEquipment(prisma, character_id),
+      ])
 
       return NextResponse.json({
         ...combatDataPayload,
@@ -198,114 +185,71 @@ export async function POST(req: NextRequest) {
 
     // Player won the boss
     const currentFloor = run.currentFloor
-    // CHA gold bonus: +0.5% per CHA point
     const goldReward = chaGoldBonus(bossGoldReward(currentFloor, run.difficulty), character.cha)
     const xpReward = bossXpReward(currentFloor, run.difficulty)
     const newTotalGold = state.totalGoldEarned + goldReward
     const newTotalXp = state.totalXpEarned + xpReward
     const newFloorsCleared = state.floorsCleared + 1
 
-    // Grant gold and xp to the character
-    await prisma.character.update({
-      where: { id: character_id },
-      data: {
-        gold: { increment: goldReward },
-        currentXp: { increment: xpReward },
-      },
-    })
-
-    // Check for level-up
-    const levelUpResult = await applyLevelUp(prisma, character_id)
-
-    // Update dungeon progress — each floor = one boss defeated
-    const bossIndex = currentFloor // floor 1 beaten = bossIndex 1
+    const bossIndex = currentFloor
     const totalBosses = getDungeonBossCount(dungeonId)
     const isDungeonComplete = bossIndex >= totalBosses
 
-    await prisma.dungeonProgress.upsert({
-      where: {
-        characterId_dungeonId: {
-          characterId: character_id,
-          dungeonId,
+    // Core DB writes — gold/xp + progress + run update/delete — in parallel
+    const nextFloorData = isDungeonComplete ? null : generateDungeonFloor(currentFloor + 1, run.difficulty, dungeonId)
+
+    await Promise.all([
+      // Grant gold and xp
+      prisma.character.update({
+        where: { id: character_id },
+        data: {
+          gold: { increment: goldReward },
+          currentXp: { increment: xpReward },
         },
-      },
-      create: {
-        characterId: character_id,
-        dungeonId,
-        bossIndex,
-        completed: isDungeonComplete,
-      },
-      update: {
-        bossIndex: { set: bossIndex },
-        completed: isDungeonComplete,
-      },
-    })
+      }),
+      // Update dungeon progress
+      prisma.dungeonProgress.upsert({
+        where: { characterId_dungeonId: { characterId: character_id, dungeonId } },
+        create: { characterId: character_id, dungeonId, bossIndex, completed: isDungeonComplete },
+        update: { bossIndex: { set: bossIndex }, completed: isDungeonComplete },
+      }),
+      // Delete or advance run
+      isDungeonComplete
+        ? prisma.dungeonRun.delete({ where: { id: run.id } })
+        : prisma.dungeonRun.update({
+            where: { id: run.id },
+            data: {
+              currentFloor: currentFloor + 1,
+              state: JSON.parse(JSON.stringify({
+                enemies: nextFloorData!.enemies,
+                isBoss: nextFloorData!.isBoss,
+                floorsCleared: newFloorsCleared,
+                totalGoldEarned: newTotalGold,
+                totalXpEarned: newTotalXp,
+              })),
+            },
+          }),
+    ])
 
-    // Update daily quest progress
-    await updateDailyQuestProgress(prisma, character_id, 'dungeons_complete')
+    // Non-critical post-combat work in parallel (level-up, quests, BP, loot, durability)
+    const [levelUpResult, , , lootItem, winDurabilityResult] = await Promise.all([
+      applyLevelUp(prisma, character_id),
+      updateDailyQuestProgress(prisma, character_id, 'dungeons_complete'),
+      awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR),
+      rollAndPersistLoot(prisma, character_id, character.level, 'boss', character.luk),
+      degradeEquipment(prisma, character_id),
+    ])
 
-    // Award Battle Pass XP
-    await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR)
-
-    // Roll for loot — every boss has 75% chance
     const loot: LootResponseItem[] = []
-    const lootItem = await rollAndPersistLoot(prisma, character_id, character.level, 'boss', character.luk)
     if (lootItem) loot.push(lootItem)
 
-    // Degrade player's equipped items after combat
-    const winDurabilityResult = await degradeEquipment(prisma, character_id)
-
-    if (isDungeonComplete) {
-      // Dungeon complete — delete the run
-      await prisma.dungeonRun.delete({ where: { id: run.id } })
-
-      return NextResponse.json({
-        ...combatDataPayload,
-        result: {
-          is_win: true,
-          winner_id: character.id,
-          gold_reward: goldReward,
-          xp_reward: xpReward,
-          turns_taken: primaryCombatResult?.totalTurns ?? 0,
-          leveled_up: levelUpResult?.leveledUp ?? false,
-          new_level: levelUpResult?.newLevel,
-          stat_points_awarded: levelUpResult?.statPointsAwarded,
-        },
-        victory: true,
-        combatResults,
-        floorCleared: currentFloor,
-        dungeonComplete: true,
-        rewards: {
-          gold: goldReward,
-          xp: xpReward,
-          totalGold: newTotalGold,
-          totalXp: newTotalXp,
-          floorsCleared: newFloorsCleared,
-        },
-        loot,
-        durability_changes: winDurabilityResult.degraded,
-      })
+    // Invalidate combat caches if level changed
+    if (levelUpResult?.leveledUp) {
+      invalidateSkillCache(character_id)
+      invalidatePassiveCache(character_id)
     }
 
-    // Not complete — advance to next boss
-    const nextFloor = currentFloor + 1
-    const nextFloorData = generateDungeonFloor(nextFloor, run.difficulty, dungeonId)
-
-    await prisma.dungeonRun.update({
-      where: { id: run.id },
-      data: {
-        currentFloor: nextFloor,
-        state: JSON.parse(JSON.stringify({
-          enemies: nextFloorData.enemies,
-          isBoss: nextFloorData.isBoss,
-          floorsCleared: newFloorsCleared,
-          totalGoldEarned: newTotalGold,
-          totalXpEarned: newTotalXp,
-        })),
-      },
-    })
-
-    return NextResponse.json({
+    const baseResult = {
       ...combatDataPayload,
       result: {
         is_win: true,
@@ -320,7 +264,7 @@ export async function POST(req: NextRequest) {
       victory: true,
       combatResults,
       floorCleared: currentFloor,
-      dungeonComplete: false,
+      dungeonComplete: isDungeonComplete,
       rewards: {
         gold: goldReward,
         xp: xpReward,
@@ -329,13 +273,21 @@ export async function POST(req: NextRequest) {
         floorsCleared: newFloorsCleared,
       },
       loot,
-      nextFloor: {
-        number: nextFloor,
-        enemies: nextFloorData.enemies,
-        isBoss: nextFloorData.isBoss,
-      },
       durability_changes: winDurabilityResult.degraded,
-    })
+    }
+
+    if (!isDungeonComplete && nextFloorData) {
+      return NextResponse.json({
+        ...baseResult,
+        nextFloor: {
+          number: currentFloor + 1,
+          enemies: nextFloorData.enemies,
+          isBoss: nextFloorData.isBoss,
+        },
+      })
+    }
+
+    return NextResponse.json(baseResult)
   } catch (error) {
     console.error('dungeon fight error:', error)
     return NextResponse.json(

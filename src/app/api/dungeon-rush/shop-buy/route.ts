@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import {
   generateShopItems,
   adjustHpPercent,
@@ -11,6 +12,10 @@ import {
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`rush-shop:${user.id}`, 15, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()
@@ -30,18 +35,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: character_id, userId: user.id },
-    })
-    if (!character) {
-      return NextResponse.json(
-        { error: 'Character not found' },
-        { status: 404 },
-      )
-    }
-
-    // Load the active rush run
+    // Load the active rush run first (we need room info before deciding on character fields)
     const run = await prisma.dungeonRun.findFirst({
       where: {
         id: run_id,
@@ -93,18 +87,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check gold
-    if (character.gold < item.price) {
-      return NextResponse.json(
-        { error: `Not enough gold. Need ${item.price}, have ${character.gold}` },
-        { status: 400 },
+    // TOCTOU-safe: gold check + deduction in a single transaction with FOR UPDATE
+    const txResult = await prisma.$transaction(async (tx) => {
+      const [character] = await tx.$queryRawUnsafe<Array<{id: string; user_id: string; gold: number}>>(
+        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
+        character_id
       )
-    }
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
 
-    // Deduct gold
-    await prisma.character.update({
-      where: { id: character_id },
-      data: { gold: { decrement: item.price } },
+      if (character.gold < item.price) {
+        throw new Error(`GOLD:Not enough gold. Need ${item.price}, have ${character.gold}`)
+      }
+
+      // Deduct gold
+      await tx.character.update({
+        where: { id: character_id },
+        data: { gold: { decrement: item.price } },
+      })
+
+      return { remainingGold: character.gold - item.price }
     })
 
     // Apply purchase effect
@@ -151,10 +153,24 @@ export async function POST(req: NextRequest) {
       },
       currentHpPercent: newHpPercent,
       buffs: newBuffs,
-      playerGold: character.gold - item.price,
+      playerGold: txResult.remainingGold,
       shopPurchased: newState.shopPurchased,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND' || error.message === 'FORBIDDEN') {
+        return NextResponse.json(
+          { error: 'Character not found' },
+          { status: 404 },
+        )
+      }
+      if (error.message.startsWith('GOLD:')) {
+        return NextResponse.json(
+          { error: error.message.slice(5) },
+          { status: 400 },
+        )
+      }
+    }
     console.error('dungeon rush shop-buy error:', error)
     return NextResponse.json(
       { error: 'Failed to process shop purchase' },

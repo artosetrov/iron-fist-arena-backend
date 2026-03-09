@@ -6,6 +6,7 @@ import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { STAMINA } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { rateLimit } from '@/lib/rate-limit'
 
 // How much stamina each stamina potion restores
 const STAMINA_RESTORE: Partial<Record<ConsumableType, number>> = {
@@ -37,6 +38,10 @@ function isHealthPotion(type: ConsumableType): boolean {
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`consumable-use:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import {
   generateRushEnemy,
   isCombatRoom,
@@ -12,6 +13,10 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (!rateLimit(`rush-status:${user.id}`, 30, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const characterId = req.nextUrl.searchParams.get('character_id')
     if (!characterId) {
@@ -21,25 +26,27 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: characterId, userId: user.id },
-    })
+    // Parallel: verify character (select only id) + find active rush run
+    const [character, run] = await Promise.all([
+      prisma.character.findFirst({
+        where: { id: characterId, userId: user.id },
+        select: { id: true },
+      }),
+      prisma.dungeonRun.findFirst({
+        where: {
+          characterId,
+          difficulty: 'rush',
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
     if (!character) {
       return NextResponse.json(
         { error: 'Character not found' },
         { status: 404 },
       )
     }
-
-    // Find active rush run
-    const run = await prisma.dungeonRun.findFirst({
-      where: {
-        characterId,
-        difficulty: 'rush',
-      },
-      orderBy: { createdAt: 'desc' },
-    })
 
     if (!run) {
       return NextResponse.json({

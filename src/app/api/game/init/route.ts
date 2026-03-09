@@ -64,10 +64,32 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       prisma.character.findUnique({
         where: { id: characterId },
+        select: {
+          id: true, userId: true, characterName: true, class: true, origin: true,
+          gender: true, avatar: true, level: true,
+          str: true, agi: true, vit: true, end: true, int: true, wis: true, luk: true, cha: true,
+          statPointsAvailable: true, currentXp: true,
+          gold: true, currentStamina: true, maxStamina: true, lastStaminaUpdate: true,
+          currentHp: true, maxHp: true, lastHpUpdate: true,
+          armor: true, magicResist: true,
+          pvpRating: true, pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
+          pvpCalibrationGames: true, highestPvpRank: true,
+          freePvpToday: true, freePvpDate: true, firstWinToday: true, firstWinDate: true,
+          combatStance: true, inventorySlots: true, goldMineSlots: true,
+          createdAt: true, lastPlayed: true,
+        },
       }),
       prisma.equipmentInventory.findMany({
         where: { characterId },
-        include: { item: true },
+        include: {
+          item: {
+            select: {
+              id: true, itemName: true, itemType: true, rarity: true, itemLevel: true,
+              baseStats: true, setName: true, specialEffect: true, uniquePassive: true,
+              imageUrl: true, classRestriction: true, description: true,
+            },
+          },
+        },
       }),
       prisma.consumableInventory.findMany({
         where: { characterId },

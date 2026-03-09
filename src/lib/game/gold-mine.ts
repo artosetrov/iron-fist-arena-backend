@@ -2,8 +2,8 @@ import { PrismaClient } from '@prisma/client'
 import { GEM_COSTS } from './balance'
 
 export const MINE_DURATION_HOURS = 4
-export const MINE_REWARD_MIN = 200
-export const MINE_REWARD_MAX = 500
+export const MINE_REWARD_MIN = 100
+export const MINE_REWARD_MAX = 250
 export const BOOST_COST_GEMS = GEM_COSTS.GOLD_MINE_BOOST
 export const MAX_GOLD_MINE_SLOTS = 3
 export const SLOT_COST_GEMS = GEM_COSTS.GOLD_MINE_BUY_SLOT

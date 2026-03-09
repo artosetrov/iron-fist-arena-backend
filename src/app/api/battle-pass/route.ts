@@ -59,10 +59,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No active season' }, { status: 404 })
     }
 
-    // Get or create battle pass for this character + season
-    let battlePass = await prisma.battlePass.findFirst({
-      where: { characterId, seasonId: activeSeason.id },
-    })
+    // Get battle pass and rewards in parallel (both depend only on season)
+    let [battlePass, rewards] = await Promise.all([
+      prisma.battlePass.findFirst({
+        where: { characterId, seasonId: activeSeason.id },
+      }),
+      prisma.battlePassReward.findMany({
+        where: { seasonId: activeSeason.id },
+        orderBy: [{ bpLevel: 'asc' }, { isPremium: 'asc' }],
+      }),
+    ])
 
     if (!battlePass) {
       battlePass = await prisma.battlePass.create({
@@ -77,12 +83,6 @@ export async function GET(req: NextRequest) {
 
     // Calculate current level
     const { level, xpIntoLevel, xpForNext } = calculateBpLevel(battlePass.bpXp)
-
-    // Get all rewards for this season
-    const rewards = await prisma.battlePassReward.findMany({
-      where: { seasonId: activeSeason.id },
-      orderBy: [{ bpLevel: 'asc' }, { isPremium: 'asc' }],
-    })
 
     // Get claimed rewards
     const claims = await prisma.battlePassClaim.findMany({

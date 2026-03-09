@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthAdmin, forbiddenResponse } from '@/lib/auth-admin'
 import { prisma } from '@/lib/prisma'
+import { cacheDelete, cacheDeletePrefix } from '@/lib/cache'
 
 /**
  * GET /api/admin/item-balance/config
@@ -60,6 +61,10 @@ export async function POST(req: NextRequest) {
         description: '',
       },
     })
+
+    // Invalidate cached config so changes take effect immediately
+    cacheDelete(`gameconfig:${key}`)
+    cacheDeletePrefix('gameconfig:batch:')
 
     // Log the admin action
     await prisma.adminLog.create({

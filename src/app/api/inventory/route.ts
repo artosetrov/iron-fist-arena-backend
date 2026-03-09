@@ -30,16 +30,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const equipment = await prisma.equipmentInventory.findMany({
-      where: { characterId },
-      include: { item: true },
-      orderBy: { acquiredAt: 'desc' },
-    })
-
-    const consumables = await prisma.consumableInventory.findMany({
-      where: { characterId },
-      orderBy: { consumableType: 'asc' },
-    })
+    // Fetch equipment and consumables in parallel
+    const [equipment, consumables] = await Promise.all([
+      prisma.equipmentInventory.findMany({
+        where: { characterId },
+        include: {
+          item: {
+            select: {
+              id: true, itemName: true, itemType: true, rarity: true, itemLevel: true,
+              baseStats: true, setName: true, specialEffect: true, uniquePassive: true,
+              imageUrl: true, classRestriction: true, description: true,
+            },
+          },
+        },
+        orderBy: { acquiredAt: 'desc' },
+      }),
+      prisma.consumableInventory.findMany({
+        where: { characterId },
+        orderBy: { consumableType: 'asc' },
+      }),
+    ])
 
     // Calculate effective stats for each equipment item (baseStats + upgrade bonus)
     const upgradeStatBonus = await getUpgradeStatBonus()

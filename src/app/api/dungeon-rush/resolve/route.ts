@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import { chaGoldBonus } from '@/lib/game/balance'
 import {
   resolveEvent,
@@ -18,6 +19,10 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (!rateLimit(`rush-resolve:${user.id}`, 20, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const body = await req.json()
     const { character_id, run_id, action } = body
@@ -29,10 +34,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: character_id, userId: user.id },
-    })
+    // Parallel: verify character (select only needed fields) + load run
+    const [character, run] = await Promise.all([
+      prisma.character.findFirst({
+        where: { id: character_id, userId: user.id },
+        select: { id: true, cha: true, gold: true },
+      }),
+      prisma.dungeonRun.findFirst({
+        where: {
+          id: run_id,
+          characterId: character_id,
+          difficulty: 'rush',
+        },
+      }),
+    ])
+
     if (!character) {
       return NextResponse.json(
         { error: 'Character not found' },
@@ -40,14 +56,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Load the active rush run
-    const run = await prisma.dungeonRun.findFirst({
-      where: {
-        id: run_id,
-        characterId: character_id,
-        difficulty: 'rush',
-      },
-    })
     if (!run) {
       return NextResponse.json(
         { error: 'No active dungeon rush found' },

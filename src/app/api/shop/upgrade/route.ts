@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { UPGRADE_CHANCES } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
+import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
+import { rateLimit } from '@/lib/rate-limit'
 import {
   getUpgradeCost,
   getUpgradeSuccessChance,
@@ -15,6 +17,10 @@ import {
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`upgrade:${user.id}`, 15, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()
@@ -125,9 +131,13 @@ export async function POST(req: NextRequest) {
 
     if (success && result.updatedItem.isEquipped) {
       await recalculateDerivedStats(character_id)
+      invalidateSkillCache(character_id)
+      invalidatePassiveCache(character_id)
     }
     if (!success && result.levelLost && result.updatedItem.isEquipped) {
       await recalculateDerivedStats(character_id)
+      invalidateSkillCache(character_id)
+      invalidatePassiveCache(character_id)
     }
 
     const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })

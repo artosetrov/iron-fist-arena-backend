@@ -3,11 +3,16 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { SKILLS } from '@/lib/game/balance'
 import { cacheDelete } from '@/lib/cache'
+import { rateLimit } from '@/lib/rate-limit'
 
 // POST — Learn a new skill
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`skills-learn:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const { character_id, skill_id } = await req.json()

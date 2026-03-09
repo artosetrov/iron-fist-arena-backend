@@ -230,6 +230,7 @@ model Character {
   freePvpToday      Int       @default(0) @map("free_pvp_today")
   freePvpDate       DateTime? @map("free_pvp_date")
 
+  gearScore         Int       @default(0) @map("gear_score")
   goldMineSlots     Int       @default(1) @map("gold_mine_slots")
   inventorySlots    Int       @default(28) @map("inventory_slots")
   dailyBonusDate    DateTime? @map("daily_bonus_date")
@@ -265,7 +266,9 @@ model Character {
 
   @@index([userId])
   @@index([pvpRating])
+  @@index([pvpRating, pvpCalibrationGames])
   @@index([level])
+  @@index([level, gearScore])
   @@index([gold])
   @@map("characters")
 }
@@ -362,6 +365,8 @@ model PvpMatch {
 
   @@index([player1Id])
   @@index([player2Id])
+  @@index([player1Id, playedAt(sort: Desc)])
+  @@index([player2Id, playedAt(sort: Desc)])
   @@index([winnerId])
   @@index([playedAt(sort: Desc)])
   @@map("pvp_matches")
@@ -377,6 +382,7 @@ model DungeonProgress {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([characterId, dungeonId])
+  @@index([characterId, completed])
   @@map("dungeon_progress")
 }
 
@@ -438,6 +444,7 @@ model GoldMineSession {
 
   @@index([characterId])
   @@index([characterId, collected])
+  @@index([characterId, endsAt])
   @@map("gold_mine_sessions")
 }
 
@@ -454,6 +461,7 @@ model MinigameSession {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId])
+  @@index([characterId, status])
   @@map("minigame_sessions")
 }
 
@@ -551,6 +559,7 @@ model Cosmetic {
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, type])
   @@map("cosmetics")
 }
 
@@ -593,6 +602,7 @@ model RevengeQueue {
 
   @@index([victimId, isUsed, expiresAt])
   @@index([attackerId])
+  @@index([expiresAt])
   @@map("revenge_queue")
 }
 
@@ -645,6 +655,7 @@ model IapTransaction {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([transactionId])
+  @@index([status, createdAt(sort: Desc)])
   @@map("iap_transactions")
 }
 

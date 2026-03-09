@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
+import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
+import { rateLimit } from '@/lib/rate-limit'
 
 const STAT_KEYS = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha'] as const
 
@@ -11,6 +13,10 @@ export async function POST(
 ) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`allocate-stats:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const { id } = await params
@@ -90,6 +96,10 @@ export async function POST(
 
     // Recalculate derived stats (maxHp, armor, magicResist) including equipment
     await recalculateDerivedStats(id)
+
+    // Invalidate combat caches so PvP uses fresh stats
+    invalidateSkillCache(id)
+    invalidatePassiveCache(id)
 
     const updated = await prisma.character.findUnique({ where: { id } })
     return NextResponse.json({ character: updated })

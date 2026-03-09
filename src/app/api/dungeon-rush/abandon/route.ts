@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`rush-abandon:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()
@@ -17,24 +22,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: character_id, userId: user.id },
-    })
+    // Parallel: verify character (select only id) + find active rush run
+    const [character, run] = await Promise.all([
+      prisma.character.findFirst({
+        where: { id: character_id, userId: user.id },
+        select: { id: true },
+      }),
+      prisma.dungeonRun.findFirst({
+        where: {
+          characterId: character_id,
+          difficulty: 'rush',
+        },
+      }),
+    ])
+
     if (!character) {
       return NextResponse.json(
         { error: 'Character not found' },
         { status: 404 },
       )
     }
-
-    // Find active rush run
-    const run = await prisma.dungeonRun.findFirst({
-      where: {
-        characterId: character_id,
-        difficulty: 'rush',
-      },
-    })
 
     if (!run) {
       return NextResponse.json(

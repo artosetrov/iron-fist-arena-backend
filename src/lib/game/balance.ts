@@ -25,13 +25,13 @@ export const HP_REGEN = {
 // --- XP ---
 /** XP required to reach the given level (cumulative threshold). */
 export function xpForLevel(level: number): number {
-  return 100 * level + 50 * level * level;
+  return 100 * level + 20 * level * level;
 }
 
 // --- Gold rewards ---
 export const GOLD_REWARDS = {
-  PVP_WIN_BASE: 100,
-  PVP_LOSS_BASE: 30,
+  PVP_WIN_BASE: 150,
+  PVP_LOSS_BASE: 50,
   TRAINING_WIN: 50,
   TRAINING_LOSS: 20,
   REVENGE_MULTIPLIER: 1.5,
@@ -39,10 +39,10 @@ export const GOLD_REWARDS = {
 
 // --- XP rewards ---
 export const XP_REWARDS = {
-  PVP_WIN_XP: 80,
-  PVP_LOSS_XP: 20,
-  TRAINING_WIN_XP: 40,
-  TRAINING_LOSS_XP: 10,
+  PVP_WIN_XP: 120,
+  PVP_LOSS_XP: 40,
+  TRAINING_WIN_XP: 60,
+  TRAINING_LOSS_XP: 20,
 } as const;
 
 // --- First win of the day bonus ---
@@ -124,10 +124,18 @@ export const COMBAT = {
   CRIT_MULTIPLIER: 1.5,
   MAX_CRIT_CHANCE: 50,
   MAX_DODGE_CHANCE: 30,
-  ROGUE_DODGE_BONUS: 5,         // rogues get +5% dodge
+  ROGUE_DODGE_BONUS: 3,         // rogues get +3% dodge (was 5)
   TANK_DAMAGE_REDUCTION: 0.85,  // tanks take 15% less damage
   DAMAGE_VARIANCE: 0.10,        // ±10% damage variance
-  POISON_ARMOR_PENETRATION: 0.5, // poison ignores 50% of armor
+  POISON_ARMOR_PENETRATION: 0.3, // poison ignores 30% of armor (was 50%)
+  // Crit/dodge formula coefficients (rebalanced to nerf AGI dominance)
+  CRIT_PER_LUK: 0.7,            // was 0.5 — LUK is now the primary crit stat
+  CRIT_PER_AGI: 0.15,           // was 0.3 — AGI crit contribution halved
+  DODGE_PER_AGI: 0.2,           // was 0.3 — dodge slightly nerfed
+  DODGE_PER_LUK: 0.1,           // NEW — LUK adds minor dodge
+  // CHA intimidation: reduces enemy damage by 0.15% per CHA point (max 15%)
+  CHA_INTIMIDATION_PER_POINT: 0.15,
+  CHA_INTIMIDATION_CAP: 15,
 } as const;
 
 // --- Prestige ---
@@ -147,9 +155,29 @@ export const DROP_CHANCES: Record<string, number> = {
   boss: 0.75,
 } as const;
 
-/** CHA gold bonus: +0.5% per CHA point */
+/** CHA gold bonus: +1% per CHA point (was 0.5%) */
 export function chaGoldBonus(baseGold: number, cha: number): number {
-  return Math.floor(baseGold * (1 + cha * 0.005));
+  return Math.floor(baseGold * (1 + cha * 0.01));
+}
+
+// --- Win Streak Gold Bonuses ---
+// Index = streak length, value = bonus multiplier (0 = no bonus)
+// 3-win: +20%, 5-win: +50%, 8+win: +100%
+export const WIN_STREAK_BONUSES: readonly number[] = [
+  0, 0, 0, 0.2, 0.2, 0.5, 0.5, 0.5, 1.0, 1.0, 1.0,
+] as const;
+
+/** Get the gold bonus multiplier for the current win streak. */
+export function streakGoldMultiplier(winStreak: number): number {
+  if (winStreak < 0) return 0;
+  const idx = Math.min(winStreak, WIN_STREAK_BONUSES.length - 1);
+  return WIN_STREAK_BONUSES[idx];
+}
+
+/** Scale PvP gold/XP reward based on character level (higher levels earn slightly more). */
+export function levelScaledReward(baseReward: number, level: number): number {
+  // +2% per level above 1 (level 50 gets +98% = ~2x rewards)
+  return Math.floor(baseReward * (1 + (level - 1) * 0.02));
 }
 
 // --- Active Skills ---

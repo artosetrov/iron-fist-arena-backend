@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import {
   createInitialRushState,
@@ -16,6 +17,10 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  if (!rateLimit(`rush-start:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const body = await req.json()
     const { character_id } = body
@@ -27,18 +32,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character belongs to user
-    const character = await prisma.character.findFirst({
-      where: { id: character_id, userId: user.id },
-    })
-    if (!character) {
-      return NextResponse.json(
-        { error: 'Character not found' },
-        { status: 404 },
-      )
-    }
-
-    // Check for active rush run — resume it instead of 409
+    // Check for active rush run BEFORE the transaction (read-only, no TOCTOU concern)
     const activeRun = await prisma.dungeonRun.findFirst({
       where: {
         characterId: character_id,
@@ -80,27 +74,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check stamina (account for time-based regeneration)
-    const staminaResult = calculateCurrentStamina(
-      character.currentStamina,
-      character.maxStamina,
-      character.lastStaminaUpdate ?? new Date()
-    )
-    const currentStamina = staminaResult.stamina
-    if (currentStamina < RUSH_STAMINA_COST) {
-      return NextResponse.json(
-        { error: `Not enough stamina. Need ${RUSH_STAMINA_COST}, have ${currentStamina}` },
-        { status: 400 },
+    // TOCTOU-safe: character lookup + stamina check + deduction in a single transaction with FOR UPDATE
+    const result = await prisma.$transaction(async (tx) => {
+      const [character] = await tx.$queryRawUnsafe<Array<{id: string; user_id: string; current_stamina: number; max_stamina: number; last_stamina_update: Date | null}>>(
+        `SELECT id, user_id, current_stamina, max_stamina, last_stamina_update FROM characters WHERE id = $1 FOR UPDATE`,
+        character_id
       )
-    }
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
 
-    // Deduct stamina
-    await prisma.character.update({
-      where: { id: character_id },
-      data: {
-        currentStamina: currentStamina - RUSH_STAMINA_COST,
-        lastStaminaUpdate: new Date(),
-      },
+      // Check stamina (account for time-based regeneration)
+      const staminaResult = calculateCurrentStamina(
+        character.current_stamina,
+        character.max_stamina,
+        character.last_stamina_update ?? new Date()
+      )
+      const currentStamina = staminaResult.stamina
+      if (currentStamina < RUSH_STAMINA_COST) {
+        throw new Error(`STAMINA:Not enough stamina. Need ${RUSH_STAMINA_COST}, have ${currentStamina}`)
+      }
+
+      // Deduct stamina
+      await tx.character.update({
+        where: { id: character_id },
+        data: {
+          currentStamina: currentStamina - RUSH_STAMINA_COST,
+          lastStaminaUpdate: new Date(),
+        },
+      })
+
+      return { currentStamina }
     })
 
     // Create fresh rush state with 12 rooms
@@ -135,6 +138,20 @@ export async function POST(req: NextRequest) {
       },
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_FOUND' || error.message === 'FORBIDDEN') {
+        return NextResponse.json(
+          { error: 'Character not found' },
+          { status: 404 },
+        )
+      }
+      if (error.message.startsWith('STAMINA:')) {
+        return NextResponse.json(
+          { error: error.message.slice(8) },
+          { status: 400 },
+        )
+      }
+    }
     console.error('start dungeon rush error:', error)
     return NextResponse.json(
       { error: 'Failed to start dungeon rush' },

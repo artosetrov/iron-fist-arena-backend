@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
+import { rateLimit } from '@/lib/rate-limit'
 
 const CONSUMABLE_PRICES: Record<ConsumableType, number> = {
   stamina_potion_small: 100,
@@ -15,6 +16,10 @@ const CONSUMABLE_PRICES: Record<ConsumableType, number> = {
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (!rateLimit(`shop-buy-consumable:${user.id}`, 15, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()

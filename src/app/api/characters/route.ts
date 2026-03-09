@@ -27,18 +27,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    // Ensure user record exists (handles legacy Supabase-only users)
-    await prisma.user.upsert({
-      where: { id: user.id },
-      update: {},
-      create: {
-        id: user.id,
-        email: user.email ?? null,
-        username: user.email?.split('@')[0] ?? 'player',
-        authProvider: 'email',
-      },
-    })
-
+    // User record is ensured at auth/login time — no need to upsert on every GET
     const characters = await prisma.character.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
