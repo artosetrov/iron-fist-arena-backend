@@ -143,9 +143,13 @@ export async function POST(
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
 
+    const attackerFinalHp = Math.max(combatResult.finalHp[attacker.id] ?? 0, 0)
+    const defenderFinalHp = Math.max(combatResult.finalHp[defender.id] ?? 0, 0)
     const attackerUpdate: Record<string, unknown> = {
       currentStamina: newStamina,
       lastStaminaUpdate: now,
+      currentHp: attackerFinalHp,
+      lastHpUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
       gold: { increment: goldReward },
@@ -173,6 +177,8 @@ export async function POST(
     const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
     const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
     const defenderUpdate: Record<string, unknown> = {
+      currentHp: defenderFinalHp,
+      lastHpUpdate: now,
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
       gold: { increment: defenderGoldReward },
@@ -240,6 +246,24 @@ export async function POST(
 
     return NextResponse.json({
       loot,
+      player: {
+        id: attacker.id,
+        character_name: attacker.characterName,
+        class: attacker.class,
+        origin: attacker.origin,
+        level: attacker.level,
+        max_hp: attacker.maxHp,
+        avatar: attacker.avatar,
+      },
+      enemy: {
+        id: defender.id,
+        character_name: defender.characterName,
+        class: defender.class,
+        origin: defender.origin,
+        level: defender.level,
+        max_hp: defender.maxHp,
+        avatar: defender.avatar,
+      },
       combat: {
         winnerId: combatResult.winnerId,
         loserId: combatResult.loserId,

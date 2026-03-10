@@ -34,8 +34,10 @@ export interface CharacterStats {
   luk: number;
   cha: number;
   maxHp: number;
+  currentHp?: number;
   armor: number;
   magicResist: number;
+  avatar?: string | null;
   combatStance?: Record<string, unknown> | null;
   equippedSkills?: SkillDefinition[];
   passiveBonuses?: PassiveBonuses;
@@ -59,6 +61,7 @@ export interface CombatResult {
   loserId: string;
   turns: Turn[];
   totalTurns: number;
+  finalHp: Record<string, number>;
 }
 
 // --- Stance definitions ---
@@ -365,8 +368,8 @@ function resolveAttack(
  */
 export function runCombat(attacker: CharacterStats, defender: CharacterStats, seed?: number): CombatResult {
   const rng: SeededRng = seed != null ? createSeededRng(seed) : (() => Math.random());
-  let hpA = attacker.maxHp;
-  let hpD = defender.maxHp;
+  let hpA = attacker.currentHp ?? attacker.maxHp;
+  let hpD = defender.currentHp ?? defender.maxHp;
 
   const turns: Turn[] = [];
 
@@ -438,7 +441,7 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
       }
 
       if (hpSecond <= 0) {
-        return buildResult(first.id, second.id, turns);
+        return buildResult(first.id, second.id, turns, { [first.id]: hpFirst, [second.id]: 0 });
       }
     }
 
@@ -459,7 +462,7 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
       }
 
       if (hpFirst <= 0) {
-        return buildResult(second.id, first.id, turns);
+        return buildResult(second.id, first.id, turns, { [first.id]: 0, [second.id]: hpSecond });
       }
     }
 
@@ -473,17 +476,18 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
   const pctSecond = hpSecond / maxHpSecond;
 
   if (pctFirst >= pctSecond) {
-    return buildResult(first.id, second.id, turns);
+    return buildResult(first.id, second.id, turns, { [first.id]: hpFirst, [second.id]: hpSecond });
   } else {
-    return buildResult(second.id, first.id, turns);
+    return buildResult(second.id, first.id, turns, { [first.id]: hpFirst, [second.id]: hpSecond });
   }
 }
 
-function buildResult(winnerId: string, loserId: string, turns: Turn[]): CombatResult {
+function buildResult(winnerId: string, loserId: string, turns: Turn[], finalHp: Record<string, number>): CombatResult {
   return {
     winnerId,
     loserId,
     turns,
     totalTurns: turns.length,
+    finalHp,
   };
 }

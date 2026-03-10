@@ -75,7 +75,7 @@ export async function POST(
         where: { id: character_id, userId: user.id },
         select: {
           id: true, userId: true, characterName: true, class: true, origin: true,
-          level: true, maxHp: true, cha: true, luk: true,
+          level: true, maxHp: true, avatar: true, cha: true, luk: true,
         },
       }),
       prisma.dungeonRun.findFirst({
@@ -102,11 +102,15 @@ export async function POST(
     // Run combat
     const combatResults: Array<{ enemyName: string; won: boolean; turns: number }> = []
     let playerWon = true
+    let playerFinalHp = playerStats.currentHp ?? playerStats.maxHp
 
     for (const enemy of state.enemies) {
       const enemyStats = enemyToCharacterStats(enemy)
       const result = runCombat(playerStats, enemyStats)
       const won = result.winnerId === playerStats.id
+
+      // Track player's remaining HP through the floor
+      playerFinalHp = Math.max(result.finalHp[playerStats.id] ?? 0, 0)
 
       combatResults.push({ enemyName: enemy.name, won, turns: result.totalTurns })
 
@@ -116,11 +120,17 @@ export async function POST(
       }
     }
 
+    const now = new Date()
+
     if (!playerWon) {
-      // Delete run + degrade equipment in parallel
+      // Delete run + degrade equipment + save HP in parallel
       const [, durabilityResult] = await Promise.all([
         prisma.dungeonRun.delete({ where: { id: run.id } }),
         degradeEquipment(prisma, character_id),
+        prisma.character.update({
+          where: { id: character_id },
+          data: { currentHp: playerFinalHp, lastHpUpdate: now },
+        }),
       ])
 
       return NextResponse.json({
@@ -160,6 +170,8 @@ export async function POST(
         data: {
           gold: { increment: goldReward },
           currentXp: { increment: xpReward },
+          currentHp: playerFinalHp,
+          lastHpUpdate: now,
         },
       }),
       prisma.dungeonProgress.upsert({

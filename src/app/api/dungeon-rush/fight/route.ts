@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     const [character, run, playerStatsRaw] = await Promise.all([
       prisma.character.findFirst({
         where: { id: character_id, userId: user.id },
-        select: { id: true, characterName: true, class: true, origin: true, level: true, maxHp: true, cha: true, luk: true },
+        select: { id: true, characterName: true, class: true, origin: true, level: true, maxHp: true, avatar: true, cha: true, luk: true },
       }),
       prisma.dungeonRun.findFirst({
         where: {
@@ -163,6 +163,7 @@ export async function POST(req: NextRequest) {
         origin: character.origin,
         level: character.level,
         max_hp: playerCurrentHp,
+        avatar: character.avatar,
       },
       enemy: {
         id: enemy.id,
@@ -213,12 +214,15 @@ export async function POST(req: NextRequest) {
     const newTotalXp = state.totalXpEarned + xpReward
     const newFloorsCleared = state.floorsCleared + 1
 
-    // Grant gold and xp to the character (atomic increment)
+    // Grant gold and xp, save post-combat HP to the character (atomic increment)
+    const playerPostCombatHp = Math.max(combatResult.finalHp[playerStatsForCombat.id] ?? 0, 0)
     await prisma.character.update({
       where: { id: character_id },
       data: {
         gold: { increment: goldReward },
         currentXp: { increment: xpReward },
+        currentHp: playerPostCombatHp,
+        lastHpUpdate: new Date(),
       },
     })
 

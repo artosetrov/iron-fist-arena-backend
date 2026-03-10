@@ -7,6 +7,7 @@ import { cacheDelete } from '@/lib/cache'
 import type { CharacterStats, DamageType } from './combat'
 import type { SkillDefinition } from './skills'
 import { aggregatePassiveBonuses, emptyPassiveBonuses, type PassiveBonuses } from './passives'
+import { calculateCurrentHp } from './hp-regen'
 
 /**
  * Load a character with all combat-relevant data: base stats, equipped skills, passive bonuses.
@@ -24,7 +25,9 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
       level: true,
       str: true, agi: true, vit: true, end: true,
       int: true, wis: true, luk: true, cha: true,
-      maxHp: true, armor: true, magicResist: true,
+      maxHp: true, currentHp: true, lastHpUpdate: true,
+      armor: true, magicResist: true,
+      avatar: true,
       combatStance: true,
       characterSkills: {
         where: { isEquipped: true },
@@ -42,6 +45,13 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
   })
 
   if (!character) throw new Error('Character not found')
+
+  // Apply HP regen based on time since last update
+  const hpRegen = calculateCurrentHp(
+    character.currentHp,
+    character.maxHp,
+    character.lastHpUpdate ?? new Date(),
+  )
 
   // Build equipped skills array
   const equippedSkills: SkillDefinition[] = character.characterSkills
@@ -85,8 +95,10 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
     luk: character.luk,
     cha: character.cha,
     maxHp: character.maxHp,
+    currentHp: hpRegen.hp,
     armor: character.armor,
     magicResist: character.magicResist,
+    avatar: character.avatar,
     combatStance: character.combatStance as Record<string, unknown> | null,
     equippedSkills,
     passiveBonuses,

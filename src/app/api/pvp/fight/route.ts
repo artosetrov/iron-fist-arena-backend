@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       characterName: true,
       class: true,
       origin: true,
+      avatar: true,
       gold: true,
       maxHp: true,
       pvpWins: true,
@@ -183,11 +184,15 @@ export async function POST(req: NextRequest) {
     const newStamina = currentStamina - staminaCost
     const now = new Date()
 
-    // Build attacker update
+    // Build attacker update — persist post-combat HP
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
+    const attackerFinalHp = Math.max(combatResult.finalHp[attacker.id] ?? 0, 0)
+    const defenderFinalHp = Math.max(combatResult.finalHp[defender.id] ?? 0, 0)
     const attackerUpdate: Record<string, unknown> = {
       currentStamina: newStamina,
       lastStaminaUpdate: now,
+      currentHp: attackerFinalHp,
+      lastHpUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
       gold: { increment: goldReward },
@@ -222,6 +227,8 @@ export async function POST(req: NextRequest) {
     const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
     const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
     const defenderUpdate: Record<string, unknown> = {
+      currentHp: defenderFinalHp,
+      lastHpUpdate: now,
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
       gold: { increment: defenderGoldReward },
@@ -330,6 +337,8 @@ export async function POST(req: NextRequest) {
         origin: attacker.origin,
         level: attacker.level,
         max_hp: attacker.maxHp,
+        current_hp: attackerStats.currentHp ?? attacker.maxHp,
+        avatar: attacker.avatar,
       },
       enemy: {
         id: defender.id,
@@ -338,6 +347,8 @@ export async function POST(req: NextRequest) {
         origin: defender.origin,
         level: defender.level,
         max_hp: defender.maxHp,
+        current_hp: defenderStats.currentHp ?? defender.maxHp,
+        avatar: defender.avatar,
       },
       combat_log,
       result: {
@@ -351,6 +362,10 @@ export async function POST(req: NextRequest) {
         leveled_up: levelUpResult?.leveledUp ?? false,
         new_level: levelUpResult?.newLevel,
         stat_points_awarded: levelUpResult?.statPointsAwarded,
+      },
+      post_combat_hp: {
+        player: attackerFinalHp,
+        enemy: defenderFinalHp,
       },
       rewards: { gold: goldReward, xp: xpReward },
       loot,

@@ -187,10 +187,14 @@ export async function POST(req: NextRequest) {
     const now = new Date()
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
 
-    // Build attacker update
+    // Build attacker update — persist post-combat HP
+    const attackerFinalHp = Math.max(combatResult.finalHp[attacker.id] ?? 0, 0)
+    const defenderFinalHp = Math.max(combatResult.finalHp[defender.id] ?? 0, 0)
     const attackerUpdate: Record<string, unknown> = {
       currentStamina: newStamina,
       lastStaminaUpdate: now,
+      currentHp: attackerFinalHp,
+      lastHpUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
       gold: { increment: goldReward },
@@ -225,6 +229,8 @@ export async function POST(req: NextRequest) {
     const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
     const defenderXpReward = attackerWon ? XP_REWARDS.PVP_LOSS_XP : XP_REWARDS.PVP_WIN_XP
     const defenderUpdate: Record<string, unknown> = {
+      currentHp: defenderFinalHp,
+      lastHpUpdate: now,
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
       gold: { increment: defenderGoldReward },
@@ -321,6 +327,10 @@ export async function POST(req: NextRequest) {
       verified: true,
       server_winner_id: winnerId,
       client_matches: clientMatchesServer,
+      post_combat_hp: {
+        player: attackerFinalHp,
+        enemy: defenderFinalHp,
+      },
       result: {
         is_win: attackerWon,
         winner_id: winnerId,
