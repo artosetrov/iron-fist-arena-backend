@@ -3,6 +3,67 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ItemType, Rarity, ConsumableType } from '@prisma/client'
 
+// Gem packages purchasable with gold (1 gem = 15 gold)
+const GEM_CATALOG = [
+  {
+    id: 'gem_pack_small',
+    catalog_id: 'gem_pack_small',
+    item_name: 'Small Gem Pouch',
+    item_type: 'consumable',
+    rarity: 'uncommon',
+    item_level: 1,
+    required_level: 1,
+    gold_price: 150,
+    gem_price: 0,
+    sell_price: 0,
+    base_stats: {},
+    description: 'Contains 10 gems.',
+    image_url: null,
+    special_effect: null,
+    unique_passive: null,
+    set_name: null,
+    consumable_type: 'gem_pack_small',
+  },
+  {
+    id: 'gem_pack_medium',
+    catalog_id: 'gem_pack_medium',
+    item_name: 'Medium Gem Pouch',
+    item_type: 'consumable',
+    rarity: 'rare',
+    item_level: 1,
+    required_level: 5,
+    gold_price: 750,
+    gem_price: 0,
+    sell_price: 0,
+    base_stats: {},
+    description: 'Contains 50 gems.',
+    image_url: null,
+    special_effect: null,
+    unique_passive: null,
+    set_name: null,
+    consumable_type: 'gem_pack_medium',
+  },
+  {
+    id: 'gem_pack_large',
+    catalog_id: 'gem_pack_large',
+    item_name: 'Large Gem Pouch',
+    item_type: 'consumable',
+    rarity: 'epic',
+    item_level: 1,
+    required_level: 10,
+    gold_price: 1500,
+    gem_price: 0,
+    sell_price: 0,
+    base_stats: {},
+    description: 'Contains 100 gems.',
+    image_url: null,
+    special_effect: null,
+    unique_passive: null,
+    set_name: null,
+    consumable_type: 'gem_pack_large',
+  },
+]
+
 // Consumable catalog for the shop display
 const CONSUMABLE_CATALOG = [
   {
@@ -213,8 +274,11 @@ export async function GET(req: NextRequest) {
       set_name: item.setName,
     }))
 
-    // Append consumable catalog entries (always available)
-    const allItems = [...shopItems, ...CONSUMABLE_CATALOG]
+    // Filter gem catalog by character level
+    const availableGems = GEM_CATALOG.filter((g) => character.level >= g.required_level)
+
+    // Append consumable + gem catalog entries (always available)
+    const allItems = [...shopItems, ...CONSUMABLE_CATALOG, ...availableGems]
 
     return NextResponse.json({
       items: allItems,

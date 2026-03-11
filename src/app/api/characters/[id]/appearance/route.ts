@@ -5,9 +5,6 @@ import { CharacterOrigin, CharacterGender } from '@prisma/client'
 
 const APPEARANCE_CHANGE_COST = 100 // gold
 
-const VALID_AVATARS_MALE = ['warlord', 'knight', 'barbarian', 'shadow']
-const VALID_AVATARS_FEMALE = ['valkyrie', 'sorceress', 'enchantress', 'huntress']
-
 const ORIGIN_BONUSES: Record<string, Partial<Record<string, number>>> = {
   human:    { cha: 2, wis: 1 },
   orc:      { str: 3, int: -1 },
@@ -71,13 +68,24 @@ export async function PATCH(
       const newGender = gender || charRow.gender
       const newAvatar = avatar || charRow.avatar
 
-      // Validate avatar matches gender
-      const validAvatars = newGender === 'female' ? VALID_AVATARS_FEMALE : VALID_AVATARS_MALE
-      if (avatar && !validAvatars.includes(newAvatar)) {
+      // Validate avatar against DB skin catalog (filtered by origin + gender)
+      const availableSkins = await tx.appearanceSkin.findMany({
+        where: {
+          origin: newOrigin as CharacterOrigin,
+          gender: newGender as CharacterGender,
+        },
+        select: { skinKey: true },
+        orderBy: { sortOrder: 'asc' },
+      })
+      const validKeys = availableSkins.map((s) => s.skinKey)
+
+      if (avatar && validKeys.length > 0 && !validKeys.includes(newAvatar)) {
         throw new Error('INVALID_AVATAR')
       }
       // If gender changed but avatar didn't, auto-pick first valid avatar for new gender
-      const finalAvatar = validAvatars.includes(newAvatar) ? newAvatar : validAvatars[0]
+      const finalAvatar = validKeys.includes(newAvatar)
+        ? newAvatar
+        : validKeys[0] ?? newAvatar
 
       const originChanged = newOrigin !== charRow.origin
       if (originChanged && charRow.gold < APPEARANCE_CHANGE_COST) {

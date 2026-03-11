@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { STANCE_ZONES } from '@/lib/game/balance'
 
 export async function POST(
   req: NextRequest,
@@ -20,29 +21,23 @@ export async function POST(
       )
     }
 
-    // Validate stance structure
+    // Validate stance structure — zone-based
+    const validZones: readonly string[] = STANCE_ZONES.VALID_ZONES
+
     if (
       typeof stance !== 'object' ||
-      typeof stance.offense !== 'number' ||
-      typeof stance.defense !== 'number'
+      typeof stance.attack !== 'string' ||
+      typeof stance.defense !== 'string'
     ) {
       return NextResponse.json(
-        { error: 'stance must have numeric offense and defense properties' },
+        { error: 'stance must have attack and defense string properties' },
         { status: 400 }
       )
     }
 
-    if (stance.offense < 0 || stance.offense > 100 || stance.defense < 0 || stance.defense > 100) {
+    if (!validZones.includes(stance.attack) || !validZones.includes(stance.defense)) {
       return NextResponse.json(
-        { error: 'offense and defense must be between 0 and 100' },
-        { status: 400 }
-      )
-    }
-
-    const total = stance.offense + stance.defense
-    if (total < 95 || total > 105) {
-      return NextResponse.json(
-        { error: 'offense + defense must sum to approximately 100' },
+        { error: 'attack and defense must be one of: head, chest, legs' },
         { status: 400 }
       )
     }

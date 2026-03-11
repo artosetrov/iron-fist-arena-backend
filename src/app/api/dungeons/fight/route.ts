@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         where: { id: character_id, userId: user.id },
         select: {
           id: true, userId: true, characterName: true, class: true, origin: true,
-          level: true, maxHp: true, cha: true, luk: true,
+          level: true, maxHp: true, cha: true, luk: true, avatar: true,
         },
       }),
       prisma.dungeonRun.findFirst({
@@ -126,13 +126,16 @@ export async function POST(req: NextRequest) {
       is_crit: t.isCrit,
       is_miss: false,
       is_dodge: t.isDodge,
-      target_zone: null,
+      target_zone: t.targetZone ?? null,
+      defend_zone: t.defendZone ?? null,
       status_applied: null,
       heal: t.healAmount ?? null,
       skill_used: t.skillUsed ?? null,
       skill_key: t.skillKey ?? null,
       damage_type: t.damageType ?? null,
     }))
+
+    const playerStartHp = playerStats.currentHp ?? character.maxHp
 
     const combatDataPayload = {
       player: {
@@ -142,6 +145,8 @@ export async function POST(req: NextRequest) {
         origin: character.origin,
         level: character.level,
         max_hp: character.maxHp,
+        current_hp: playerStartHp,
+        avatar: character.avatar,
       },
       enemy: {
         id: primaryEnemy?.id ?? 'enemy',

@@ -3,7 +3,7 @@
 // baseDamage now reads class scaling from GameConfig via item-balance engine.
 // =============================================================================
 
-import { COMBAT } from './balance';
+import { COMBAT, STANCE_ZONES, type BodyZone } from './balance';
 import { getClassDamageFormula } from './item-balance';
 import {
   selectSkill,
@@ -54,6 +54,8 @@ export interface Turn {
   skillKey?: string;
   damageType?: DamageType;
   healAmount?: number;
+  targetZone?: string;
+  defendZone?: string;
 }
 
 export interface CombatResult {
@@ -64,7 +66,7 @@ export interface CombatResult {
   finalHp: Record<string, number>;
 }
 
-// --- Stance definitions ---
+// --- Zone-based stance computation ---
 
 interface StanceModifiers {
   offense: number;
@@ -73,15 +75,42 @@ interface StanceModifiers {
   dodge: number;
 }
 
-const DEFAULT_STANCE: StanceModifiers = { offense: 0, defense: 0, crit: 0, dodge: 0 };
+interface ParsedZoneStance {
+  attack: BodyZone;
+  defense: BodyZone;
+}
 
-function parseStance(combatStance: Record<string, unknown> | null | undefined): StanceModifiers {
-  if (!combatStance) return DEFAULT_STANCE;
+const DEFAULT_ZONE_STANCE: ParsedZoneStance = { attack: 'chest', defense: 'chest' };
+
+function parseZoneStance(combatStance: Record<string, unknown> | null | undefined): ParsedZoneStance {
+  if (!combatStance) return DEFAULT_ZONE_STANCE;
+  const attack = combatStance.attack;
+  const defense = combatStance.defense;
+  const valid: readonly string[] = STANCE_ZONES.VALID_ZONES;
   return {
-    offense: Math.min(100, Math.max(0, typeof combatStance.offense === 'number' ? combatStance.offense : 0)),
-    defense: Math.min(100, Math.max(0, typeof combatStance.defense === 'number' ? combatStance.defense : 0)),
-    crit: typeof combatStance.crit === 'number' ? combatStance.crit : 0,
-    dodge: typeof combatStance.dodge === 'number' ? combatStance.dodge : 0,
+    attack: (typeof attack === 'string' && valid.includes(attack)) ? attack as BodyZone : 'chest',
+    defense: (typeof defense === 'string' && valid.includes(defense)) ? defense as BodyZone : 'chest',
+  };
+}
+
+/**
+ * Compute effective stance modifiers given own zone stance and opponent's zone stance.
+ * Zone matching creates strategic interaction between fighters.
+ */
+function computeStanceModifiers(myStance: ParsedZoneStance, opponentStance: ParsedZoneStance): StanceModifiers {
+  const atkBonus = STANCE_ZONES.ATTACK_ZONE[myStance.attack];
+  const defBonus = STANCE_ZONES.DEFENSE_ZONE[myStance.defense];
+
+  const offenseMismatch = myStance.attack !== opponentStance.defense
+    ? STANCE_ZONES.MISMATCH_OFFENSE_BONUS : 0;
+  const defenseMatch = opponentStance.attack === myStance.defense
+    ? STANCE_ZONES.MATCH_DEFENSE_BONUS : 0;
+
+  return {
+    offense: atkBonus.offense + offenseMismatch,
+    defense: defBonus.defense + defenseMatch,
+    crit: atkBonus.crit,
+    dodge: defBonus.dodge,
   };
 }
 
@@ -234,6 +263,8 @@ function resolveAttack(
   passivesDef: PassiveBonuses,
   cooldownState: SkillCooldownState,
   rng: SeededRng,
+  attackerZone?: string,
+  defenderZone?: string,
 ): { turn: Turn; newDefenderHp: number; healAmount: number } {
   // Dodge check — passive dodge bonus applied
   const totalDodge = dodgeChance(defenderChar, stanceDef) + passivesDef.flatDodgeChance;
@@ -248,6 +279,8 @@ function resolveAttack(
         isCrit: false,
         isDodge: true,
         defenderHpAfter: defenderHp,
+        targetZone: attackerZone,
+        defendZone: defenderZone,
       },
       newDefenderHp: defenderHp,
       healAmount: 0,
@@ -284,6 +317,8 @@ function resolveAttack(
           skillKey: skill.skillKey,
           damageType: skill.damageType,
           healAmount: selfHeal > 0 ? selfHeal : undefined,
+          targetZone: attackerZone,
+          defendZone: defenderZone,
         },
         newDefenderHp: defenderHp,
         healAmount: selfHeal,
@@ -350,6 +385,8 @@ function resolveAttack(
       skillKey: skillKeyStr,
       damageType: dmgType,
       healAmount: healAmount > 0 ? healAmount : undefined,
+      targetZone: attackerZone,
+      defendZone: defenderZone,
     },
     newDefenderHp,
     healAmount,
@@ -373,8 +410,10 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
 
   const turns: Turn[] = [];
 
-  const stanceA = parseStance(attacker.combatStance);
-  const stanceD = parseStance(defender.combatStance);
+  const zoneA = parseZoneStance(attacker.combatStance);
+  const zoneD = parseZoneStance(defender.combatStance);
+  const stanceA = computeStanceModifiers(zoneA, zoneD);
+  const stanceD = computeStanceModifiers(zoneD, zoneA);
   const passivesA = attacker.passiveBonuses ?? emptyPassiveBonuses();
   const passivesD = defender.passiveBonuses ?? emptyPassiveBonuses();
 
@@ -394,6 +433,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
   let hpSecond: number;
   let maxHpFirst: number;
   let maxHpSecond: number;
+  let zoneFirst: ParsedZoneStance;
+  let zoneSecond: ParsedZoneStance;
 
   if (defender.agi > attacker.agi) {
     first = defender;
@@ -408,6 +449,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
     hpSecond = hpA;
     maxHpFirst = defender.maxHp;
     maxHpSecond = attacker.maxHp;
+    zoneFirst = zoneD;
+    zoneSecond = zoneA;
   } else {
     first = attacker;
     second = defender;
@@ -421,6 +464,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
     hpSecond = hpD;
     maxHpFirst = attacker.maxHp;
     maxHpSecond = defender.maxHp;
+    zoneFirst = zoneA;
+    zoneSecond = zoneD;
   }
 
   for (let t = 1; t <= COMBAT.MAX_TURNS; t++) {
@@ -431,6 +476,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
         stanceFirst, stanceSecond,
         passivesFirst, passivesSecond,
         cooldownFirst, rng,
+        zoneFirst.attack,
+        zoneSecond.defense,
       );
       turns.push(result.turn);
       hpSecond = result.newDefenderHp;
@@ -452,6 +499,8 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
         stanceSecond, stanceFirst,
         passivesSecond, passivesFirst,
         cooldownSecond, rng,
+        zoneSecond.attack,
+        zoneFirst.defense,
       );
       turns.push(result.turn);
       hpFirst = result.newDefenderHp;

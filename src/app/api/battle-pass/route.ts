@@ -3,6 +3,19 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { bpXpForLevel } from '@/lib/game/balance'
 
+function formatRewardName(rewardType: string, amount: number): string {
+  switch (rewardType) {
+    case 'gold': return `${amount} Gold`
+    case 'gems': return `${amount} Gems`
+    case 'xp': return `${amount} XP`
+    case 'stamina': return `${amount} Stamina`
+    case 'chest': return 'Chest'
+    case 'skin': return 'Skin'
+    case 'item': return 'Item'
+    default: return rewardType
+  }
+}
+
 /**
  * Calculate the current BP level from total bpXp.
  * Each level requires bpXpForLevel(level) XP.
@@ -98,23 +111,35 @@ export async function GET(req: NextRequest) {
       claimable: r.bpLevel <= level && !claimedRewardIds.has(r.id) && (!r.isPremium || battlePass!.premium),
     }))
 
+    // Build free/premium reward arrays in the format iOS expects
+    const freeRewards = rewardsWithStatus
+      .filter((r) => !r.isPremium)
+      .map((r) => ({
+        level: r.bpLevel,
+        reward_type: r.rewardType,
+        reward_name: formatRewardName(r.rewardType, r.rewardAmount),
+        amount: r.rewardAmount,
+        claimed: r.claimed,
+      }))
+
+    const premiumRewards = rewardsWithStatus
+      .filter((r) => r.isPremium)
+      .map((r) => ({
+        level: r.bpLevel,
+        reward_type: r.rewardType,
+        reward_name: formatRewardName(r.rewardType, r.rewardAmount),
+        amount: r.rewardAmount,
+        claimed: r.claimed,
+      }))
+
     return NextResponse.json({
-      season: {
-        id: activeSeason.id,
-        number: activeSeason.number,
-        theme: activeSeason.theme,
-        startAt: activeSeason.startAt,
-        endAt: activeSeason.endAt,
-      },
-      battlePass: {
-        id: battlePass.id,
-        premium: battlePass.premium,
-        bpXp: battlePass.bpXp,
-        level,
-        xpIntoLevel,
-        xpForNext,
-      },
-      rewards: rewardsWithStatus,
+      season_name: activeSeason.theme ?? `Season ${activeSeason.number}`,
+      current_level: level,
+      current_xp: xpIntoLevel,
+      xp_to_next: xpForNext,
+      has_premium: battlePass.premium,
+      free_rewards: freeRewards,
+      premium_rewards: premiumRewards,
     })
   } catch (error) {
     console.error('get battle pass error:', error)

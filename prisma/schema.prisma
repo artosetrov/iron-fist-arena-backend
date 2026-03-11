@@ -289,6 +289,7 @@ model Item {
   sellPrice       Int       @default(0) @map("sell_price")
   description     String?
   imageUrl        String?   @map("image_url")
+  imageKey        String?   @map("image_key")
   dropChance      Float?    @default(0) @map("drop_chance")
   itemClass       String?   @map("item_class")
   upgradeConfig   Json?     @map("upgrade_config")
@@ -561,6 +562,26 @@ model Cosmetic {
   @@index([userId])
   @@index([userId, type])
   @@map("cosmetics")
+}
+
+model AppearanceSkin {
+  id        String          @id @default(uuid())
+  skinKey   String          @unique @map("skin_key")
+  name      String
+  origin    CharacterOrigin
+  gender    CharacterGender
+  rarity    String          @default("common")
+  priceGold Int             @default(0) @map("price_gold")
+  priceGems Int             @default(0) @map("price_gems")
+  imageUrl  String?         @map("image_url")
+  imageKey  String?         @map("image_key")
+  isDefault Boolean         @default(false) @map("is_default")
+  sortOrder Int             @default(0) @map("sort_order")
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  @@index([origin, gender])
+  @@map("appearance_skins")
 }
 
 model DesignToken {

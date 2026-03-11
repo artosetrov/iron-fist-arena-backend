@@ -252,9 +252,14 @@ async function main() {
     { catalogId: 'relic_orb_of_ages', itemName: 'Orb of Ages', itemType: 'relic', rarity: 'legendary', itemLevel: 15, buyPrice: 7500, sellPrice: 1875, baseStats: { int: 15, wis: 12, luk: 8 }, description: 'Contains the wisdom of millennia.', specialEffect: '+15% all magic, +10% XP' },
 
     // ── CONSUMABLES (Stamina Potions) ───────────────────────
-    { catalogId: 'stamina_potion_small', itemName: 'Small Stamina Potion', itemType: 'consumable', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: {}, description: 'Restores 20 stamina.', specialEffect: '+20 stamina' },
-    { catalogId: 'stamina_potion_medium', itemName: 'Medium Stamina Potion', itemType: 'consumable', rarity: 'uncommon', itemLevel: 1, buyPrice: 250, sellPrice: 63, baseStats: {}, description: 'Restores 50 stamina.', specialEffect: '+50 stamina' },
+    { catalogId: 'stamina_potion_small', itemName: 'Small Stamina Potion', itemType: 'consumable', rarity: 'common', itemLevel: 1, buyPrice: 100, sellPrice: 25, baseStats: {}, description: 'Restores 30 stamina.', specialEffect: '+30 stamina' },
+    { catalogId: 'stamina_potion_medium', itemName: 'Medium Stamina Potion', itemType: 'consumable', rarity: 'uncommon', itemLevel: 1, buyPrice: 250, sellPrice: 63, baseStats: {}, description: 'Restores 60 stamina.', specialEffect: '+60 stamina' },
     { catalogId: 'stamina_potion_large', itemName: 'Large Stamina Potion', itemType: 'consumable', rarity: 'rare', itemLevel: 1, buyPrice: 500, sellPrice: 125, baseStats: {}, description: 'Fully restores stamina to maximum.', specialEffect: 'Full stamina restore' },
+
+    // ── CONSUMABLES (Health Potions) ────────────────────────
+    { catalogId: 'health_potion_small', itemName: 'Small Health Potion', itemType: 'consumable', rarity: 'common', itemLevel: 1, buyPrice: 150, sellPrice: 38, baseStats: {}, description: 'Restores 25% of max HP.', specialEffect: '+25% HP' },
+    { catalogId: 'health_potion_medium', itemName: 'Medium Health Potion', itemType: 'consumable', rarity: 'uncommon', itemLevel: 1, buyPrice: 350, sellPrice: 88, baseStats: {}, description: 'Restores 50% of max HP.', specialEffect: '+50% HP' },
+    { catalogId: 'health_potion_large', itemName: 'Large Health Potion', itemType: 'consumable', rarity: 'rare', itemLevel: 1, buyPrice: 700, sellPrice: 175, baseStats: {}, description: 'Fully restores HP.', specialEffect: 'Full HP restore' },
   ]
 
   let itemsCreated = 0

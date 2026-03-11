@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { STAMINA, COMBAT, GOLD_REWARDS, XP_REWARDS, ELO } from '@/lib/game/balance'
+import { STAMINA, COMBAT, GOLD_REWARDS, XP_REWARDS, ELO, STANCE_ZONES } from '@/lib/game/balance'
 
 /**
  * POST /api/pvp/prepare
@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
         name: playerStats.name,
         class: playerStats.class,
         level: playerStats.level,
+        avatar: playerStats.avatar,
         str: playerStats.str,
         agi: playerStats.agi,
         vit: playerStats.vit,
@@ -173,6 +174,7 @@ export async function POST(req: NextRequest) {
         name: enemyStats.name,
         class: enemyStats.class,
         level: enemyStats.level,
+        avatar: enemyStats.avatar,
         str: enemyStats.str,
         agi: enemyStats.agi,
         vit: enemyStats.vit,
@@ -204,6 +206,11 @@ export async function POST(req: NextRequest) {
         dodge_per_luk: COMBAT.DODGE_PER_LUK,
         cha_intimidation_per_point: COMBAT.CHA_INTIMIDATION_PER_POINT,
         cha_intimidation_cap: COMBAT.CHA_INTIMIDATION_CAP,
+        // Zone stance constants
+        stance_attack_zones: STANCE_ZONES.ATTACK_ZONE,
+        stance_defense_zones: STANCE_ZONES.DEFENSE_ZONE,
+        stance_mismatch_offense_bonus: STANCE_ZONES.MISMATCH_OFFENSE_BONUS,
+        stance_match_defense_bonus: STANCE_ZONES.MATCH_DEFENSE_BONUS,
       },
       stamina: {
         current: currentStamina,

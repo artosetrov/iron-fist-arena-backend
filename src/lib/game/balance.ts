@@ -138,6 +138,31 @@ export const COMBAT = {
   CHA_INTIMIDATION_CAP: 15,
 } as const;
 
+// --- Stance Zones ---
+export type BodyZone = 'head' | 'chest' | 'legs';
+
+export const STANCE_ZONES = {
+  VALID_ZONES: ['head', 'chest', 'legs'] as readonly BodyZone[],
+
+  // Intrinsic bonuses for choosing an attack zone
+  ATTACK_ZONE: {
+    head:  { offense: 10, crit: 5 },   // aggressive, high crit
+    chest: { offense: 5,  crit: 0 },   // balanced
+    legs:  { offense: 0,  crit: -3 },  // conservative
+  } as const satisfies Record<BodyZone, { offense: number; crit: number }>,
+
+  // Intrinsic bonuses for choosing a defense zone
+  DEFENSE_ZONE: {
+    head:  { defense: 0,  dodge: 8 },  // evasive
+    chest: { defense: 10, dodge: 0 },  // tanky
+    legs:  { defense: 5,  dodge: 3 },  // balanced
+  } as const satisfies Record<BodyZone, { defense: number; dodge: number }>,
+
+  // Zone matching bonuses
+  MISMATCH_OFFENSE_BONUS: 5,   // attacker bonus when attack zone != defender's defense zone
+  MATCH_DEFENSE_BONUS: 15,     // defender bonus when correctly predicting attack zone
+} as const;
+
 // --- Prestige ---
 export const PRESTIGE = {
   MAX_LEVEL: 50,
