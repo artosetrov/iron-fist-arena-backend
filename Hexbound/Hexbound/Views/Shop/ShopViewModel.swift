@@ -1,0 +1,177 @@
+import SwiftUI
+
+struct ShopSection: Identifiable {
+    let id: String
+    let title: String
+    let icon: String
+    let items: [ShopItem]
+}
+
+@MainActor @Observable
+final class ShopViewModel {
+    private let appState: AppState
+    private let service: ShopService
+    private let inventoryService: InventoryService
+
+    var items: [ShopItem] = []
+    var isLoading = false
+    var selectedTab = 0
+    var buyingItemId: String?
+
+    // Detail modal
+    var selectedItem: ShopItem?
+    var showItemDetail = false
+
+    static let tabs = ["All", "Weapons", "Equipment", "Potions"]
+    static let tabTypes: [[String]] = [
+        [], // all — no filter
+        ["weapon"],
+        ["helmet", "chest", "gloves", "legs", "boots", "accessory", "amulet", "belt", "relic", "necklace", "ring"],
+        ["consumable", "potion"]
+    ]
+
+    private let cache: GameDataCache
+
+    init(appState: AppState, cache: GameDataCache) {
+        self.appState = appState
+        self.cache = cache
+        self.service = ShopService(appState: appState)
+        self.inventoryService = InventoryService(appState: appState)
+    }
+
+    var gold: Int { appState.currentCharacter?.gold ?? 0 }
+    var gems: Int { appState.currentCharacter?.gems ?? 0 }
+    var playerLevel: Int { appState.currentCharacter?.level ?? 1 }
+
+    var filteredItems: [ShopItem] {
+        let types = Self.tabTypes[selectedTab]
+        if types.isEmpty { return items } // "All" tab
+        return items.filter { types.contains($0.itemType) }
+    }
+
+    var sectionedItems: [ShopSection] {
+        let weaponTypes = Self.tabTypes[1]
+        let equipmentTypes = Self.tabTypes[2]
+        let potionTypes = Self.tabTypes[3]
+
+        let weapons = items.filter { weaponTypes.contains($0.itemType) }
+        let equipment = items.filter { equipmentTypes.contains($0.itemType) }
+        let gemPacks = items.filter { ($0.consumableType ?? $0.catalogId ?? "").hasPrefix("gem_pack_") }
+        let potions = items.filter {
+            potionTypes.contains($0.itemType) && !($0.consumableType ?? $0.catalogId ?? "").hasPrefix("gem_pack_")
+        }
+
+        var sections: [ShopSection] = []
+        if !weapons.isEmpty {
+            sections.append(ShopSection(id: "weapons", title: "Weapons", icon: "⚔️", items: weapons))
+        }
+        if !equipment.isEmpty {
+            sections.append(ShopSection(id: "equipment", title: "Equipment", icon: "🛡️", items: equipment))
+        }
+        if !potions.isEmpty {
+            sections.append(ShopSection(id: "potions", title: "Potions", icon: "🧪", items: potions))
+        }
+        if !gemPacks.isEmpty {
+            sections.append(ShopSection(id: "gems", title: "Gems", icon: "💎", items: gemPacks))
+        }
+        return sections
+    }
+
+    // MARK: - Load
+
+    func loadItems() async {
+        // Serve cached shop instantly
+        if let cached = cache.cachedShop() {
+            items = cached
+        } else {
+            isLoading = true
+        }
+        let result = await service.getItems()
+        items = result
+        cache.cacheShop(result)
+        isLoading = false
+        // Pre-load inventory for comparison if not cached
+        if appState.cachedInventory == nil {
+            _ = await inventoryService.loadInventory()
+        }
+    }
+
+    // MARK: - Selection
+
+    func selectItem(_ item: ShopItem) {
+        selectedItem = item
+        showItemDetail = true
+    }
+
+    func closeDetail() {
+        showItemDetail = false
+        selectedItem = nil
+    }
+
+    // MARK: - Comparison
+
+    func equippedItemForSlot(_ shopItem: ShopItem) -> Item? {
+        guard let inventory = appState.cachedInventory else { return nil }
+        return inventory.first {
+            $0.isEquipped == true && $0.itemType.rawValue == shopItem.itemType
+        }
+    }
+
+    // MARK: - Buy
+
+    func canAfford(_ item: ShopItem) -> Bool {
+        if item.isGemPurchase {
+            return gems >= item.gemPrice
+        }
+        return gold >= item.goldPrice
+    }
+
+    func meetsLevel(_ item: ShopItem) -> Bool {
+        playerLevel >= item.requiredLevel
+    }
+
+    func buy(_ item: ShopItem) async {
+        // Validate currency
+        if !canAfford(item) {
+            appState.showToast(
+                item.isGemPurchase ? "Not enough gems!" : "Not enough gold!",
+                type: .error
+            )
+            return
+        }
+
+        buyingItemId = item.id
+
+        let success: Bool
+        let ct = item.consumableType ?? item.catalogId ?? ""
+        if ct.hasPrefix("gem_pack_") {
+            // Gem packs use the buy-gems endpoint
+            let gemsAmount: Int
+            switch ct {
+            case "gem_pack_small": gemsAmount = 10
+            case "gem_pack_medium": gemsAmount = 50
+            case "gem_pack_large": gemsAmount = 100
+            default: gemsAmount = 10
+            }
+            success = await service.buyGems(gemsAmount: gemsAmount)
+        } else if item.isConsumable, !ct.isEmpty {
+            success = await service.buyConsumable(consumableType: ct)
+        } else {
+            let catalogId = item.catalogId ?? item.id
+            success = await service.buy(catalogId: catalogId)
+        }
+
+        buyingItemId = nil
+        if success {
+            // Consumables stay available — only equipment disappears
+            if !item.isConsumable {
+                items.removeAll { $0.id == item.id }
+            }
+            showItemDetail = false
+            selectedItem = nil
+            appState.showToast("Purchased \(item.itemName)!", type: .reward)
+            appState.invalidateCache("inventory")
+            appState.invalidateCache("quests")
+        }
+    }
+}
