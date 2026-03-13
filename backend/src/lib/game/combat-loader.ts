@@ -31,11 +31,28 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
       combatStance: true,
       characterSkills: {
         where: { isEquipped: true },
-        include: { skill: true },
         orderBy: { slotIndex: 'asc' },
+        select: {
+          rank: true,
+          skill: {
+            select: {
+              id: true,
+              skillKey: true,
+              name: true,
+              isActive: true,
+              damageBase: true,
+              damageScaling: true,
+              damageType: true,
+              targetType: true,
+              cooldown: true,
+              effectJson: true,
+              rankScaling: true,
+            },
+          },
+        },
       },
       characterPassives: {
-        include: {
+        select: {
           node: {
             select: { bonusType: true, bonusStat: true, bonusValue: true },
           },
