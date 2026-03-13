@@ -75,8 +75,9 @@ final class AuthService {
                 // Setup 401 handler
                 setupUnauthorizedHandler()
 
-                // Set authenticated — new account, no character yet → onboarding will be triggered
-                appState.isAuthenticated = true
+                // Do NOT set isAuthenticated here — new account has no character.
+                // RegisterViewModel will append .onboarding, and OnboardingViewModel
+                // sets isAuthenticated = true after character creation.
             }
 
             return .success(needsConfirmation)
@@ -111,9 +112,12 @@ final class AuthService {
             if hasCharacter, let cache = cache {
                 let initService = GameInitService(appState: appState, cache: cache)
                 await initService.loadGameData()
+                appState.isAuthenticated = true
+            } else {
+                // No character — stay on AuthRouterView, navigate to onboarding.
+                // OnboardingViewModel sets isAuthenticated after character creation.
+                appState.authPath.append(AppRoute.onboarding)
             }
-
-            appState.isAuthenticated = true
 
             return .success(())
         } catch let error as APIError {

@@ -3,10 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CharacterClass, CharacterOrigin, CharacterGender } from '@prisma/client'
 
-const VALID_AVATARS: Record<CharacterGender, string[]> = {
-  male: ['warlord', 'knight', 'barbarian', 'shadow'],
-  female: ['valkyrie', 'sorceress', 'enchantress', 'huntress'],
-}
+// Avatar validation is done against the appearance_skins DB table at runtime
 
 const ORIGIN_BONUSES: Record<CharacterOrigin, Partial<Record<string, number>>> = {
   human:    { cha: 2, wis: 1 },
@@ -77,9 +74,26 @@ export async function POST(req: NextRequest) {
       ? gender as CharacterGender
       : CharacterGender.male
 
-    // Avatar validation
-    const validAvatars = VALID_AVATARS[charGender]
-    const charAvatar = avatar && validAvatars.includes(avatar) ? avatar : validAvatars[0]
+    // Avatar validation — check against appearance_skins table
+    let charAvatar: string | null = null
+    if (avatar) {
+      const skin = await prisma.appearanceSkin.findUnique({
+        where: { skinKey: avatar },
+        select: { skinKey: true, origin: true, gender: true },
+      })
+      if (skin && skin.origin === origin && skin.gender === charGender) {
+        charAvatar = skin.skinKey
+      }
+    }
+    // Fallback: pick the first default skin for this origin + gender
+    if (!charAvatar) {
+      const fallback = await prisma.appearanceSkin.findFirst({
+        where: { origin: origin as CharacterOrigin, gender: charGender, isDefault: true },
+        select: { skinKey: true },
+        orderBy: { sortOrder: 'asc' },
+      })
+      charAvatar = fallback?.skinKey ?? avatar ?? null
+    }
 
     // Ensure user record exists in our database (handles users created
     // via Supabase Auth before we had prisma.user.create in auth routes)
@@ -122,7 +136,7 @@ export async function POST(req: NextRequest) {
         class: charClass as CharacterClass,
         origin: origin as CharacterOrigin,
         gender: charGender,
-        avatar: charAvatar,
+        avatar: charAvatar ?? undefined,
         str: stats.str,
         agi: stats.agi,
         vit: stats.vit,
