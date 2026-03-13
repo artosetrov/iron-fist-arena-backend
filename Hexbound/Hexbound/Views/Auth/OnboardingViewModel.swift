@@ -259,7 +259,7 @@ final class OnboardingViewModel {
 
     // MARK: - Create Character
 
-    func createCharacter(appState: AppState) async {
+    func createCharacter(appState: AppState, cache: GameDataCache) async {
         guard let charClass = selectedClass,
               let origin = selectedOrigin,
               let gender = selectedGender,
@@ -303,9 +303,15 @@ final class OnboardingViewModel {
                 let character = try decoder.decode(Character.self, from: jsonData)
 
                 appState.currentCharacter = character
+                if !allSkins.isEmpty {
+                    cache.cacheSkins(allSkins)
+                }
                 appState.isAuthenticated = true
                 appState.authPath = NavigationPath()
             } else {
+                if !allSkins.isEmpty {
+                    cache.cacheSkins(allSkins)
+                }
                 appState.isAuthenticated = true
                 appState.authPath = NavigationPath()
             }

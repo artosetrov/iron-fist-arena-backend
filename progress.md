@@ -94,3 +94,74 @@ Original prompt: Act as a principal game engineer, backend architect, performanc
   - `backend`: `npm test` ✅
   - `backend`: `npx tsc --noEmit` ✅
   - `backend`: `npm run build` ✅
+
+- Prisma migration baseline normalization completed:
+  - Confirmed the live Supabase database had no `_prisma_migrations` table and therefore no applied Prisma history.
+  - Confirmed the live database already matched almost the full schema and was only missing the new `pvp_battle_tickets` table.
+  - Generated a real baseline migration at `backend/prisma/migrations/20260306_baseline/migration.sql` from the current live schema.
+  - Removed the old point migrations `20260307_add_gender_avatar` and `20260309_add_gear_score` because they are now subsumed by the baseline.
+  - Added migration workflow documentation in `backend/prisma/MIGRATIONS.md`.
+  - Added package scripts for `db:migrate:status`, `db:migrate:dev`, `db:migrate:deploy`, and `db:migrate:adopt`.
+  - Added a guardrail warning on `db:push` so schema-only drift is harder to reintroduce on shared databases.
+
+- Verification after migration baseline pass:
+  - `backend`: `npm run db:migrate:status` shows only `20260306_baseline` and `20260312_add_pvp_battle_tickets` as unapplied on the existing schema-only database ✅
+  - `backend`: `npx prisma validate --schema=prisma/schema.prisma` ✅
+  - `backend`: `npm test` ✅
+  - `backend`: `npx tsc --noEmit` ✅
+  - `backend`: `npm run build` ✅
+
+- Remaining high-priority TODOs after migration baseline pass:
+  - Run `db:migrate:adopt` and `db:migrate:deploy` against the real shared database during a controlled deployment window.
+  - Replace in-memory cache/rate-limit with shared infrastructure.
+  - Add DB-backed integration tests for replay and transaction safety.
+
+- Shared cache/rate-limit hardening completed:
+  - Added Upstash-backed shared KV support in `backend/src/lib/shared-kv.ts` with safe memory fallback and one-time production warning when Redis env is missing.
+  - Reworked `backend/src/lib/rate-limit.ts` into async shared rate limiting with `@upstash/ratelimit`, including structured metadata for middleware headers.
+  - Reworked `backend/src/lib/cache.ts` into async shared cache with Redis prefix invalidation and memory fallback cleanup timers using `unref()`.
+  - Updated `backend/src/middleware.ts` to use the shared rate-limit path and preserve response headers.
+  - Converted all route/cache call sites across backend routes, auth, admin, and combat helpers to await the new async cache/rate-limit APIs.
+  - Switched the shared Redis client to the fetch-based Upstash Cloudflare export to keep Next middleware edge-safe.
+
+- Battle pass data repair + shared config completed:
+  - Added shared battle pass milestone mapping in `backend/prisma/battle-pass-milestones.ts`.
+  - Added reusable repair helper in `backend/prisma/battle-pass-reward-repair.ts`.
+  - Added executable repair script `backend/prisma/fix-battle-pass-rewards.ts` and package script `db:fix:battle-pass-rewards`.
+  - Updated `backend/prisma/seed-battle-pass.ts` to use the shared milestone config instead of duplicating item mappings.
+
+- Performance pass completed:
+  - Optimized `backend/src/app/api/game/init/route.ts` to replace achievement row fetches with `count()` queries and narrower `select` payloads for consumables, quests, and active events.
+  - Optimized `backend/src/app/api/shop/items/route.ts` to filter owned items in Prisma instead of loading ownership rows and filtering in JS, while narrowing the selected item payload.
+
+- Test coverage expanded:
+  - Added `backend/tests/lib/rate-limit.test.ts` for memory-fallback rate-limit contract.
+  - Added `backend/tests/lib/cache.test.ts` for shared cache prefix invalidation contract.
+  - Added `backend/tests/prisma/battle-pass-reward-repair.test.ts` for legacy reward repair behavior.
+
+- Verification after shared infra / perf / repair pass:
+  - `backend`: `npm test` ✅
+  - `backend`: `npx tsc --noEmit` ✅
+  - `backend`: `npx prisma validate --schema=prisma/schema.prisma` ✅
+  - `backend`: `npm run build` ✅
+
+- Remaining operational TODO after this pass:
+  - Run `npm run db:migrate:adopt` and `npm run db:migrate:deploy` against the real shared database.
+  - Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in shared environments so cache/rate-limit stop falling back to per-instance memory.
+  - Run `npm run db:fix:battle-pass-rewards` against existing shared data if legacy premium milestone rows are present.
+
+## 2026-03-13
+
+- Investigated live regression where only PvP battles stopped launching from the iOS client.
+- Confirmed root cause was infrastructure drift, not the Swift PvP flow:
+  - `backend/.env` points at the shared Supabase database.
+  - `npm run db:migrate:status` showed `20260306_baseline` and `20260312_add_pvp_battle_tickets` were unapplied there.
+  - The current `/api/pvp/prepare` route now requires `pvp_battle_tickets`, so only PvP failed while the rest of the game continued to work.
+- Applied the intended production-safe Prisma workflow on the shared database:
+  - `backend`: `npm run db:migrate:adopt` ✅
+  - `backend`: `npm run db:migrate:deploy` ✅
+  - `backend`: `npm run db:migrate:status` → `Database schema is up to date!` ✅
+  - `backend`: `npx tsc --noEmit` ✅
+- Expected outcome:
+  - `/api/pvp/prepare` can now create battle tickets again.
+  - PvP combat should launch normally again without further client changes.

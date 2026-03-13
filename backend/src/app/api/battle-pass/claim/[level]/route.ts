@@ -125,7 +125,7 @@ export async function POST(
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`battle-pass-claim:${user.id}`, 10, 60_000)) {
+  if (!(await rateLimit(`battle-pass-claim:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 

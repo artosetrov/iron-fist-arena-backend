@@ -65,7 +65,7 @@ export async function POST(
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`dungeon-run-fight:${user.id}`, 20, 60_000)) {
+  if (!(await rateLimit(`dungeon-run-fight:${user.id}`, 20, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -244,8 +244,8 @@ export async function POST(
 
     // Invalidate combat caches if level changed
     if (levelUpResult?.leveledUp) {
-      invalidateSkillCache(character_id)
-      invalidatePassiveCache(character_id)
+      await invalidateSkillCache(character_id)
+      await invalidatePassiveCache(character_id)
     }
 
     return NextResponse.json({

@@ -44,6 +44,7 @@ struct HeroDetailView: View {
                         onSell: { Task { await vm.sell(item) } },
                         onUse: { Task { await vm.useItem(item) } },
                         onUpgrade: { useProtection in Task { await vm.upgrade(item, useProtection: useProtection) } },
+                        onRepair: { Task { await vm.repair(item) } },
                         onClose: { vm.showItemDetail = false }
                     )
                     .transition(.opacity)

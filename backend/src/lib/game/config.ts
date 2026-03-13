@@ -10,16 +10,16 @@ const CONFIG_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
  */
 export async function getGameConfig<T>(key: string, fallback: T): Promise<T> {
   const cacheKey = `gameconfig:${key}`
-  const cached = cacheGet<T>(cacheKey)
+  const cached = await cacheGet<T>(cacheKey)
   if (cached !== null) return cached
 
   try {
     const row = await prisma.gameConfig.findUnique({ where: { key } })
     if (!row) {
-      cacheSet(cacheKey, fallback, CONFIG_CACHE_TTL)
+      await cacheSet(cacheKey, fallback, CONFIG_CACHE_TTL)
       return fallback
     }
-    cacheSet(cacheKey, row.value, CONFIG_CACHE_TTL)
+    await cacheSet(cacheKey, row.value, CONFIG_CACHE_TTL)
     return row.value as T
   } catch {
     return fallback
@@ -35,7 +35,7 @@ export async function getGameConfigs(
   keys: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
   const batchKey = `gameconfig:batch:${Object.keys(keys).sort().join(',')}`
-  const cached = cacheGet<Record<string, unknown>>(batchKey)
+  const cached = await cacheGet<Record<string, unknown>>(batchKey)
   if (cached !== null) return cached
 
   try {
@@ -46,7 +46,7 @@ export async function getGameConfigs(
     for (const row of rows) {
       result[row.key] = row.value
     }
-    cacheSet(batchKey, result, CONFIG_CACHE_TTL)
+    await cacheSet(batchKey, result, CONFIG_CACHE_TTL)
     return result
   } catch {
     return keys

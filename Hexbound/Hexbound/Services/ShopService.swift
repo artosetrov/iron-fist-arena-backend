@@ -141,6 +141,53 @@ final class ShopService {
         }
     }
 
+    // MARK: - Repair Item
+
+    struct RepairResult {
+        let repairCost: Int
+        let gold: Int
+        let gems: Int
+        let newDurability: Int
+        let maxDurability: Int
+    }
+
+    func repair(inventoryId: String) async -> RepairResult? {
+        guard let charId = appState.currentCharacter?.id else { return nil }
+        do {
+            let body: [String: Any] = [
+                "character_id": charId,
+                "inventory_id": inventoryId
+            ]
+            let response = try await APIClient.shared.postRaw(APIEndpoints.shopRepair, body: body)
+            let repairCost = response["repairCost"] as? Int ?? 0
+            let character = response["character"] as? [String: Any] ?? [:]
+            let gold = character["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
+            let gems = character["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
+            let inventoryItem = response["inventoryItem"] as? [String: Any] ?? [:]
+            let newDurability = inventoryItem["durability"] as? Int ?? 0
+            let maxDurability = inventoryItem["maxDurability"] as? Int ?? 0
+            if var char = appState.currentCharacter {
+                char.gold = gold
+                char.gems = gems
+                appState.currentCharacter = char
+            }
+            return RepairResult(
+                repairCost: repairCost, gold: gold, gems: gems,
+                newDurability: newDurability, maxDurability: maxDurability
+            )
+        } catch let error as APIError {
+            if case .clientError(_, let message) = error {
+                appState.showToast(message, type: .error)
+            } else {
+                appState.showToast("Repair failed", type: .error)
+            }
+            return nil
+        } catch {
+            appState.showToast("Repair failed", type: .error)
+            return nil
+        }
+    }
+
     // MARK: - Upgrade Item
 
     struct UpgradeResult {
@@ -170,8 +217,11 @@ final class ShopService {
             let character = response["character"] as? [String: Any] ?? [:]
             let gold = character["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
             let gems = character["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
-            appState.currentCharacter?.gold = gold
-            appState.currentCharacter?.gems = gems
+            if var char = appState.currentCharacter {
+                char.gold = gold
+                char.gems = gems
+                appState.currentCharacter = char
+            }
             appState.cachedInventory = nil // upgrade changed item stats
             return UpgradeResult(
                 success: success, newLevel: newLevel, levelLost: levelLost,
@@ -194,13 +244,11 @@ final class ShopService {
     // MARK: - Helpers
 
     private func updateCharacter(from response: [String: Any]) {
-        if let character = response["character"] as? [String: Any] {
-            if let gold = character["gold"] as? Int {
-                appState.currentCharacter?.gold = gold
-            }
-            if let gems = character["gems"] as? Int {
-                appState.currentCharacter?.gems = gems
-            }
+        if let character = response["character"] as? [String: Any],
+           var char = appState.currentCharacter {
+            if let gold = character["gold"] as? Int { char.gold = gold }
+            if let gems = character["gems"] as? Int { char.gems = gems }
+            appState.currentCharacter = char
             // Invalidate inventory cache since items changed (new purchase)
             appState.cachedInventory = nil
         }

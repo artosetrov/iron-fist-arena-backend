@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
     // Check cache first — leaderboard is the same for all users
     const cacheKey = `leaderboard:${limit}`
-    const cached = cacheGet<object>(cacheKey)
+    const cached = await cacheGet<object>(cacheKey)
     if (cached) return NextResponse.json(cached)
 
     const baseSelect = { id: true, characterName: true, class: true, pvpRating: true, level: true }
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       gold: byGold.map((c, i) => ({ characterId: c.id, characterName: c.characterName, class: c.class, value: c.gold, rank: i + 1 })),
     }
 
-    cacheSet(cacheKey, result, LEADERBOARD_CACHE_TTL)
+    await cacheSet(cacheKey, result, LEADERBOARD_CACHE_TTL)
     return NextResponse.json(result)
   } catch (error) {
     console.error('leaderboard error:', error)

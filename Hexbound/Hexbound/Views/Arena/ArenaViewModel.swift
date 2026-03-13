@@ -81,7 +81,7 @@ final class ArenaViewModel {
         guard let _ = appState.currentCharacter?.id else { return }
         for opponent in opponents.prefix(3) {
             Task(priority: .background) {
-                _ = await battlePreloader.prepare(opponentId: opponent.id)
+                _ = await battlePreloader.prepare(opponentId: opponent.id, showErrors: false)
             }
         }
     }
@@ -139,11 +139,13 @@ final class ArenaViewModel {
         appState.mainPath.append(AppRoute.combat)
 
         // 2. Prepare battle (get seed + stats from server)
+        //    If a background preload is already in-flight, this awaits it.
         guard let prepareData = await battlePreloader.prepare(opponentId: opponentId) else {
             // Prepare failed — pop combat screen
             if !appState.mainPath.isEmpty {
                 appState.mainPath.removeLast()
             }
+            appState.showToast("Failed to start battle", type: .error)
             return
         }
         await battlePreloader.invalidatePreparedBattle(opponentId: opponentId)
@@ -185,6 +187,7 @@ final class ArenaViewModel {
             if !appState.mainPath.isEmpty {
                 appState.mainPath.removeLast()
             }
+            appState.showToast("Failed to start battle", type: .error)
             return
         }
         await battlePreloader.invalidatePreparedBattle(revengeId: revengeId)
@@ -212,46 +215,43 @@ final class ArenaViewModel {
         }
     }
 
-    /// Apply resolve data to character immediately so UI reflects server-verified state
+    /// Apply resolve data to character immediately so UI reflects server-verified state.
+    /// Uses a single write-back to avoid @Observable re-entrant exclusive-access violations
+    /// (Character is a struct, so repeated `?.prop = value` creates overlapping modify accesses).
     private func applyResolveToCharacter(_ result: ResolveResult?) {
         guard let result else { return }
+        guard var char = appState.currentCharacter else { return }
 
-        // Update stamina
-        appState.currentCharacter?.currentStamina = result.staminaCurrent
-        appState.currentCharacter?.maxStamina = result.staminaMax
+        // Stamina
+        char.currentStamina = result.staminaCurrent
+        char.maxStamina = result.staminaMax
 
-        // Update gold and XP from server-verified rewards
-        if let currentGold = appState.currentCharacter?.gold {
-            appState.currentCharacter?.gold = currentGold + result.goldReward
-        }
-        if let currentXp = appState.currentCharacter?.experience {
-            appState.currentCharacter?.experience = currentXp + result.xpReward
-        }
+        // Gold & XP
+        char.gold += result.goldReward
+        char.experience = (char.experience ?? 0) + result.xpReward
 
-        // Update PvP rating
-        if let currentRating = appState.currentCharacter?.pvpRating {
-            appState.currentCharacter?.pvpRating = currentRating + result.ratingChange
-        }
+        // PvP rating
+        char.pvpRating += result.ratingChange
 
-        // Update win/loss counters
-        let isWin = result.serverWinnerId == appState.currentCharacter?.id
+        // Win/loss counters
+        let isWin = result.serverWinnerId == char.id
         if isWin {
-            appState.currentCharacter?.pvpWins = (appState.currentCharacter?.pvpWins ?? 0) + 1
-            appState.currentCharacter?.pvpWinStreak = (appState.currentCharacter?.pvpWinStreak ?? 0) + 1
-            appState.currentCharacter?.pvpLossStreak = 0
+            char.pvpWins += 1
+            char.pvpWinStreak = (char.pvpWinStreak ?? 0) + 1
+            char.pvpLossStreak = 0
         } else {
-            appState.currentCharacter?.pvpLosses = (appState.currentCharacter?.pvpLosses ?? 0) + 1
-            appState.currentCharacter?.pvpLossStreak = (appState.currentCharacter?.pvpLossStreak ?? 0) + 1
-            appState.currentCharacter?.pvpWinStreak = 0
+            char.pvpLosses += 1
+            char.pvpLossStreak = (char.pvpLossStreak ?? 0) + 1
+            char.pvpWinStreak = 0
         }
+
+        // Single write-back — triggers one @Observable notification
+        appState.currentCharacter = char
 
         // Store loot for display
         if !result.loot.isEmpty {
             appState.pendingLoot = result.loot
         }
-
-        // Level-up modal is triggered from CombatResultDetailView.onAppear
-        // to avoid showing it during combat animation
 
         // Notify about broken equipment
         let brokenItems = result.durabilityDegraded.filter {

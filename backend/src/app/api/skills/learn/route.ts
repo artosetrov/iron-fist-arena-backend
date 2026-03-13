@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`skills-learn:${user.id}`, 10, 60_000)) {
+  if (!(await rateLimit(`skills-learn:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Invalidate cache
-    cacheDelete(`skills:char:${character_id}`)
+    await cacheDelete(`skills:char:${character_id}`)
 
     return NextResponse.json({
       skill: {

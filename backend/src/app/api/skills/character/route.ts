@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (character.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const cacheKey = `skills:char:${characterId}`
-  const cached = cacheGet<unknown[]>(cacheKey)
+  const cached = await cacheGet<unknown[]>(cacheKey)
   if (cached) {
     return NextResponse.json({ skills: cached })
   }
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     slot_index: cs.slotIndex,
   }))
 
-  cacheSet(cacheKey, skills, CACHE_TTL)
+  await cacheSet(cacheKey, skills, CACHE_TTL)
 
   return NextResponse.json({ skills })
 }

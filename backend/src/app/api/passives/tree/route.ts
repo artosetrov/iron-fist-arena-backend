@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const cacheKey = 'passives:tree'
-  let tree = cacheGet<CachedTree>(cacheKey)
+  let tree = await cacheGet<CachedTree>(cacheKey)
 
   if (!tree) {
     const [nodes, connections] = await Promise.all([
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     ])
 
     tree = { nodes, connections }
-    cacheSet(cacheKey, tree, CACHE_TTL)
+    await cacheSet(cacheKey, tree, CACHE_TTL)
   }
 
   return NextResponse.json(tree)

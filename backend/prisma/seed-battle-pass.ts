@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { PrismaClient } from '@prisma/client'
+import { BATTLE_PASS_MILESTONE_CATALOG_IDS } from './battle-pass-milestones'
 
 const prisma = new PrismaClient()
 
@@ -31,15 +32,9 @@ async function main() {
 
   console.log(`Season created/updated: ${season.id} (${season.theme})`)
 
-  const milestoneCatalogIds: Record<number, string> = {
-    10: 'chest_chain_mail',
-    20: 'chest_plate_armor',
-    30: 'chest_titan_cuirass',
-  }
-
   const milestoneItems = await prisma.item.findMany({
     where: {
-      catalogId: { in: Object.values(milestoneCatalogIds) },
+      catalogId: { in: Object.values(BATTLE_PASS_MILESTONE_CATALOG_IDS) },
     },
     select: {
       id: true,
@@ -52,7 +47,7 @@ async function main() {
     milestoneItems.map((item) => [item.catalogId, item.id]),
   )
 
-  for (const catalogId of Object.values(milestoneCatalogIds)) {
+  for (const catalogId of Object.values(BATTLE_PASS_MILESTONE_CATALOG_IDS)) {
     if (!itemIdByCatalogId.has(catalogId)) {
       throw new Error(
         `Battle pass seed requires item catalog "${catalogId}". Run the main item seed before seeding battle pass rewards.`,
@@ -112,7 +107,7 @@ async function main() {
         bpLevel: level,
         isPremium: true,
         rewardType: 'item',
-        rewardId: itemIdByCatalogId.get(milestoneCatalogIds[level]) ?? null,
+        rewardId: itemIdByCatalogId.get(BATTLE_PASS_MILESTONE_CATALOG_IDS[level]) ?? null,
         rewardAmount: 1,
       })
     } else if (level % 5 === 0) {

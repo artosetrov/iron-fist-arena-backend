@@ -10,6 +10,7 @@ struct ItemDetailSheet: View {
     let onSell: () -> Void
     let onUse: () -> Void
     let onUpgrade: (Bool) -> Void
+    let onRepair: () -> Void
     let onClose: () -> Void
 
     // Shop mode (optional)
@@ -37,11 +38,40 @@ struct ItemDetailSheet: View {
     }
 
     private var currentUpgradeLevel: Int { item.upgradeLevel ?? 0 }
-    private var canUpgrade: Bool { item.itemType != .consumable && currentUpgradeLevel < 10 }
+    private var canUpgrade: Bool { item.itemType != .consumable && currentUpgradeLevel < 10 && !isBroken }
     private var upgradeCost: Int { (currentUpgradeLevel + 1) * 100 }
     private var upgradeChance: Int {
         guard currentUpgradeLevel < upgradeChances.count else { return 0 }
         return upgradeChances[currentUpgradeLevel]
+    }
+
+    private var hasDurability: Bool {
+        item.durability != nil && item.maxDurability != nil && item.itemType != .consumable
+    }
+    private var isBroken: Bool {
+        item.durability == 0 && item.maxDurability != nil
+    }
+    private var isDamaged: Bool {
+        guard let dur = item.durability, let maxDur = item.maxDurability else { return false }
+        return dur < maxDur
+    }
+    private var repairCost: Int {
+        ((item.maxDurability ?? 0) - (item.durability ?? 0)) * 2
+    }
+    private var durabilityFraction: Double {
+        guard let dur = item.durability, let maxDur = item.maxDurability, maxDur > 0 else { return 0 }
+        return Double(dur) / Double(maxDur)
+    }
+    private var durabilityColor: Color {
+        if durabilityFraction > 0.6 { return DarkFantasyTheme.success }
+        if durabilityFraction > 0.3 { return DarkFantasyTheme.stamina }
+        return DarkFantasyTheme.danger
+    }
+    private var durabilityGradient: LinearGradient {
+        LinearGradient(
+            colors: [durabilityColor, durabilityColor.opacity(0.7)],
+            startPoint: .leading, endPoint: .trailing
+        )
     }
 
     var body: some View {
@@ -63,6 +93,9 @@ struct ItemDetailSheet: View {
 
                         // SECTION 2 — Stats
                         statsSection
+
+                        // SECTION 2.5 — Durability
+                        durabilitySection
 
                         // SECTION 3 — Comparison
                         comparisonSection
@@ -231,6 +264,46 @@ struct ItemDetailSheet: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Section 2.5: Durability
+
+    @ViewBuilder
+    private var durabilitySection: some View {
+        if hasDurability {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+                sectionHeader(icon: "wrench.fill", title: isBroken ? "DURABILITY — BROKEN" : "DURABILITY")
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(DarkFantasyTheme.bgTertiary)
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(durabilityGradient)
+                                .frame(width: geo.size.width * durabilityFraction)
+                        }
+                    }
+                    .frame(height: 12)
+
+                    Text("\(item.durability ?? 0)/\(item.maxDurability ?? 0)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .foregroundStyle(durabilityColor)
+                        .monospacedDigit()
+                }
+
+                if isBroken {
+                    Text("This item is broken and cannot be equipped. Repair it first.")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.danger)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, LayoutConstants.cardPadding)
+            .padding(.vertical, LayoutConstants.spaceMD)
+
+            sectionDivider
+        }
     }
 
     // MARK: - Section 3: Comparison
@@ -438,6 +511,10 @@ struct ItemDetailSheet: View {
                 shopBuySection(shop)
             } else if showUpgradeConfirm {
                 upgradeConfirmPanel
+            } else if isBroken {
+                // Broken item — only REPAIR available
+                Button("REPAIR · \(repairCost) 💰") { onRepair() }
+                    .buttonStyle(.primary)
             } else {
                 if item.itemType == .consumable {
                     Button("USE") { onUse() }
@@ -446,7 +523,10 @@ struct ItemDetailSheet: View {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Button("UNEQUIP") { onUnequip() }
                             .buttonStyle(.secondary)
-                        if canUpgrade {
+                        if isDamaged {
+                            Button("REPAIR · \(repairCost) 💰") { onRepair() }
+                                .buttonStyle(.primary)
+                        } else if canUpgrade {
                             Button("UPGRADE") { showUpgradeConfirm = true }
                                 .buttonStyle(.primary)
                         }
@@ -458,7 +538,10 @@ struct ItemDetailSheet: View {
                         Button("SELL") { onSell() }
                             .buttonStyle(.danger)
                     }
-                    if canUpgrade {
+                    if isDamaged {
+                        Button("REPAIR · \(repairCost) 💰") { onRepair() }
+                            .buttonStyle(.secondary)
+                    } else if canUpgrade {
                         Button("UPGRADE") { showUpgradeConfirm = true }
                             .buttonStyle(.secondary)
                     }

@@ -24,7 +24,7 @@ export async function getAuthUser(req: NextRequest) {
 
   // Ban check with caching (avoids DB hit on every request)
   const banCacheKey = `ban:${user.id}`
-  const cachedBan = cacheGet<boolean>(banCacheKey)
+  const cachedBan = await cacheGet<boolean>(banCacheKey)
 
   if (cachedBan === true) return null
   if (cachedBan === false) return user
@@ -36,13 +36,13 @@ export async function getAuthUser(req: NextRequest) {
   })
   if (!dbUser) return null
 
-  cacheSet(banCacheKey, dbUser.isBanned, BAN_CACHE_TTL)
+  await cacheSet(banCacheKey, dbUser.isBanned, BAN_CACHE_TTL)
   if (dbUser.isBanned) return null
 
   return user
 }
 
 /** Invalidate ban cache when admin bans/unbans a user */
-export function invalidateBanCache(userId: string) {
-  cacheDelete(`ban:${userId}`)
+export async function invalidateBanCache(userId: string) {
+  await cacheDelete(`ban:${userId}`)
 }

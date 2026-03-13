@@ -47,13 +47,16 @@ final class CombatService {
                 APIEndpoints.combatBuyExtra,
                 body: ["character_id": charId]
             )
-            // Update gems and stamina from response
-            if let gems = response["gems"] as? Int ?? response["gemsRemaining"] as? Int ?? response["gems_remaining"] as? Int {
-                appState.currentCharacter?.gems = gems
-            }
-            if let stamina = response["stamina"] as? [String: Any],
-               let current = stamina["current"] as? Int {
-                appState.currentCharacter?.currentStamina = current
+            // Update gems and stamina from response (single write-back to avoid @Observable re-entrant access)
+            if var char = appState.currentCharacter {
+                if let gems = response["gems"] as? Int ?? response["gemsRemaining"] as? Int ?? response["gems_remaining"] as? Int {
+                    char.gems = gems
+                }
+                if let stamina = response["stamina"] as? [String: Any],
+                   let current = stamina["current"] as? Int {
+                    char.currentStamina = current
+                }
+                appState.currentCharacter = char
             }
             return true
         } catch {

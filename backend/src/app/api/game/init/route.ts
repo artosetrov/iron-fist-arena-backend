@@ -58,7 +58,9 @@ export async function GET(req: NextRequest) {
       consumables,
       quests,
       dailyLogin,
-      achievements,
+      achievementsTotal,
+      achievementsCompleted,
+      achievementsClaimable,
       activeEvents,
       userRecord,
     ] = await Promise.all([
@@ -93,17 +95,38 @@ export async function GET(req: NextRequest) {
       }),
       prisma.consumableInventory.findMany({
         where: { characterId },
+        select: {
+          id: true,
+          consumableType: true,
+          quantity: true,
+          acquiredAt: true,
+        },
       }),
       prisma.dailyQuest.findMany({
         where: { characterId, day: today },
         orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          questType: true,
+          progress: true,
+          target: true,
+          completed: true,
+          rewardGold: true,
+          rewardXp: true,
+          rewardGems: true,
+        },
       }),
       prisma.dailyLoginReward.findUnique({
         where: { characterId },
       }),
-      prisma.achievement.findMany({
+      prisma.achievement.count({
         where: { characterId },
-        select: { completed: true, rewardClaimed: true },
+      }),
+      prisma.achievement.count({
+        where: { characterId, completed: true },
+      }),
+      prisma.achievement.count({
+        where: { characterId, completed: true, rewardClaimed: false },
       }),
       prisma.event.findMany({
         where: {
@@ -112,6 +135,17 @@ export async function GET(req: NextRequest) {
           endAt: { gte: now },
         },
         orderBy: { startAt: 'asc' },
+        select: {
+          id: true,
+          eventKey: true,
+          title: true,
+          description: true,
+          eventType: true,
+          config: true,
+          startAt: true,
+          endAt: true,
+          isActive: true,
+        },
       }),
       prisma.user.findUnique({
         where: { id: user.id },
@@ -179,9 +213,9 @@ export async function GET(req: NextRequest) {
 
     // Achievement summary (counts only — full list fetched on demand)
     const achievementsSummary = {
-      total: achievements.length,
-      completed: achievements.filter((a) => a.completed).length,
-      claimable: achievements.filter((a) => a.completed && !a.rewardClaimed).length,
+      total: achievementsTotal,
+      completed: achievementsCompleted,
+      claimable: achievementsClaimable,
     }
 
     // Game balance constants the client needs for local calculations

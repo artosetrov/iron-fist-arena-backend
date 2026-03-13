@@ -122,32 +122,26 @@ final class InventoryViewModel {
     }
 
     func useItem(_ item: Item) async {
-        // Optimistic UI: decrement quantity or remove
-        let previousItems = items
-        if let qty = item.quantity, qty > 1 {
-            items = items.map { existing in
-                guard existing.id == item.id else { return existing }
-                var updated = existing
-                updated.quantity = qty - 1
-                return updated
-            }
-        } else {
-            items.removeAll { $0.id == item.id }
-        }
         showItemDetail = false
-        appState.showToast("Used \(item.displayName)", type: .reward)
 
         let success = await service.useItem(inventoryId: item.id, consumableType: item.consumableType)
         if success {
-            // Server confirmed — keep local state (no full reload)
+            // Server confirmed — update local state
+            if let qty = item.quantity, qty > 1 {
+                items = items.map { existing in
+                    guard existing.id == item.id else { return existing }
+                    var updated = existing
+                    updated.quantity = qty - 1
+                    return updated
+                }
+            } else {
+                items.removeAll { $0.id == item.id }
+            }
             appState.cachedInventory = items
             appState.invalidateCache("quests")
-        } else {
-            // Rollback on failure
-            items = previousItems
-            appState.cachedInventory = previousItems
-            appState.showToast("Failed to use item", type: .error)
+            appState.showToast("Used \(item.displayName)", type: .reward)
         }
+        // On failure: service already shows specific error toast (e.g. "Stamina is already full")
     }
 
     func upgrade(_ item: Item, useProtection: Bool) async {
@@ -171,6 +165,20 @@ final class InventoryViewModel {
         } else {
             appState.showToast("❌ Upgrade failed", type: .error)
         }
+    }
+
+    func repair(_ item: Item) async {
+        showItemDetail = false
+        guard let result = await shopService.repair(inventoryId: item.id) else { return }
+        items = items.map { existing in
+            guard existing.id == item.id else { return existing }
+            var updated = existing
+            updated.durability = result.newDurability
+            updated.maxDurability = result.maxDurability
+            return updated
+        }
+        appState.cachedInventory = items
+        appState.showToast("Repaired for \(result.repairCost) gold", type: .reward)
     }
 
     // MARK: - Expand Inventory

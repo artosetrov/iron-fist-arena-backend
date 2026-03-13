@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   if (character.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const cacheKey = `passives:char:${characterId}`
-  const cached = cacheGet<unknown[]>(cacheKey)
+  const cached = await cacheGet<unknown[]>(cacheKey)
   if (cached) {
     return NextResponse.json({
       passive_points_available: character.passivePointsAvailable,
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     unlocked_at: p.unlockedAt,
   }))
 
-  cacheSet(cacheKey, unlocked_nodes, CACHE_TTL)
+  await cacheSet(cacheKey, unlocked_nodes, CACHE_TTL)
 
   return NextResponse.json({
     passive_points_available: character.passivePointsAvailable,

@@ -29,7 +29,7 @@ export async function POST(
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`respec-stats:${user.id}`, 5, 60_000)) {
+  if (!(await rateLimit(`respec-stats:${user.id}`, 5, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -103,8 +103,8 @@ export async function POST(
     await recalculateDerivedStats(id)
 
     // Invalidate combat caches
-    invalidateSkillCache(id)
-    invalidatePassiveCache(id)
+    await invalidateSkillCache(id)
+    await invalidatePassiveCache(id)
 
     const updated = await prisma.character.findUnique({ where: { id } })
     return NextResponse.json({ character: updated })

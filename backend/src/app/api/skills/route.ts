@@ -14,14 +14,14 @@ export async function GET(req: NextRequest) {
 
   // Try cache for full catalog
   const cacheKey = 'skills:catalog'
-  let skills = cacheGet<unknown[]>(cacheKey)
+  let skills = await cacheGet<unknown[]>(cacheKey)
 
   if (!skills) {
     skills = await prisma.skill.findMany({
       where: { isActive: true },
       orderBy: [{ classRestriction: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
     })
-    cacheSet(cacheKey, skills, CACHE_TTL)
+    await cacheSet(cacheKey, skills, CACHE_TTL)
   }
 
   // Apply client-side class filter

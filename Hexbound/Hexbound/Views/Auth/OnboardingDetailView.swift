@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var vm = OnboardingViewModel()
 
     var body: some View {
@@ -901,7 +902,7 @@ struct OnboardingDetailView: View {
 
                 Button {
                     if vm.step == OnboardingViewModel.totalSteps - 1 {
-                        Task { await vm.createCharacter(appState: appState) }
+                        Task { await vm.createCharacter(appState: appState, cache: cache) }
                     } else {
                         vm.nextStep()
                     }

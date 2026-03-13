@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { character_id, bet_amount } = body
 
-    if (!rateLimit('shell-start:' + user.id, 10, 60_000)) {
+    if (!(await rateLimit('shell-start:' + user.id, 10, 60_000))) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429 }

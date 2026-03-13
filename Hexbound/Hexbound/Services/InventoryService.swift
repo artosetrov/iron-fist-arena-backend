@@ -170,15 +170,17 @@ final class InventoryService {
                 )
             }
 
-            // Update stamina from response
-            if let stamina = response["stamina"] as? [String: Any],
-               let after = stamina["after"] as? Int {
-                appState.currentCharacter?.currentStamina = after
-            }
-            // Update HP from response
-            if let health = response["health"] as? [String: Any],
-               let after = health["after"] as? Int {
-                appState.currentCharacter?.currentHp = after
+            // Single write-back to avoid @Observable re-entrant access
+            if var char = appState.currentCharacter {
+                if let stamina = response["stamina"] as? [String: Any],
+                   let after = stamina["after"] as? Int {
+                    char.currentStamina = after
+                }
+                if let health = response["health"] as? [String: Any],
+                   let after = health["after"] as? Int {
+                    char.currentHp = after
+                }
+                appState.currentCharacter = char
             }
             // Invalidate inventory cache (consumable quantity changed)
             appState.cachedInventory = nil
@@ -208,8 +210,12 @@ final class InventoryService {
             )
             if let slots = response["inventorySlots"] as? Int,
                let gold = response["gold"] as? Int {
-                appState.currentCharacter?.inventorySlots = slots
-                appState.currentCharacter?.gold = gold
+                // Single write-back to avoid @Observable re-entrant access
+                if var char = appState.currentCharacter {
+                    char.inventorySlots = slots
+                    char.gold = gold
+                    appState.currentCharacter = char
+                }
                 return slots
             }
             return nil

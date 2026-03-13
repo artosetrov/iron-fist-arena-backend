@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`shop-buy-gems:${user.id}`, 10, 60_000)) {
+  if (!(await rateLimit(`shop-buy-gems:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 

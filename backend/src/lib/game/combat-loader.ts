@@ -124,10 +124,10 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
 
 // --- Cache invalidation helpers ---
 
-export function invalidateSkillCache(characterId: string): void {
-  cacheDelete(`skills:char:${characterId}`)
+export async function invalidateSkillCache(characterId: string): Promise<void> {
+  await cacheDelete(`skills:char:${characterId}`)
 }
 
-export function invalidatePassiveCache(characterId: string): void {
-  cacheDelete(`passives:char:${characterId}`)
+export async function invalidatePassiveCache(characterId: string): Promise<void> {
+  await cacheDelete(`passives:char:${characterId}`)
 }

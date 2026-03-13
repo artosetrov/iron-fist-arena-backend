@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const { email, password, username } = body
 
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
-    if (!rateLimit('register:' + ip, 5, 60_000)) {
+    if (!(await rateLimit('register:' + ip, 5, 60_000))) {
       return NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429 }

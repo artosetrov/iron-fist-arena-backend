@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    cacheDelete('passives:tree')
+    await cacheDelete('passives:tree')
     return NextResponse.json({ connection }, { status: 201 })
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes('Unique constraint')) {
@@ -66,7 +66,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     await prisma.passiveConnection.delete({ where: { id } })
-    cacheDelete('passives:tree')
+    await cacheDelete('passives:tree')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('admin delete connection error:', error)

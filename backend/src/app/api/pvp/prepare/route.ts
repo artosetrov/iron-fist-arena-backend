@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`pvp-prepare:${user.id}`, 10, 60_000)) {
+  if (!(await rateLimit(`pvp-prepare:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -234,9 +234,11 @@ export async function POST(req: NextRequest) {
       ...(revenge_id ? { revenge_id } : {}),
     })
   } catch (error) {
-    console.error('pvp prepare error:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    console.error('pvp prepare error:', message, stack)
     return NextResponse.json(
-      { error: 'Failed to prepare battle' },
+      { error: `Failed to prepare battle: ${message}` },
       { status: 500 }
     )
   }

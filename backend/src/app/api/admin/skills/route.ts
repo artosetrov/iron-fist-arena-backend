@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    cacheDelete('skills:catalog')
+    await cacheDelete('skills:catalog')
     return NextResponse.json({ skill }, { status: 201 })
   } catch (error: unknown) {
     if (error instanceof Error && error.message.includes('Unique constraint')) {
@@ -99,7 +99,7 @@ export async function PUT(req: NextRequest) {
 
     const skill = await prisma.skill.update({ where: { id }, data })
 
-    cacheDelete('skills:catalog')
+    await cacheDelete('skills:catalog')
     return NextResponse.json({ skill })
   } catch (error) {
     console.error('admin update skill error:', error)
@@ -119,7 +119,7 @@ export async function DELETE(req: NextRequest) {
 
   try {
     await prisma.skill.delete({ where: { id } })
-    cacheDelete('skills:catalog')
+    await cacheDelete('skills:catalog')
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('admin delete skill error:', error)

@@ -129,6 +129,7 @@ struct ShopDetailView: View {
                         onSell: {},
                         onUse: {},
                         onUpgrade: { _ in },
+                        onRepair: {},
                         onClose: { vm.closeDetail() },
                         shopMode: .init(
                             displayPrice: shopItem.displayPrice,

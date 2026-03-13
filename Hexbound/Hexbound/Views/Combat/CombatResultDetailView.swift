@@ -111,6 +111,20 @@ struct CombatResultDetailView: View {
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.bottom, LayoutConstants.spaceLG)
                 }
+            } else {
+                // Fallback — combat result not available (shouldn't happen)
+                VStack(spacing: LayoutConstants.spaceMD) {
+                    Spacer()
+                    Text("Battle Complete")
+                        .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Button("RETURN") {
+                        goBack()
+                    }
+                    .buttonStyle(.primary)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    Spacer()
+                }
             }
         }
         .navigationBarHidden(true)

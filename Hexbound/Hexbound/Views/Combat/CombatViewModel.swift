@@ -323,10 +323,11 @@ final class CombatViewModel {
         }
 
         isNavigatingToResult = true
+        defer { isNavigatingToResult = false }
 
-        // Wait briefly for resolve result if not yet available
+        // Wait briefly for resolve result if not yet available (max ~1.5s)
         if appState.resolveResult == nil {
-            for _ in 0..<6 {
+            for _ in 0..<3 {
                 try? await Task.sleep(for: .milliseconds(500))
                 if appState.resolveResult != nil { break }
             }
@@ -361,7 +362,6 @@ final class CombatViewModel {
             appState.combatResult = combatData
         }
 
-        isNavigatingToResult = false
         appState.mainPath.append(AppRoute.combatResult)
     }
 }

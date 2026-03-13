@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Invalidate ban cache so the ban takes effect immediately
-    invalidateBanCache(user_id)
+    await invalidateBanCache(user_id)
 
     return NextResponse.json({ success: true, user_id, banned: true })
   } catch (error) {

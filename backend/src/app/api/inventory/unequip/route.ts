@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`unequip:${user.id}`, 20, 60_000)) {
+  if (!(await rateLimit(`unequip:${user.id}`, 20, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -68,8 +68,8 @@ export async function POST(req: NextRequest) {
     await recalculateDerivedStats(character_id)
 
     // Invalidate combat caches so PvP uses fresh equipment data
-    invalidateSkillCache(character_id)
-    invalidatePassiveCache(character_id)
+    await invalidateSkillCache(character_id)
+    await invalidatePassiveCache(character_id)
 
     // Return updated inventory
     const equipment = await prisma.equipmentInventory.findMany({

@@ -15,7 +15,7 @@ export async function getAuthAdmin(req: NextRequest) {
   if (!user) return null
 
   const cacheKey = `role:${user.id}`
-  const cachedRole = cacheGet<string>(cacheKey)
+  const cachedRole = await cacheGet<string>(cacheKey)
 
   if (cachedRole !== null) {
     return cachedRole === 'admin' ? user : null
@@ -28,7 +28,7 @@ export async function getAuthAdmin(req: NextRequest) {
 
   if (!dbUser) return null
 
-  cacheSet(cacheKey, dbUser.role, ROLE_CACHE_TTL)
+  await cacheSet(cacheKey, dbUser.role, ROLE_CACHE_TTL)
   return dbUser.role === 'admin' ? user : null
 }
 

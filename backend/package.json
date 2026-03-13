@@ -9,14 +9,21 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:push": "prisma db push",
+    "db:migrate:status": "prisma migrate status --schema=prisma/schema.prisma",
+    "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:migrate:adopt": "prisma migrate resolve --applied 20260306_baseline --schema=prisma/schema.prisma",
+    "db:push": "node -e \"console.warn('WARNING: prisma db push is local-only and must not be used on shared, staging, or production databases.')\" && prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:fix:battle-pass-rewards": "tsx prisma/fix-battle-pass-rewards.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.0",
     "@supabase/supabase-js": "^2.49.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

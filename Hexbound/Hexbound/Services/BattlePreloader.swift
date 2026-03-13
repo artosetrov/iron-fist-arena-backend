@@ -34,18 +34,21 @@ struct BattlePrepareData {
 /// Thread-safe cache for concurrent prepare calls
 private actor PrepareCacheStore {
     private var cache: [String: BattlePrepareData] = [:]
-    private var preparing: Set<String> = []
+    private var inFlight: [String: Task<BattlePrepareData?, Never>] = [:]
 
     func get(_ key: String) -> BattlePrepareData? { cache[key] }
     func set(_ key: String, _ data: BattlePrepareData) { cache[key] = data }
-    func clear() { cache.removeAll() }
+    func clear() {
+        cache.removeAll()
+        inFlight.removeAll()
+    }
     func remove(_ key: String) {
         cache.removeValue(forKey: key)
-        preparing.remove(key)
+        inFlight.removeValue(forKey: key)
     }
-    func markPreparing(_ key: String) { preparing.insert(key) }
-    func unmarkPreparing(_ key: String) { preparing.remove(key) }
-    func isPreparing(_ key: String) -> Bool { preparing.contains(key) }
+    func getInFlight(_ key: String) -> Task<BattlePrepareData?, Never>? { inFlight[key] }
+    func setInFlight(_ key: String, _ task: Task<BattlePrepareData?, Never>) { inFlight[key] = task }
+    func removeInFlight(_ key: String) { inFlight.removeValue(forKey: key) }
 }
 
 @MainActor @Observable
@@ -61,69 +64,88 @@ final class BattlePreloader {
 
     /// Fetches battle data from server. Returns prepare data or nil on failure.
     /// Pass revengeId for revenge fights — the server resolves the opponent from the revenge entry.
-    func prepare(opponentId: String? = nil, revengeId: String? = nil) async -> BattlePrepareData? {
+    func prepare(opponentId: String? = nil, revengeId: String? = nil, showErrors: Bool = true) async -> BattlePrepareData? {
         let cacheKey = revengeId ?? opponentId ?? ""
+
         // Return cached if available
         if let cached = await cacheStore.get(cacheKey) {
             return cached
         }
 
+        // If another call is already preparing this key, await it instead of returning nil
+        if let existingTask = await cacheStore.getInFlight(cacheKey) {
+            return await existingTask.value
+        }
+
         guard let charId = appState.currentCharacter?.id else { return nil }
-        guard !(await cacheStore.isPreparing(cacheKey)) else { return nil }
-        await cacheStore.markPreparing(cacheKey)
 
-        do {
-            var body: [String: Any] = ["character_id": charId]
-            if let revengeId { body["revenge_id"] = revengeId }
-            if let opponentId { body["opponent_id"] = opponentId }
-            let response = try await APIClient.shared.postRaw(
-                APIEndpoints.pvpPrepare,
-                body: body
-            )
+        let task = Task<BattlePrepareData?, Never> { [weak self] in
+            guard let self else { return nil }
+            do {
+                var body: [String: Any] = ["character_id": charId]
+                if let revengeId { body["revenge_id"] = revengeId }
+                if let opponentId { body["opponent_id"] = opponentId }
 
-            guard let ticketId = response["battle_ticket_id"] as? String,
-                  let seed = response["battle_seed"] as? Int,
-                  let playerDict = response["player_stats"] as? [String: Any],
-                  let enemyDict = response["enemy_stats"] as? [String: Any] else {
-                await cacheStore.unmarkPreparing(cacheKey)
+                let response = try await APIClient.shared.postRaw(
+                    APIEndpoints.pvpPrepare,
+                    body: body
+                )
+
+                guard let ticketId = response["battle_ticket_id"] as? String,
+                      let seed = response["battle_seed"] as? Int,
+                      let playerDict = response["player_stats"] as? [String: Any],
+                      let enemyDict = response["enemy_stats"] as? [String: Any] else {
+                    await cacheStore.removeInFlight(cacheKey)
+                    return nil
+                }
+
+                let configDict = response["combat_config"] as? [String: Any] ?? [:]
+                let staminaDict = response["stamina"] as? [String: Any] ?? [:]
+
+                let data = BattlePrepareData(
+                    battleTicketId: ticketId,
+                    battleSeed: seed,
+                    playerStats: FighterStats(from: playerDict),
+                    enemyStats: FighterStats(from: enemyDict),
+                    combatConfig: CombatConfig(from: configDict),
+                    staminaInfo: BattlePrepareData.StaminaInfo(
+                        current: staminaDict["current"] as? Int ?? 0,
+                        cost: staminaDict["cost"] as? Int ?? 0,
+                        hasFreePvp: staminaDict["has_free_pvp"] as? Bool ?? false,
+                        freePvpRemaining: staminaDict["free_pvp_remaining"] as? Int ?? 0
+                    )
+                )
+
+                await cacheStore.set(cacheKey, data)
+                await cacheStore.removeInFlight(cacheKey)
+                return data
+
+            } catch let error as APIError {
+                await cacheStore.removeInFlight(cacheKey)
+                if showErrors {
+                    await MainActor.run { [weak self] in
+                        switch error {
+                        case .clientError(_, let message):
+                            self?.appState.showToast(message, type: .error)
+                        default:
+                            self?.appState.showToast("Failed to prepare battle", type: .error)
+                        }
+                    }
+                }
+                return nil
+            } catch {
+                await cacheStore.removeInFlight(cacheKey)
+                if showErrors {
+                    await MainActor.run { [weak self] in
+                        self?.appState.showToast("Failed to prepare battle", type: .error)
+                    }
+                }
                 return nil
             }
-
-            let configDict = response["combat_config"] as? [String: Any] ?? [:]
-            let staminaDict = response["stamina"] as? [String: Any] ?? [:]
-
-            let data = BattlePrepareData(
-                battleTicketId: ticketId,
-                battleSeed: seed,
-                playerStats: FighterStats(from: playerDict),
-                enemyStats: FighterStats(from: enemyDict),
-                combatConfig: CombatConfig(from: configDict),
-                staminaInfo: BattlePrepareData.StaminaInfo(
-                    current: staminaDict["current"] as? Int ?? 0,
-                    cost: staminaDict["cost"] as? Int ?? 0,
-                    hasFreePvp: staminaDict["has_free_pvp"] as? Bool ?? false,
-                    freePvpRemaining: staminaDict["free_pvp_remaining"] as? Int ?? 0
-                )
-            )
-
-            await cacheStore.set(cacheKey, data)
-            await cacheStore.unmarkPreparing(cacheKey)
-            return data
-
-        } catch let error as APIError {
-            await cacheStore.unmarkPreparing(cacheKey)
-            switch error {
-            case .clientError(_, let message):
-                appState.showToast(message, type: .error)
-            default:
-                appState.showToast("Failed to prepare battle", type: .error)
-            }
-            return nil
-        } catch {
-            await cacheStore.unmarkPreparing(cacheKey)
-            appState.showToast("Failed to prepare battle", type: .error)
-            return nil
         }
+
+        await cacheStore.setInFlight(cacheKey, task)
+        return await task.value
     }
 
     // MARK: - Simulate Combat (client-side, instant)
@@ -211,7 +233,7 @@ final class BattlePreloader {
     }
 
     func isPreparing(_ opponentId: String) async -> Bool {
-        await cacheStore.isPreparing(opponentId)
+        await cacheStore.getInFlight(opponentId) != nil
     }
 }
 

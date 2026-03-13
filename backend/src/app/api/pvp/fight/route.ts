@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!rateLimit(`pvp-fight:${user.id}`, 10, 60_000)) {
+  if (!(await rateLimit(`pvp-fight:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
     ])
 
     // Invalidate leaderboard cache since ratings changed
-    cacheDeletePrefix('leaderboard:')
+    await cacheDeletePrefix('leaderboard:')
 
     // Run all post-combat side effects in parallel for maximum speed
     const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000) // 72 hours

@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Invalidate cached config so changes take effect immediately
-    cacheDelete(`gameconfig:${key}`)
-    cacheDeletePrefix('gameconfig:batch:')
+    await cacheDelete(`gameconfig:${key}`)
+    await cacheDeletePrefix('gameconfig:batch:')
 
     // Log the admin action
     await prisma.adminLog.create({

@@ -198,29 +198,21 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Verify character ownership + get owned items in parallel
-    const [character, ownedItems] = await Promise.all([
-      prisma.character.findUnique({
-        where: { id: characterId },
-        select: { id: true, userId: true, level: true },
-      }),
-      prisma.equipmentInventory.findMany({
-        where: { characterId },
-        select: { itemId: true },
-      }),
-    ])
+    const character = await prisma.character.findUnique({
+      where: { id: characterId },
+      select: { id: true, userId: true, level: true },
+    })
 
     if (!character || character.userId !== user.id) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
-
-    const ownedItemIds = new Set(ownedItems.map((e) => e.itemId))
 
     // Build filter — always exclude consumables from DB (served from CONSUMABLE_CATALOG)
     const where: {
       itemType?: ItemType | { not: ItemType };
       rarity?: Rarity;
       itemLevel?: { lte: number };
+      equipment?: { none: { characterId: string } };
     } = { itemType: { not: ItemType.consumable } }
 
     if (typeParam && typeParam !== 'consumable') {
@@ -245,19 +237,32 @@ export async function GET(req: NextRequest) {
 
     // Level-based assortment: show items up to character level + 2
     where.itemLevel = { lte: character.level + 2 }
+    where.equipment = { none: { characterId } }
 
     const items = await prisma.item.findMany({
       where,
+      select: {
+        id: true,
+        catalogId: true,
+        itemName: true,
+        itemType: true,
+        rarity: true,
+        itemLevel: true,
+        buyPrice: true,
+        sellPrice: true,
+        baseStats: true,
+        description: true,
+        imageUrl: true,
+        imageKey: true,
+        specialEffect: true,
+        uniquePassive: true,
+        setName: true,
+      },
       orderBy: [{ itemLevel: 'asc' }, { itemName: 'asc' }],
     })
 
-    // Filter out items this character already owns
-    const availableItems = items.filter(
-      (item) => !ownedItemIds.has(item.id)
-    )
-
     // Transform to snake_case format expected by iOS client
-    const shopItems = availableItems.map((item) => ({
+    const shopItems = items.map((item) => ({
       id: item.id,
       catalog_id: item.catalogId,
       item_name: item.itemName,

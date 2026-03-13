@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // ── CORS allowed origins ──
 // Set CORS_ORIGINS env var to a comma-separated list of allowed origins.
@@ -7,8 +8,6 @@ const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
   : null
 
-// ── Rate limiting store (in-memory, per-instance) ──
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
 const RATE_LIMIT_MAX = 120 // requests per window
 
@@ -30,18 +29,13 @@ function applyCorsHeaders(res: NextResponse, origin: string | null): NextRespons
   return res
 }
 
-// Periodic cleanup of expired rate-limit entries (every 5 min)
-let lastCleanup = Date.now()
-function cleanupRateLimits() {
-  const now = Date.now()
-  if (now - lastCleanup < 300_000) return
-  lastCleanup = now
-  for (const [key, val] of rateLimitMap) {
-    if (now > val.resetAt) rateLimitMap.delete(key)
-  }
+function getClientIp(request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for')
+  if (!forwardedFor) return 'anon'
+  return forwardedFor.split(',')[0]?.trim() || 'anon'
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const origin = request.headers.get('origin')
 
   // ── Preflight ──
@@ -51,33 +45,24 @@ export function middleware(request: NextRequest) {
   }
 
   // ── Rate limiting ──
-  cleanupRateLimits()
-  const rateLimitKey = request.headers.get('x-forwarded-for') || 'anon'
-  const now = Date.now()
-  let entry = rateLimitMap.get(rateLimitKey)
+  const rateLimitKey = `middleware:${getClientIp(request)}`
+  const result = await checkRateLimit(rateLimitKey, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)
 
-  if (!entry || now > entry.resetAt) {
-    entry = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
-    rateLimitMap.set(rateLimitKey, entry)
-  }
-
-  entry.count++
-
-  if (entry.count > RATE_LIMIT_MAX) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
+  if (!result.allowed) {
+    const retryAfter = Math.max(1, Math.ceil((result.resetAt - Date.now()) / 1000))
     const res = NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     res.headers.set('Retry-After', String(retryAfter))
-    res.headers.set('X-RateLimit-Limit', String(RATE_LIMIT_MAX))
+    res.headers.set('X-RateLimit-Limit', String(result.limit))
     res.headers.set('X-RateLimit-Remaining', '0')
-    res.headers.set('X-RateLimit-Reset', String(Math.ceil(entry.resetAt / 1000)))
+    res.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)))
     return applyCorsHeaders(res, origin)
   }
 
   // ── Pass through ──
   const response = NextResponse.next()
-  response.headers.set('X-RateLimit-Limit', String(RATE_LIMIT_MAX))
-  response.headers.set('X-RateLimit-Remaining', String(RATE_LIMIT_MAX - entry.count))
-  response.headers.set('X-RateLimit-Reset', String(Math.ceil(entry.resetAt / 1000)))
+  response.headers.set('X-RateLimit-Limit', String(result.limit))
+  response.headers.set('X-RateLimit-Remaining', String(result.remaining))
+  response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)))
 
   return applyCorsHeaders(response, origin)
 }
