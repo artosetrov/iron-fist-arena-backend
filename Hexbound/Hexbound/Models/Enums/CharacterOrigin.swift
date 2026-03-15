@@ -23,6 +23,16 @@ enum CharacterOrigin: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    var iconAsset: String {
+        switch self {
+        case .human: "race-icon-human"
+        case .orc: "race-icon-orc"
+        case .skeleton: "race-icon-skeleton"
+        case .demon: "race-icon-demon"
+        case .dogfolk: "race-icon-dogfolk"
+        }
+    }
+
     var bonuses: String {
         switch self {
         case .human: "+2 Charisma  +1 Luck"

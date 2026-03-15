@@ -35,13 +35,10 @@ final class LoginViewModel {
 
         let result = await authService?.guestLogin()
         isLoading = false
-        switch result {
-        case .failure(let error):
+        if case .failure(let error) = result {
             errorMessage = error.localizedDescription
-        default:
-            // Navigate to onboarding for guest
-            appState.mainPath.append(AppRoute.onboarding)
         }
+        // Navigation is handled inside AuthService.guestLogin()
     }
 
     func handleAppleSignIn(result: Result<ASAuthorization, Error>, appState: AppState) async {
@@ -73,8 +70,10 @@ final class LoginViewModel {
                 let hasCharacter = await authService?.loadCharacterPublic() ?? false
 
                 isLoading = false
-                appState.isAuthenticated = true
-                if !hasCharacter {
+                if hasCharacter {
+                    appState.isAuthenticated = true
+                } else {
+                    // No character — stay on AuthRouterView, navigate to onboarding
                     appState.authPath.append(AppRoute.onboarding)
                 }
             } catch {

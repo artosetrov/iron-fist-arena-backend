@@ -22,21 +22,16 @@ struct ShopItemCardView: View {
                 if isBuying {
                     ProgressView()
                         .tint(DarkFantasyTheme.gold)
-                } else if item.imageKey != nil || item.imageUrl != nil {
+                } else {
                     ItemImageView(
                         imageKey: item.imageKey,
                         imageUrl: item.imageUrl,
+                        systemIcon: item.consumableIcon,
+                        systemIconColor: item.consumableIconColor,
                         fallbackIcon: item.typeIcon
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
-                } else if let sfIcon = item.consumableIcon {
-                    Image(systemName: sfIcon)
-                        .font(.system(size: 32))
-                        .foregroundStyle(item.consumableIconColor ?? .yellow)
-                } else {
-                    Text(item.typeIcon)
-                        .font(.system(size: 32))
                 }
             }
             .overlay(alignment: .bottom) {
@@ -75,6 +70,6 @@ struct ShopItemCardView: View {
             )
             .opacity(canAfford && meetsLevel ? 1.0 : 0.5)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.95))
     }
 }

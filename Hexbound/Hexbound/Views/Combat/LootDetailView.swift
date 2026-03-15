@@ -16,6 +16,14 @@ struct LootDetailView: View {
             VStack(spacing: 0) {
                 Spacer()
 
+                // Loot illustration
+                if !lootItems.isEmpty {
+                    Image("result-loot-found")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 128, height: 128)
+                }
+
                 // Title
                 Text(lootItems.isEmpty ? "NO LOOT" : "LOOT FOUND!")
                     .font(DarkFantasyTheme.section(size: 32))
@@ -85,6 +93,9 @@ struct LootDetailView: View {
         let rarityColor = DarkFantasyTheme.rarityColor(for: rarity)
         let isGold = rawType == "gold" || rawType == "currency"
         let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
+        let consumableType = item["consumable_type"] as? String ?? item["consumableType"] as? String
+        let sfIcon = Self.consumableSFIcon(for: consumableType, type: rawType)
+        let sfColor = Self.consumableSFColor(for: consumableType, type: rawType)
 
         VStack(spacing: LayoutConstants.spaceSM) {
             // Icon Card
@@ -95,6 +106,8 @@ struct LootDetailView: View {
                 ItemImageView(
                     imageKey: lootImageKey,
                     imageUrl: lootImageUrl,
+                    systemIcon: sfIcon,
+                    systemIconColor: sfColor,
                     fallbackIcon: type?.icon ?? "📦"
                 )
                 .frame(width: 56, height: 56)
@@ -155,6 +168,9 @@ struct LootDetailView: View {
         let stats = item["stats"] as? [String: Int] ?? item["base_stats"] as? [String: Int]
         let isGold = rawType == "gold" || rawType == "currency"
         let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
+        let consumableType2 = item["consumable_type"] as? String ?? item["consumableType"] as? String
+        let sfIcon2 = Self.consumableSFIcon(for: consumableType2, type: rawType)
+        let sfColor2 = Self.consumableSFColor(for: consumableType2, type: rawType)
 
         ZStack {
             // Backdrop
@@ -179,6 +195,8 @@ struct LootDetailView: View {
                         ItemImageView(
                             imageKey: lootImageKey2,
                             imageUrl: lootImageUrl,
+                            systemIcon: sfIcon2,
+                            systemIconColor: sfColor2,
                             fallbackIcon: type?.icon ?? "📦"
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
@@ -233,12 +251,8 @@ struct LootDetailView: View {
                         }
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .frame(width: 28, height: 28)
-                            .background(DarkFantasyTheme.bgTertiary.opacity(0.6))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
+                    .buttonStyle(.closeButton)
                 }
                 .padding(LayoutConstants.cardPadding)
 
@@ -342,5 +356,25 @@ struct LootDetailView: View {
         } else {
             appState.mainPath = NavigationPath()
         }
+    }
+
+    // MARK: - Consumable Icon Helpers
+
+    static func consumableSFIcon(for consumableType: String?, type: String) -> String? {
+        guard type == "consumable" else { return nil }
+        let ct = consumableType ?? ""
+        if ct.contains("gem_pack") { return "diamond.fill" }
+        if ct.contains("health") { return "heart.fill" }
+        if ct.contains("stamina") { return "bolt.fill" }
+        return "flask.fill"
+    }
+
+    static func consumableSFColor(for consumableType: String?, type: String) -> Color? {
+        guard type == "consumable" else { return nil }
+        let ct = consumableType ?? ""
+        if ct.contains("gem_pack") { return DarkFantasyTheme.cyan }
+        if ct.contains("health") { return DarkFantasyTheme.hpBlood }
+        if ct.contains("stamina") { return DarkFantasyTheme.stamina }
+        return DarkFantasyTheme.goldBright
     }
 }

@@ -118,6 +118,7 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
     case auth, hub, hero, arena, combat, shop
     case dungeon, minigames, quests, achievements
     case leaderboard, battlePass, profile, settings, modals
+    case devTools
 
     var id: String { rawValue }
 
@@ -138,6 +139,7 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
         case .profile: "Profile"
         case .settings: "Settings"
         case .modals: "Modals / Overlays"
+        case .devTools: "Dev Tools"
         }
     }
 
@@ -214,6 +216,10 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
                 CatalogItem(id: "daily-login-popup", name: "Daily Login Popup", icon: "calendar.badge.plus", route: nil, isModal: true),
                 CatalogItem(id: "level-up-modal", name: "Level Up Modal", icon: "arrow.up.circle.fill", route: nil, isModal: true),
                 CatalogItem(id: "toast-overlay", name: "Toast Notifications", icon: "bell.fill", route: nil, isModal: true),
+            ]
+        case .devTools:
+            return [
+                CatalogItem(id: "design-system", name: "Design System", icon: "paintpalette.fill", route: .designSystem),
             ]
         }
     }

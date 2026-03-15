@@ -1,5 +1,11 @@
 import Foundation
 
+enum AutoLoginResult {
+    case noTokens
+    case hasCharacter
+    case noCharacter
+}
+
 @MainActor
 final class AuthService {
     private let appState: AppState
@@ -33,15 +39,16 @@ final class AuthService {
             // Load character first
             let hasCharacter = await loadCharacter()
 
-            // Load game data (inventory, quests, daily login, config)
-            if hasCharacter, let cache = cache {
-                let initService = GameInitService(appState: appState, cache: cache)
-                await initService.loadGameData()
-            }
-
-            appState.isAuthenticated = true
-
-            if !hasCharacter {
+            if hasCharacter {
+                // Load game data (inventory, quests, daily login, config)
+                if let cache = cache {
+                    let initService = GameInitService(appState: appState, cache: cache)
+                    await initService.loadGameData()
+                }
+                appState.isAuthenticated = true
+            } else {
+                // No character — stay on AuthRouterView, navigate to onboarding.
+                // OnboardingViewModel sets isAuthenticated after character creation.
                 appState.authPath.append(AppRoute.onboarding)
             }
 
@@ -129,10 +136,10 @@ final class AuthService {
 
     // MARK: - Auto Login
 
-    func tryAutoLogin() async -> Bool {
+    func tryAutoLogin() async -> AutoLoginResult {
         // Try refresh token first
         guard let refreshToken = KeychainManager.shared.refreshToken else {
-            return false
+            return .noTokens
         }
 
         do {
@@ -147,8 +154,8 @@ final class AuthService {
             setupUnauthorizedHandler()
 
             // Load character
-            _ = await loadCharacter()
-            return true
+            let hasCharacter = await loadCharacter()
+            return hasCharacter ? .hasCharacter : .noCharacter
         } catch {
             // Try validating existing access token
             if let accessToken = KeychainManager.shared.accessToken {
@@ -159,16 +166,16 @@ final class AuthService {
                     // Setup 401 handler on fallback path too
                     setupUnauthorizedHandler()
 
-                    _ = await loadCharacter()
-                    return true
+                    let hasCharacter = await loadCharacter()
+                    return hasCharacter ? .hasCharacter : .noCharacter
                 } catch {
                     // Token invalid
                     KeychainManager.shared.clearAll()
-                    return false
+                    return .noTokens
                 }
             }
             KeychainManager.shared.clearAll()
-            return false
+            return .noTokens
         }
     }
 

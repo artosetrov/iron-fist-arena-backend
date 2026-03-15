@@ -11,7 +11,7 @@ struct CurrencyDisplay: View {
             VStack(alignment: .trailing, spacing: 4) {
                 HStack(spacing: 5) {
                     Text("\u{1FA99}")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                     Text(formatGold(gold))
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -20,7 +20,7 @@ struct CurrencyDisplay: View {
                 if let gems = gems, gems > 0 {
                     HStack(spacing: 5) {
                         Text("\u{1F48E}")
-                            .font(.system(size: 14))
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         Text("\(gems)")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                             .foregroundStyle(DarkFantasyTheme.cyan)
@@ -33,7 +33,7 @@ struct CurrencyDisplay: View {
                     onAdd?()
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 22))
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
                 .buttonStyle(.plain)

@@ -128,7 +128,7 @@ final class BattlePreloader {
                         case .clientError(_, let message):
                             self?.appState.showToast(message, type: .error)
                         default:
-                            self?.appState.showToast("Failed to prepare battle", type: .error)
+                            self?.appState.showToast("Failed to prepare battle", subtitle: "Check connection and try again", type: .error)
                         }
                     }
                 }
@@ -137,7 +137,7 @@ final class BattlePreloader {
                 await cacheStore.removeInFlight(cacheKey)
                 if showErrors {
                     await MainActor.run { [weak self] in
-                        self?.appState.showToast("Failed to prepare battle", type: .error)
+                        self?.appState.showToast("Failed to prepare battle", subtitle: "Check connection and try again", type: .error)
                     }
                 }
                 return nil

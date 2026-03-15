@@ -7,7 +7,17 @@ struct ShopDetailView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            // Background image with dark overlay
+            GeometryReader { geo in
+                Image("bg-shop")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+            .ignoresSafeArea()
+            DarkFantasyTheme.bgBackdrop
+                .ignoresSafeArea()
 
             if let vm {
                 VStack(spacing: 0) {
@@ -61,7 +71,7 @@ struct ShopDetailView: View {
                         Spacer()
                         VStack(spacing: LayoutConstants.spaceSM) {
                             Text("🛒")
-                                .font(.system(size: 40))
+                                .font(.system(size: 40)) // emoji — keep
                             Text("No items available")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -89,7 +99,7 @@ struct ShopDetailView: View {
                                         } header: {
                                             HStack(spacing: LayoutConstants.spaceXS) {
                                                 Text(section.icon)
-                                                    .font(.system(size: 14))
+                                                    .font(.system(size: 14)) // emoji — keep
                                                 Text(section.title.uppercased())
                                                     .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
                                                     .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -185,16 +195,23 @@ struct ShopMerchantBanner: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMD) {
-            // Merchant portrait — uses knight avatar
-            Image("avatar_knight")
-                .resizable()
-                .scaledToFill()
-                .frame(width: 56, height: 56)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 2)
-                )
+            // Merchant portrait — uses knight avatar with remote fallback
+            Group {
+                if UIImage(named: "avatar_knight") != nil {
+                    Image("avatar_knight")
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    Text("🛒")
+                        .font(.system(size: 28)) // emoji — keep
+                }
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(Circle())
+            .overlay(
+                Circle()
+                    .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 2)
+            )
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("MERCHANT")

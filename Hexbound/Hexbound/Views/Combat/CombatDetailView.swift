@@ -5,10 +5,11 @@ struct CombatDetailView: View {
     @State private var viewModel: CombatViewModel?
     @State private var screenShake: CGFloat = 0
     @State private var animatePulse = false
+    @State private var showForfeitConfirmation = false
 
     var body: some View {
         ZStack {
-            Color(hex: 0x0A0A14).ignoresSafeArea()
+            DarkFantasyTheme.bgAbyss.ignoresSafeArea()
 
             if let vm = viewModel {
                 VStack(spacing: 0) {
@@ -31,6 +32,12 @@ struct CombatDetailView: View {
                 }
                 .offset(x: screenShake)
 
+                // VFX Particle Layer (between UI and popups)
+                CombatVFXOverlay(
+                    vfxManager: vm.vfxManager,
+                    speedMultiplier: vm.speedMultiplier
+                )
+
                 // Damage Popups Overlay
                 damagePopupsOverlay(vm)
 
@@ -49,6 +56,18 @@ struct CombatDetailView: View {
             }
         }
         .navigationBarHidden(true)
+        .confirmationDialog(
+            "FORFEIT BATTLE",
+            isPresented: $showForfeitConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Forfeit", role: .destructive) {
+                viewModel?.forfeit()
+            }
+            Button("Keep Fighting", role: .cancel) {}
+        } message: {
+            Text("You will lose the battle and any rewards. Are you sure?")
+        }
         .onAppear {
             setupCombatIfReady()
         }
@@ -73,6 +92,19 @@ struct CombatDetailView: View {
         }
     }
 
+    // MARK: - Boss Portrait Lookup
+
+    /// Find the boss portraitImage by matching the fighter's name against all dungeon bosses.
+    private func bossPortraitImage(for name: String) -> String? {
+        let lowered = name.lowercased()
+        for dungeon in DungeonInfo.all {
+            if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
+                return boss.portraitImage
+            }
+        }
+        return nil
+    }
+
     // MARK: - Setup
 
     private func setupCombatIfReady() {
@@ -92,7 +124,7 @@ struct CombatDetailView: View {
 
             // Pulsing swords icon
             Text("⚔️")
-                .font(.system(size: 72))
+                .font(DarkFantasyTheme.title(size: 72))
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: animatePulse ? 20 : 8)
                 .scaleEffect(animatePulse ? 1.05 : 0.95)
                 .animation(
@@ -203,13 +235,23 @@ struct CombatDetailView: View {
 
                 GeometryReader { geo in
                     let side = min(geo.size.width, geo.size.height)
-                    AvatarImageView(
-                        skinKey: fighter.avatar,
-                        characterClass: fighter.characterClass,
-                        size: side
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
-                    .frame(width: side, height: side)
+
+                    if !isPlayer, let bossPortrait = bossPortraitImage(for: fighter.characterName),
+                       UIImage(named: bossPortrait) != nil {
+                        Image(bossPortrait)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: side, height: side)
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
+                    } else {
+                        AvatarImageView(
+                            skinKey: fighter.avatar,
+                            characterClass: fighter.characterClass,
+                            size: side
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
+                        .frame(width: side, height: side)
+                    }
                 }
             }
             .frame(width: 130, height: 130)
@@ -260,13 +302,17 @@ struct CombatDetailView: View {
             if !statuses.isEmpty {
                 HStack(spacing: 4) {
                     ForEach(statuses) { status in
-                        Text(status.abbreviation)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(status.color.opacity(0.8))
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        HStack(spacing: 3) {
+                            Image(systemName: status.icon)
+                                .font(.system(size: 8))
+                            Text(status.abbreviation)
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(status.color.opacity(0.8))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                 }
             }
@@ -287,8 +333,8 @@ struct CombatDetailView: View {
                 Text(vm.currentAttackZone ?? "—")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(zoneColor(vm.currentAttackZone))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceXS)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(zoneColor(vm.currentAttackZone).opacity(0.5), lineWidth: 1)
@@ -307,8 +353,8 @@ struct CombatDetailView: View {
                 Text(vm.currentDefendZone ?? "—")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(zoneColor(vm.currentDefendZone))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceXS)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(zoneColor(vm.currentDefendZone).opacity(0.5), lineWidth: 1)
@@ -361,13 +407,19 @@ struct CombatDetailView: View {
                                         .foregroundStyle(entry.resultColor)
 
                                     if let label = entry.damageTypeLabel, let color = entry.damageTypeColor {
-                                        Text(label)
-                                            .font(DarkFantasyTheme.body(size: 8).bold())
-                                            .foregroundStyle(.white)
-                                            .padding(.horizontal, 4)
-                                            .padding(.vertical, 2)
-                                            .background(color.opacity(0.7))
-                                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                                        HStack(spacing: 2) {
+                                            if let icon = entry.damageTypeIcon {
+                                                Image(systemName: icon)
+                                                    .font(.system(size: 7))
+                                            }
+                                            Text(label)
+                                                .font(DarkFantasyTheme.body(size: 8).bold())
+                                        }
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(color.opacity(0.7))
+                                        .clipShape(RoundedRectangle(cornerRadius: 3))
                                     }
                                 }
                                 .padding(.vertical, 6)
@@ -380,9 +432,11 @@ struct CombatDetailView: View {
                     }
                 }
                 .onChange(of: vm.visibleLogEntries.count) { _, _ in
-                    if let last = vm.visibleLogEntries.last {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            proxy.scrollTo(last.id, anchor: .bottom)
+                    DispatchQueue.main.async {
+                        if let last = vm.visibleLogEntries.last {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                proxy.scrollTo(last.id, anchor: .bottom)
+                            }
                         }
                     }
                 }
@@ -430,59 +484,33 @@ struct CombatDetailView: View {
                     if vm.speedMode != 0 { vm.toggleSpeed() }
                 } label: {
                     Text("1X")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-                        .foregroundStyle(vm.speedMode == 0 ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightMD)
-                        .background(
-                            vm.speedMode == 0
-                                ? DarkFantasyTheme.bgTertiary
-                                : DarkFantasyTheme.bgSecondary
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .stroke(vm.speedMode == 0 ? DarkFantasyTheme.borderMedium : DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
                 }
+                .buttonStyle(.combatToggle(isActive: vm.speedMode == 0))
 
                 // 2X button
                 Button {
                     if vm.speedMode != 1 { vm.toggleSpeed() }
                 } label: {
                     Text("2X")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-                        .foregroundStyle(vm.speedMode == 1 ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightMD)
-                        .background(
-                            vm.speedMode == 1
-                                ? DarkFantasyTheme.gold
-                                : DarkFantasyTheme.bgSecondary
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .stroke(vm.speedMode == 1 ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
                 }
+                .buttonStyle(.combatToggle(isActive: vm.speedMode == 1))
 
                 // SKIP button
                 Button {
                     vm.skip()
                 } label: {
                     Text("SKIP")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightMD)
-                        .background(DarkFantasyTheme.bgSecondary)
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
                 }
+                .buttonStyle(.combatControl)
+
+                // FORFEIT button
+                Button {
+                    showForfeitConfirmation = true
+                } label: {
+                    Image(systemName: "flag.fill")
+                        .font(.system(size: 14))
+                }
+                .buttonStyle(.combatForfeit)
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceMD)

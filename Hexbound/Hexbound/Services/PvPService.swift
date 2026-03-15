@@ -38,7 +38,7 @@ final class PvPService {
                     continue
                 }
                 let msg = (error as? APIError)?.errorDescription ?? "Failed to load opponents"
-                appState.showToast(msg, type: .error)
+                appState.showToast(msg, subtitle: msg == "Failed to load opponents" ? "Pull to refresh or try later" : "", type: .error)
                 return []
             }
         }

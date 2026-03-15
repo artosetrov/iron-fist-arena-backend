@@ -55,7 +55,7 @@ struct GoldMineDetailView: View {
 
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("🪙")
-                    .font(.system(size: 22))
+                    .font(.system(size: 22)) // emoji — keep
                 Text("\(vm.activeSlotCount * 200)/HR")
                     .font(DarkFantasyTheme.title(size: 32))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -164,7 +164,7 @@ struct GoldMineDetailView: View {
                     .fill(DarkFantasyTheme.textTertiary.opacity(0.12))
                     .frame(width: 48, height: 48)
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 20)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
             }
 
@@ -188,19 +188,9 @@ struct GoldMineDetailView: View {
                 Task { await vm.buySlot() }
             } label: {
                 Text("UNLOCK")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .frame(width: 80, height: 34)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                            .fill(DarkFantasyTheme.bgTertiary)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                            .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
-                    )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
             .disabled(vm.isBuyingSlot)
         }
         .padding(LayoutConstants.spaceMD)
@@ -218,15 +208,15 @@ struct GoldMineDetailView: View {
             switch status {
             case "mining":
                 Image(systemName: "hammer.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 20)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             case "ready":
                 Image(systemName: "checkmark.square.fill")
-                    .font(.system(size: 22))
+                    .font(.system(size: 22)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.success)
             default:
                 Image(systemName: "circle.dashed")
-                    .font(.system(size: 20))
+                    .font(.system(size: 20)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -280,13 +270,9 @@ struct GoldMineDetailView: View {
                 Task { await vm.startMining(slotIndex: index) }
             } label: {
                 Text("MINE")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
                     .frame(width: 80, height: 34)
-                    .background(DarkFantasyTheme.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.compactPrimary)
 
         case "mining":
             Button {
@@ -294,22 +280,12 @@ struct GoldMineDetailView: View {
             } label: {
                 HStack(spacing: 4) {
                     Text("BOOST")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                     Text("💎")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11)) // emoji — keep
                 }
-                .foregroundStyle(DarkFantasyTheme.cyan)
                 .frame(width: 90, height: 34)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .fill(DarkFantasyTheme.cyan.opacity(0.08))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(DarkFantasyTheme.cyan.opacity(0.5), lineWidth: 1)
-                )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
 
         case "ready":
             Button {
@@ -317,16 +293,12 @@ struct GoldMineDetailView: View {
             } label: {
                 HStack(spacing: 4) {
                     Text("COLLECT")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                     Text("🪙")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11)) // emoji — keep
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
                 .frame(width: 100, height: 34)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.compactPrimary)
 
         default:
             EmptyView()

@@ -3,6 +3,7 @@ import SwiftUI
 struct CharacterDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel: CharacterViewModel?
+    @State private var tooltipStat: StatType?
 
     var body: some View {
         ZStack {
@@ -138,7 +139,10 @@ struct CharacterDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.classColor(for: char.characterClass))
                 Text("•")
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                Text(char.origin.icon)
+                Image(char.origin.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
                 Text(char.origin.displayName)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
@@ -237,6 +241,15 @@ struct CharacterDetailView: View {
                     .foregroundStyle(color)
                     .lineLimit(1)
 
+                Button {
+                    tooltipStat = tooltipStat == stat ? nil : stat
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .buttonStyle(.plain)
+
                 Spacer(minLength: 4)
 
                 if delta > 0 {
@@ -248,7 +261,7 @@ struct CharacterDetailView: View {
                             .background(DarkFantasyTheme.danger.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scalePress(0.85))
                 }
 
                 Text("\(value)")
@@ -265,7 +278,7 @@ struct CharacterDetailView: View {
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scalePress(0.85))
                     .disabled(vm.availablePoints <= 0)
                 }
             }
@@ -273,6 +286,17 @@ struct CharacterDetailView: View {
             Text(vm.primaryDerivedLabel(for: stat))
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                 .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
+
+            if tooltipStat == stat {
+                Text(stat.description)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .padding(LayoutConstants.spaceXS)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(DarkFantasyTheme.bgTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+            }
 
             if hasPoints {
                 HStack(spacing: 4) {

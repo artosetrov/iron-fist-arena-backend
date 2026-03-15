@@ -43,21 +43,33 @@ struct DailyLoginDetailView: View {
                                 .padding(.top, LayoutConstants.spaceLG)
 
                             // Claim Button
-                            Button {
-                                Task { await vm.claimReward() }
-                            } label: {
-                                if vm.isClaiming {
-                                    ProgressView()
-                                        .tint(DarkFantasyTheme.textOnGold)
-                                } else {
-                                    Text(vm.hasClaimed ? "ALREADY CLAIMED" : "CLAIM REWARD")
+                            if vm.hasClaimed {
+                                Button {
+                                    appState.mainPath.removeLast()
+                                } label: {
+                                    Text("CLAIMED")
                                 }
+                                .buttonStyle(.primary)
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                                .padding(.top, LayoutConstants.spaceLG)
+                                .padding(.bottom, LayoutConstants.space2XL)
+                            } else {
+                                Button {
+                                    Task { await vm.claimReward() }
+                                } label: {
+                                    if vm.isClaiming {
+                                        ProgressView()
+                                            .tint(DarkFantasyTheme.textOnGold)
+                                    } else {
+                                        Text("CLAIM REWARD")
+                                    }
+                                }
+                                .buttonStyle(.primary)
+                                .disabled(vm.isClaiming)
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                                .padding(.top, LayoutConstants.spaceLG)
+                                .padding(.bottom, LayoutConstants.space2XL)
                             }
-                            .buttonStyle(.primary)
-                            .disabled(vm.hasClaimed || vm.isClaiming)
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.top, LayoutConstants.spaceLG)
-                            .padding(.bottom, LayoutConstants.space2XL)
                         }
                     }
                 }
@@ -96,7 +108,7 @@ struct DailyLoginDetailView: View {
             ZStack {
                 Circle()
                     .fill(
-                        isClaimed ? Color(red: 0.55, green: 0.42, blue: 0.2).opacity(0.6) :
+                        isClaimed ? DarkFantasyTheme.goldDim.opacity(0.6) :
                         isCurrentDay ? DarkFantasyTheme.bgTertiary :
                         DarkFantasyTheme.bgTertiary.opacity(0.4)
                     )
@@ -113,7 +125,7 @@ struct DailyLoginDetailView: View {
                     .frame(width: circleSize, height: circleSize)
 
                 Text(reward.icon)
-                    .font(.system(size: isDay7 ? 26 : 20))
+                    .font(.system(size: isDay7 ? 26 : 20)) // emoji text — keep as is
                     .opacity(isClaimed || isCurrentDay ? 1.0 : 0.35)
             }
 
@@ -134,7 +146,7 @@ struct DailyLoginDetailView: View {
         if let reward = DailyReward.rewards.first(where: { $0.day == data.currentDay }) {
             VStack(spacing: LayoutConstants.spaceSM) {
                 Text(reward.icon)
-                    .font(.system(size: 40))
+                    .font(.system(size: 40)) // emoji text — keep as is
 
                 Text(reward.label.uppercased())
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBody).bold())

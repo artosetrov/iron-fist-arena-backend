@@ -14,7 +14,7 @@ struct StaminaBarView: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "bolt.fill")
-                .font(.system(size: 16, weight: .bold))
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody).bold())
                 .foregroundStyle(DarkFantasyTheme.stamina)
 
             GeometryReader { geo in
@@ -35,7 +35,7 @@ struct StaminaBarView: View {
 
             if showPlus {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16))
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }

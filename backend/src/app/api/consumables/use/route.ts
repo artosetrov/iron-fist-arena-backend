@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       const [consumable] = await tx.$queryRawUnsafe<Array<{ id: string; quantity: number }>>(
         `SELECT id, quantity
          FROM consumable_inventory
-         WHERE character_id = $1 AND consumable_type = $2
+         WHERE character_id = $1 AND consumable_type::text = $2
          FOR UPDATE`,
         character_id,
         consumable_type

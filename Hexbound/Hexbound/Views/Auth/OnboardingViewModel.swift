@@ -6,8 +6,17 @@ final class OnboardingViewModel {
     var step = 0
     var selectedClass: CharacterClass?
     var selectedOrigin: CharacterOrigin?
-    var selectedGender: CharacterGender?
+    var selectedGender: CharacterGender = .male
     var selectedSkinKey: String?
+
+    // Appearance step: avatar navigation
+    var avatarIndex: Int = 0
+    var slideDirection: SlideDirection = .none
+    var diceRotation: Double = 0
+
+    enum SlideDirection {
+        case none, left, right
+    }
     var characterName = ""
     var errorMessage = ""
     var isCreating = false
@@ -44,7 +53,7 @@ final class OnboardingViewModel {
     var canProceed: Bool {
         switch step {
         case 0: selectedClass != nil
-        case 1: selectedOrigin != nil && selectedGender != nil && selectedSkinKey != nil
+        case 1: selectedOrigin != nil && selectedSkinKey != nil
         case 2: characterName.count >= 3 && characterName.count <= 16 && isValidName && nameAvailability == .available
         default: false
         }
@@ -55,7 +64,7 @@ final class OnboardingViewModel {
     var availableSkins: [AppearanceSkin] {
         allSkins.filter { skin in
             let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-            let matchesGender = selectedGender.map { skin.gender == $0.rawValue } ?? true
+            let matchesGender = skin.gender == selectedGender.rawValue
             return matchesOrigin && matchesGender
         }
     }
@@ -105,7 +114,7 @@ final class OnboardingViewModel {
 
     var heroSummary: String {
         let parts = [
-            selectedGender?.displayName,
+            selectedGender.displayName,
             selectedOrigin?.displayName,
             selectedClass?.displayName
         ].compactMap { $0 }
@@ -141,24 +150,46 @@ final class OnboardingViewModel {
     }
 
     func onGenderChanged() {
-        // Reset skin if current one doesn't match new gender
-        if let skinKey = selectedSkinKey {
-            let valid = availableSkins
-            if !valid.contains(where: { $0.skinKey == skinKey }) {
-                selectedSkinKey = valid.first?.skinKey
-            }
-        } else {
-            selectedSkinKey = nil
-        }
+        avatarIndex = 0
+        slideDirection = .none
+        let valid = availableSkins
+        selectedSkinKey = valid.first?.skinKey
     }
 
     func onOriginChanged() {
-        if let skinKey = selectedSkinKey {
-            let valid = availableSkins
-            if !valid.contains(where: { $0.skinKey == skinKey }) {
-                selectedSkinKey = valid.first?.skinKey
-            }
-        }
+        avatarIndex = 0
+        slideDirection = .none
+        let valid = availableSkins
+        selectedSkinKey = valid.first?.skinKey
+    }
+
+    func toggleGender() {
+        selectedGender = selectedGender == .male ? .female : .male
+        onGenderChanged()
+    }
+
+    func nextAvatar() {
+        let skins = availableSkins
+        guard !skins.isEmpty else { return }
+        slideDirection = .left
+        avatarIndex = (avatarIndex + 1) % skins.count
+        selectedSkinKey = skins[avatarIndex].skinKey
+    }
+
+    func prevAvatar() {
+        let skins = availableSkins
+        guard !skins.isEmpty else { return }
+        slideDirection = .right
+        avatarIndex = (avatarIndex - 1 + skins.count) % skins.count
+        selectedSkinKey = skins[avatarIndex].skinKey
+    }
+
+    func selectAvatar(at index: Int) {
+        let skins = availableSkins
+        guard index >= 0, index < skins.count else { return }
+        slideDirection = .none
+        avatarIndex = index
+        selectedSkinKey = skins[index].skinKey
     }
 
     // MARK: - Name Availability Check (debounced)
@@ -197,15 +228,15 @@ final class OnboardingViewModel {
     // MARK: - Randomize (only gender + avatar within current race)
 
     func randomize() {
-        let randomGender = CharacterGender.allCases.randomElement() ?? .male
-        selectedGender = randomGender
-
-        // Keep current race, only randomize gender + avatar
-        let matching = allSkins.filter {
-            $0.gender == randomGender.rawValue &&
-            $0.origin == (selectedOrigin?.rawValue ?? "")
-        }
-        selectedSkinKey = matching.randomElement()?.skinKey
+        let skins = availableSkins
+        guard skins.count > 1 else { return }
+        var newIndex: Int
+        repeat {
+            newIndex = Int.random(in: 0..<skins.count)
+        } while newIndex == avatarIndex
+        slideDirection = .none
+        avatarIndex = newIndex
+        selectedSkinKey = skins[newIndex].skinKey
     }
 
     // MARK: - Random Name Generator
@@ -260,9 +291,9 @@ final class OnboardingViewModel {
     // MARK: - Create Character
 
     func createCharacter(appState: AppState, cache: GameDataCache) async {
+        let gender = selectedGender
         guard let charClass = selectedClass,
               let origin = selectedOrigin,
-              let gender = selectedGender,
               let skinKey = selectedSkinKey,
               characterName.count >= 3 else {
             errorMessage = "Please complete all steps"

@@ -61,7 +61,7 @@ struct SkeletonOpponentCard: View {
                 SkeletonRect(width: 60, height: 12)
             }
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -97,7 +97,7 @@ struct SkeletonQuestCard: View {
 
             SkeletonRect(width: 44, height: 20, cornerRadius: 10)
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -119,7 +119,7 @@ struct SkeletonLeaderboardRow: View {
             Spacer()
             SkeletonRect(width: 50, height: 16)
         }
-        .padding(12)
+        .padding(LayoutConstants.spaceMS)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -157,7 +157,7 @@ struct SkeletonAchievementCard: View {
 
             SkeletonRect(width: 50, height: 24, cornerRadius: 12)
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -187,7 +187,7 @@ struct SkeletonDungeonCard: View {
                 SkeletonRect(height: 10)
                 SkeletonRect(height: 10)
             }
-            .padding(14)
+            .padding(LayoutConstants.bannerPadding)
         }
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -210,7 +210,7 @@ struct SkeletonMineSlot: View {
             Spacer()
             SkeletonRect(width: 64, height: 32, cornerRadius: 8)
         }
-        .padding(12)
+        .padding(LayoutConstants.spaceMS)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -251,7 +251,7 @@ struct SkeletonHistoryRow: View {
                 SkeletonRect(width: 50, height: 10)
             }
         }
-        .padding(12)
+        .padding(LayoutConstants.spaceMS)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)

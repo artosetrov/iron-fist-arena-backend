@@ -180,7 +180,7 @@ struct CurrencyPurchaseView: View {
         let isGold = selectedTab == 0
         VStack(spacing: LayoutConstants.spaceSM) {
             Text(isGold ? "💰" : "💎")
-                .font(.system(size: 48))
+                .font(.system(size: 48)) // emoji — keep
 
             Text(isGold ? "GOLD TREASURY" : "GEM VAULT")
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
@@ -206,7 +206,7 @@ struct CurrencyPurchaseView: View {
 
             VStack(spacing: LayoutConstants.spaceLG) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 64))
+                    .font(.system(size: 64)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text("PURCHASE COMPLETE")
@@ -280,7 +280,7 @@ struct CurrencyPackageCard: View {
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text(package.currencyType.icon)
-                        .font(.system(size: 28))
+                        .font(.system(size: 28)) // emoji — keep
                     VStack(alignment: .leading, spacing: 0) {
                         Text(package.displayAmount)
                             .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
@@ -325,20 +325,10 @@ struct CurrencyPackageCard: View {
                         .frame(width: 72, height: 40)
                 } else {
                     Text(package.priceUSD)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .frame(width: 72, height: 40)
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(isPurchasing ? AnyShapeStyle(DarkFantasyTheme.goldDim) : AnyShapeStyle(DarkFantasyTheme.goldGradient))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 1)
-            )
-            .buttonStyle(.plain)
+            .buttonStyle(.compactPrimary)
             .disabled(isPurchasing)
             .contentShape(Rectangle())
         }

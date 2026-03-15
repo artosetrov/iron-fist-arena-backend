@@ -1,0 +1,68 @@
+# Hexbound SwiftLint Configuration
+# Enforces design system token usage and UI consistency.
+
+# ─── Paths ──────────────────────────────────────────────
+included:
+  - Hexbound
+
+excluded:
+  - Hexbound/Theme           # Theme defines the tokens — raw colors are expected here
+  - Hexbound/Views/Dev       # Dev previews may demo raw values
+
+# ─── Opt-in Rules ───────────────────────────────────────
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_filter_count
+  - flatmap_over_map_reduce
+  - first_where
+
+# ─── Disabled Rules ─────────────────────────────────────
+disabled_rules:
+  - trailing_comma        # We use trailing commas in array literals
+  - opening_brace         # Conflicts with SwiftUI builder style
+
+# ─── Line Length ────────────────────────────────────────
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+# ─── Custom Rules — Design System Enforcement ───────────
+custom_rules:
+  no_raw_color_hex:
+    name: "No Raw Color(hex:) in Views"
+    regex: 'Color\(hex:\s*0x'
+    message: "Use DarkFantasyTheme tokens instead of Color(hex:). See Theme/DarkFantasyTheme.swift."
+    severity: warning
+    match_kinds:
+      - identifier
+      - argument
+
+  no_raw_color_rgb:
+    name: "No Raw Color(red:green:blue:) in Views"
+    regex: 'Color\(red:'
+    message: "Use DarkFantasyTheme tokens instead of raw Color(red:green:blue:). See Theme/DarkFantasyTheme.swift."
+    severity: warning
+    match_kinds:
+      - identifier
+      - argument
+
+  no_raw_color_literal:
+    name: "No Color Literals"
+    regex: '#colorLiteral'
+    message: "Use DarkFantasyTheme tokens instead of color literals."
+    severity: warning
+
+  no_hardcoded_font_size:
+    name: "No Hardcoded .system(size:) in Views"
+    regex: '\.font\(\.system\(size:'
+    message: "Prefer DarkFantasyTheme.title/section/body/cardTitle or LayoutConstants text sizes."
+    severity: warning
+
+  use_layout_constants_padding:
+    name: "Prefer LayoutConstants for Padding"
+    regex: '\.padding\(\.(horizontal|vertical|all),\s*\d{2,}\)'
+    message: "Prefer LayoutConstants spacing tokens (spaceSM, spaceMD, spaceLG, etc.) for padding values."
+    severity: warning

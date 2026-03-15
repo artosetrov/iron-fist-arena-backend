@@ -51,6 +51,7 @@ enum AppRoute: Hashable {
 
     // Dev (routed to PlaceholderView in Release builds)
     case screenCatalog
+    case designSystem
 }
 
 // MARK: - Bottom Tab
@@ -118,6 +119,7 @@ struct MainRouterView: View {
         case .appearanceEditor: AppearanceEditorDetailView()
         #if DEBUG
         case .screenCatalog: ScreenCatalogView()
+        case .designSystem: DesignSystemPreview()
         #endif
         default: PlaceholderView()
         }

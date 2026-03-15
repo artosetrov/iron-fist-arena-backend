@@ -18,7 +18,7 @@ final class CharacterService {
             )
             appState.currentCharacter = response.character
         } catch {
-            appState.showToast("Failed to load character", type: .error)
+            appState.showToast("Failed to load character", subtitle: "Check connection and try again", type: .error)
         }
     }
 
@@ -45,7 +45,7 @@ final class CharacterService {
             await loadCharacter()
             return true
         } catch {
-            appState.showToast("Failed to save stats", type: .error)
+            appState.showToast("Failed to save stats", subtitle: "Changes not applied — try again", type: .error)
             return false
         }
     }
@@ -72,7 +72,7 @@ final class CharacterService {
             await loadCharacter()
             return true
         } catch {
-            appState.showToast("Failed to reset stats", type: .error)
+            appState.showToast("Failed to reset stats", subtitle: "Check connection and try again", type: .error)
             return false
         }
     }
@@ -91,7 +91,7 @@ final class CharacterService {
             appState.showToast("Stance updated!", type: .info)
             return true
         } catch {
-            appState.showToast("Failed to update stance", type: .error)
+            appState.showToast("Failed to update stance", subtitle: "Check connection and try again", type: .error)
             return false
         }
     }
@@ -113,7 +113,7 @@ final class CharacterService {
             appState.combatData = combatData
             return true
         } catch {
-            appState.showToast("Training failed", type: .error)
+            appState.showToast("Training failed", subtitle: "Check your stamina and try again", type: .error)
             return false
         }
     }

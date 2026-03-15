@@ -4,10 +4,22 @@ struct ArenaDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: ArenaViewModel?
+    @State private var refreshRotation: Double = 0
+    @State private var revengeConfirmEntry: RevengeEntry?
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            // Background image with dark overlay
+            GeometryReader { geo in
+                Image("bg-arena")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+            .ignoresSafeArea()
+            DarkFantasyTheme.bgBackdrop
+                .ignoresSafeArea()
 
             if let vm {
                 VStack(spacing: 0) {
@@ -19,20 +31,18 @@ struct ArenaDetailView: View {
                         ActiveQuestBanner(questTypes: ["pvp_wins"])
                             .padding(.horizontal, LayoutConstants.screenPadding)
 
-                        // Arena Header
+                        // Arena Header (Rating, Record, Rank)
                         arenaHeader(vm)
 
-                        // Combat Stance
-                        if let char = appState.currentCharacter {
-                            stanceSummaryCard(char)
-                        }
+                        // Loadout strip
+                        loadoutStrip(vm)
 
                         GoldDivider()
                             .padding(.horizontal, LayoutConstants.screenPadding)
 
                         // Tab Switcher
                         TabSwitcher(
-                            tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
+                            tabs: ["⚔ OPPONENTS", "🔄 REVENGE", "📜 HISTORY"],
                             selectedIndex: Binding(
                                 get: { vm.selectedTab },
                                 set: { newValue in
@@ -54,7 +64,31 @@ struct ArenaDetailView: View {
                         Spacer().frame(height: LayoutConstants.spaceLG)
                     }
                 }
+
+                // Refresh button pinned to bottom
+                if vm.selectedTab == 0 && !vm.opponents.isEmpty {
+                    refreshButton(vm)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceSM)
+                }
                 } // VStack
+                .sheet(isPresented: Binding(
+                    get: { vm.showComparison },
+                    set: { vm.showComparison = $0 }
+                )) {
+                    if let opponent = vm.selectedOpponent, let char = vm.character {
+                        ArenaComparisonSheet(
+                            opponent: opponent,
+                            character: char,
+                            isFighting: vm.fightingOpponentId == opponent.id,
+                            canFight: vm.canFight,
+                            staminaCost: vm.staminaCost,
+                            onFight: {
+                                Task { await vm.fight(opponentId: opponent.id) }
+                            }
+                        )
+                    }
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -66,6 +100,28 @@ struct ArenaDetailView: View {
                 Text("ARENA")
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
+            }
+        }
+        .confirmationDialog(
+            "REVENGE",
+            isPresented: Binding(
+                get: { revengeConfirmEntry != nil },
+                set: { if !$0 { revengeConfirmEntry = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let entry = revengeConfirmEntry {
+                Button("Fight \(entry.attackerName) (\(vm?.staminaCost ?? 0) STA)") {
+                    Task { await vm?.revenge(revengeId: entry.id) }
+                    revengeConfirmEntry = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    revengeConfirmEntry = nil
+                }
+            }
+        } message: {
+            if let entry = revengeConfirmEntry {
+                Text("\(entry.attackerName) took \(entry.ratingLost) rating from you. Spend stamina to fight back?")
             }
         }
         .onAppear {
@@ -95,19 +151,19 @@ struct ArenaDetailView: View {
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.stamina)
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(DarkFantasyTheme.bgTertiary)
+                            .fill(DarkFantasyTheme.bgDarkPanel)
                         RoundedRectangle(cornerRadius: 6)
                             .fill(DarkFantasyTheme.staminaGradient)
                             .frame(width: geo.size.width * fraction)
                     }
                 }
-                .frame(height: 14)
+                .frame(height: 6)
 
                 Text("\(current)/\(max)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -115,7 +171,7 @@ struct ArenaDetailView: View {
                     .monospacedDigit()
 
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: 16)) // SF Symbol icon — keep
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
             .padding(.horizontal, LayoutConstants.cardPadding)
@@ -129,7 +185,7 @@ struct ArenaDetailView: View {
                     .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.97))
         .contentShape(Rectangle())
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)
@@ -141,18 +197,18 @@ struct ArenaDetailView: View {
     @ViewBuilder
     private func arenaHeader(_ vm: ArenaViewModel) -> some View {
         HStack(spacing: 0) {
-            arenaPvpStat("Rating", value: "\(vm.pvpRating)", color: DarkFantasyTheme.rankColor(for: vm.pvpRating))
-            arenaPvpStat("Record", value: "\(vm.character?.pvpWins ?? 0)W / \(vm.character?.pvpLosses ?? 0)L", color: DarkFantasyTheme.textPrimary)
-            arenaPvpStat("Rank", value: vm.character?.rankName ?? vm.rank.rawValue, color: DarkFantasyTheme.rankColor(for: vm.pvpRating))
+            arenaPvpStat("RATING", value: "\(vm.pvpRating)", color: DarkFantasyTheme.xpRing)
+            arenaPvpStat("RECORD", value: "\(vm.character?.pvpWins ?? 0)W / \(vm.character?.pvpLosses ?? 0)L", color: DarkFantasyTheme.textPrimary)
+            arenaPvpStat("RANK", value: vm.character?.rankName ?? vm.rank.rawValue, color: DarkFantasyTheme.arenaRankGold)
         }
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(DarkFantasyTheme.bgDarkPanel)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 1)
         )
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
@@ -160,14 +216,76 @@ struct ArenaDetailView: View {
     @ViewBuilder
     private func arenaPvpStat(_ label: String, value: String, color: Color) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
-            Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.section(size: 14))
                 .foregroundStyle(color)
+            Text(label)
+                .font(DarkFantasyTheme.body(size: 9))
+                .foregroundStyle(DarkFantasyTheme.textDimLabel)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Loadout Strip
+
+    @ViewBuilder
+    private func loadoutStrip(_ vm: ArenaViewModel) -> some View {
+        Button {
+            vm.goToEquipment()
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Text("LOADOUT")
+                    .font(DarkFantasyTheme.body(size: 10))
+                    .foregroundStyle(DarkFantasyTheme.textDimLabel)
+
+                HStack(spacing: 6) {
+                    ForEach(0..<5, id: \.self) { index in
+                        if index < vm.equippedItems.count {
+                            let item = vm.equippedItems[index]
+                            ItemImageView(
+                                imageKey: item.imageKey,
+                                imageUrl: item.imageUrl,
+                                systemIcon: item.consumableIcon,
+                                systemIconColor: item.consumableIconColor,
+                                fallbackIcon: item.itemType.icon
+                            )
+                            .frame(width: 32, height: 32)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(DarkFantasyTheme.rarityColor(for: item.rarity), lineWidth: 1)
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(DarkFantasyTheme.bgTertiary)
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                                )
+                        }
+                    }
+                }
+
+                Spacer()
+
+                Text("Edit ›")
+                    .font(DarkFantasyTheme.body(size: 12))
+                    .foregroundStyle(DarkFantasyTheme.xpRing)
+            }
+            .padding(LayoutConstants.spaceSM)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(DarkFantasyTheme.bgDarkPanel)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.scalePress(0.97))
+        .contentShape(Rectangle())
+        .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
     // MARK: - Opponents Tab
@@ -176,45 +294,58 @@ struct ArenaDetailView: View {
     private func opponentsTab(_ vm: ArenaViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             if vm.isLoadingOpponents && vm.opponents.isEmpty {
-                // Skeleton loading state — 3 shimmer cards
-                ForEach(0..<3, id: \.self) { _ in
-                    SkeletonOpponentCard()
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                }
-            } else if vm.opponents.isEmpty {
-                emptyState(icon: "⚔️", message: "No opponents available.\nPull down to refresh.")
-            } else {
-                // Refresh button
-                HStack {
-                    Spacer()
-                    Button {
-                        Task { await vm.refreshOpponents() }
-                    } label: {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "arrow.clockwise")
-                            Text("REFRESH")
-                        }
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.gold)
+                // Skeleton loading state
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    ForEach(0..<2, id: \.self) { _ in
+                        SkeletonOpponentCard()
                     }
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
-
-                ForEach(vm.opponents) { opponent in
-                    OpponentCardView(
-                        opponent: opponent,
-                        isFighting: vm.fightingOpponentId == opponent.id,
-                        canFight: vm.canFight,
-                        staminaCost: vm.staminaCost,
-                        onFight: {
-                            Task { await vm.fight(opponentId: opponent.id) }
-                        },
-                        playerRating: vm.pvpRating
-                    )
+            } else if vm.opponents.isEmpty {
+                emptyState(icon: "⚔️", message: "No opponents available.") {
+                    Button {
+                        Task { await vm.refreshOpponents() }
+                    } label: {
+                        Text("FIND OPPONENTS")
+                    }
+                    .buttonStyle(.secondary)
                     .padding(.horizontal, LayoutConstants.screenPadding)
                 }
+            } else {
+                // Two opponent cards side by side
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    ForEach(vm.displayedOpponents) { opponent in
+                        ArenaOpponentCard(
+                            opponent: opponent,
+                            playerRating: vm.pvpRating,
+                            onTap: { vm.selectOpponent(opponent) }
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.horizontal, LayoutConstants.screenPadding)
             }
         }
+    }
+
+    // MARK: - Refresh Button
+
+    @ViewBuilder
+    private func refreshButton(_ vm: ArenaViewModel) -> some View {
+        Button {
+            withAnimation(.linear(duration: 0.5)) {
+                refreshRotation += 360
+            }
+            Task { await vm.refreshOpponents() }
+        } label: {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: "arrow.clockwise")
+                    .rotationEffect(.degrees(refreshRotation))
+                Text("NEW OPPONENTS")
+            }
+        }
+        .buttonStyle(.primary)
+        .disabled(vm.isRefreshing)
     }
 
     // MARK: - Revenge Tab
@@ -243,7 +374,7 @@ struct ArenaDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Attacker info
             Text(entry.attackerClass.icon)
-                .font(.system(size: 24))
+                .font(.system(size: 24)) // emoji — keep
                 .frame(width: 40, height: 40)
                 .background(
                     RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
@@ -271,31 +402,23 @@ struct ArenaDetailView: View {
 
             Spacer()
 
-            // Revenge button
+            // Revenge button — opens confirmation
             Button {
-                Task { await vm.revenge(revengeId: entry.id) }
+                revengeConfirmEntry = entry
             } label: {
                 HStack(spacing: 4) {
                     if vm.fightingOpponentId == entry.id {
                         ProgressView()
-                            .tint(DarkFantasyTheme.textOnGold)
+                            .tint(.white)
                             .scaleEffect(0.8)
                     } else {
                         Text("⚔️")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14)) // emoji — keep
                         Text("REVENGE")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                     }
                 }
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(DarkFantasyTheme.danger.opacity(0.2))
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
-                )
             }
+            .buttonStyle(.dangerCompact)
             .disabled(vm.fightingOpponentId == entry.id || !vm.canFight)
         }
         .panelCard()
@@ -327,7 +450,7 @@ struct ArenaDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Win/Loss indicator
             Text(match.isWin ? "✅" : "❌")
-                .font(.system(size: 20))
+                .font(.system(size: 20)) // emoji — keep
 
             // Opponent info
             VStack(alignment: .leading, spacing: 2) {
@@ -338,7 +461,7 @@ struct ArenaDetailView: View {
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text(match.opponentClass.icon)
-                        .font(.system(size: 12))
+                        .font(.system(size: 12)) // emoji — keep
                     Text("Lv.\(match.opponentLevel)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
@@ -378,57 +501,18 @@ struct ArenaDetailView: View {
         )
     }
 
-    // MARK: - Stance Summary Card
-
-    @ViewBuilder
-    private func stanceSummaryCard(_ char: Character) -> some View {
-        let stance = char.combatStance ?? .default
-
-        Button {
-            appState.mainPath.append(AppRoute.stanceSelector)
-        } label: {
-            HStack(spacing: LayoutConstants.spaceLG) {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    Text("⚔️ ATTACK")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Text(stance.attack.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.attack))
-                }
-
-                Rectangle()
-                    .fill(DarkFantasyTheme.borderSubtle)
-                    .frame(width: 1, height: 40)
-
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    Text("🛡️ DEFENSE")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Text(stance.defense.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.defense))
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .panelCard(highlight: true)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
     // MARK: - Empty State
 
     @ViewBuilder
-    private func emptyState(icon: String, message: String) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
+    private func emptyState<CTA: View>(icon: String, message: String, @ViewBuilder cta: () -> CTA = { EmptyView() }) -> some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
             Text(icon)
-                .font(.system(size: 40))
+                .font(.system(size: 40)) // emoji — keep
             Text(message)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
+            cta()
         }
         .padding(.top, LayoutConstants.spaceXL)
     }

@@ -58,22 +58,8 @@ struct ShellGameDetailView: View {
                                     vm.selectedBet = bet
                                 } label: {
                                     Text("\(bet)")
-                                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                        .foregroundStyle(
-                                            vm.selectedBet == bet
-                                                ? DarkFantasyTheme.textOnGold
-                                                : (vm.gold >= bet ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textDisabled)
-                                        )
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: LayoutConstants.buttonHeightSM)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                                                .fill(vm.selectedBet == bet
-                                                      ? DarkFantasyTheme.gold
-                                                      : DarkFantasyTheme.bgSecondary)
-                                        )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.colorToggle(isActive: vm.selectedBet == bet))
                                 .disabled(vm.gold < bet || gamePhase != .idle)
                             }
                         }
@@ -110,20 +96,8 @@ struct ShellGameDetailView: View {
                             Task { await startPressed(vm: vm) }
                         } label: {
                             Text("START")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                .foregroundStyle(
-                                    vm.canPlay
-                                        ? DarkFantasyTheme.textOnGold
-                                        : DarkFantasyTheme.textDisabled
-                                )
-                                .frame(maxWidth: .infinity)
-                                .frame(height: LayoutConstants.buttonHeightLG)
-                                .background(
-                                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                                        .fill(vm.canPlay ? DarkFantasyTheme.gold : DarkFantasyTheme.bgSecondary)
-                                )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.primary)
                         .disabled(!vm.canPlay)
                         .padding(.horizontal, LayoutConstants.screenPadding)
                     }
@@ -219,7 +193,7 @@ struct ShellGameDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.9))
         .disabled(gamePhase != .guessing)
     }
 

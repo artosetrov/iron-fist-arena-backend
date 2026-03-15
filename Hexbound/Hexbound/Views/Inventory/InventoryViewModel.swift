@@ -34,6 +34,15 @@ final class InventoryViewModel {
             }
     }
 
+    /// Currently equipped item per slot — used for comparison indicators
+    var equippedBySlot: [String: Item] {
+        var map: [String: Item] = [:]
+        for item in items where item.isEquipped == true {
+            map[item.equipSlot] = item
+        }
+        return map
+    }
+
     /// Grid slots: items + empty placeholders up to totalSlots
     var gridSlots: [InventorySlot] {
         let sorted = sortedItems
@@ -81,7 +90,7 @@ final class InventoryViewModel {
         } else {
             // Rollback on failure
             items = previousItems
-            appState.showToast("Failed to equip", type: .error)
+            appState.showToast("Failed to equip", subtitle: "Check class or level requirements", type: .error)
         }
     }
 
@@ -97,7 +106,7 @@ final class InventoryViewModel {
             appState.cachedInventory = updated
         } else {
             items = previousItems
-            appState.showToast("Failed to unequip", type: .error)
+            appState.showToast("Failed to unequip", subtitle: "Inventory may be full", type: .error)
         }
     }
 
@@ -117,7 +126,7 @@ final class InventoryViewModel {
             // Rollback on failure
             items = previousItems
             appState.cachedInventory = previousItems
-            appState.showToast("Failed to sell", type: .error)
+            appState.showToast("Failed to sell", subtitle: "Unequip the item first", type: .error)
         }
     }
 
@@ -163,7 +172,7 @@ final class InventoryViewModel {
         } else if result.levelLost {
             appState.showToast("❌ Failed! Dropped to +\(result.newLevel)", type: .error)
         } else {
-            appState.showToast("❌ Upgrade failed", type: .error)
+            appState.showToast("❌ Upgrade failed", subtitle: "Level unchanged", type: .error)
         }
     }
 
@@ -186,7 +195,7 @@ final class InventoryViewModel {
     func expandInventory() async {
         guard canExpand else { return }
         guard gold >= expandCost else {
-            appState.showToast("Not enough gold", type: .error)
+            appState.showToast("Not enough gold", subtitle: "Earn gold in arena or dungeons", type: .error)
             return
         }
         if let newSlots = await service.expandInventory() {

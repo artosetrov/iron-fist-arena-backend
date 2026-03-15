@@ -71,7 +71,7 @@ final class GoldMineViewModel {
             appState.showToast("Mining started!", type: .info)
         } catch {
             actionSlotId = nil
-            appState.showToast("Failed to start mining", type: .error)
+            appState.showToast("Failed to start mining", subtitle: "Check connection and try again", type: .error)
         }
     }
 
@@ -98,7 +98,7 @@ final class GoldMineViewModel {
             appState.invalidateCache("quests")
         } catch {
             actionSlotId = nil
-            appState.showToast("Failed to collect", type: .error)
+            appState.showToast("Failed to collect", subtitle: "Check connection and try again", type: .error)
         }
     }
 
@@ -123,7 +123,7 @@ final class GoldMineViewModel {
             appState.showToast("Slot boosted!", type: .info)
         } catch {
             actionSlotId = nil
-            appState.showToast("Failed to boost", type: .error)
+            appState.showToast("Failed to boost", subtitle: "Check your gem balance", type: .error)
         }
     }
 
@@ -151,7 +151,7 @@ final class GoldMineViewModel {
             }
             appState.showToast("New mining slot unlocked!", type: .reward)
         } catch {
-            appState.showToast("Failed to buy slot", type: .error)
+            appState.showToast("Failed to buy slot", subtitle: "Check your gem balance", type: .error)
         }
     }
 

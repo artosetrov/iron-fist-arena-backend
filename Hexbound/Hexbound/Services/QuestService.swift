@@ -39,7 +39,7 @@ final class QuestService {
             Task { [weak self] in await self?.refreshCharacter() }
             return result["success"] as? Bool ?? true
         } catch {
-            appState.showToast("Failed to claim quest", type: .error)
+            appState.showToast("Failed to claim quest", subtitle: "Quest may not be completed yet", type: .error)
             return false
         }
     }

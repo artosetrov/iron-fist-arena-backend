@@ -133,14 +133,9 @@ struct DailyQuestsDetailView: View {
                         ProgressView().tint(DarkFantasyTheme.textOnGold)
                     } else {
                         Text("CLAIM BONUS")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                     }
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightSM)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+                .buttonStyle(.compactPrimary)
                 .disabled(vm.isClaimingBonus)
             }
         }
@@ -194,7 +189,7 @@ struct DailyQuestsDetailView: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 // Icon
                 Text(quest.icon)
-                    .font(.system(size: 28))
+                    .font(.system(size: 28)) // emoji text — keep as is
                     .frame(width: 44)
 
                 // Info
@@ -249,20 +244,17 @@ struct DailyQuestsDetailView: View {
                                 ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
                             } else {
                                 Text("Claim")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                             }
                         }
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .frame(width: 60, height: 30)
-                        .background(DarkFantasyTheme.goldGradient)
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+                        .buttonStyle(.compactPrimary)
                         .disabled(isClaiming)
                     }
 
                     // Navigation chevron — shows destination is tappable
                     if destination != nil && !quest.rewardClaimed {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold)) // SF Symbol icon — keep as is
                             .foregroundStyle(DarkFantasyTheme.goldDim)
                     }
                 }

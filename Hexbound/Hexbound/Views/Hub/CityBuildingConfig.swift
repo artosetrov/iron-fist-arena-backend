@@ -37,7 +37,7 @@ let cityBuildings: [CityBuilding] = [
         relativeX: 0.50,
         relativeY: 0.82,
         relativeSize: 0.24,
-        glowColor: Color.purple,
+        glowColor: Color.orange,
         fallbackIcon: "star.circle.fill"
     ),
     CityBuilding(
@@ -81,7 +81,7 @@ let cityBuildings: [CityBuilding] = [
         relativeX: 0.88,
         relativeY: 0.50,
         relativeSize: 0.21,
-        glowColor: Color(hex: 0x7B2D8B),
+        glowColor: Color.orange,
         fallbackIcon: "door.left.hand.open"
     ),
     CityBuilding(

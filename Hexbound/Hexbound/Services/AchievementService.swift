@@ -47,7 +47,7 @@ final class AchievementService {
             }
             return true
         } catch {
-            appState.showToast("Failed to claim reward", type: .error)
+            appState.showToast("Failed to claim reward", subtitle: "Check connection and try again", type: .error)
             return false
         }
     }

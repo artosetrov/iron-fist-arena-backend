@@ -235,6 +235,19 @@ enum StatType: String, CaseIterable {
         }
     }
 
+    var description: String {
+        switch self {
+        case .strength:     "Increases physical attack power"
+        case .agility:      "Increases dodge chance and attack speed"
+        case .vitality:     "Increases max HP"
+        case .endurance:    "Increases armor and damage reduction"
+        case .intelligence: "Increases magic attack power"
+        case .wisdom:       "Increases magic resistance"
+        case .luck:         "Increases critical hit chance and loot quality"
+        case .charisma:     "Increases gold and XP rewards"
+        }
+    }
+
     var iconAsset: String {
         switch self {
         case .strength:     "icon-strength"

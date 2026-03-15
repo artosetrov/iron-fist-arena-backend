@@ -19,7 +19,7 @@ struct HubView: View {
                     } label: {
                         StaminaBarView(currentStamina: char.currentStamina, maxStamina: char.maxStamina)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scalePress(0.97))
                     .contentShape(Rectangle())
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.top, LayoutConstants.spaceSM)
@@ -27,14 +27,8 @@ struct HubView: View {
 
                 // Character Card
                 if let char = appState.currentCharacter {
-                    Button {
-                        appState.mainPath.append(AppRoute.hero)
-                    } label: {
-                        HubCharacterCard(character: char)
-                    }
-                    .buttonStyle(.plain)
-                    .contentShape(Rectangle())
-                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    HubCharacterCardWrapper(character: char)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
                 }
 
                 // First Win Bonus — prominent above fold
@@ -55,7 +49,7 @@ struct HubView: View {
 
                 VStack(spacing: 10) {
                     FloatingActionIcon(
-                        systemIcon: "gift.fill",
+                        customIcon: "hud-gift",
                         badgeActive: appState.dailyLoginCanClaim,
                         accentColor: DarkFantasyTheme.goldBright,
                         size: 50
@@ -64,7 +58,7 @@ struct HubView: View {
                     }
 
                     FloatingActionIcon(
-                        systemIcon: "scroll.fill",
+                        customIcon: "hud-quests",
                         badgeActive: {
                             let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
                             let total = appState.cachedTypedQuests?.count ?? 0
@@ -233,7 +227,7 @@ struct TopCurrencyBar: View {
                 .frame(minHeight: LayoutConstants.touchMin)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scalePress(0.95))
 
             Spacer()
 
@@ -252,7 +246,7 @@ struct TopCurrencyBar: View {
                 .frame(minHeight: LayoutConstants.touchMin)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scalePress(0.95))
 
         }
     }
@@ -264,107 +258,7 @@ struct TopCurrencyBar: View {
     }
 }
 
-// MARK: - Hub Character Card
-
-struct HubCharacterCard: View {
-    let character: Character
-    var showCurrencies: Bool = true
-
-    private func formatGold(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
-    }
-
-    var body: some View {
-        VStack(spacing: 10) {
-            HStack(alignment: .center, spacing: 14) {
-                // Avatar — square with level badge
-                ZStack(alignment: .bottomTrailing) {
-                    AvatarImageView(
-                        skinKey: character.avatar,
-                        characterClass: character.characterClass,
-                        size: 70
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
-                    )
-                    .frame(width: 70, height: 70)
-
-                    // Level badge
-                    Text("\(character.level)")
-                        .font(DarkFantasyTheme.section(size: 11).bold())
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .frame(width: 24, height: 24)
-                        .background(Circle().fill(DarkFantasyTheme.gold))
-                        .offset(x: 4, y: 4)
-                }
-
-                // Info — Name, HP and XP
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(character.characterName)
-                        .font(DarkFantasyTheme.section(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .lineLimit(1)
-
-                    HubStatBar(
-                        label: "HP",
-                        valueText: "\(character.currentHp)/\(character.maxHp)",
-                        percentage: character.hpPercentage,
-                        color: DarkFantasyTheme.hpBlood
-                    )
-
-                    HubStatBar(
-                        label: "XP",
-                        valueText: "\(Int(character.xpPercentage * 100))%",
-                        percentage: character.xpPercentage,
-                        color: DarkFantasyTheme.cyan
-                    )
-                }
-            }
-
-            // Currencies row (gold + gems) — integrated into hero widget
-            if showCurrencies {
-                HStack(spacing: 0) {
-                    HStack(spacing: 5) {
-                        Image("icon-gold")
-                            .resizable()
-                            .frame(width: 18, height: 18)
-                        Text(formatGold(character.gold))
-                            .font(DarkFantasyTheme.section(size: 13))
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .monospacedDigit()
-                    }
-
-                    Spacer()
-
-                    HStack(spacing: 5) {
-                        Image("icon-gems")
-                            .resizable()
-                            .frame(width: 18, height: 18)
-                        Text("\(character.gems ?? 0)")
-                            .font(DarkFantasyTheme.section(size: 13))
-                            .foregroundStyle(DarkFantasyTheme.cyan)
-                            .monospacedDigit()
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1.5)
-        )
-    }
-}
-
-// MARK: - Hub Stat Bar
+// MARK: - Hub Stat Bar (used by CompactHeroWidget and other views)
 
 struct HubStatBar: View {
     let label: String
@@ -398,6 +292,54 @@ struct HubStatBar: View {
     }
 }
 
+// MARK: - Hub Character Card Wrapper (handles navigation vs potion tap)
+
+struct HubCharacterCardWrapper: View {
+    let character: Character
+    @Environment(AppState.self) private var appState
+
+    var body: some View {
+        HubCharacterCard(
+            character: character,
+            onUsePotion: { Task { await useHealthPotion() } }
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            appState.mainPath.append(AppRoute.hero)
+        }
+    }
+
+    private func useHealthPotion() async {
+        // Find the first available health potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
+        }
+
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No health potions", subtitle: "Buy potions at the shop", type: .error)
+            return
+        }
+
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
+
+        if success {
+            let healed = (appState.currentCharacter?.currentHp ?? 0) - character.currentHp
+            let healAmount = max(healed, 0)
+            appState.showToast(
+                "+\(healAmount) HP restored!",
+                type: .reward
+            )
+        }
+    }
+}
+
 // MARK: - Daily Quests Card
 
 struct DailyQuestsCard: View {
@@ -425,7 +367,10 @@ struct DailyQuestsCard: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("📜").font(.system(size: 30))
+            Image("hud-quests")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 34, height: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("DAILY QUESTS")
@@ -459,7 +404,7 @@ struct DailyQuestsCard: View {
             }
             .frame(width: 80, height: 10)
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -504,7 +449,7 @@ struct BattlePassCard: View {
             }
             .frame(width: 80, height: 10)
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -534,7 +479,7 @@ struct FirstWinBonusCard: View {
 
             Spacer()
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -553,7 +498,10 @@ struct DailyLoginCard: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text("🎁").font(.system(size: 30))
+            Image("hud-gift")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 34, height: 34)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("DAILY LOGIN")
@@ -578,7 +526,7 @@ struct DailyLoginCard: View {
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }
-        .padding(14)
+        .padding(LayoutConstants.bannerPadding)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
@@ -596,11 +544,30 @@ struct DailyLoginCard: View {
 // MARK: - Floating Action Icon
 
 struct FloatingActionIcon: View {
-    let systemIcon: String
+    let systemIcon: String?
+    let customIcon: String?
     let badgeActive: Bool
     let accentColor: Color
     var size: CGFloat = 56
     let action: () -> Void
+
+    init(systemIcon: String, badgeActive: Bool, accentColor: Color, size: CGFloat = 56, action: @escaping () -> Void) {
+        self.systemIcon = systemIcon
+        self.customIcon = nil
+        self.badgeActive = badgeActive
+        self.accentColor = accentColor
+        self.size = size
+        self.action = action
+    }
+
+    init(customIcon: String, badgeActive: Bool, accentColor: Color, size: CGFloat = 56, action: @escaping () -> Void) {
+        self.systemIcon = nil
+        self.customIcon = customIcon
+        self.badgeActive = badgeActive
+        self.accentColor = accentColor
+        self.size = size
+        self.action = action
+    }
 
     @State private var badgePulse = false
 
@@ -609,9 +576,18 @@ struct FloatingActionIcon: View {
     var body: some View {
         Button(action: action) {
             ZStack(alignment: .topTrailing) {
-                Image(systemName: systemIcon)
-                    .font(.system(size: iconSize, weight: .semibold))
-                    .foregroundStyle(accentColor)
+                Group {
+                    if let customIcon {
+                        Image(customIcon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: size * 0.75, height: size * 0.75)
+                    } else if let systemIcon {
+                        Image(systemName: systemIcon)
+                            .font(.system(size: iconSize, weight: .semibold))
+                            .foregroundStyle(accentColor)
+                    }
+                }
                     .frame(width: size, height: size)
                     .background(
                         Circle()
@@ -637,7 +613,7 @@ struct FloatingActionIcon: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.9))
         .contentShape(Circle())
         .onAppear {
             if badgeActive {
@@ -673,9 +649,10 @@ struct FloatingSoundToggle: View {
                 AudioManager.shared.playBGM("Stray City.mp3")
             }
         } label: {
-            Image(systemName: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                .font(.system(size: iconSize, weight: .semibold))
-                .foregroundStyle(accentColor)
+            Image(isMuted ? "hud-sound-off" : "hud-sound-on")
+                .resizable()
+                .scaledToFit()
+                .frame(width: size * 0.75, height: size * 0.75)
                 .frame(width: size, height: size)
                 .background(
                     Circle()
@@ -687,7 +664,7 @@ struct FloatingSoundToggle: View {
                 )
                 .shadow(color: accentColor.opacity(0.3), radius: 8, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.9))
         .contentShape(Circle())
     }
 }

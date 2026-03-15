@@ -9,7 +9,7 @@ struct AchievementCardView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Category icon
             Text(achievement.categoryIcon)
-                .font(.system(size: 28))
+                .font(.system(size: 28)) // emoji text — keep as is
                 .frame(width: 44)
 
             // Info
@@ -68,13 +68,10 @@ struct AchievementCardView: View {
                         ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
                     } else {
                         Text("Claim")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                     }
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
                 .frame(width: 72, height: LayoutConstants.touchMin)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+                .buttonStyle(.compactPrimary)
                 .disabled(isClaiming)
             }
         }

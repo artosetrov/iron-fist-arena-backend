@@ -3,10 +3,13 @@ import SwiftUI
 /// Reusable item image view with local-asset-first fallback chain:
 /// 1. `imageKey` → local asset from bundle (instant, offline)
 /// 2. `imageUrl` → remote AsyncImage (network, cached by URLSession)
-/// 3. `fallbackIcon` → emoji/text icon
+/// 3. `systemIcon` + `systemIconColor` → SF Symbol (e.g. consumable icons)
+/// 4. `fallbackIcon` → emoji/text icon
 struct ItemImageView: View {
     let imageKey: String?
     let imageUrl: String?
+    var systemIcon: String? = nil
+    var systemIconColor: Color? = nil
     let fallbackIcon: String
 
     var body: some View {
@@ -20,6 +23,10 @@ struct ItemImageView: View {
             } placeholder: {
                 Text(fallbackIcon).font(.system(size: 32))
             }
+        } else if let sfIcon = systemIcon {
+            Image(systemName: sfIcon)
+                .font(.system(size: 32))
+                .foregroundStyle(systemIconColor ?? .yellow)
         } else {
             Text(fallbackIcon)
                 .font(.system(size: 32))

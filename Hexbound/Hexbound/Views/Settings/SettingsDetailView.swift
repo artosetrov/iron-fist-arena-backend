@@ -165,15 +165,8 @@ struct SettingsDetailView: View {
                 vm.linkAccount()
             } label: {
                 Text(vm.linkAccountMessage ?? "Link Account")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightMD)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                            .fill(DarkFantasyTheme.bgTertiary)
-                    )
             }
+            .buttonStyle(.neutral)
             .disabled(vm.linkAccountMessage != nil)
 
             // Logout — with confirmation
@@ -181,15 +174,8 @@ struct SettingsDetailView: View {
                 showLogoutConfirm = true
             } label: {
                 Text("Logout")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-                    .foregroundStyle(DarkFantasyTheme.danger)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightMD)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                            .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
-                    )
             }
+            .buttonStyle(.dangerOutline)
             .alert("Logout", isPresented: $showLogoutConfirm) {
                 Button("Cancel", role: .cancel) {}
                 Button("Logout", role: .destructive) { vm.logout() }
@@ -202,11 +188,8 @@ struct SettingsDetailView: View {
                 showDeleteConfirm = true
             } label: {
                 Text("Delete Account")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightMD)
             }
+            .buttonStyle(.ghost)
             .alert("Delete Account", isPresented: $showDeleteConfirm) {
                 TextField("Type DELETE to confirm", text: $deleteConfirmText)
                 Button("Cancel", role: .cancel) { deleteConfirmText = "" }
@@ -245,7 +228,7 @@ struct SettingsDetailView: View {
                 .frame(height: LayoutConstants.buttonHeightMD)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scalePress(0.97))
         }
     }
     #endif

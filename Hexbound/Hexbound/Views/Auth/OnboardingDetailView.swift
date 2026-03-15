@@ -89,11 +89,11 @@ struct OnboardingDetailView: View {
 
                 if isCompleted {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 10, weight: .bold)) // SF Symbol icon — keep as is
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                 } else {
                     Text("\(number)")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: 11, weight: .bold, design: .rounded)) // rounded design — keep as is
                         .foregroundStyle(isActive ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
                 }
             }
@@ -135,9 +135,24 @@ struct OnboardingDetailView: View {
                 .padding(.top, LayoutConstants.spaceLG)
 
             if let selectedClass = vm.selectedClass {
-                // Large class showcase area
+                // Large class showcase area (swipeable)
                 classShowcase(selectedClass)
                     .padding(.top, LayoutConstants.spaceMD)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 40)
+                            .onEnded { value in
+                                if value.translation.width < -40 {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        vm.selectNextClass()
+                                    }
+                                } else if value.translation.width > 40 {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        vm.selectPreviousClass()
+                                    }
+                                }
+                            }
+                    )
 
                 Spacer(minLength: LayoutConstants.spaceMD)
 
@@ -167,28 +182,14 @@ struct OnboardingDetailView: View {
                             endRadius: 140
                         )
                     )
-                    .frame(height: 200)
+                    .frame(height: 340)
 
                 // Class icon
-                Text(charClass.icon)
-                    .font(.system(size: 80))
+                Image(charClass.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 256, height: 256)
                     .shadow(color: DarkFantasyTheme.classColor(for: charClass).opacity(0.5), radius: 20)
-
-                // Avatar image overlay (if exists)
-                if let skin = vm.selectedSkin {
-                    if UIImage(named: skin.resolvedImageKey) != nil {
-                        Image(skin.resolvedImageKey)
-                            .resizable().scaledToFit()
-                            .frame(height: 180)
-                    } else if let url = skin.resolvedImageURL {
-                        AsyncImage(url: url) { image in
-                            image.resizable().scaledToFit()
-                        } placeholder: {
-                            EmptyView()
-                        }
-                        .frame(height: 180)
-                    }
-                }
             }
 
             // Class info panel
@@ -230,9 +231,10 @@ struct OnboardingDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Left arrow
             Button { vm.selectPreviousClass() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(DarkFantasyTheme.gold)
+                Image("ui-arrow-left")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
                     .frame(width: 36, height: 36)
             }
 
@@ -248,9 +250,10 @@ struct OnboardingDetailView: View {
 
             // Right arrow
             Button { vm.selectNextClass() } label: {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(DarkFantasyTheme.gold)
+                Image("ui-arrow-right")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
                     .frame(width: 36, height: 36)
             }
         }
@@ -272,66 +275,73 @@ struct OnboardingDetailView: View {
                 .frame(width: 56, height: 56)
 
             // Icon
-            Text(charClass.icon)
-                .font(.system(size: 24))
+            Image(charClass.iconAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 36)
         }
         .shadow(color: isSelected ? color.opacity(0.4) : .clear, radius: 8)
         .scaleEffect(isSelected ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 
-    // MARK: - Step 2: Appearance (Race + Gender + Avatar)
+    // MARK: - Step 2: Appearance (Race + Gender + Avatar) — Single Screen, No Scroll
 
     private var appearanceStep: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: LayoutConstants.spaceLG) {
-                // Title
-                Text("CHOOSE YOUR APPEARANCE")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
+        VStack(spacing: 0) {
+            // Title
+            Text("CHOOSE YOUR APPEARANCE")
+                .font(DarkFantasyTheme.title(size: 16))
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .tracking(2)
+                .padding(.top, LayoutConstants.spaceMD)
+
+            // Race row
+            appearanceRaceRow
+                .padding(.top, LayoutConstants.spaceSM)
+
+            // Central avatar area (fills remaining vertical space)
+            if vm.selectedOrigin != nil {
+                // Thumbnail previews — ABOVE main avatar
+                appearanceThumbnailRow
                     .padding(.top, LayoutConstants.spaceMD)
 
-                // Race selection (horizontal scroll)
-                raceSelector
+                appearanceAvatarArea
+                    .padding(.top, LayoutConstants.spaceSM)
 
-                // Gender toggle + Dice
-                genderAndDiceRow
-
-                // Avatar grid
-                avatarGrid
-
-                // Selected skin preview
-                if let skin = vm.selectedSkin {
-                    selectedSkinPreview(skin)
-                }
+                // Race bonus widget — BELOW avatar, taller
+                appearanceRaceBonusWidget
+                    .padding(.top, LayoutConstants.spaceMD)
+                    .padding(.bottom, LayoutConstants.spaceLG)
+            } else {
+                // Empty state
+                appearanceEmptyState
+                    .padding(.top, LayoutConstants.spaceSM)
+                    .padding(.bottom, LayoutConstants.spaceSM)
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.bottom, LayoutConstants.spaceLG)
         }
+        .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
-    private var raceSelector: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+    // MARK: Race Icons Row
+
+    private var appearanceRaceRow: some View {
+        VStack(spacing: 4) {
             Text("RACE")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .font(DarkFantasyTheme.body(size: 10))
+                .foregroundStyle(DarkFantasyTheme.textDimLabel)
 
-            // Full-width race rows
-            VStack(spacing: 6) {
+            HStack(spacing: 6) {
                 ForEach(CharacterOrigin.allCases) { origin in
-                    raceRow(origin)
+                    appearanceRaceIcon(origin)
+                        .frame(maxWidth: .infinity)
                 }
-            }
-
-            // Race stats panel (Task 23: prominent stats)
-            if let origin = vm.selectedOrigin {
-                raceStatsPanel(origin)
             }
         }
     }
 
     @ViewBuilder
-    private func raceRow(_ origin: CharacterOrigin) -> some View {
+    private func appearanceRaceIcon(_ origin: CharacterOrigin) -> some View {
         let isSelected = vm.selectedOrigin == origin
 
         Button {
@@ -340,261 +350,282 @@ struct OnboardingDetailView: View {
                 vm.onOriginChanged()
             }
         } label: {
-            HStack(spacing: 12) {
-                Text(origin.icon)
-                    .font(.system(size: 28))
-                    .frame(width: 40)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(origin.displayName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                        .foregroundStyle(isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
-                    Text(origin.description)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(isSelected ? DarkFantasyTheme.gold.opacity(0.1) : DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: isSelected ? 2 : 1)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    // Task 23: Large, prominent race stats
-    @ViewBuilder
-    private func raceStatsPanel(_ origin: CharacterOrigin) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            HStack(spacing: 6) {
-                Text(origin.icon)
-                    .font(.system(size: 20))
-                Text(origin.displayName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                Text("BONUSES")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-            }
-
-            // Parse bonus string into structured display
-            let bonusParts = origin.bonuses.components(separatedBy: "  ")
-            HStack(spacing: 0) {
-                ForEach(Array(bonusParts.enumerated()), id: \.offset) { _, part in
-                    let trimmed = part.trimmingCharacters(in: .whitespaces)
-                    VStack(spacing: 4) {
-                        Text(String(trimmed.prefix(while: { $0 == "+" || $0 == "-" || $0.isNumber })))
-                            .font(DarkFantasyTheme.title(size: 24))
-                            .foregroundStyle(trimmed.hasPrefix("-") ? DarkFantasyTheme.textDanger : DarkFantasyTheme.textSuccess)
-                        Text(String(trimmed.drop(while: { $0 == "+" || $0 == "-" || $0.isNumber || $0 == " " })))
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .padding(LayoutConstants.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
-        )
-    }
-
-    private var genderAndDiceRow: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            // Gender icon toggle (Task 20: icons only)
-            HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(CharacterGender.allCases) { gender in
-                    let isSelected = vm.selectedGender == gender
-
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            vm.selectedGender = gender
-                            vm.onGenderChanged()
-                        }
-                    } label: {
-                        Image(systemName: gender == .male ? "figure.stand" : "figure.stand.dress")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                            .frame(width: 52, height: 52)
-                            .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                                    .fill(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgSecondary)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                                    .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: isSelected ? 2 : 1)
-                            )
-                            .shadow(color: isSelected ? DarkFantasyTheme.goldGlow : .clear, radius: 6)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-
-            Spacer()
-
-            // Random dice button
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    vm.randomize()
-                }
-            } label: {
-                Image(systemName: "dice.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                    .frame(width: 52, height: 52)
+            VStack(spacing: 3) {
+                Image(origin.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 36, height: 36)
+                    .frame(width: 56, height: 56)
                     .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                            .fill(DarkFantasyTheme.bgSecondary)
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(isSelected ? DarkFantasyTheme.gold.opacity(0.1) : DarkFantasyTheme.bgDarkPanel)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2.5)
                     )
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-    }
+                    .shadow(color: isSelected ? DarkFantasyTheme.gold.opacity(0.3) : .clear, radius: 7)
 
-    private var avatarGrid: some View {
-        let skins = vm.availableSkins
-        let columns = [
-            GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-            GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-            GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-            GridItem(.flexible(), spacing: LayoutConstants.spaceSM)
-        ]
-
-        return LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
-            ForEach(skins) { skin in
-                skinThumbnail(skin)
+                Text(origin.displayName)
+                    .font(DarkFantasyTheme.body(size: 9))
+                    .foregroundStyle(isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary)
             }
         }
+        .buttonStyle(.scalePress(0.95))
     }
 
-    @ViewBuilder
-    private func skinThumbnail(_ skin: AppearanceSkin) -> some View {
-        let isSelected = vm.selectedSkinKey == skin.skinKey
+    // MARK: Race Bonus Widget
 
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                vm.selectedSkinKey = skin.skinKey
-            }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
+    private var appearanceRaceBonusWidget: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 14)
+                .fill(DarkFantasyTheme.bgSecondary)
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
 
-                // Skin image — prefer local asset
-                if UIImage(named: skin.resolvedImageKey) != nil {
-                    Image(skin.resolvedImageKey)
+            if let origin = vm.selectedOrigin {
+                HStack(spacing: 12) {
+                    Image(origin.iconAsset)
                         .resizable()
-                        .scaledToFill()
-                        .clipped()
-                        .cornerRadius(LayoutConstants.panelRadius)
-                } else if let url = skin.resolvedImageURL {
-                    AsyncImage(url: url) { image in
-                        image.resizable()
-                            .scaledToFill()
-                            .clipped()
-                            .cornerRadius(LayoutConstants.panelRadius)
-                    } placeholder: {
-                        ProgressView().tint(DarkFantasyTheme.textTertiary)
-                    }
-                } else {
-                    VStack(spacing: 2) {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        Text(skin.displayName)
-                            .font(DarkFantasyTheme.body(size: 8))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    }
-                }
+                        .scaledToFit()
+                        .frame(width: 48, height: 48)
 
-                // Selection indicator
-                if isSelected {
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(origin.displayName)
+                            .font(DarkFantasyTheme.section(size: 16))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+
+                        Text(origin.description)
+                            .font(DarkFantasyTheme.body(size: 13))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Text(origin.bonuses)
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.textSuccess)
+                        .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
                 }
+                .padding(.horizontal, LayoutConstants.bannerPadding)
+            } else {
+                Text("Select a race to see avatars")
+                    .font(DarkFantasyTheme.body(size: 13))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
-            .aspectRatio(1, contentMode: .fit)
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: isSelected ? 2.5 : 1)
-            )
-            .shadow(color: isSelected ? DarkFantasyTheme.goldGlow : .clear, radius: 6)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .frame(height: 88)
+        .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.2), value: vm.selectedOrigin)
     }
 
-    // Task 21: Square centered avatar preview — main visual accent
-    @ViewBuilder
-    private func selectedSkinPreview(_ skin: AppearanceSkin) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+    // MARK: Empty State
 
-                if UIImage(named: skin.resolvedImageKey) != nil {
-                    Image(skin.resolvedImageKey)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 160, height: 160)
-                        .clipped()
-                } else if let url = skin.resolvedImageURL {
-                    AsyncImage(url: url) { image in
-                        image.resizable()
-                            .scaledToFill()
-                            .frame(width: 160, height: 160)
-                            .clipped()
-                    } placeholder: {
-                        ProgressView().tint(DarkFantasyTheme.textTertiary)
-                    }
-                } else {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                }
-            }
-            .frame(width: 180, height: 180)
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(DarkFantasyTheme.gold, lineWidth: 2)
-            )
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
+    private var appearanceEmptyState: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Spacer()
 
-            Text(skin.displayName)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(DarkFantasyTheme.goldBright)
+            RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(DarkFantasyTheme.bgDarkPanelBorder, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+                .frame(width: 160, height: 160)
+                .overlay(
+                    Text("?")
+                        .font(DarkFantasyTheme.title(size: 48))
+                        .foregroundStyle(DarkFantasyTheme.bgDarkPanelBorder)
+                )
+
+            Text("Choose a race above to see available avatars")
+                .font(DarkFantasyTheme.body(size: 12))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .multilineTextAlignment(.center)
+
+            Spacer()
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Avatar Area (gender + arrows + central avatar + dice)
+
+    private var appearanceAvatarArea: some View {
+        GeometryReader { geo in
+            let spacing: CGFloat = 8
+            let sideSize: CGFloat = 64
+            let avatarSize: CGFloat = min(geo.size.width - sideSize * 2 - spacing * 4, 220)
+
+            HStack(alignment: .center, spacing: spacing) {
+                // Left column: gender toggle (top) + left arrow (bottom)
+                VStack(spacing: 0) {
+                    appearanceSquareButton(content: AnyView(
+                        Image(vm.selectedGender == .male ? "ui-gender-male" : "ui-gender-female")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: sideSize * 0.6, height: sideSize * 0.6)
+                    ), size: sideSize, bg: DarkFantasyTheme.xpRing.opacity(0.1),
+                       border: DarkFantasyTheme.xpRing, shadow: DarkFantasyTheme.xpRing.opacity(0.2)) {
+                        withAnimation(.easeInOut(duration: 0.2)) { vm.toggleGender() }
+                    }
+                    Spacer()
+                    appearanceSquareButton(content: AnyView(
+                        Image("ui-arrow-left")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: sideSize * 0.5, height: sideSize * 0.5)
+                    ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
+                       border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
+                        withAnimation(.easeInOut(duration: 0.25)) { vm.prevAvatar() }
+                    }
+                }
+                .frame(width: sideSize, height: avatarSize)
+
+                // Central avatar
+                appearanceCentralAvatar(size: avatarSize)
+
+                // Right column: dice (top) + right arrow (bottom)
+                VStack(spacing: 0) {
+                    appearanceSquareButton(content: AnyView(
+                        Image("ui-dice")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: sideSize * 0.6, height: sideSize * 0.6)
+                            .rotationEffect(.degrees(vm.diceRotation))
+                    ), size: sideSize, bg: DarkFantasyTheme.gold.opacity(0.1),
+                       border: DarkFantasyTheme.gold.opacity(0.3), shadow: .clear) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            vm.diceRotation += 360
+                            vm.randomize()
+                        }
+                    }
+                    Spacer()
+                    appearanceSquareButton(content: AnyView(
+                        Image("ui-arrow-right")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: sideSize * 0.5, height: sideSize * 0.5)
+                    ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
+                       border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
+                        withAnimation(.easeInOut(duration: 0.25)) { vm.nextAvatar() }
+                    }
+                }
+                .frame(width: sideSize, height: avatarSize)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    // MARK: Square Button Helper
+
+    @ViewBuilder
+    private func appearanceSquareButton(content: AnyView, size: CGFloat, bg: Color, border: Color, shadow: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            content
+                .frame(width: size, height: size)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(bg)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(border, lineWidth: 2)
+                )
+                .shadow(color: shadow, radius: 5)
+        }
+        .buttonStyle(.scalePress)
+    }
+
+    @ViewBuilder
+    private func appearanceCentralAvatar(size: CGFloat) -> some View {
+        let skins = vm.availableSkins
+
+        ZStack {
+            RoundedRectangle(cornerRadius: 22)
+                .fill(DarkFantasyTheme.bgSecondary)
+
+            if vm.avatarIndex < skins.count {
+                let skin = skins[vm.avatarIndex]
+                appearanceSkinImage(skin)
+                    .frame(width: size, height: size)
+                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .id(skin.skinKey)
+                    .transition(avatarTransition)
+            }
+        }
+        .frame(width: size, height: size)
+        .overlay(
+            RoundedRectangle(cornerRadius: 22)
+                .stroke(DarkFantasyTheme.gold, lineWidth: 3)
+        )
+        .shadow(color: DarkFantasyTheme.gold.opacity(0.2), radius: 20, y: 8)
+        .animation(.easeInOut(duration: 0.25), value: vm.avatarIndex)
+    }
+
+    private var avatarTransition: AnyTransition {
+        switch vm.slideDirection {
+        case .left:
+            .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                         removal: .move(edge: .leading).combined(with: .opacity))
+        case .right:
+            .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                         removal: .move(edge: .trailing).combined(with: .opacity))
+        case .none:
+            .opacity
+        }
+    }
+
+    // MARK: Thumbnail Row (separate row under avatar area)
+
+    private var appearanceThumbnailRow: some View {
+        let skins = vm.availableSkins
+
+        return HStack(spacing: 6) {
+            ForEach(Array(skins.enumerated()), id: \.element.id) { index, skin in
+                let isSelected = vm.avatarIndex == index
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        vm.selectAvatar(at: index)
+                    }
+                } label: {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(DarkFantasyTheme.bgDarkPanel)
+
+                        appearanceSkinImage(skin)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2)
+                    )
+                    .shadow(color: isSelected ? DarkFantasyTheme.gold.opacity(0.25) : .clear, radius: 5)
+                }
+                .buttonStyle(.scalePress(0.95))
+            }
+        }
+    }
+
+    // MARK: Skin Image Helper
+
+    @ViewBuilder
+    private func appearanceSkinImage(_ skin: AppearanceSkin) -> some View {
+        if UIImage(named: skin.resolvedImageKey) != nil {
+            Image(skin.resolvedImageKey)
+                .resizable()
+                .scaledToFill()
+        } else if let url = skin.resolvedImageURL {
+            AsyncImage(url: url) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                ProgressView().tint(DarkFantasyTheme.textTertiary)
+            }
+        } else {
+            Image(systemName: "person.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+        }
     }
 
     // MARK: - Step 3: Name
@@ -624,98 +655,113 @@ struct OnboardingDetailView: View {
         }
     }
 
-    // Task 24: Full character card like Hub, showing avatar + stats + class/origin
+    // Large centered character preview — matching step 1/2 visual style
     private var characterPreviewCard: some View {
-        HStack(alignment: .center, spacing: 14) {
-            // Avatar — square with gold border
-            ZStack(alignment: .bottomTrailing) {
-                Group {
-                    if let skin = vm.selectedSkin, UIImage(named: skin.resolvedImageKey) != nil {
-                        Image(skin.resolvedImageKey)
-                            .resizable()
-                            .scaledToFill()
-                    } else if let skin = vm.selectedSkin, let url = skin.resolvedImageURL {
-                        AsyncImage(url: url) { image in
-                            image.resizable().scaledToFill()
-                        } placeholder: {
-                            ProgressView().tint(DarkFantasyTheme.textTertiary)
-                        }
-                    } else {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(DarkFantasyTheme.bgTertiary)
-                    }
-                }
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
-                )
-
-                // Level 1 badge
-                Text("1")
-                    .font(DarkFantasyTheme.section(size: 11).bold())
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .frame(width: 24, height: 24)
-                    .background(Circle().fill(DarkFantasyTheme.gold))
-                    .offset(x: 4, y: 4)
-            }
-
-            // Info
-            VStack(alignment: .leading, spacing: 6) {
-                // Origin + Class
-                HStack(spacing: 6) {
-                    if let origin = vm.selectedOrigin {
-                        Text(origin.icon)
-                        Text(origin.displayName)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-                    if let cls = vm.selectedClass {
-                        Text(cls.icon)
-                        Text(cls.sfName)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.classColor(for: cls))
-                    }
+        VStack(spacing: LayoutConstants.spaceMD) {
+            // Large centered avatar with glow
+            ZStack {
+                // Background glow (like class showcase)
+                if let cls = vm.selectedClass {
+                    RoundedRectangle(cornerRadius: 22)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    DarkFantasyTheme.classColor(for: cls).opacity(0.2),
+                                    DarkFantasyTheme.bgSecondary.opacity(0.3),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 20,
+                                endRadius: 120
+                            )
+                        )
+                        .frame(width: 200, height: 200)
                 }
 
-                // Combined bonuses
-                if !vm.combinedBonuses.isEmpty {
-                    HStack(spacing: 8) {
-                        ForEach(vm.combinedBonuses.prefix(4), id: \.stat) { bonus in
-                            VStack(spacing: 1) {
-                                Text("\(bonus.value > 0 ? "+" : "")\(bonus.value)")
-                                    .font(DarkFantasyTheme.section(size: 14).bold())
-                                    .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
-                                Text(String(bonus.stat.prefix(3)).uppercased())
-                                    .font(DarkFantasyTheme.body(size: 9))
-                                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                ZStack(alignment: .bottomTrailing) {
+                    Group {
+                        if let skin = vm.selectedSkin, UIImage(named: skin.resolvedImageKey) != nil {
+                            Image(skin.resolvedImageKey)
+                                .resizable()
+                                .scaledToFill()
+                        } else if let skin = vm.selectedSkin, let url = skin.resolvedImageURL {
+                            AsyncImage(url: url) { image in
+                                image.resizable().scaledToFill()
+                            } placeholder: {
+                                ProgressView().tint(DarkFantasyTheme.textTertiary)
                             }
+                        } else {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 56)) // SF Symbol icon — keep as is
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(DarkFantasyTheme.bgTertiary)
+                        }
+                    }
+                    .frame(width: 180, height: 180)
+                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(DarkFantasyTheme.gold, lineWidth: 3)
+                    )
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.2), radius: 20, y: 8)
+
+                    // Level 1 badge
+                    Text("1")
+                        .font(DarkFantasyTheme.section(size: 13).bold())
+                        .foregroundStyle(DarkFantasyTheme.textOnGold)
+                        .frame(width: 30, height: 30)
+                        .background(Circle().fill(DarkFantasyTheme.gold))
+                        .offset(x: 4, y: 4)
+                }
+            }
+
+            // Origin + Class row
+            HStack(spacing: 8) {
+                if let origin = vm.selectedOrigin {
+                    Image(origin.iconAsset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text(origin.displayName)
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+                if let cls = vm.selectedClass {
+                    Image(cls.iconAsset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                    Text(cls.sfName)
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.classColor(for: cls))
+                }
+            }
+
+            // Stat bonuses — prominent row
+            if !vm.combinedBonuses.isEmpty {
+                HStack(spacing: 16) {
+                    ForEach(vm.combinedBonuses, id: \.stat) { bonus in
+                        VStack(spacing: 2) {
+                            Text("\(bonus.value > 0 ? "+" : "")\(bonus.value)")
+                                .font(DarkFantasyTheme.section(size: 20).bold())
+                                .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
+                            Text(String(bonus.stat.prefix(3)).uppercased())
+                                .font(DarkFantasyTheme.body(size: 10))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
                 }
-
-                // Gender display
-                if let gender = vm.selectedGender {
-                    Text(gender.displayName)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                }
             }
+
+            // Gender
+            Text(vm.selectedGender.displayName.uppercased())
+                .font(DarkFantasyTheme.body(size: 11))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(1)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1.5)
-        )
+        .padding(.vertical, LayoutConstants.spaceMD)
+        .frame(maxWidth: .infinity)
     }
 
     // Task 16: Name input with real-time availability check
@@ -739,9 +785,7 @@ struct OnboardingDetailView: View {
             HStack(spacing: 0) {
                 TextField("", text: $vm.characterName)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                    .foregroundStyle(
-                        vm.characterName.count >= 3 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textDanger
-                    )
+                    .foregroundStyle(nameTextColor)
                     .placeholder(when: vm.characterName.isEmpty) {
                         Text("Enter hero name...")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCard))
@@ -784,13 +828,14 @@ struct OnboardingDetailView: View {
                     vm.generateRandomName()
                     vm.checkNameAvailability()
                 } label: {
-                    Image(systemName: "dice.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Image("ui-dice")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.scalePress(0.85))
             }
             .padding(.horizontal, LayoutConstants.spaceMD)
             .frame(height: LayoutConstants.inputHeight)
@@ -838,36 +883,53 @@ struct OnboardingDetailView: View {
         }
     }
 
+    /// Name text color: green if available, red if taken or too short, gold while checking
+    private var nameTextColor: Color {
+        if vm.characterName.isEmpty { return DarkFantasyTheme.textPrimary }
+        if vm.characterName.count < 3 { return DarkFantasyTheme.danger }
+        switch vm.nameAvailability {
+        case .available: return DarkFantasyTheme.success
+        case .taken: return DarkFantasyTheme.danger
+        case .checking: return DarkFantasyTheme.goldBright
+        default: return DarkFantasyTheme.goldBright
+        }
+    }
+
     private var buildSummary: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
+            // Hero name — large title like class showcase
             Text(vm.characterName.uppercased())
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                 .foregroundStyle(DarkFantasyTheme.goldBright)
+                .tracking(2)
 
-            Text(vm.heroSummary)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+            // Summary line
+            Text(vm.heroSummary.uppercased())
+                .font(DarkFantasyTheme.section(size: 12))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .tracking(1)
 
-            // Combined bonuses
+            // Combined bonuses — styled like class bonuses
             if !vm.combinedBonuses.isEmpty {
-                HStack(spacing: LayoutConstants.spaceSM) {
+                HStack(spacing: LayoutConstants.spaceMD) {
                     ForEach(vm.combinedBonuses, id: \.stat) { bonus in
                         Text("\(bonus.value > 0 ? "+" : "")\(bonus.value) \(bonus.stat)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.section(size: 12))
                             .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
                     }
                 }
+                .padding(.top, 2)
             }
         }
         .frame(maxWidth: .infinity)
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
         )
     }
 

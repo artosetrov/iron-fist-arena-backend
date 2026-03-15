@@ -59,7 +59,7 @@ struct DungeonRushDetailView: View {
             Spacer()
 
             Text("🏰")
-                .font(.system(size: 64))
+                .font(.system(size: 64)) // emoji — keep
 
             Text("Dungeon Rush")
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
@@ -88,14 +88,9 @@ struct DungeonRushDetailView: View {
                     ProgressView().tint(DarkFantasyTheme.textOnGold)
                 } else {
                     Text("START RUSH")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                 }
             }
-            .foregroundStyle(DarkFantasyTheme.textOnGold)
-            .frame(maxWidth: .infinity)
-            .frame(height: LayoutConstants.buttonHeightLG)
-            .background(DarkFantasyTheme.goldGradient)
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+            .buttonStyle(.primary)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .disabled(vm.isLoading)
 
@@ -112,7 +107,7 @@ struct DungeonRushDetailView: View {
             HStack(spacing: 4) {
                 ForEach(0..<types.count, id: \.self) { i in
                     Text(types[i])
-                        .font(.system(size: 16))
+                        .font(.system(size: 16)) // emoji — keep
                         .frame(width: 28, height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
@@ -179,7 +174,7 @@ struct DungeonRushDetailView: View {
                         let isResolved = room.resolved
 
                         Text(room.icon)
-                            .font(.system(size: isCurrent ? 20 : 14))
+                            .font(.system(size: isCurrent ? 20 : 14)) // emoji — keep
                             .frame(width: isCurrent ? 36 : 26, height: isCurrent ? 36 : 26)
                             .background(
                                 RoundedRectangle(cornerRadius: 4)
@@ -241,7 +236,7 @@ struct DungeonRushDetailView: View {
                 ForEach(buffs, id: \.id) { buff in
                     HStack(spacing: 2) {
                         Text(buff.icon)
-                            .font(.system(size: 12))
+                            .font(.system(size: 12)) // emoji — keep
                         Text("+\(buff.value)")
                             .font(DarkFantasyTheme.body(size: 10))
                             .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -269,7 +264,7 @@ struct DungeonRushDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text(room.icon)
-                .font(.system(size: 56))
+                .font(.system(size: 56)) // emoji — keep
 
             Text(room.label.uppercased())
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -344,14 +339,9 @@ struct DungeonRushDetailView: View {
                             ProgressView().tint(DarkFantasyTheme.textOnGold)
                         } else {
                             Text("FIGHT")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                         }
                     }
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightLG)
-                    .background(DarkFantasyTheme.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                    .buttonStyle(.primary)
                     .disabled(vm.isFighting)
 
                 case "treasure":
@@ -362,14 +352,9 @@ struct DungeonRushDetailView: View {
                             ProgressView().tint(DarkFantasyTheme.textOnGold)
                         } else {
                             Text("OPEN CHEST")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                         }
                     }
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightLG)
-                    .background(DarkFantasyTheme.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                    .buttonStyle(.primary)
                     .disabled(vm.isLoading)
 
                 case "event":
@@ -380,14 +365,9 @@ struct DungeonRushDetailView: View {
                             ProgressView().tint(DarkFantasyTheme.textOnGold)
                         } else {
                             Text("EXPLORE")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                         }
                     }
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightLG)
-                    .background(DarkFantasyTheme.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                    .buttonStyle(.primary)
                     .disabled(vm.isLoading)
 
                 case "shop":
@@ -398,14 +378,9 @@ struct DungeonRushDetailView: View {
                             ProgressView().tint(DarkFantasyTheme.textOnGold)
                         } else {
                             Text("ENTER SHOP")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                         }
                     }
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LayoutConstants.buttonHeightLG)
-                    .background(DarkFantasyTheme.goldGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                    .buttonStyle(.primary)
                     .disabled(vm.isLoading)
 
                 default:
@@ -429,12 +404,12 @@ struct DungeonRushDetailView: View {
     @ViewBuilder
     private func shopOverlay(vm: DungeonRushViewModel) -> some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
+            DarkFantasyTheme.bgBackdropLight.ignoresSafeArea()
                 .onTapGesture {} // Block taps
 
             VStack(spacing: LayoutConstants.spaceLG) {
                 Text("🏪")
-                    .font(.system(size: 48))
+                    .font(.system(size: 48)) // emoji — keep
 
                 Text("SHOP")
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -458,14 +433,9 @@ struct DungeonRushDetailView: View {
                         ProgressView().tint(DarkFantasyTheme.textOnGold)
                     } else {
                         Text("LEAVE SHOP")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                     }
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightLG)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                .buttonStyle(.primary)
                 .disabled(vm.isLoading)
             }
             .padding(LayoutConstants.spaceXL)
@@ -476,7 +446,7 @@ struct DungeonRushDetailView: View {
     private func shopItemRow(vm: DungeonRushViewModel, item: RushShopItem) -> some View {
         HStack {
             Text(item.icon)
-                .font(.system(size: 24))
+                .font(.system(size: 24)) // emoji — keep
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
@@ -498,13 +468,10 @@ struct DungeonRushDetailView: View {
                     Task { await vm.buyShopItem(slot: item.slot) }
                 } label: {
                     Text("💰 \(item.price)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.spaceXS)
-                        .background(DarkFantasyTheme.goldGradient)
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
+                .buttonStyle(.compactPrimary)
                 .disabled(vm.isProcessingShop)
             }
         }
@@ -516,11 +483,11 @@ struct DungeonRushDetailView: View {
     @ViewBuilder
     private func eventOverlay(vm: DungeonRushViewModel) -> some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
+            DarkFantasyTheme.bgBackdropLight.ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceLG) {
                 Text(vm.eventResultIcon)
-                    .font(.system(size: 56))
+                    .font(.system(size: 56)) // emoji — keep
 
                 Text(vm.eventResultTitle)
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -536,13 +503,8 @@ struct DungeonRushDetailView: View {
                     vm.dismissEventResult()
                 } label: {
                     Text("CONTINUE")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightLG)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                .buttonStyle(.primary)
             }
             .padding(LayoutConstants.spaceXL)
         }
@@ -553,11 +515,11 @@ struct DungeonRushDetailView: View {
     @ViewBuilder
     private func treasureOverlay(vm: DungeonRushViewModel) -> some View {
         ZStack {
-            Color.black.opacity(0.7).ignoresSafeArea()
+            DarkFantasyTheme.bgBackdropLight.ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceLG) {
                 Text("📦")
-                    .font(.system(size: 56))
+                    .font(.system(size: 56)) // emoji — keep
 
                 Text("TREASURE!")
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -586,13 +548,8 @@ struct DungeonRushDetailView: View {
                     vm.dismissTreasureResult()
                 } label: {
                     Text("CONTINUE")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .frame(maxWidth: .infinity)
-                .frame(height: LayoutConstants.buttonHeightLG)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                .buttonStyle(.primary)
             }
             .padding(LayoutConstants.spaceXL)
         }
@@ -606,7 +563,7 @@ struct DungeonRushDetailView: View {
             Spacer()
 
             Text(vm.rushComplete ? "🏆" : vm.lastFightWon ? "🏃" : "💀")
-                .font(.system(size: 64))
+                .font(.system(size: 64)) // emoji — keep
 
             Text(vm.rushComplete ? "Rush Complete!" : vm.lastFightWon ? "Escaped!" : "Defeated!")
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
@@ -676,20 +633,20 @@ struct DungeonRushDetailView: View {
                     .buttonStyle(.primary)
                 }
 
-                Button {
-                    vm.exit()
-                } label: {
-                    Text("EXIT")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-                        .foregroundStyle(appState.pendingLoot.isEmpty ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightLG)
-                        .background(appState.pendingLoot.isEmpty ? DarkFantasyTheme.goldGradient : LinearGradient(colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary], startPoint: .leading, endPoint: .trailing))
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .stroke(DarkFantasyTheme.borderOrnament, lineWidth: appState.pendingLoot.isEmpty ? 0 : 1)
-                        )
+                if appState.pendingLoot.isEmpty {
+                    Button {
+                        vm.exit()
+                    } label: {
+                        Text("EXIT")
+                    }
+                    .buttonStyle(.primary)
+                } else {
+                    Button {
+                        vm.exit()
+                    } label: {
+                        Text("EXIT")
+                    }
+                    .buttonStyle(.secondary)
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)

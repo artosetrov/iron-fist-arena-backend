@@ -41,7 +41,7 @@ final class DailyLoginService {
             _ = await charRefresh
             return await status
         } catch {
-            appState.showToast("Failed to claim reward", type: .error)
+            appState.showToast("Failed to claim reward", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }

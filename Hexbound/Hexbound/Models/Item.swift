@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct Item: Codable, Identifiable {
     let id: String
@@ -64,6 +65,17 @@ struct Item: Codable, Identifiable {
         upgradeLevel ?? 0
     }
 
+    /// Sum of all effective stats — used for quick power comparison
+    var totalPower: Int {
+        effectiveStats.values.reduce(0, +)
+    }
+
+    /// Slot this item can go in (uses equippedSlot if set, otherwise derives from itemType)
+    var equipSlot: String {
+        if let slot = equippedSlot, !slot.isEmpty { return slot }
+        return itemType.rawValue
+    }
+
     /// Stat key → full display label mapping
     static let statLabels: [String: String] = [
         "str": "Strength", "agi": "Agility", "vit": "Vitality", "end": "Endurance",
@@ -76,4 +88,26 @@ struct Item: Codable, Identifiable {
     static let rarityOrder: [ItemRarity: Int] = [
         .common: 1, .uncommon: 2, .rare: 3, .epic: 4, .legendary: 5
     ]
+
+    // MARK: - Consumable Icon Helpers
+
+    /// SF Symbol name for consumable items based on consumableType
+    var consumableIcon: String? {
+        guard itemType == .consumable else { return nil }
+        let ct = consumableType ?? ""
+        if ct.contains("gem_pack") { return "diamond.fill" }
+        if ct.contains("health") { return "heart.fill" }
+        if ct.contains("stamina") { return "bolt.fill" }
+        return "flask.fill"
+    }
+
+    /// Tint color for consumable SF Symbol
+    var consumableIconColor: Color? {
+        guard itemType == .consumable else { return nil }
+        let ct = consumableType ?? ""
+        if ct.contains("gem_pack") { return .cyan }
+        if ct.contains("health") { return .red }
+        if ct.contains("stamina") { return .green }
+        return .yellow
+    }
 }

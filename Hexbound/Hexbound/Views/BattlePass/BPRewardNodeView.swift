@@ -20,7 +20,7 @@ struct BPRewardNodeView: View {
                     .frame(width: 64, height: 64)
 
                 Text(reward.icon)
-                    .font(.system(size: 28))
+                    .font(.system(size: 28)) // emoji text — keep as is
             }
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
@@ -54,13 +54,10 @@ struct BPRewardNodeView: View {
                             .scaleEffect(0.7)
                     } else {
                         Text("Claim")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
                     }
                 }
                 .frame(width: 70, height: 36)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .buttonStyle(.compactPrimary)
             case .claimed:
                 Text("Claimed")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))

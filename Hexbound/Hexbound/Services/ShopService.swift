@@ -29,7 +29,7 @@ final class ShopService {
             let decoder = JSONDecoder()
             return try decoder.decode([ShopItem].self, from: jsonData)
         } catch {
-            appState.showToast("Failed to load shop", type: .error)
+            appState.showToast("Failed to load shop", subtitle: "Pull to refresh or try again later", type: .error)
             return []
         }
     }
@@ -54,11 +54,11 @@ final class ShopService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Purchase failed", type: .error)
+                appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             }
             return false
         } catch {
-            appState.showToast("Purchase failed", type: .error)
+            appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             return false
         }
     }
@@ -83,11 +83,11 @@ final class ShopService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Purchase failed", type: .error)
+                appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             }
             return false
         } catch {
-            appState.showToast("Purchase failed", type: .error)
+            appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             return false
         }
     }
@@ -111,11 +111,11 @@ final class ShopService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Purchase failed", type: .error)
+                appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             }
             return false
         } catch {
-            appState.showToast("Purchase failed", type: .error)
+            appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             return false
         }
     }
@@ -136,7 +136,7 @@ final class ShopService {
             updateCharacter(from: response)
             return true
         } catch {
-            appState.showToast("Purchase failed", type: .error)
+            appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             return false
         }
     }
@@ -179,11 +179,11 @@ final class ShopService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Repair failed", type: .error)
+                appState.showToast("Repair failed", subtitle: "Check your gold and try again", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Repair failed", type: .error)
+            appState.showToast("Repair failed", subtitle: "Check your gold and try again", type: .error)
             return nil
         }
     }
@@ -232,11 +232,11 @@ final class ShopService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Upgrade failed", type: .error)
+                appState.showToast("Upgrade failed", subtitle: "Check your gold and try again", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Upgrade failed", type: .error)
+            appState.showToast("Upgrade failed", subtitle: "Check your gold and try again", type: .error)
             return nil
         }
     }

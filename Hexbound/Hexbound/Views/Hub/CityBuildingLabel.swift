@@ -8,7 +8,7 @@ struct CityBuildingLabel: View {
 
     var body: some View {
         Text(text)
-            .font(.custom("Inter-SemiBold", size: 11))
+            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
             .foregroundStyle(DarkFantasyTheme.goldBright)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)

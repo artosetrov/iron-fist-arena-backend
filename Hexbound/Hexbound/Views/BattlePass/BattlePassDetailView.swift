@@ -7,7 +7,17 @@ struct BattlePassDetailView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            // Background image with dark overlay
+            GeometryReader { geo in
+                Image("bg-forge")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+            .ignoresSafeArea()
+            DarkFantasyTheme.bgBackdrop
+                .ignoresSafeArea()
 
             if let vm {
                 if vm.isLoading && vm.data == nil {
@@ -133,14 +143,9 @@ struct BattlePassDetailView: View {
                     Image(systemName: "star.fill")
                 }
                 Text("UPGRADE TO PREMIUM")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
             }
-            .foregroundStyle(DarkFantasyTheme.textOnGold)
-            .frame(maxWidth: .infinity)
-            .frame(height: LayoutConstants.buttonHeightMD)
-            .background(vm.isBuyingPremium ? AnyShapeStyle(DarkFantasyTheme.goldDim) : AnyShapeStyle(DarkFantasyTheme.goldGradient))
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
         }
+        .buttonStyle(.primary)
         .disabled(vm.isBuyingPremium)
     }
 

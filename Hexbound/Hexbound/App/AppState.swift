@@ -123,13 +123,13 @@ enum ToastType {
 
     var color: Color {
         switch self {
-        case .achievement: Color(red: 1.0, green: 0.85, blue: 0.2)
-        case .levelUp: Color(red: 0.4, green: 1.0, blue: 0.4)
-        case .rankUp: Color(red: 0.6, green: 0.4, blue: 1.0)
-        case .quest: Color(red: 0.3, green: 0.85, blue: 1.0)
-        case .reward: Color(red: 1.0, green: 0.65, blue: 0.2)
-        case .info: Color(red: 0.8, green: 0.8, blue: 0.85)
-        case .error: Color(red: 1.0, green: 0.35, blue: 0.35)
+        case .achievement: DarkFantasyTheme.toastAchievement
+        case .levelUp: DarkFantasyTheme.toastLevelUp
+        case .rankUp: DarkFantasyTheme.toastRankUp
+        case .quest: DarkFantasyTheme.toastQuest
+        case .reward: DarkFantasyTheme.toastReward
+        case .info: DarkFantasyTheme.toastInfo
+        case .error: DarkFantasyTheme.toastError
         }
     }
 }

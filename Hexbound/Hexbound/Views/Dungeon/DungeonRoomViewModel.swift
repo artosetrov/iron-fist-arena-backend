@@ -144,7 +144,7 @@ final class DungeonRoomViewModel {
 
         guard !runId.isEmpty else {
             isFighting = false
-            appState.showToast("Failed to start dungeon run", type: .error)
+            appState.showToast("Failed to start dungeon run", subtitle: "Check energy and connection", type: .error)
             return
         }
 
@@ -223,7 +223,7 @@ final class DungeonRoomViewModel {
         } else {
             // Defeat — run is deleted server-side
             runId = ""
-            appState.showToast("Defeated! Try again.", type: .error)
+            appState.showToast("Defeated!", subtitle: "Heal up and try again", type: .error)
         }
     }
 

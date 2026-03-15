@@ -107,7 +107,7 @@ struct DailyLoginPopupView: View {
                 // Background fill
                 Circle()
                     .fill(
-                        isClaimed ? Color(red: 0.55, green: 0.42, blue: 0.2).opacity(0.6) :
+                        isClaimed ? DarkFantasyTheme.goldDim.opacity(0.6) :
                         isCurrentDay ? DarkFantasyTheme.bgTertiary :
                         DarkFantasyTheme.bgTertiary.opacity(0.4)
                     )
@@ -126,7 +126,7 @@ struct DailyLoginPopupView: View {
 
                 // Icon
                 Text(reward.icon)
-                    .font(.system(size: isDay7 ? 24 : 18))
+                    .font(.system(size: isDay7 ? 24 : 18)) // emoji text — keep as is
                     .opacity(isClaimed || isCurrentDay ? 1.0 : 0.35)
             }
 
@@ -147,7 +147,7 @@ struct DailyLoginPopupView: View {
         if let reward = DailyReward.rewards.first(where: { $0.day == data.currentDay }) {
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text(reward.icon)
-                    .font(.system(size: 32))
+                    .font(.system(size: 32)) // emoji text — keep as is
 
                 Text(reward.label.uppercased())
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel).bold())

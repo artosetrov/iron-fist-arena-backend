@@ -54,7 +54,7 @@ final class InventoryService {
             if let cached = appState.cachedInventory {
                 return cached
             }
-            appState.showToast("Failed to load inventory", type: .error)
+            appState.showToast("Failed to load inventory", subtitle: "Check connection and try again", type: .error)
             return []
         }
     }
@@ -77,11 +77,11 @@ final class InventoryService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Equip failed", type: .error)
+                appState.showToast("Equip failed", subtitle: "Item may have class or level restrictions", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Equip failed", type: .error)
+            appState.showToast("Equip failed", subtitle: "Item may have class or level restrictions", type: .error)
             return nil
         }
     }
@@ -101,7 +101,7 @@ final class InventoryService {
             )
             return parseInventoryResponse(response)
         } catch {
-            appState.showToast("Unequip failed", type: .error)
+            appState.showToast("Unequip failed", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }
@@ -129,7 +129,7 @@ final class InventoryService {
             }
             return SellResult(gold: gold ?? 0, soldFor: soldFor)
         } catch {
-            appState.showToast("Sell failed", type: .error)
+            appState.showToast("Sell failed", subtitle: "Unequip item first, then try again", type: .error)
             return nil
         }
     }
@@ -186,14 +186,15 @@ final class InventoryService {
             appState.cachedInventory = nil
             return true
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            switch error {
+            case .clientError(_, let message), .serverError(_, let message):
                 appState.showToast(message, type: .error)
-            } else {
-                appState.showToast("Failed to use item", type: .error)
+            default:
+                appState.showToast("Failed to use item", subtitle: "Item may be on cooldown", type: .error)
             }
             return false
         } catch {
-            appState.showToast("Failed to use item", type: .error)
+            appState.showToast("Failed to use item", subtitle: "Item may be on cooldown", type: .error)
             return false
         }
     }
@@ -223,11 +224,11 @@ final class InventoryService {
             if case .clientError(_, let message) = error {
                 appState.showToast(message, type: .error)
             } else {
-                appState.showToast("Failed to expand inventory", type: .error)
+                appState.showToast("Failed to expand inventory", subtitle: "Check your gold balance", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Failed to expand inventory", type: .error)
+            appState.showToast("Failed to expand inventory", subtitle: "Check your gold balance", type: .error)
             return nil
         }
     }

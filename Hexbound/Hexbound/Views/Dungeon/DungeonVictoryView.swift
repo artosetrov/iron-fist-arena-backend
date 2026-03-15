@@ -13,7 +13,7 @@ struct DungeonVictoryView: View {
     var body: some View {
         ZStack {
             // Dim background
-            Color.black.opacity(0.8)
+            DarkFantasyTheme.bgModal
                 .ignoresSafeArea()
                 .onTapGesture { } // absorb taps
 
@@ -23,8 +23,8 @@ struct DungeonVictoryView: View {
                 // Victory title
                 if showTitle {
                     VStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "swords")
-                            .font(.system(size: 40, weight: .bold))
+                        Image(systemName: "shield.checkered")
+                            .font(DarkFantasyTheme.title(size: LayoutConstants.textCinematic))
                             .foregroundStyle(DarkFantasyTheme.goldBright)
 
                         Text("VICTORY")
@@ -153,17 +153,11 @@ struct DungeonVictoryView: View {
                             } label: {
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Image(systemName: "trophy.fill")
-                                        .font(.system(size: 18))
+                                        .font(.system(size: 18)) // SF Symbol icon — keep
                                     Text("CLAIM & EXIT")
-                                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                                 }
-                                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: LayoutConstants.buttonHeightLG)
-                                .background(DarkFantasyTheme.goldGradient)
-                                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.primary)
                         } else {
                             // Next boss
                             Button {
@@ -171,17 +165,11 @@ struct DungeonVictoryView: View {
                             } label: {
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Text("NEXT BOSS")
-                                        .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 16, weight: .bold))
+                                        .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
                                 }
-                                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: LayoutConstants.buttonHeightLG)
-                                .background(DarkFantasyTheme.goldGradient)
-                                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.primary)
 
                             // Leave
                             Button {
@@ -189,10 +177,8 @@ struct DungeonVictoryView: View {
                                 vm.goBack()
                             } label: {
                                 Text("LEAVE DUNGEON")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                    .foregroundStyle(DarkFantasyTheme.textTertiary)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.ghost)
                         }
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
@@ -258,7 +244,7 @@ struct DungeonVictoryView: View {
     private func rewardRow(icon: String, label: String, value: String, color: Color) -> some View {
         HStack {
             Text(icon)
-                .font(.system(size: 20))
+                .font(DarkFantasyTheme.body(size: 20))
 
             Text(label)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))

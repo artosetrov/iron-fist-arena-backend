@@ -73,7 +73,7 @@ struct CityBuildingView: View {
                         .font(.system(size: 28))
                         .foregroundStyle(building.glowColor)
                     Text(building.label)
-                        .font(.custom("Inter-SemiBold", size: 10))
+                        .font(DarkFantasyTheme.section(size: 10))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -131,9 +131,9 @@ struct CityBuildingView: View {
         case "tavern":
             return (0.2, 0.55, 2.5)      // warm orange flicker
         case "dungeon":
-            return (0.15, 0.5, 4.0)      // eerie slow glow
+            return (0.2, 0.55, 2.5)      // warm orange flicker
         case "battlepass":
-            return (0.2, 0.6, 2.0)       // mystic purple shimmer
+            return (0.2, 0.55, 2.5)      // warm orange flicker
         default:
             return (0.2, 0.45, 3.5)      // subtle torch glow
         }

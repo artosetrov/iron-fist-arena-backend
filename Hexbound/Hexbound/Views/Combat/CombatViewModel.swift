@@ -41,6 +41,9 @@ final class CombatViewModel {
     var skipRequested = false
     var isNavigatingToResult = false
 
+    // VFX
+    let vfxManager = CombatVFXManager()
+
     // Callbacks
     var onHit: ((_ isCrit: Bool) -> Void)?
 
@@ -117,6 +120,11 @@ final class CombatViewModel {
     private func animateTurn(_ turn: CombatLog, isPlayerAttacking: Bool) async {
         let sm = speedMultiplier
 
+        // Defender position (normalized 0-1) for VFX placement
+        let defenderX: CGFloat = isPlayerAttacking ? 0.75 : 0.25
+        let defenderY: CGFloat = 0.28
+        let attackerX: CGFloat = isPlayerAttacking ? 0.25 : 0.75
+
         // 1. Attacker slides forward
         withAnimation(.easeOut(duration: 0.15 * sm)) {
             if isPlayerAttacking {
@@ -127,8 +135,32 @@ final class CombatViewModel {
         }
         try? await Task.sleep(for: .seconds(0.15 * sm))
 
-        // 2. Hit effects
-        if !turn.isMiss && !turn.isDodge && turn.damage > 0 {
+        // 2. Hit effects + VFX
+        if turn.isDodge {
+            // Dodge VFX on defender
+            vfxManager.trigger(.dodge, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+        } else if turn.isMiss {
+            // Miss VFX on defender
+            vfxManager.trigger(.miss, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+        } else if turn.isBlocked {
+            // Block VFX + mild flash
+            vfxManager.trigger(.block, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+            withAnimation(.easeInOut(duration: 0.1)) {
+                if isPlayerAttacking { enemyFlash = true } else { playerFlash = true }
+            }
+            onHit?(false)
+            try? await Task.sleep(for: .seconds(0.1 * sm))
+            withAnimation(.easeInOut(duration: 0.1)) {
+                enemyFlash = false
+                playerFlash = false
+            }
+        }
+
+        if !turn.isMiss && !turn.isDodge && !turn.isBlocked && turn.damage > 0 {
+            // Damage VFX — map from CombatLog
+            let vfxType = VFXEffectType.from(turn)
+            vfxManager.trigger(vfxType, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+
             // Flash on defender + screen shake
             withAnimation(.easeInOut(duration: 0.1)) {
                 if isPlayerAttacking {
@@ -149,6 +181,11 @@ final class CombatViewModel {
         spawnDamagePopup(turn: turn, isPlayerAttacking: isPlayerAttacking)
 
         // 4. Update HP
+        // Heal VFX (trigger outside withAnimation)
+        if let heal = turn.heal, heal > 0 {
+            vfxManager.trigger(.heal, at: CGPoint(x: attackerX, y: defenderY), speed: sm)
+        }
+
         withAnimation(.easeInOut(duration: 0.3 * sm)) {
             if isPlayerAttacking {
                 enemyHp = max(0, enemyHp - turn.damage)
@@ -156,7 +193,7 @@ final class CombatViewModel {
                 playerHp = max(0, playerHp - turn.damage)
             }
 
-            // Heal
+            // Heal HP
             if let heal = turn.heal, heal > 0 {
                 if isPlayerAttacking {
                     playerHp = min(playerMaxHp, playerHp + heal)
@@ -167,8 +204,9 @@ final class CombatViewModel {
         }
         try? await Task.sleep(for: .seconds(0.3 * sm))
 
-        // 5. Status effect
+        // 5. Status effect + VFX
         if let status = turn.statusApplied, !status.isEmpty {
+            vfxManager.trigger(.statusProc(status), at: CGPoint(x: defenderX, y: defenderY), speed: sm)
             let effect = StatusEffect(name: status)
             withAnimation(.easeIn(duration: 0.2)) {
                 if isPlayerAttacking {
@@ -194,9 +232,9 @@ final class CombatViewModel {
     private func spawnDamagePopup(turn: CombatLog, isPlayerAttacking: Bool) {
         let popup: DamagePopup
         if turn.isMiss {
-            popup = DamagePopup(text: "MISS", color: DarkFantasyTheme.textTertiary, isCrit: false, onDefender: !isPlayerAttacking)
+            popup = DamagePopup(text: "Missed!", color: DarkFantasyTheme.textTertiary, isCrit: false, onDefender: !isPlayerAttacking)
         } else if turn.isDodge {
-            popup = DamagePopup(text: "DODGE", color: DarkFantasyTheme.textTertiary, isCrit: false, onDefender: !isPlayerAttacking)
+            popup = DamagePopup(text: "Dodged!", color: DarkFantasyTheme.textTertiary, isCrit: false, onDefender: !isPlayerAttacking)
         } else {
             let text = turn.isCrit ? "\(turn.damage)!" : "\(turn.damage)"
             let dmgStyle = DamageTypeStyle(from: turn.damageType)
@@ -230,17 +268,19 @@ final class CombatViewModel {
         if turn.isDodge {
             entry = CombatLogEntry(
                 text: "\(attackerName) \(actionVerb) \(zone)",
-                result: "DODGE!",
+                result: "Dodged!",
                 resultColor: DarkFantasyTheme.textTertiary,
                 damageTypeLabel: nil,
+                damageTypeIcon: nil,
                 damageTypeColor: nil
             )
         } else if turn.isMiss {
             entry = CombatLogEntry(
                 text: "\(attackerName) \(actionVerb) \(zone)",
-                result: "MISS!",
+                result: "Missed!",
                 resultColor: DarkFantasyTheme.textTertiary,
                 damageTypeLabel: nil,
+                damageTypeIcon: nil,
                 damageTypeColor: nil
             )
         } else if turn.isBlocked {
@@ -249,14 +289,16 @@ final class CombatViewModel {
                 result: "Blocked! -\(turn.damage)",
                 resultColor: DarkFantasyTheme.info,
                 damageTypeLabel: dmgStyle.label,
+                damageTypeIcon: dmgStyle.icon,
                 damageTypeColor: dmgStyle.color
             )
         } else if turn.isCrit {
             entry = CombatLogEntry(
                 text: "\(attackerName) \(actionVerb) \(zone)",
-                result: "CRIT! -\(turn.damage)",
+                result: "Critical! -\(turn.damage)",
                 resultColor: dmgStyle.color,
                 damageTypeLabel: dmgStyle.label,
+                damageTypeIcon: dmgStyle.icon,
                 damageTypeColor: dmgStyle.color
             )
         } else {
@@ -265,6 +307,7 @@ final class CombatViewModel {
                 result: "-\(turn.damage)",
                 resultColor: dmgStyle.color,
                 damageTypeLabel: dmgStyle.label,
+                damageTypeIcon: dmgStyle.icon,
                 damageTypeColor: dmgStyle.color
             )
         }
@@ -297,7 +340,14 @@ final class CombatViewModel {
         currentTurnIndex = combatData.combatLog.count - 1
         currentRound = (currentTurnIndex / 2) + 1
         damagePopups.removeAll()
+        vfxManager.clearAll()
         finishCombat()
+    }
+
+    /// Forfeit: skip to end, result already determined server-side.
+    /// The user sees the defeat screen immediately.
+    func forfeit() {
+        skip()
     }
 
     func toggleSpeed() {
@@ -381,13 +431,17 @@ struct StatusEffect: Identifiable {
     let name: String
 
     var abbreviation: String {
+        name.capitalized
+    }
+
+    var icon: String {
         switch name.lowercased() {
-        case "bleed": "BLD"
-        case "burn": "BRN"
-        case "stun": "STN"
-        case "poison": "PSN"
-        case "freeze": "FRZ"
-        default: String(name.prefix(3)).uppercased()
+        case "bleed": "drop.fill"
+        case "burn": "flame.fill"
+        case "stun": "bolt.fill"
+        case "poison": "flask.fill"
+        case "freeze": "snowflake"
+        default: "exclamationmark.triangle.fill"
         }
     }
 
@@ -409,6 +463,7 @@ struct CombatLogEntry: Identifiable {
     let result: String
     let resultColor: Color
     let damageTypeLabel: String?
+    let damageTypeIcon: String?
     let damageTypeColor: Color?
 }
 
@@ -437,11 +492,21 @@ enum DamageTypeStyle {
 
     var label: String {
         switch self {
-        case .physical: "PHY"
-        case .magical:  "MAG"
-        case .poison:   "PSN"
-        case .trueDamage: "TRUE"
-        case .unknown:  "DMG"
+        case .physical: "Physical"
+        case .magical:  "Magic"
+        case .poison:   "Poison"
+        case .trueDamage: "True"
+        case .unknown:  "Damage"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .physical:   "figure.fencing"
+        case .magical:    "wand.and.stars"
+        case .poison:     "flask.fill"
+        case .trueDamage: "bolt.fill"
+        case .unknown:    "burst.fill"
         }
     }
 }

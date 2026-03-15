@@ -23,7 +23,7 @@ final class CombatService {
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(CombatData.self, from: jsonData)
         } catch {
-            appState.showToast("Combat failed", type: .error)
+            appState.showToast("Combat failed", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }
@@ -60,7 +60,7 @@ final class CombatService {
             }
             return true
         } catch {
-            appState.showToast("Purchase failed", type: .error)
+            appState.showToast("Purchase failed", subtitle: "Check your gem balance", type: .error)
             return false
         }
     }

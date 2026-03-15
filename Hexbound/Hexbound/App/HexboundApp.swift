@@ -35,15 +35,15 @@ struct HexboundApp: App {
 
     private func checkAutoLogin() async {
         // Race: auto-login vs 10s timeout — first to finish wins
-        let success = await withTaskGroup(of: Bool?.self, returning: Bool.self) { group in
+        let result = await withTaskGroup(of: AutoLoginResult?.self, returning: AutoLoginResult.self) { group in
             group.addTask { @MainActor in
                 let authService = AuthService(appState: appState, cache: cache)
-                let ok = await authService.tryAutoLogin()
-                if ok {
+                let loginResult = await authService.tryAutoLogin()
+                if loginResult == .hasCharacter {
                     let initService = GameInitService(appState: appState, cache: cache)
                     await initService.loadGameData()
                 }
-                return ok
+                return loginResult
             }
             group.addTask {
                 try? await Task.sleep(for: .seconds(10))
@@ -53,13 +53,20 @@ struct HexboundApp: App {
             let first = await group.next() ?? nil
             group.cancelAll()
             // If timeout fired first (nil), treat as failure
-            return first ?? false
+            return first ?? .noTokens
         }
 
         await MainActor.run {
             isCheckingAuth = false
-            if success {
+            switch result {
+            case .hasCharacter:
                 appState.isAuthenticated = true
+            case .noCharacter:
+                // Authenticated but no character — show AuthRouterView with onboarding
+                appState.authPath.append(AppRoute.onboarding)
+            case .noTokens:
+                // Show login screen
+                break
             }
         }
     }

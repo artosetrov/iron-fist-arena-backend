@@ -82,13 +82,10 @@ struct ActiveQuestBanner: View {
                             .scaleEffect(0.7)
                     } else {
                         Text("Claim")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                     }
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
                 .frame(width: 56, height: 26)
-                .background(DarkFantasyTheme.goldGradient)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+                .buttonStyle(.compactPrimary)
                 .disabled(claimingId == quest.id)
             } else {
                 // Progress pill

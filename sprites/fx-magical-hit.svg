@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="mg-core" cx="50%" cy="50%" r="35%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="10%" stop-color="#E8DAFF"/>
+      <stop offset="30%" stop-color="#8B5CF6"/>
+      <stop offset="55%" stop-color="#4169E1"/>
+      <stop offset="80%" stop-color="#1A237E" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0D1042" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mg-bloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4169E1" stop-opacity="0.2"/>
+      <stop offset="40%" stop-color="#1A237E" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mg-rune-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="mg-glow-strong">
+      <feGaussianBlur stdDeviation="10" result="b1"/>
+      <feGaussianBlur stdDeviation="4" result="b2"/>
+      <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="mg-glow-med">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="mg-glow-soft">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="mg-spark">
+      <feGaussianBlur stdDeviation="2"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- === LAYER 0: Dark arcane atmosphere === -->
+  <g opacity="0.07">
+    <circle cx="220" cy="200" r="90" fill="#4169E1" filter="url(#mg-glow-soft)"/>
+    <circle cx="300" cy="320" r="75" fill="#8B5CF6" filter="url(#mg-glow-soft)"/>
+    <circle cx="256" cy="256" r="140" fill="#1A237E" filter="url(#mg-glow-soft)"/>
+  </g>
+
+  <!-- === LAYER 1: Outer bloom === -->
+  <circle cx="256" cy="256" r="190" fill="url(#mg-bloom)"/>
+
+  <!-- === LAYER 2: Outer fractured ritual ring === -->
+  <g stroke="#4169E1" fill="none" opacity="0.25" stroke-width="1.5">
+    <circle cx="256" cy="256" r="120" stroke-dasharray="15 8 4 22 8 12 3 18"/>
+    <circle cx="256" cy="256" r="130" stroke-dasharray="6 25 4 20 8 15" opacity="0.15"/>
+  </g>
+  <!-- Inner rune ring (hexagonal, partially broken) -->
+  <g stroke="#8B5CF6" fill="none" opacity="0.4" stroke-width="1.8" filter="url(#mg-glow-med)">
+    <path d="M256,176 L316,206 L316,306 L256,336 L196,306 L196,206 Z" stroke-dasharray="20 5 15 8"/>
+  </g>
+  <!-- Second hex ring, rotated, more broken -->
+  <g stroke="#4169E1" fill="none" opacity="0.2" stroke-width="1" transform="rotate(30 256 256)">
+    <path d="M256,166 L326,201 L326,311 L256,346 L186,311 L186,201 Z" stroke-dasharray="10 20 5 25"/>
+  </g>
+
+  <!-- === LAYER 3: Arcane energy tendrils (curved, organic) === -->
+  <g stroke="#4169E1" stroke-width="2.5" fill="none" stroke-linecap="round" filter="url(#mg-glow-med)" opacity="0.7">
+    <path d="M256,256 C240,195 260,155 242,100"/>
+    <path d="M256,256 C305,225 345,195 385,155"/>
+    <path d="M256,256 C315,260 360,248 415,238"/>
+    <path d="M256,256 C305,295 345,330 382,372"/>
+    <path d="M256,256 C262,315 268,360 262,415"/>
+    <path d="M256,256 C205,290 165,325 128,368"/>
+    <path d="M256,256 C195,258 145,265 95,268"/>
+    <path d="M256,256 C210,218 170,185 130,148"/>
+  </g>
+  <!-- Secondary thinner tendrils -->
+  <g stroke="#8B5CF6" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.4">
+    <path d="M256,256 C225,180 268,142 225,88"/>
+    <path d="M256,256 C328,235 372,208 408,175"/>
+    <path d="M256,256 C298,305 338,348 365,395"/>
+    <path d="M256,256 C218,308 182,350 148,395"/>
+    <path d="M256,256 C182,242 138,232 92,225"/>
+    <path d="M256,256 C285,188 308,138 298,88"/>
+  </g>
+
+  <!-- === LAYER 4: Fractured sigil shards (flying outward) === -->
+  <g fill="#8B5CF6" filter="url(#mg-spark)" opacity="0.7">
+    <!-- Angular shard shapes -->
+    <polygon points="175,118 182,108 192,112 185,120"/>
+    <polygon points="365,128 372,118 382,122 375,132"/>
+    <polygon points="418,240 428,236 430,248 420,246"/>
+    <polygon points="388,382 395,375 405,380 396,388"/>
+    <polygon points="248,418 242,425 235,418 240,412"/>
+    <polygon points="118,370 110,365 115,355 122,362"/>
+    <polygon points="88,245 80,240 82,232 90,238"/>
+    <polygon points="130,128 122,120 128,112 135,120"/>
+  </g>
+  <!-- Bright shard accents -->
+  <g fill="#E8DAFF" opacity="0.5" filter="url(#mg-spark)">
+    <polygon points="200,95 206,88 214,92 208,98"/>
+    <polygon points="400,195 408,190 412,198 404,200"/>
+    <polygon points="325,408 330,415 322,418 318,412"/>
+    <polygon points="95,315 88,310 92,302 98,308"/>
+  </g>
+
+  <!-- === LAYER 5: Glowing arcane core === -->
+  <circle cx="256" cy="256" r="60" fill="url(#mg-core)" filter="url(#mg-glow-strong)"/>
+  <circle cx="256" cy="256" r="30" fill="#8B5CF6" opacity="0.7" filter="url(#mg-glow-med)"/>
+  <circle cx="256" cy="256" r="15" fill="#E8DAFF" opacity="0.9"/>
+  <circle cx="256" cy="256" r="7" fill="#FFFFFF"/>
+
+  <!-- === LAYER 6: Floating rune symbols === -->
+  <g filter="url(#mg-spark)" opacity="0.65">
+    <!-- Rune 1 - triangle sigil -->
+    <g transform="translate(185,135) rotate(-20)">
+      <polygon points="0,-10 9,6 -9,6" fill="none" stroke="#8B5CF6" stroke-width="1.8"/>
+      <line x1="0" y1="-10" x2="0" y2="8" stroke="#8B5CF6" stroke-width="1"/>
+    </g>
+    <!-- Rune 2 - circle cross -->
+    <g transform="translate(378,195) rotate(15)">
+      <circle cx="0" cy="0" r="8" fill="none" stroke="#4169E1" stroke-width="1.5"/>
+      <line x1="-6" y1="0" x2="6" y2="0" stroke="#4169E1" stroke-width="1.2"/>
+      <line x1="0" y1="-6" x2="0" y2="6" stroke="#4169E1" stroke-width="1.2"/>
+    </g>
+    <!-- Rune 3 - diamond -->
+    <g transform="translate(395,340) rotate(30)">
+      <polygon points="0,-8 7,0 0,8 -7,0" fill="none" stroke="#8B5CF6" stroke-width="1.5"/>
+    </g>
+    <!-- Rune 4 - eye sigil -->
+    <g transform="translate(135,345) rotate(-25)">
+      <ellipse cx="0" cy="0" rx="9" ry="5" fill="none" stroke="#4169E1" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="2.5" fill="#4169E1"/>
+    </g>
+    <!-- Rune 5 - arrow sigil -->
+    <g transform="translate(118,205) rotate(-10)">
+      <path d="M-6,6 L0,-8 L6,6" fill="none" stroke="#8B5CF6" stroke-width="1.5"/>
+      <line x1="0" y1="-8" x2="0" y2="10" stroke="#8B5CF6" stroke-width="1"/>
+    </g>
+    <!-- Rune 6 - hex fragment -->
+    <g transform="translate(300,105) rotate(22)">
+      <path d="M-4,-7 L4,-7 L8,0 L4,7" fill="none" stroke="#4169E1" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- === LAYER 7: Sparkle particles === -->
+  <g fill="#FFFFFF" filter="url(#mg-spark)" opacity="0.7">
+    <circle cx="190" cy="155" r="2.5"/>
+    <circle cx="348" cy="162" r="2"/>
+    <circle cx="398" cy="278" r="2"/>
+    <circle cx="340" cy="392" r="2.5"/>
+    <circle cx="175" cy="378" r="2"/>
+    <circle cx="122" cy="248" r="2.5"/>
+    <circle cx="278" cy="112" r="1.8"/>
+    <circle cx="402" cy="218" r="1.5"/>
+  </g>
+  <g fill="#8B5CF6" opacity="0.5">
+    <circle cx="168" cy="178" r="3"/>
+    <circle cx="358" cy="188" r="2.5"/>
+    <circle cx="378" cy="338" r="2.5"/>
+    <circle cx="232" cy="398" r="3"/>
+    <circle cx="138" cy="318" r="2"/>
+    <circle cx="310" cy="128" r="2"/>
+  </g>
+  <g fill="#4169E1" opacity="0.35">
+    <circle cx="148" cy="198" r="2"/>
+    <circle cx="372" cy="208" r="1.5"/>
+    <circle cx="362" cy="358" r="2"/>
+    <circle cx="208" cy="408" r="1.5"/>
+    <circle cx="118" cy="330" r="1.5"/>
+    <circle cx="325" cy="110" r="1.5"/>
+  </g>
+
+  <!-- === LAYER 8: Arcane smoke residue === -->
+  <g fill="#1A237E" opacity="0.08" filter="url(#mg-glow-soft)">
+    <ellipse cx="200" cy="180" rx="40" ry="25"/>
+    <ellipse cx="320" cy="340" rx="35" ry="22"/>
+    <ellipse cx="180" cy="330" rx="30" ry="20"/>
+    <ellipse cx="330" cy="180" rx="32" ry="18"/>
+  </g>
+
+  <!-- === LAYER 9: Directional energy arcs === -->
+  <g stroke="#4169E1" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.25">
+    <path d="M215,185 C195,158 178,138 158,115"/>
+    <path d="M300,192 C325,168 348,148 375,125"/>
+    <path d="M315,262 C345,258 372,252 402,245"/>
+    <path d="M298,322 C318,348 338,372 358,398"/>
+    <path d="M215,325 C192,352 172,375 148,402"/>
+    <path d="M195,258 C165,262 138,268 108,275"/>
+  </g>
+</svg>

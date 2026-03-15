@@ -6,9 +6,17 @@ final class AppearanceEditorViewModel {
     private let cache: GameDataCache
 
     var selectedOrigin: CharacterOrigin?
-    var selectedGender: CharacterGender?
+    var selectedGender: CharacterGender = .male
     var selectedSkinKey: String?
-    var selectedSkinIndex: Int = 0
+
+    // Avatar navigation (same pattern as onboarding)
+    var avatarIndex: Int = 0
+    var slideDirection: AvatarSlideDirection = .none
+    var diceRotation: Double = 0
+
+    enum AvatarSlideDirection {
+        case none, left, right
+    }
 
     var allSkins: [AppearanceSkin] = []
     var isLoadingSkins = false
@@ -28,7 +36,7 @@ final class AppearanceEditorViewModel {
         // Serve cached skins instantly
         if !cache.skins.isEmpty {
             allSkins = cache.skins
-            syncSkinIndex()
+            syncAvatarIndex()
         }
     }
 
@@ -36,18 +44,22 @@ final class AppearanceEditorViewModel {
 
     // MARK: - Skin Lists
 
-    /// All skins for current gender — used for arrow navigation (not filtered by race)
-    var browsableSkins: [AppearanceSkin] {
-        allSkins
-            .filter { skin in selectedGender.map { skin.gender == $0.rawValue } ?? true }
-            .sorted { $0.sortOrder < $1.sortOrder }
+    /// Default (free) skins filtered by origin + gender — shown in thumbnail row & arrows
+    var defaultSkins: [AppearanceSkin] {
+        allSkins.filter { skin in
+            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
+            let matchesGender = skin.gender == selectedGender.rawValue
+            return matchesOrigin && matchesGender && skin.isDefault
+        }.sorted { $0.sortOrder < $1.sortOrder }
     }
 
-    /// Skins filtered by both origin + gender (kept for backward compat)
+    /// All skins for current origin + gender (includes premium) — used for main preview
     var availableSkins: [AppearanceSkin] {
-        browsableSkins.filter { skin in
-            selectedOrigin.map { skin.origin == $0.rawValue } ?? true
-        }
+        allSkins.filter { skin in
+            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
+            let matchesGender = skin.gender == selectedGender.rawValue
+            return matchesOrigin && matchesGender
+        }.sorted { $0.sortOrder < $1.sortOrder }
     }
 
     // MARK: - Derived State
@@ -65,61 +77,106 @@ final class AppearanceEditorViewModel {
     }
 
     var canSave: Bool {
-        hasChanges && selectedOrigin != nil && selectedGender != nil && selectedSkinKey != nil && !isSaving
+        hasChanges && selectedOrigin != nil && selectedSkinKey != nil && !isSaving
+    }
+
+    var showPremiumSkins: Bool = false
+
+    /// Cost breakdown for save button
+    var totalGoldCost: Int {
+        var cost = 0
+        if originChanged { cost += 100 }
+        // Avatar change costs gold (based on skin price, default skins are free)
+        if let char = character, selectedSkinKey != char.avatar,
+           let skin = selectedSkin {
+            cost += skin.priceGold
+        }
+        return cost
     }
 
     var costText: String? {
-        originChanged ? "100 gold" : nil
+        let cost = totalGoldCost
+        return cost > 0 ? "\(cost) gold" : nil
     }
 
-    /// Total browsable skins count (for counter display)
-    var totalBrowsableCount: Int { browsableSkins.count }
+    /// Premium skins for current origin + gender (non-default, purchasable with gems)
+    var premiumSkins: [AppearanceSkin] {
+        allSkins.filter { skin in
+            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
+            let matchesGender = skin.gender == selectedGender.rawValue
+            return matchesOrigin && matchesGender && !skin.isDefault && skin.priceGems > 0
+        }.sorted { $0.sortOrder < $1.sortOrder }
+    }
 
     // MARK: - Selected Skin
 
-    /// The currently selected skin object (uses browsableSkins for navigation)
     var selectedSkin: AppearanceSkin? {
-        let skins = browsableSkins
-        guard !skins.isEmpty else { return nil }
-        let idx = max(0, min(selectedSkinIndex, skins.count - 1))
-        return skins[idx]
+        guard let key = selectedSkinKey else { return nil }
+        return allSkins.first { $0.skinKey == key }
     }
 
-    // MARK: - Arrow Navigation (browses ALL skins of current gender)
+    // MARK: - Avatar Navigation (same as onboarding)
 
-    func selectNextSkin() {
-        let skins = browsableSkins
+    func nextAvatar() {
+        let skins = defaultSkins
         guard !skins.isEmpty else { return }
-        selectedSkinIndex = (selectedSkinIndex + 1) % skins.count
-        applySkinAtIndex(skins: skins)
+        slideDirection = .left
+        avatarIndex = (avatarIndex + 1) % skins.count
+        selectedSkinKey = skins[avatarIndex].skinKey
     }
 
-    func selectPreviousSkin() {
-        let skins = browsableSkins
+    func prevAvatar() {
+        let skins = defaultSkins
         guard !skins.isEmpty else { return }
-        selectedSkinIndex = (selectedSkinIndex - 1 + skins.count) % skins.count
-        applySkinAtIndex(skins: skins)
+        slideDirection = .right
+        avatarIndex = (avatarIndex - 1 + skins.count) % skins.count
+        selectedSkinKey = skins[avatarIndex].skinKey
     }
 
-    /// Apply the skin at current index — updates skinKey AND origin to match
-    private func applySkinAtIndex(skins: [AppearanceSkin]) {
-        let skin = skins[selectedSkinIndex]
-        selectedSkinKey = skin.skinKey
-        // Auto-update race to match the current skin
-        if let origin = CharacterOrigin(rawValue: skin.origin) {
-            selectedOrigin = origin
-        }
+    func selectAvatar(at index: Int) {
+        let skins = defaultSkins
+        guard index >= 0, index < skins.count else { return }
+        slideDirection = .none
+        avatarIndex = index
+        selectedSkinKey = skins[index].skinKey
     }
 
-    // MARK: - Race Portrait Tap (jumps to first skin of that race)
+    // MARK: - Gender Toggle
 
-    func jumpToOrigin(_ origin: CharacterOrigin) {
+    func toggleGender() {
+        selectedGender = selectedGender == .male ? .female : .male
+        onGenderChanged()
+    }
+
+    func onGenderChanged() {
+        avatarIndex = 0
+        slideDirection = .none
+        let valid = defaultSkins
+        selectedSkinKey = valid.first?.skinKey
+    }
+
+    // MARK: - Race Change
+
+    func selectOrigin(_ origin: CharacterOrigin) {
         selectedOrigin = origin
-        let skins = browsableSkins
-        if let idx = skins.firstIndex(where: { $0.origin == origin.rawValue }) {
-            selectedSkinIndex = idx
-            selectedSkinKey = skins[idx].skinKey
-        }
+        avatarIndex = 0
+        slideDirection = .none
+        let valid = defaultSkins
+        selectedSkinKey = valid.first?.skinKey
+    }
+
+    // MARK: - Randomize (avatar only, within current race + gender)
+
+    func randomize() {
+        let skins = defaultSkins
+        guard skins.count > 1 else { return }
+        var newIndex: Int
+        repeat {
+            newIndex = Int.random(in: 0..<skins.count)
+        } while newIndex == avatarIndex
+        slideDirection = .none
+        avatarIndex = newIndex
+        selectedSkinKey = skins[newIndex].skinKey
     }
 
     // MARK: - Fetch Skins from API
@@ -131,51 +188,22 @@ final class AppearanceEditorViewModel {
             allSkins = response.skins
             cache.cacheSkins(response.skins)
             isLoadingSkins = false
-            syncSkinIndex()
+            syncAvatarIndex()
         } catch {
             isLoadingSkins = false
         }
     }
 
-    // MARK: - Gender Changed
-
-    func onGenderChanged() {
-        syncSkinIndex()
-    }
-
     // MARK: - Sync Index
 
-    /// Sync index within browsableSkins after gender change or initial load
-    private func syncSkinIndex() {
-        let skins = browsableSkins
+    private func syncAvatarIndex() {
+        let skins = defaultSkins
         if let key = selectedSkinKey, let idx = skins.firstIndex(where: { $0.skinKey == key }) {
-            selectedSkinIndex = idx
-        } else if let origin = selectedOrigin, let idx = skins.firstIndex(where: { $0.origin == origin.rawValue }) {
-            selectedSkinIndex = idx
-            selectedSkinKey = skins[idx].skinKey
+            avatarIndex = idx
         } else {
-            selectedSkinIndex = 0
+            avatarIndex = 0
             selectedSkinKey = skins.first?.skinKey
-            if let first = skins.first, let o = CharacterOrigin(rawValue: first.origin) {
-                selectedOrigin = o
-            }
         }
-    }
-
-    // MARK: - Randomize
-
-    func randomize() {
-        let randomGender = CharacterGender.allCases.randomElement() ?? .male
-        selectedGender = randomGender
-
-        let skins = allSkins.filter { $0.gender == randomGender.rawValue }
-        guard let randomSkin = skins.randomElement() else { return }
-
-        selectedSkinKey = randomSkin.skinKey
-        if let origin = CharacterOrigin(rawValue: randomSkin.origin) {
-            selectedOrigin = origin
-        }
-        syncSkinIndex()
     }
 
     // MARK: - Save
@@ -192,7 +220,7 @@ final class AppearanceEditorViewModel {
                 body["origin"] = selectedOrigin?.rawValue
             }
             if selectedGender != (char.gender ?? .male) {
-                body["gender"] = selectedGender?.rawValue
+                body["gender"] = selectedGender.rawValue
             }
             if selectedSkinKey != char.avatar {
                 body["avatar"] = selectedSkinKey

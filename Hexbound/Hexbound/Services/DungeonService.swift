@@ -38,11 +38,11 @@ final class DungeonService {
             case .clientError(_, let message):
                 appState.showToast(message, type: .error)
             default:
-                appState.showToast("Failed to enter dungeon", type: .error)
+                appState.showToast("Failed to enter dungeon", subtitle: "Check connection and try again", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Failed to enter dungeon", type: .error)
+            appState.showToast("Failed to enter dungeon", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }
@@ -61,11 +61,11 @@ final class DungeonService {
             case .clientError(_, let message):
                 appState.showToast(message, type: .error)
             default:
-                appState.showToast("Fight failed", type: .error)
+                appState.showToast("Fight failed", subtitle: "Check connection and try again", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Fight failed", type: .error)
+            appState.showToast("Fight failed", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }
@@ -92,11 +92,11 @@ final class DungeonService {
             case .clientError(_, let message):
                 appState.showToast(message, type: .error)
             default:
-                appState.showToast("Failed to start rush", type: .error)
+                appState.showToast("Failed to start rush", subtitle: "Check connection and try again", type: .error)
             }
             return nil
         } catch {
-            appState.showToast("Failed to start rush", type: .error)
+            appState.showToast("Failed to start rush", subtitle: "Check connection and try again", type: .error)
             return nil
         }
     }

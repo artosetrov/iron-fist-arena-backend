@@ -6,14 +6,14 @@ struct LoadingOverlay: View {
 
     var body: some View {
         ZStack {
-            Color(hex: 0x0A0A14).opacity(0.85)
+            DarkFantasyTheme.bgAbyss.opacity(0.85)
                 .ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceLG) {
                 Spacer()
 
                 // Pulsing logo
-                Image("hexbound-logo")
+                Image("preloader-hex")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 180)

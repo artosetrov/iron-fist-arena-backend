@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Core impact gradient -->
+    <radialGradient id="ph-core" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="12%" stop-color="#FFF8E1"/>
+      <stop offset="30%" stop-color="#FFD700"/>
+      <stop offset="55%" stop-color="#D4A537"/>
+      <stop offset="80%" stop-color="#8B6914" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#5C4A1E" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Outer bloom -->
+    <radialGradient id="ph-bloom" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D4A537" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#8B6914" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Hot ember gradient -->
+    <radialGradient id="ph-ember" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF"/>
+      <stop offset="40%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#D4A537" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="ph-glow-strong">
+      <feGaussianBlur stdDeviation="8" result="b1"/>
+      <feGaussianBlur stdDeviation="3" result="b2"/>
+      <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="ph-glow-med">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="ph-glow-soft">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="ph-spark">
+      <feGaussianBlur stdDeviation="1.5"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- === LAYER 0: Ambient dust/ash atmosphere === -->
+  <g opacity="0.06">
+    <circle cx="180" cy="180" r="80" fill="#D4A537" filter="url(#ph-glow-soft)"/>
+    <circle cx="340" cy="310" r="70" fill="#8B6914" filter="url(#ph-glow-soft)"/>
+    <circle cx="256" cy="256" r="120" fill="#5C4A1E" filter="url(#ph-glow-soft)"/>
+  </g>
+
+  <!-- === LAYER 1: Outer bloom halo === -->
+  <circle cx="256" cy="256" r="180" fill="url(#ph-bloom)" opacity="0.7"/>
+
+  <!-- === LAYER 2: Cracked impact ring === -->
+  <g stroke="#8B6914" fill="none" opacity="0.35" stroke-width="1.2">
+    <circle cx="256" cy="256" r="85" stroke-dasharray="8 12 4 18 6 14"/>
+    <circle cx="256" cy="256" r="95" stroke-dasharray="5 20 3 15" opacity="0.2"/>
+  </g>
+  <!-- Crack lines radiating from ring -->
+  <g stroke="#6B5419" stroke-width="1" fill="none" opacity="0.3" stroke-linecap="round">
+    <path d="M256,170 L250,140 L248,118"/>
+    <path d="M320,195 L348,170 L368,148"/>
+    <path d="M340,256 L370,252 L395,248"/>
+    <path d="M320,318 L342,342 L358,368"/>
+    <path d="M256,342 L260,372 L262,395"/>
+    <path d="M192,318 L168,340 L148,362"/>
+    <path d="M172,256 L142,258 L118,260"/>
+    <path d="M192,195 L170,172 L152,148"/>
+  </g>
+
+  <!-- === LAYER 3: Primary slash rays (uneven, sharp) === -->
+  <g filter="url(#ph-glow-med)">
+    <!-- Major rays - varied lengths and widths for realism -->
+    <line x1="256" y1="256" x2="256" y2="108" stroke="#D4A537" stroke-width="3.5" stroke-linecap="round" opacity="0.9"/>
+    <line x1="256" y1="256" x2="360" y2="152" stroke="#FFD700" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+    <line x1="256" y1="256" x2="398" y2="248" stroke="#D4A537" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <line x1="256" y1="256" x2="352" y2="358" stroke="#D4A537" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+    <line x1="256" y1="256" x2="256" y2="392" stroke="#FFD700" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <line x1="256" y1="256" x2="155" y2="350" stroke="#D4A537" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+    <line x1="256" y1="256" x2="115" y2="262" stroke="#D4A537" stroke-width="2.8" stroke-linecap="round" opacity="0.9"/>
+    <line x1="256" y1="256" x2="162" y2="158" stroke="#FFD700" stroke-width="3.2" stroke-linecap="round" opacity="0.8"/>
+  </g>
+
+  <!-- Secondary broken/shorter rays -->
+  <g stroke="#B8860B" stroke-width="1.5" stroke-linecap="round" opacity="0.55">
+    <line x1="256" y1="256" x2="210" y2="125"/>
+    <line x1="256" y1="256" x2="380" y2="185"/>
+    <line x1="256" y1="256" x2="395" y2="310"/>
+    <line x1="256" y1="256" x2="310" y2="400"/>
+    <line x1="256" y1="256" x2="145" y2="380"/>
+    <line x1="256" y1="256" x2="120" y2="210"/>
+    <!-- Broken ray stubs -->
+    <line x1="230" y1="170" x2="218" y2="138" opacity="0.35"/>
+    <line x1="340" y1="200" x2="362" y2="178" opacity="0.3"/>
+    <line x1="340" y1="315" x2="365" y2="340" opacity="0.25"/>
+    <line x1="180" y1="340" x2="158" y2="368" opacity="0.3"/>
+  </g>
+
+  <!-- === LAYER 4: Hot core === -->
+  <circle cx="256" cy="256" r="55" fill="url(#ph-core)" filter="url(#ph-glow-strong)"/>
+  <circle cx="256" cy="256" r="28" fill="#FFD700" opacity="0.8" filter="url(#ph-glow-med)"/>
+  <circle cx="256" cy="256" r="14" fill="#FFFFFF" opacity="0.95"/>
+  <circle cx="256" cy="256" r="7" fill="#FFFFFF"/>
+
+  <!-- === LAYER 5: Steel fragments (sharp angular shapes) === -->
+  <g filter="url(#ph-spark)">
+    <polygon points="165,128 170,118 180,112 172,122" fill="#FFD700" opacity="0.9"/>
+    <polygon points="368,142 376,132 388,128 378,138" fill="#FFF8E1" opacity="0.85"/>
+    <polygon points="408,258 418,252 428,256 416,262" fill="#D4A537" opacity="0.8"/>
+    <polygon points="375,375 382,368 395,372 384,378" fill="#FFD700" opacity="0.7"/>
+    <polygon points="260,405 256,412 248,418 252,410" fill="#B8860B" opacity="0.65"/>
+    <polygon points="138,362 130,358 122,365 132,360" fill="#D4A537" opacity="0.7"/>
+    <polygon points="102,252 95,248 88,255 96,256" fill="#FFD700" opacity="0.75"/>
+    <polygon points="148,145 140,138 132,142 142,148" fill="#FFF8E1" opacity="0.8"/>
+    <!-- Extra debris -->
+    <polygon points="195,108 200,100 208,98 202,106" fill="#FFD700" opacity="0.6"/>
+    <polygon points="392,198 400,192 408,196 398,200" fill="#D4A537" opacity="0.55"/>
+    <polygon points="310,408 316,415 322,410 314,405" fill="#B8860B" opacity="0.5"/>
+    <polygon points="108,308 100,312 96,318 105,314" fill="#D4A537" opacity="0.5"/>
+  </g>
+
+  <!-- === LAYER 6: Flying sparks (small hot dots) === -->
+  <g fill="#FFD700" filter="url(#ph-spark)">
+    <circle cx="152" cy="148" r="4.5"/>
+    <circle cx="355" cy="155" r="3.5"/>
+    <circle cx="400" cy="285" r="3"/>
+    <circle cx="345" cy="390" r="3.5"/>
+    <circle cx="172" cy="385" r="4"/>
+    <circle cx="118" cy="278" r="3.5"/>
+    <circle cx="190" cy="118" r="3"/>
+    <circle cx="382" cy="210" r="2.5"/>
+  </g>
+  <!-- Hot white sparks (closer to core) -->
+  <g fill="#FFFFFF" opacity="0.7" filter="url(#ph-spark)">
+    <circle cx="210" cy="195" r="2.5"/>
+    <circle cx="310" cy="200" r="2"/>
+    <circle cx="318" cy="308" r="2.5"/>
+    <circle cx="198" cy="315" r="2"/>
+    <circle cx="225" cy="180" r="1.5"/>
+    <circle cx="295" cy="182" r="1.5"/>
+  </g>
+
+  <!-- === LAYER 7: Ember trail particles (tiny, fading) === -->
+  <g fill="#D4A537" opacity="0.4">
+    <circle cx="140" cy="165" r="2"/>
+    <circle cx="360" cy="165" r="1.5"/>
+    <circle cx="405" cy="270" r="1.8"/>
+    <circle cx="355" cy="400" r="1.5"/>
+    <circle cx="165" cy="395" r="2"/>
+    <circle cx="108" cy="295" r="1.5"/>
+    <circle cx="280" cy="105" r="1.5"/>
+    <circle cx="395" cy="225" r="1.2"/>
+  </g>
+  <g fill="#8B6914" opacity="0.25">
+    <circle cx="125" cy="185" r="1.5"/>
+    <circle cx="378" cy="180" r="1.2"/>
+    <circle cx="415" cy="295" r="1.5"/>
+    <circle cx="340" cy="415" r="1.2"/>
+    <circle cx="145" cy="408" r="1.5"/>
+    <circle cx="95" cy="260" r="1.2"/>
+  </g>
+
+  <!-- === LAYER 8: Ash / residue (subtle dark particles) === -->
+  <g fill="#3D2E0F" opacity="0.2">
+    <rect x="190" y="160" width="6" height="2.5" rx="1" transform="rotate(35 193 161)"/>
+    <rect x="330" y="170" width="5" height="2" rx="1" transform="rotate(-22 332 171)"/>
+    <rect x="365" y="335" width="6" height="2.5" rx="1" transform="rotate(58 368 336)"/>
+    <rect x="165" y="350" width="5" height="2" rx="1" transform="rotate(-48 167 351)"/>
+    <rect x="300" y="140" width="4" height="2" rx="1" transform="rotate(12 302 141)"/>
+    <rect x="150" y="300" width="5" height="2" rx="1" transform="rotate(-30 152 301)"/>
+    <rect x="340" y="280" width="4" height="2" rx="1" transform="rotate(42 342 281)"/>
+    <rect x="200" y="380" width="5" height="2" rx="1" transform="rotate(-15 202 381)"/>
+  </g>
+
+  <!-- === LAYER 9: Directional force streaks === -->
+  <g stroke="#FFD700" stroke-width="0.8" stroke-linecap="round" opacity="0.3">
+    <path d="M220,190 C200,165 185,148 170,128" fill="none"/>
+    <path d="M295,195 C320,172 340,155 362,135" fill="none"/>
+    <path d="M310,260 C340,258 365,255 392,250" fill="none"/>
+    <path d="M295,320 C315,342 332,360 352,382" fill="none"/>
+    <path d="M220,320 C198,345 178,365 158,388" fill="none"/>
+    <path d="M200,255 C170,258 145,260 118,265" fill="none"/>
+  </g>
+</svg>

@@ -85,14 +85,16 @@ struct LoginView: View {
                                 .blendMode(.overlay)
 
                                 Image(systemName: "apple.logo")
-                                    .font(.system(size: 22, weight: .medium))
+                                    .font(.system(size: 22, weight: .medium)) // SF Symbol icon — keep as is
                                     .foregroundStyle(Color.white)
                                     .allowsHitTesting(false)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: LayoutConstants.buttonHeightLG)
-                            .background(Color.black)
-                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .fill(Color.black)
+                            )
                             .overlay(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
@@ -103,17 +105,8 @@ struct LoginView: View {
                                 // TODO: Google Sign In
                             } label: {
                                 Text("G")
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundStyle(Color.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: LayoutConstants.buttonHeightLG)
-                                    .background(Color.black)
-                                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                                    )
                             }
+                            .buttonStyle(.socialAuth)
                         }
                     }
 

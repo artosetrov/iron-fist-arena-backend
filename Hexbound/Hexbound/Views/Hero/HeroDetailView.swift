@@ -24,6 +24,7 @@ struct HeroDetailView: View {
     @State private var inventoryVM: InventoryViewModel?
     @State private var showRespecConfirm = false
     @State private var statsBadgePulse = false
+    @State private var tooltipStat: StatType?
 
     var body: some View {
         ZStack {
@@ -243,7 +244,7 @@ struct HeroDetailView: View {
             } label: {
                 StaminaBarView(currentStamina: char.currentStamina, maxStamina: char.maxStamina, showPlus: true)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.scalePress(0.97))
             .contentShape(Rectangle())
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceSM)
@@ -468,6 +469,7 @@ struct HeroDetailView: View {
                 }
             }
             .overlay(alignment: .bottom) {
+                // Upgrade dots
                 if let item, let level = item.upgradeLevel, level > 0 {
                     HStack(spacing: 2) {
                         ForEach(0..<level, id: \.self) { _ in
@@ -496,9 +498,23 @@ struct HeroDetailView: View {
                         lineWidth: item != nil ? 2 : 1
                     )
             )
+            // Durability ring contour
+            .overlay {
+                if let item,
+                   let maxDur = item.maxDurability, maxDur > 0 {
+                    let fraction = Double(item.durability ?? 0) / Double(maxDur)
+                    if fraction < 1.0 {
+                        DurabilityRingOverlay(
+                            fraction: fraction,
+                            cornerRadius: LayoutConstants.cardRadius,
+                            lineWidth: 2
+                        )
+                    }
+                }
+            }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.95))
         .disabled(item == nil)
     }
 
@@ -737,18 +753,27 @@ struct HeroDetailView: View {
                     .foregroundStyle(color)
                     .lineLimit(1)
 
+                Button {
+                    tooltipStat = tooltipStat == stat ? nil : stat
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11)) // SF Symbol icon — keep as is
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .buttonStyle(.plain)
+
                 Spacer(minLength: 4)
 
                 if delta > 0 {
                     Button { vm.decrement(stat) } label: {
                         Image(systemName: "minus")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 10, weight: .bold)) // SF Symbol icon — keep as is
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .frame(width: 22, height: 22)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scalePress(0.85))
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
                 }
@@ -761,13 +786,13 @@ struct HeroDetailView: View {
                 if hasPoints {
                     Button { vm.increment(stat) } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 10, weight: .bold)) // SF Symbol icon — keep as is
                             .foregroundStyle(.white)
                             .frame(width: 22, height: 22)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scalePress(0.85))
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
                     .disabled(vm.availablePoints <= 0)
@@ -778,6 +803,18 @@ struct HeroDetailView: View {
             Text(vm.primaryDerivedLabel(for: stat))
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                 .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
+
+            // Row 2b: Stat description tooltip
+            if tooltipStat == stat {
+                Text(stat.description)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .padding(LayoutConstants.spaceXS)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(DarkFantasyTheme.bgTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
+            }
 
             // Row 3: Per-point benefit hints
             if hasPoints {
@@ -840,7 +877,7 @@ struct HeroDetailView: View {
             .frame(maxWidth: .infinity)
             .panelCard(highlight: true)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.97))
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
@@ -915,7 +952,7 @@ struct HeroDetailView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: 14, weight: .bold)) // SF Symbol icon — keep as is
                         Text("RESPEC STATS")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         Spacer()
@@ -939,7 +976,7 @@ struct HeroDetailView: View {
                             .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.scalePress(0.95))
             }
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
@@ -998,7 +1035,7 @@ struct HeroDetailView: View {
 
             HStack {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("\u{1F4B0}").font(.system(size: 18))
+                    Text("\u{1F4B0}").font(.system(size: 18)) // emoji — keep as is
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Gold")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
@@ -1010,7 +1047,7 @@ struct HeroDetailView: View {
                 }
                 Spacer()
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("\u{1F48E}").font(.system(size: 18))
+                    Text("\u{1F48E}").font(.system(size: 18)) // emoji — keep as is
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Gems")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
@@ -1048,7 +1085,7 @@ struct HeroDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Spacer()
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("💰").font(.system(size: 14))
+                    Text("💰").font(.system(size: 14)) // emoji — keep as is
                     Text("\(vm.gold)")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -1073,7 +1110,10 @@ struct HeroDetailView: View {
                 ) {
                     ForEach(0..<max(vm.totalSlots, 28), id: \.self) { index in
                         if index < vm.sortedItems.count {
-                            ItemCardView(item: vm.sortedItems[index]) {
+                            ItemCardView(
+                                item: vm.sortedItems[index],
+                                equippedItem: vm.equippedBySlot[vm.sortedItems[index].equipSlot]
+                            ) {
                                 vm.selectItem(vm.sortedItems[index])
                             }
                         } else {
@@ -1100,7 +1140,7 @@ struct HeroDetailView: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "plus.square.dashed")
-                                .font(.system(size: 16))
+                                .font(.system(size: 16)) // SF Symbol icon — keep as is
                             Text("+10 SLOTS")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
                             Text("(\(vm.expandCost) gold)")
@@ -1119,7 +1159,7 @@ struct HeroDetailView: View {
                                 .stroke(vm.gold >= vm.expandCost ? DarkFantasyTheme.gold.opacity(0.5) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.scalePress(0.95))
                 }
             }
         }

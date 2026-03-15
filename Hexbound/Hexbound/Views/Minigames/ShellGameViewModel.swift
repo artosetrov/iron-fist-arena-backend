@@ -65,12 +65,12 @@ final class ShellGameViewModel {
             case .clientError(_, let message):
                 appState.showToast(message, type: .error)
             default:
-                appState.showToast("Shell game unavailable", type: .error)
+                appState.showToast("Shell game unavailable", subtitle: "Try again later", type: .error)
             }
             return nil
         } catch {
             isPlaying = false
-            appState.showToast("Shell game unavailable", type: .error)
+            appState.showToast("Shell game unavailable", subtitle: "Try again later", type: .error)
             return nil
         }
     }
@@ -116,7 +116,7 @@ final class ShellGameViewModel {
             appState.invalidateCache("quests")
         } catch {
             isPlaying = false
-            appState.showToast("Shell game failed", type: .error)
+            appState.showToast("Shell game failed", subtitle: "Check connection and try again", type: .error)
         }
     }
 

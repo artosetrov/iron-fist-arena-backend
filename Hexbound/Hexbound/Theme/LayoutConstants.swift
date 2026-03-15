@@ -13,6 +13,7 @@ enum LayoutConstants {
     static let space2XS: CGFloat = 2   // Micro gaps, inline icon offsets
     static let spaceXS: CGFloat = 4    // Badge padding, tight groups
     static let spaceSM: CGFloat = 8    // Card internal gaps, filter tag gaps
+    static let spaceMS: CGFloat = 12   // Compact element padding, zone indicators
     static let spaceMD: CGFloat = 16   // Standard padding, section gaps
     static let spaceLG: CGFloat = 24   // Section separation
     static let spaceXL: CGFloat = 32   // Screen section breaks
@@ -66,6 +67,8 @@ enum LayoutConstants {
 
     // MARK: - Typography Sizes (AAA Standard)
 
+    static let textHero: CGFloat = 64          // Level up number, celebration
+    static let textCelebration: CGFloat = 44   // Level up subtitle, victory
     static let textCinematic: CGFloat = 40
     static let textScreen: CGFloat = 28
     static let textSection: CGFloat = 22
@@ -75,4 +78,14 @@ enum LayoutConstants {
     static let textLabel: CGFloat = 14
     static let textCaption: CGFloat = 12
     static let textBadge: CGFloat = 11
+
+    // MARK: - Compact Card Sizing
+
+    static let bannerPadding: CGFloat = 14     // Hub banner cards (compact exception)
+
+    // MARK: - Character Card Sizing
+
+    static let avatarRingSize: CGFloat = 74    // XP ring diameter on Hub
+    static let avatarInnerSize: CGFloat = 64   // Avatar image inside ring
+    static let avatarRingOverflow: CGFloat = 80 // Container height for badge overflow
 }

@@ -77,7 +77,7 @@ struct OpponentCardView: View {
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                         .foregroundStyle(DarkFantasyTheme.rankColor(for: opponent.pvpRating))
                     Text(opponent.rank.icon)
-                        .font(.system(size: 14))
+                        .font(.system(size: 14)) // emoji — keep
                 }
             }
 

@@ -36,7 +36,7 @@ struct LevelUpModalView: View {
 
                 // Level up icon
                 Text("\u{2694}\u{FE0F}")
-                    .font(.system(size: 64))
+                    .font(.system(size: LayoutConstants.textHero))
                     .padding(.bottom, LayoutConstants.spaceSM)
 
                 // Title
@@ -47,7 +47,7 @@ struct LevelUpModalView: View {
 
                 // New level
                 Text("LEVEL \(appState.levelUpNewLevel)")
-                    .font(DarkFantasyTheme.title(size: 44))
+                    .font(DarkFantasyTheme.title(size: LayoutConstants.textCelebration))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.top, LayoutConstants.spaceSM)
 

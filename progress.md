@@ -165,3 +165,22 @@ Original prompt: Act as a principal game engineer, backend architect, performanc
 - Expected outcome:
   - `/api/pvp/prepare` can now create battle tickets again.
   - PvP combat should launch normally again without further client changes.
+
+- Full audit + verification pass completed across current repo state:
+  - `backend`: `npm test` ✅
+  - `backend`: `npx tsc --noEmit` ✅ after rebuild; initial run hit stale `.next/types/* 2.ts` / `* 3.ts` duplicate artifacts
+  - `backend`: `npm run build` ✅
+  - `admin`: `npx tsc --noEmit` ✅ after rebuild; initial run hit the same stale `.next/types` duplicate-artifact issue
+  - `admin`: `npm run build` ✅
+  - `Hexbound`: `xcodebuild -scheme Hexbound -project Hexbound/Hexbound.xcodeproj -destination 'generic/platform=iOS Simulator' build` ✅
+  - `backend` + `admin`: `npm run lint` ❌ both scripts launch interactive `next lint` setup instead of a real non-interactive lint pass
+
+- Audit findings from this pass:
+  - `backend/src/app/api/dev/fix-avatars/route.ts` is a production-mutating endpoint with no auth or environment guard; any caller can rewrite character avatars.
+  - Hub quick-heal depends on `appState.cachedInventory`; if inventory was never opened it tells the player to "Open inventory first", and after a successful potion use `InventoryService.useItem(...)` clears that cache so the hub potion button effectively disables itself until inventory is reloaded.
+  - There is still no automated iOS test target in `Hexbound.xcodeproj`; mobile regressions are only covered by compile success right now.
+
+- Follow-up TODOs from this audit:
+  - Lock down or remove `/api/dev/fix-avatars` outside local/dev environments.
+  - Decouple hub potion quick-use from `cachedInventory` invalidation by either refreshing the cache after use or maintaining local consumable counts.
+  - Replace `next lint` scripts with ESLint CLI config so lint can run in CI.

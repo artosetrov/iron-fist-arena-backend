@@ -8,7 +8,17 @@ struct DungeonSelectDetailView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            // Background image with dark overlay
+            GeometryReader { geo in
+                Image("bg-dungeon")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+            .ignoresSafeArea()
+            DarkFantasyTheme.bgBackdrop
+                .ignoresSafeArea()
 
             if let vm {
                 if vm.isLoading && vm.dungeonProgress.isEmpty {
@@ -25,7 +35,6 @@ struct DungeonSelectDetailView: View {
                             .padding(.top, LayoutConstants.spaceSM)
                             .padding(.bottom, LayoutConstants.space2XL)
                         }
-                        minigameBar()
                     }
                 } else {
                     dungeonWorldContent(vm: vm)
@@ -78,8 +87,6 @@ struct DungeonSelectDetailView: View {
                 .padding(.bottom, LayoutConstants.space2XL)
             }
 
-            // Minigame shortcuts
-            minigameBar()
         }
     }
 
@@ -130,7 +137,7 @@ struct DungeonSelectDetailView: View {
                     .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.97))
         .contentShape(Rectangle())
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)
@@ -225,7 +232,7 @@ struct DungeonSelectDetailView: View {
                     // Lock overlay
                     if isLocked {
                         RoundedRectangle(cornerRadius: 0)
-                            .fill(Color.black.opacity(0.5))
+                            .fill(DarkFantasyTheme.bgScrim)
                             .frame(height: 140)
                             .overlay {
                                 VStack(spacing: LayoutConstants.spaceSM) {
@@ -298,7 +305,7 @@ struct DungeonSelectDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.97))
         .disabled(isLocked)
     }
 
@@ -340,48 +347,4 @@ struct DungeonSelectDetailView: View {
         }
     }
 
-    // MARK: - Minigame Bar
-
-    @ViewBuilder
-    private func minigameBar() -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            minigameButton(icon: "🎲", label: "Shell Game") {
-                appState.mainPath.append(AppRoute.shellGame)
-            }
-            minigameButton(icon: "⛏️", label: "Gold Mine") {
-                appState.mainPath.append(AppRoute.goldMine)
-            }
-            minigameButton(icon: "🏃", label: "Rush") {
-                appState.mainPath.append(AppRoute.dungeonRush)
-            }
-        }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.bgSecondary)
-    }
-
-    @ViewBuilder
-    private func minigameButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: LayoutConstants.spaceXS) {
-                Text(icon)
-                    .font(.system(size: 20))
-                Text(label)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
 }

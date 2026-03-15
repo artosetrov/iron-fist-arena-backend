@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound Combat VFX v4 — Preview</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a0f; color: #ccc; font-family: 'Segoe UI', system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ============ ANIMATED PARTICLE SYSTEM ============
+function Particles({ count, color, minR, maxR, spread, speed, direction = "out", style }) {
+  const particles = useRef(
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      angle: (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5,
+      dist: 20 + Math.random() * 30,
+      r: minR + Math.random() * (maxR - minR),
+      delay: Math.random() * speed,
+      speed: speed * (0.7 + Math.random() * 0.6),
+    }))
+  ).current;
+
+  return (
+    <g>
+      {particles.map((p) => {
+        const endX = 256 + Math.cos(p.angle) * spread;
+        const endY = 256 + Math.sin(p.angle) * spread;
+        const startX = 256 + Math.cos(p.angle) * p.dist;
+        const startY = 256 + Math.sin(p.angle) * p.dist;
+        return (
+          <circle key={p.id} cx={startX} cy={startY} r={p.r} fill={color} opacity="0" style={style}>
+            <animate attributeName="cx" from={startX} to={endX} dur={`${p.speed}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+            <animate attributeName="cy" from={startY} to={endY} dur={`${p.speed}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.9;0.7;0" keyTimes="0;0.15;0.6;1" dur={`${p.speed}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+            <animate attributeName="r" from={p.r} to={p.r * 0.3} dur={`${p.speed}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+          </circle>
+        );
+      })}
+    </g>
+  );
+}
+
+// ============ RISING PARTICLES (for heal, buffs) ============
+function RisingParticles({ count, colors, spread, speed }) {
+  const particles = useRef(
+    Array.from({ length: count }, (_, i) => ({
+      id: i,
+      x: 256 + (Math.random() - 0.5) * spread,
+      r: 2 + Math.random() * 5,
+      delay: Math.random() * speed,
+      dur: speed * (0.7 + Math.random() * 0.6),
+      color: colors[Math.floor(Math.random() * colors.length)],
+      drift: (Math.random() - 0.5) * 30,
+    }))
+  ).current;
+
+  return (
+    <g>
+      {particles.map((p) => (
+        <circle key={p.id} cx={p.x} cy={400} r={p.r} fill={p.color} opacity="0">
+          <animate attributeName="cy" from="400" to="80" dur={`${p.dur}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="cx" from={p.x} to={p.x + p.drift} dur={`${p.dur}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;0.8;0.7;0" keyTimes="0;0.1;0.65;1" dur={`${p.dur}s`} begin={`${p.delay}s`} repeatCount="indefinite" />
+        </circle>
+      ))}
+    </g>
+  );
+}
+
+// ============ EXPANDING RINGS ============
+function ShockwaveRings({ count, color, maxR, speed, strokeW = 1.5 }) {
+  return (
+    <g>
+      {Array.from({ length: count }, (_, i) => (
+        <circle key={i} cx="256" cy="256" r="30" fill="none" stroke={color} strokeWidth={strokeW} opacity="0">
+          <animate attributeName="r" from="30" to={maxR} dur={`${speed}s`} begin={`${(i * speed) / count}s`} repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;0.6;0.3;0" keyTimes="0;0.1;0.5;1" dur={`${speed}s`} begin={`${(i * speed) / count}s`} repeatCount="indefinite" />
+          <animate attributeName="stroke-width" from={strokeW} to="0.3" dur={`${speed}s`} begin={`${(i * speed) / count}s`} repeatCount="indefinite" />
+        </circle>
+      ))}
+    </g>
+  );
+}
+
+// ============ SHARED FILTERS ============
+function VFXFilters({ prefix }) {
+  return (
+    <defs>
+      <filter id={`${prefix}-gs`}><feGaussianBlur stdDeviation="12" result="b1"/><feGaussianBlur stdDeviation="5" result="b2"/><feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id={`${prefix}-gm`}><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id={`${prefix}-gl`}><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id={`${prefix}-go`}><feGaussianBlur stdDeviation="8"/></filter>
+      <filter id={`${prefix}-sp`}><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id={`${prefix}-mb`}><feGaussianBlur stdDeviation="8 2"/></filter>
+    </defs>
+  );
+}
+
+// ============ CORE GLOW (reusable volumetric core) ============
+function VolumetricCore({ colors, coreR = 55, midR = 28, innerR = 14, hotR = 7, prefix, pulse = true }) {
+  const [c1, c2, c3, c4 = "#FFF"] = colors;
+  return (
+    <g>
+      <defs>
+        <radialGradient id={`${prefix}-cg`} cx="50%" cy="50%" r="45%">
+          <stop offset="0%" stopColor="#FFF"/>
+          <stop offset="10%" stopColor={c4}/>
+          <stop offset="25%" stopColor={c1}/>
+          <stop offset="50%" stopColor={c2}/>
+          <stop offset="75%" stopColor={c3} stopOpacity="0.4"/>
+          <stop offset="100%" stopColor={c3} stopOpacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="256" cy="256" r={coreR * 1.8} fill={c3} opacity="0.04" filter={`url(#${prefix}-go)`}/>
+      <circle cx="256" cy="256" r={coreR} fill={`url(#${prefix}-cg)`} filter={`url(#${prefix}-gs)`}>
+        {pulse && <animate attributeName="r" values={`${coreR};${coreR * 1.12};${coreR}`} dur="2s" repeatCount="indefinite"/>}
+        {pulse && <animate attributeName="opacity" values="0.85;1;0.85" dur="2s" repeatCount="indefinite"/>}
+      </circle>
+      <circle cx="256" cy="256" r={midR} fill={c1} opacity="0.75" filter={`url(#${prefix}-gm)`}/>
+      <circle cx="256" cy="256" r={innerR} fill={c4} opacity="0.92"/>
+      <circle cx="256" cy="256" r={hotR} fill="#FFF"/>
+    </g>
+  );
+}
+
+// ============ DEBRIS FRAGMENTS ============
+function Fragments({ count, color1, color2, spread, filter }) {
+  const frags = useRef(
+    Array.from({ length: count }, (_, i) => {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+      const dist = spread * (0.6 + Math.random() * 0.4);
+      const x = 256 + Math.cos(angle) * dist;
+      const y = 256 + Math.sin(angle) * dist;
+      const rot = Math.random() * 360;
+      const size = 4 + Math.random() * 10;
+      return { id: i, x, y, rot, size, color: Math.random() > 0.5 ? color1 : color2, opacity: 0.5 + Math.random() * 0.4 };
+    })
+  ).current;
+
+  return (
+    <g filter={filter}>
+      {frags.map(f => (
+        <polygon key={f.id}
+          points={`${f.x},${f.y - f.size / 2} ${f.x + f.size / 3},${f.y + f.size / 3} ${f.x - f.size / 3},${f.y + f.size / 4}`}
+          fill={f.color} opacity={f.opacity} transform={`rotate(${f.rot} ${f.x} ${f.y})`}
+        />
+      ))}
+    </g>
+  );
+}
+
+// ============ ENERGY RAYS ============
+function EnergyRays({ count, color1, color2, minLen, maxLen, minW, maxW, filter, opacity = 0.8 }) {
+  const rays = useRef(
+    Array.from({ length: count }, (_, i) => {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+      const len = minLen + Math.random() * (maxLen - minLen);
+      const w = minW + Math.random() * (maxW - minW);
+      return {
+        id: i, angle, len, w,
+        x2: 256 + Math.cos(angle) * len,
+        y2: 256 + Math.sin(angle) * len,
+        color: Math.random() > 0.5 ? color1 : color2,
+        op: 0.5 + Math.random() * 0.5,
+      };
+    })
+  ).current;
+
+  return (
+    <g filter={filter} opacity={opacity}>
+      {rays.map(r => (
+        <line key={r.id} x1="256" y1="256" x2={r.x2} y2={r.y2}
+          stroke={r.color} strokeWidth={r.w} strokeLinecap="round" opacity={r.op}
+        />
+      ))}
+    </g>
+  );
+}
+
+// =====================================================
+// VFX COMPONENTS
+// =====================================================
+
+function PhysicalHit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="ph"/>
+      <EnergyRays count={12} color1="#D4A537" color2="#FFD700" minLen={100} maxLen={180} minW={2} maxW={4.5} filter="url(#ph-gm)"/>
+      <EnergyRays count={8} color1="#B8860B" color2="#8B6914" minLen={60} maxLen={130} minW={1} maxW={2} opacity={0.4}/>
+      <ShockwaveRings count={2} color="#D4A537" maxR={160} speed={2.5}/>
+      <g stroke="#6B5419" strokeWidth="1.2" fill="none" opacity="0.35" strokeLinecap="round">
+        {[0,45,90,135,180,225,270,315].map(a => {
+          const rad = a * Math.PI / 180;
+          const x1 = 256 + Math.cos(rad)*85, y1 = 256 + Math.sin(rad)*85;
+          const x2 = 256 + Math.cos(rad)*130, y2 = 256 + Math.sin(rad)*130;
+          return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2}/>;
+        })}
+      </g>
+      <VolumetricCore prefix="ph" colors={["#FFD700","#D4A537","#5C4A1E","#FFF8E1"]} coreR={60} midR={30} innerR={16} hotR={8}/>
+      <Particles count={20} color="#FFD700" minR={2} maxR={5} spread={200} speed={2}/>
+      <Particles count={12} color="#FFF" minR={1} maxR={3} spread={140} speed={1.8}/>
+      <Fragments count={14} color1="#FFD700" color2="#FFF8E1" spread={160} filter="url(#ph-sp)"/>
+      <g fill="#3D2E0F" opacity="0.2">
+        {Array.from({length:10},(_,i)=>{
+          const a=Math.random()*Math.PI*2, d=80+Math.random()*100;
+          return <rect key={i} x={256+Math.cos(a)*d} y={256+Math.sin(a)*d} width={4+Math.random()*4} height={2} rx="1" transform={`rotate(${Math.random()*360} ${256+Math.cos(a)*d} ${256+Math.sin(a)*d})`}/>;
+        })}
+      </g>
+    </svg>
+  );
+}
+
+function PhysicalCrit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="pc"/>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0,0;-4,3;5,-3;-3,-4;4,2;0,0" dur="0.6s" repeatCount="indefinite"/>
+        <EnergyRays count={16} color1="#FFD700" color2="#FFF" minLen={140} maxLen={220} minW={3} maxW={6} filter="url(#pc-gm)"/>
+        <EnergyRays count={10} color1="#D4A537" color2="#B8860B" minLen={80} maxLen={160} minW={1.5} maxW={3} opacity={0.5}/>
+        <ShockwaveRings count={3} color="#FFD700" maxR={220} speed={2} strokeW={2.5}/>
+        <g stroke="#8B6914" strokeWidth="2" fill="none" opacity="0.5" strokeLinecap="round">
+          {[0,30,60,90,120,150,180,210,240,270,300,330].map(a => {
+            const rad = a * Math.PI / 180;
+            const x1 = 256 + Math.cos(rad)*100, y1 = 256 + Math.sin(rad)*100;
+            const x2 = 256 + Math.cos(rad)*195, y2 = 256 + Math.sin(rad)*195;
+            return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2}/>;
+          })}
+        </g>
+        <VolumetricCore prefix="pc" colors={["#FFD700","#D4A537","#5C4A1E","#FFF"]} coreR={80} midR={42} innerR={24} hotR={12}/>
+        <Particles count={30} color="#FFD700" minR={2} maxR={6} spread={230} speed={1.8}/>
+        <Particles count={16} color="#FFF" minR={1.5} maxR={4} spread={180} speed={1.5}/>
+        <Fragments count={20} color1="#FFD700" color2="#FFF" spread={200} filter="url(#pc-sp)"/>
+      </g>
+    </svg>
+  );
+}
+
+function MagicalHit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="mg"/>
+      <circle cx="256" cy="256" r="200" fill="#4169E1" opacity="0.03" filter="url(#mg-go)"/>
+      {/* Rotating ritual rings */}
+      <g stroke="#4169E1" fill="none" opacity="0.25" strokeWidth="1.5" strokeDasharray="15 8 4 22">
+        <circle cx="256" cy="256" r="130"><animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="20s" repeatCount="indefinite"/></circle>
+      </g>
+      <g stroke="#8B5CF6" fill="none" opacity="0.4" strokeWidth="1.8" strokeDasharray="20 5 15 8" filter="url(#mg-gm)">
+        <polygon points="256,176 316,206 316,306 256,336 196,306 196,206"><animateTransform attributeName="transform" type="rotate" from="360 256 256" to="0 256 256" dur="25s" repeatCount="indefinite"/></polygon>
+      </g>
+      <g stroke="#4169E1" fill="none" opacity="0.2" strokeWidth="1" strokeDasharray="10 20 5 25">
+        <polygon points="256,156 336,196 336,316 256,356 176,316 176,196"><animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="30s" repeatCount="indefinite"/></polygon>
+      </g>
+      {/* Curved tendrils */}
+      <g stroke="#4169E1" strokeWidth="2.5" fill="none" strokeLinecap="round" filter="url(#mg-gm)" opacity="0.65">
+        {[100,155,238,372,415,368,95,148].map((v,i) => {
+          const angles = [[240,195,260,155,242],[305,225,345,195,385],[315,260,360,248,415],[305,295,345,330,382],[262,315,268,360,262],[205,290,165,325,128],[195,258,145,265,95],[210,218,170,185,130]];
+          const a = angles[i]; if(!a) return null;
+          return <path key={i} d={`M256,256 C${a[0]},${a[1]} ${a[2]},${a[3]} ${a[4]},${v}`}/>;
+        })}
+      </g>
+      <ShockwaveRings count={2} color="#8B5CF6" maxR={150} speed={3}/>
+      <VolumetricCore prefix="mg" colors={["#8B5CF6","#4169E1","#0D1042","#E8DAFF"]} coreR={65} midR={32} innerR={16} hotR={8}/>
+      <Particles count={18} color="#8B5CF6" minR={1.5} maxR={4.5} spread={180} speed={2.5}/>
+      <Particles count={10} color="#FFF" minR={1} maxR={3} spread={150} speed={2}/>
+      {/* Floating runes */}
+      <g opacity="0.6" filter="url(#mg-sp)">
+        {[[-70,-120,15],[120,-60,-20],[-120,90,25],[140,80,-15],[0,-130,10],[-100,-30,-12]].map(([ox,oy,rot],i) => (
+          <g key={i} transform={`translate(${256+ox},${256+oy}) rotate(${rot})`}>
+            <animate attributeName="opacity" values="0.4;0.8;0.4" dur={`${3+i*0.3}s`} repeatCount="indefinite"/>
+            {i%3===0 && <polygon points="0,-10 9,6 -9,6" fill="none" stroke="#8B5CF6" strokeWidth="1.8"/>}
+            {i%3===1 && <><circle cx="0" cy="0" r="8" fill="none" stroke="#4169E1" strokeWidth="1.5"/><line x1="-5" y1="0" x2="5" y2="0" stroke="#4169E1" strokeWidth="1.2"/></>}
+            {i%3===2 && <polygon points="0,-8 7,0 0,8 -7,0" fill="none" stroke="#8B5CF6" strokeWidth="1.5"/>}
+          </g>
+        ))}
+      </g>
+      <Fragments count={10} color1="#8B5CF6" color2="#E8DAFF" spread={170} filter="url(#mg-sp)"/>
+    </svg>
+  );
+}
+
+function MagicalCrit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="mc"/>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0,0;-3,2;4,-3;-2,-3;3,2;0,0" dur="0.7s" repeatCount="indefinite"/>
+        <circle cx="256" cy="256" r="220" fill="#4169E1" opacity="0.05" filter="url(#mc-go)"/>
+        <g stroke="#8B5CF6" fill="none" opacity="0.5" strokeWidth="2.5" strokeDasharray="25 5 15 8" filter="url(#mc-gm)">
+          <polygon points="256,146 346,196 346,316 256,366 166,316 166,196"><animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="12s" repeatCount="indefinite"/></polygon>
+        </g>
+        <g stroke="#4169E1" fill="none" opacity="0.3" strokeWidth="1.5">
+          <polygon points="256,126 366,186 366,326 256,386 146,326 146,186"><animateTransform attributeName="transform" type="rotate" from="360 256 256" to="0 256 256" dur="15s" repeatCount="indefinite"/></polygon>
+        </g>
+        {/* Lightning arcs */}
+        <g stroke="#B0C0FF" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.6" filter="url(#mc-gl)">
+          {[[256,80,230,130,270,100,250,60],[430,256,380,230,410,270,440,250],[256,440,280,380,240,410,260,450],[80,256,130,280,100,240,60,250]].map(([x1,y1,cx1,cy1,cx2,cy2,x2,y2],i) => (
+            <path key={i} d={`M256,256 L${cx1},${cy1} L${cx2},${cy2} L${x2},${y2}`} opacity="0.5">
+              <animate attributeName="opacity" values="0;0.7;0.3;0.8;0" dur="1.5s" begin={`${i*0.3}s`} repeatCount="indefinite"/>
+            </path>
+          ))}
+        </g>
+        <ShockwaveRings count={3} color="#8B5CF6" maxR={200} speed={2} strokeW={2}/>
+        <VolumetricCore prefix="mc" colors={["#8B5CF6","#4169E1","#0D1042","#FFF"]} coreR={85} midR={45} innerR={25} hotR={12}/>
+        <Particles count={28} color="#8B5CF6" minR={2} maxR={6} spread={220} speed={2}/>
+        <Particles count={14} color="#FFF" minR={1.5} maxR={4} spread={170} speed={1.6}/>
+        <Fragments count={16} color1="#8B5CF6" color2="#FFF" spread={190} filter="url(#mc-sp)"/>
+      </g>
+    </svg>
+  );
+}
+
+function PoisonHit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="ps"/>
+      <circle cx="256" cy="270" r="200" fill="#2ECC71" opacity="0.03" filter="url(#ps-go)"/>
+      <g stroke="#1A7A42" fill="none" opacity="0.2" strokeWidth="1.2" strokeDasharray="6 15 3 20"><circle cx="256" cy="265" r="115"/></g>
+      {/* Rising vapor */}
+      {[210,240,270,295].map((x,i) => (
+        <g key={i} stroke="#2ECC71" strokeWidth={1.5+Math.random()} fill="none" strokeLinecap="round" opacity="0">
+          <path d={`M${x},280 C${x-8},240 ${x+8},200 ${x-5},150 C${x+5},120 ${x-3},90 ${x+2},50`}/>
+          <animate attributeName="opacity" values="0;0.3;0.25;0" dur={`${3.5+i*0.4}s`} begin={`${i*0.5}s`} repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" values="0,0;0,-60" dur={`${3.5+i*0.4}s`} begin={`${i*0.5}s`} repeatCount="indefinite"/>
+        </g>
+      ))}
+      {/* Vapor clouds */}
+      <g fill="#2ECC71" opacity="0.05" filter="url(#ps-go)"><ellipse cx="230" cy="130" rx="60" ry="30"/><ellipse cx="280" cy="100" rx="50" ry="25"/></g>
+      <VolumetricCore prefix="ps" colors={["#2ECC71","#1A7A42","#0A3D1F","#AFFFAA"]} coreR={62} midR={30} innerR={14} hotR={6}/>
+      {/* Acid drops */}
+      <defs><radialGradient id="ps-dg" cx="40%" cy="35%" r="55%"><stop offset="0%" stopColor="#7CFC00"/><stop offset="50%" stopColor="#2ECC71"/><stop offset="100%" stopColor="#1A7A42"/></radialGradient></defs>
+      {[[162,198,-28,14,19],[348,208,22,12,17],[370,315,42,11,15],[148,335,-38,13,17],[310,155,15,10,14],[195,148,-18,11,13],[130,260,-48,9,12],[388,268,32,8,11]].map(([cx,cy,rot,rx,ry],i) => (
+        <ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry} transform={`rotate(${rot} ${cx} ${cy})`} fill="url(#ps-dg)" opacity={0.6+Math.random()*0.25} filter="url(#ps-sp)"/>
+      ))}
+      {/* Drip trails */}
+      {[[162,215,158,275],[348,225,352,285],[148,350,145,410]].map(([x1,y1,x2,y2],i) => (
+        <g key={i}>
+          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#2ECC71" strokeWidth="1.5" strokeLinecap="round" opacity="0">
+            <animate attributeName="opacity" values="0;0.35;0" dur="3s" begin={`${i*0.5}s`} repeatCount="indefinite"/>
+          </line>
+          <circle cx={x2} cy={y2} r="2.5" fill="#2ECC71" opacity="0">
+            <animate attributeName="opacity" values="0;0.5;0" dur="3s" begin={`${i*0.5+0.5}s`} repeatCount="indefinite"/>
+            <animate attributeName="r" from="1" to="4" dur="3s" begin={`${i*0.5+0.5}s`} repeatCount="indefinite"/>
+          </circle>
+        </g>
+      ))}
+      {/* Bubbles */}
+      {[[218,198,10],[300,202,8],[335,288,9],[180,305,7],[240,342,8],[275,185,6],[312,195,5]].map(([cx,cy,r],i) => (
+        <g key={i}>
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#2ECC71" strokeWidth="1.5" opacity="0.4">
+            <animate attributeName="r" values={`${r};${r*1.3};${r*1.5}`} dur={`${3+i*0.3}s`} repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.4;0.6;0" dur={`${3+i*0.3}s`} repeatCount="indefinite"/>
+          </circle>
+          <circle cx={cx-r*0.3} cy={cy-r*0.4} r={r*0.25} fill="#FFF" opacity="0.2"/>
+        </g>
+      ))}
+      <Particles count={14} color="#7CFC00" minR={1.5} maxR={4} spread={190} speed={3}/>
+    </svg>
+  );
+}
+
+function PoisonCrit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="psc"/>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0,0;-2,3;3,-2;-3,-2;2,3;0,0" dur="0.8s" repeatCount="indefinite"/>
+        <circle cx="256" cy="256" r="220" fill="#2ECC71" opacity="0.06" filter="url(#psc-go)"/>
+        <ShockwaveRings count={2} color="#2ECC71" maxR={200} speed={2.5} strokeW={2}/>
+        {/* Massive vapor cloud */}
+        {[200,240,270,310].map((x,i) => (
+          <g key={i} stroke="#2ECC71" strokeWidth={2} fill="none" strokeLinecap="round" opacity="0">
+            <path d={`M${x},270 C${x-12},220 ${x+12},170 ${x-8},110 C${x+8},70 ${x-5},40 ${x+3},10`}/>
+            <animate attributeName="opacity" values="0;0.4;0.3;0" dur={`${3+i*0.3}s`} begin={`${i*0.3}s`} repeatCount="indefinite"/>
+            <animateTransform attributeName="transform" type="translate" values="0,0;0,-80" dur={`${3+i*0.3}s`} begin={`${i*0.3}s`} repeatCount="indefinite"/>
+          </g>
+        ))}
+        {/* Skull in the cloud */}
+        <g opacity="0.15" filter="url(#psc-go)">
+          <circle cx="256" cy="100" r="22" fill="#2ECC71"/>
+          <circle cx="246" cy="95" r="5" fill="#000"/><circle cx="266" cy="95" r="5" fill="#000"/>
+          <path d="M248,108 L252,112 L256,108 L260,112 L264,108" stroke="#000" strokeWidth="2" fill="none"/>
+          <animate attributeName="opacity" values="0;0.2;0.15;0" dur="4s" repeatCount="indefinite"/>
+        </g>
+        <VolumetricCore prefix="psc" colors={["#2ECC71","#1A7A42","#0A3D1F","#7CFC00"]} coreR={80} midR={42} innerR={22} hotR={10}/>
+        <Particles count={25} color="#2ECC71" minR={2} maxR={6} spread={220} speed={2}/>
+        <Particles count={12} color="#7CFC00" minR={1.5} maxR={4} spread={170} speed={2.5}/>
+        <Fragments count={12} color1="#2ECC71" color2="#7CFC00" spread={180} filter="url(#psc-sp)"/>
+      </g>
+    </svg>
+  );
+}
+
+function TrueHit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="tr"/>
+      <circle cx="256" cy="256" r="200" fill="#FFD700" opacity="0.03" filter="url(#tr-go)"/>
+      {/* Piercing beams */}
+      <g stroke="#FFD700" strokeWidth="2" fill="none" strokeLinecap="round" filter="url(#tr-gm)" opacity="0.5">
+        {[0,45,90,135,180,225,270,315].map(a => {
+          const rad = a * Math.PI / 180;
+          return <line key={a} x1={256+Math.cos(rad)*20} y1={256+Math.sin(rad)*20} x2={256+Math.cos(rad)*230} y2={256+Math.sin(rad)*230}>
+            <animate attributeName="opacity" values="0.2;0.7;0.2" dur="2.5s" begin={`${a/360}s`} repeatCount="indefinite"/>
+          </line>;
+        })}
+      </g>
+      <g stroke="#FFF" strokeWidth="0.8" fill="none" opacity="0.2">
+        {[22,67,112,157,202,247,292,337].map(a => {
+          const rad = a * Math.PI / 180;
+          return <line key={a} x1={256+Math.cos(rad)*30} y1={256+Math.sin(rad)*30} x2={256+Math.cos(rad)*200} y2={256+Math.sin(rad)*200}/>;
+        })}
+      </g>
+      {/* Rotating hex seals */}
+      <g stroke="#FFD700" fill="none" opacity="0.3" strokeWidth="1.5" filter="url(#tr-gm)">
+        <polygon points="256,176 325,211 325,301 256,336 187,301 187,211"><animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="18s" repeatCount="indefinite"/></polygon>
+      </g>
+      <g stroke="#FFF" fill="none" opacity="0.15" strokeWidth="1">
+        <polygon points="256,196 308,218 308,294 256,316 204,294 204,218"><animateTransform attributeName="transform" type="rotate" from="360 256 256" to="0 256 256" dur="22s" repeatCount="indefinite"/></polygon>
+      </g>
+      <ShockwaveRings count={2} color="#FFD700" maxR={180} speed={3} strokeW={1}/>
+      <VolumetricCore prefix="tr" colors={["#FFD700","#DAA520","#8B6914","#FFF8E1"]} coreR={52} midR={25} innerR={13} hotR={6}/>
+      <Particles count={14} color="#FFD700" minR={1.5} maxR={4} spread={190} speed={2.5}/>
+      <Particles count={8} color="#FFF" minR={1} maxR={2.5} spread={150} speed={2}/>
+      <Fragments count={8} color1="#FFF" color2="#FFD700" spread={160} filter="url(#tr-sp)"/>
+    </svg>
+  );
+}
+
+function TrueCrit() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="tc"/>
+      <g>
+        <animateTransform attributeName="transform" type="translate" values="0,0;-2,2;3,-2;-2,-3;2,2;0,0" dur="0.6s" repeatCount="indefinite"/>
+        <circle cx="256" cy="256" r="230" fill="#FFD700" opacity="0.06" filter="url(#tc-go)"/>
+        <g stroke="#FFD700" strokeWidth="3" fill="none" strokeLinecap="round" filter="url(#tc-gm)" opacity="0.7">
+          {[0,30,60,90,120,150,180,210,240,270,300,330].map(a => {
+            const rad = a * Math.PI / 180;
+            return <line key={a} x1={256+Math.cos(rad)*25} y1={256+Math.sin(rad)*25} x2={256+Math.cos(rad)*240} y2={256+Math.sin(rad)*240}>
+              <animate attributeName="opacity" values="0.3;0.9;0.3" dur="2s" begin={`${a/400}s`} repeatCount="indefinite"/>
+            </line>;
+          })}
+        </g>
+        <g stroke="#FFD700" fill="none" opacity="0.45" strokeWidth="2" filter="url(#tc-gm)">
+          <polygon points="256,146 356,196 356,316 256,366 156,316 156,196"><animateTransform attributeName="transform" type="rotate" from="0 256 256" to="360 256 256" dur="10s" repeatCount="indefinite"/></polygon>
+        </g>
+        <ShockwaveRings count={3} color="#FFD700" maxR={220} speed={2} strokeW={2}/>
+        <VolumetricCore prefix="tc" colors={["#FFD700","#DAA520","#8B6914","#FFF"]} coreR={90} midR={48} innerR={26} hotR={14}/>
+        <Particles count={30} color="#FFD700" minR={2} maxR={6} spread={230} speed={1.8}/>
+        <Particles count={15} color="#FFF" minR={1.5} maxR={4} spread={180} speed={1.5}/>
+      </g>
+    </svg>
+  );
+}
+
+function Dodge() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="dg-st" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#5A7088" stopOpacity="0"/><stop offset="30%" stopColor="#8BA4B8" stopOpacity="0.5"/><stop offset="100%" stopColor="#B0C4D8" stopOpacity="0.7"/></linearGradient>
+        <filter id="dg-bh"><feGaussianBlur stdDeviation="12 3"/></filter>
+        <filter id="dg-bm"><feGaussianBlur stdDeviation="6 2"/></filter>
+        <filter id="dg-bl"><feGaussianBlur stdDeviation="3 1"/></filter>
+        <filter id="dg-gd"><feGaussianBlur stdDeviation="3"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="dg-gs"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+      {/* Afterimages */}
+      <g filter="url(#dg-bh)" opacity="0.1"><ellipse cx="135" cy="255" rx="26" ry="62" fill="#3A4F60"/><circle cx="135" cy="192" r="18" fill="#3A4F60"/></g>
+      <g filter="url(#dg-bm)" opacity="0.2"><ellipse cx="195" cy="255" rx="28" ry="66" fill="#4A6575"/><circle cx="195" cy="190" r="20" fill="#4A6575"/></g>
+      <g filter="url(#dg-bl)">
+        <ellipse cx="270" cy="255" rx="32" ry="72" fill="#6B8BA0" opacity="0.35">
+          <animate attributeName="opacity" values="0.35;0.15;0.35" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="cx" values="270;285;270" dur="2s" repeatCount="indefinite"/>
+        </ellipse>
+        <circle cx="270" cy="185" r="24" fill="#6B8BA0" opacity="0.35">
+          <animate attributeName="opacity" values="0.35;0.15;0.35" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="cx" values="270;285;270" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+      {/* Speed streaks */}
+      {[195,220,250,280,310].map((y,i) => (
+        <line key={i} x1="80" y1={y} x2="380" y2={y-3+i} stroke="url(#dg-st)" strokeWidth={2+Math.random()*1.5} strokeLinecap="round" opacity="0">
+          <animate attributeName="opacity" values="0;0.6;0" dur="1.8s" begin={`${i*0.15}s`} repeatCount="indefinite"/>
+          <animateTransform attributeName="transform" type="translate" values="-30,0;40,0" dur="1.8s" begin={`${i*0.15}s`} repeatCount="indefinite"/>
+        </line>
+      ))}
+      {[188,210,240,268,298,322].map((y,i) => (
+        <line key={i} x1="110" y1={y} x2="340" y2={y-1} stroke="#5A7088" strokeWidth={0.8+Math.random()*0.5} strokeLinecap="round" opacity="0.3"/>
+      ))}
+      {/* Accent streaks at destination */}
+      <g stroke="#B0C4D8" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" filter="url(#dg-gd)">
+        {[205,235,255,275,295].map((y,i) => <line key={i} x1="330" y1={y} x2="400" y2={y-1}/>)}
+      </g>
+      {/* Dust */}
+      {Array.from({length:8},(_,i)=>({x:340+Math.random()*60,y:340+Math.random()*50,r:1.5+Math.random()*3})).map((d,i) => (
+        <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#5A7088" opacity="0.3" filter="url(#dg-gd)"/>
+      ))}
+      {/* Ground shadow */}
+      <ellipse cx="260" cy="348" rx="80" ry="10" fill="#5A7088" opacity="0.06" filter="url(#dg-gs)"/>
+    </svg>
+  );
+}
+
+function Miss() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs><filter id="ms-bl"><feGaussianBlur stdDeviation="4"/></filter></defs>
+      <g opacity="0.35">
+        <animate attributeName="opacity" values="0.35;0.1;0.35" dur="3s" repeatCount="indefinite"/>
+        <g stroke="#3A3A4A" strokeWidth="1.2" fill="none" strokeLinecap="round" filter="url(#ms-bl)" opacity="0.35">
+          <path d="M256,256 C250,232 260,215 252,192"/><path d="M256,256 C272,238 282,222 290,205"/>
+          <path d="M256,256 C240,238 228,225 218,208"/><path d="M256,256 C265,240 275,225 280,210"/>
+        </g>
+        <circle cx="256" cy="256" r="18" fill="#2A2A3A" opacity="0.2" filter="url(#ms-bl)"/>
+        <circle cx="256" cy="256" r="6" fill="#4A4A5A" opacity="0.25"/>
+        <circle cx="256" cy="256" r="2.5" fill="#6A6A7A" opacity="0.3"/>
+        <g fill="#4A4A5A" opacity="0.2"><circle cx="248" cy="202" r="1.5"/><circle cx="268" cy="208" r="1.2"/><circle cx="235" cy="215" r="1.3"/><circle cx="278" cy="198" r="1"/></g>
+      </g>
+    </svg>
+  );
+}
+
+function AttackWarrior() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="aw-sl" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#FFF" stopOpacity="0.9"/><stop offset="30%" stopColor="#FFD700"/><stop offset="70%" stopColor="#D4A537"/><stop offset="100%" stopColor="#8B6914" stopOpacity="0"/></linearGradient>
+        <filter id="aw-gm"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="aw-sp"><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="aw-go"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+      <ellipse cx="256" cy="256" rx="150" ry="120" fill="#D4A537" opacity="0.03" filter="url(#aw-go)" transform="rotate(-35 256 256)"/>
+      <path d="M385,95 C345,155 285,218 205,298 C165,338 135,375 115,415" stroke="url(#aw-sl)" strokeWidth="7" fill="none" strokeLinecap="round" filter="url(#aw-gm)" strokeDasharray="450" strokeDashoffset="450" opacity="0">
+        <animate attributeName="stroke-dashoffset" values="450;0" dur="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;0.8;0.3" keyTimes="0;0.1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
+      </path>
+      <path d="M375,110 C338,168 280,228 202,305 C168,342 140,375 122,408" stroke="#D4A537" strokeWidth="3.5" fill="none" strokeLinecap="round" opacity="0" strokeDasharray="430" strokeDashoffset="430">
+        <animate attributeName="stroke-dashoffset" values="430;0" dur="1.2s" begin="0.06s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.5;0.4;0.1" keyTimes="0;0.1;0.5;1" dur="1.2s" begin="0.06s" repeatCount="indefinite"/>
+      </path>
+      {/* Sparks along arc */}
+      {[[345,150,0.2],[285,218,0.35],[225,282,0.5],[168,338,0.65],[135,378,0.8]].map(([x,y,d],i) => (
+        <g key={i} filter="url(#aw-sp)">
+          <circle cx={x} cy={y} r={3+Math.random()*2} fill="#FFD700" opacity="0">
+            <animate attributeName="opacity" values="0;0.9;0" dur="1.2s" begin={`${d}s`} repeatCount="indefinite"/>
+          </circle>
+          <circle cx={x+5} cy={y-5} r={1.5} fill="#FFF" opacity="0">
+            <animate attributeName="opacity" values="0;0.7;0" dur="1.2s" begin={`${d+0.05}s`} repeatCount="indefinite"/>
+          </circle>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function AttackRogue() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ar-sl" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#AFFFAA" stopOpacity="0.8"/><stop offset="40%" stopColor="#2ECC71"/><stop offset="100%" stopColor="#1A7A42" stopOpacity="0"/></linearGradient>
+        <filter id="ar-gm"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="ar-sp"><feGaussianBlur stdDeviation="1.5"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      {/* X-slash */}
+      <path d="M380,110 C310,180 220,280 130,400" stroke="url(#ar-sl)" strokeWidth="5" fill="none" strokeLinecap="round" filter="url(#ar-gm)" strokeDasharray="420" strokeDashoffset="420" opacity="0">
+        <animate attributeName="stroke-dashoffset" values="420;0" dur="0.9s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.9;0.6;0.2" keyTimes="0;0.1;0.5;1" dur="0.9s" repeatCount="indefinite"/>
+      </path>
+      <path d="M130,110 C200,180 290,280 380,400" stroke="url(#ar-sl)" strokeWidth="5" fill="none" strokeLinecap="round" filter="url(#ar-gm)" strokeDasharray="420" strokeDashoffset="420" opacity="0">
+        <animate attributeName="stroke-dashoffset" values="420;0" dur="0.9s" begin="0.15s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;0.9;0.6;0.2" keyTimes="0;0.1;0.5;1" dur="0.9s" begin="0.15s" repeatCount="indefinite"/>
+      </path>
+      {/* Poison drops along cuts */}
+      {[[320,160],[260,230],[200,310],[340,310],[260,280],[185,360]].map(([x,y],i) => (
+        <circle key={i} cx={x} cy={y} r={2.5} fill="#2ECC71" opacity="0" filter="url(#ar-sp)">
+          <animate attributeName="opacity" values="0;0.8;0" dur="0.9s" begin={`${0.15+i*0.08}s`} repeatCount="indefinite"/>
+          <animate attributeName="cy" from={y} to={y+15} dur="0.9s" begin={`${0.15+i*0.08}s`} repeatCount="indefinite"/>
+        </circle>
+      ))}
+    </svg>
+  );
+}
+
+function AttackMage() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="am-orb" cx="40%" cy="40%" r="50%"><stop offset="0%" stopColor="#E8DAFF"/><stop offset="30%" stopColor="#8B5CF6"/><stop offset="60%" stopColor="#4169E1"/><stop offset="100%" stopColor="#1A237E" stopOpacity="0"/></radialGradient>
+        <filter id="am-gm"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="am-sp"><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      {/* Flying orb */}
+      <circle cx="100" cy="280" r="28" fill="url(#am-orb)" filter="url(#am-gm)" opacity="0.9">
+        <animate attributeName="cx" from="80" to="440" dur="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="cy" from="300" to="220" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="100" cy="280" r="12" fill="#8B5CF6" opacity="0.6">
+        <animate attributeName="cx" from="80" to="440" dur="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="cy" from="300" to="220" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="100" cy="280" r="5" fill="#FFF" opacity="0.7">
+        <animate attributeName="cx" from="80" to="440" dur="1.5s" repeatCount="indefinite"/>
+        <animate attributeName="cy" from="300" to="220" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      {/* Trail particles */}
+      {Array.from({length:8},(_,i) => {
+        const delay = i * 0.12;
+        return (
+          <circle key={i} cx="80" cy="300" r={2+Math.random()*3} fill="#8B5CF6" opacity="0" filter="url(#am-sp)">
+            <animate attributeName="cx" from="80" to="440" dur="1.5s" begin={`${delay}s`} repeatCount="indefinite"/>
+            <animate attributeName="cy" from={300+Math.random()*20-10} to={220+Math.random()*20-10} dur="1.5s" begin={`${delay}s`} repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.6;0.4;0" keyTimes="0;0.05;0.3;0.6" dur="1.5s" begin={`${delay}s`} repeatCount="indefinite"/>
+          </circle>
+        );
+      })}
+    </svg>
+  );
+}
+
+function AttackTank() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <VFXFilters prefix="at"/>
+      {/* Ground impact shockwave */}
+      <ShockwaveRings count={3} color="#D4A537" maxR={180} speed={2} strokeW={2}/>
+      {/* Ground cracks */}
+      <g stroke="#8B6914" strokeWidth="2" fill="none" opacity="0.5" strokeLinecap="round">
+        {[[256,256,256,160],[256,256,340,190],[256,256,380,256],[256,256,340,320],[256,256,256,350],[256,256,172,320],[256,256,132,256],[256,256,172,190]].map(([x1,y1,x2,y2],i) => (
+          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} opacity={0.3+Math.random()*0.3}/>
+        ))}
+      </g>
+      {/* Upward debris */}
+      <Particles count={16} color="#D4A537" minR={2} maxR={5} spread={150} speed={1.8}/>
+      {/* Core impact */}
+      <circle cx="256" cy="256" r="40" fill="#D4A537" opacity="0.15" filter="url(#at-go)">
+        <animate attributeName="r" values="30;50;30" dur="1.5s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="256" cy="256" r="18" fill="#FFD700" opacity="0.4" filter="url(#at-gm)"/>
+      <circle cx="256" cy="256" r="8" fill="#FFF" opacity="0.6"/>
+      {/* Dust cloud */}
+      {[[220,280,40,20],[290,270,35,18],[256,290,45,15]].map(([cx,cy,rx,ry],i) => (
+        <ellipse key={i} cx={cx} cy={cy} rx={rx} ry={ry} fill="#5C4A1E" opacity="0.06" filter="url(#at-go)">
+          <animate attributeName="rx" from={rx} to={rx*1.5} dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.08;0.04;0.08" dur="2s" repeatCount="indefinite"/>
+        </ellipse>
+      ))}
+    </svg>
+  );
+}
+
+function Heal() {
+  return (
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="hl-gm"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="hl-go"><feGaussianBlur stdDeviation="8"/></filter>
+      </defs>
+      <ellipse cx="256" cy="400" rx="90" ry="22" fill="#2ECC71" opacity="0.06" filter="url(#hl-go)"/>
+      <RisingParticles count={18} colors={["#2ECC71","#50C878","#D4A537","#7CFC00"]} spread={140} speed={3.5}/>
+      {/* Leaf shapes */}
+      {Array.from({length:5},(_,i) => {
+        const x = 210 + Math.random() * 90;
+        const dur = 3.5 + Math.random() * 1.5;
+        const delay = Math.random() * 2;
+        return (
+          <ellipse key={i} cx={x} cy="400" rx="4" ry="8" fill="#2ECC71" opacity="0" transform={`rotate(${-20+Math.random()*40} ${x} 400)`}>
+            <animate attributeName="cy" from="420" to="100" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.3;0.25;0" keyTimes="0;0.1;0.7;1" dur={`${dur}s`} begin={`${delay}s`} repeatCount="indefinite"/>
+          </ellipse>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ============ CARD WRAPPER ============
+function VFXCard({ name, desc, tag, tagClass, children, borderColor }) {
+  return (
+    <div style={{
+      background: "#0E0E14", border: "1px solid #1A1A24", borderRadius: 12, overflow: "hidden",
+      transition: "transform 0.2s, border-color 0.2s, box-shadow 0.2s", cursor: "default",
+    }}
+    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = `0 10px 30px ${borderColor}22`; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.borderColor = "#1A1A24"; e.currentTarget.style.boxShadow = ""; }}
+    >
+      <div style={{ width: "100%", aspectRatio: "1", background: "#000", display: "flex", alignItems: "center", justifyContent: "center", padding: 8, overflow: "hidden" }}>
+        {children}
+      </div>
+      <div style={{ padding: "12px 14px", borderTop: "1px solid #1A1A24" }}>
+        <div style={{ fontFamily: "'Courier New', monospace", fontSize: 13, fontWeight: 700, color: "#E0E0E0", marginBottom: 4 }}>{name}</div>
+        <div style={{ fontSize: 11, color: "#777", lineHeight: 1.4, marginBottom: 8 }}>{desc}</div>
+        <span className={tagClass} style={{
+          display: "inline-block", padding: "2px 10px", borderRadius: 12, fontSize: 9, fontWeight: 700, letterSpacing: 1,
+        }}>{tag}</span>
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN APP ============
+function CombatVFX() {
+  const tagStyles = `
+    .tg-ph { background: rgba(212,165,55,0.12); color: #D4A537; border: 1px solid rgba(212,165,55,0.25); }
+    .tg-mg { background: rgba(65,105,225,0.12); color: #6B8BF5; border: 1px solid rgba(65,105,225,0.25); }
+    .tg-ps { background: rgba(46,204,113,0.12); color: #2ECC71; border: 1px solid rgba(46,204,113,0.25); }
+    .tg-tr { background: rgba(255,215,0,0.1); color: #FFD700; border: 1px solid rgba(255,215,0,0.2); }
+    .tg-nt { background: rgba(139,164,184,0.1); color: #8BA4B8; border: 1px solid rgba(139,164,184,0.2); }
+    .tg-hl { background: rgba(46,204,113,0.1); color: #50C878; border: 1px solid rgba(46,204,113,0.2); }
+  `;
+
+  return (
+    <div style={{ background: "#08080C", minHeight: "100vh", padding: "30px 20px", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <style>{tagStyles}</style>
+      <h1 style={{ textAlign: "center", color: "#D4A537", fontSize: 28, marginBottom: 4, letterSpacing: 4, textTransform: "uppercase", textShadow: "0 0 20px rgba(212,165,55,0.3)" }}>HEXBOUND</h1>
+      <p style={{ textAlign: "center", color: "#555", fontSize: 12, marginBottom: 36, letterSpacing: 2, textTransform: "uppercase" }}>Combat VFX v4 — Volumetric Animated — 14 effects</p>
+
+      {/* DAMAGE HITS */}
+      <h2 style={{ color: "#D4A537", fontSize: 16, letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid #1A1A24", paddingBottom: 8, marginBottom: 20 }}>
+        Damage Hits <span style={{ fontSize: 11, color: "#444", letterSpacing: 0, textTransform: "none", marginLeft: 10 }}>4 types × hit</span>
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
+        <VFXCard name="fx-physical-hit" desc="Brutal impact — 20 animated particles, shockwave rings, volumetric core, steel fragments, ash debris." tag="Physical" tagClass="tg-ph" borderColor="#D4A537"><PhysicalHit/></VFXCard>
+        <VFXCard name="fx-magical-hit" desc="Arcane collision — rotating ritual rings, drifting rune symbols, curved tendrils, pulsing shards." tag="Magical" tagClass="tg-mg" borderColor="#4169E1"><MagicalHit/></VFXCard>
+        <VFXCard name="fx-poison-hit" desc="Toxic splash — rising vapor, dripping acid trails, popping bubbles, contamination particles." tag="Poison" tagClass="tg-ps" borderColor="#2ECC71"><PoisonHit/></VFXCard>
+        <VFXCard name="fx-true-hit" desc="Pure energy — piercing beams, rotating hex seals, divine shards, white-gold radiance." tag="True Damage" tagClass="tg-tr" borderColor="#FFD700"><TrueHit/></VFXCard>
+      </div>
+
+      {/* CRITS */}
+      <h2 style={{ color: "#D4A537", fontSize: 16, letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid #1A1A24", paddingBottom: 8, marginBottom: 20 }}>
+        Critical Hits <span style={{ fontSize: 11, color: "#444", letterSpacing: 0, textTransform: "none", marginLeft: 10 }}>×1.5 damage — screen shake</span>
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
+        <VFXCard name="fx-physical-crit" desc="Devastating — screen shake, 30 particles, 3 shockwaves, massive 80px core, 20 fragments." tag="Physical Crit" tagClass="tg-ph" borderColor="#D4A537"><PhysicalCrit/></VFXCard>
+        <VFXCard name="fx-magical-crit" desc="Arcane explosion — lightning arcs, triple hex rings, 28 particles, massive shockwaves." tag="Magical Crit" tagClass="tg-mg" borderColor="#4169E1"><MagicalCrit/></VFXCard>
+        <VFXCard name="fx-poison-crit" desc="Toxic eruption — skull in vapor cloud, massive acid core, green shockwaves, 25 particles." tag="Poison Crit" tagClass="tg-ps" borderColor="#2ECC71"><PoisonCrit/></VFXCard>
+        <VFXCard name="fx-true-crit" desc="Divine judgment — 12 piercing beams, massive hex seal, triple shockwaves, 30 light particles." tag="True Crit" tagClass="tg-tr" borderColor="#FFD700"><TrueCrit/></VFXCard>
+      </div>
+
+      {/* EVASION */}
+      <h2 style={{ color: "#D4A537", fontSize: 16, letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid #1A1A24", paddingBottom: 8, marginBottom: 20 }}>
+        Evasion <span style={{ fontSize: 11, color: "#444", letterSpacing: 0, textTransform: "none", marginLeft: 10 }}>dodge / miss</span>
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
+        <VFXCard name="fx-dodge" desc="Phantom evasion — triple afterimage, animated speed streaks, dust scatter, ghost shift." tag="Dodge" tagClass="tg-nt" borderColor="#8BA4B8"><Dodge/></VFXCard>
+        <VFXCard name="fx-miss" desc="Pathetic fizzle — dim wisps fading to nothing, barely visible gray sparks." tag="Miss" tagClass="tg-nt" borderColor="#8BA4B8"><Miss/></VFXCard>
+      </div>
+
+      {/* CLASS ATTACKS */}
+      <h2 style={{ color: "#D4A537", fontSize: 16, letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid #1A1A24", paddingBottom: 8, marginBottom: 20 }}>
+        Class Attacks <span style={{ fontSize: 11, color: "#444", letterSpacing: 0, textTransform: "none", marginLeft: 10 }}>auto-attacks by class</span>
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
+        <VFXCard name="attack-warrior" desc="Sword slash — animated arc trail with cascading golden sparks along blade path." tag="Warrior" tagClass="tg-ph" borderColor="#D4A537"><AttackWarrior/></VFXCard>
+        <VFXCard name="attack-rogue" desc="Double X-slash — twin green dagger arcs with poison drops falling from cuts." tag="Rogue" tagClass="tg-ps" borderColor="#2ECC71"><AttackRogue/></VFXCard>
+        <VFXCard name="attack-mage" desc="Arcane bolt — flying blue-violet orb with trailing particle wake." tag="Mage" tagClass="tg-mg" borderColor="#4169E1"><AttackMage/></VFXCard>
+        <VFXCard name="attack-tank" desc="Ground slam — expanding shockwaves, upward debris particles, ground cracks, dust clouds." tag="Tank" tagClass="tg-ph" borderColor="#D4A537"><AttackTank/></VFXCard>
+      </div>
+
+      {/* HEAL */}
+      <h2 style={{ color: "#D4A537", fontSize: 16, letterSpacing: 2, textTransform: "uppercase", borderBottom: "1px solid #1A1A24", paddingBottom: 8, marginBottom: 20 }}>
+        Utility <span style={{ fontSize: 11, color: "#444", letterSpacing: 0, textTransform: "none", marginLeft: 10 }}>heal / buffs</span>
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
+        <VFXCard name="fx-heal" desc="Restoration — 18 rising green-gold particles, leaf shapes, warm bottom glow." tag="Heal" tagClass="tg-hl" borderColor="#50C878"><Heal/></VFXCard>
+      </div>
+
+      <p style={{ textAlign: "center", color: "#333", fontSize: 11, marginTop: 24, padding: 20, borderTop: "1px solid #1A1A24" }}>
+        HEXBOUND Combat VFX v4 · 14 animated effects · React + SVG · Procedural particles · Dark Fantasy
+      </p>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(CombatVFX));
+</script>
+</body>
+</html>

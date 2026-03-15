@@ -129,25 +129,10 @@ struct StanceSelectorDetailView: View {
         Button(action: action) {
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text(StanceSelectorViewModel.zoneIcon(for: zone))
-                    .font(.system(size: 28))
-
+                    .font(.system(size: 28)) // emoji — keep
                 Text(zone.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(isSelected ? color : DarkFantasyTheme.textDisabled)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, LayoutConstants.spaceMD)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(isSelected ? color.opacity(0.15) : DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(isSelected ? color : DarkFantasyTheme.borderSubtle, lineWidth: isSelected ? 2 : 1)
-            )
-            .opacity(isSelected ? 1.0 : 0.6)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.colorToggle(isActive: isSelected, color: color, height: LayoutConstants.buttonHeightMD))
     }
 }

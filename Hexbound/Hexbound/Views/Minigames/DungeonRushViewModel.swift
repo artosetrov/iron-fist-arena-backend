@@ -224,7 +224,7 @@ final class DungeonRushViewModel {
         let result = await service.rushShopBuy(runId: runId, slot: slot)
         isProcessingShop = false
         guard let result else {
-            appState.showToast("Purchase failed", type: .error)
+            appState.showToast("Purchase failed", subtitle: "Not enough gold for this item", type: .error)
             return
         }
 
@@ -420,7 +420,7 @@ final class DungeonRushViewModel {
             }
         } else {
             isGameOver = true
-            appState.showToast("Defeated!", type: .error)
+            appState.showToast("Defeated!", subtitle: "Rewards saved — try again anytime", type: .error)
         }
     }
 

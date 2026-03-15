@@ -15,7 +15,7 @@ struct LeaderboardRowView: View {
 
             // Class icon
             Text(entry.classIcon)
-                .font(.system(size: 18))
+                .font(.system(size: 18)) // emoji text — keep as is
                 .frame(width: 28)
 
             // Name

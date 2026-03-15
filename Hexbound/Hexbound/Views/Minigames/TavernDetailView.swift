@@ -82,7 +82,7 @@ struct TavernGameCard: View {
                         .fill(accentColor.opacity(0.15))
                         .frame(width: 56, height: 56)
                     Text(icon)
-                        .font(.system(size: 26))
+                        .font(.system(size: 26)) // emoji — keep
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -98,10 +98,10 @@ struct TavernGameCard: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold)) // SF Symbol icon — keep
                     .foregroundStyle(accentColor.opacity(0.6))
             }
-            .padding(14)
+            .padding(LayoutConstants.bannerPadding)
             .background(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .fill(DarkFantasyTheme.bgSecondary)
@@ -112,6 +112,6 @@ struct TavernGameCard: View {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.scalePress(0.97))
     }
 }

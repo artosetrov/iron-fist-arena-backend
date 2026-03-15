@@ -49,7 +49,7 @@ final class BattlePassService {
             Task { [weak self] in await self?.refreshCharacter() }
             return true
         } catch {
-            appState.showToast("Failed to claim reward", type: .error)
+            appState.showToast("Failed to claim reward", subtitle: "Check connection and try again", type: .error)
             return false
         }
     }
@@ -65,7 +65,7 @@ final class BattlePassService {
             Task { [weak self] in await self?.refreshCharacter() }
             return true
         } catch {
-            appState.showToast("Failed to buy premium", type: .error)
+            appState.showToast("Failed to buy premium", subtitle: "Check your gem balance", type: .error)
             return false
         }
     }

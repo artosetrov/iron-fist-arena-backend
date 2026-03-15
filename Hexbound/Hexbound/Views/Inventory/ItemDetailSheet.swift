@@ -153,6 +153,8 @@ struct ItemDetailSheet: View {
                 ItemImageView(
                     imageKey: item.imageKey,
                     imageUrl: item.imageUrl,
+                    systemIcon: item.consumableIcon,
+                    systemIconColor: item.consumableIconColor,
                     fallbackIcon: item.itemType.icon
                 )
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
@@ -188,12 +190,8 @@ struct ItemDetailSheet: View {
             // Close (X) button
             Button { onClose() } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .frame(width: 28, height: 28)
-                    .background(DarkFantasyTheme.bgTertiary.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
             }
+            .buttonStyle(.closeButton)
         }
     }
 
@@ -333,7 +331,7 @@ struct ItemDetailSheet: View {
                             Spacer()
                             HStack(spacing: LayoutConstants.spaceXS) {
                                 Text(delta > 0 ? "▲" : "▼")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: 10)) // emoji text — keep as is
                                 Text(delta > 0 ? "+\(delta)" : "\(delta)")
                                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                             }
@@ -361,7 +359,7 @@ struct ItemDetailSheet: View {
                 if let special = item.specialEffect, !special.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12)) // SF Symbol icon — keep as is
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(special)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -371,7 +369,7 @@ struct ItemDetailSheet: View {
                 if let passive = item.uniquePassive, !passive.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "bolt.fill")
-                            .font(.system(size: 12))
+                            .font(.system(size: 12)) // SF Symbol icon — keep as is
                             .foregroundStyle(DarkFantasyTheme.cyan)
                         Text(passive)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -442,7 +440,7 @@ struct ItemDetailSheet: View {
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                     Text("+10")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(Color(hex: 0x60A5FA)) // blue-400
+                        .foregroundStyle(DarkFantasyTheme.upgradeBlue)
                     Text("(linear)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -482,7 +480,7 @@ struct ItemDetailSheet: View {
                 if let setName = item.setName, !setName.isEmpty {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "diamond.fill")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10)) // SF Symbol icon — keep as is
                             .foregroundStyle(DarkFantasyTheme.success)
                         Text("Set: \(setName)")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -491,7 +489,7 @@ struct ItemDetailSheet: View {
                 }
                 if let catalogId = item.catalogId, !catalogId.isEmpty {
                     Text(catalogId)
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 10, design: .monospaced)) // monospaced design — keep as is
                         .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
                 }
             }
@@ -694,7 +692,7 @@ struct ItemDetailSheet: View {
     private func sectionHeader(icon: String, title: String) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
-                .font(.system(size: 12))
+                .font(.system(size: 12)) // SF Symbol icon — keep as is
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(title)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))

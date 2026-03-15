@@ -16,11 +16,23 @@ final class ArenaViewModel {
     var revengeList: [RevengeEntry] = []
     var history: [MatchHistory] = []
 
+    // Displayed pair (2 opponents shown at a time, refresh cycles through)
+    var displayedOpponents: [Opponent] = []
+    private var displayOffset: Int = 0
+
+    // Comparison sheet
+    var selectedOpponent: Opponent?
+    var showComparison = false
+
     // Loading
     var isLoadingOpponents = false
     var isLoadingRevenge = false
     var isLoadingHistory = false
     var fightingOpponentId: String?
+    var isRefreshing = false
+
+    // Equipment / Loadout
+    var equippedItems: [Item] = []
 
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
@@ -49,6 +61,10 @@ final class ArenaViewModel {
         appState.mainPath.append(AppRoute.shop)
     }
 
+    func goToEquipment() {
+        appState.mainPath.append(AppRoute.hero)
+    }
+
     var canFight: Bool {
         hasFreePvp || currentStamina >= AppConstants.pvpStaminaCost
     }
@@ -57,17 +73,42 @@ final class ArenaViewModel {
         hasFreePvp ? 0 : AppConstants.pvpStaminaCost
     }
 
+    // MARK: - Display helpers
+
+    /// Shows the current pair of opponents based on displayOffset
+    private func updateDisplayedOpponents() {
+        guard !opponents.isEmpty else {
+            displayedOpponents = []
+            return
+        }
+        let start = displayOffset % opponents.count
+        var pair: [Opponent] = []
+        for i in 0..<2 {
+            let idx = (start + i) % opponents.count
+            pair.append(opponents[idx])
+        }
+        displayedOpponents = pair
+    }
+
+    /// Select opponent — opens comparison sheet
+    func selectOpponent(_ opponent: Opponent) {
+        selectedOpponent = opponent
+        showComparison = true
+    }
+
     // MARK: - Load Data
 
     func loadOpponents() async {
         // Serve cached opponents instantly, then refresh in background
         if let cached = cache.cachedOpponents() {
             opponents = cached
+            updateDisplayedOpponents()
         } else {
             isLoadingOpponents = true
         }
         let result = await pvpService.getOpponents()
         opponents = result
+        updateDisplayedOpponents()
         cache.cacheOpponents(result)
         isLoadingOpponents = false
 
@@ -129,6 +170,7 @@ final class ArenaViewModel {
 
     func fight(opponentId: String) async {
         fightingOpponentId = opponentId
+        showComparison = false
 
         // 1. Navigate to combat screen INSTANTLY (shows preparation animation)
         appState.combatData = nil
@@ -145,7 +187,7 @@ final class ArenaViewModel {
             if !appState.mainPath.isEmpty {
                 appState.mainPath.removeLast()
             }
-            appState.showToast("Failed to start battle", type: .error)
+            appState.showToast("Failed to start battle", subtitle: "Check stamina and connection", type: .error)
             return
         }
         await battlePreloader.invalidatePreparedBattle(opponentId: opponentId)
@@ -187,7 +229,7 @@ final class ArenaViewModel {
             if !appState.mainPath.isEmpty {
                 appState.mainPath.removeLast()
             }
-            appState.showToast("Failed to start battle", type: .error)
+            appState.showToast("Failed to start battle", subtitle: "Check stamina and connection", type: .error)
             return
         }
         await battlePreloader.invalidatePreparedBattle(revengeId: revengeId)
@@ -270,11 +312,24 @@ final class ArenaViewModel {
     // MARK: - Refresh
 
     func refreshOpponents() async {
-        cache.invalidateOpponents()
-        await battlePreloader.invalidateCache()
-        // Load opponents + character in parallel
-        async let opponentRefresh: Void = loadOpponents()
-        async let charRefresh: Void = characterService.loadCharacter()
-        _ = await (opponentRefresh, charRefresh)
+        isRefreshing = true
+
+        if opponents.count > 2 {
+            // Cycle to next pair from the existing pool
+            displayOffset += 2
+            updateDisplayedOpponents()
+            // Preload battle data for new pair
+            preloadBattleData(for: displayedOpponents)
+        } else {
+            // Not enough opponents cached — fetch fresh from server
+            cache.invalidateOpponents()
+            await battlePreloader.invalidateCache()
+            async let opponentRefresh: Void = loadOpponents()
+            async let charRefresh: Void = characterService.loadCharacter()
+            _ = await (opponentRefresh, charRefresh)
+            displayOffset = 0
+        }
+
+        isRefreshing = false
     }
 }
