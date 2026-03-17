@@ -2,7 +2,7 @@
 // elo.ts — ELO rating calculation
 // =============================================================================
 
-import { ELO } from './balance';
+import { getEloConfig } from './live-config';
 
 export interface EloResult {
   newWinner: number;
@@ -18,24 +18,27 @@ export interface EloResult {
  *
  * @param winnerRating  Current rating of the winner
  * @param loserRating   Current rating of the loser
- * @param k             K-factor (use ELO.K_CALIBRATION for first 10 games, ELO.K_DEFAULT after)
+ * @param k             K-factor (optional, defaults to live config K_DEFAULT)
  * @returns             New ratings for both players
  */
-export function calculateElo(
+export async function calculateElo(
   winnerRating: number,
   loserRating: number,
-  k: number = ELO.K_DEFAULT,
-): EloResult {
+  k?: number,
+): Promise<EloResult> {
+  const eloConfig = await getEloConfig();
+  const kFactor = k !== undefined ? k : eloConfig.K_DEFAULT;
+
   const expectedWinner = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
   const expectedLoser = 1 / (1 + Math.pow(10, (winnerRating - loserRating) / 400));
 
   const newWinner = Math.max(
-    ELO.MIN_RATING,
-    Math.round(winnerRating + k * (1 - expectedWinner)),
+    eloConfig.MIN_RATING,
+    Math.round(winnerRating + kFactor * (1 - expectedWinner)),
   );
   const newLoser = Math.max(
-    ELO.MIN_RATING,
-    Math.round(loserRating + k * (0 - expectedLoser)),
+    eloConfig.MIN_RATING,
+    Math.round(loserRating + kFactor * (0 - expectedLoser)),
   );
 
   return { newWinner, newLoser };
@@ -44,8 +47,9 @@ export function calculateElo(
 /**
  * Determine the appropriate K-factor based on the number of calibration games played.
  */
-export function getKFactor(calibrationGamesPlayed: number): number {
-  return calibrationGamesPlayed < ELO.CALIBRATION_GAMES
-    ? ELO.K_CALIBRATION
-    : ELO.K_DEFAULT;
+export async function getKFactor(calibrationGamesPlayed: number): Promise<number> {
+  const eloConfig = await getEloConfig();
+  return calibrationGamesPlayed < eloConfig.CALIBRATION_GAMES
+    ? eloConfig.K_CALIBRATION
+    : eloConfig.K_DEFAULT;
 }

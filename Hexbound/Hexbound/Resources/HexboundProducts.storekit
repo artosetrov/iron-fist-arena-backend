@@ -1,0 +1,226 @@
+{
+  "identifier" : "D7A8F3E1-2B4C-4D5E-9F6A-1234567890AB",
+  "type" : "local",
+  "version" : 3,
+  "products" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "GOLD500",
+      "localizations" : [
+        {
+          "description" : "500 Gold",
+          "displayName" : "Pouch of Gold",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gold500",
+      "referenceName" : "Gold 500",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "GOLD1200",
+      "localizations" : [
+        {
+          "description" : "1,000 Gold + 200 Bonus",
+          "displayName" : "Sack of Gold",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gold1200",
+      "referenceName" : "Gold 1200",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "GOLD3500",
+      "localizations" : [
+        {
+          "description" : "3,000 Gold + 500 Bonus",
+          "displayName" : "Chest of Gold",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gold3500",
+      "referenceName" : "Gold 3500",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "GOLD8000",
+      "localizations" : [
+        {
+          "description" : "7,000 Gold + 1,000 Bonus",
+          "displayName" : "Vault of Gold",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gold8000",
+      "referenceName" : "Gold 8000",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "GOLD20000",
+      "localizations" : [
+        {
+          "description" : "17,000 Gold + 3,000 Bonus",
+          "displayName" : "Dragon Hoard",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gold20000",
+      "referenceName" : "Gold 20000",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "GEMS_SMALL",
+      "localizations" : [
+        {
+          "description" : "100 Gems",
+          "displayName" : "Handful of Gems",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gems_small",
+      "referenceName" : "Gems Small",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "GEMS_MEDIUM",
+      "localizations" : [
+        {
+          "description" : "500 Gems + 50 Bonus",
+          "displayName" : "Pouch of Gems",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gems_medium",
+      "referenceName" : "Gems Medium",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "GEMS_LARGE",
+      "localizations" : [
+        {
+          "description" : "1,000 Gems + 200 Bonus",
+          "displayName" : "Chest of Gems",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gems_large",
+      "referenceName" : "Gems Large",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "GEMS_MEGA",
+      "localizations" : [
+        {
+          "description" : "5,000 Gems + 1,500 Bonus",
+          "displayName" : "Gem Vault",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gems_mega",
+      "referenceName" : "Gems Mega",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "MONTHLY_GEM_CARD",
+      "localizations" : [
+        {
+          "description" : "50 gems now + 10 gems daily for 30 days",
+          "displayName" : "Monthly Gem Card",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.monthly_gem_card",
+      "referenceName" : "Monthly Gem Card",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "PREMIUM_FOREVER",
+      "localizations" : [
+        {
+          "description" : "Unlock Premium forever — +20% XP & Gold, exclusive cosmetics, and more",
+          "displayName" : "Premium Upgrade",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.premium_forever",
+      "referenceName" : "Premium Forever",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "hexbound",
+    "_developerTeamID" : "XXXXXXXXXX",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  }
+}

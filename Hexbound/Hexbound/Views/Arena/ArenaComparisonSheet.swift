@@ -11,18 +11,19 @@ struct ArenaComparisonSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(GameDataCache.self) private var cache
+    @State private var showStaminaConfirm = false
 
     private var winChance: Int {
         ArenaComparisonSheet.estimateWinChance(char: character, opponent: opponent)
     }
 
     var body: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
+        VStack(spacing: LayoutConstants.spaceMD) {
             // Handle
             RoundedRectangle(cornerRadius: 2)
                 .fill(DarkFantasyTheme.textTertiary)
                 .frame(width: 36, height: 4)
-                .padding(.top, LayoutConstants.spaceSM)
+                .padding(.top, LayoutConstants.spaceMD)
 
             // VS Header
             vsHeader
@@ -38,24 +39,14 @@ struct ArenaComparisonSheet: View {
 
             // Fight button
             fightButton
+                .padding(.top, LayoutConstants.spaceXS)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.bottom, LayoutConstants.spaceXL)
-        .background(
-            DarkFantasyTheme.bgArenaSheet
-            .clipShape(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 20,
-                    bottomLeadingRadius: 0,
-                    bottomTrailingRadius: 0,
-                    topTrailingRadius: 20
-                )
-            )
-            .ignoresSafeArea(edges: .bottom)
-        )
-        .presentationDetents([.medium, .large])
+        .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
+        .presentationDetents([.height(560)])
         .presentationDragIndicator(.hidden)
-        .presentationBackground(.clear)
+        .presentationBackground(DarkFantasyTheme.bgArenaSheet)
+        .presentationCornerRadius(20)
     }
 
     // MARK: - VS Header
@@ -63,55 +54,55 @@ struct ArenaComparisonSheet: View {
     private var vsHeader: some View {
         HStack(spacing: LayoutConstants.spaceLG) {
             // My avatar
-            VStack(spacing: LayoutConstants.spaceXS) {
+            VStack(spacing: LayoutConstants.spaceSM) {
                 AvatarImageView(
                     skinKey: character.avatar,
                     characterClass: character.characterClass,
-                    size: 56
+                    size: 80
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: 18)
                         .stroke(DarkFantasyTheme.success, lineWidth: 2)
                 )
                 .shadow(color: DarkFantasyTheme.success.opacity(0.3), radius: 8)
 
                 Text(character.characterName)
-                    .font(DarkFantasyTheme.section(size: 12))
+                    .font(DarkFantasyTheme.section(size: 15))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 Text("Lv.\(character.level) \(character.characterClass.displayName)")
-                    .font(DarkFantasyTheme.body(size: 9).bold())
+                    .font(DarkFantasyTheme.body(size: 12).bold())
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
 
             // VS
             Text("VS")
-                .font(DarkFantasyTheme.title(size: 28))
+                .font(DarkFantasyTheme.title(size: 32))
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             // Opponent avatar
-            VStack(spacing: LayoutConstants.spaceXS) {
+            VStack(spacing: LayoutConstants.spaceSM) {
                 AvatarImageView(
                     skinKey: opponent.avatar,
                     characterClass: opponent.characterClass,
-                    size: 56
+                    size: 80
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: 18)
                         .stroke(DarkFantasyTheme.danger, lineWidth: 2)
                 )
                 .shadow(color: DarkFantasyTheme.danger.opacity(0.3), radius: 8)
 
                 Text(opponent.characterName)
-                    .font(DarkFantasyTheme.section(size: 12))
+                    .font(DarkFantasyTheme.section(size: 15))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 Text("Lv.\(opponent.level) \(opponent.characterClass.displayName)")
-                    .font(DarkFantasyTheme.body(size: 9).bold())
+                    .font(DarkFantasyTheme.body(size: 12).bold())
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
         }
@@ -122,7 +113,7 @@ struct ArenaComparisonSheet: View {
     private var combatStatsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("COMBAT STATS")
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.body(size: 12))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
@@ -146,22 +137,22 @@ struct ArenaComparisonSheet: View {
     private func statRow(label: String, myValue: Int, theirValue: Int) -> some View {
         HStack {
             Text("\(myValue)")
-                .font(DarkFantasyTheme.section(size: 14))
+                .font(DarkFantasyTheme.section(size: 18))
                 .foregroundStyle(statColor(my: myValue, their: theirValue))
-                .frame(width: 60, alignment: .trailing)
+                .frame(width: 70, alignment: .trailing)
 
             Spacer()
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: 10))
+                .font(DarkFantasyTheme.body(size: 13))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Spacer()
 
             Text("\(theirValue)")
-                .font(DarkFantasyTheme.section(size: 14))
+                .font(DarkFantasyTheme.section(size: 18))
                 .foregroundStyle(statColor(my: theirValue, their: myValue))
-                .frame(width: 60, alignment: .leading)
+                .frame(width: 70, alignment: .leading)
         }
     }
 
@@ -188,12 +179,12 @@ struct ArenaComparisonSheet: View {
     // MARK: - Win Prediction
 
     private var winPrediction: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             Text("Estimated win chance:")
-                .font(DarkFantasyTheme.body(size: 12))
+                .font(DarkFantasyTheme.body(size: 15))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Text("\(winChance)%")
-                .font(DarkFantasyTheme.section(size: 16))
+                .font(DarkFantasyTheme.section(size: 20))
                 .foregroundStyle(winChanceColor)
         }
     }
@@ -208,8 +199,11 @@ struct ArenaComparisonSheet: View {
 
     private var fightButton: some View {
         Button {
-            onFight()
-            dismiss()
+            if staminaCost > 0 {
+                showStaminaConfirm = true
+            } else {
+                onFight()
+            }
         } label: {
             HStack(spacing: LayoutConstants.spaceXS) {
                 if isFighting {
@@ -219,10 +213,10 @@ struct ArenaComparisonSheet: View {
                     Text("FIGHT")
                     if staminaCost > 0 {
                         Text("(\(staminaCost) STA)")
-                            .font(DarkFantasyTheme.body(size: 11))
+                            .font(DarkFantasyTheme.body(size: 13))
                     } else {
                         Text("(FREE)")
-                            .font(DarkFantasyTheme.body(size: 11))
+                            .font(DarkFantasyTheme.body(size: 13))
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 }
@@ -230,6 +224,18 @@ struct ArenaComparisonSheet: View {
         }
         .buttonStyle(.fight)
         .disabled(isFighting || !canFight)
+        .confirmationDialog(
+            "SPEND STAMINA",
+            isPresented: $showStaminaConfirm,
+            presenting: staminaCost
+        ) { cost in
+            Button("Fight (\(cost) STA)") {
+                onFight()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: { cost in
+            Text("Spend \(cost) stamina to fight \(opponent.characterName)?")
+        }
     }
 
     // MARK: - Win Chance Calculation

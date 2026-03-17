@@ -7,6 +7,7 @@ enum APIEndpoints {
     static let authGuestLogin = "/api/auth/guest-login"
     static let authForgotPassword = "/api/auth/forgot-password"
     static let authApple = "/api/auth/apple"
+    static let authGoogle = "/api/auth/google"
 
     // MARK: - Characters
     static let characters = "/api/characters"
@@ -49,6 +50,7 @@ enum APIEndpoints {
     static let shopBuyConsumable = "/api/shop/buy-consumable"
     static let shopBuyGold = "/api/shop/buy-gold"
     static let shopBuyGems = "/api/shop/buy-gems"
+    static let shopOffers = "/api/shop/offers"
     static let shopRepair = "/api/shop/repair"
     static let shopUpgrade = "/api/shop/upgrade"
 
@@ -69,6 +71,10 @@ enum APIEndpoints {
     static let dungeons = "/api/dungeons"
     static let dungeonsStart = "/api/dungeons/start"
     static let dungeonsFight = "/api/dungeons/fight"
+
+    // MARK: - Push Notifications
+    static let pushRegister = "/api/push/register"
+    static let pushUnregister = "/api/push/unregister"
 
     // MARK: - Dungeon Rush
     static let dungeonRushStart = "/api/dungeon-rush/start"

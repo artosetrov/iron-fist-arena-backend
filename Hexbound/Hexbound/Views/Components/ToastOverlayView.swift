@@ -38,6 +38,22 @@ struct ToastView: View {
             }
 
             Spacer()
+
+            if let label = toast.actionLabel, let action = toast.action {
+                Button {
+                    action()
+                } label: {
+                    Text(label)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textOnGold)
+                        .padding(.horizontal, LayoutConstants.spaceSM)
+                        .padding(.vertical, LayoutConstants.spaceXS)
+                        .background(
+                            Capsule().fill(toast.type.color)
+                        )
+                }
+                .buttonStyle(.scalePress(0.9))
+            }
         }
         .padding(LayoutConstants.spaceSM)
         .background(

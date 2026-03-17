@@ -2,7 +2,7 @@
 // hp-regen.ts — HP regeneration calculation
 // =============================================================================
 
-import { HP_REGEN } from './balance';
+import { getHpRegenConfig } from './live-config';
 
 export interface HpRegenResult {
   hp: number;
@@ -12,31 +12,33 @@ export interface HpRegenResult {
 /**
  * Calculate the current HP based on time elapsed since last update.
  *
- * Regenerates REGEN_RATE% of maxHp per REGEN_INTERVAL_MINUTES (default: 1% every 5 min).
+ * Regenerates REGEN_RATE% of maxHp per REGEN_INTERVAL_MINUTES.
  * Capped at maxHp.
  */
-export function calculateCurrentHp(
+export async function calculateCurrentHp(
   currentHp: number,
   maxHp: number,
   lastUpdate: Date,
-): HpRegenResult {
+): Promise<HpRegenResult> {
   if (currentHp >= maxHp) {
     return { hp: maxHp, updated: false };
   }
+
+  const hpRegenConfig = await getHpRegenConfig();
 
   const now = Date.now();
   const elapsed = now - lastUpdate.getTime();
   const minutesElapsed = elapsed / (1000 * 60);
 
   const intervals = Math.floor(
-    minutesElapsed / HP_REGEN.REGEN_INTERVAL_MINUTES,
+    minutesElapsed / hpRegenConfig.REGEN_INTERVAL_MINUTES,
   );
 
   if (intervals <= 0) {
     return { hp: currentHp, updated: false };
   }
 
-  const regenAmount = Math.floor(maxHp * HP_REGEN.REGEN_RATE * intervals / 100);
+  const regenAmount = Math.floor(maxHp * hpRegenConfig.REGEN_RATE * intervals / 100);
 
   if (regenAmount <= 0) {
     return { hp: currentHp, updated: false };

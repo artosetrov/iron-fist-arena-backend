@@ -8,11 +8,13 @@ import { getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import {
-  STAMINA,
-  GOLD_REWARDS,
-  XP_REWARDS,
-  FIRST_WIN_BONUS,
-  BATTLE_PASS,
+  getStaminaConfig,
+  getGoldRewardsConfig,
+  getXpRewardsConfig,
+  getFirstWinBonusConfig,
+  getBattlePassConfig,
+} from '@/lib/game/live-config'
+import {
   chaGoldBonus,
   streakGoldMultiplier,
   levelScaledReward,
@@ -58,6 +60,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const [STAMINA, GOLD_REWARDS, XP_REWARDS, FIRST_WIN_BONUS, BATTLE_PASS] = await Promise.all([
+      getStaminaConfig(),
+      getGoldRewardsConfig(),
+      getXpRewardsConfig(),
+      getFirstWinBonusConfig(),
+      getBattlePassConfig(),
+    ])
+
     const body = await req.json()
     const { character_id, opponent_id, battle_seed, battle_ticket_id, client_winner_id, revenge_id } = body
     const isRevenge = !!revenge_id

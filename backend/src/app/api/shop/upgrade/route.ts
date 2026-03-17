@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { UPGRADE_CHANCES } from '@/lib/game/balance'
+import { getUpgradeChancesConfig } from '@/lib/game/live-config'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const UPGRADE_CHANCES = await getUpgradeChancesConfig()
     const body = await req.json()
     const { character_id, inventory_id, use_protection } = body
 

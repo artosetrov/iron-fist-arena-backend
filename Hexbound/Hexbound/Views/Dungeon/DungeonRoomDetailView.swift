@@ -85,9 +85,15 @@ struct DungeonRoomDetailView: View {
                 DungeonInfoSheet(dungeon: dungeon)
             }
         }
-        .sheet(isPresented: $showLootDetail) {
-            if let loot = selectedLootItem {
-                LootPreviewSheet(loot: loot, onClose: { showLootDetail = false })
+        .overlay {
+            if showLootDetail, let loot = selectedLootItem {
+                LootPreviewSheet(loot: loot, onClose: {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        showLootDetail = false
+                    }
+                })
+                .transition(.opacity)
+                .zIndex(100)
             }
         }
         .confirmationDialog(
@@ -127,36 +133,36 @@ struct DungeonRoomDetailView: View {
         let defeated = vm.defeatedCount
         let pctInt = total > 0 ? Int(Double(defeated) / Double(total) * 100) : 0
 
-        VStack(spacing: 8) {
+        VStack(spacing: LayoutConstants.spaceSM) {
             // Progress text + badge + cost
             HStack {
                 Text("\(defeated)/\(total)")
-                    .font(DarkFantasyTheme.section(size: 16))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 if vm.isDungeonComplete {
                     Text("Complete!")
-                        .font(DarkFantasyTheme.body(size: 11).bold())
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, LayoutConstants.spaceSM)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(completedGreen))
                 } else {
                     Text("\(pctInt)%")
-                        .font(DarkFantasyTheme.body(size: 11).bold())
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, LayoutConstants.spaceSM)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(accentOrange))
                 }
 
                 Spacer()
 
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 14)) // SF Symbol icon — keep
                     Text("Cost \(vm.dungeon?.energyCost ?? 10)")
-                        .font(DarkFantasyTheme.section(size: 16))
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                 }
                 .foregroundStyle(DarkFantasyTheme.stamina)
             }
@@ -165,7 +171,7 @@ struct DungeonRoomDetailView: View {
             miniNodeRow(vm: vm)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.vertical, 10)
+        .padding(.vertical, LayoutConstants.spaceMS)
     }
 
     // MARK: - Mini Node Row
@@ -175,7 +181,7 @@ struct DungeonRoomDetailView: View {
         let bosses = vm.dungeon?.bosses ?? []
         let nodeSize: CGFloat = 28
 
-        HStack(spacing: 4) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             ForEach(0..<bosses.count, id: \.self) { i in
                 miniNode(index: i, boss: bosses[i], size: nodeSize, vm: vm)
             }
@@ -269,42 +275,56 @@ struct DungeonRoomDetailView: View {
             }
         )
 
-        TabView(selection: selection) {
-            ForEach(0..<bosses.count, id: \.self) { index in
-                ScrollView(.vertical, showsIndicators: false) {
-                    bossCard(boss: bosses[index], bossIndex: index, vm: vm)
-                        .padding(.top, 8)
-                        .padding(.bottom, LayoutConstants.spaceLG)
+        GeometryReader { geo in
+            let cardWidth = geo.size.width - 2 * LayoutConstants.screenPadding
+            let cardHeight: CGFloat = 520
+
+            TabView(selection: selection) {
+                ForEach(0..<bosses.count, id: \.self) { index in
+                    bossCard(boss: bosses[index], bossIndex: index, vm: vm, cardWidth: cardWidth, cardHeight: cardHeight)
+                        .padding(.top, LayoutConstants.spaceSM)
+                        .tag(index)
                 }
-                .tag(index)
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
     }
 
     @ViewBuilder
-    private func bossCard(boss: BossInfo, bossIndex: Int, vm: DungeonRoomViewModel) -> some View {
+    private func bossCard(boss: BossInfo, bossIndex: Int, vm: DungeonRoomViewModel, cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
         let state = vm.bossState(at: bossIndex)
         let borderColor = bossCardBorderColor(state: state)
 
-        VStack(spacing: 0) {
-            // Top area: boss image as background with header + name overlaid
-            ZStack(alignment: .bottom) {
-                // Boss image as background
-                bossImageBackground(boss: boss, state: state)
-                    .frame(height: 220)
-                    .clipped()
+        ZStack(alignment: .top) {
+            // Boss image as card background (fixed 256pt height, shifted up)
+            bossImageBackground(boss: boss, state: state)
+                .frame(width: cardWidth, height: 256)
+                .clipped()
+                .frame(width: cardWidth, height: cardHeight, alignment: .top)
+                .offset(y: 40)
 
-                // Gradient overlay for readability
+            // Top + bottom gradients for readability
+            VStack(spacing: 0) {
                 LinearGradient(
-                    colors: [.clear, DarkFantasyTheme.bgDungeonPurple.opacity(0.7), DarkFantasyTheme.bgDungeonPurple],
+                    colors: [DarkFantasyTheme.bgDungeonPurple, DarkFantasyTheme.bgDungeonPurple.opacity(0.9), DarkFantasyTheme.bgDungeonPurple.opacity(0.5), .clear],
                     startPoint: .top, endPoint: .bottom
                 )
+                .frame(height: cardHeight * 0.25)
 
-                // Content overlaid on image
-                VStack(spacing: 4) {
-                    Spacer()
+                Spacer(minLength: 0)
 
+                LinearGradient(
+                    colors: [.clear, DarkFantasyTheme.bgDungeonPurple.opacity(0.5), DarkFantasyTheme.bgDungeonPurple.opacity(0.9), DarkFantasyTheme.bgDungeonPurple],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: cardHeight * 0.55)
+            }
+            .frame(width: cardWidth, height: cardHeight)
+
+            // All content on top of image
+            VStack(spacing: 0) {
+                // Boss name + description at top
+                VStack(spacing: LayoutConstants.spaceXS) {
                     // Defeated checkmark
                     if state == .defeated {
                         ZStack {
@@ -312,14 +332,14 @@ struct DungeonRoomDetailView: View {
                                 .fill(completedGreen)
                                 .frame(width: 32, height: 32)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
                                 .foregroundStyle(.white)
                         }
-                        .padding(.bottom, 4)
+                        .padding(.bottom, LayoutConstants.spaceXS)
                     }
 
                     Text(boss.name.uppercased())
-                        .font(DarkFantasyTheme.title(size: 20))
+                        .font(DarkFantasyTheme.title(size: LayoutConstants.textSection - 2))
                         .foregroundStyle(
                             state == .locked
                                 ? DarkFantasyTheme.textDisabled
@@ -329,47 +349,51 @@ struct DungeonRoomDetailView: View {
                         .shadow(color: .black.opacity(0.8), radius: 4)
 
                     Text(boss.description)
-                        .font(DarkFantasyTheme.body(size: 11).italic())
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).italic())
                         .foregroundStyle(DarkFantasyTheme.textBossDesc)
                         .multilineTextAlignment(.center)
                         .shadow(color: .black.opacity(0.8), radius: 4)
                 }
                 .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.top, LayoutConstants.spaceLG)
                 .padding(.bottom, LayoutConstants.spaceSM)
-            }
-            .frame(height: 220)
 
-            // Header row on top of image area
-            VStack(spacing: LayoutConstants.spaceMS) {
-                // Header: BOSS tag, level, status badge
-                bossCardHeader(boss: boss, state: state, bossIndex: bossIndex, vm: vm)
+                Spacer()
 
-                // HP bar
-                bossHPBar(boss: boss, state: state)
+                // Info section at bottom
+                VStack(spacing: LayoutConstants.spaceMS) {
+                    // Header: BOSS tag, level, status badge
+                    bossCardHeader(boss: boss, state: state, bossIndex: bossIndex, vm: vm)
 
-                // Loot section
-                if !boss.loot.isEmpty {
-                    lootSection(loot: boss.loot)
+                    // HP bar
+                    bossHPBar(boss: boss, state: state)
+
+                    // Loot section
+                    if !boss.loot.isEmpty {
+                        lootSection(loot: boss.loot)
+                    }
+
+                    // Fight button
+                    fightButton(state: state, bossIndex: bossIndex, vm: vm)
                 }
-
-                // Fight button
-                fightButton(state: state, bossIndex: bossIndex, vm: vm)
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.vertical, LayoutConstants.spaceMS)
             }
-            .padding(.horizontal, LayoutConstants.spaceMD)
-            .padding(.vertical, LayoutConstants.spaceMS)
+            .frame(width: cardWidth, height: cardHeight)
         }
+        .frame(width: cardWidth, height: cardHeight)
+        .clipped()
         .background(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
                 .fill(DarkFantasyTheme.bossCardGradient)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
                 .stroke(borderColor, lineWidth: 2)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius))
         .opacity(state == .locked ? 0.6 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: state == .locked)
-        .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
     // MARK: - Boss Card Header
@@ -378,11 +402,11 @@ struct DungeonRoomDetailView: View {
     private func bossCardHeader(boss: BossInfo, state: BossState, bossIndex: Int, vm: DungeonRoomViewModel) -> some View {
         HStack {
             // BOSS tag
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Text("\u{2620}")
-                    .font(.system(size: 12))
+                    .font(.system(size: 12)) // emoji — keep
                 Text("BOSS")
-                    .font(DarkFantasyTheme.section(size: 11))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                     .tracking(2)
             }
             .foregroundStyle(state == .defeated ? completedGreen : bossPurple)
@@ -391,7 +415,7 @@ struct DungeonRoomDetailView: View {
 
             // Level
             Text("Lv. \(boss.level)")
-                .font(DarkFantasyTheme.section(size: 14))
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             // Status badge
@@ -404,26 +428,26 @@ struct DungeonRoomDetailView: View {
         switch state {
         case .defeated:
             Text("Defeated")
-                .font(DarkFantasyTheme.body(size: 10).bold())
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
                 .foregroundStyle(.white)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, 3)
                 .background(Capsule().fill(completedGreen))
 
         case .current:
             Text("Ready")
-                .font(DarkFantasyTheme.body(size: 10).bold())
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
                 .foregroundStyle(.white)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, 3)
                 .background(Capsule().fill(accentOrange))
 
         case .locked:
             let remaining = bossIndex - vm.defeatedCount
             Text("\(remaining) left")
-                .font(DarkFantasyTheme.body(size: 10).bold())
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, 3)
                 .background(Capsule().fill(lockedGray))
         }
@@ -439,11 +463,11 @@ struct DungeonRoomDetailView: View {
             if UIImage(named: boss.fullImage) != nil {
                 Image(boss.fullImage)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
             } else if UIImage(named: boss.portraitImage) != nil {
                 Image(boss.portraitImage)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
             } else {
                 Text(boss.emoji)
                     .font(.system(size: 80))
@@ -458,7 +482,7 @@ struct DungeonRoomDetailView: View {
 
     @ViewBuilder
     private func bossHPBar(boss: BossInfo, state: BossState) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: LayoutConstants.space2XS) {
             HStack {
                 Text("HP")
                     .font(DarkFantasyTheme.body(size: 9))
@@ -495,13 +519,16 @@ struct DungeonRoomDetailView: View {
 
     @ViewBuilder
     private func lootSection(loot: [LootPreview]) -> some View {
-        VStack(spacing: 8) {
+        // Calculate cell width to match inventory/shop icon size
+        let cellWidth = (UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols)
+
+        VStack(spacing: LayoutConstants.spaceSM) {
             HStack {
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Text("\u{1F381}")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11)) // emoji — keep
                     Text("POSSIBLE LOOT")
-                        .font(DarkFantasyTheme.section(size: 11))
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                         .tracking(1)
                 }
                 .foregroundStyle(lootGold)
@@ -509,13 +536,14 @@ struct DungeonRoomDetailView: View {
                 Spacer()
             }
 
-            // 3-column loot grid
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: min(3, loot.count))
-            LazyVGrid(columns: columns, spacing: 8) {
+            // Items sized to match inventory/shop cards
+            HStack(spacing: LayoutConstants.inventoryGap) {
                 ForEach(loot) { item in
                     lootCard(item: item)
+                        .frame(width: cellWidth)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
@@ -526,9 +554,11 @@ struct DungeonRoomDetailView: View {
 
         Button {
             selectedLootItem = item
-            showLootDetail = true
+            withAnimation(.easeOut(duration: 0.2)) {
+                showLootDetail = true
+            }
         } label: {
-            VStack(spacing: 6) {
+            VStack(spacing: LayoutConstants.spaceXS + 2) {
                 // Item image — like shop/inventory cards
                 ZStack {
                     RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -558,7 +588,7 @@ struct DungeonRoomDetailView: View {
                     .lineLimit(1)
 
                 Text(item.detail)
-                    .font(DarkFantasyTheme.section(size: 11))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                     .foregroundStyle(rColor)
                     .lineLimit(1)
             }
@@ -580,22 +610,22 @@ struct DungeonRoomDetailView: View {
         switch state {
         case .defeated:
             // Defeated state — green outline
-            HStack(spacing: 8) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 18)) // SF Symbol icon — keep
                 Text("DEFEATED")
-                    .font(DarkFantasyTheme.section(size: 16))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                     .tracking(2)
             }
             .foregroundStyle(completedGreen)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: LayoutConstants.buttonHeightLG)
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                     .fill(completedGreen.opacity(0.1))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                     .stroke(completedGreen.opacity(0.3), lineWidth: 2)
             )
 
@@ -610,18 +640,18 @@ struct DungeonRoomDetailView: View {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    VStack(spacing: 2) {
-                        HStack(spacing: 8) {
+                    VStack(spacing: LayoutConstants.space2XS) {
+                        HStack(spacing: LayoutConstants.spaceSM) {
                             Image(systemName: "bolt.shield.fill")
                                 .font(.system(size: 18, weight: .bold)) // SF Symbol icon — keep
                             Text("FIGHT BOSS")
                         }
 
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "bolt.fill")
                                 .font(.system(size: 9)) // SF Symbol icon — keep
                             Text("\(vm.dungeon?.energyCost ?? 10) Energy")
-                                .font(DarkFantasyTheme.body(size: 10))
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1))
                         }
                         .opacity(0.7)
                     }
@@ -632,7 +662,7 @@ struct DungeonRoomDetailView: View {
 
             if !hasEnergy {
                 Text("Not enough energy — \(vm.stamina)/\(vm.dungeon?.energyCost ?? 10)")
-                    .font(DarkFantasyTheme.body(size: 11))
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     .foregroundStyle(DarkFantasyTheme.danger)
             }
 
@@ -640,22 +670,22 @@ struct DungeonRoomDetailView: View {
             // Locked — dark with remaining count
             let remaining = bossIndex - vm.defeatedCount
 
-            HStack(spacing: 8) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 14))
+                    .font(.system(size: 14)) // SF Symbol icon — keep
                 Text("\(remaining) ENEMIES REMAIN")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .tracking(1)
             }
             .foregroundStyle(DarkFantasyTheme.textLocked)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .frame(height: LayoutConstants.buttonHeightLG)
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                     .fill(DarkFantasyTheme.bgDarkPanel)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                     .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2)
             )
         }

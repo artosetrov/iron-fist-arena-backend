@@ -2,7 +2,7 @@
 // daily-login.ts — Daily login reward logic
 // =============================================================================
 
-import { DAILY_LOGIN_REWARDS, type DailyLoginRewardDef } from './balance';
+import { getDailyLoginRewardsConfig, type DailyLoginRewardDef } from './live-config';
 
 /**
  * Check whether the player is eligible to claim their daily login reward.
@@ -47,15 +47,16 @@ export function shouldResetStreak(lastClaimDate: Date | null): boolean {
 }
 
 /**
- * Get the daily login reward for a given day in the 7-day cycle.
+ * Get the daily login reward for a given day in the cycle.
  *
- * Days cycle: 1-7, 1-7, 1-7, ...
+ * Days cycle through the rewards from live config.
  *
  * @param day  The current streak day (1-based)
  * @returns    The reward definition for that day
  */
-export function getDailyReward(day: number): DailyLoginRewardDef {
-  // Cycle through the 7-day reward table
-  const index = ((day - 1) % DAILY_LOGIN_REWARDS.length);
-  return DAILY_LOGIN_REWARDS[index];
+export async function getDailyReward(day: number): Promise<DailyLoginRewardDef> {
+  const rewards = await getDailyLoginRewardsConfig();
+  // Cycle through the reward table
+  const index = ((day - 1) % rewards.length);
+  return rewards[index];
 }

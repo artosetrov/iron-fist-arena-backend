@@ -6,6 +6,7 @@ struct StaminaBarView: View {
     let currentStamina: Int
     let maxStamina: Int
     var showPlus: Bool = true
+    var recoveryText: String? = nil
 
     private var fraction: Double {
         maxStamina > 0 ? Double(currentStamina) / Double(maxStamina) : 0
@@ -37,6 +38,12 @@ struct StaminaBarView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
+            }
+
+            if let recoveryText, currentStamina < maxStamina {
+                Text(recoveryText)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
         .padding(.horizontal, LayoutConstants.cardPadding)

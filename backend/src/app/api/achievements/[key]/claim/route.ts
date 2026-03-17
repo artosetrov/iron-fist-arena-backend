@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ACHIEVEMENT_CATALOG } from '@/lib/game/achievement-catalog'
+import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
 import { applyLevelUp } from '@/lib/game/progression'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
-import { BATTLE_PASS } from '@/lib/game/balance'
+import { getBattlePassConfig } from '@/lib/game/live-config'
 
 /**
  * POST /api/achievements/[key]/claim
@@ -23,12 +23,14 @@ export async function POST(
     const body = await req.json()
     const { character_id } = body
     const { key: achievement_key } = await params
+    const BATTLE_PASS = await getBattlePassConfig()
 
     if (!character_id) {
       return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
     }
 
-    const def = ACHIEVEMENT_CATALOG[achievement_key]
+    const catalog = await getAchievementCatalog()
+    const def = catalog[achievement_key]
     if (!def) {
       return NextResponse.json({ error: 'Invalid achievement key' }, { status: 400 })
     }

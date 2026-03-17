@@ -26,7 +26,19 @@ struct ShellGameDetailView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            // Background image
+            GeometryReader { geo in
+                Image("bg-shell-game")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+            }
+            .ignoresSafeArea()
+
+            // Dark overlay for UI readability
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
 
             if let vm {
                 VStack(spacing: LayoutConstants.spaceLG) {
@@ -89,18 +101,7 @@ struct ShellGameDetailView: View {
                                 .scaleEffect(cupScales[cup])
                         }
                     }
-
-                    // ─── START BUTTON ─────────────────────────────────────
-                    if gamePhase == .idle {
-                        Button {
-                            Task { await startPressed(vm: vm) }
-                        } label: {
-                            Text("START")
-                        }
-                        .buttonStyle(.primary)
-                        .disabled(!vm.canPlay)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                    }
+                    .padding(.top, LayoutConstants.spaceLG)
 
                     // ─── RESULT ───────────────────────────────────────────
                     if gamePhase == .result, let result = vm.result {
@@ -133,6 +134,19 @@ struct ShellGameDetailView: View {
                     }
 
                     Spacer()
+
+                    // ─── START BUTTON (bottom) ───────────────────────────
+                    if gamePhase == .idle {
+                        Button {
+                            Task { await startPressed(vm: vm) }
+                        } label: {
+                            Text("START")
+                        }
+                        .buttonStyle(.primary)
+                        .disabled(!vm.canPlay)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceSM)
+                    }
                 }
             }
         }
@@ -173,7 +187,7 @@ struct ShellGameDetailView: View {
                         Image("shell_ball")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 46, height: 46)
+                            .frame(width: 60, height: 60)
                             .transition(.scale(scale: 0.4).combined(with: .opacity))
                     }
 
@@ -181,12 +195,12 @@ struct ShellGameDetailView: View {
                     Image("shell_cup")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 66, height: 66)
+                        .frame(width: 90, height: 90)
                         .offset(y: cupLiftOffsets[cup])
                         .opacity(gamePhase == .result && !isWinner ? 0.4 : 1.0)
                         .animation(.spring(response: 0.38, dampingFraction: 0.62), value: cupLiftOffsets[cup])
                 }
-                .frame(width: 90, height: 100)
+                .frame(width: 110, height: 130)
 
                 Text("Cup \(cup + 1)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
@@ -209,7 +223,7 @@ struct ShellGameDetailView: View {
 
         // Lift cup to show ball
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-            cupLiftOffsets[revealCup] = -52
+            cupLiftOffsets[revealCup] = -68
         }
         try? await Task.sleep(for: .seconds(1.5))
 
@@ -229,7 +243,7 @@ struct ShellGameDetailView: View {
 
     private func performShuffle() async {
         let swapPairs: [(Int, Int)] = [(0, 2), (1, 0), (2, 1), (0, 1), (2, 0), (1, 2)]
-        let cupSpacing: CGFloat = 90 + LayoutConstants.spaceLG
+        let cupSpacing: CGFloat = 110 + LayoutConstants.spaceLG
 
         for (a, b) in swapPairs {
             let dist = CGFloat(b - a) * cupSpacing
@@ -256,7 +270,7 @@ struct ShellGameDetailView: View {
         // Lift winning cup to reveal ball
         if let winCup = vm.winningCup {
             withAnimation(.spring(response: 0.38, dampingFraction: 0.62)) {
-                cupLiftOffsets[winCup] = -52
+                cupLiftOffsets[winCup] = -68
             }
         }
         withAnimation(.easeInOut(duration: 0.3)) {

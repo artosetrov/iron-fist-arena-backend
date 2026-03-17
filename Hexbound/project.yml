@@ -6,6 +6,11 @@ options:
   xcodeVersion: "15.0"
   defaultConfig: Release
 
+packages:
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: "8.0.0"
+
 settings:
   base:
     MARKETING_VERSION: "1.0.0"
@@ -25,10 +30,13 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: Hexbound/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Hexbound/Hexbound.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: com.hexbound.app
         TARGETED_DEVICE_FAMILY: "1"
         SUPPORTED_INTERFACE_ORIENTATIONS: "UIInterfaceOrientationPortrait"
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: false
+    dependencies:
+      - package: GoogleSignIn
     info:
       path: Hexbound/Info.plist

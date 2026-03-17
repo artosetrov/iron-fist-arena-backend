@@ -12,6 +12,13 @@ final class InventoryViewModel {
     var showItemDetail = false
     var totalSlots: Int = 28
 
+    // Search & Sort
+    var searchText = ""
+    var sortMode: InventorySortMode = .rarity
+    var filterType: ItemType? = nil  // nil = all
+
+    static let filterTypes: [ItemType] = [.weapon, .helmet, .chest, .gloves, .legs, .boots, .accessory, .consumable]
+
     init(appState: AppState) {
         self.appState = appState
         self.service = InventoryService(appState: appState)
@@ -24,14 +31,41 @@ final class InventoryViewModel {
     let expandCost = 5000
 
     var sortedItems: [Item] {
-        items
-            .filter { $0.isEquipped != true }
-            .sorted { a, b in
+        var result = items.filter { $0.isEquipped != true }
+
+        // Filter by type
+        if let filterType {
+            result = result.filter { $0.itemType == filterType }
+        }
+
+        // Filter by search text
+        if !searchText.isEmpty {
+            let q = searchText.lowercased()
+            result = result.filter {
+                $0.displayName.lowercased().contains(q) ||
+                $0.rarity.rawValue.lowercased().contains(q) ||
+                $0.itemType.rawValue.lowercased().contains(q)
+            }
+        }
+
+        // Sort
+        return result.sorted { a, b in
+            switch sortMode {
+            case .rarity:
                 let aR = Item.rarityOrder[a.rarity] ?? 0
                 let bR = Item.rarityOrder[b.rarity] ?? 0
                 if aR != bR { return aR > bR }
                 return a.itemLevel > b.itemLevel
+            case .level:
+                if a.itemLevel != b.itemLevel { return a.itemLevel > b.itemLevel }
+                return (Item.rarityOrder[a.rarity] ?? 0) > (Item.rarityOrder[b.rarity] ?? 0)
+            case .type:
+                if a.itemType != b.itemType { return a.itemType.rawValue < b.itemType.rawValue }
+                return (Item.rarityOrder[a.rarity] ?? 0) > (Item.rarityOrder[b.rarity] ?? 0)
+            case .newest:
+                return a.id > b.id  // IDs are chronological UUIDs
             }
+        }
     }
 
     /// Currently equipped item per slot — used for comparison indicators
@@ -243,4 +277,22 @@ struct InventorySlot: Identifiable {
     let index: Int
     let item: Item?
     var id: String { item?.id ?? "empty_\(index)" }
+}
+
+// MARK: - Sort Mode
+
+enum InventorySortMode: String, CaseIterable {
+    case rarity = "Rarity"
+    case level = "Level"
+    case type = "Type"
+    case newest = "Newest"
+
+    var icon: String {
+        switch self {
+        case .rarity: "star.fill"
+        case .level: "arrow.up.right"
+        case .type: "square.grid.2x2"
+        case .newest: "clock"
+        }
+    }
 }

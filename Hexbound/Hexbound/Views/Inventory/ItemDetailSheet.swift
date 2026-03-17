@@ -169,8 +169,8 @@ struct ItemDetailSheet: View {
                     .lineLimit(2)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    badgePill(item.itemType.displayName.lowercased(), style: .secondary)
-                    badgePill(item.rarity.rawValue, style: .rarity)
+                    badgePill(item.itemType.displayName, style: .secondary)
+                    badgePill(item.rarity.displayName, style: .rarity)
                 }
 
                 Text("Level \(item.itemLevel)")

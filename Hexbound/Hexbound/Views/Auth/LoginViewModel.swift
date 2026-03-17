@@ -90,6 +90,48 @@ final class LoginViewModel {
         }
     }
 
+    func handleGoogleSignIn(appState: AppState) async {
+        isLoading = true; errorMessage = ""
+
+        do {
+            let googleResult = try await GoogleSignInHelper.signIn()
+
+            let body: [String: Any] = [
+                "id_token": googleResult.idToken,
+                "access_token": googleResult.accessToken,
+                "provider": "google"
+            ]
+            let data = try await APIClient.shared.postRaw(APIEndpoints.authGoogle, body: body)
+
+            guard let accessToken = data["access_token"] as? String,
+                  let refreshToken = data["refresh_token"] as? String else {
+                isLoading = false; errorMessage = "Invalid server response"
+                return
+            }
+
+            KeychainManager.shared.saveAccessToken(accessToken)
+            KeychainManager.shared.saveRefreshToken(refreshToken)
+            await APIClient.shared.setAuthToken(accessToken)
+
+            let hasCharacter = await authService?.loadCharacterPublic() ?? false
+
+            isLoading = false
+            if hasCharacter {
+                appState.isAuthenticated = true
+            } else {
+                appState.authPath.append(AppRoute.onboarding)
+            }
+        } catch {
+            isLoading = false
+            // Don't show error if user cancelled
+            let nsError = error as NSError
+            if nsError.domain == "com.google.GIDSignIn" && nsError.code == -5 {
+                return // user cancelled
+            }
+            errorMessage = "Google Sign In failed: \(error.localizedDescription)"
+        }
+    }
+
     func sendPasswordReset(appState: AppState) async {
         let trimmed = forgotEmail.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, trimmed.contains("@") else {

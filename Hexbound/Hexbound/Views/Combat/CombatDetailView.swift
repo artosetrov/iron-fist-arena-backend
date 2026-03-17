@@ -275,25 +275,11 @@ struct CombatDetailView: View {
 
             // HP Bar
             VStack(spacing: 3) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DarkFantasyTheme.bgPrimary)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                            )
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DarkFantasyTheme.hpGradient(percentage: hpPct))
-                            .frame(width: geo.size.width * max(0, hpPct))
-                            .animation(.easeInOut(duration: 0.4), value: hpPct)
-                    }
-                }
-                .frame(height: 14)
+                HPBarView(currentHp: currentHp, maxHp: maxHp, height: 14)
 
                 Text("\(currentHp)/\(maxHp)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(isPlayer ? DarkFantasyTheme.hpBlood : DarkFantasyTheme.hpBlood)
+                    .foregroundStyle(DarkFantasyTheme.hpBlood)
                     .contentTransition(.numericText())
                     .animation(.easeInOut(duration: 0.3), value: currentHp)
             }

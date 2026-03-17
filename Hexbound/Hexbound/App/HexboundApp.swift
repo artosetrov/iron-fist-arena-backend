@@ -1,9 +1,13 @@
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct HexboundApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @State private var appState = AppState()
     @State private var cache = GameDataCache()
+    @State private var pushService = PushNotificationService()
     @State private var isCheckingAuth = true
 
     var body: some Scene {
@@ -19,16 +23,30 @@ struct HexboundApp: App {
             }
             .environment(appState)
             .environment(cache)
+            .environment(pushService)
+            .overlay(alignment: .top) { OfflineBannerView() }
             .overlay(alignment: .top) { ToastOverlayView() .environment(appState) }
             .overlay { if appState.isLoading { LoadingOverlay() } }
             .overlay { if appState.showLevelUpModal { LevelUpModalView().environment(appState) } }
             .animation(.easeInOut(duration: 0.3), value: appState.isAuthenticated)
             .animation(.easeInOut(duration: 0.3), value: isCheckingAuth)
             .task {
+                // Wire push service into AppDelegate for token forwarding
+                appDelegate.pushService = pushService
                 await checkAutoLogin()
             }
+            .onOpenURL { url in
+                _ = GoogleSignInHelper.handle(url)
+            }
             .onChange(of: appState.isAuthenticated) { _, isAuth in
-                if !isAuth { cache.invalidateAll() }
+                if isAuth {
+                    // Request push permission after login
+                    Task { await pushService.requestPermissionAndRegister() }
+                } else {
+                    // Unregister push token on logout
+                    Task { await pushService.unregisterToken() }
+                    cache.invalidateAll()
+                }
             }
         }
     }

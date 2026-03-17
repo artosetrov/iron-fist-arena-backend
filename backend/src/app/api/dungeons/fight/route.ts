@@ -8,7 +8,8 @@ import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
-import { BATTLE_PASS, chaGoldBonus } from '@/lib/game/balance'
+import { chaGoldBonus } from '@/lib/game/balance'
+import { getBattlePassConfig } from '@/lib/game/live-config'
 import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { rateLimit } from '@/lib/rate-limit'
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
     const { character_id, run_id } = body
 

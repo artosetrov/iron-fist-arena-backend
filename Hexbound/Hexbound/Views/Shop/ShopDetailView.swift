@@ -31,6 +31,7 @@ struct ShopDetailView: View {
                             onAdd: { appState.mainPath.append(AppRoute.currencyPurchase) }
                         )
                     }
+                    .tutorialAnchor(.shopGems)
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceSM)
 
@@ -42,6 +43,18 @@ struct ShopDetailView: View {
                     // Active quest banner
                     ActiveQuestBanner(questTypes: ["gold_spent"])
                         .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceSM)
+
+                    // Special Offers carousel
+                    if !vm.offers.isEmpty {
+                        ShopOfferBannerView(
+                            offers: vm.offers,
+                            canAfford: { vm.canAffordOffer($0) },
+                            buyingId: vm.buyingOfferId,
+                            onBuy: { offer in Task { await vm.buyOffer(offer) } }
+                        )
+                        .padding(.bottom, LayoutConstants.spaceSM)
+                    }
 
                     // Tab switcher
                     TabSwitcher(
@@ -52,6 +65,7 @@ struct ShopDetailView: View {
                         )
                     )
                     .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.bottom, LayoutConstants.spaceSM)
 
                     // Content
                     if vm.isLoading && vm.items.isEmpty {
@@ -148,7 +162,7 @@ struct ShopDetailView: View {
                             meetsLevel: vm.meetsLevel(shopItem),
                             isBuying: vm.buyingItemId == shopItem.id,
                             requiredLevel: shopItem.requiredLevel,
-                            onBuy: { Task { await vm.buy(shopItem) } }
+                            onBuy: { vm.requestBuy(shopItem) }
                         )
                     )
                     .transition(.opacity)
@@ -156,7 +170,25 @@ struct ShopDetailView: View {
                 }
             }
         }
+        .confirmationDialog(
+            "CONFIRM PURCHASE",
+            isPresented: Binding(
+                get: { vm?.showPurchaseConfirm ?? false },
+                set: { if !$0 { vm?.cancelPendingPurchase() } }
+            ),
+            presenting: vm?.pendingPurchaseItem
+        ) { item in
+            Button("Buy for \(item.displayPrice)") {
+                vm?.confirmPendingPurchase()
+            }
+            Button("Cancel", role: .cancel) {
+                vm?.cancelPendingPurchase()
+            }
+        } message: { item in
+            Text("Spend \(item.displayPrice) on \(item.itemName)?")
+        }
         .navigationBarBackButtonHidden(true)
+        .tutorialOverlay(steps: [.shopGems])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()

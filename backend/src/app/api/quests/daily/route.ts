@@ -4,9 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { QuestType } from '@prisma/client'
 import { applyLevelUp } from '@/lib/game/progression'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
-import { BATTLE_PASS } from '@/lib/game/balance'
+import { getBattlePassConfig } from '@/lib/game/live-config'
 
-// Quest generation config
+// Quest generation config (fallback)
 const QUEST_POOL: {
   questType: QuestType
   minTarget: number
@@ -24,7 +24,7 @@ const QUEST_POOL: {
   { questType: 'gold_mine_collect', minTarget: 1, maxTarget: 3, rewardGold: 100, rewardXp: 100, rewardGems: 2 },
 ]
 
-// Human-readable quest metadata by type
+// Human-readable quest metadata by type (fallback)
 const QUEST_META: Record<QuestType, { title: string; description: (target: number) => string; icon: string }> = {
   pvp_wins: { title: 'Warrior', description: (t) => `Win ${t} PvP battles`, icon: '⚔️' },
   dungeons_complete: { title: 'Dungeon Crawler', description: (t) => `Complete ${t} dungeons`, icon: '🏰' },
@@ -33,6 +33,41 @@ const QUEST_META: Record<QuestType, { title: string; description: (target: numbe
   consumable_use: { title: 'Alchemist', description: (t) => `Use ${t} consumables`, icon: '⚗️' },
   shell_game_play: { title: 'Shell Game', description: (t) => `Play shell game ${t} times`, icon: '🎭' },
   gold_mine_collect: { title: 'Gold Miner', description: (t) => `Collect from gold mine ${t} times`, icon: '⛏️' },
+}
+
+async function getQuestPool() {
+  try {
+    const defs = await prisma.questDefinition.findMany({ where: { active: true } })
+    if (defs.length > 0) {
+      return defs.map(d => ({
+        questType: d.questType as QuestType,
+        minTarget: d.minTarget,
+        maxTarget: d.maxTarget,
+        rewardGold: d.rewardGold,
+        rewardXp: d.rewardXp,
+        rewardGems: d.rewardGems,
+      }))
+    }
+  } catch {}
+  return QUEST_POOL
+}
+
+async function getQuestMeta(): Promise<Record<QuestType, { title: string; description: (target: number) => string; icon: string }>> {
+  try {
+    const defs = await prisma.questDefinition.findMany({ where: { active: true } })
+    if (defs.length > 0) {
+      const meta: Record<string, { title: string; description: (target: number) => string; icon: string }> = {}
+      for (const d of defs) {
+        meta[d.questType] = {
+          title: d.title,
+          description: (t: number) => d.description.includes('${t}') ? d.description.replace('${t}', String(t)) : `${d.description} (${t})`,
+          icon: d.icon,
+        }
+      }
+      return meta as Record<QuestType, { title: string; description: (target: number) => string; icon: string }>
+    }
+  } catch {}
+  return QUEST_META
 }
 
 function getToday(): string {
@@ -48,23 +83,26 @@ function pickRandom<T>(arr: T[], count: number): T[] {
   return shuffled.slice(0, count)
 }
 
-function formatQuest(q: {
-  id: string
-  questType: QuestType
-  progress: number
-  target: number
-  rewardGold: number
-  rewardXp: number
-  rewardGems: number
-  completed: boolean
-}) {
-  const meta = QUEST_META[q.questType]
+function formatQuest(
+  q: {
+    id: string
+    questType: QuestType
+    progress: number
+    target: number
+    rewardGold: number
+    rewardXp: number
+    rewardGems: number
+    completed: boolean
+  },
+  meta: Record<QuestType, { title: string; description: (target: number) => string; icon: string }>
+) {
+  const questMeta = meta[q.questType] || QUEST_META[q.questType]
   return {
     id: q.id,
     type: q.questType,
-    title: meta.title,
-    description: meta.description(q.target),
-    icon: meta.icon,
+    title: questMeta.title,
+    description: questMeta.description(q.target),
+    icon: questMeta.icon,
     target: q.target,
     progress: q.progress,
     completed: q.progress >= q.target,
@@ -87,8 +125,8 @@ export async function GET(req: NextRequest) {
 
     const today = getToday()
 
-    // Parallel: verify ownership + fetch today's quests
-    const [character, quests_raw] = await Promise.all([
+    // Parallel: verify ownership + fetch today's quests + get quest definitions
+    const [character, quests_raw, questPool, questMeta] = await Promise.all([
       prisma.character.findUnique({
         where: { id: characterId },
         select: { id: true, userId: true, dailyBonusDate: true },
@@ -97,6 +135,8 @@ export async function GET(req: NextRequest) {
         where: { characterId, day: today },
         orderBy: { createdAt: 'asc' },
       }),
+      getQuestPool(),
+      getQuestMeta(),
     ])
 
     if (!character) {
@@ -109,7 +149,7 @@ export async function GET(req: NextRequest) {
     let quests = quests_raw
 
     if (quests.length === 0) {
-      const selected = pickRandom(QUEST_POOL, 3)
+      const selected = pickRandom(questPool, 3)
       const createData = selected.map((q) => ({
         characterId,
         questType: q.questType,
@@ -131,7 +171,7 @@ export async function GET(req: NextRequest) {
       character.dailyBonusDate.toISOString().slice(0, 10) === today
 
     return NextResponse.json({
-      quests: quests.map(formatQuest),
+      quests: quests.map(q => formatQuest(q, questMeta)),
       day: today,
       daily_bonus_claimed: dailyBonusClaimed,
     })
@@ -150,6 +190,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
     const { character_id, quest_id, action } = body
 

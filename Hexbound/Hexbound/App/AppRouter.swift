@@ -23,6 +23,7 @@ enum AppRoute: Hashable {
     // Shop
     case shop
     case currencyPurchase
+    case premiumPurchase
 
     // Dungeon
     case dungeonSelect
@@ -33,6 +34,9 @@ enum AppRoute: Hashable {
     case shellGame
     case goldMine
     case dungeonRush
+
+    // Inbox
+    case inbox
 
     // Quests & Achievements
     case dailyLogin
@@ -94,34 +98,61 @@ struct MainRouterView: View {
     @ViewBuilder
     private func routeView(for route: AppRoute) -> some View {
         switch route {
+        // Hub
         case .hub: HubView()
         case .hero: HeroDetailView()
         case .character: CharacterDetailView()
         case .stanceSelector: StanceSelectorDetailView()
+        
+        // Combat
         case .combat: CombatDetailView()
         case .combatResult: CombatResultDetailView()
         case .loot: LootDetailView()
+        
+        // Arena
         case .arena: ArenaDetailView()
+        
+        // Shop
         case .shop: ShopDetailView()
-        case .currencyPurchase: ShopDetailView()
+        case .currencyPurchase: CurrencyPurchaseView()
+        case .premiumPurchase: PremiumPurchaseView()
+        
+        // Dungeon
         case .dungeonSelect: DungeonSelectDetailView()
         case .dungeonRoom: DungeonRoomDetailView()
+        
+        // Minigames
         case .tavern: TavernDetailView()
         case .shellGame: ShellGameDetailView()
         case .goldMine: GoldMineDetailView()
         case .dungeonRush: DungeonRushDetailView()
+        
+        // Inbox
+        case .inbox: InboxDetailView()
+
+        // Quests & Achievements
         case .dailyLogin: DailyLoginDetailView()
         case .dailyQuests: DailyQuestsDetailView()
         case .achievements: AchievementsDetailView()
+        
+        // Leaderboard
         case .leaderboard: LeaderboardDetailView()
+        
+        // Battle Pass
         case .battlePass: BattlePassDetailView()
+        
+        // Settings
         case .settings: SettingsDetailView()
         case .appearanceEditor: AppearanceEditorDetailView()
+        
         #if DEBUG
         case .screenCatalog: ScreenCatalogView()
         case .designSystem: DesignSystemPreview()
         #endif
-        default: PlaceholderView()
+        
+        // Auth (should not reach here in MainRouter)
+        case .login, .register, .onboarding:
+            PlaceholderView()
         }
     }
 }
@@ -150,28 +181,47 @@ struct AuthRouterView: View {
 
 struct PlaceholderView: View {
     @Environment(AppState.self) private var appState
+    
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgDark.ignoresSafeArea()
+            
             VStack(spacing: 16) {
+                Image(systemName: "hammer.fill")
+                    .font(.system(size: 48))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .symbolEffect(.bounce, options: .repeating)
+                
                 Text("Coming Soon")
                     .font(DarkFantasyTheme.title(size: 28))
                     .foregroundStyle(DarkFantasyTheme.gold)
+                
                 Text("This feature is under development")
                     .font(DarkFantasyTheme.body(size: 16))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
             }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                if !appState.mainPath.isEmpty {
-                    Button("Back") { appState.mainPath.removeLast() }
-                        .foregroundStyle(DarkFantasyTheme.gold)
+                Button {
+                    // Безопасное удаление из стека навигации
+                    if !appState.mainPath.isEmpty {
+                        appState.mainPath.removeLast()
+                    } else if !appState.authPath.isEmpty {
+                        appState.authPath.removeLast()
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }
         }
     }
 }
 
-// All route stubs have been replaced with real views

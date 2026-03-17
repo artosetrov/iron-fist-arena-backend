@@ -269,3 +269,32 @@ export function getAchievementsByCategory(category: string): [string, Achievemen
     ([, def]) => def.category === category,
   );
 }
+
+/**
+ * Load achievement catalog from DB (AchievementDefinition table).
+ * Falls back to hardcoded ACHIEVEMENT_CATALOG if DB is empty or unavailable.
+ */
+export async function getAchievementCatalog(): Promise<Record<string, AchievementDef>> {
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const defs = await (prisma as any).achievementDefinition.findMany({
+      where: { active: true },
+    });
+    if (defs.length > 0) {
+      const catalog: Record<string, AchievementDef> = {};
+      for (const def of defs) {
+        catalog[def.key] = {
+          target: def.target,
+          category: def.category,
+          rewardType: def.rewardType,
+          rewardAmount: def.rewardAmount,
+          rewardId: def.rewardId ?? undefined,
+        };
+      }
+      return catalog;
+    }
+  } catch {
+    // DB not available or model not yet migrated — fall back
+  }
+  return { ...ACHIEVEMENT_CATALOG };
+}

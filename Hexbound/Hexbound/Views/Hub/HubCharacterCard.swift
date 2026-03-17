@@ -165,32 +165,14 @@ struct HubCharacterCard: View {
 
     private var hpBarRow: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            // HP Bar with numbers inside
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    // Background
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(DarkFantasyTheme.bgTertiary)
-
-                    // Fill — uses canonical HP gradient (green → amber → red)
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(DarkFantasyTheme.canonicalHpGradient(percentage: hpPercent))
-                        .frame(width: geo.size.width * max(0.02, min(1, hpPercent)))
-                        .modifier(PulseModifier(active: isCriticalHP))
-
-                    // HP text inside bar (hidden when full)
-                    if !isFullHP {
-                        Text("\(character.currentHp) / \(character.maxHp)")
-                            .font(DarkFantasyTheme.body(size: 10).bold())
-                            .foregroundStyle(.white.opacity(0.9))
-                            .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
-                            .frame(maxWidth: .infinity)
-                            .transition(.opacity)
-                    }
-                }
-            }
-            .frame(height: LayoutConstants.spaceMD)
-            .animation(.easeInOut(duration: 0.8), value: hpPercent)
+            HPBarView(
+                currentHp: character.currentHp,
+                maxHp: character.maxHp,
+                height: LayoutConstants.spaceMD,
+                cornerRadius: 7,
+                showTextInside: true,
+                pulseOnCritical: true
+            )
 
             // Potion button (only when HP < 100%)
             if !isFullHP {

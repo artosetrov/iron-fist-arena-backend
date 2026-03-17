@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { INVENTORY } from '@/lib/game/balance'
+import { getInventoryConfig } from '@/lib/game/live-config'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const INVENTORY = await getInventoryConfig()
     const body = await req.json()
     const { character_id } = body
 

@@ -384,13 +384,13 @@ struct FightButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightLG)
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                     .fill(isEnabled ? AnyShapeStyle(DarkFantasyTheme.fightButtonGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
             )
             .shadow(color: isEnabled ? accentColor.opacity(0.4) : .clear, radius: 15, y: 6)
             .overlay(
                 // Shine effect
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                     .fill(
                         LinearGradient(
                             colors: [.clear, .white.opacity(0.15), .clear],

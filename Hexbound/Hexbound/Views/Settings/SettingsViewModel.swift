@@ -38,14 +38,15 @@ final class SettingsViewModel {
 
     var selectedLanguageIndex: Int {
         get { Self.languages.firstIndex(of: settings.language) ?? 0 }
-        set { settings.language = Self.languages[newValue] }
+        set {
+            let code = Self.languages[newValue]
+            settings.language = code
+            LocalizationManager.shared.setLanguage(code)
+        }
     }
 
-    static let languages = ["en", "es", "fr", "de", "pt", "ru", "ja", "ko", "zh"]
-    static let languageNames = [
-        "English", "Spanish", "French", "German",
-        "Portuguese", "Russian", "Japanese", "Korean", "Chinese"
-    ]
+    static let languages = LocalizationManager.supportedLanguages.map(\.code)
+    static let languageNames = LocalizationManager.supportedLanguages.map(\.nativeName)
 
     var linkAccountMessage: String?
 
@@ -54,7 +55,7 @@ final class SettingsViewModel {
     }
 
     func linkAccount() {
-        linkAccountMessage = "Coming soon..."
+        linkAccountMessage = L10n.comingSoon
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))
             linkAccountMessage = nil

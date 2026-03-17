@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ACHIEVEMENT_CATALOG } from '@/lib/game/achievement-catalog'
+import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -24,8 +24,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validate achievement key exists in catalog
-    const def = ACHIEVEMENT_CATALOG[achievement_key]
+    // Validate achievement key exists in catalog (DB-driven with hardcoded fallback)
+    const catalog = await getAchievementCatalog()
+    const def = catalog[achievement_key]
     if (!def) {
       return NextResponse.json({ error: 'Invalid achievement key' }, { status: 400 })
     }

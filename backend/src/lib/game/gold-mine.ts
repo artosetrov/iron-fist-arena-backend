@@ -1,12 +1,30 @@
 import { PrismaClient } from '@prisma/client'
-import { GEM_COSTS } from './balance'
+import { getGemCostsConfig } from './live-config'
 
 export const MINE_DURATION_HOURS = 4
 export const MINE_REWARD_MIN = 100
 export const MINE_REWARD_MAX = 250
-export const BOOST_COST_GEMS = GEM_COSTS.GOLD_MINE_BOOST
 export const MAX_GOLD_MINE_SLOTS = 3
-export const SLOT_COST_GEMS = GEM_COSTS.GOLD_MINE_BUY_SLOT
+
+// Lazy getters for gem costs (read from live config)
+let _cachedGemConfig: Awaited<ReturnType<typeof getGemCostsConfig>> | null = null
+
+async function getGemConfig() {
+  if (!_cachedGemConfig) {
+    _cachedGemConfig = await getGemCostsConfig()
+  }
+  return _cachedGemConfig
+}
+
+export async function getBOOST_COST_GEMS(): Promise<number> {
+  const config = await getGemConfig()
+  return config.GOLD_MINE_BOOST
+}
+
+export async function getSLOT_COST_GEMS(): Promise<number> {
+  const config = await getGemConfig()
+  return config.GOLD_MINE_BUY_SLOT
+}
 
 // Gem (crystal) random drop from mining
 export const GEM_DROP_CHANCE = 0.10 // 10% chance per collect

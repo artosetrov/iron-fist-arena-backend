@@ -16,24 +16,27 @@ export async function getConfig(key: string) {
   return config?.value ?? null
 }
 
-export async function updateConfig(key: string, value: unknown, adminId: string) {
+export async function updateConfig(key: string, value: unknown, adminId?: string) {
+  const admin = adminId ? { id: adminId } : await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
+
   const config = await prisma.gameConfig.upsert({
     where: { key },
     update: {
       value: value as never,
-      updatedBy: adminId,
+      updatedBy: admin.id,
     },
     create: {
       key,
       value: value as never,
       category: 'general',
-      updatedBy: adminId,
+      updatedBy: admin.id,
     },
   })
 
   await prisma.adminLog.create({
     data: {
-      adminId,
+      adminId: admin.id,
       action: 'update_config',
       target: key,
       details: { value } as never,
@@ -103,6 +106,14 @@ export async function seedDefaultConfigs() {
     { key: 'elo.k_default', value: 32, category: 'elo', description: 'K-factor for regular matches' },
     { key: 'elo.calibration_games', value: 10, category: 'elo', description: 'Number of calibration games before stable rating' },
     { key: 'elo.min_rating', value: 0, category: 'elo', description: 'Minimum possible ELO rating' },
+
+    // PvP Ranks
+    { key: 'pvp_ranks.bronze', value: 0, category: 'pvp_ranks', description: 'Minimum ELO for Bronze rank' },
+    { key: 'pvp_ranks.silver', value: 1200, category: 'pvp_ranks', description: 'Minimum ELO for Silver rank' },
+    { key: 'pvp_ranks.gold', value: 1500, category: 'pvp_ranks', description: 'Minimum ELO for Gold rank' },
+    { key: 'pvp_ranks.platinum', value: 1800, category: 'pvp_ranks', description: 'Minimum ELO for Platinum rank' },
+    { key: 'pvp_ranks.diamond', value: 2100, category: 'pvp_ranks', description: 'Minimum ELO for Diamond rank' },
+    { key: 'pvp_ranks.grandmaster', value: 2400, category: 'pvp_ranks', description: 'Minimum ELO for Grandmaster rank' },
 
     // Combat
     { key: 'combat.max_turns', value: 15, category: 'combat', description: 'Maximum turns per combat encounter' },

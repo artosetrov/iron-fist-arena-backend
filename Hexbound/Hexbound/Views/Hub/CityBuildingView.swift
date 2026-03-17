@@ -6,6 +6,7 @@ struct CityBuildingView: View {
     let building: CityBuilding
     let terrainSize: CGSize
     let onTap: (CityBuilding) -> Void
+    var badge: String? = nil
 
     @State private var isPressed = false
     @State private var showLabel = false
@@ -25,7 +26,7 @@ struct CityBuildingView: View {
 
         VStack(spacing: 4) {
             // Label above building (always visible)
-            CityBuildingLabel(text: building.label, visible: true)
+            CityBuildingLabel(text: building.label, visible: true, badge: badge)
                 .offset(y: building.labelYOffset * terrainSize.height)
 
             // Building sprite

@@ -281,12 +281,19 @@ struct HeroDetailView: View {
                             .frame(width: portraitSize, height: portraitSize)
 
                         VStack(spacing: 5) {
-                            HubStatBar(
-                                label: "HP",
-                                valueText: "\(char.currentHp)/\(char.maxHp)",
-                                percentage: char.hpPercentage,
-                                color: DarkFantasyTheme.hpBlood
-                            )
+                            HStack(spacing: 6) {
+                                Text("HP")
+                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                    .frame(width: 20, alignment: .leading)
+
+                                HPBarView(currentHp: char.currentHp, maxHp: char.maxHp, height: 10)
+
+                                Text("\(char.currentHp)/\(char.maxHp)")
+                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                    .frame(width: 58, alignment: .trailing)
+                            }
                             HubStatBar(
                                 label: "XP",
                                 valueText: "\(Int(char.xpPercentage * 100))%",
@@ -1098,6 +1105,9 @@ struct HeroDetailView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 
+            // Search + Sort bar
+            inventorySearchBar(vm)
+
             // Item grid — always show all 28 slots
             if vm.isLoading {
                 ProgressView().tint(DarkFantasyTheme.gold)
@@ -1163,5 +1173,98 @@ struct HeroDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Inventory Search & Sort Bar
+
+    @ViewBuilder
+    private func inventorySearchBar(_ vm: InventoryViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Search field
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                TextField("", text: Binding(
+                    get: { vm.searchText },
+                    set: { vm.searchText = $0 }
+                ))
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .placeholder(when: vm.searchText.isEmpty) {
+                    Text("Search items...")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+
+                if !vm.searchText.isEmpty {
+                    Button { vm.searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    }
+                }
+
+                // Sort picker
+                Menu {
+                    ForEach(InventorySortMode.allCases, id: \.self) { mode in
+                        Button {
+                            vm.sortMode = mode
+                        } label: {
+                            Label(mode.rawValue, systemImage: mode.icon)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .frame(width: 32, height: 32)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .frame(height: LayoutConstants.buttonHeightSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.bgTertiary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+
+            // Filter chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    filterChip("All", isActive: vm.filterType == nil) {
+                        vm.filterType = nil
+                    }
+                    ForEach(InventoryViewModel.filterTypes, id: \.self) { type in
+                        filterChip(type.displayName, isActive: vm.filterType == type) {
+                            vm.filterType = vm.filterType == type ? nil : type
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    @ViewBuilder
+    private func filterChip(_ label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .foregroundStyle(isActive ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.spaceXS)
+                .background(
+                    Capsule().fill(isActive ? DarkFantasyTheme.gold : DarkFantasyTheme.bgSecondary)
+                )
+                .overlay(
+                    Capsule().stroke(isActive ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.scalePress(0.95))
     }
 }

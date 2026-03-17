@@ -40,6 +40,7 @@ final class AppState {
     var showDailyLoginPopup = false
     var hasAutoShownDailyLogin = false  // prevents auto-popup on every hub visit
     var dailyLoginCanClaim = false       // drives the hub widget badge
+    var unreadMailCount = 0               // drives the inbox badge on hub
 
     // MARK: - Level Up Modal
     var showLevelUpModal = false
@@ -49,14 +50,65 @@ final class AppState {
     func triggerLevelUpModal(newLevel: Int, statPoints: Int) {
         levelUpNewLevel = newLevel
         levelUpStatPoints = statPoints
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-            showLevelUpModal = true
-        }
+        enqueueModal(.levelUp)
     }
 
     func dismissLevelUpModal() {
         withAnimation(.easeOut(duration: 0.25)) {
             showLevelUpModal = false
+        }
+        // Show next queued modal after brief delay
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(350))
+            self?.presentNextModal()
+        }
+    }
+
+    // MARK: - Modal Queue (prevents overlapping modals)
+
+    enum ModalType: Equatable {
+        case dailyLogin
+        case levelUp
+    }
+
+    var modalQueue: [ModalType] = []
+
+    func enqueueModal(_ modal: ModalType) {
+        // Don't enqueue duplicates
+        guard !modalQueue.contains(modal) else { return }
+        modalQueue.append(modal)
+
+        // If nothing is showing, present immediately
+        if !showLevelUpModal && !showDailyLoginPopup {
+            presentNextModal()
+        }
+    }
+
+    func presentNextModal() {
+        guard !modalQueue.isEmpty else { return }
+        // Don't present if something is already showing
+        guard !showLevelUpModal && !showDailyLoginPopup else { return }
+
+        let next = modalQueue.removeFirst()
+        switch next {
+        case .levelUp:
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                showLevelUpModal = true
+            }
+        case .dailyLogin:
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                showDailyLoginPopup = true
+            }
+        }
+    }
+
+    func dismissDailyLoginPopup() {
+        withAnimation(.easeOut(duration: 0.25)) {
+            showDailyLoginPopup = false
+        }
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(350))
+            self?.presentNextModal()
         }
     }
 
@@ -66,12 +118,13 @@ final class AppState {
         isLoading = loading
     }
 
-    func showToast(_ title: String, subtitle: String = "", type: ToastType = .info) {
-        let toast = ToastMessage(title: title, subtitle: subtitle, type: type)
+    func showToast(_ title: String, subtitle: String = "", type: ToastType = .info, actionLabel: String? = nil, action: (() -> Void)? = nil) {
+        let toast = ToastMessage(title: title, subtitle: subtitle, type: type, actionLabel: actionLabel, action: action)
         self.toasts.append(toast)
 
+        let duration: Double = action != nil ? 5 : 3  // longer for actionable toasts
         Task { [weak self] in
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(duration))
             self?.toasts.removeAll { $0.id == toast.id }
         }
     }
@@ -116,6 +169,8 @@ struct ToastMessage: Identifiable {
     let title: String
     let subtitle: String
     let type: ToastType
+    var actionLabel: String? = nil
+    var action: (() -> Void)? = nil
 }
 
 enum ToastType {

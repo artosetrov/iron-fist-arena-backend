@@ -94,6 +94,6 @@ let cityBuildings: [CityBuilding] = [
         relativeSize: 0.32,
         glowColor: Color.orange,
         fallbackIcon: "trophy.fill",
-        labelYOffset: 0.05
+        labelYOffset: -0.04
     ),
 ]

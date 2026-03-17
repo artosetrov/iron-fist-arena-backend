@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { STAMINA } from '@/lib/game/balance'
+import { getStaminaConfig } from '@/lib/game/live-config'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
+    const STAMINA = await getStaminaConfig()
+
     const characterId = req.nextUrl.searchParams.get('character_id')
     if (!characterId) {
       return NextResponse.json(

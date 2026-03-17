@@ -34,8 +34,17 @@ struct ArenaDetailView: View {
                         // Arena Header (Rating, Record, Rank)
                         arenaHeader(vm)
 
-                        // Loadout strip
-                        loadoutStrip(vm)
+                        // Current stance indicator
+                        if let stance = appState.currentCharacter?.combatStance {
+                            stancePreview(stance)
+                                .tutorialAnchor(.arenaStance)
+                        }
+
+                        // Character card (from Hub)
+                        if let char = appState.currentCharacter {
+                            HubCharacterCardWrapper(character: char)
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                        }
 
                         GoldDivider()
                             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -92,6 +101,7 @@ struct ArenaDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -226,65 +236,50 @@ struct ArenaDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Loadout Strip
+    // MARK: - Stance Preview
 
     @ViewBuilder
-    private func loadoutStrip(_ vm: ArenaViewModel) -> some View {
+    private func stancePreview(_ stance: CombatStance) -> some View {
         Button {
-            vm.goToEquipment()
+            appState.mainPath.append(AppRoute.stanceSelector)
         } label: {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Text("LOADOUT")
-                    .font(DarkFantasyTheme.body(size: 10))
-                    .foregroundStyle(DarkFantasyTheme.textDimLabel)
-
-                HStack(spacing: 6) {
-                    ForEach(0..<5, id: \.self) { index in
-                        if index < vm.equippedItems.count {
-                            let item = vm.equippedItems[index]
-                            ItemImageView(
-                                imageKey: item.imageKey,
-                                imageUrl: item.imageUrl,
-                                systemIcon: item.consumableIcon,
-                                systemIconColor: item.consumableIconColor,
-                                fallbackIcon: item.itemType.icon
-                            )
-                            .frame(width: 32, height: 32)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(DarkFantasyTheme.rarityColor(for: item.rarity), lineWidth: 1)
-                                )
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(DarkFantasyTheme.bgTertiary)
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                                )
-                        }
-                    }
+            HStack(spacing: LayoutConstants.spaceMD) {
+                // Attack zone
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text("⚔️")
+                    Text(stance.attack.uppercased())
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.attack))
                 }
 
                 Spacer()
 
-                Text("Edit ›")
-                    .font(DarkFantasyTheme.body(size: 12))
-                    .foregroundStyle(DarkFantasyTheme.xpRing)
+                Text("STANCE")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.textDimLabel)
+
+                Spacer()
+
+                // Defense zone
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text(stance.defense.uppercased())
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.defense))
+                    Text("🛡️")
+                }
             }
-            .padding(LayoutConstants.spaceSM)
+            .padding(.horizontal, LayoutConstants.cardPadding)
+            .padding(.vertical, LayoutConstants.spaceSM)
             .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(DarkFantasyTheme.bgDarkPanel)
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 1)
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
         }
         .buttonStyle(.scalePress(0.97))
-        .contentShape(Rectangle())
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
@@ -323,6 +318,7 @@ struct ArenaDetailView: View {
                         .frame(maxWidth: .infinity)
                     }
                 }
+                .tutorialAnchor(.arenaOpponent)
                 .padding(.horizontal, LayoutConstants.screenPadding)
             }
         }

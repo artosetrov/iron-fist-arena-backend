@@ -126,10 +126,9 @@ struct LootPreviewSheet: View {
             )
             .shadow(color: .black.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
+            .frame(maxHeight: UIScreen.main.bounds.height * 0.75)
             .fixedSize(horizontal: false, vertical: true)
         }
-        .presentationBackground(.clear)
-        .presentationDetents([.medium])
     }
 
     private func lootFlavorText(for loot: LootPreview) -> String {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { SKILLS } from '@/lib/game/balance'
+import { getSkillsConfig } from '@/lib/game/live-config'
 import { cacheDelete } from '@/lib/cache'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const SKILLS = await getSkillsConfig()
     const { character_id, skill_id } = await req.json()
 
     if (!character_id || !skill_id) {

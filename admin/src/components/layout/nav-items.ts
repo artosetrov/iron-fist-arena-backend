@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Database, Users, Swords, Package, Trophy,
   Calendar, Sliders, Scroll, ImageIcon, Settings, Shield, Dice3,
   Coins, ScrollText, Castle, Zap, GitBranch, Scale, Gauge, Palette,
+  FlaskConical, Archive, Gift, Award, Mail, Flag, ShoppingBag, Bell,
 } from 'lucide-react'
 
 export const navItems = [
@@ -12,6 +13,7 @@ export const navItems = [
   { label: 'Dungeons', href: '/dungeons', icon: Castle },
   { label: 'Economy', href: '/economy', icon: Coins },
   { label: 'Items', href: '/items', icon: ScrollText },
+  { label: 'Consumables', href: '/consumables', icon: FlaskConical },
   { label: 'Skills', href: '/skills', icon: Zap },
   { label: 'Passives', href: '/passives', icon: GitBranch },
   { label: 'Loot Tables', href: '/loot', icon: Dice3 },
@@ -19,8 +21,16 @@ export const navItems = [
   { label: 'Item Balance', href: '/item-balance', icon: Scale },
   { label: 'Events', href: '/events', icon: Calendar },
   { label: 'Seasons', href: '/seasons', icon: Trophy },
+  { label: 'Battle Pass', href: '/battle-pass', icon: Award },
   { label: 'Achievements', href: '/achievements', icon: Shield },
+  { label: 'Quests', href: '/quests', icon: Scroll },
+  { label: 'Daily Login', href: '/daily-login', icon: Gift },
+  { label: 'Mail / Inbox', href: '/mail', icon: Mail },
+  { label: 'Shop Offers', href: '/offers', icon: ShoppingBag },
+  { label: 'Push Notifications', href: '/push', icon: Bell },
+  { label: 'Feature Flags', href: '/flags', icon: Flag },
   { label: 'Live Config', href: '/config', icon: Sliders },
+  { label: 'Config Snapshots', href: '/snapshots', icon: Archive },
   { label: 'Appearances', href: '/appearances', icon: Palette },
   { label: 'Assets', href: '/assets', icon: ImageIcon },
   { label: 'Settings', href: '/settings', icon: Settings },

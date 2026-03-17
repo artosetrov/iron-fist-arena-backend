@@ -85,15 +85,29 @@ export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
 // --- In-App Purchase products ---
 export interface IapProduct {
   gems: number;
+  gold: number;
+  premium: boolean; // grants permanent premium
+  monthlyGemCard: boolean; // activates daily gem card (50 instant + 10/day x30)
   price: number;
 }
 
 export const IAP_PRODUCTS: Record<string, IapProduct> = {
-  gems_small: { gems: 100, price: 0.99 },
-  gems_medium: { gems: 550, price: 4.99 },
-  gems_large: { gems: 1200, price: 9.99 },
-  gems_huge: { gems: 2500, price: 19.99 },
-  gems_mega: { gems: 6500, price: 49.99 },
+  // Gem packs
+  gems_small:  { gems: 100,  gold: 0, premium: false, monthlyGemCard: false, price: 0.99 },
+  gems_medium: { gems: 550,  gold: 0, premium: false, monthlyGemCard: false, price: 4.99 },
+  gems_large:  { gems: 1200, gold: 0, premium: false, monthlyGemCard: false, price: 9.99 },
+  gems_huge:   { gems: 2500, gold: 0, premium: false, monthlyGemCard: false, price: 19.99 },
+  gems_mega:   { gems: 6500, gold: 0, premium: false, monthlyGemCard: false, price: 49.99 },
+  // Gold packs
+  gold_500:    { gems: 0, gold: 500,   premium: false, monthlyGemCard: false, price: 0.99 },
+  gold_1200:   { gems: 0, gold: 1200,  premium: false, monthlyGemCard: false, price: 1.99 },
+  gold_3500:   { gems: 0, gold: 3500,  premium: false, monthlyGemCard: false, price: 4.99 },
+  gold_8000:   { gems: 0, gold: 8000,  premium: false, monthlyGemCard: false, price: 9.99 },
+  gold_20000:  { gems: 0, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99 },
+  // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry)
+  monthly_gem_card: { gems: 50, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
+  // Premium — one-time forever unlock
+  premium_forever: { gems: 0, gold: 0, premium: true, monthlyGemCard: false, price: 9.99 },
 } as const;
 
 // --- Battle Pass ---
@@ -115,6 +129,16 @@ export const ELO = {
   K_DEFAULT: 32,
   CALIBRATION_GAMES: 10,
   MIN_RATING: 0,
+} as const;
+
+// --- PvP Rank Thresholds ---
+export const PVP_RANKS = {
+  BRONZE: 0,
+  SILVER: 1200,
+  GOLD: 1500,
+  PLATINUM: 1800,
+  DIAMOND: 2100,
+  GRANDMASTER: 2400,
 } as const;
 
 // --- Combat ---

@@ -8,6 +8,7 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { chaGoldBonus } from '@/lib/game/balance'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
+import { getBattlePassConfig } from '@/lib/game/live-config'
 import {
   generateRushEnemy,
   getRoomRewards,
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
   let activeRunId: string | null = null
 
   try {
+    const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
     const { character_id, run_id } = body
 

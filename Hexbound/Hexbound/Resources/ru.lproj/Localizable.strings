@@ -1,0 +1,214 @@
+/* Hexbound – Русская локализация */
+
+// MARK: - Common
+"common.ok" = "ОК";
+"common.cancel" = "Отмена";
+"common.save" = "Сохранить";
+"common.delete" = "Удалить";
+"common.confirm" = "Подтвердить";
+"common.back" = "Назад";
+"common.close" = "Закрыть";
+"common.loading" = "Загрузка...";
+"common.error" = "Ошибка";
+"common.retry" = "Повторить";
+"common.done" = "Готово";
+"common.edit" = "Изменить";
+"common.search" = "Поиск";
+"common.comingSoon" = "Скоро...";
+"common.level" = "Уровень";
+"common.level.short" = "Ур.";
+
+// MARK: - Auth
+"auth.login" = "Войти";
+"auth.register" = "Регистрация";
+"auth.logout" = "Выйти";
+"auth.email" = "Электронная почта";
+"auth.password" = "Пароль";
+"auth.username" = "Имя пользователя";
+"auth.forgotPassword" = "Забыли пароль?";
+"auth.noAccount" = "Нет аккаунта?";
+"auth.hasAccount" = "Уже есть аккаунт?";
+"auth.signInWithGoogle" = "Войти через Google";
+"auth.signInWithApple" = "Войти через Apple";
+"auth.orContinueWith" = "Или продолжить с";
+
+// MARK: - Onboarding
+"onboarding.chooseName" = "ВЫБЕРИ ИМЯ";
+"onboarding.yourName" = "ТВОЁ ИМЯ";
+"onboarding.enterHeroName" = "Введи имя героя...";
+"onboarding.nameMinChars" = "Имя должно содержать минимум 3 символа";
+"onboarding.checkingAvailability" = "Проверяю доступность...";
+"onboarding.nameAvailable" = "Имя доступно!";
+"onboarding.nameTaken" = "Имя уже занято";
+"onboarding.chooseClass" = "ВЫБЕРИ КЛАСС";
+"onboarding.chooseAppearance" = "ВЫБЕРИ ВНЕШНОСТЬ";
+"onboarding.continue" = "Продолжить";
+"onboarding.createCharacter" = "Создать персонажа";
+
+// MARK: - Hub / Main
+"hub.title" = "ГЛАВНАЯ";
+"hub.arena" = "Арена";
+"hub.dungeons" = "Подземелья";
+"hub.shop" = "Магазин";
+"hub.hero" = "Герой";
+"hub.quests" = "Задания";
+"hub.leaderboard" = "Рейтинг";
+"hub.achievements" = "Достижения";
+"hub.goldMine" = "Золотая шахта";
+"hub.battlePass" = "Боевой пропуск";
+"hub.dailyLogin" = "Ежедневный вход";
+
+// MARK: - Shop
+"shop.title" = "МАГАЗИН";
+"shop.merchant" = "ТОРГОВЕЦ";
+"shop.noItems" = "Нет доступных предметов";
+"shop.buy" = "Купить";
+"shop.purchased" = "Куплено";
+"shop.maxPurchased" = "Лимит покупок";
+"shop.price" = "Цена";
+"shop.discount" = "-%d%%";
+"shop.timeLeft" = "Осталось %@";
+"shop.gems" = "Кристаллы";
+"shop.gold" = "Золото";
+"shop.buyGems" = "Купить кристаллы";
+"shop.items" = "Предметы";
+"shop.consumables" = "Расходники";
+"shop.offers" = "Спец. предложения";
+
+// MARK: - Arena / PvP
+"arena.title" = "АРЕНА";
+"arena.findMatch" = "Найти бой";
+"arena.searching" = "Поиск...";
+"arena.rank" = "Ранг";
+"arena.rating" = "Рейтинг";
+"arena.wins" = "Победы";
+"arena.losses" = "Поражения";
+"arena.streak" = "Серия побед";
+"arena.matchHistory" = "История боёв";
+"arena.victory" = "ПОБЕДА";
+"arena.defeat" = "ПОРАЖЕНИЕ";
+"arena.draw" = "НИЧЬЯ";
+"arena.rewards" = "Награды";
+
+// MARK: - Combat
+"combat.yourTurn" = "ВАШ ХОД";
+"combat.enemyTurn" = "Ход противника";
+"combat.attack" = "Атака";
+"combat.defend" = "Защита";
+"combat.skill" = "Умение";
+"combat.flee" = "Бежать";
+"combat.hp" = "ОЗ";
+"combat.mp" = "ОМ";
+"combat.damage" = "Урон";
+"combat.heal" = "Лечение";
+"combat.miss" = "ПРОМАХ";
+"combat.critical" = "КРИТИЧЕСКИЙ";
+
+// MARK: - Hero
+"hero.title" = "ГЕРОЙ";
+"hero.stats" = "Характеристики";
+"hero.equipment" = "Снаряжение";
+"hero.skills" = "Умения";
+"hero.inventory" = "Инвентарь";
+"hero.strength" = "Сила";
+"hero.agility" = "Ловкость";
+"hero.intelligence" = "Интеллект";
+"hero.vitality" = "Живучесть";
+"hero.xpToNext" = "%d опыта до следующего уровня";
+"hero.emptySlot" = "Пустой слот";
+
+// MARK: - Dungeons
+"dungeon.title" = "ПОДЗЕМЕЛЬЯ";
+"dungeon.enter" = "Войти в подземелье";
+"dungeon.floor" = "Этаж %d";
+"dungeon.rooms" = "%d комнат";
+"dungeon.difficulty" = "Сложность";
+"dungeon.easy" = "Легко";
+"dungeon.normal" = "Нормально";
+"dungeon.hard" = "Сложно";
+"dungeon.nightmare" = "Кошмар";
+"dungeon.boss" = "БОСС";
+"dungeon.cleared" = "Пройдено!";
+"dungeon.staminaCost" = "Выносливость: %d";
+
+// MARK: - Achievements
+"achievements.title" = "ДОСТИЖЕНИЯ";
+"achievements.completed" = "Выполнено";
+"achievements.inProgress" = "В процессе";
+"achievements.locked" = "Заблокировано";
+"achievements.claimReward" = "Забрать награду";
+"achievements.progress" = "%d / %d";
+
+// MARK: - Quests
+"quests.title" = "ЗАДАНИЯ";
+"quests.daily" = "Ежедневные";
+"quests.weekly" = "Еженедельные";
+"quests.story" = "Сюжетные";
+"quests.claim" = "Забрать";
+"quests.completed" = "Выполнено";
+"quests.active" = "Активные";
+
+// MARK: - Settings
+"settings.title" = "Настройки";
+"settings.account" = "Аккаунт";
+"settings.language" = "Язык";
+"settings.sound" = "Звук";
+"settings.music" = "Музыка";
+"settings.notifications" = "Уведомления";
+"settings.about" = "О приложении";
+"settings.version" = "Версия";
+"settings.deleteAccount" = "Удалить аккаунт";
+"settings.deleteWarning" = "Это действие нельзя отменить. Весь прогресс будет потерян.";
+"settings.premium" = "Премиум";
+
+// MARK: - Leaderboard
+"leaderboard.title" = "РЕЙТИНГ";
+"leaderboard.global" = "Мировой";
+"leaderboard.class" = "По классам";
+"leaderboard.you" = "Вы";
+
+// MARK: - Battle Pass
+"battlePass.title" = "БОЕВОЙ ПРОПУСК";
+"battlePass.free" = "Бесплатный";
+"battlePass.premium" = "Премиум";
+"battlePass.tier" = "Уровень %d";
+"battlePass.claimAll" = "Забрать всё";
+"battlePass.unlock" = "Открыть Премиум";
+"battlePass.daysLeft" = "Осталось %d дней";
+
+// MARK: - Daily Login
+"dailyLogin.title" = "ЕЖЕДНЕВНЫЙ ВХОД";
+"dailyLogin.day" = "День %d";
+"dailyLogin.claimed" = "Получено";
+"dailyLogin.claimNow" = "Забрать";
+"dailyLogin.streak" = "Дни подряд";
+
+// MARK: - Gold Mine
+"goldMine.title" = "ЗОЛОТАЯ ШАХТА";
+"goldMine.collect" = "Собрать";
+"goldMine.upgrade" = "Улучшить";
+"goldMine.production" = "Добыча";
+"goldMine.perHour" = "%d / час";
+"goldMine.capacity" = "Ёмкость";
+"goldMine.full" = "ПОЛНАЯ";
+
+// MARK: - Premium
+"premium.title" = "ПРЕМИУМ";
+"premium.subscribe" = "Подписаться";
+"premium.xpBonus" = "+20%% опыта из всех источников";
+"premium.goldBonus" = "+20%% золота из всех источников";
+"premium.freePvP" = "5 бесплатных PvP-боёв в день";
+"premium.cosmetics" = "Эксклюзивная премиум-косметика";
+"premium.matchmaking" = "Приоритетный подбор соперников";
+
+// MARK: - Errors
+"error.network" = "Ошибка сети. Проверьте подключение.";
+"error.serverError" = "Ошибка сервера. Попробуйте позже.";
+"error.unauthorized" = "Сессия истекла. Войдите снова.";
+"error.notEnoughGold" = "Недостаточно золота";
+"error.notEnoughGems" = "Недостаточно кристаллов";
+"error.notEnoughStamina" = "Недостаточно выносливости";
+
+// MARK: - Push Notifications
+"push.permissionTitle" = "Оставайся в бою!";
+"push.permissionBody" = "Включи уведомления, чтобы получать награды арены, обновления заданий и спецпредложения.";

@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
-import { GEM_COSTS, EXTRA_PVP } from '@/lib/game/balance'
+import { getGemCostsConfig, getExtraPvpConfig } from '@/lib/game/live-config'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-
-const EXTRA_PVP_GEM_COST = GEM_COSTS.EXTRA_PVP_COMBAT
-const EXTRA_PVP_STAMINA = EXTRA_PVP.STAMINA_GRANTED
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -17,6 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const [GEM_COSTS, EXTRA_PVP] = await Promise.all([
+      getGemCostsConfig(),
+      getExtraPvpConfig(),
+    ])
+    const EXTRA_PVP_GEM_COST = GEM_COSTS.EXTRA_PVP_COMBAT
+    const EXTRA_PVP_STAMINA = EXTRA_PVP.STAMINA_GRANTED
+
     const body = await req.json()
     const { character_id } = body
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ACHIEVEMENT_CATALOG } from '@/lib/game/achievement-catalog'
+import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -27,6 +27,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Load catalog from DB (falls back to hardcoded)
+    const catalog = await getAchievementCatalog()
+
     // Get existing achievements
     let achievements = await prisma.achievement.findMany({
       where: { characterId },
@@ -35,12 +38,12 @@ export async function GET(req: NextRequest) {
 
     // If no achievements exist, initialize from catalog
     if (achievements.length === 0) {
-      const catalogKeys = Object.keys(ACHIEVEMENT_CATALOG)
+      const catalogKeys = Object.keys(catalog)
 
       const createData = catalogKeys.map((key) => ({
         characterId,
         achievementKey: key,
-        target: ACHIEVEMENT_CATALOG[key].target,
+        target: catalog[key].target,
         progress: 0,
         completed: false,
         rewardClaimed: false,
@@ -56,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     // Enrich with catalog metadata and transform to iOS-compatible format
     const enriched = achievements.map((a) => {
-      const def = ACHIEVEMENT_CATALOG[a.achievementKey]
+      const def = catalog[a.achievementKey]
       const rewardType = def?.rewardType ?? 'gold'
       const rewardAmount = def?.rewardAmount ?? 0
       const reward =

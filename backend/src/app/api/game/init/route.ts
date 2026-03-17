@@ -5,16 +5,19 @@ import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { canClaimDailyLogin } from '@/lib/game/daily-login'
 import {
-  STAMINA,
-  HP_REGEN,
-  UPGRADE_CHANCES,
-  COMBAT,
-  PRESTIGE,
-  GOLD_REWARDS,
-  XP_REWARDS,
-  DAILY_LOGIN_REWARDS,
-  ELO,
-} from '@/lib/game/balance'
+  getStaminaConfig,
+  getHpRegenConfig,
+  getUpgradeChancesConfig,
+  getCombatConfig,
+  getPrestigeConfig,
+  getGoldRewardsConfig,
+  getXpRewardsConfig,
+  getDailyLoginRewardsConfig,
+  getEloConfig,
+  getPvpRanksConfig,
+  getBattlePassConfig,
+} from '@/lib/game/live-config'
+import { resolveAllFlags } from '@/lib/game/feature-flags'
 import { QuestType } from '@prisma/client'
 
 // Quest metadata for formatting
@@ -219,25 +222,55 @@ export async function GET(req: NextRequest) {
     }
 
     // Game balance constants the client needs for local calculations
+    const [
+      staminaConfig,
+      hpRegenConfig,
+      prestigeConfig,
+      goldRewardsConfig,
+      xpRewardsConfig,
+      combatConfig,
+      upgradeChancesConfig,
+      dailyLoginRewardsConfig,
+      eloConfig,
+      pvpRanksConfig,
+      battlePassConfig,
+      featureFlags,
+    ] = await Promise.all([
+      getStaminaConfig(),
+      getHpRegenConfig(),
+      getPrestigeConfig(),
+      getGoldRewardsConfig(),
+      getXpRewardsConfig(),
+      getCombatConfig(),
+      getUpgradeChancesConfig(),
+      getDailyLoginRewardsConfig(),
+      getEloConfig(),
+      getPvpRanksConfig(),
+      getBattlePassConfig(),
+      resolveAllFlags(user.id, { id: character.id, level: character.level, class: character.class }),
+    ])
+
     const config = {
-      staminaMax: STAMINA.MAX,
-      staminaRegenMinutes: STAMINA.REGEN_INTERVAL_MINUTES,
-      hpRegenPercent: HP_REGEN.REGEN_RATE,
-      hpRegenMinutes: HP_REGEN.REGEN_INTERVAL_MINUTES,
-      pvpStaminaCost: STAMINA.PVP_COST,
-      freePvpPerDay: STAMINA.FREE_PVP_PER_DAY,
-      upgradeChances: UPGRADE_CHANCES,
-      maxLevel: PRESTIGE.MAX_LEVEL,
-      statPointsPerLevel: PRESTIGE.STAT_POINTS_PER_LEVEL,
-      pvpWinGold: GOLD_REWARDS.PVP_WIN_BASE,
-      pvpLossGold: GOLD_REWARDS.PVP_LOSS_BASE,
-      pvpWinXp: XP_REWARDS.PVP_WIN_XP,
-      pvpLossXp: XP_REWARDS.PVP_LOSS_XP,
-      critMultiplier: COMBAT.CRIT_MULTIPLIER,
-      maxCritChance: COMBAT.MAX_CRIT_CHANCE,
-      maxDodgeChance: COMBAT.MAX_DODGE_CHANCE,
-      dailyLoginRewards: DAILY_LOGIN_REWARDS,
-      eloCalibrationGames: ELO.CALIBRATION_GAMES,
+      staminaMax: staminaConfig.MAX,
+      staminaRegenMinutes: staminaConfig.REGEN_INTERVAL_MINUTES,
+      hpRegenPercent: hpRegenConfig.REGEN_RATE,
+      hpRegenMinutes: hpRegenConfig.REGEN_INTERVAL_MINUTES,
+      pvpStaminaCost: staminaConfig.PVP_COST,
+      freePvpPerDay: staminaConfig.FREE_PVP_PER_DAY,
+      upgradeChances: upgradeChancesConfig,
+      maxLevel: prestigeConfig.MAX_LEVEL,
+      statPointsPerLevel: prestigeConfig.STAT_POINTS_PER_LEVEL,
+      pvpWinGold: goldRewardsConfig.PVP_WIN_BASE,
+      pvpLossGold: goldRewardsConfig.PVP_LOSS_BASE,
+      pvpWinXp: xpRewardsConfig.PVP_WIN_XP,
+      pvpLossXp: xpRewardsConfig.PVP_LOSS_XP,
+      critMultiplier: combatConfig.CRIT_MULTIPLIER,
+      maxCritChance: combatConfig.MAX_CRIT_CHANCE,
+      maxDodgeChance: combatConfig.MAX_DODGE_CHANCE,
+      dailyLoginRewards: dailyLoginRewardsConfig,
+      eloCalibrationGames: eloConfig.CALIBRATION_GAMES,
+      pvpRanks: pvpRanksConfig,
+      battlePass: battlePassConfig,
     }
 
     return NextResponse.json({
@@ -254,6 +287,7 @@ export async function GET(req: NextRequest) {
       achievementsSummary,
       activeEvents,
       config,
+      featureFlags,
       serverTime: now.toISOString(),
     })
   } catch (error) {

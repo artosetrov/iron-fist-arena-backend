@@ -3,14 +3,23 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
 import { rateLimit } from '@/lib/rate-limit'
+import { getGameConfig } from '@/lib/game/config'
 
-const CONSUMABLE_PRICES: Record<ConsumableType, number> = {
+// Hardcoded fallbacks — overridden by GameConfig consumable.price.* keys
+const DEFAULT_CONSUMABLE_PRICES: Record<ConsumableType, number> = {
   stamina_potion_small: 100,
   stamina_potion_medium: 250,
   stamina_potion_large: 500,
   health_potion_small: 150,
   health_potion_medium: 350,
   health_potion_large: 700,
+}
+
+async function getConsumablePrice(type: ConsumableType): Promise<number> {
+  return getGameConfig<number>(
+    `consumable.price.${type}`,
+    DEFAULT_CONSUMABLE_PRICES[type],
+  )
 }
 
 export async function POST(req: NextRequest) {
@@ -47,7 +56,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const unitPrice = CONSUMABLE_PRICES[consumable_type as ConsumableType]
+    const unitPrice = await getConsumablePrice(consumable_type as ConsumableType)
     const totalCost = unitPrice * quantity
 
     // Use interactive transaction with row-level lock to prevent TOCTOU

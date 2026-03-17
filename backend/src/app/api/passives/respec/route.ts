@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { PASSIVES } from '@/lib/game/balance'
+import { getPassivesConfig } from '@/lib/game/live-config'
 import { recalculateFullDerivedStats } from '@/lib/game/build-stats'
 import { cacheDelete } from '@/lib/cache'
 import { rateLimit } from '@/lib/rate-limit'
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const PASSIVES = await getPassivesConfig()
     const { character_id } = await req.json()
 
     if (!character_id) {

@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { STAMINA } from '@/lib/game/balance'
+import { getStaminaConfig } from '@/lib/game/live-config'
 import { generateDungeonFloor, getDungeonBossCount } from '@/lib/game/dungeon'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rateLimit } from '@/lib/rate-limit'
-
-const STAMINA_COST: Record<string, number> = {
-  easy: STAMINA.DUNGEON_EASY,
-  normal: STAMINA.DUNGEON_NORMAL,
-  hard: STAMINA.DUNGEON_HARD,
-}
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -21,6 +15,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const STAMINA = await getStaminaConfig()
+    const STAMINA_COST: Record<string, number> = {
+      easy: STAMINA.DUNGEON_EASY,
+      normal: STAMINA.DUNGEON_NORMAL,
+      hard: STAMINA.DUNGEON_HARD,
+    }
+
     const body = await req.json()
     const { character_id, difficulty, dungeon_id } = body
 

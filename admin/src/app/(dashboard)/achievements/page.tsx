@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { AchievementsClient } from './achievements-client'
+import { getAchievementDefinitions } from '@/actions/achievement-definitions'
 
 async function getAchievementStats() {
   const results: { achievement_key: string; total_count: string; completed_count: string }[] = await prisma.$queryRaw`
@@ -41,9 +42,10 @@ async function getOverallStats() {
 }
 
 export default async function AchievementsPage() {
-  const [stats, overall] = await Promise.all([
+  const [stats, overall, definitions] = await Promise.all([
     getAchievementStats(),
     getOverallStats(),
+    getAchievementDefinitions().catch(() => []),
   ])
 
   return (
@@ -51,10 +53,10 @@ export default async function AchievementsPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Achievements</h1>
         <p className="text-muted-foreground">
-          Overview of achievement statistics across all players.
+          Manage achievement definitions and view player completion statistics.
         </p>
       </div>
-      <AchievementsClient stats={stats} overall={overall} />
+      <AchievementsClient stats={stats} overall={overall} definitions={definitions} />
     </div>
   )
 }

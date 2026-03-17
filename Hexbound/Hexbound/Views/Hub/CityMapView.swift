@@ -24,7 +24,8 @@ struct CityMapView: View {
                     ForEach(cityBuildings) { building in
                         CityBuildingView(
                             building: building,
-                            terrainSize: terrainSize
+                            terrainSize: terrainSize,
+                            badge: badgeFor(building)
                         ) { tapped in
                             appState.mainPath.append(tapped.route)
                         }
@@ -34,5 +35,14 @@ struct CityMapView: View {
             }
             .defaultScrollAnchor(.center)
         }
+    }
+
+    /// Per-building badge (e.g. free PvP fights remaining on Arena)
+    private func badgeFor(_ building: CityBuilding) -> String? {
+        guard building.id == "arena" else { return nil }
+        let used = appState.currentCharacter?.freePvpToday ?? 0
+        let remaining = AppConstants.freePvpPerDay - used
+        guard remaining > 0 else { return nil }
+        return "FREE \(remaining)"
     }
 }

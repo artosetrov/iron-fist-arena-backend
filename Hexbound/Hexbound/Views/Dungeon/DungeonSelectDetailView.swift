@@ -326,7 +326,7 @@ struct DungeonSelectDetailView: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(
                             fraction >= 1.0
-                                ? DarkFantasyTheme.hpHighGradient
+                                ? DarkFantasyTheme.canonicalHpGradient(percentage: 1.0)
                                 : DarkFantasyTheme.progressGradient
                         )
                         .frame(width: geo.size.width * fraction)

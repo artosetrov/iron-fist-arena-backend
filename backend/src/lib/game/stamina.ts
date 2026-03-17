@@ -2,7 +2,7 @@
 // stamina.ts — Stamina regeneration calculation
 // =============================================================================
 
-import { STAMINA } from './balance';
+import { getStaminaConfig } from './live-config';
 
 export interface StaminaResult {
   stamina: number;
@@ -12,7 +12,7 @@ export interface StaminaResult {
 /**
  * Calculate the current stamina based on time elapsed since last update.
  *
- * Regenerates 1 point per REGEN_INTERVAL_MINUTES (8 min by default).
+ * Regenerates REGEN_RATE point(s) per REGEN_INTERVAL_MINUTES.
  * Capped at maxStamina.
  *
  * @param currentStamina   The stored stamina value
@@ -20,22 +20,24 @@ export interface StaminaResult {
  * @param lastUpdate       Timestamp of the last stamina update
  * @returns                The new stamina value and whether it changed
  */
-export function calculateCurrentStamina(
+export async function calculateCurrentStamina(
   currentStamina: number,
   maxStamina: number,
   lastUpdate: Date,
-): StaminaResult {
+): Promise<StaminaResult> {
   if (currentStamina >= maxStamina) {
     return { stamina: maxStamina, updated: false };
   }
+
+  const staminaConfig = await getStaminaConfig();
 
   const now = Date.now();
   const elapsed = now - lastUpdate.getTime();
   const minutesElapsed = elapsed / (1000 * 60);
 
   const pointsToRegen = Math.floor(
-    minutesElapsed / STAMINA.REGEN_INTERVAL_MINUTES,
-  ) * STAMINA.REGEN_RATE;
+    minutesElapsed / staminaConfig.REGEN_INTERVAL_MINUTES,
+  ) * staminaConfig.REGEN_RATE;
 
   if (pointsToRegen <= 0) {
     return { stamina: currentStamina, updated: false };

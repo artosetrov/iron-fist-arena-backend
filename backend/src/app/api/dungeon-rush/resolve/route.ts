@@ -15,6 +15,7 @@ import {
   type RushState,
 } from '@/lib/game/dungeon-rush'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
+import { getBattlePassConfig } from '@/lib/game/live-config'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
   let activeRoomType: string | null = null
 
   try {
+    const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
     const { character_id, run_id, action } = body
 

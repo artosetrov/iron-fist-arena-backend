@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { STAMINA, COMBAT, GOLD_REWARDS, XP_REWARDS, ELO, STANCE_ZONES } from '@/lib/game/balance'
+import {
+  getStaminaConfig,
+  getCombatConfig,
+  getGoldRewardsConfig,
+  getXpRewardsConfig,
+} from '@/lib/game/live-config'
+import { STANCE_ZONES } from '@/lib/game/balance'
 
 const BATTLE_TICKET_TTL_MS = 5 * 60_000
 
@@ -30,6 +36,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const [STAMINA, COMBAT] = await Promise.all([
+      getStaminaConfig(),
+      getCombatConfig(),
+    ])
+
     const body = await req.json()
     const { character_id, opponent_id, revenge_id } = body
 

@@ -6,27 +6,49 @@ import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { rateLimit } from '@/lib/rate-limit'
+import { getGameConfig } from '@/lib/game/config'
 
-// How much stamina each stamina potion restores
-const STAMINA_RESTORE: Partial<Record<ConsumableType, number>> = {
+// Hardcoded fallbacks — overridden by GameConfig consumable.* keys
+const DEFAULT_STAMINA_RESTORE: Partial<Record<ConsumableType, number>> = {
   stamina_potion_small: 30,
   stamina_potion_medium: 60,
   stamina_potion_large: 999, // full restore (capped at max)
 }
 
-// How much HP each health potion restores (percentage of maxHp)
-const HP_RESTORE_PERCENT: Partial<Record<ConsumableType, number>> = {
+const DEFAULT_HP_RESTORE_PERCENT: Partial<Record<ConsumableType, number>> = {
   health_potion_small: 25,   // 25% of max HP
   health_potion_medium: 50,  // 50% of max HP
   health_potion_large: 100,  // full restore
 }
 
+const STAMINA_POTION_TYPES = new Set<string>([
+  'stamina_potion_small', 'stamina_potion_medium', 'stamina_potion_large',
+])
+
+const HEALTH_POTION_TYPES = new Set<string>([
+  'health_potion_small', 'health_potion_medium', 'health_potion_large',
+])
+
 function isStaminaPotion(type: ConsumableType): boolean {
-  return type in STAMINA_RESTORE
+  return STAMINA_POTION_TYPES.has(type)
 }
 
 function isHealthPotion(type: ConsumableType): boolean {
-  return type in HP_RESTORE_PERCENT
+  return HEALTH_POTION_TYPES.has(type)
+}
+
+async function getStaminaRestore(type: ConsumableType): Promise<number> {
+  return getGameConfig<number>(
+    `consumable.stamina_restore.${type}`,
+    DEFAULT_STAMINA_RESTORE[type] ?? 0,
+  )
+}
+
+async function getHpRestorePercent(type: ConsumableType): Promise<number> {
+  return getGameConfig<number>(
+    `consumable.hp_restore_percent.${type}`,
+    DEFAULT_HP_RESTORE_PERCENT[type] ?? 0,
+  )
 }
 
 /**
@@ -109,7 +131,7 @@ export async function POST(req: NextRequest) {
           throw new Error('STAMINA_FULL')
         }
 
-        const restore = STAMINA_RESTORE[ctEnum]!
+        const restore = await getStaminaRestore(ctEnum)
         const newStamina = Math.min(staminaResult.stamina + restore, character.max_stamina)
 
         const [, updatedConsumable] = await Promise.all([
@@ -149,7 +171,7 @@ export async function POST(req: NextRequest) {
         throw new Error('HEALTH_FULL')
       }
 
-      const percent = HP_RESTORE_PERCENT[ctEnum]!
+      const percent = await getHpRestorePercent(ctEnum)
       const restoreAmount = Math.floor(character.max_hp * percent / 100)
       const newHp = Math.min(hpResult.hp + restoreAmount, character.max_hp)
 

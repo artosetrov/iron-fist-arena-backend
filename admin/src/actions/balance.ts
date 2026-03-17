@@ -9,7 +9,7 @@ export async function getBalanceConfigs() {
 
   const balanceCategories = [
     'stamina', 'gold_rewards', 'xp_rewards', 'first_win_bonus',
-    'drop_chances', 'rarity_distribution', 'elo', 'combat',
+    'drop_chances', 'rarity_distribution', 'elo', 'pvp_ranks', 'combat',
     'win_streak', 'matchmaking', 'prestige', 'upgrade',
     'battle_pass', 'hp_regen', 'skills', 'passives',
     'gem_costs', 'inventory',
@@ -27,6 +27,23 @@ export async function batchUpdateBalanceConfigs(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+
+  // Auto-snapshot before batch update
+  const allConfigs = await prisma.gameConfig.findMany()
+  if (allConfigs.length > 0) {
+    await prisma.configSnapshot.create({
+      data: {
+        name: `Auto-backup before balance update (${updates.length} changes)`,
+        configs: allConfigs.map(c => ({
+          key: c.key,
+          value: c.value,
+          category: c.category,
+          description: c.description,
+        })) as never,
+        createdBy: adminId,
+      },
+    })
+  }
 
   const results = []
 
@@ -70,6 +87,23 @@ export async function batchUpdateBalanceConfigs(
 export async function resetBalanceToDefaults(keys: string[], adminId: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+
+  // Auto-snapshot before reset
+  const allConfigs = await prisma.gameConfig.findMany()
+  if (allConfigs.length > 0) {
+    await prisma.configSnapshot.create({
+      data: {
+        name: `Auto-backup before reset (${keys.length} configs)`,
+        configs: allConfigs.map(c => ({
+          key: c.key,
+          value: c.value,
+          category: c.category,
+          description: c.description,
+        })) as never,
+        createdBy: adminId,
+      },
+    })
+  }
 
   // Delete the specified keys so they revert to code defaults
   await prisma.gameConfig.deleteMany({

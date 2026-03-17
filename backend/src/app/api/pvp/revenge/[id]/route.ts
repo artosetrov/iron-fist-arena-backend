@@ -7,10 +7,12 @@ import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import {
-  STAMINA,
-  GOLD_REWARDS,
-  XP_REWARDS,
-  FIRST_WIN_BONUS,
+  getStaminaConfig,
+  getGoldRewardsConfig,
+  getXpRewardsConfig,
+  getFirstWinBonusConfig,
+} from '@/lib/game/live-config'
+import {
   chaGoldBonus,
 } from '@/lib/game/balance'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
@@ -44,6 +46,13 @@ export async function POST(
   }
 
   try {
+    const [STAMINA, GOLD_REWARDS, XP_REWARDS, FIRST_WIN_BONUS] = await Promise.all([
+      getStaminaConfig(),
+      getGoldRewardsConfig(),
+      getXpRewardsConfig(),
+      getFirstWinBonusConfig(),
+    ])
+
     const body = await req.json()
     const { character_id } = body
     const { id: revenge_id } = await params

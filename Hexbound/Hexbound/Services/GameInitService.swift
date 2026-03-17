@@ -72,6 +72,11 @@ final class GameInitService {
                 cache.gameConfig = GameConfig(from: config)
             }
 
+            // Parse feature flags (resolved server-side)
+            if let flags = response["featureFlags"] as? [String: Any] {
+                cache.cacheFeatureFlags(flags)
+            }
+
             // Calculate server time delta for client-side stamina calculation
             if let serverTimeStr = response["serverTime"] as? String {
                 let formatter = ISO8601DateFormatter()

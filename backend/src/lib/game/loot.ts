@@ -2,7 +2,8 @@
 // loot.ts — Item drop system (config-driven via item-balance engine)
 // =============================================================================
 
-import { DROP_CHANCES, RARITY_DISTRIBUTION, INVENTORY } from './balance';
+import { INVENTORY } from './balance';
+import { getDropChancesConfig, getRarityDistributionConfig, getInventoryConfig } from './live-config';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { generateBalancedBaseStats, calculateSellPrice, getDropTuningConfig, getRarityMultipliers } from './item-balance';
@@ -42,8 +43,15 @@ export interface LootResponseItem {
   base_stats: Record<string, number>;
 }
 
-/** Maximum number of items a character can hold in their inventory. */
-export const MAX_INVENTORY_SLOTS = INVENTORY.MAX_SLOTS;
+// Note: MAX_INVENTORY_SLOTS is now loaded from live-config, see getMaxInventorySlots()
+/**
+ * Get the maximum inventory slots from live config.
+ * Cache this if calling frequently in a single request.
+ */
+async function getMaxInventorySlots(): Promise<number> {
+  const config = await getInventoryConfig();
+  return config.MAX_SLOTS;
+}
 
 // All possible equipment slot types
 const ITEM_TYPES: ItemType[] = [
@@ -110,16 +118,17 @@ export function generateItemName(itemType: ItemType, rarity: Rarity): string {
  */
 async function rollRarity(playerLevel: number): Promise<Rarity> {
   const dropTuning = await getDropTuningConfig();
+  const rarityDist = await getRarityDistributionConfig();
   const levelBonus = Math.max(0, (playerLevel - 1) * dropTuning.levelRarityBonusPerLevel);
   const distribution = dropTuning.levelRarityBonusDistribution;
 
   // Build adjusted weights
   const weights: Record<Rarity, number> = {
-    common: Math.max(RARITY_DISTRIBUTION.common - levelBonus, 10),
-    uncommon: RARITY_DISTRIBUTION.uncommon,
-    rare: RARITY_DISTRIBUTION.rare + levelBonus * (distribution.rare ?? 0.4),
-    epic: RARITY_DISTRIBUTION.epic + levelBonus * (distribution.epic ?? 0.35),
-    legendary: RARITY_DISTRIBUTION.legendary + levelBonus * (distribution.legendary ?? 0.25),
+    common: Math.max(rarityDist.common - levelBonus, 10),
+    uncommon: rarityDist.uncommon,
+    rare: rarityDist.rare + levelBonus * (distribution.rare ?? 0.4),
+    epic: rarityDist.epic + levelBonus * (distribution.epic ?? 0.35),
+    legendary: rarityDist.legendary + levelBonus * (distribution.legendary ?? 0.25),
   };
 
   // Normalise to sum
@@ -147,7 +156,7 @@ function rollItemType(): ItemType {
 
 /**
  * Attempt to generate a dropped item after an activity.
- * Now reads LUK bonus and drop cap from config.
+ * Now reads drop chances from live config with LUK bonus and drop cap from item-balance config.
  */
 export async function rollDropChance(
   playerLevel: number,
@@ -155,7 +164,8 @@ export async function rollDropChance(
   luk: number = 0,
 ): Promise<DroppedItem | null> {
   const dropTuning = await getDropTuningConfig();
-  const baseChance = DROP_CHANCES[difficulty] ?? 0;
+  const dropChances = await getDropChancesConfig();
+  const baseChance = dropChances[difficulty as keyof typeof dropChances] ?? 0;
   const lukBonus = luk * dropTuning.lukBonusPerPoint;
   const chance = Math.min(baseChance + lukBonus, dropTuning.dropChanceCap);
 
@@ -188,10 +198,11 @@ export async function persistLoot(
   drop: DroppedItem,
 ): Promise<LootResponseItem | null> {
   // Check inventory capacity before creating the item
+  const maxSlots = await getMaxInventorySlots();
   const inventoryCount = await prisma.equipmentInventory.count({
     where: { characterId },
   });
-  if (inventoryCount >= MAX_INVENTORY_SLOTS) {
+  if (inventoryCount >= maxSlots) {
     return null; // Inventory full — drop is lost
   }
 

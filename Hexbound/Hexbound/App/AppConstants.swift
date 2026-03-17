@@ -10,6 +10,9 @@ enum AppConstants {
     static let supabaseAuthURL = "\(supabaseProjectURL)/auth/v1"
     static let supabaseRealtimeURL = "wss://gqnyozmqbhgzprsftdzp.supabase.co/realtime/v1/websocket"
 
+    // MARK: - Google Sign-In
+    static let googleClientID = "443362223078-f8bse9a7lddqb2ajoqo18tbqlbigekv0.apps.googleusercontent.com"
+
     // MARK: - Networking
     static let requestTimeout: TimeInterval = 30
     static let maxRetries = 0
@@ -25,6 +28,7 @@ enum AppConstants {
     static let udIsMuted = "is_muted"
     static let udLanguage = "language"
     static let udPushNotifications = "push_notifications"
+    static let udTutorialCompleted = "tutorial_completed_steps"
 
     // MARK: - Game
     static let maxStamina = 120

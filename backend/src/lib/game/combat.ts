@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { COMBAT, STANCE_ZONES, type BodyZone } from './balance';
+import { getCombatConfig } from './live-config';
 import { getClassDamageFormula } from './item-balance';
 import {
   selectSkill,
@@ -186,14 +187,36 @@ function getAutoAttackDamageType(cls: CharacterClassType): DamageType {
   }
 }
 
+interface CombatConfigData {
+  MAX_TURNS: number;
+  MIN_DAMAGE: number;
+  CRIT_MULTIPLIER: number;
+  MAX_CRIT_CHANCE: number;
+  MAX_DODGE_CHANCE: number;
+  ROGUE_DODGE_BONUS: number;
+  TANK_DAMAGE_REDUCTION: number;
+  DAMAGE_VARIANCE: number;
+  POISON_ARMOR_PENETRATION: number;
+  CRIT_PER_LUK: number;
+  CRIT_PER_AGI: number;
+  DODGE_PER_AGI: number;
+  DODGE_PER_LUK: number;
+  CHA_INTIMIDATION_PER_POINT: number;
+  CHA_INTIMIDATION_CAP: number;
+}
+
+// Cached combat config
+let _cachedCombatConfig: CombatConfigData | null = null;
+
 function reduceDamageByType(
   raw: number,
   defender: CharacterStats,
   damageType: DamageType,
+  config: CombatConfigData,
 ): number {
   if (damageType === 'true_damage') return raw;
   if (damageType === 'poison') {
-    const effectiveArmor = Math.max(0, defender.armor) * (1 - COMBAT.POISON_ARMOR_PENETRATION);
+    const effectiveArmor = Math.max(0, defender.armor) * (1 - config.POISON_ARMOR_PENETRATION);
     return raw * (100 / (100 + effectiveArmor));
   }
   const resist = damageType === 'magical' ? defender.magicResist : defender.armor;
@@ -201,35 +224,35 @@ function reduceDamageByType(
   return raw * (100 / (100 + effectiveResist));
 }
 
-function applyClassReduction(damage: number, defenderClass: CharacterClassType): number {
+function applyClassReduction(damage: number, defenderClass: CharacterClassType, config: CombatConfigData): number {
   if (defenderClass === 'tank') {
-    return damage * COMBAT.TANK_DAMAGE_REDUCTION;
+    return damage * config.TANK_DAMAGE_REDUCTION;
   }
   return damage;
 }
 
-function critChance(c: CharacterStats, stanceMod: StanceModifiers): number {
+function critChance(c: CharacterStats, stanceMod: StanceModifiers, config: CombatConfigData): number {
   return Math.min(
-    c.luk * COMBAT.CRIT_PER_LUK + c.agi * COMBAT.CRIT_PER_AGI + stanceMod.crit,
-    COMBAT.MAX_CRIT_CHANCE,
+    c.luk * config.CRIT_PER_LUK + c.agi * config.CRIT_PER_AGI + stanceMod.crit,
+    config.MAX_CRIT_CHANCE,
   );
 }
 
-function dodgeChance(defender: CharacterStats, stanceMod: StanceModifiers): number {
-  const classBonus = defender.class === 'rogue' ? COMBAT.ROGUE_DODGE_BONUS : 0;
+function dodgeChance(defender: CharacterStats, stanceMod: StanceModifiers, config: CombatConfigData): number {
+  const classBonus = defender.class === 'rogue' ? config.ROGUE_DODGE_BONUS : 0;
   return Math.min(
-    defender.agi * COMBAT.DODGE_PER_AGI + defender.luk * COMBAT.DODGE_PER_LUK + classBonus + stanceMod.dodge,
-    COMBAT.MAX_DODGE_CHANCE,
+    defender.agi * config.DODGE_PER_AGI + defender.luk * config.DODGE_PER_LUK + classBonus + stanceMod.dodge,
+    config.MAX_DODGE_CHANCE,
   );
 }
 
 /** CHA intimidation: attacker's CHA reduces defender's outgoing damage. */
-function chaIntimidation(attackerCha: number): number {
-  return Math.min(attackerCha * COMBAT.CHA_INTIMIDATION_PER_POINT, COMBAT.CHA_INTIMIDATION_CAP) / 100;
+function chaIntimidation(attackerCha: number, config: CombatConfigData): number {
+  return Math.min(attackerCha * config.CHA_INTIMIDATION_PER_POINT, config.CHA_INTIMIDATION_CAP) / 100;
 }
 
-function applyVariance(damage: number, rng: SeededRng): number {
-  const variance = COMBAT.DAMAGE_VARIANCE;
+function applyVariance(damage: number, rng: SeededRng, config: CombatConfigData): number {
+  const variance = config.DAMAGE_VARIANCE;
   const multiplier = (1 - variance) + rng() * (variance * 2);
   return damage * multiplier;
 }
@@ -263,12 +286,13 @@ function resolveAttack(
   passivesDef: PassiveBonuses,
   cooldownState: SkillCooldownState,
   rng: SeededRng,
+  config: CombatConfigData,
   attackerZone?: string,
   defenderZone?: string,
 ): { turn: Turn; newDefenderHp: number; healAmount: number } {
   // Dodge check — passive dodge bonus applied
-  const totalDodge = dodgeChance(defenderChar, stanceDef) + passivesDef.flatDodgeChance;
-  const isDodge = rollPercent(rng) < Math.min(totalDodge, COMBAT.MAX_DODGE_CHANCE);
+  const totalDodge = dodgeChance(defenderChar, stanceDef, config) + passivesDef.flatDodgeChance;
+  const isDodge = rollPercent(rng) < Math.min(totalDodge, config.MAX_DODGE_CHANCE);
 
   if (isDodge) {
     return {
@@ -326,13 +350,13 @@ function resolveAttack(
     }
 
     const result = calculateSkillDamage(skill, attackerChar);
-    raw = applyVariance(result.rawDamage, rng);
+    raw = applyVariance(result.rawDamage, rng, config);
     dmgType = result.damageType;
     skillName = result.skillName;
     skillKeyStr = result.skillKey;
   } else {
     // Auto-attack fallback
-    raw = applyVariance(baseDamage(attackerChar), rng);
+    raw = applyVariance(baseDamage(attackerChar), rng, config);
     dmgType = getAutoAttackDamageType(attackerChar.class);
   }
 
@@ -341,20 +365,20 @@ function resolveAttack(
   raw *= 1 + passivesAtk.percentDamage / 100;
 
   // Resistance reduction
-  const reduced = reduceDamageByType(raw, defenderChar, dmgType);
-  const withClass = applyClassReduction(reduced, defenderChar.class);
+  const reduced = reduceDamageByType(raw, defenderChar, dmgType, config);
+  const withClass = applyClassReduction(reduced, defenderChar.class, config);
 
   // Crit check — passive crit bonus applied
-  const totalCrit = critChance(attackerChar, stanceAtk) + passivesAtk.flatCritChance;
-  const isCrit = rollPercent(rng) < Math.min(totalCrit, COMBAT.MAX_CRIT_CHANCE);
-  let dmg = isCrit ? withClass * COMBAT.CRIT_MULTIPLIER : withClass;
+  const totalCrit = critChance(attackerChar, stanceAtk, config) + passivesAtk.flatCritChance;
+  const isCrit = rollPercent(rng) < Math.min(totalCrit, config.MAX_CRIT_CHANCE);
+  let dmg = isCrit ? withClass * config.CRIT_MULTIPLIER : withClass;
 
   // Stance modifiers
   dmg = dmg * (1 + stanceAtk.offense / 100);
   dmg = dmg * (1 - stanceDef.defense / 100);
 
   // CHA intimidation: defender's CHA reduces attacker's damage
-  const intimReduction = chaIntimidation(defenderChar.cha);
+  const intimReduction = chaIntimidation(defenderChar.cha, config);
   if (intimReduction > 0) {
     dmg *= 1 - intimReduction;
   }
@@ -364,7 +388,7 @@ function resolveAttack(
     dmg *= 1 - Math.min(passivesDef.damageReduction, 50) / 100;
   }
 
-  dmg = Math.max(Math.floor(dmg), COMBAT.MIN_DAMAGE);
+  dmg = Math.max(Math.floor(dmg), config.MIN_DAMAGE);
   const newDefenderHp = Math.max(defenderHp - dmg, 0);
 
   // Lifesteal
@@ -395,15 +419,20 @@ function resolveAttack(
 
 /**
  * Run a full turn-based combat between attacker and defender.
- * NOTE: Call initCombatConfig() once before calling this in API routes.
  *
  * Supports skill-based attacks and passive bonuses when present on CharacterStats.
  * Falls back to auto-attack when no skills are equipped (backward compatible).
+ * Fetches live combat config from database with balance.ts as fallback.
  *
  * @param seed Optional 32-bit integer seed for deterministic combat.
  *             When provided, both server and client produce identical results.
  */
-export function runCombat(attacker: CharacterStats, defender: CharacterStats, seed?: number): CombatResult {
+export async function runCombat(attacker: CharacterStats, defender: CharacterStats, seed?: number): Promise<CombatResult> {
+  // Load class damage config and combat config once per combat
+  await loadClassDamageConfig();
+  const config = await getCombatConfig();
+  _cachedCombatConfig = config;
+
   const rng: SeededRng = seed != null ? createSeededRng(seed) : (() => Math.random());
   let hpA = attacker.currentHp ?? attacker.maxHp;
   let hpD = defender.currentHp ?? defender.maxHp;
@@ -468,7 +497,7 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
     zoneSecond = zoneD;
   }
 
-  for (let t = 1; t <= COMBAT.MAX_TURNS; t++) {
+  for (let t = 1; t <= config.MAX_TURNS; t++) {
     // --- First character attacks second ---
     {
       const result = resolveAttack(
@@ -476,6 +505,7 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
         stanceFirst, stanceSecond,
         passivesFirst, passivesSecond,
         cooldownFirst, rng,
+        config,
         zoneFirst.attack,
         zoneSecond.defense,
       );
@@ -499,6 +529,7 @@ export function runCombat(attacker: CharacterStats, defender: CharacterStats, se
         stanceSecond, stanceFirst,
         passivesSecond, passivesFirst,
         cooldownSecond, rng,
+        config,
         zoneSecond.attack,
         zoneFirst.defense,
       );

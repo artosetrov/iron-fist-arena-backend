@@ -98,7 +98,7 @@ struct ScreenCatalogView: View {
         // Modals — trigger flags
         switch item.id {
         case "daily-login-popup":
-            appState.showDailyLoginPopup = true
+            appState.enqueueModal(.dailyLogin)
         case "level-up-modal":
             appState.triggerLevelUpModal(newLevel: 26, statPoints: 3)
         case "toast-overlay":

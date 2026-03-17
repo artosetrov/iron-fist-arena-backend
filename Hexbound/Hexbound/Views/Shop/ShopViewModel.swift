@@ -14,13 +14,19 @@ final class ShopViewModel {
     private let inventoryService: InventoryService
 
     var items: [ShopItem] = []
+    var offers: [ShopOffer] = []
     var isLoading = false
     var selectedTab = 0
     var buyingItemId: String?
+    var buyingOfferId: String?
 
     // Detail modal
     var selectedItem: ShopItem?
     var showItemDetail = false
+
+    // Purchase confirmation (gems / expensive items)
+    var pendingPurchaseItem: ShopItem?
+    var showPurchaseConfirm = false
 
     static let tabs = ["All", "Weapons", "Equipment", "Potions"]
     static let tabTypes: [[String]] = [
@@ -86,7 +92,11 @@ final class ShopViewModel {
         } else {
             isLoading = true
         }
-        let result = await service.getItems()
+        // Load items and offers in parallel
+        async let itemsTask = service.getItems()
+        async let offersTask = loadOffers()
+        let result = await itemsTask
+        _ = await offersTask
         items = result
         cache.cacheShop(result)
         isLoading = false
@@ -94,6 +104,58 @@ final class ShopViewModel {
         if appState.cachedInventory == nil {
             _ = await inventoryService.loadInventory()
         }
+    }
+
+    private func loadOffers() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        do {
+            let response: ShopOffersResponse = try await APIClient.shared.get(
+                APIEndpoints.shopOffers,
+                params: ["character_id": charId]
+            )
+            offers = response.offers
+        } catch {
+            #if DEBUG
+            print("[ShopVM] Failed to load offers: \(error)")
+            #endif
+        }
+    }
+
+    func canAffordOffer(_ offer: ShopOffer) -> Bool {
+        if offer.isGemPurchase {
+            return gems >= offer.salePrice
+        }
+        return gold >= offer.salePrice
+    }
+
+    func buyOffer(_ offer: ShopOffer) async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        guard offer.canPurchase else {
+            appState.showToast("Purchase limit reached!", type: .error)
+            return
+        }
+        guard canAffordOffer(offer) else {
+            appState.showToast(offer.isGemPurchase ? "Not enough gems!" : "Not enough gold!", type: .error)
+            return
+        }
+
+        buyingOfferId = offer.id
+        do {
+            let response: OfferPurchaseResponse = try await APIClient.shared.post(
+                APIEndpoints.shopOffers,
+                body: ["character_id": charId, "offer_id": offer.id]
+            )
+            if response.success {
+                appState.currentCharacter?.gold = response.gold
+                appState.currentCharacter?.gems = response.gems
+                appState.showToast("Purchased \(offer.title)!", type: .reward)
+                // Refresh offers to update purchase counts
+                await loadOffers()
+            }
+        } catch {
+            appState.showToast("Purchase failed", type: .error)
+        }
+        buyingOfferId = nil
     }
 
     // MARK: - Selection
@@ -128,6 +190,28 @@ final class ShopViewModel {
 
     func meetsLevel(_ item: ShopItem) -> Bool {
         playerLevel >= item.requiredLevel
+    }
+
+    /// Gate purchases: gem items require confirmation, gold items go through directly.
+    func requestBuy(_ item: ShopItem) {
+        if item.isGemPurchase {
+            pendingPurchaseItem = item
+            showPurchaseConfirm = true
+        } else {
+            Task { await buy(item) }
+        }
+    }
+
+    func confirmPendingPurchase() {
+        guard let item = pendingPurchaseItem else { return }
+        pendingPurchaseItem = nil
+        showPurchaseConfirm = false
+        Task { await buy(item) }
+    }
+
+    func cancelPendingPurchase() {
+        pendingPurchaseItem = nil
+        showPurchaseConfirm = false
     }
 
     func buy(_ item: ShopItem) async {

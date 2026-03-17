@@ -3,9 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { STAMINA, GEM_COSTS } from '@/lib/game/balance'
-
-const GEMS_PER_REFILL = GEM_COSTS.STAMINA_REFILL
+import { getStaminaConfig, getGemCostsConfig } from '@/lib/game/live-config'
 
 /**
  * POST /api/stamina/refill
@@ -21,6 +19,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const [STAMINA, GEM_COSTS] = await Promise.all([
+      getStaminaConfig(),
+      getGemCostsConfig(),
+    ])
+    const GEMS_PER_REFILL = GEM_COSTS.STAMINA_REFILL
+
     const body = await req.json()
     const { character_id } = body
 

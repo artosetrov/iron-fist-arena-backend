@@ -27,12 +27,14 @@ enum LayoutConstants {
     static let buttonHeightSM: CGFloat = 36      // Tertiary, filter tags
     static let buttonPaddingH: CGFloat = 24      // Horizontal padding inside buttons
     static let buttonRadius: CGFloat = 8
+    static let buttonRadiusLG: CGFloat = 14     // Fight / boss card buttons
 
     // Cards
     static let cardPadding: CGFloat = 16
     static let cardRadius: CGFloat = 12
     static let panelRadius: CGFloat = 8
     static let modalRadius: CGFloat = 16
+    static let bossCardRadius: CGFloat = 20     // Dungeon boss card
 
     // Inputs
     static let inputHeight: CGFloat = 52

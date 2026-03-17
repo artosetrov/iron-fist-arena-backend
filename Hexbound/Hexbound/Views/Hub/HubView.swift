@@ -17,10 +17,15 @@ struct HubView: View {
                         appState.shopInitialTab = 3
                         appState.mainPath.append(AppRoute.shop)
                     } label: {
-                        StaminaBarView(currentStamina: char.currentStamina, maxStamina: char.maxStamina)
+                        StaminaBarView(
+                            currentStamina: char.currentStamina,
+                            maxStamina: char.maxStamina,
+                            recoveryText: staminaRecoveryText(current: char.currentStamina, max: char.maxStamina)
+                        )
                     }
                     .buttonStyle(.scalePress(0.97))
                     .contentShape(Rectangle())
+                    .tutorialAnchor(.hubStamina)
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.top, LayoutConstants.spaceSM)
                 }
@@ -28,6 +33,7 @@ struct HubView: View {
                 // Character Card
                 if let char = appState.currentCharacter {
                     HubCharacterCardWrapper(character: char)
+                        .tutorialAnchor(.hubCharacterCard)
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
 
@@ -39,48 +45,55 @@ struct HubView: View {
 
                 // Interactive city map (replaces nav grid)
                 CityMapView()
+                    .tutorialAnchor(.hubCityMap)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
+                    .overlay(alignment: .topTrailing) {
+                        // Floating action icons — anchored to top-right of map
+                        VStack(spacing: 10) {
+                            FloatingActionIcon(
+                                customIcon: "hud-gift",
+                                badgeActive: appState.dailyLoginCanClaim,
+                                accentColor: DarkFantasyTheme.goldBright,
+                                size: 50
+                            ) {
+                                appState.mainPath.append(AppRoute.dailyLogin)
+                            }
+                            .tutorialAnchor(.hubDailyLogin)
 
-            // Floating action icons — top-right, under hero card
-            VStack {
-                // Offset to sit below stamina + character card
-                Spacer().frame(height: LayoutConstants.spaceSM + 20 + 10 + 120 + 50)
+                            FloatingActionIcon(
+                                customIcon: "hud-quests",
+                                badgeActive: {
+                                    let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
+                                    let total = appState.cachedTypedQuests?.count ?? 0
+                                    return total > 0 && completed < total
+                                }(),
+                                accentColor: DarkFantasyTheme.gold,
+                                size: 50
+                            ) {
+                                appState.mainPath.append(AppRoute.dailyQuests)
+                            }
 
-                VStack(spacing: 10) {
-                    FloatingActionIcon(
-                        customIcon: "hud-gift",
-                        badgeActive: appState.dailyLoginCanClaim,
-                        accentColor: DarkFantasyTheme.goldBright,
-                        size: 50
-                    ) {
-                        appState.mainPath.append(AppRoute.dailyLogin)
+                            FloatingActionIcon(
+                                systemIcon: "envelope.fill",
+                                badgeActive: appState.unreadMailCount > 0,
+                                accentColor: DarkFantasyTheme.accent,
+                                size: 50
+                            ) {
+                                appState.mainPath.append(AppRoute.inbox)
+                            }
+
+                            FloatingSoundToggle(size: 50)
+                        }
+                        .padding(.top, LayoutConstants.spaceSM)
+                        .padding(.trailing, LayoutConstants.screenPadding)
                     }
 
-                    FloatingActionIcon(
-                        customIcon: "hud-quests",
-                        badgeActive: {
-                            let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
-                            let total = appState.cachedTypedQuests?.count ?? 0
-                            return total > 0 && completed < total
-                        }(),
-                        accentColor: DarkFantasyTheme.gold,
-                        size: 50
-                    ) {
-                        appState.mainPath.append(AppRoute.dailyQuests)
-                    }
-
-                    FloatingSoundToggle(size: 50)
-                }
-
-                Spacer()
             }
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, LayoutConstants.screenPadding)
-
         }
         .navigationBarHidden(true)
+        .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])
         .task { await checkDailyLogin() }
+        .task { await fetchUnreadMailCount() }
         .onAppear {
             // Start BGM
             AudioManager.shared.playBGM("Stray City.mp3")
@@ -103,6 +116,13 @@ struct HubView: View {
                 Task { await prefetchDungeons() }
             }
         }
+    }
+
+    private func fetchUnreadMailCount() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        let vm = InboxViewModel()
+        await vm.fetchUnreadCount(characterId: charId)
+        appState.unreadMailCount = vm.unreadCount
     }
 
     private func checkDailyLogin() async {
@@ -198,6 +218,20 @@ struct HubView: View {
         }
         if !progress.isEmpty {
             await MainActor.run { cache.cacheDungeonProgress(progress) }
+        }
+    }
+
+    private func staminaRecoveryText(current: Int, max: Int) -> String? {
+        guard current < max else { return nil }
+        let missing = max - current
+        let minutesPerPoint = 5 // 5 minutes per stamina point
+        let totalMinutes = missing * minutesPerPoint
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0 {
+            return "Full in \(hours)h \(minutes)m"
+        } else {
+            return "Full in \(minutes)m"
         }
     }
 }

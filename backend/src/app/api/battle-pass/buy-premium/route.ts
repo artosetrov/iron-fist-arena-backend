@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { GEM_COSTS } from '@/lib/game/balance'
+import { getGemCostsConfig } from '@/lib/game/live-config'
 import { rateLimit } from '@/lib/rate-limit'
-
-const PREMIUM_COST_GEMS = GEM_COSTS.BATTLE_PASS_PREMIUM
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -15,6 +13,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const GEM_COSTS = await getGemCostsConfig()
+    const PREMIUM_COST_GEMS = GEM_COSTS.BATTLE_PASS_PREMIUM
     const body = await req.json()
     const { character_id } = body
 

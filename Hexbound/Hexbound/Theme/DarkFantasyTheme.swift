@@ -385,19 +385,18 @@ enum DarkFantasyTheme {
 
     static func rankColor(for rating: Int) -> Color {
         switch rating {
-        case ..<1100: rankBronze
-        case 1100..<1300: rankSilver
-        case 1300..<1500: rankGold
-        case 1500..<1700: rankPlatinum
-        case 1700..<2000: rankDiamond
+        case ..<1200: rankBronze
+        case 1200..<1500: rankSilver
+        case 1500..<1800: rankGold
+        case 1800..<2100: rankPlatinum
+        case 2100..<2400: rankDiamond
         default: rankGrandmaster
         }
     }
 
+    @available(*, deprecated, message: "Use canonicalHpGradient(percentage:) instead")
     static func hpGradient(percentage: Double) -> LinearGradient {
-        if percentage > 0.6 { return hpHighGradient }
-        if percentage > 0.3 { return hpMidGradient }
-        return hpLowGradient
+        canonicalHpGradient(percentage: percentage)
     }
 
     static func statColor(for stat: String) -> Color {

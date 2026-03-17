@@ -50,11 +50,16 @@ export function generateCatalogId(itemType: string, itemName: string): string {
 }
 
 // Base stat fields displayed in the Stats tab
+// Must match backend StatKey: str, agi, vit, end, int, wis, luk, cha
 export const STAT_KEYS = [
   { key: 'str', label: 'Strength' },
   { key: 'agi', label: 'Agility' },
   { key: 'vit', label: 'Vitality' },
+  { key: 'end', label: 'Endurance' },
+  { key: 'int', label: 'Intelligence' },
+  { key: 'wis', label: 'Wisdom' },
   { key: 'luk', label: 'Luck' },
+  { key: 'cha', label: 'Charisma' },
   { key: 'damageMin', label: 'Min Damage' },
   { key: 'damageMax', label: 'Max Damage' },
   { key: 'critChance', label: 'Crit Chance' },
@@ -70,6 +75,12 @@ export const UPGRADE_STAT_KEYS = [
   { key: 'damage', label: 'Damage +' },
   { key: 'str', label: 'Strength +' },
   { key: 'agi', label: 'Agility +' },
+  { key: 'vit', label: 'Vitality +' },
+  { key: 'end', label: 'Endurance +' },
+  { key: 'int', label: 'Intelligence +' },
+  { key: 'wis', label: 'Wisdom +' },
+  { key: 'luk', label: 'Luck +' },
+  { key: 'cha', label: 'Charisma +' },
   { key: 'crit', label: 'Crit +' },
   { key: 'defense', label: 'Defense +' },
 ] as const

@@ -57,6 +57,22 @@ final class GameDataCache {
     private(set) var matchHistory: [MatchHistory] = []
     private var historyFetchedAt: Date?
 
+    // MARK: - Feature Flags (resolved server-side, keyed by flag key)
+
+    private(set) var featureFlags: [String: Any] = [:]
+
+    func isFeatureEnabled(_ key: String) -> Bool {
+        featureFlags[key] as? Bool ?? false
+    }
+
+    func featureFlagValue<T>(_ key: String, default defaultValue: T) -> T {
+        featureFlags[key] as? T ?? defaultValue
+    }
+
+    func cacheFeatureFlags(_ flags: [String: Any]) {
+        featureFlags = flags
+    }
+
     // MARK: - Game config from server
 
     var gameConfig: GameConfig?
@@ -252,6 +268,7 @@ final class GameDataCache {
         revengeFetchedAt = nil
         matchHistory = []
         historyFetchedAt = nil
+        featureFlags = [:]
         gameConfig = nil
         isInitLoaded = false
     }

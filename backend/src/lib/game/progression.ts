@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { xpForLevel } from './balance';
-import { PRESTIGE, PASSIVES } from './balance';
+import { getPrestigeConfig, getPassivesConfig } from './live-config';
 
 // Re-export for convenience
 export { xpForLevel };
@@ -68,29 +68,32 @@ export interface PrestigeResult {
  * @param character  Object with currentXp and level
  * @returns          Whether a level occurred, the new level, leftover XP, and stat points awarded
  */
-export function checkLevelUp(character: {
+export async function checkLevelUp(character: {
   currentXp: number;
   level: number;
-}): LevelUpResult {
+}): Promise<LevelUpResult> {
+  const prestigeConfig = await getPrestigeConfig();
+  const passivesConfig = await getPassivesConfig();
+
   let { currentXp, level } = character;
   let totalStatPoints = 0;
   let totalPassivePoints = 0;
   const startLevel = level;
 
   // Allow multiple level-ups in one pass
-  while (level < PRESTIGE.MAX_LEVEL) {
+  while (level < prestigeConfig.MAX_LEVEL) {
     const needed = xpForLevel(level + 1);
     if (currentXp < needed) {
       break;
     }
     currentXp -= needed;
     level += 1;
-    totalStatPoints += PRESTIGE.STAT_POINTS_PER_LEVEL;
-    totalPassivePoints += PASSIVES.POINTS_PER_LEVEL;
+    totalStatPoints += prestigeConfig.STAT_POINTS_PER_LEVEL;
+    totalPassivePoints += passivesConfig.POINTS_PER_LEVEL;
   }
 
   // Cap XP if at max level
-  if (level >= PRESTIGE.MAX_LEVEL) {
+  if (level >= prestigeConfig.MAX_LEVEL) {
     // Don't lose XP, but stop leveling
     // Player must prestige to continue
   }
@@ -110,22 +113,23 @@ export function checkLevelUp(character: {
  * Check whether a character is eligible for prestige and compute the result.
  *
  * Prestige rules:
- * - Must be level 50 (PRESTIGE.MAX_LEVEL)
+ * - Must be at max level
  * - Resets to level 1
  * - Keeps items
  * - Gains prestige_level + 1
- * - Bonus: +5% all stats per prestige level
+ * - Bonus: +% all stats per prestige level
  *
  * @param currentLevel    Character's current level
  * @param currentPrestige Character's current prestige level
  */
-export function checkPrestige(
+export async function checkPrestige(
   currentLevel: number,
   currentPrestige: number,
-): PrestigeResult {
-  const canPrestige = currentLevel >= PRESTIGE.MAX_LEVEL;
+): Promise<PrestigeResult> {
+  const prestigeConfig = await getPrestigeConfig();
+  const canPrestige = currentLevel >= prestigeConfig.MAX_LEVEL;
   const newPrestigeLevel = canPrestige ? currentPrestige + 1 : currentPrestige;
-  const statBonusPercent = newPrestigeLevel * PRESTIGE.STAT_BONUS_PER_PRESTIGE * 100;
+  const statBonusPercent = newPrestigeLevel * prestigeConfig.STAT_BONUS_PER_PRESTIGE * 100;
 
   return {
     canPrestige,
@@ -141,7 +145,8 @@ export function checkPrestige(
  * @param prestigeLevel  The character's prestige level
  * @returns              The stat value after prestige bonus
  */
-export function applyPrestigeBonus(baseStat: number, prestigeLevel: number): number {
-  const multiplier = 1 + prestigeLevel * PRESTIGE.STAT_BONUS_PER_PRESTIGE;
+export async function applyPrestigeBonus(baseStat: number, prestigeLevel: number): Promise<number> {
+  const prestigeConfig = await getPrestigeConfig();
+  const multiplier = 1 + prestigeLevel * prestigeConfig.STAT_BONUS_PER_PRESTIGE;
   return Math.floor(baseStat * multiplier);
 }
