@@ -12,14 +12,14 @@ export async function getBattlePassRewards(seasonId?: string) {
   return prisma.battlePassReward.findMany({
     where,
     orderBy: [{ bpLevel: 'asc' }, { isPremium: 'asc' }],
-    include: { season: { select: { id: true, name: true } } },
+    include: { season: { select: { id: true, number: true, theme: true } } },
   })
 }
 
 export async function getSeasons() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
-  return prisma.season.findMany({ orderBy: { startDate: 'desc' } })
+  return prisma.season.findMany({ orderBy: { startAt: 'desc' } })
 }
 
 export async function createBattlePassReward(data: {

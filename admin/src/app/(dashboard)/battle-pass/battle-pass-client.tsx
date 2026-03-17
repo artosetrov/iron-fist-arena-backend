@@ -31,8 +31,8 @@ import { toast } from 'sonner'
 
 type Season = {
   id: string
-  name: string
   number: number
+  theme: string | null
 }
 
 type BattlePassReward = {
@@ -182,7 +182,7 @@ export function BattlePassClient({
                 <SelectContent>
                   {seasons.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {s.name}
+                      {s.theme || `Season ${s.number}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -254,7 +254,7 @@ export function BattlePassClient({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">
-            {selectedSeason?.name} - Rewards
+            {selectedSeason?.theme || `Season ${selectedSeason?.number}`} - Rewards
           </CardTitle>
           <Gift className="h-4 w-4 text-amber-400" />
         </CardHeader>
