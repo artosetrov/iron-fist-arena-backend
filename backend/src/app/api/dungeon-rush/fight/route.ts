@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       magicResist: enemy.magicResist,
     }
 
-    const combatResult = runCombat(playerStatsForCombat, enemyStats)
+    const combatResult = await runCombat(playerStatsForCombat, enemyStats)
     const playerWon = combatResult.winnerId === playerStatsForCombat.id
 
     // Build combat_log for iOS client animation

@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       loadCombatCharacter(defender.id),
     ])
 
-    const combatResult = runCombat(attackerStats, defenderStats, battle_seed)
+    const combatResult = await runCombat(attackerStats, defenderStats, battle_seed)
     const attackerWon = combatResult.winnerId === attacker.id
     const winnerId = combatResult.winnerId
     const loserId = combatResult.loserId
@@ -164,8 +164,8 @@ export async function POST(req: NextRequest) {
     // ELO calculation
     const winnerRatingBefore = attackerWon ? attacker.pvpRating : defender.pvpRating
     const loserRatingBefore = attackerWon ? defender.pvpRating : attacker.pvpRating
-    const kWinner = getKFactor(attackerWon ? attacker.pvpCalibrationGames : defender.pvpCalibrationGames)
-    const kLoser = getKFactor(attackerWon ? defender.pvpCalibrationGames : attacker.pvpCalibrationGames)
+    const kWinner = await getKFactor(attackerWon ? attacker.pvpCalibrationGames : defender.pvpCalibrationGames)
+    const kLoser = await getKFactor(attackerWon ? defender.pvpCalibrationGames : attacker.pvpCalibrationGames)
     const expectedWinner = 1 / (1 + Math.pow(10, (loserRatingBefore - winnerRatingBefore) / 400))
     const expectedLoser = 1 - expectedWinner
     const newWinnerRating = Math.max(0, Math.round(winnerRatingBefore + kWinner * (1 - expectedWinner)))

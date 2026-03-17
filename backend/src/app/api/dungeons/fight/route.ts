@@ -106,12 +106,12 @@ export async function POST(req: NextRequest) {
     // Run combat
     const combatResults: Array<{ enemyName: string; won: boolean; turns: number }> = []
     let playerWon = true
-    let primaryCombatResult: ReturnType<typeof runCombat> | null = null
+    let primaryCombatResult: Awaited<ReturnType<typeof runCombat>> | null = null
     const primaryEnemy = state.enemies[0]
 
     for (const enemy of state.enemies) {
       const enemyStats = enemyToCharacterStats(enemy)
-      const result = runCombat(playerStats, enemyStats)
+      const result = await runCombat(playerStats, enemyStats)
       const won = result.winnerId === playerStats.id
 
       if (!primaryCombatResult) primaryCombatResult = result

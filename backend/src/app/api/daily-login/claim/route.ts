@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       const newStreak = resetStreak ? 1 : loginReward.streak + 1
 
       // Get the reward for the current day
-      const reward = getDailyReward(newDay)
+      const reward = await getDailyReward(newDay)
 
       // Apply reward
       if (reward.type === 'gold') {

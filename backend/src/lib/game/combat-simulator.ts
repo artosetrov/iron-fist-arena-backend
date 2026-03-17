@@ -225,7 +225,7 @@ export async function simulateCombat(
   let totalHitsB = 0
 
   for (let i = 0; i < iterations; i++) {
-    const result = runCombat(charA, charB)
+    const result = await runCombat(charA, charB)
     const analysis = analyzeCombat(result, 'sim_a', 'sim_b', charA.maxHp, charB.maxHp)
 
     if (analysis.winner === 'A') winsA++
@@ -370,7 +370,7 @@ export async function simulateItemImpact(
   let enhancedHits = 0
 
   for (let i = 0; i < iterations; i++) {
-    const result = runCombat(enhancedChar, opponent)
+    const result = await runCombat(enhancedChar, opponent)
     if (result.winnerId === 'sim_enhanced') enhancedWins++
     enhancedTotalTurns += result.totalTurns
 

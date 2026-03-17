@@ -27,7 +27,7 @@ export async function applyLevelUp(
   });
   if (!character) return null;
 
-  const result = checkLevelUp(character);
+  const result = await checkLevelUp(character);
   if (!result.leveledUp) return result;
 
   await tx.character.update({

@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
 
   // 2. K-factor for calibration
   try {
-    const kCalib = getKFactor(5)  // still in calibration
-    const kNormal = getKFactor(15) // past calibration
+    const kCalib = await getKFactor(5)  // still in calibration
+    const kNormal = await getKFactor(15) // past calibration
     results.push({
       name: 'K-factor calibration',
       passed: kCalib > kNormal,
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
       int: 5, wis: 5, luk: 5, cha: 5,
       maxHp: 100, armor: 5, magicResist: 0,
     }
-    const result = runCombat(fighter, { ...fighter, id: 'b', name: 'B' })
+    const result = await runCombat(fighter, { ...fighter, id: 'b', name: 'B' })
     results.push({
       name: 'Combat engine',
       passed: !!result.winnerId && result.totalTurns >= 1,

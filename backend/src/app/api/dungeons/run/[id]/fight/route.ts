@@ -112,7 +112,7 @@ export async function POST(
 
     for (const enemy of state.enemies) {
       const enemyStats = enemyToCharacterStats(enemy)
-      const result = runCombat(playerStats, enemyStats)
+      const result = await runCombat(playerStats, enemyStats)
       const won = result.winnerId === playerStats.id
 
       // Track player's remaining HP through the floor
