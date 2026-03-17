@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
 
     const lastUpdate = character.lastStaminaUpdate ?? new Date()
-    const result = calculateCurrentStamina(
+    const result = await calculateCurrentStamina(
       character.currentStamina,
       character.maxStamina,
       lastUpdate

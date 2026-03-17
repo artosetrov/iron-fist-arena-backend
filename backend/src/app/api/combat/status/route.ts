@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Calculate current stamina with regen
-    const staminaResult = calculateCurrentStamina(
+    const staminaResult = await calculateCurrentStamina(
       character.currentStamina,
       character.maxStamina,
       character.lastStaminaUpdate ?? new Date()

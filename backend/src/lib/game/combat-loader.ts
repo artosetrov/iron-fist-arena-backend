@@ -64,7 +64,7 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
   if (!character) throw new Error('Character not found')
 
   // Apply HP regen based on time since last update
-  const hpRegen = calculateCurrentHp(
+  const hpRegen = await calculateCurrentHp(
     character.currentHp,
     character.maxHp,
     character.lastHpUpdate ?? new Date(),

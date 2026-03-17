@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       if (character.user_id !== user.id) throw new Error('FORBIDDEN')
 
       // Check stamina (account for time-based regeneration)
-      const staminaResult = calculateCurrentStamina(
+      const staminaResult = await calculateCurrentStamina(
         character.current_stamina,
         character.max_stamina,
         character.last_stamina_update ?? new Date()

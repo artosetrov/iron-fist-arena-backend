@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Stamina check — revenge always costs stamina (no free PvP)
-    const staminaResult = calculateCurrentStamina(
+    const staminaResult = await calculateCurrentStamina(
       attacker.currentStamina,
       attacker.maxStamina,
       attacker.lastStaminaUpdate ?? new Date()

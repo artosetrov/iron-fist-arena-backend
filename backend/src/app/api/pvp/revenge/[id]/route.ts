@@ -95,7 +95,7 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const staminaResult = calculateCurrentStamina(
+    const staminaResult = await calculateCurrentStamina(
       attacker.currentStamina,
       attacker.maxStamina,
       attacker.lastStaminaUpdate ?? new Date()

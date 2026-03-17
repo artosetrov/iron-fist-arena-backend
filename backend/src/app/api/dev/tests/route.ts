@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
   // 3. Stamina regen
   try {
     const past = new Date(Date.now() - 16 * 60 * 1000) // 16 minutes ago
-    const result = calculateCurrentStamina(100, 120, past)
+    const result = await calculateCurrentStamina(100, 120, past)
     results.push({
       name: 'Stamina regen',
       passed: result.stamina >= 102,

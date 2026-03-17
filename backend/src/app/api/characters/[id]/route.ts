@@ -34,14 +34,14 @@ export async function GET(
     }
 
     // Compute current stamina without writing to DB
-    const staminaResult = calculateCurrentStamina(
+    const staminaResult = await calculateCurrentStamina(
       character.currentStamina,
       character.maxStamina,
       character.lastStaminaUpdate ?? new Date()
     )
 
     // Compute current HP with regen
-    const hpResult = calculateCurrentHp(
+    const hpResult = await calculateCurrentHp(
       character.currentHp,
       character.maxHp,
       character.lastHpUpdate ?? new Date()

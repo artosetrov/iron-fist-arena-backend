@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       const now = new Date()
 
       if (isStaminaPotion(ctEnum)) {
-        const staminaResult = calculateCurrentStamina(
+        const staminaResult = await calculateCurrentStamina(
           character.current_stamina,
           character.max_stamina,
           character.last_stamina_update ?? now
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
         throw new Error('UNKNOWN_CONSUMABLE')
       }
 
-      const hpResult = calculateCurrentHp(
+      const hpResult = await calculateCurrentHp(
         character.current_hp,
         character.max_hp,
         character.last_hp_update ?? now

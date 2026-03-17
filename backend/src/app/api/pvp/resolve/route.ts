@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     if (!defender) return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
 
     // Stamina check — revenge fights are FREE (no stamina cost)
-    const staminaResult = calculateCurrentStamina(
+    const staminaResult = await calculateCurrentStamina(
       attacker.currentStamina,
       attacker.maxStamina,
       attacker.lastStaminaUpdate ?? new Date()

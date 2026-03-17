@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       if (activeRun) throw new Error('ACTIVE_RUN_EXISTS')
 
       // Check stamina with time-based regen
-      const staminaResult = calculateCurrentStamina(
+      const staminaResult = await calculateCurrentStamina(
         character.current_stamina,
         character.max_stamina,
         character.last_stamina_update ?? new Date()
