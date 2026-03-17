@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { buildSlotsArray, BOOST_COST_GEMS } from '@/lib/game/gold-mine'
+import { buildSlotsArray, getBOOST_COST_GEMS } from '@/lib/game/gold-mine'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
       )
 
       if (!userRow) throw new Error('USER_NOT_FOUND')
-      if (userRow.gems < BOOST_COST_GEMS) throw new Error('NOT_ENOUGH_GEMS')
+      const BOOST_COST = await getBOOST_COST_GEMS()
+      if (userRow.gems < BOOST_COST) throw new Error('NOT_ENOUGH_GEMS')
 
       // Verify character ownership
       const character = await tx.character.findUnique({
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
 
       const updatedUser = await tx.user.update({
         where: { id: user.id },
-        data: { gems: { decrement: BOOST_COST_GEMS } },
+        data: { gems: { decrement: BOOST_COST } },
       })
 
       await tx.goldMineSession.update({

@@ -273,11 +273,11 @@ export async function POST(
       let gemsIncrement = 0
       let xpIncrement = 0
 
-      const staminaBefore = calculateCurrentStamina(
+      const staminaBefore = (await calculateCurrentStamina(
         lockedCharacter.current_stamina,
         lockedCharacter.max_stamina,
         lockedCharacter.last_stamina_update ?? now,
-      ).stamina
+      )).stamina
       let staminaAfter = staminaBefore
 
       const pendingItemIds: string[] = []

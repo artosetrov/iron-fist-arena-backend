@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { buildSlotsArray, MAX_GOLD_MINE_SLOTS, SLOT_COST_GEMS } from '@/lib/game/gold-mine'
+import { buildSlotsArray, MAX_GOLD_MINE_SLOTS, getSLOT_COST_GEMS } from '@/lib/game/gold-mine'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
       )
 
       if (!userRow) throw new Error('USER_NOT_FOUND')
-      if (userRow.gems < SLOT_COST_GEMS) throw new Error('NOT_ENOUGH_GEMS')
+      const SLOT_COST = await getSLOT_COST_GEMS()
+      if (userRow.gems < SLOT_COST) throw new Error('NOT_ENOUGH_GEMS')
 
       // Lock the character row for update (goldMineSlots)
       const [charRow] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold_mine_slots: number }>>(
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
       const updatedUser = await tx.user.update({
         where: { id: user.id },
-        data: { gems: { decrement: SLOT_COST_GEMS } },
+        data: { gems: { decrement: SLOT_COST } },
       })
 
       const updatedCharacter = await tx.character.update({
