@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
-import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
+import { generateDungeonFloor, getDungeonBossCount, generateDungeonFloorFromDB, getDungeonBossCountFromDB, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
@@ -214,11 +214,11 @@ export async function POST(req: NextRequest) {
     const newFloorsCleared = state.floorsCleared + 1
 
     const bossIndex = currentFloor
-    const totalBosses = getDungeonBossCount(dungeonId)
+    const totalBosses = await getDungeonBossCountFromDB(dungeonId)
     const isDungeonComplete = bossIndex >= totalBosses
 
     // Core DB writes — gold/xp + progress + run update/delete — in parallel
-    const nextFloorData = isDungeonComplete ? null : generateDungeonFloor(currentFloor + 1, run.difficulty, dungeonId)
+    const nextFloorData = isDungeonComplete ? null : await generateDungeonFloorFromDB(currentFloor + 1, run.difficulty, dungeonId)
 
     await prisma.$transaction(async (tx) => {
       const lockedRun = await lockDungeonRunForUpdate(tx, run.id)

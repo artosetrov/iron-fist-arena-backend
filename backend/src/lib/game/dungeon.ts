@@ -164,3 +164,73 @@ export function generateDungeonFloor(
 export function getDungeonBossCount(dungeonId: string): number {
   return DUNGEON_BOSSES[dungeonId]?.length ?? 10;
 }
+
+// --- DB-backed boss generation ---
+
+import { prisma } from '@/lib/prisma';
+
+/**
+ * Try to load boss data from the database for a dungeon slug.
+ * Falls back to hardcoded DUNGEON_BOSSES if DB has no bosses for this dungeon.
+ */
+export async function generateDungeonFloorFromDB(
+  floor: number,
+  difficulty: string,
+  dungeonSlug: string,
+): Promise<DungeonFloor> {
+  const diffMult = DIFFICULTY_MULTIPLIERS[difficulty] ?? 1.0;
+  const bossIndex = Math.max(0, floor - 1);
+
+  // Try DB first: find dungeon by slug, get boss at floor_number
+  try {
+    const dungeon = await prisma.dungeon.findFirst({
+      where: { slug: dungeonSlug, isActive: true },
+      select: { id: true },
+    });
+
+    if (dungeon) {
+      const boss = await prisma.dungeonBoss.findFirst({
+        where: { dungeonId: dungeon.id, floorNumber: floor },
+      });
+
+      if (boss) {
+        return {
+          enemies: [{
+            id: generateId(),
+            name: boss.name,
+            level: Math.round(boss.level * diffMult),
+            maxHp: Math.round(boss.hp * diffMult),
+            str: Math.round((boss.damage ?? 15) * diffMult),
+            agi: Math.round((boss.speed ?? 10) * diffMult),
+            armor: Math.round((boss.defense ?? 10) * diffMult),
+            magicResist: Math.round(((boss.defense ?? 10) * 0.7) * diffMult),
+            isBoss: true,
+          }],
+          isBoss: true,
+        };
+      }
+    }
+  } catch {
+    // DB error — fall through to hardcoded
+  }
+
+  // Fallback to hardcoded
+  return generateDungeonFloor(floor, difficulty, dungeonSlug);
+}
+
+/** Get total boss count from DB first, fallback to hardcoded */
+export async function getDungeonBossCountFromDB(dungeonSlug: string): Promise<number> {
+  try {
+    const dungeon = await prisma.dungeon.findFirst({
+      where: { slug: dungeonSlug, isActive: true },
+      select: { id: true },
+    });
+    if (dungeon) {
+      const count = await prisma.dungeonBoss.count({ where: { dungeonId: dungeon.id } });
+      if (count > 0) return count;
+    }
+  } catch {
+    // fallback
+  }
+  return getDungeonBossCount(dungeonSlug);
+}

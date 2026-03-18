@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getStaminaConfig } from '@/lib/game/live-config'
-import { generateDungeonFloor, getDungeonBossCount } from '@/lib/game/dungeon'
+import { generateDungeonFloor, getDungeonBossCount, generateDungeonFloorFromDB, getDungeonBossCountFromDB } from '@/lib/game/dungeon'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
       )
       if (staminaResult.stamina < cost) throw new Error('NOT_ENOUGH_STAMINA')
 
-      const startFloor = progress ? Math.min(progress.bossIndex + 1, getDungeonBossCount(dungeonId)) : 1
+      const bossCount = await getDungeonBossCountFromDB(dungeonId)
+      const startFloor = progress ? Math.min(progress.bossIndex + 1, bossCount) : 1
 
       // Deduct stamina
       await tx.character.update({
@@ -86,9 +87,9 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Generate first floor
+      // Generate first floor (try DB bosses first, fallback to hardcoded)
       const seed = Math.floor(Math.random() * 2147483647)
-      const floor = generateDungeonFloor(startFloor, difficulty, dungeonId)
+      const floor = await generateDungeonFloorFromDB(startFloor, difficulty, dungeonId)
 
       // Create the dungeon run
       const run = await tx.dungeonRun.create({
