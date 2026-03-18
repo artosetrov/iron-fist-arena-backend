@@ -176,10 +176,12 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
           body,
           senderName,
           targetType,
-          characterId: targetType === 'character' ? characterId : undefined,
-          minLevel: targetType === 'segment' ? Number(minLevel) : undefined,
-          maxLevel: targetType === 'segment' ? Number(maxLevel) : undefined,
-          class: targetType === 'segment' ? characterClass : undefined,
+          targetCharacterId: targetType === 'character' ? characterId : undefined,
+          targetFilter: targetType === 'segment' ? {
+            minLevel: minLevel ? Number(minLevel) : undefined,
+            maxLevel: maxLevel ? Number(maxLevel) : undefined,
+            class: characterClass || undefined,
+          } : undefined,
           attachments: attachments.length > 0 ? attachments : undefined,
           expiresAt: expiresAt ? new Date(expiresAt) : undefined,
         })
