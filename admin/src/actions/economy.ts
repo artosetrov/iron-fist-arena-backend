@@ -8,7 +8,8 @@ import { getAdminUser } from '@/lib/auth'
 // ---------------------------------------------------------------------------
 
 export async function getEconomySummary() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
 
   const [
     totalChars,
@@ -74,7 +75,8 @@ export async function getEconomySummary() {
 // ---------------------------------------------------------------------------
 
 export async function getGoldByLevel() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
 
   const results = await prisma.character.groupBy({
     by: ['level'],
@@ -97,7 +99,8 @@ export async function getGoldByLevel() {
 // ---------------------------------------------------------------------------
 
 export async function getTopGoldHolders(limit = 15) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.character.findMany({
     orderBy: { gold: 'desc' },
     take: limit,
@@ -109,7 +112,8 @@ export async function getTopGoldHolders(limit = 15) {
 }
 
 export async function getTopGemHolders(limit = 15) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.user.findMany({
     orderBy: { gems: 'desc' },
     take: limit,
@@ -129,7 +133,8 @@ export async function getTopGemHolders(limit = 15) {
 // ---------------------------------------------------------------------------
 
 export async function getIapByProduct() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   const results = await prisma.iapTransaction.groupBy({
     by: ['productId'],
     where: { status: 'verified' },
@@ -146,7 +151,8 @@ export async function getIapByProduct() {
 }
 
 export async function getRecentTransactions(limit = 30) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.iapTransaction.findMany({
     orderBy: { createdAt: 'desc' },
     take: limit,
@@ -163,7 +169,8 @@ export async function getRecentTransactions(limit = 30) {
 // ---------------------------------------------------------------------------
 
 export async function getOfferPurchasesByOffer() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   const results = await prisma.shopOfferPurchase.groupBy({
     by: ['offerId'],
     _count: true,
@@ -194,7 +201,8 @@ export async function getOfferPurchasesByOffer() {
 // ---------------------------------------------------------------------------
 
 export async function getWealthDistribution() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
 
   // Get all characters' gold sorted
   const chars = await prisma.character.findMany({
@@ -246,7 +254,8 @@ export async function getWealthDistribution() {
 // ---------------------------------------------------------------------------
 
 export async function getEconomyByClass() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
 
   const results = await prisma.character.groupBy({
     by: ['class'],

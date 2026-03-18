@@ -41,7 +41,8 @@ type UpdateOfferInput = Partial<CreateOfferInput> & { id: string }
 // ---------------------------------------------------------------------------
 
 export async function listShopOffers() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.shopOffer.findMany({
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     include: {
@@ -51,7 +52,8 @@ export async function listShopOffers() {
 }
 
 export async function getShopOffer(id: string) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.shopOffer.findUnique({
     where: { id },
     include: {
@@ -69,6 +71,8 @@ export async function getShopOffer(id: string) {
 
 export async function createShopOffer(input: CreateOfferInput) {
   const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized: Admin user not found')
+  const adminUser = admin!
   return prisma.shopOffer.create({
     data: {
       key: input.key,
@@ -89,13 +93,14 @@ export async function createShopOffer(input: CreateOfferInput) {
       isActive: input.isActive ?? false,
       startsAt: input.startsAt ? new Date(input.startsAt) : null,
       endsAt: input.endsAt ? new Date(input.endsAt) : null,
-      createdBy: admin.email ?? admin.id,
+      createdBy: adminUser.email ?? adminUser.id,
     },
   })
 }
 
 export async function updateShopOffer(input: UpdateOfferInput) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   const { id, startsAt, endsAt, ...rest } = input
   const data: any = { ...rest }
   if (startsAt !== undefined) data.startsAt = startsAt ? new Date(startsAt) : null
@@ -105,7 +110,8 @@ export async function updateShopOffer(input: UpdateOfferInput) {
 }
 
 export async function toggleShopOffer(id: string) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   const offer = await prisma.shopOffer.findUnique({ where: { id }, select: { isActive: true } })
   if (!offer) throw new Error('Offer not found')
   return prisma.shopOffer.update({
@@ -115,12 +121,14 @@ export async function toggleShopOffer(id: string) {
 }
 
 export async function deleteShopOffer(id: string) {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.shopOffer.delete({ where: { id } })
 }
 
 export async function getOfferStats() {
-  await getAdminUser()
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   const [total, active, totalPurchases, revenue] = await Promise.all([
     prisma.shopOffer.count(),
     prisma.shopOffer.count({ where: { isActive: true } }),
@@ -137,6 +145,7 @@ export async function getOfferStats() {
 
 export async function seedDefaultOffers() {
   const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized: Admin user not found')
   const defaults: CreateOfferInput[] = [
     {
       key: 'starter_pack',
