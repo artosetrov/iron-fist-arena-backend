@@ -531,7 +531,7 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
                           )}
                           {message.targetType === 'character' && (
                             <Badge variant="outline" className="bg-green-500/10 text-green-700 border-green-500/50">
-                              {message.characterId}
+                              Character
                             </Badge>
                           )}
                           {message.targetType === 'segment' && (
