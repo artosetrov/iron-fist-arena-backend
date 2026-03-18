@@ -590,7 +590,7 @@ export function PassivesClient({
             )}
 
             {/* Row 1: Node Key + Name */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="nodeKey">Node Key</Label>
                 <Input
@@ -625,7 +625,7 @@ export function PassivesClient({
             </div>
 
             {/* Row 2: Bonus Type + Bonus Stat + Bonus Value */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Bonus Type</Label>
                 <Select
@@ -681,7 +681,7 @@ export function PassivesClient({
             </div>
 
             {/* Row 3: Tier + Cost + Class Restriction */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="tier">Tier</Label>
                 <Select
@@ -735,7 +735,7 @@ export function PassivesClient({
             </div>
 
             {/* Row 4: Position X + Position Y + Icon */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="positionX">Position X</Label>
                 <Input

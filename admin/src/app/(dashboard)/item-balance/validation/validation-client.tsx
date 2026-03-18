@@ -150,7 +150,7 @@ export function ValidationClient({ adminId }: { adminId: string }) {
       {/* Results Summary */}
       {result && (
         <>
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-5">
             <Card>
               <CardContent className="pt-6 text-center">
                 <div className="text-2xl font-bold">{result.totalItems}</div>

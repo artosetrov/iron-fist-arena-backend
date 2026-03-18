@@ -13,6 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { formatDate, truncate } from '@/lib/utils'
 import {
   ChevronUp,
@@ -113,6 +123,8 @@ function CollapsibleJson({ value }: { value: string }) {
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-label={expanded ? 'Collapse JSON preview' : 'Expand JSON preview'}
         className="font-mono text-xs text-primary hover:underline cursor-pointer text-left"
       >
         {expanded ? 'Collapse' : preview}
@@ -163,6 +175,7 @@ export function DataTable({
   primaryKeyColumn,
 }: DataTableProps) {
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   const textColumns = columns.filter((c) => {
     const ft = mapColumnToFieldType(c)
@@ -177,24 +190,46 @@ export function DataTable({
     }
   }
 
+  const handleSortKeyDown = (e: React.KeyboardEvent, colName: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleSortClick(colName)
+    }
+  }
+
+  const getSortAriaLabel = (colName: string) => {
+    if (sortColumn !== colName) return `Sort by ${colName}`
+    return sortDir === 'asc'
+      ? `Sort by ${colName}, currently ascending`
+      : `Sort by ${colName}, currently descending`
+  }
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      onDelete(deleteTarget)
+      setDeleteTarget(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Search bar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder="Search..."
             value={searchValue}
             onChange={(e) => onSearch(e.target.value, searchColumn)}
             className="pl-9"
+            aria-label="Search table records"
           />
         </div>
         <Select
           value={searchColumn}
           onValueChange={(val) => onSearch(searchValue, val)}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[200px]" aria-label="Select column to search">
             <SelectValue placeholder="Search column" />
           </SelectTrigger>
           <SelectContent>
@@ -210,23 +245,32 @@ export function DataTable({
       {/* Table */}
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" role="grid">
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 {columns.map((col) => (
                   <th
                     key={col.column_name}
-                    className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors whitespace-nowrap"
+                    role="columnheader"
+                    aria-sort={
+                      sortColumn === col.column_name
+                        ? sortDir === 'asc' ? 'ascending' : 'descending'
+                        : 'none'
+                    }
+                    aria-label={getSortAriaLabel(col.column_name)}
+                    tabIndex={0}
+                    className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset transition-colors whitespace-nowrap select-none"
                     onClick={() => handleSortClick(col.column_name)}
+                    onKeyDown={(e) => handleSortKeyDown(e, col.column_name)}
                   >
                     {col.column_name}
                     {col.is_primary_key && (
-                      <span className="ml-1 text-primary" title="Primary Key">PK</span>
+                      <span className="ml-1 text-primary" aria-label="Primary Key">PK</span>
                     )}
                     {col.is_foreign_key && (
                       <span
                         className="ml-1 text-warning"
-                        title={`FK -> ${col.foreign_table}.${col.foreign_column}`}
+                        aria-label={`Foreign Key to ${col.foreign_table}.${col.foreign_column}`}
                       >
                         FK
                       </span>
@@ -272,16 +316,17 @@ export function DataTable({
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(row)}
-                        title="Edit"
+                        aria-label={`Edit record ${String(row[primaryKeyColumn] ?? idx)}`}
+                        className="h-9 w-9 md:h-9 md:w-9 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onDelete(String(row[primaryKeyColumn]))}
-                        title="Delete"
-                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(String(row[primaryKeyColumn]))}
+                        aria-label={`Delete record ${String(row[primaryKeyColumn] ?? idx)}`}
+                        className="text-destructive hover:text-destructive h-9 w-9 md:h-9 md:w-9 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -295,31 +340,57 @@ export function DataTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Page {page} of {totalPages} &middot; {totalRows} total rows
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left" aria-live="polite">
+          Page {page} of {totalPages} &middot; {totalRows} rows
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2" role="navigation" aria-label="Table pagination">
           <Button
             variant="outline"
             size="sm"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
+            aria-label="Go to previous page"
+            className="min-h-[44px] md:min-h-0"
           >
             <ChevronLeft className="mr-1 h-4 w-4" />
-            Previous
+            <span className="hidden sm:inline">Previous</span>
           </Button>
+          <span className="text-sm text-muted-foreground sm:hidden" aria-hidden="true">{page}/{totalPages}</span>
           <Button
             variant="outline"
             size="sm"
             disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}
+            aria-label="Go to next page"
+            className="min-h-[44px] md:min-h-0"
           >
-            Next
+            <span className="hidden sm:inline">Next</span>
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete record <strong className="font-mono">{deleteTarget}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

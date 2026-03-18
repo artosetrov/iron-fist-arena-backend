@@ -151,11 +151,11 @@ export function SimulationClient({
             <CardDescription>Configure two fighters and run thousands of simulated fights.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Fighter A */}
               <div className="space-y-3">
                 <h3 className="font-medium text-sm">Fighter A</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Class</Label>
                     <Select value={classA} onValueChange={setClassA}>
@@ -181,7 +181,7 @@ export function SimulationClient({
               {/* Fighter B */}
               <div className="space-y-3">
                 <h3 className="font-medium text-sm">Fighter B</h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Class</Label>
                     <Select value={classB} onValueChange={setClassB}>
@@ -325,7 +325,7 @@ export function SimulationClient({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
                   <Label className="text-xs">Class</Label>
                   <Select value={impactClass} onValueChange={setImpactClass}>
@@ -345,7 +345,7 @@ export function SimulationClient({
 
               <div>
                 <Label className="text-xs mb-2 block">Item Stats</Label>
-                <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
                   {STATS.map((stat) => (
                     <div key={stat}>
                       <Label className="text-xs uppercase">{stat}</Label>
@@ -375,7 +375,7 @@ export function SimulationClient({
               <CardTitle>Impact Results</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { label: 'DPS Change', value: `${Number(impactResult.dpsChangePercent) > 0 ? '+' : ''}${impactResult.dpsChangePercent}%`, sub: `${impactResult.baselineDps} → ${impactResult.withItemDps}` },
                   { label: 'Win Rate Change', value: `${Number(impactResult.winRateChange) > 0 ? '+' : ''}${impactResult.winRateChange}%`, sub: `${impactResult.baselineWinRate}% → ${impactResult.withItemWinRate}%` },
