@@ -104,7 +104,8 @@ export function BattlePassClient({
         seasonId: selectedSeasonId,
         ...data,
       })
-      setRewards((prev) => [...prev, newReward])
+      const selectedSeason = seasons.find((s) => s.id === selectedSeasonId)
+      setRewards((prev) => [...prev, { ...newReward, season: selectedSeason! } as BattlePassReward])
       setIsAddOpen(false)
       toast.success('Reward created')
     } catch (error) {
