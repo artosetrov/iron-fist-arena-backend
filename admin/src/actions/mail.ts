@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { getAdminUser } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
 
@@ -104,9 +105,9 @@ export async function sendMail(data: SendMailInput) {
       body,
       senderType,
       senderName,
-      attachments: attachments ? JSON.stringify(attachments) : null,
+      attachments: attachments ? JSON.stringify(attachments) : Prisma.JsonNull,
       targetType,
-      targetFilter: targetFilter ? JSON.stringify(targetFilter) : null,
+      targetFilter: targetFilter ? JSON.stringify(targetFilter) : Prisma.JsonNull,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       createdBy: createdBy || admin.id,
     },
