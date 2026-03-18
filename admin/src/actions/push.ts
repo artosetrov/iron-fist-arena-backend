@@ -30,6 +30,7 @@ export async function listCampaigns() {
 
 export async function createCampaign(input: CreateCampaignInput) {
   const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   return prisma.pushCampaign.create({
     data: {
       title: input.title,
