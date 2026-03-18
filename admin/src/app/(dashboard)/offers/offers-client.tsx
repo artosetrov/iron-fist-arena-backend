@@ -25,7 +25,7 @@ import {
   Plus, Trash2, Edit, Sprout, ShoppingBag, Package, Zap, Gift,
 } from 'lucide-react'
 
-type ContentItem = { type: string; id?: string; quantity: number }
+type ContentItem = { type: 'gold' | 'gems' | 'item' | 'consumable' | 'xp'; id?: string; quantity: number }
 
 type Offer = {
   id: string

@@ -70,8 +70,9 @@ interface MailMessage {
 interface MailStats {
   totalMessages: number
   totalRecipients: number
-  readRate: number
-  claimedRate: number
+  totalRead: number
+  totalClaimed: number
+  messagesToday: number
 }
 
 interface MailClientProps {
@@ -231,8 +232,8 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
     })
   }
 
-  const readRate = stats.totalRecipients > 0 ? Math.round((stats.readRate / stats.totalRecipients) * 100) : 0
-  const claimedRate = stats.totalRecipients > 0 ? Math.round((stats.claimedRate / stats.totalRecipients) * 100) : 0
+  const readRate = stats.totalRecipients > 0 ? Math.round((stats.totalRead / stats.totalRecipients) * 100) : 0
+  const claimedRate = stats.totalRecipients > 0 ? Math.round((stats.totalClaimed / stats.totalRecipients) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -267,7 +268,7 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{readRate}%</div>
-            <p className="text-xs text-muted-foreground">{stats.readRate} of {stats.totalRecipients}</p>
+            <p className="text-xs text-muted-foreground">{stats.totalRead} of {stats.totalRecipients}</p>
           </CardContent>
         </Card>
 
@@ -278,7 +279,7 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{claimedRate}%</div>
-            <p className="text-xs text-muted-foreground">{stats.claimedRate} of {stats.totalRecipients}</p>
+            <p className="text-xs text-muted-foreground">{stats.totalClaimed} of {stats.totalRecipients}</p>
           </CardContent>
         </Card>
       </div>

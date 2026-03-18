@@ -1,9 +1,15 @@
 import { getConfig } from '@/actions/config'
 import { DailyLoginClient } from './daily-login-client'
 
+interface DailyLoginReward {
+  type: 'gold' | 'gems' | 'consumable'
+  amount: number
+  itemId?: string
+}
+
 export default async function DailyLoginPage() {
   const rewards = await getConfig('daily_login_rewards')
-  const defaultRewards = [
+  const defaultRewards: DailyLoginReward[] = [
     { type: 'gold', amount: 200 },
     { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },
     { type: 'gold', amount: 500 },
@@ -13,6 +19,8 @@ export default async function DailyLoginPage() {
     { type: 'gems', amount: 5 },
   ]
 
+  const rewardsData = (rewards as DailyLoginReward[] | null) ?? defaultRewards
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,7 +29,7 @@ export default async function DailyLoginPage() {
           Configure the 7-day reward cycle for daily login.
         </p>
       </div>
-      <DailyLoginClient rewards={(rewards ?? defaultRewards) as any[]} />
+      <DailyLoginClient rewards={rewardsData} />
     </div>
   )
 }

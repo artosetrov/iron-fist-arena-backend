@@ -13,7 +13,7 @@ export default async function MailPage() {
         <h1 className="text-2xl font-bold tracking-tight">Mail &amp; Inbox</h1>
         <p className="text-muted-foreground">Send messages and rewards to players.</p>
       </div>
-      <MailClient initialMessages={messagesData} stats={stats} />
+      <MailClient initialMessages={messagesData.messages} stats={stats} />
     </div>
   )
 }

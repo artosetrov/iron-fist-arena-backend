@@ -32,7 +32,6 @@ export default async function ConsumablesPage() {
       <ConsumablesClient
         items={JSON.parse(JSON.stringify(consumableItems))}
         configs={JSON.parse(JSON.stringify(configs))}
-        adminId={admin.id}
       />
     </div>
   )

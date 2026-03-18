@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { QuestDefinition } from '@prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +32,20 @@ import {
 } from '@/components/ui/table'
 import { createQuestDefinition, updateQuestDefinition, deleteQuestDefinition, seedQuestDefinitions, getQuestDefinitions } from '@/actions/quest-definitions'
 import { useToast } from '@/hooks/use-toast'
+
+interface QuestDefinition {
+  id: string
+  questType: string
+  title: string
+  description: string
+  icon: string
+  minTarget: number
+  maxTarget: number
+  rewardGold: number
+  rewardXp: number
+  rewardGems: number
+  active: boolean
+}
 
 interface QuestsClientProps {
   initialQuests: QuestDefinition[]

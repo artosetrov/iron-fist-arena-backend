@@ -70,11 +70,9 @@ const RARITY_COLORS: Record<string, string> = {
 export function ConsumablesClient({
   items,
   configs,
-  adminId,
 }: {
   items: ConsumableItem[]
   configs: ConfigEntry[]
-  adminId: string
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -130,7 +128,7 @@ export function ConsumablesClient({
         }
 
         for (const u of updates) {
-          await updateConfig(u.key, u.value, adminId)
+          await updateConfig(u.key, u.value)
         }
 
         setMessage('All consumable configs saved successfully.')
