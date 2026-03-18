@@ -50,19 +50,15 @@ interface MailMessage {
   id: string
   subject: string
   body: string
+  senderType: string
   senderName: string
-  targetType: 'broadcast' | 'character' | 'segment'
-  characterId?: string
-  minLevel?: number
-  maxLevel?: number
-  class?: string
-  attachments?: Array<{
-    type: 'gold' | 'gems' | 'xp'
-    amount: number
-  }>
-  expiresAt?: Date
-  sentAt: Date
-  totalRecipients: number
+  targetType: string
+  attachments: unknown
+  targetFilter: unknown
+  expiresAt: Date | null
+  createdAt: Date
+  createdBy: string | null
+  _count: { recipients: number }
   readCount: number
   claimedCount: number
 }
@@ -545,15 +541,15 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {message.totalRecipients}
+                          {message._count.recipients}
                         </TableCell>
                         <TableCell className="text-center text-sm">
                           <div className="text-muted-foreground">
-                            {message.readCount}/{message.totalRecipients} read · {message.claimedCount}/{message.totalRecipients} claimed
+                            {message.readCount}/{message._count.recipients} read · {message.claimedCount}/{message._count.recipients} claimed
                           </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(message.sentAt).toLocaleDateString()} {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(message.createdAt).toLocaleDateString()} {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
