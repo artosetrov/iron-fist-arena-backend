@@ -69,7 +69,7 @@ private struct OfferCard: View {
                         Text(remaining)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     }
-                    .foregroundStyle(DarkFantasyTheme.flame)
+                    .foregroundStyle(DarkFantasyTheme.stamina)
                 }
             }
 
@@ -161,7 +161,7 @@ private struct OfferCard: View {
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(
                     offer.hasDiscount
-                        ? DarkFantasyTheme.flame.opacity(0.5)
+                        ? DarkFantasyTheme.stamina.opacity(0.5)
                         : DarkFantasyTheme.gold.opacity(0.3),
                     lineWidth: 1
                 )

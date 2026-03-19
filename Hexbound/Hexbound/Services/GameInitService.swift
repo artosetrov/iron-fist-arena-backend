@@ -17,6 +17,9 @@ final class GameInitService {
     func loadGameData() async {
         guard let charId = appState.currentCharacter?.id else { return }
 
+        // Load cached hub layout from disk immediately (before network)
+        cache.loadHubLayoutFromDisk()
+
         do {
             let response = try await APIClient.shared.getRaw(
                 APIEndpoints.gameInit,
@@ -75,6 +78,11 @@ final class GameInitService {
             // Parse feature flags (resolved server-side)
             if let flags = response["featureFlags"] as? [String: Any] {
                 cache.cacheFeatureFlags(flags)
+            }
+
+            // Parse hub layout (admin-defined building positions)
+            if let hubLayout = response["hubLayout"] as? [String: Any] {
+                cache.cacheHubLayout(from: hubLayout)
             }
 
             // Calculate server time delta for client-side stamina calculation

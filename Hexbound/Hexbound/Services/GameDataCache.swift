@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 /// Central client-side cache for game data.
 /// Stores data from /game/init and screen-specific caches with TTLs.
@@ -77,6 +78,74 @@ final class GameDataCache {
 
     var gameConfig: GameConfig?
     var serverTimeDelta: TimeInterval = 0 // localTime - serverTime
+
+    // MARK: - Hub Layout (admin-defined building positions + sizes)
+
+    struct BuildingOverride {
+        let x: CGFloat
+        let y: CGFloat
+        let size: CGFloat? // nil = use default
+    }
+
+    private static let hubLayoutKey = "hub_layout_cache"
+
+    private(set) var hubLayout: [String: BuildingOverride] = GameDataCache.loadFromDisk() {
+        didSet { persistHubLayout() }
+    }
+
+    private static func loadFromDisk() -> [String: BuildingOverride] {
+        guard let dict = UserDefaults.standard.dictionary(forKey: hubLayoutKey) as? [String: [String: Double]] else {
+            return [:]
+        }
+        var result: [String: BuildingOverride] = [:]
+        for (id, coords) in dict {
+            if let x = coords["x"], let y = coords["y"] {
+                result[id] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: coords["size"].map { CGFloat($0) })
+            }
+        }
+        return result
+    }
+
+    func cacheHubLayout(_ layout: [String: BuildingOverride]) {
+        hubLayout = layout
+    }
+
+    func cacheHubLayout(from dict: [String: Any]) {
+        var result: [String: BuildingOverride] = [:]
+        for (buildingId, value) in dict {
+            if let coords = value as? [String: Any],
+               let x = coords["x"] as? Double,
+               let y = coords["y"] as? Double {
+                let size = coords["size"] as? Double
+                result[buildingId] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: size.map { CGFloat($0) })
+            }
+        }
+        hubLayout = result
+    }
+
+    func loadHubLayoutFromDisk() {
+        guard hubLayout.isEmpty,
+              let dict = UserDefaults.standard.dictionary(forKey: Self.hubLayoutKey) as? [String: [String: Double]]
+        else { return }
+        var result: [String: BuildingOverride] = [:]
+        for (id, coords) in dict {
+            if let x = coords["x"], let y = coords["y"] {
+                result[id] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: coords["size"].map { CGFloat($0) })
+            }
+        }
+        hubLayout = result
+    }
+
+    private func persistHubLayout() {
+        guard !hubLayout.isEmpty else { return }
+        var dict: [String: [String: Double]] = [:]
+        for (id, o) in hubLayout {
+            var entry: [String: Double] = ["x": Double(o.x), "y": Double(o.y)]
+            if let s = o.size { entry["size"] = Double(s) }
+            dict[id] = entry
+        }
+        UserDefaults.standard.set(dict, forKey: Self.hubLayoutKey)
+    }
 
     // MARK: - TTLs
 

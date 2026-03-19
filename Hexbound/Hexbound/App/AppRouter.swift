@@ -56,6 +56,7 @@ enum AppRoute: Hashable {
     // Dev (routed to PlaceholderView in Release builds)
     case screenCatalog
     case designSystem
+    case hubEditor
 }
 
 // MARK: - Bottom Tab
@@ -145,9 +146,14 @@ struct MainRouterView: View {
         case .settings: SettingsDetailView()
         case .appearanceEditor: AppearanceEditorDetailView()
         
+        // Dev screens
         #if DEBUG
         case .screenCatalog: ScreenCatalogView()
         case .designSystem: DesignSystemPreview()
+        case .hubEditor: HubEditorDetailView()
+        #else
+        case .screenCatalog, .designSystem, .hubEditor:
+            PlaceholderView()
         #endif
         
         // Auth (should not reach here in MainRouter)
@@ -165,12 +171,13 @@ struct AuthRouterView: View {
     var body: some View {
         @Bindable var state = appState
         NavigationStack(path: $state.authPath) {
-            LoginView()
+            WelcomeView()
                 .navigationDestination(for: AppRoute.self) { route in
                     switch route {
+                    case .login: LoginView()
                     case .register: RegisterDetailView()
                     case .onboarding: OnboardingDetailView()
-                    default: LoginView()
+                    default: WelcomeView()
                     }
                 }
         }

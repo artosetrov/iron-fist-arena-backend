@@ -229,6 +229,24 @@ struct SettingsDetailView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.scalePress(0.97))
+
+            Button {
+                appState.mainPath.append(AppRoute.hubEditor)
+            } label: {
+                HStack {
+                    Image(systemName: "map.fill")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    Text("Hub Map Editor")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .frame(height: LayoutConstants.buttonHeightMD)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.scalePress(0.97))
         }
     }
     #endif

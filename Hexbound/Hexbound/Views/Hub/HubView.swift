@@ -7,9 +7,8 @@ struct HubView: View {
     @Environment(GameDataCache.self) private var cache
 
     var body: some View {
-        ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-
+        VStack(spacing: 0) {
+            // HUD widgets at top
             VStack(spacing: 10) {
                 // Stamina Bar → Potions tab
                 if let char = appState.currentCharacter {
@@ -42,54 +41,54 @@ struct HubView: View {
                     FirstWinBonusCard()
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
-
-                // Interactive city map (replaces nav grid)
-                CityMapView()
-                    .tutorialAnchor(.hubCityMap)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(alignment: .topTrailing) {
-                        // Floating action icons — anchored to top-right of map
-                        VStack(spacing: 10) {
-                            FloatingActionIcon(
-                                customIcon: "hud-gift",
-                                badgeActive: appState.dailyLoginCanClaim,
-                                accentColor: DarkFantasyTheme.goldBright,
-                                size: 50
-                            ) {
-                                appState.mainPath.append(AppRoute.dailyLogin)
-                            }
-                            .tutorialAnchor(.hubDailyLogin)
-
-                            FloatingActionIcon(
-                                customIcon: "hud-quests",
-                                badgeActive: {
-                                    let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
-                                    let total = appState.cachedTypedQuests?.count ?? 0
-                                    return total > 0 && completed < total
-                                }(),
-                                accentColor: DarkFantasyTheme.gold,
-                                size: 50
-                            ) {
-                                appState.mainPath.append(AppRoute.dailyQuests)
-                            }
-
-                            FloatingActionIcon(
-                                systemIcon: "envelope.fill",
-                                badgeActive: appState.unreadMailCount > 0,
-                                accentColor: DarkFantasyTheme.accent,
-                                size: 50
-                            ) {
-                                appState.mainPath.append(AppRoute.inbox)
-                            }
-
-                            FloatingSoundToggle(size: 50)
-                        }
-                        .padding(.top, LayoutConstants.spaceSM)
-                        .padding(.trailing, LayoutConstants.screenPadding)
-                    }
-
             }
+            .background(DarkFantasyTheme.bgPrimary)
+
+            // City map — fills remaining space, bleeds to bottom edge
+            CityMapView()
+                .tutorialAnchor(.hubCityMap)
+                .clipped()
+                .overlay(alignment: .topTrailing) {
+                    VStack(spacing: 10) {
+                        FloatingActionIcon(
+                            customIcon: "hud-gift",
+                            badgeActive: appState.dailyLoginCanClaim,
+                            accentColor: DarkFantasyTheme.goldBright,
+                            size: 50
+                        ) {
+                            appState.mainPath.append(AppRoute.dailyLogin)
+                        }
+                        .tutorialAnchor(.hubDailyLogin)
+
+                        FloatingActionIcon(
+                            customIcon: "hud-quests",
+                            badgeActive: {
+                                let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
+                                let total = appState.cachedTypedQuests?.count ?? 0
+                                return total > 0 && completed < total
+                            }(),
+                            accentColor: DarkFantasyTheme.gold,
+                            size: 50
+                        ) {
+                            appState.mainPath.append(AppRoute.dailyQuests)
+                        }
+
+                        FloatingActionIcon(
+                            systemIcon: "envelope.fill",
+                            badgeActive: appState.unreadMailCount > 0,
+                            accentColor: DarkFantasyTheme.gold,
+                            size: 50
+                        ) {
+                            appState.mainPath.append(AppRoute.inbox)
+                        }
+
+                        FloatingSoundToggle(size: 50)
+                    }
+                    .padding(.top, LayoutConstants.spaceSM)
+                    .padding(.trailing, LayoutConstants.screenPadding)
+                }
         }
+        .ignoresSafeArea(edges: .bottom)
         .navigationBarHidden(true)
         .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])
         .task { await checkDailyLogin() }

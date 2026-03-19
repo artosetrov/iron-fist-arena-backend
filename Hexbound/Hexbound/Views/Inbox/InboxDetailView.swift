@@ -3,13 +3,16 @@ import SwiftUI
 struct InboxDetailView: View {
     @State private var viewModel = InboxViewModel()
     @Environment(\.dismiss) var dismiss
-    
-    let characterId: String
+    @Environment(AppState.self) private var appState
+
+    private var characterId: String {
+        appState.currentCharacter?.id ?? ""
+    }
     
     var body: some View {
         ZStack {
             // Background
-            DarkFantasyTheme.background
+            DarkFantasyTheme.bgPrimary
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -25,27 +28,27 @@ struct InboxDetailView: View {
                         Badge(count: viewModel.unreadCount)
                     }
                 }
-                .padding(.horizontal, LayoutConstants.padding)
-                .padding(.vertical, LayoutConstants.paddingMedium)
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.vertical, LayoutConstants.spaceMD)
                 
                 Divider()
-                    .foregroundColor(DarkFantasyTheme.surfaceLight)
+                    .foregroundColor(DarkFantasyTheme.bgTertiary)
                 
                 // Content
                 if viewModel.isLoading && viewModel.messages.isEmpty {
-                    VStack(spacing: LayoutConstants.paddingMedium) {
+                    VStack(spacing: LayoutConstants.spaceMD) {
                         ProgressView()
-                            .tint(DarkFantasyTheme.accent)
+                            .tint(DarkFantasyTheme.gold)
                         
                         Text("Loading mail...")
                             .foregroundColor(DarkFantasyTheme.textSecondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(DarkFantasyTheme.background)
+                    .background(DarkFantasyTheme.bgPrimary)
                 } else if viewModel.messages.isEmpty {
                     EmptyMailState()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(DarkFantasyTheme.background)
+                        .background(DarkFantasyTheme.bgPrimary)
                 } else {
                     List {
                         ForEach(viewModel.messages) { message in
@@ -57,7 +60,7 @@ struct InboxDetailView: View {
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
-                    .background(DarkFantasyTheme.background)
+                    .background(DarkFantasyTheme.bgPrimary)
                     .refreshable {
                         await viewModel.fetchInbox(characterId: characterId)
                     }
@@ -65,7 +68,7 @@ struct InboxDetailView: View {
                 
                 if let error = viewModel.error {
                     ErrorBanner(message: error)
-                        .padding(LayoutConstants.padding)
+                        .padding(LayoutConstants.spaceMD)
                 }
             }
         }
@@ -78,7 +81,7 @@ struct InboxDetailView: View {
 // MARK: - Empty State
 private struct EmptyMailState: View {
     var body: some View {
-        VStack(spacing: LayoutConstants.paddingLarge) {
+        VStack(spacing: LayoutConstants.spaceLG) {
             Image(systemName: "envelope.open")
                 .font(.system(size: 48))
                 .foregroundColor(DarkFantasyTheme.textSecondary)
@@ -91,10 +94,10 @@ private struct EmptyMailState: View {
                 .font(.system(size: 14))
                 .foregroundColor(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, LayoutConstants.paddingLarge)
+                .padding(.horizontal, LayoutConstants.spaceLG)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DarkFantasyTheme.background)
+        .background(DarkFantasyTheme.bgPrimary)
     }
 }
 
@@ -105,11 +108,11 @@ private struct Badge: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(DarkFantasyTheme.accent)
+                .fill(DarkFantasyTheme.gold)
             
             Text("\(count)")
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(DarkFantasyTheme.background)
+                .foregroundColor(DarkFantasyTheme.bgPrimary)
         }
         .frame(width: 24, height: 24)
     }
@@ -120,7 +123,7 @@ private struct ErrorBanner: View {
     let message: String
     
     var body: some View {
-        HStack(spacing: LayoutConstants.padding) {
+        HStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "exclamationmark.circle.fill")
                 .foregroundColor(DarkFantasyTheme.gold)
             
@@ -131,12 +134,12 @@ private struct ErrorBanner: View {
             
             Spacer()
         }
-        .padding(LayoutConstants.paddingMedium)
-        .background(DarkFantasyTheme.surface)
+        .padding(LayoutConstants.spaceMD)
+        .background(DarkFantasyTheme.bgSecondary)
         .cornerRadius(8)
     }
 }
 
 #Preview {
-    InboxDetailView(characterId: "char-123")
+    InboxDetailView()
 }

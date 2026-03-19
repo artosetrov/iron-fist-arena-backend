@@ -24,6 +24,7 @@ struct ArenaComparisonSheet: View {
                 .fill(DarkFantasyTheme.textTertiary)
                 .frame(width: 36, height: 4)
                 .padding(.top, LayoutConstants.spaceMD)
+                .padding(.bottom, LayoutConstants.spaceLG)
 
             // VS Header
             vsHeader
@@ -43,7 +44,7 @@ struct ArenaComparisonSheet: View {
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
-        .presentationDetents([.height(560)])
+        .presentationDetents([.height(620)])
         .presentationDragIndicator(.hidden)
         .presentationBackground(DarkFantasyTheme.bgArenaSheet)
         .presentationCornerRadius(20)
@@ -58,7 +59,7 @@ struct ArenaComparisonSheet: View {
                 AvatarImageView(
                     skinKey: character.avatar,
                     characterClass: character.characterClass,
-                    size: 80
+                    size: 100
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay(
@@ -87,7 +88,7 @@ struct ArenaComparisonSheet: View {
                 AvatarImageView(
                     skinKey: opponent.avatar,
                     characterClass: opponent.characterClass,
-                    size: 80
+                    size: 100
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay(

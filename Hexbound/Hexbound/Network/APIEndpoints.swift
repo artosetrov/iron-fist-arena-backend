@@ -115,4 +115,7 @@ enum APIEndpoints {
     static let iapVerify = "/api/iap/verify"
     static let iapRestore = "/api/iap/restore"
     static let iapProducts = "/api/iap/products"
+
+    // MARK: - Admin
+    static let adminHubLayout = "/api/admin/hub-layout"
 }

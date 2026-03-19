@@ -7,17 +7,17 @@ struct CityBuilding: Identifiable {
     let imageName: String        // asset name in xcassets
     let label: String            // banner text
     let route: AppRoute          // navigation target
-    let relativeX: CGFloat       // 0.0...1.0 position on terrain X
-    let relativeY: CGFloat       // 0.0...1.0 position on terrain Y
-    let relativeSize: CGFloat    // size relative to terrain height
+    var relativeX: CGFloat       // 0.0...1.0 position on terrain X
+    var relativeY: CGFloat       // 0.0...1.0 position on terrain Y
+    var relativeSize: CGFloat    // size relative to terrain height
     let glowColor: Color         // glow color on tap / idle
     let fallbackIcon: String     // SF Symbol fallback if asset missing
     var labelYOffset: CGFloat = 0 // extra Y offset for label (relative to terrain height)
 }
 
-// MARK: - Building Configurations
+// MARK: - Default Building Configurations (hardcoded fallback)
 
-let cityBuildings: [CityBuilding] = [
+let defaultCityBuildings: [CityBuilding] = [
     CityBuilding(
         id: "shop",
         imageName: "building-shop",
@@ -97,3 +97,25 @@ let cityBuildings: [CityBuilding] = [
         labelYOffset: -0.04
     ),
 ]
+
+// MARK: - Resolved buildings (server overrides → hardcoded defaults)
+
+@MainActor
+func resolvedCityBuildings(from cache: GameDataCache) -> [CityBuilding] {
+    let overrides = cache.hubLayout
+    guard !overrides.isEmpty else { return defaultCityBuildings }
+
+    return defaultCityBuildings.map { building in
+        var b = building
+        if let o = overrides[building.id] {
+            b.relativeX = o.x
+            b.relativeY = o.y
+            if let size = o.size { b.relativeSize = size }
+        }
+        return b
+    }
+}
+
+// MARK: - Convenience (for views without cache access, uses defaults)
+
+var cityBuildings: [CityBuilding] { defaultCityBuildings }

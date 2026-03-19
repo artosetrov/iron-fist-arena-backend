@@ -1,0 +1,104 @@
+default_platform(:ios)
+
+platform :ios do
+
+  # ──────────────────────────────────────────────
+  # ЗАГРУЗИТЬ НА TESTFLIGHT
+  # Запуск: fastlane beta
+  # ──────────────────────────────────────────────
+  desc "Собрать и загрузить на TestFlight"
+  lane :beta do
+    # 1. Инкрементировать build number
+    increment_build_number(
+      xcodeproj: "Hexbound.xcodeproj"
+    )
+
+    # 2. Собрать архив
+    build_app(
+      project: "Hexbound.xcodeproj",
+      scheme: "Hexbound",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "Hexbound.ipa",
+      clean: true,
+      include_symbols: true,
+      export_options: {
+        provisioningProfiles: {
+          "com.hexbound.app" => "Hexbound AppStore"
+        }
+      }
+    )
+
+    # 3. Загрузить на App Store Connect / TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false,
+      changelog: "Новый билд Hexbound 🎮"
+    )
+
+    # 4. Уведомить об успехе
+    current_version = get_version_number(xcodeproj: "Hexbound.xcodeproj")
+    current_build = get_build_number(xcodeproj: "Hexbound.xcodeproj")
+    UI.success("✅ Hexbound #{current_version} (#{current_build}) загружен на TestFlight!")
+  end
+
+  # ──────────────────────────────────────────────
+  # ТОЛЬКО СОБРАТЬ (без загрузки)
+  # Запуск: fastlane build
+  # ──────────────────────────────────────────────
+  desc "Собрать без загрузки (проверка что компилится)"
+  lane :build do
+    build_app(
+      project: "Hexbound.xcodeproj",
+      scheme: "Hexbound",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "Hexbound.ipa",
+      clean: true
+    )
+    UI.success("✅ Билд собран: ./build/Hexbound.ipa")
+  end
+
+  # ──────────────────────────────────────────────
+  # ИНКРЕМЕНТ ВЕРСИИ
+  # Запуск: fastlane bump_patch / bump_minor / bump_major
+  # ──────────────────────────────────────────────
+  desc "Bump patch версию (1.0.0 → 1.0.1)"
+  lane :bump_patch do
+    increment_version_number(
+      xcodeproj: "Hexbound.xcodeproj",
+      bump_type: "patch"
+    )
+    version = get_version_number(xcodeproj: "Hexbound.xcodeproj")
+    UI.success("Версия: #{version}")
+  end
+
+  desc "Bump minor версию (1.0.x → 1.1.0)"
+  lane :bump_minor do
+    increment_version_number(
+      xcodeproj: "Hexbound.xcodeproj",
+      bump_type: "minor"
+    )
+    version = get_version_number(xcodeproj: "Hexbound.xcodeproj")
+    UI.success("Версия: #{version}")
+  end
+
+  desc "Bump major версию (1.x.x → 2.0.0)"
+  lane :bump_major do
+    increment_version_number(
+      xcodeproj: "Hexbound.xcodeproj",
+      bump_type: "major"
+    )
+    version = get_version_number(xcodeproj: "Hexbound.xcodeproj")
+    UI.success("Версия: #{version}")
+  end
+
+  # ──────────────────────────────────────────────
+  # ERROR HANDLING
+  # ──────────────────────────────────────────────
+  error do |lane, exception|
+    UI.error("❌ Ошибка в lane '#{lane}': #{exception.message}")
+  end
+end

@@ -84,7 +84,21 @@ struct RegisterDetailView: View {
                 LoadingOverlay()
             }
         }
-        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    if !appState.authPath.isEmpty {
+                        appState.authPath.removeLast()
+                    }
+                } label: {
+                    Image("ui-arrow-left")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                }
+            }
+        }
         .onAppear { vm.setup(appState: appState) }
     }
 }

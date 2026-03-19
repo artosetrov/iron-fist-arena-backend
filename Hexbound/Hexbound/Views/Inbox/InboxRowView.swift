@@ -12,11 +12,11 @@ struct InboxRowView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Row header
-            HStack(spacing: LayoutConstants.paddingMedium) {
+            HStack(spacing: LayoutConstants.spaceMD) {
                 // Unread indicator
                 if !message.isRead {
                     Circle()
-                        .fill(DarkFantasyTheme.accent)
+                        .fill(DarkFantasyTheme.gold)
                         .frame(width: 8, height: 8)
                 } else {
                     Circle()
@@ -25,7 +25,7 @@ struct InboxRowView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: LayoutConstants.paddingSmall) {
+                    HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.subject)
                             .font(.system(size: 15, weight: message.isRead ? .regular : .semibold))
                             .foregroundColor(DarkFantasyTheme.textPrimary)
@@ -49,7 +49,7 @@ struct InboxRowView: View {
                         }
                     }
                     
-                    HStack(spacing: LayoutConstants.paddingSmall) {
+                    HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.senderName)
                             .font(.system(size: 13))
                             .foregroundColor(DarkFantasyTheme.textSecondary)
@@ -66,8 +66,8 @@ struct InboxRowView: View {
                     .foregroundColor(DarkFantasyTheme.textSecondary)
                     .font(.system(size: 12, weight: .semibold))
             }
-            .padding(LayoutConstants.paddingMedium)
-            .background(DarkFantasyTheme.surface)
+            .padding(LayoutConstants.spaceMD)
+            .background(DarkFantasyTheme.bgSecondary)
             .contentShape(Rectangle())
             .onTapGesture {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -83,9 +83,9 @@ struct InboxRowView: View {
             
             // Expanded content
             if isExpanded {
-                VStack(alignment: .leading, spacing: LayoutConstants.paddingMedium) {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
                     Divider()
-                        .foregroundColor(DarkFantasyTheme.surfaceLight)
+                        .foregroundColor(DarkFantasyTheme.bgTertiary)
                     
                     // Message body
                     Text(message.body)
@@ -95,13 +95,13 @@ struct InboxRowView: View {
                     
                     // Attachments details
                     if let attachments = message.attachments, !attachments.isEmpty {
-                        VStack(alignment: .leading, spacing: LayoutConstants.paddingSmall) {
+                        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                             Text("Attachments")
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(DarkFantasyTheme.textSecondary)
                             
                             ForEach(attachments, id: \.type) { attachment in
-                                HStack(spacing: LayoutConstants.paddingSmall) {
+                                HStack(spacing: LayoutConstants.spaceSM) {
                                     AttachmentIcon(type: attachment.type, amount: attachment.amount)
                                     
                                     Text(formatAttachment(attachment))
@@ -112,13 +112,13 @@ struct InboxRowView: View {
                                 }
                             }
                         }
-                        .padding(LayoutConstants.paddingMedium)
-                        .background(DarkFantasyTheme.surfaceLight)
+                        .padding(LayoutConstants.spaceMD)
+                        .background(DarkFantasyTheme.bgTertiary)
                         .cornerRadius(6)
                     }
                     
                     // Actions
-                    HStack(spacing: LayoutConstants.paddingMedium) {
+                    HStack(spacing: LayoutConstants.spaceMD) {
                         if !message.isClaimed && message.attachments != nil {
                             Button(action: claimAttachments) {
                                 HStack {
@@ -142,14 +142,14 @@ struct InboxRowView: View {
                         .disabled(isDeleting)
                     }
                 }
-                .padding(LayoutConstants.paddingMedium)
-                .background(DarkFantasyTheme.surface)
+                .padding(LayoutConstants.spaceMD)
+                .background(DarkFantasyTheme.bgSecondary)
             }
         }
-        .background(DarkFantasyTheme.surface)
+        .background(DarkFantasyTheme.bgSecondary)
         .cornerRadius(8)
-        .padding(.horizontal, LayoutConstants.paddingMedium)
-        .padding(.vertical, LayoutConstants.paddingSmall)
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceSM)
     }
     
     private func claimAttachments() {
@@ -222,7 +222,7 @@ private struct AttachmentIcon: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
-        .background(DarkFantasyTheme.surfaceLight)
+        .background(DarkFantasyTheme.bgTertiary)
         .cornerRadius(4)
     }
     
@@ -246,11 +246,11 @@ private struct AttachmentIcon: View {
         case "gold":
             return DarkFantasyTheme.gold
         case "gems":
-            return DarkFantasyTheme.gemPurple
+            return DarkFantasyTheme.purple
         case "xp":
-            return DarkFantasyTheme.accent
+            return DarkFantasyTheme.gold
         case "item":
-            return DarkFantasyTheme.accent
+            return DarkFantasyTheme.gold
         default:
             return DarkFantasyTheme.textSecondary
         }
@@ -277,5 +277,5 @@ private struct AttachmentIcon: View {
         viewModel: InboxViewModel(),
         characterId: "char-123"
     )
-    .background(DarkFantasyTheme.background)
+    .background(DarkFantasyTheme.bgPrimary)
 }

@@ -74,6 +74,7 @@ final class LocalizationManager {
 
 // MARK: - String Extension
 
+@MainActor
 extension String {
     /// Returns the localized version of this string key.
     /// Usage: `"shop.title".localized`
@@ -93,6 +94,7 @@ extension String {
 
 // MARK: - SwiftUI Text Extension
 
+@MainActor
 extension Text {
     /// Create a Text from a localization key using our custom LocalizationManager.
     /// Usage: `Text(l10n: "shop.title")`
@@ -112,6 +114,7 @@ extension Text {
 
 // MARK: - Type-Safe Keys (most common)
 
+@MainActor
 enum L10n {
     // Common
     static var ok: String { "common.ok".localized }

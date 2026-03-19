@@ -1,0 +1,214 @@
+/* Hexbound – English (Base) Localization */
+
+// MARK: - Common
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.save" = "Save";
+"common.delete" = "Delete";
+"common.confirm" = "Confirm";
+"common.back" = "Back";
+"common.close" = "Close";
+"common.loading" = "Loading...";
+"common.error" = "Error";
+"common.retry" = "Retry";
+"common.done" = "Done";
+"common.edit" = "Edit";
+"common.search" = "Search";
+"common.comingSoon" = "Coming soon...";
+"common.level" = "Level";
+"common.level.short" = "Lv.";
+
+// MARK: - Auth
+"auth.login" = "Log In";
+"auth.register" = "Register";
+"auth.logout" = "Log Out";
+"auth.email" = "Email";
+"auth.password" = "Password";
+"auth.username" = "Username";
+"auth.forgotPassword" = "Forgot Password?";
+"auth.noAccount" = "Don't have an account?";
+"auth.hasAccount" = "Already have an account?";
+"auth.signInWithGoogle" = "Sign in with Google";
+"auth.signInWithApple" = "Sign in with Apple";
+"auth.orContinueWith" = "Or continue with";
+
+// MARK: - Onboarding
+"onboarding.chooseName" = "CHOOSE YOUR NAME";
+"onboarding.yourName" = "YOUR NAME";
+"onboarding.enterHeroName" = "Enter hero name...";
+"onboarding.nameMinChars" = "Name must be at least 3 characters";
+"onboarding.checkingAvailability" = "Checking availability...";
+"onboarding.nameAvailable" = "Name is available!";
+"onboarding.nameTaken" = "Name already taken";
+"onboarding.chooseClass" = "CHOOSE YOUR CLASS";
+"onboarding.chooseAppearance" = "CHOOSE YOUR LOOK";
+"onboarding.continue" = "Continue";
+"onboarding.createCharacter" = "Create Character";
+
+// MARK: - Hub / Main
+"hub.title" = "HUB";
+"hub.arena" = "Arena";
+"hub.dungeons" = "Dungeons";
+"hub.shop" = "Shop";
+"hub.hero" = "Hero";
+"hub.quests" = "Quests";
+"hub.leaderboard" = "Leaderboard";
+"hub.achievements" = "Achievements";
+"hub.goldMine" = "Gold Mine";
+"hub.battlePass" = "Battle Pass";
+"hub.dailyLogin" = "Daily Login";
+
+// MARK: - Shop
+"shop.title" = "SHOP";
+"shop.merchant" = "MERCHANT";
+"shop.noItems" = "No items available";
+"shop.buy" = "Buy";
+"shop.purchased" = "Purchased";
+"shop.maxPurchased" = "Max Purchased";
+"shop.price" = "Price";
+"shop.discount" = "%d%% OFF";
+"shop.timeLeft" = "%@ left";
+"shop.gems" = "Gems";
+"shop.gold" = "Gold";
+"shop.buyGems" = "Buy Gems";
+"shop.items" = "Items";
+"shop.consumables" = "Consumables";
+"shop.offers" = "Special Offers";
+
+// MARK: - Arena / PvP
+"arena.title" = "ARENA";
+"arena.findMatch" = "Find Match";
+"arena.searching" = "Searching...";
+"arena.rank" = "Rank";
+"arena.rating" = "Rating";
+"arena.wins" = "Wins";
+"arena.losses" = "Losses";
+"arena.streak" = "Win Streak";
+"arena.matchHistory" = "Match History";
+"arena.victory" = "VICTORY";
+"arena.defeat" = "DEFEAT";
+"arena.draw" = "DRAW";
+"arena.rewards" = "Rewards";
+
+// MARK: - Combat
+"combat.yourTurn" = "YOUR TURN";
+"combat.enemyTurn" = "Enemy Turn";
+"combat.attack" = "Attack";
+"combat.defend" = "Defend";
+"combat.skill" = "Skill";
+"combat.flee" = "Flee";
+"combat.hp" = "HP";
+"combat.mp" = "MP";
+"combat.damage" = "Damage";
+"combat.heal" = "Heal";
+"combat.miss" = "MISS";
+"combat.critical" = "CRITICAL";
+
+// MARK: - Hero
+"hero.title" = "HERO";
+"hero.stats" = "Stats";
+"hero.equipment" = "Equipment";
+"hero.skills" = "Skills";
+"hero.inventory" = "Inventory";
+"hero.strength" = "Strength";
+"hero.agility" = "Agility";
+"hero.intelligence" = "Intelligence";
+"hero.vitality" = "Vitality";
+"hero.xpToNext" = "%d XP to next level";
+"hero.emptySlot" = "Empty Slot";
+
+// MARK: - Dungeons
+"dungeon.title" = "DUNGEONS";
+"dungeon.enter" = "Enter Dungeon";
+"dungeon.floor" = "Floor %d";
+"dungeon.rooms" = "%d Rooms";
+"dungeon.difficulty" = "Difficulty";
+"dungeon.easy" = "Easy";
+"dungeon.normal" = "Normal";
+"dungeon.hard" = "Hard";
+"dungeon.nightmare" = "Nightmare";
+"dungeon.boss" = "BOSS";
+"dungeon.cleared" = "Cleared!";
+"dungeon.staminaCost" = "Stamina: %d";
+
+// MARK: - Achievements
+"achievements.title" = "ACHIEVEMENTS";
+"achievements.completed" = "Completed";
+"achievements.inProgress" = "In Progress";
+"achievements.locked" = "Locked";
+"achievements.claimReward" = "Claim Reward";
+"achievements.progress" = "%d / %d";
+
+// MARK: - Quests
+"quests.title" = "QUESTS";
+"quests.daily" = "Daily";
+"quests.weekly" = "Weekly";
+"quests.story" = "Story";
+"quests.claim" = "Claim";
+"quests.completed" = "Completed";
+"quests.active" = "Active";
+
+// MARK: - Settings
+"settings.title" = "Settings";
+"settings.account" = "Account";
+"settings.language" = "Language";
+"settings.sound" = "Sound";
+"settings.music" = "Music";
+"settings.notifications" = "Notifications";
+"settings.about" = "About";
+"settings.version" = "Version";
+"settings.deleteAccount" = "Delete Account";
+"settings.deleteWarning" = "This action cannot be undone. All your progress will be lost.";
+"settings.premium" = "Premium";
+
+// MARK: - Leaderboard
+"leaderboard.title" = "LEADERBOARD";
+"leaderboard.global" = "Global";
+"leaderboard.class" = "By Class";
+"leaderboard.you" = "You";
+
+// MARK: - Battle Pass
+"battlePass.title" = "BATTLE PASS";
+"battlePass.free" = "Free";
+"battlePass.premium" = "Premium";
+"battlePass.tier" = "Tier %d";
+"battlePass.claimAll" = "Claim All";
+"battlePass.unlock" = "Unlock Premium";
+"battlePass.daysLeft" = "%d days left";
+
+// MARK: - Daily Login
+"dailyLogin.title" = "DAILY LOGIN";
+"dailyLogin.day" = "Day %d";
+"dailyLogin.claimed" = "Claimed";
+"dailyLogin.claimNow" = "Claim Now";
+"dailyLogin.streak" = "Login Streak";
+
+// MARK: - Gold Mine
+"goldMine.title" = "GOLD MINE";
+"goldMine.collect" = "Collect";
+"goldMine.upgrade" = "Upgrade";
+"goldMine.production" = "Production";
+"goldMine.perHour" = "%d / hour";
+"goldMine.capacity" = "Capacity";
+"goldMine.full" = "FULL";
+
+// MARK: - Premium
+"premium.title" = "PREMIUM";
+"premium.subscribe" = "Subscribe";
+"premium.xpBonus" = "+20%% XP from all sources";
+"premium.goldBonus" = "+20%% Gold from all sources";
+"premium.freePvP" = "5 Free PvP fights per day";
+"premium.cosmetics" = "Exclusive premium cosmetics";
+"premium.matchmaking" = "Priority matchmaking";
+
+// MARK: - Errors
+"error.network" = "Network error. Please check your connection.";
+"error.serverError" = "Server error. Please try again later.";
+"error.unauthorized" = "Session expired. Please log in again.";
+"error.notEnoughGold" = "Not enough gold";
+"error.notEnoughGems" = "Not enough gems";
+"error.notEnoughStamina" = "Not enough stamina";
+
+// MARK: - Push Notifications
+"push.permissionTitle" = "Stay in the Fight!";
+"push.permissionBody" = "Enable notifications to get arena rewards, quest updates, and special offers.";

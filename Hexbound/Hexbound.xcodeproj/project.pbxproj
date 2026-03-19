@@ -10,6 +10,7 @@
 		0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */; };
 		007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */; };
 		01ACCBEA4188CBD49C2C4A6B /* CharacterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446B460A2C750CE2BFD0F86D /* CharacterDetailView.swift */; };
+		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */; };
 		0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */; };
 		0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */; };
@@ -56,6 +57,7 @@
 		4EF2ECBFEC10704C85A5EA08 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AB9A6B1D0F6FECA30FCAD7F3 /* Inter-Regular.ttf */; };
 		50BA6A3A30789BC202A01C2A /* StaminaBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4FF07BEAA46D906846F3946 /* StaminaBarView.swift */; };
 		50BDBEB825D56CF4C576F162 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8295F58FEE8531E138102511 /* LoginView.swift */; };
+		50BDBEB825D56CF4C576F163 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8295F58FEE8531E138102512 /* WelcomeView.swift */; };
 		50EE3B465FD846F749B06FBC /* ScreenLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF81E118A6812E0F4273F368 /* ScreenLayout.swift */; };
 		5171B41A35F2E62A243FBCFE /* DailyLoginData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */; };
 		517BAE0300AC0F8E88D17AE9 /* Opponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056220C532DB828C69C4C356 /* Opponent.swift */; };
@@ -124,6 +126,7 @@
 		C1A00001CITY00000001 /* CityBuildingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000005 /* CityBuildingConfig.swift */; };
 		C1A00001CITY00000002 /* CityBuildingLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000006 /* CityBuildingLabel.swift */; };
 		C1A00001CITY00000003 /* CityBuildingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000007 /* CityBuildingView.swift */; };
+		C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00002EFCT00000002 /* CityMapEffects.swift */; };
 		C1A00001CITY00000004 /* CityMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000008 /* CityMapView.swift */; };
 		C3D4E5F60718A9B0C1D2E3F4 /* HPBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F60718A9B0C1D2E3F5 /* HPBarView.swift */; };
 		C41999D768F5968EA7B75677 /* ItemRarity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4548EC844F00904DF207ED30 /* ItemRarity.swift */; };
@@ -244,8 +247,10 @@
 		7C53C086F4EE08A374066CD1 /* SettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailView.swift; sourceTree = "<group>"; };
 		7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushDetailView.swift; sourceTree = "<group>"; };
 		80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsDetailView.swift; sourceTree = "<group>"; };
+		07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubEditorDetailView.swift; sourceTree = "<group>"; };
 		81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
 		8295F58FEE8531E138102511 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		8295F58FEE8531E138102512 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		851C837AEE3485F0447C5271 /* DailyQuestsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuestsViewModel.swift; sourceTree = "<group>"; };
 		877EA698C6CB6187721D94A8 /* Applogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Applogo.png; sourceTree = "<group>"; };
 		8825D55175E1FECF38EF971F /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
@@ -293,6 +298,7 @@
 		C1A00001CITY00000005 /* CityBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingConfig.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000006 /* CityBuildingLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingLabel.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000007 /* CityBuildingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingView.swift; sourceTree = "<group>"; };
+		C1A00002EFCT00000002 /* CityMapEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapEffects.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000008 /* CityMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapView.swift; sourceTree = "<group>"; };
 		C268D3E4D32E3822E9F6013B /* ArenaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArenaViewModel.swift; sourceTree = "<group>"; };
 		C3D4E5F60718A9B0C1D2E3F5 /* HPBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HPBarView.swift; sourceTree = "<group>"; };
@@ -341,8 +347,8 @@
 		FF01A1B2C3D4E5F6A7B8C9D1 /* FeatureFlagService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagService.swift; sourceTree = "<group>"; };
 		GSIG00001REF00001 /* GoogleSignInHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSignInHelper.swift; sourceTree = "<group>"; };
 		L10N001REF000000000000A2 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
-		L10N003REF000000000000A5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/en.lproj/Localizable.strings; sourceTree = "<group>"; };
-		L10N004REF000000000000A6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Resources/ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10N003REF000000000000A5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = ../Resources/en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L10N004REF000000000000A6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ../Resources/ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		MAIL0001REF00001 /* MailMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailMessage.swift; sourceTree = "<group>"; };
 		MAIL0001REF00002 /* InboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxViewModel.swift; sourceTree = "<group>"; };
 		MAIL0001REF00003 /* InboxDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxDetailView.swift; sourceTree = "<group>"; };
@@ -433,6 +439,7 @@
 				A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */,
 				A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */,
 				8295F58FEE8531E138102511 /* LoginView.swift */,
+				8295F58FEE8531E138102512 /* WelcomeView.swift */,
 				02F525698FF57035C2C32D1B /* LoginViewModel.swift */,
 				A1B2C3D4E5F60718A9B0C1D7 /* NameStepView.swift */,
 				C413E383C1949E4D72157CC2 /* OnboardingDetailView.swift */,
@@ -657,7 +664,6 @@
 		A0EBD6252F68D53C0067FDF7 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				L10N002VAR000000000000A4 /* Localizable.strings */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -670,8 +676,10 @@
 				C1A00001CITY00000005 /* CityBuildingConfig.swift */,
 				C1A00001CITY00000006 /* CityBuildingLabel.swift */,
 				C1A00001CITY00000007 /* CityBuildingView.swift */,
+				C1A00002EFCT00000002 /* CityMapEffects.swift */,
 				C1A00001CITY00000008 /* CityMapView.swift */,
 				A1B2C3D4E5F6000000000002 /* HubCharacterCard.swift */,
+				07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */,
 				81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */,
 				D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */,
 				ED9C9599BC7FEA09D41E975A /* StanceSelectorViewModel.swift */,
@@ -1030,8 +1038,10 @@
 				C1A00001CITY00000001 /* CityBuildingConfig.swift in Sources */,
 				C1A00001CITY00000002 /* CityBuildingLabel.swift in Sources */,
 				C1A00001CITY00000003 /* CityBuildingView.swift in Sources */,
+				C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */,
 				C1A00001CITY00000004 /* CityMapView.swift in Sources */,
 				A1B2C3D4E5F6000000000001 /* HubCharacterCard.swift in Sources */,
+				07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */,
 				078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */,
 				51E2F782E669CC65903D964A /* InventoryService.swift in Sources */,
 				686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */,
@@ -1054,6 +1064,7 @@
 				6056EEBEF912AA9AF2CADE12 /* LevelUpModalView.swift in Sources */,
 				9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */,
 				50BDBEB825D56CF4C576F162 /* LoginView.swift in Sources */,
+				50BDBEB825D56CF4C576F163 /* WelcomeView.swift in Sources */,
 				EA6DA3C33DF151344CE8AFB4 /* LoginViewModel.swift in Sources */,
 				34A9736F58B7E41F8EC88EC6 /* LootDetailView.swift in Sources */,
 				A326E466BA779E44829BEA76 /* MatchHistory.swift in Sources */,

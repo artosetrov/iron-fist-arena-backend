@@ -145,16 +145,6 @@ struct LoginView: View {
                     }
                     .padding(.top, LayoutConstants.spaceSM)
 
-                    // DEV: Quick admin login
-                    #if DEBUG
-                    Button {
-                        Task { await vm.devLogin(appState: appState) }
-                    } label: {
-                        Text("DEV: Admin Login")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.danger)
-                    }
-                    #endif
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.bottom, 60)
@@ -164,7 +154,21 @@ struct LoginView: View {
                 LoadingOverlay()
             }
         }
-        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    if !appState.authPath.isEmpty {
+                        appState.authPath.removeLast()
+                    }
+                } label: {
+                    Image("ui-arrow-left")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                }
+            }
+        }
         .onAppear {
             vm.setup(appState: appState)
         }
