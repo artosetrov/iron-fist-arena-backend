@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Build transaction operations
-    const contents = offer.contents as OfferContent[]
+    const contents = offer.contents as unknown as OfferContent[]
     const ops: any[] = []
 
     // 1. Deduct currency
