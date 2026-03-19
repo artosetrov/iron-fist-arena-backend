@@ -28,6 +28,12 @@ vi.mock('@/lib/rate-limit', () => ({
 }))
 
 vi.mock('@/lib/game/balance', () => ({
+  BATTLE_PASS: {
+    BP_XP_PER_PVP: 20,
+    BP_XP_PER_DUNGEON_FLOOR: 30,
+    BP_XP_PER_QUEST: 50,
+    BP_XP_PER_ACHIEVEMENT: 100,
+  },
   chaGoldBonus: (value: number) => value,
 }))
 

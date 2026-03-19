@@ -115,6 +115,13 @@ vi.mock('@/lib/game/durability', () => ({
 
 vi.mock('@/lib/cache', () => ({
   cacheDeletePrefix: mockCacheDeletePrefix,
+  cacheGet: vi.fn().mockResolvedValue(null),
+  cacheSet: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@/lib/game/config', () => ({
+  getGameConfig: vi.fn(async (_key: string, fallback: unknown) => fallback),
+  getGameConfigs: vi.fn(async (keys: Record<string, unknown>) => keys),
 }))
 
 import { POST } from '@/app/api/pvp/resolve/route'
