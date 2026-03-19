@@ -124,6 +124,21 @@
       "type" : "Consumable"
     },
     {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "GEMS_HUGE",
+      "localizations" : [
+        {
+          "description" : "2,000 Gems + 500 Bonus",
+          "displayName" : "Hoard of Gems",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.hexbound.gems_huge",
+      "referenceName" : "Gems Huge",
+      "type" : "Consumable"
+    },
+    {
       "displayPrice" : "49.99",
       "familyShareable" : false,
       "internalID" : "GEMS_MEGA",

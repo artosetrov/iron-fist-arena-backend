@@ -94,7 +94,7 @@ final class ShopViewModel {
         }
         // Load items and offers in parallel
         async let itemsTask = service.getItems()
-        async let offersTask = loadOffers()
+        async let offersTask: Void = loadOffers()
         let result = await itemsTask
         _ = await offersTask
         items = result
@@ -135,7 +135,14 @@ final class ShopViewModel {
             return
         }
         guard canAffordOffer(offer) else {
-            appState.showToast(offer.isGemPurchase ? "Not enough gems!" : "Not enough gold!", type: .error)
+            appState.showToast(
+                offer.isGemPurchase ? "Not enough gems!" : "Not enough gold!",
+                type: .error,
+                actionLabel: "GET MORE",
+                action: { [weak appState] in
+                    appState?.mainPath.append(AppRoute.currencyPurchase)
+                }
+            )
             return
         }
 
@@ -219,7 +226,11 @@ final class ShopViewModel {
         if !canAfford(item) {
             appState.showToast(
                 item.isGemPurchase ? "Not enough gems!" : "Not enough gold!",
-                type: .error
+                type: .error,
+                actionLabel: "GET MORE",
+                action: { [weak appState] in
+                    appState?.mainPath.append(AppRoute.currencyPurchase)
+                }
             )
             return
         }

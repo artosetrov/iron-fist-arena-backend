@@ -5,6 +5,11 @@ struct ShopDetailView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var vm: ShopViewModel?
 
+    // Merchant strip state (UI-only, not in VM)
+    @State private var showMerchant = true
+    @State private var showMerchantMini = false
+    @State private var tipProvider = MerchantTipProvider()
+
     var body: some View {
         ZStack {
             // Background image with dark overlay
@@ -21,24 +26,32 @@ struct ShopDetailView: View {
 
             if let vm {
                 VStack(spacing: 0) {
-                    // Currency bar
-                    HStack(spacing: LayoutConstants.spaceMD) {
+                    // Currency bar — redesigned: balance LEFT, GET MORE button RIGHT
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        CurrencyDisplay(gold: vm.gold, gems: vm.gems)
+
                         Spacer()
-                        CurrencyDisplay(
-                            gold: vm.gold,
-                            gems: vm.gems,
-                            showAddButton: true,
-                            onAdd: { appState.mainPath.append(AppRoute.currencyPurchase) }
-                        )
+
+                        Button {
+                            appState.mainPath.append(AppRoute.currencyPurchase)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("GET MORE")
+                            }
+                        }
+                        .buttonStyle(.getMore)
                     }
                     .tutorialAnchor(.shopGems)
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceSM)
-
-                    // Merchant banner
-                    ShopMerchantBanner()
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM)
+                    .background(DarkFantasyTheme.bgSecondary)
+                    .overlay(alignment: .bottom) {
+                        Rectangle()
+                            .fill(DarkFantasyTheme.borderSubtle)
+                            .frame(height: 1)
+                    }
 
                     // Active quest banner
                     ActiveQuestBanner(questTypes: ["gold_spent"])
@@ -66,6 +79,9 @@ struct ShopDetailView: View {
                     )
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.bottom, LayoutConstants.spaceSM)
+                    .onChange(of: vm.selectedTab) { _, newTab in
+                        tipProvider.updateTab(newTab)
+                    }
 
                     // Content
                     if vm.isLoading && vm.items.isEmpty {
@@ -138,6 +154,41 @@ struct ShopDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+                        // Merchant strip as bottom inset
+                        .safeAreaInset(edge: .bottom) {
+                            if showMerchant {
+                                MerchantStripView(
+                                    tipProvider: tipProvider,
+                                    onCollapse: {
+                                        withAnimation(.easeOut(duration: 0.3)) {
+                                            showMerchant = false
+                                            showMerchantMini = true
+                                        }
+                                    },
+                                    onDismiss: {
+                                        withAnimation(.easeOut(duration: 0.2)) {
+                                            showMerchant = false
+                                        }
+                                    }
+                                )
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
+                        }
+                    }
+                }
+
+                // Collapsed merchant mini avatar
+                .overlay(alignment: .bottomLeading) {
+                    if showMerchantMini {
+                        MerchantMiniButton {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showMerchantMini = false
+                                showMerchant = true
+                            }
+                        }
+                        .padding(.leading, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceMD)
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
 
@@ -205,76 +256,11 @@ struct ShopDetailView: View {
                 if appState.shopInitialTab > 0 {
                     shopVM.selectedTab = appState.shopInitialTab
                     appState.shopInitialTab = 0
+                    tipProvider.updateTab(shopVM.selectedTab)
                 }
                 vm = shopVM
             }
             await vm?.loadItems()
-        }
-    }
-}
-
-// MARK: - Shop Merchant Banner
-
-struct ShopMerchantBanner: View {
-    private let greetings = [
-        "Welcome, warrior! Browse my finest wares.",
-        "Ah, a customer! I have just what you need.",
-        "Step closer, friend. Only the best in stock.",
-        "Gold burns a hole in the pocket. Spend it wisely!"
-    ]
-
-    @State private var greeting: String = ""
-
-    var body: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            // Merchant portrait — uses knight avatar with remote fallback
-            Group {
-                if UIImage(named: "avatar_knight") != nil {
-                    Image("avatar_knight")
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Text("🛒")
-                        .font(.system(size: 28)) // emoji — keep
-                }
-            }
-            .frame(width: 56, height: 56)
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 2)
-            )
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text("MERCHANT")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                Text(greeting)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(LayoutConstants.spaceSM + 2)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(
-                    LinearGradient(
-                        colors: [DarkFantasyTheme.bgSecondary, DarkFantasyTheme.bgTertiary.opacity(0.5)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
-        )
-        .onAppear {
-            greeting = greetings.randomElement() ?? greetings[0]
         }
     }
 }

@@ -498,3 +498,70 @@ extension ButtonStyle where Self == ColorToggleButtonStyle {
         ColorToggleButtonStyle(isActive: isActive, activeColor: color, height: height)
     }
 }
+
+// MARK: - Get More Button (Currency purchase CTA — gold outline, compact)
+// Height: 36px, Gold 2px outline, gold tinted fill, gold text
+// Used in: Shop currency bar — replaces hidden plus icon
+
+struct GetMoreButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+            .textCase(.uppercase)
+            .tracking(1)
+            .foregroundStyle(DarkFantasyTheme.goldBright)
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .frame(height: LayoutConstants.buttonHeightSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .fill(DarkFantasyTheme.gold.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(DarkFantasyTheme.gold, lineWidth: 2)
+            )
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == GetMoreButtonStyle {
+    static var getMore: GetMoreButtonStyle { GetMoreButtonStyle() }
+}
+
+// MARK: - Premium Button (Purple → Pink gradient — Special offers)
+// Height: 56px, purple→pink gradient bg, white text, pink border + shadow
+// Used in: CurrencyPurchaseView Special tab — Premium Forever CTA
+
+struct PremiumButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    private let gradient = LinearGradient(
+        colors: [DarkFantasyTheme.purple, DarkFantasyTheme.premiumPink],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .textCase(.uppercase)
+            .tracking(2)
+            .foregroundStyle(.white)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .fill(isEnabled ? AnyShapeStyle(gradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(DarkFantasyTheme.premiumPink.opacity(0.6), lineWidth: 2)
+            )
+            .shadow(color: DarkFantasyTheme.premiumPink.opacity(0.3), radius: 12, y: 4)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PremiumButtonStyle {
+    static var premium: PremiumButtonStyle { PremiumButtonStyle() }
+}

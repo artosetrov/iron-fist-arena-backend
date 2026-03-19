@@ -15,6 +15,7 @@ enum IAPProduct: String, CaseIterable {
     case gemsSmall = "com.hexbound.gems_small"        // 100 gems — $0.99
     case gemsMedium = "com.hexbound.gems_medium"       // 550 gems — $4.99
     case gemsLarge = "com.hexbound.gems_large"         // 1200 gems — $9.99
+    case gemsHuge = "com.hexbound.gems_huge"           // 2500 gems — $19.99
     case gemsMega = "com.hexbound.gems_mega"           // 6500 gems — $49.99
 
     // Special
@@ -55,7 +56,7 @@ final class StoreKitService: ObservableObject {
 
     private init() {
         transactionListener = listenForTransactions()
-        Task { [weak self] in await self?.loadProducts() }
+        _ = Task { [weak self] in await self?.loadProducts() }
     }
 
     deinit {
@@ -146,7 +147,7 @@ final class StoreKitService: ObservableObject {
         Task.detached {
             for await result in Transaction.updates {
                 if case .verified(let transaction) = result {
-                    await MainActor.run {
+                    _ = await MainActor.run {
                         self.purchasedProductIDs.insert(transaction.productID)
                     }
                     await transaction.finish()

@@ -87,6 +87,8 @@ struct CurrencyPurchaseView: View {
               priceUSD: "$4.99", productId: "com.hexbound.gems_medium", isBestValue: false, isPopular: true),
         .init(id: "gems_large", currencyType: .gems, amount: 1000, bonusAmount: 200,
               priceUSD: "$9.99", productId: "com.hexbound.gems_large", isBestValue: true, isPopular: false),
+        .init(id: "gems_huge", currencyType: .gems, amount: 2000, bonusAmount: 500,
+              priceUSD: "$19.99", productId: "com.hexbound.gems_huge", isBestValue: false, isPopular: false),
         .init(id: "gems_mega", currencyType: .gems, amount: 5000, bonusAmount: 1500,
               priceUSD: "$49.99", productId: "com.hexbound.gems_mega", isBestValue: false, isPopular: false),
     ]
@@ -104,6 +106,42 @@ struct CurrencyPurchaseView: View {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                // Current balance strip
+                HStack {
+                    Spacer()
+                    HStack(spacing: LayoutConstants.spaceLG) {
+                        HStack(spacing: 6) {
+                            Text("💰")
+                                .font(.system(size: 14)) // emoji — keep
+                            Text("YOUR GOLD")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            Text(formatBalance(appState.currentCharacter?.gold ?? 0))
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .foregroundStyle(DarkFantasyTheme.goldBright)
+                        }
+                        Rectangle()
+                            .fill(DarkFantasyTheme.borderSubtle)
+                            .frame(width: 1, height: 20)
+                        HStack(spacing: 6) {
+                            Text("💎")
+                                .font(.system(size: 14)) // emoji — keep
+                            Text("YOUR GEMS")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            Text("\(appState.currentCharacter?.gems ?? 0)")
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .foregroundStyle(DarkFantasyTheme.cyan)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, LayoutConstants.spaceSM)
+                .background(DarkFantasyTheme.bgSecondary)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(DarkFantasyTheme.borderSubtle).frame(height: 1)
+                }
+
                 // Tab switcher
                 TabSwitcher(
                     tabs: tabs,
@@ -366,6 +404,12 @@ struct CurrencyPurchaseView: View {
             appState.showToast("Purchases restored!", type: .reward)
         }
     }
+
+    private func formatBalance(_ n: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
+    }
 }
 
 // MARK: - Currency Package Card
@@ -384,62 +428,52 @@ struct CurrencyPackageCard: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMD) {
-            // Currency icon + amount
+            // Currency icon — themed container
+            VStack {
+                Text(package.currencyType.icon)
+                    .font(.system(size: package.isBestValue ? 36 : 32)) // emoji — keep
+            }
+            .frame(width: 56, height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(accentColor.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(accentColor.opacity(0.2), lineWidth: 1)
+            )
+
+            // Amount + bonus
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text(package.currencyType.icon)
-                        .font(.system(size: 28)) // emoji — keep
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(package.displayAmount)
-                            .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
-                            .foregroundStyle(accentColor)
-                        if package.bonusAmount > 0 {
-                            Text("+\(package.bonusAmount) BONUS")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                                .foregroundStyle(DarkFantasyTheme.textSuccess)
-                        }
-                    }
+                Text(package.displayAmount)
+                    .font(DarkFantasyTheme.title(size: package.isBestValue ? LayoutConstants.packageBestValueAmountFont : LayoutConstants.packageAmountFont))
+                    .foregroundStyle(accentColor)
+                if package.bonusAmount > 0 {
+                    Text("+\(formatBonus(package.bonusAmount)) BONUS")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textSuccess)
+                        .fontWeight(.semibold)
                 }
             }
 
             Spacer(minLength: 4)
 
-            // Badges
-            if package.isBestValue {
-                Text("BEST VALUE")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule().fill(DarkFantasyTheme.goldGradient)
-                    )
-            } else if package.isPopular {
-                Text("POPULAR")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(
-                        Capsule().fill(DarkFantasyTheme.purple)
-                    )
-            }
-
-            // Buy button
+            // Buy button — meets touchMin (48pt)
             Button(action: onBuy) {
                 if isPurchasing {
                     ProgressView()
                         .tint(DarkFantasyTheme.textOnGold)
-                        .frame(width: 72, height: 40)
+                        .frame(width: LayoutConstants.packagePriceBtnWidth, height: LayoutConstants.packagePriceBtnHeight)
                 } else {
                     Text(package.priceUSD)
-                        .frame(width: 72, height: 40)
+                        .frame(width: LayoutConstants.packagePriceBtnWidth, height: LayoutConstants.packagePriceBtnHeight)
                 }
             }
             .buttonStyle(.compactPrimary)
             .disabled(isPurchasing)
             .contentShape(Rectangle())
         }
+        .frame(minHeight: LayoutConstants.packageCardMinHeight)
         .padding(LayoutConstants.spaceMD)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -448,12 +482,52 @@ struct CurrencyPackageCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(
-                    package.isBestValue ? accentColor.opacity(0.5) : DarkFantasyTheme.borderSubtle,
-                    lineWidth: package.isBestValue ? 2 : 1
+                    package.isBestValue ? accentColor.opacity(0.5) :
+                    package.isPopular ? DarkFantasyTheme.purple.opacity(0.4) :
+                    DarkFantasyTheme.borderSubtle,
+                    lineWidth: (package.isBestValue || package.isPopular) ? 2 : 1
                 )
         )
+        // Corner badge overlay
+        .overlay(alignment: .topTrailing) {
+            if package.isBestValue {
+                Text("⭐ BEST VALUE")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                    .foregroundStyle(DarkFantasyTheme.textOnGold)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(DarkFantasyTheme.goldGradient)
+                    .clipShape(UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 6,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: LayoutConstants.cardRadius
+                    ))
+            } else if package.isPopular {
+                Text("POPULAR")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(DarkFantasyTheme.purple)
+                    .clipShape(UnevenRoundedRectangle(
+                        topLeadingRadius: 0,
+                        bottomLeadingRadius: 6,
+                        bottomTrailingRadius: 0,
+                        topTrailingRadius: LayoutConstants.cardRadius
+                    ))
+            }
+        }
         .shadow(color: package.isBestValue ? accentColor.opacity(0.15) : .clear, radius: 8)
+        // Shimmer on best value
+        .modifier(package.isBestValue ? ShimmerModifier(color: accentColor, duration: 4) : ShimmerModifier(color: .clear, duration: 0))
         .contentShape(Rectangle())
+    }
+
+    private func formatBonus(_ n: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 }
 
@@ -592,7 +666,7 @@ struct PremiumUnlockCard: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: LayoutConstants.buttonHeightLG)
             }
-            .buttonStyle(PremiumButtonStyle())
+            .buttonStyle(.premium)
         }
         .padding(LayoutConstants.spaceMD)
         .background(
@@ -629,33 +703,4 @@ struct PremiumBenefitChip: View {
     }
 }
 
-// MARK: - Premium Button Style
-
-struct PremiumButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    private let gradient = LinearGradient(
-        colors: [DarkFantasyTheme.purple, DarkFantasyTheme.premiumPink],
-        startPoint: .leading,
-        endPoint: .trailing
-    )
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
-            .textCase(.uppercase)
-            .tracking(2)
-            .foregroundStyle(.white)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(isEnabled ? AnyShapeStyle(gradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(DarkFantasyTheme.premiumPink.opacity(0.6), lineWidth: 2)
-            )
-            .shadow(color: DarkFantasyTheme.premiumPink.opacity(0.3), radius: 12, y: 4)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
-    }
-}
+// PremiumButtonStyle moved to ButtonStyles.swift (use .premium)
