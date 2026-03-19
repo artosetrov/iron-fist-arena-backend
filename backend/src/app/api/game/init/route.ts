@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
       achievementsClaimable,
       activeEvents,
       userRecord,
+      hubLayoutConfig,
     ] = await Promise.all([
       prisma.character.findUnique({
         where: { id: characterId },
@@ -162,6 +163,10 @@ export async function GET(req: NextRequest) {
           createdAt: true,
           lastLogin: true,
         },
+      }),
+      prisma.gameConfig.findUnique({
+        where: { key: 'hub_layout' },
+        select: { value: true },
       }),
     ])
 
@@ -288,6 +293,7 @@ export async function GET(req: NextRequest) {
       activeEvents,
       config,
       featureFlags,
+      hubLayout: hubLayoutConfig?.value ?? {},
       serverTime: now.toISOString(),
     })
   } catch (error) {

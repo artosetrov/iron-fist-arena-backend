@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://ironfistarena.com'}/reset-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://hexboundapp.com'}/reset-password`,
     })
 
     if (error) {
