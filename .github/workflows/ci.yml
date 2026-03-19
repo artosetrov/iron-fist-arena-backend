@@ -14,7 +14,7 @@ on:
 
 jobs:
   backend-build:
-    name: Backend Build
+    name: Backend Build & Test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,6 +30,7 @@ jobs:
 
       - run: npm ci
       - run: npx prisma generate
+      - run: npx vitest run
       - run: npx next build
 
   admin-build:
