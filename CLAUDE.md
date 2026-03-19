@@ -182,11 +182,18 @@ These are the **actual** backend enums. Do not invent values.
 - **`prisma generate` must run before `tsc`/`next build`.** Without it, TS reports false errors for all Prisma models (`mailRecipient`, `shopOffer`, etc. "not found on PrismaClient"). On Vercel this runs automatically via build command. Locally: `cd backend && npx prisma generate` first.
 - **`ignoreBuildErrors` is REMOVED.** TypeScript errors now block the Vercel deploy. Do not reintroduce this flag. Fix TS errors properly.
 
-## Self-Documenting Rules (META)
+## Self-Documenting Rules (META — MANDATORY)
 
-If during work you discover a pattern, bug, or practice that:
-- **repeats** across sessions (same mistake / same manual step),
-- **breaks the build** or causes a runtime crash,
-- requires **non-obvious project knowledge** (API quirks, model specifics, dependencies),
+After completing ANY task (feature, bugfix, cleanup, docs, UI, balance, deploy), do a **post-task review**:
 
-then **automatically add a new rule** to this `CLAUDE.md` without asking. Format: brief problem description + what to do / what not to do. Choose the section by topic or create a new one.
+1. **Re-read this `CLAUDE.md`** and check: did I follow all rules? Did I miss a step (Prisma sync? admin subtree push? Xcode pbxproj? design tokens verification?)?
+2. **Check if a new rule is needed.** If during work you discovered a pattern, bug, gotcha, or practice that:
+   - **repeats** across sessions (same mistake / same manual step),
+   - **breaks the build** or causes a runtime crash,
+   - requires **non-obvious project knowledge** (API quirks, model specifics, dependencies),
+   - would **save time** for the next agent or human working on this project,
+   then **automatically add a new rule** to this `CLAUDE.md` without asking. Format: brief problem description + what to do / what not to do. Choose the section by topic or create a new one.
+3. **Check if docs need updating.** If the task changed behavior, schema, API, screens, balance, or config — update the relevant canonical doc in `/docs/`. Refer to the Documentation Quick Lookup table above.
+4. **Commit the rule/doc update** together with the task commit or as a separate `docs(claude):` commit.
+
+This is not optional. Every task ends with this review. The goal: `CLAUDE.md` and `/docs/` stay current automatically, without the user having to ask.
