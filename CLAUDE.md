@@ -60,6 +60,35 @@ Generate unique 24-character hex IDs for `{ID1}` and `{ID2}`. Keep entries alpha
 - **Strict null checks:** When a function returns `T | null`, always narrow the type before use. Prefer `if (!x) throw` followed by explicit non-null assertion or destructuring, not bare `x.property` access.
 - **Build before push:** Run `npx next build` locally or check Vercel preview before merging to `main`.
 
+## Prisma Schema Sync (CRITICAL)
+
+`backend/prisma/schema.prisma` is the **single source of truth** for the database schema. Admin has its own copy that **must stay identical**.
+
+After ANY change to `backend/prisma/schema.prisma`:
+1. Run the migration: `cd backend && npm run db:migrate:dev -- --name your_change`
+2. **Copy to admin**: `cp backend/prisma/schema.prisma admin/prisma/schema.prisma`
+3. Commit both files together
+
+**If you skip step 2, CI will fail** (prisma-schema-sync check) and admin panel may crash on deploy.
+
+## Git & Deploy (CRITICAL)
+
+The project has **2 git remotes**. Pushing to `origin` does NOT deploy admin.
+
+- `origin` → full monorepo → **backend auto-deploys** to Vercel
+- `admin-deploy` → admin subtree → **admin auto-deploys** to Vercel
+
+After `git push origin main`, if admin/ was changed, you MUST also run:
+```
+git subtree push --prefix=admin admin-deploy main
+```
+
+**If you skip this, admin panel will NOT update.**
+
+## TypeScript Build Health (KNOWN ISSUE)
+
+`backend/next.config.ts` has `ignoreBuildErrors: true`. This means TypeScript errors in backend do NOT block Vercel deploy. This is temporary tech debt — do not rely on it. Fix TS errors when you encounter them, do not introduce new ones.
+
 ## UI/UX Design & Review Rules
 
 When designing new screens, auditing existing screens, or reviewing SwiftUI code for UX quality:
