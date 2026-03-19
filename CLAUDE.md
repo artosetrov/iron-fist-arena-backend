@@ -175,6 +175,13 @@ These are the **actual** backend enums. Do not invent values.
 - Different models (`Item`, `ShopItem`, `LootPreview`, `EquippedItem`, etc.) have **different property sets**, even if conceptually similar. Always check the specific type definition.
 - If a needed property is **missing** — use the existing field directly (e.g. `imageKey` instead of `resolvedImageKey`) or **add** a computed property to the model.
 
+## Backend TypeScript Rules (CRITICAL)
+
+- **All `get*Config()` functions in `src/lib/game/live-config.ts` are async.** Always `await` them. Missing `await` produces `Promise<number>` instead of `number` — the build will fail.
+- **Never create files with spaces or " 2" in the name.** macOS sometimes creates `file 2.ts` copies. If you see them — delete them, they are junk.
+- **`prisma generate` must run before `tsc`/`next build`.** Without it, TS reports false errors for all Prisma models (`mailRecipient`, `shopOffer`, etc. "not found on PrismaClient"). On Vercel this runs automatically via build command. Locally: `cd backend && npx prisma generate` first.
+- **`ignoreBuildErrors` is REMOVED.** TypeScript errors now block the Vercel deploy. Do not reintroduce this flag. Fix TS errors properly.
+
 ## Self-Documenting Rules (META)
 
 If during work you discover a pattern, bug, or practice that:
