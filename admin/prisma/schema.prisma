@@ -170,6 +170,7 @@ model User {
   cosmetics     Cosmetic[]
   pushTokens    PushToken[]
   iapTransactions IapTransaction[]
+  dailyGemCard  DailyGemCard?
 
   @@map("users")
 }
@@ -230,6 +231,7 @@ model Character {
   freePvpToday      Int       @default(0) @map("free_pvp_today")
   freePvpDate       DateTime? @map("free_pvp_date")
 
+  gearScore         Int       @default(0) @map("gear_score")
   goldMineSlots     Int       @default(1) @map("gold_mine_slots")
   inventorySlots    Int       @default(28) @map("inventory_slots")
   dailyBonusDate    DateTime? @map("daily_bonus_date")
@@ -269,7 +271,9 @@ model Character {
 
   @@index([userId])
   @@index([pvpRating])
+  @@index([pvpRating, pvpCalibrationGames])
   @@index([level])
+  @@index([level, gearScore])
   @@index([gold])
   @@map("characters")
 }
@@ -367,6 +371,8 @@ model PvpMatch {
 
   @@index([player1Id])
   @@index([player2Id])
+  @@index([player1Id, playedAt(sort: Desc)])
+  @@index([player2Id, playedAt(sort: Desc)])
   @@index([winnerId])
   @@index([playedAt(sort: Desc)])
   @@map("pvp_matches")
@@ -382,6 +388,7 @@ model DungeonProgress {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([characterId, dungeonId])
+  @@index([characterId, completed])
   @@map("dungeon_progress")
 }
 
@@ -443,6 +450,7 @@ model GoldMineSession {
 
   @@index([characterId])
   @@index([characterId, collected])
+  @@index([characterId, endsAt])
   @@map("gold_mine_sessions")
 }
 
@@ -459,6 +467,7 @@ model MinigameSession {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId])
+  @@index([characterId, status])
   @@map("minigame_sessions")
 }
 
@@ -556,6 +565,7 @@ model Cosmetic {
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, type])
   @@map("cosmetics")
 }
 
@@ -619,6 +629,7 @@ model RevengeQueue {
 
   @@index([victimId, isUsed, expiresAt])
   @@index([attackerId])
+  @@index([expiresAt])
   @@map("revenge_queue")
 }
 
@@ -680,10 +691,10 @@ model PushCampaign {
   id           String    @id @default(uuid())
   title        String
   body         String
-  data         Json?
-  targetType   String    @default("broadcast") @map("target_type")
-  targetFilter Json?     @map("target_filter")
-  status       String    @default("draft")
+  data         Json?     // custom payload: {route?, offerId?, eventId?}
+  targetType   String    @default("broadcast") @map("target_type") // broadcast, segment, user
+  targetFilter Json?     @map("target_filter") // {minLevel?, maxLevel?, class?, userIds?[]}
+  status       String    @default("draft") // draft, sending, sent, failed
   sentCount    Int       @default(0) @map("sent_count")
   failCount    Int       @default(0) @map("fail_count")
   scheduledAt  DateTime? @map("scheduled_at")
@@ -702,7 +713,7 @@ model PushLog {
   token      String
   title      String
   body       String
-  status     String   @default("sent")
+  status     String   @default("sent") // sent, delivered, failed
   error      String?
   createdAt  DateTime @default(now()) @map("created_at")
 
@@ -726,7 +737,21 @@ model IapTransaction {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([transactionId])
+  @@index([status, createdAt(sort: Desc)])
   @@map("iap_transactions")
+}
+
+model DailyGemCard {
+  id            String    @id @default(uuid())
+  userId        String    @unique @map("user_id")
+  purchasedAt   DateTime  @map("purchased_at")
+  expiresAt     DateTime  @map("expires_at")
+  lastClaimedAt DateTime  @map("last_claimed_at")
+  daysRemaining Int       @default(30) @map("days_remaining")
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_gem_cards")
 }
 
 model Event {
@@ -822,11 +847,11 @@ model FeatureFlag {
   key         String    @unique
   title       String
   description String?
-  flagType    String    @default("boolean") @map("flag_type")
-  value       Json      @default("true")
-  targeting   Json?
+  flagType    String    @default("boolean") @map("flag_type") // boolean, percentage, segment, json
+  value       Json      @default("true") // true/false for boolean, 0-100 for percentage, {} for json
+  targeting   Json?     // {minLevel?, maxLevel?, class?, userIds?[], newUsersOnly?}
   isActive    Boolean   @default(false) @map("is_active")
-  environment String    @default("all")
+  environment String    @default("all") // all, production, staging, development
   tags        String[]  @default([])
   createdBy   String?   @map("created_by")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -843,11 +868,11 @@ model MailMessage {
   id            String    @id @default(uuid())
   subject       String
   body          String
-  senderType    String    @default("system") @map("sender_type")
+  senderType    String    @default("system") @map("sender_type") // system, admin, event
   senderName    String    @default("System") @map("sender_name")
-  attachments   Json?
-  targetType    String    @default("broadcast") @map("target_type")
-  targetFilter  Json?     @map("target_filter")
+  attachments   Json?     // [{type: "gold"|"gems"|"xp"|"item", amount: number, itemId?: string}]
+  targetType    String    @default("broadcast") @map("target_type") // broadcast, character, segment
+  targetFilter  Json?     @map("target_filter") // for segment: {minLevel?, maxLevel?, class?, etc.}
   expiresAt     DateTime? @map("expires_at")
   createdBy     String?   @map("created_by")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -1119,13 +1144,13 @@ model ShopOffer {
   key           String    @unique
   title         String
   description   String?
-  offerType     String    @default("bundle") @map("offer_type")
-  contents      Json
-  originalPrice Int       @map("original_price")
-  salePrice     Int       @map("sale_price")
-  currency      String    @default("gold")
-  discountPct   Int       @default(0) @map("discount_pct")
-  maxPurchases  Int       @default(1) @map("max_purchases")
+  offerType     String    @default("bundle") @map("offer_type") // bundle, daily_deal, flash_sale, starter_pack, level_up
+  contents      Json      // [{type: "gold"|"gems"|"item"|"consumable", id?: string, quantity: number}]
+  originalPrice Int       @map("original_price") // display-only "was X gold"
+  salePrice     Int       @map("sale_price")     // actual price
+  currency      String    @default("gold")       // gold, gems
+  discountPct   Int       @default(0) @map("discount_pct") // 0-100, for display badge
+  maxPurchases  Int       @default(1) @map("max_purchases") // per character, 0 = unlimited
   minLevel      Int       @default(1) @map("min_level")
   maxLevel      Int       @default(999) @map("max_level")
   sortOrder     Int       @default(0) @map("sort_order")

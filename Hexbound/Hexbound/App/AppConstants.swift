@@ -1,8 +1,38 @@
 import Foundation
 
 enum AppConstants {
+
+    // MARK: - Environment
+    // Switch via Xcode scheme: Edit Scheme → Run → Arguments → Environment Variables
+    // Set HEXBOUND_ENV = "staging" for staging, or leave unset for production
+
+    enum Environment: String {
+        case production
+        case staging
+
+        static var current: Environment {
+            if let env = ProcessInfo.processInfo.environment["HEXBOUND_ENV"],
+               let parsed = Environment(rawValue: env) {
+                return parsed
+            }
+            #if DEBUG
+            return .staging
+            #else
+            return .production
+            #endif
+        }
+    }
+
     // MARK: - Backend API
-    static let apiBaseURL = URL(string: "https://iron-fist-arena-backend.vercel.app")!
+    static var apiBaseURL: URL {
+        switch Environment.current {
+        case .production:
+            return URL(string: "https://api.hexboundapp.com")!
+        case .staging:
+            // TODO: Replace with actual staging URL when available
+            return URL(string: "https://api.hexboundapp.com")!
+        }
+    }
 
     // MARK: - Supabase
     static let supabaseProjectURL = "https://gqnyozmqbhgzprsftdzp.supabase.co"

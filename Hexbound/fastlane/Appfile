@@ -1,0 +1,17 @@
+# Hexbound — Fastlane Config
+# Source of truth: docs/10_operations/RELEASE_IOS.md
+
+# App Identifier (must match Xcode bundle ID)
+app_identifier("com.hexbound.app")
+
+# Apple Developer Portal — your Apple ID email
+# ⚠️ REQUIRED: replace with your real Apple ID
+apple_id(ENV["FASTLANE_APPLE_ID"] || "YOUR_APPLE_ID@example.com")
+
+# Developer Team ID (developer.apple.com → Membership → Team ID)
+# ⚠️ REQUIRED: uncomment and set your Team ID
+# team_id(ENV["FASTLANE_TEAM_ID"] || "XXXXXXXXXX")
+
+# App Store Connect Team ID (may differ from Developer Team ID)
+# ⚠️ REQUIRED if you have multiple teams
+# itc_team_id(ENV["FASTLANE_ITC_TEAM_ID"] || "XXXXXXXXXX")

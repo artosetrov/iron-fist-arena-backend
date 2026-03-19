@@ -79,7 +79,7 @@ struct CurrencyPurchaseView: View {
               priceUSD: "$19.99", productId: "com.hexbound.gold20000", isBestValue: false, isPopular: false),
     ]
 
-    // Gem packages — aligned with PROJECT_KNOWLEDGE IAP
+    // Gem packages — aligned with docs/02_product_and_features/ECONOMY.md
     private let gemPackages: [CurrencyPackage] = [
         .init(id: "gems_small", currencyType: .gems, amount: 100, bonusAmount: 0,
               priceUSD: "$0.99", productId: "com.hexbound.gems_small", isBestValue: false, isPopular: false),

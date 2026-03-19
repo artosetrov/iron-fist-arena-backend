@@ -1,7 +1,7 @@
 import Foundation
 
 enum LayoutConstants {
-    // MARK: - Screen Layout (from UI_DESIGN_DOCUMENT Section 4.3)
+    // MARK: - Screen Layout (see docs/07_ui_ux/DESIGN_SYSTEM.md)
 
     static let screenPadding: CGFloat = 16       // Horizontal content inset
     static let screenTopGap: CGFloat = 16        // Gap below header before content

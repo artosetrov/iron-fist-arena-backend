@@ -11,7 +11,7 @@ enum IAPProduct: String, CaseIterable {
     case gold8000 = "com.hexbound.gold8000"
     case gold20000 = "com.hexbound.gold20000"
 
-    // Gem packs (aligned with PROJECT_KNOWLEDGE)
+    // Gem packs (aligned with docs/02_product_and_features/ECONOMY.md)
     case gemsSmall = "com.hexbound.gems_small"        // 100 gems — $0.99
     case gemsMedium = "com.hexbound.gems_medium"       // 550 gems — $4.99
     case gemsLarge = "com.hexbound.gems_large"         // 1200 gems — $9.99

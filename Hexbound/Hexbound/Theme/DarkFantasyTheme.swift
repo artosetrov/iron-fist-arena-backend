@@ -2,7 +2,7 @@ import SwiftUI
 
 enum DarkFantasyTheme {
 
-    // MARK: - Background & Surface Colors (from UI_DESIGN_DOCUMENT Section 4.1)
+    // MARK: - Background & Surface Colors (see docs/07_ui_ux/DESIGN_SYSTEM.md)
 
     static let bgAbyss = Color(hex: 0x08080C)       // Deepest black — behind modals
     static let bgPrimary = Color(hex: 0x0D0D12)     // Main screen background
