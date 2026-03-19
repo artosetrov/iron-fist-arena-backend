@@ -39,7 +39,7 @@ async function getQuestPool() {
   try {
     const defs = await prisma.questDefinition.findMany({ where: { active: true } })
     if (defs.length > 0) {
-      return defs.map(d => ({
+      return defs.map((d: any) => ({
         questType: d.questType as QuestType,
         minTarget: d.minTarget,
         maxTarget: d.maxTarget,
@@ -57,7 +57,7 @@ async function getQuestMeta(): Promise<Record<QuestType, { title: string; descri
     const defs = await prisma.questDefinition.findMany({ where: { active: true } })
     if (defs.length > 0) {
       const meta: Record<string, { title: string; description: (target: number) => string; icon: string }> = {}
-      for (const d of defs) {
+      for (const d of defs as any[]) {
         meta[d.questType] = {
           title: d.title,
           description: (t: number) => d.description.includes('${t}') ? d.description.replace('${t}', String(t)) : `${d.description} (${t})`,
@@ -84,19 +84,11 @@ function pickRandom<T>(arr: T[], count: number): T[] {
 }
 
 function formatQuest(
-  q: {
-    id: string
-    questType: QuestType
-    progress: number
-    target: number
-    rewardGold: number
-    rewardXp: number
-    rewardGems: number
-    completed: boolean
-  },
+  q: any,
   meta: Record<QuestType, { title: string; description: (target: number) => string; icon: string }>
 ) {
-  const questMeta = meta[q.questType] || QUEST_META[q.questType]
+  const questType = q.questType as QuestType
+  const questMeta = meta[questType] || QUEST_META[questType]
   return {
     id: q.id,
     type: q.questType,
@@ -150,7 +142,7 @@ export async function GET(req: NextRequest) {
 
     if (quests.length === 0) {
       const selected = pickRandom(questPool, 3)
-      const createData = selected.map((q) => ({
+      const createData = selected.map((q: any) => ({
         characterId,
         questType: q.questType,
         target: randomInt(q.minTarget, q.maxTarget),
@@ -171,7 +163,7 @@ export async function GET(req: NextRequest) {
       character.dailyBonusDate.toISOString().slice(0, 10) === today
 
     return NextResponse.json({
-      quests: quests.map(q => formatQuest(q, questMeta)),
+      quests: quests.map((q: any) => formatQuest(q, questMeta)),
       day: today,
       daily_bonus_claimed: dailyBonusClaimed,
     })

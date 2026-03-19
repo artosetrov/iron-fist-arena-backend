@@ -88,7 +88,14 @@ export async function POST(req: NextRequest) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       if (error.message === 'STAMINA_FULL') return NextResponse.json({ error: 'Stamina is already full' }, { status: 400 })
-      if (error.message === 'NOT_ENOUGH_GEMS') return NextResponse.json({ error: 'Not enough gems', required: GEMS_PER_REFILL }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GEMS') {
+        try {
+          const GEM_COSTS = await getGemCostsConfig()
+          return NextResponse.json({ error: 'Not enough gems', required: GEM_COSTS.STAMINA_REFILL }, { status: 400 })
+        } catch {
+          return NextResponse.json({ error: 'Not enough gems' }, { status: 400 })
+        }
+      }
     }
     console.error('stamina refill error:', error)
     return NextResponse.json({ error: 'Failed to refill stamina' }, { status: 500 })

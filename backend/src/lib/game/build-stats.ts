@@ -69,12 +69,12 @@ function sumEquipmentBonuses(
  * 7. + Passive flat HP/armor/MR
  * 8. × Passive percent HP/armor/MR
  */
-export function calculateFullStats(
+export async function calculateFullStats(
   baseStats: StatBlock,
   equipmentBonuses: StatBlock,
   passiveBonuses: PassiveBonuses,
   prestigeLevel: number,
-): FullDerivedStats {
+): Promise<FullDerivedStats> {
   // Steps 1-3: base + equipment + passive flat
   const withFlat: StatBlock = { str: 0, agi: 0, vit: 0, end: 0, int: 0, wis: 0, luk: 0, cha: 0 }
   for (const key of STAT_KEYS) {
@@ -91,7 +91,7 @@ export function calculateFullStats(
   // Step 5: apply prestige bonus
   const totalStats: StatBlock = { str: 0, agi: 0, vit: 0, end: 0, int: 0, wis: 0, luk: 0, cha: 0 }
   for (const key of STAT_KEYS) {
-    totalStats[key] = applyPrestigeBonus(withPercent[key], prestigeLevel)
+    totalStats[key] = await applyPrestigeBonus(withPercent[key], prestigeLevel)
   }
 
   // Step 6: derive base HP/armor/MR
@@ -173,7 +173,7 @@ export async function recalculateFullDerivedStats(
       )
     : emptyPassiveBonuses()
 
-  const derived = calculateFullStats(
+  const derived = await calculateFullStats(
     baseStats,
     eqBonus,
     passiveBonuses,

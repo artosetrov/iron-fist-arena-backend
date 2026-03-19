@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    const messages = mailRecipients.map((recipient) => ({
+    const messages = mailRecipients.map((recipient: any) => ({
       id: recipient.id,
       messageId: recipient.messageId,
       subject: recipient.message.subject,
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       total,
       page,
       limit,
-      unread_count: mailRecipients.filter((r) => !r.isRead).length,
+      unread_count: mailRecipients.filter((r: any) => !r.isRead).length,
     });
   } catch (error) {
     console.error('Mail list error:', error);

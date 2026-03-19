@@ -89,14 +89,17 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     if (error instanceof Error) {
-      const map: Record<string, { msg: string; status: number }> = {
-        NOT_FOUND: { msg: 'Character not found', status: 404 },
-        FORBIDDEN: { msg: 'Forbidden', status: 403 },
-        NOT_LEARNED: { msg: 'Skill not learned yet', status: 400 },
-        INVALID_SLOT: { msg: `Invalid slot index (0-${SKILLS.MAX_EQUIPPED_SLOTS - 1})`, status: 400 },
+      if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'NOT_LEARNED') return NextResponse.json({ error: 'Skill not learned yet' }, { status: 400 })
+      if (error.message === 'INVALID_SLOT') {
+        try {
+          const CONFIG = await getSkillsConfig()
+          return NextResponse.json({ error: `Invalid slot index (0-${CONFIG.MAX_EQUIPPED_SLOTS - 1})` }, { status: 400 })
+        } catch {
+          return NextResponse.json({ error: 'Invalid slot index' }, { status: 400 })
+        }
       }
-      const mapped = map[error.message]
-      if (mapped) return NextResponse.json({ error: mapped.msg }, { status: mapped.status })
     }
     console.error('equip skill error:', error)
     return NextResponse.json({ error: 'Failed to equip skill' }, { status: 500 })

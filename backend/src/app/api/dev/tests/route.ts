@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
   // 1. ELO calculation
   try {
-    const elo = calculateElo(1000, 1000, 32)
+    const elo = await calculateElo(1000, 1000, 32)
     const passed = elo.newWinner > 1000 && elo.newLoser < 1000
     results.push({ name: 'ELO calculation', passed, detail: JSON.stringify(elo) })
   } catch (e) {

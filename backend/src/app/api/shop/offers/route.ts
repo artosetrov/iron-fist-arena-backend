@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    const result = offers.map((offer) => ({
+    const result = offers.map((offer: any) => ({
       id: offer.id,
       key: offer.key,
       title: offer.title,

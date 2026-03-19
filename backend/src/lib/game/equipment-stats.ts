@@ -113,14 +113,14 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
   // Apply prestige bonus: +5% per prestige level to each stat
   const prestige = character.prestigeLevel ?? 0
   const totalStats: StatBlock = {
-    str: applyPrestigeBonus(rawTotalStats.str, prestige),
-    agi: applyPrestigeBonus(rawTotalStats.agi, prestige),
-    vit: applyPrestigeBonus(rawTotalStats.vit, prestige),
-    end: applyPrestigeBonus(rawTotalStats.end, prestige),
-    int: applyPrestigeBonus(rawTotalStats.int, prestige),
-    wis: applyPrestigeBonus(rawTotalStats.wis, prestige),
-    luk: applyPrestigeBonus(rawTotalStats.luk, prestige),
-    cha: applyPrestigeBonus(rawTotalStats.cha, prestige),
+    str: await applyPrestigeBonus(rawTotalStats.str, prestige),
+    agi: await applyPrestigeBonus(rawTotalStats.agi, prestige),
+    vit: await applyPrestigeBonus(rawTotalStats.vit, prestige),
+    end: await applyPrestigeBonus(rawTotalStats.end, prestige),
+    int: await applyPrestigeBonus(rawTotalStats.int, prestige),
+    wis: await applyPrestigeBonus(rawTotalStats.wis, prestige),
+    luk: await applyPrestigeBonus(rawTotalStats.luk, prestige),
+    cha: await applyPrestigeBonus(rawTotalStats.cha, prestige),
   }
 
   // Use config-driven derived stat calculation

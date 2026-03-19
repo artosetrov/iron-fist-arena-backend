@@ -2,7 +2,8 @@
 // daily-login.ts — Daily login reward logic
 // =============================================================================
 
-import { getDailyLoginRewardsConfig, type DailyLoginRewardDef } from './live-config';
+import { getDailyLoginRewardsConfig } from './live-config';
+import { type DailyLoginRewardDef } from './balance';
 
 /**
  * Check whether the player is eligible to claim their daily login reward.

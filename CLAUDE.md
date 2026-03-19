@@ -85,10 +85,6 @@ git subtree push --prefix=admin admin-deploy main
 
 **If you skip this, admin panel will NOT update.**
 
-## TypeScript Build Health (KNOWN ISSUE)
-
-`backend/next.config.ts` has `ignoreBuildErrors: true`. This means TypeScript errors in backend do NOT block Vercel deploy. This is temporary tech debt — do not rely on it. Fix TS errors when you encounter them, do not introduce new ones.
-
 ## UI/UX Design & Review Rules
 
 When designing new screens, auditing existing screens, or reviewing SwiftUI code for UX quality:
