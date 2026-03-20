@@ -10,8 +10,8 @@
 		0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */; };
 		007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */; };
 		01ACCBEA4188CBD49C2C4A6B /* CharacterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 446B460A2C750CE2BFD0F86D /* CharacterDetailView.swift */; };
-		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */; };
+		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */; };
 		0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */; };
 		0BE3C5E0FAB536974BC44084 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8825D55175E1FECF38EF971F /* AudioManager.swift */; };
@@ -24,6 +24,7 @@
 		1BDC4E98CDE7ACA78658823C /* DarkFantasyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */; };
 		1DBFF877794C9BA0839B0D1F /* GameDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E3C795887491564EEEA91D /* GameDataCache.swift */; };
 		1DF365585FEF43884C9CDEC0 /* DungeonRushViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84C12D9BFA71769CEBB55D0 /* DungeonRushViewModel.swift */; };
+		1E7F3A8B9C0D1E2F3A4B5C6D /* MerchantStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */; };
 		1EFA8D6051AE4260C72EAABA /* DungeonInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */; };
 		2283DB5DD84EB4557630A37E /* DailyLoginPopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0591 /* DailyLoginPopupView.swift */; };
 		23092D3C445756F441D90B22 /* ArenaViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C268D3E4D32E3822E9F6013B /* ArenaViewModel.swift */; };
@@ -48,8 +49,13 @@
 		4079A47AFB185960DF048074 /* AppearanceSkin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFF230EF79980A38C6D413DF /* AppearanceSkin.swift */; };
 		41CB9B1A5E08848F14AC6F83 /* LeaderboardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9C513DB77F2837F754CB4BD /* LeaderboardDetailView.swift */; };
 		421D36EB28AA6E911F63030B /* DungeonRoomDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */; };
+		42A1B2C3D4E5F60DM1CF002 /* DungeonMapBuildingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */; };
+		42A1B2C3D4E5F60DM2BV002 /* DungeonMapBuildingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1B2C3D4E5F60DM2BV001 /* DungeonMapBuildingView.swift */; };
+		42A1B2C3D4E5F60DM3MP002 /* DungeonMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1B2C3D4E5F60DM3MP001 /* DungeonMapView.swift */; };
+		42A1B2C3D4E5F60DM4ED002 /* DungeonMapEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A1B2C3D4E5F60DM4ED001 /* DungeonMapEditorView.swift */; };
 		43BF9C17F3A15E1B1CA230F4 /* DungeonSelectViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */; };
 		4442F83247EBA7804A2839E5 /* ShopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D50542690564E6DD583B058 /* ShopService.swift */; };
+		447d8a37dea56559ee287a2b /* UnifiedHeroWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */; };
 		467020D2C9265A8F7CBEAAE2 /* ShellGameDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */; };
 		470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */; };
 		48B45024E1F5F9192D4A497D /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18860E524F76C28304AB39AF /* AuthService.swift */; };
@@ -59,11 +65,13 @@
 		50BDBEB825D56CF4C576F162 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8295F58FEE8531E138102511 /* LoginView.swift */; };
 		50BDBEB825D56CF4C576F163 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8295F58FEE8531E138102512 /* WelcomeView.swift */; };
 		50EE3B465FD846F749B06FBC /* ScreenLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF81E118A6812E0F4273F368 /* ScreenLayout.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* ScrollBounceDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6F7E8D9C0B1A2 /* ScrollBounceDisabler.swift */; };
 		5171B41A35F2E62A243FBCFE /* DailyLoginData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */; };
 		517BAE0300AC0F8E88D17AE9 /* Opponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056220C532DB828C69C4C356 /* Opponent.swift */; };
 		51E2F782E669CC65903D964A /* InventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */; };
 		542C67EDB654AF9BFE887353 /* AchievementsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */; };
 		55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BBF308478B5B2817B50708 /* HeroDetailView.swift */; };
+		9FFC603AFA333C9FE0297080 /* HeroIntegratedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */; };
 		5612752CB7D2FC212D7A34AB /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9587A537C61AE1E63A2CD011 /* APIClient.swift */; };
 		5612940BBC1C68FBEB84BECD /* CombatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AC33F4DE1089A000F90E2A9 /* CombatViewModel.swift */; };
 		5A45820C703B6866A4474D67 /* CharacterClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4207BE33FB8C08DAEF7E2385 /* CharacterClass.swift */; };
@@ -76,16 +84,17 @@
 		60AA3C7D4E914FAF3DBA1D9B /* ItemImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB9FFFE4B66FE8540FBEA77 /* ItemImageView.swift */; };
 		686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1B4BDE312B412B655B4901 /* InventoryViewModel.swift */; };
 		75096D41FD966689964F0D95 /* DungeonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9D0FE34B2EB74605E5F239 /* DungeonService.swift */; };
+		7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */; };
 		82C5D1FA1A587E598C410E8D /* BattlePassService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39859708651A5AACC1204865 /* BattlePassService.swift */; };
 		8380A79FD977F53D662B3660 /* ItemDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B312FE20E15FB7A18E120B8 /* ItemDetailSheet.swift */; };
 		8394D02039030683CC15DC76 /* PvPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F22D92AB4A3E0BFA40954F /* PvPService.swift */; };
 		87FA8B563EB81FEDE4364E89 /* StanceSelectorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED9C9599BC7FEA09D41E975A /* StanceSelectorViewModel.swift */; };
-		C1A00001SKYC00000009 /* SkyObjectConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001SKYC00000010 /* SkyObjectConfig.swift */; };
 		8A5BD4C851E1EFCD93815451 /* OpponentCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5495C24F8D2EDB96BF629CD /* OpponentCardView.swift */; };
 		8A9D4C7B52EB4E15E20C6E9D /* LeaderboardRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCB2332630298DD6B6B56CA4 /* LeaderboardRowView.swift */; };
 		9121AA92CB9AFC72BF9F1C8C /* AppearanceEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0580D08F8C6242E1F3AA8C12 /* AppearanceEditorViewModel.swift */; };
 		92770A80367263C6EF378362 /* CardStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF33E718E8879D96022545A /* CardStyles.swift */; };
 		9284496670692885430BC264 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218B22634BDF8DD52EFCB0D6 /* Item.swift */; };
+		936bc7da30515e5a4d639a03 /* XPRingShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */; };
 		941F9A9BC1C17F6006E85B3E /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 476A9CFCA1A9D35CCC98890C /* AppConstants.swift */; };
 		95A33C717E6DFC5BB43324C7 /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4599C5B23903A3CEB334E06E /* AvatarImageView.swift */; };
 		96844CD8AFAA42E132100B2A /* BattlePassViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB9546BEA21F368E3E72FA3 /* BattlePassViewModel.swift */; };
@@ -95,6 +104,7 @@
 		9C1661144B791A9D961831B7 /* RegisterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF910FAC6901DEB5410930AB /* RegisterDetailView.swift */; };
 		9C34F625C37E95BB45CA66C9 /* DungeonSelectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */; };
 		9C4D0C346C21E578DEFB215D /* ShopItemCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F2B72E095487CEDDF1F44A /* ShopItemCardView.swift */; };
+		9C5D1E6F7A8B9C0D1E2F3A4B /* MerchantTipProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */; };
 		9DCB45F2EBAF8C55EDF393C3 /* CharacterAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75A07A9A439E7FDBB6F57E0 /* CharacterAvatar.swift */; };
 		A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8812C4317B938859A4087AC /* ShellGameViewModel.swift */; };
 		A197D004F08DF73AC34CD691 /* AchievementCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790428D0ACD6FA1C13F6B19C /* AchievementCardView.swift */; };
@@ -127,8 +137,9 @@
 		C1A00001CITY00000001 /* CityBuildingConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000005 /* CityBuildingConfig.swift */; };
 		C1A00001CITY00000002 /* CityBuildingLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000006 /* CityBuildingLabel.swift */; };
 		C1A00001CITY00000003 /* CityBuildingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000007 /* CityBuildingView.swift */; };
-		C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00002EFCT00000002 /* CityMapEffects.swift */; };
 		C1A00001CITY00000004 /* CityMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000008 /* CityMapView.swift */; };
+		C1A00001SKYC00000009 /* SkyObjectConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001SKYC00000010 /* SkyObjectConfig.swift */; };
+		C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00002EFCT00000002 /* CityMapEffects.swift */; };
 		C3D4E5F60718A9B0C1D2E3F4 /* HPBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F60718A9B0C1D2E3F5 /* HPBarView.swift */; };
 		C41999D768F5968EA7B75677 /* ItemRarity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4548EC844F00904DF207ED30 /* ItemRarity.swift */; };
 		C5342FADCAE6D9D360F07F82 /* PvPRank.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F77C1F26D7F3F4A893CD9D /* PvPRank.swift */; };
@@ -184,12 +195,7 @@
 		VFX00001BLD00005 /* DodgeMissBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00005 /* DodgeMissBlock.swift */; };
 		VFX00001BLD00006 /* HealEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00006 /* HealEffect.swift */; };
 		VFX00001BLD00007 /* StatusVFXEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00007 /* StatusVFXEffects.swift */; };
-		447d8a37dea56559ee287a2b /* UnifiedHeroWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */; };
-		936bc7da30515e5a4d639a03 /* XPRingShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */; };
 		d680a257344d7fdf12459044 /* WidgetPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = f19ff3059acb375eb47564d1 /* WidgetPill.swift */; };
-		1E7F3A8B9C0D1E2F3A4B5C6D /* MerchantStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */; };
-		9C5D1E6F7A8B9C0D1E2F3A4B /* MerchantTipProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */; };
-		7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -200,8 +206,9 @@
 		0337A4B35D2288E5501C6665 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 		056220C532DB828C69C4C356 /* Opponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Opponent.swift; sourceTree = "<group>"; };
 		0580D08F8C6242E1F3AA8C12 /* AppearanceEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceEditorViewModel.swift; sourceTree = "<group>"; };
-		0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantTipProvider.swift; sourceTree = "<group>"; };
+		07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubEditorDetailView.swift; sourceTree = "<group>"; };
 		0D50542690564E6DD583B058 /* ShopService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopService.swift; sourceTree = "<group>"; };
+		0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantTipProvider.swift; sourceTree = "<group>"; };
 		1211BB33BA65054F0F0D892A /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
 		121D1EBEBB21F2F8CB461C46 /* Difficulty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Difficulty.swift; sourceTree = "<group>"; };
 		16611824B5A68DF831E41A6B /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
@@ -210,6 +217,7 @@
 		1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomViewModel.swift; sourceTree = "<group>"; };
 		1DAA6F03EBEB036FC162EC75 /* Stray City.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "Stray City.mp3"; sourceTree = "<group>"; };
 		20BBF308478B5B2817B50708 /* HeroDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroDetailView.swift; sourceTree = "<group>"; };
+		3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroIntegratedCard.swift; sourceTree = "<group>"; };
 		218B22634BDF8DD52EFCB0D6 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		2213FD96DD8374E3C8F83A20 /* RegisterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewModel.swift; sourceTree = "<group>"; };
 		23B93532AFD12F5E4A34B4A8 /* LeaderboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardViewModel.swift; sourceTree = "<group>"; };
@@ -239,6 +247,10 @@
 		553D0C40DE02EC82C7902148 /* AchievementsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsViewModel.swift; sourceTree = "<group>"; };
 		5B6DF2AB4A5F6FDC34209975 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		5CD1C05B7BC3FD0D9E2E844D /* CombatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatService.swift; sourceTree = "<group>"; };
+		42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingConfig.swift; sourceTree = "<group>"; };
+		42A1B2C3D4E5F60DM2BV001 /* DungeonMapBuildingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingView.swift; sourceTree = "<group>"; };
+		42A1B2C3D4E5F60DM3MP001 /* DungeonMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapView.swift; sourceTree = "<group>"; };
+		42A1B2C3D4E5F60DM4ED001 /* DungeonMapEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapEditorView.swift; sourceTree = "<group>"; };
 		5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomDetailView.swift; sourceTree = "<group>"; };
 		5E160EA5CEA60F2AB037A705 /* ItemCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCardView.swift; sourceTree = "<group>"; };
 		5E9F432E444EE871124DC12E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -256,7 +268,6 @@
 		7C53C086F4EE08A374066CD1 /* SettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailView.swift; sourceTree = "<group>"; };
 		7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushDetailView.swift; sourceTree = "<group>"; };
 		80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsDetailView.swift; sourceTree = "<group>"; };
-		07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubEditorDetailView.swift; sourceTree = "<group>"; };
 		81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
 		8295F58FEE8531E138102511 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		8295F58FEE8531E138102512 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
@@ -274,6 +285,7 @@
 		97F7A52D6B95D6E098D95620 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPurchaseView.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineDetailView.swift; sourceTree = "<group>"; };
+		9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPRingShape.swift; sourceTree = "<group>"; };
 		A0394C602F688BD400860F7B /* HexboundProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = HexboundProducts.storekit; path = Hexbound/Resources/HexboundProducts.storekit; sourceTree = "<group>"; };
 		A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectViewModel.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6000000000002 /* HubCharacterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubCharacterCard.swift; sourceTree = "<group>"; };
@@ -304,12 +316,14 @@
 		B64C62F1A2D1A3CC82872691 /* Cinzel-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cinzel-Bold.ttf"; sourceTree = "<group>"; };
 		B7F3F6DFB69AE93686CCB35A /* TabSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcher.swift; sourceTree = "<group>"; };
 		BF81E118A6812E0F4273F368 /* ScreenLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenLayout.swift; sourceTree = "<group>"; };
+		F1E2D3C4B5A6F7E8D9C0B1A2 /* ScrollBounceDisabler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollBounceDisabler.swift; sourceTree = "<group>"; };
 		BFF230EF79980A38C6D413DF /* AppearanceSkin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSkin.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000005 /* CityBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingConfig.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000006 /* CityBuildingLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingLabel.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000007 /* CityBuildingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingView.swift; sourceTree = "<group>"; };
-		C1A00002EFCT00000002 /* CityMapEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapEffects.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000008 /* CityMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapView.swift; sourceTree = "<group>"; };
+		C1A00001SKYC00000010 /* SkyObjectConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyObjectConfig.swift; sourceTree = "<group>"; };
+		C1A00002EFCT00000002 /* CityMapEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapEffects.swift; sourceTree = "<group>"; };
 		C268D3E4D32E3822E9F6013B /* ArenaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArenaViewModel.swift; sourceTree = "<group>"; };
 		C3D4E5F60718A9B0C1D2E3F5 /* HPBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HPBarView.swift; sourceTree = "<group>"; };
 		C413E383C1949E4D72157CC2 /* OnboardingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingDetailView.swift; sourceTree = "<group>"; };
@@ -329,7 +343,6 @@
 		D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StanceSelectorDetailView.swift; sourceTree = "<group>"; };
 		D9E867F52B861525354D0709 /* BattlePreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePreloader.swift; sourceTree = "<group>"; };
 		DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonViews.swift; sourceTree = "<group>"; };
-		C1A00001SKYC00000010 /* SkyObjectConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyObjectConfig.swift; sourceTree = "<group>"; };
 		DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementService.swift; sourceTree = "<group>"; };
 		DCB2332630298DD6B6B56CA4 /* LeaderboardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRowView.swift; sourceTree = "<group>"; };
 		DDA2027B3B20C90225EFF37A /* DungeonVictoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonVictoryView.swift; sourceTree = "<group>"; };
@@ -377,7 +390,6 @@
 		VFX00001REF00005 /* DodgeMissBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DodgeMissBlock.swift; sourceTree = "<group>"; };
 		VFX00001REF00006 /* HealEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealEffect.swift; sourceTree = "<group>"; };
 		VFX00001REF00007 /* StatusVFXEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusVFXEffects.swift; sourceTree = "<group>"; };
-		9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPRingShape.swift; sourceTree = "<group>"; };
 		dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedHeroWidget.swift; sourceTree = "<group>"; };
 		f19ff3059acb375eb47564d1 /* WidgetPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPill.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -518,6 +530,7 @@
 				8E88E6579AE4331AE8DC2F07 /* LevelUpModalView.swift */,
 				3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */,
 				BF81E118A6812E0F4273F368 /* ScreenLayout.swift */,
+				F1E2D3C4B5A6F7E8D9C0B1A2 /* ScrollBounceDisabler.swift */,
 				DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */,
 				8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */,
 				E4FF07BEAA46D906846F3946 /* StaminaBarView.swift */,
@@ -527,6 +540,7 @@
 				f19ff3059acb375eb47564d1 /* WidgetPill.swift */,
 				9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */,
 				C3D4E5F60718A9B0C1D2E3F5 /* HPBarView.swift */,
+				3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */,
 				B2C3D4E5F60718A9B0C1D2E4 /* OfflineBannerView.swift */,
 				6E890783BBDDCD6E2B9EC21D /* ToastOverlayView.swift */,
 			);
@@ -768,6 +782,10 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60001AABB0002 /* DungeonInfoSheet.swift */,
+				42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */,
+				42A1B2C3D4E5F60DM2BV001 /* DungeonMapBuildingView.swift */,
+				42A1B2C3D4E5F60DM4ED001 /* DungeonMapEditorView.swift */,
+				42A1B2C3D4E5F60DM3MP001 /* DungeonMapView.swift */,
 				5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */,
 				1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */,
 				3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */,
@@ -838,15 +856,6 @@
 			path = Arena;
 			sourceTree = "<group>";
 		};
-		L10N005GRP000000000000A7 /* Localization */ = {
-			isa = PBXGroup;
-			children = (
-				L10N001REF000000000000A2 /* L10n.swift */,
-				L10N002VAR000000000000A4 /* Localizable.strings */,
-			);
-			path = Localization;
-			sourceTree = "<group>";
-		};
 		FD066CAA89D84FCA763443C8 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -856,6 +865,15 @@
 				5034CCCB6705B69EBA9EE717 /* Fonts */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		L10N005GRP000000000000A7 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				L10N001REF000000000000A2 /* L10n.swift */,
+				L10N002VAR000000000000A4 /* Localizable.strings */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		MAIL0001GRP00001 /* Inbox */ = {
@@ -1043,6 +1061,10 @@
 				B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */,
 				F425A4E619F59E4D30700CDE /* DungeonRushDetailView.swift in Sources */,
 				1DF365585FEF43884C9CDEC0 /* DungeonRushViewModel.swift in Sources */,
+				42A1B2C3D4E5F60DM1CF002 /* DungeonMapBuildingConfig.swift in Sources */,
+				42A1B2C3D4E5F60DM2BV002 /* DungeonMapBuildingView.swift in Sources */,
+				42A1B2C3D4E5F60DM4ED002 /* DungeonMapEditorView.swift in Sources */,
+				42A1B2C3D4E5F60DM3MP002 /* DungeonMapView.swift in Sources */,
 				9C34F625C37E95BB45CA66C9 /* DungeonSelectDetailView.swift in Sources */,
 				43BF9C17F3A15E1B1CA230F4 /* DungeonSelectViewModel.swift in Sources */,
 				75096D41FD966689964F0D95 /* DungeonService.swift in Sources */,
@@ -1055,6 +1077,7 @@
 				B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */,
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
 				55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */,
+				9FFC603AFA333C9FE0297080 /* HeroIntegratedCard.swift in Sources */,
 				E33F5024DE17C6563145B8DF /* HexboundApp.swift in Sources */,
 				C1A00001CITY00000001 /* CityBuildingConfig.swift in Sources */,
 				C1A00001CITY00000002 /* CityBuildingLabel.swift in Sources */,
@@ -1113,6 +1136,7 @@
 				B1FD7C06AD25A6CD94815611 /* RevengeEntry.swift in Sources */,
 				FD62818BA32BB2B9EF44DCFE /* ScreenCatalogView.swift in Sources */,
 				50EE3B465FD846F749B06FBC /* ScreenLayout.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* ScrollBounceDisabler.swift in Sources */,
 				C8A6A02DD37B0D4D88EE1155 /* SettingsDetailView.swift in Sources */,
 				2AF622924BD22E871CCC1E02 /* SettingsManager.swift in Sources */,
 				B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */,
@@ -1167,12 +1191,15 @@
 				CODE_SIGN_ENTITLEMENTS = Hexbound/Hexbound.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Hexbound/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Hexbound;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hexbound.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_INTERFACE_ORIENTATIONS = UIInterfaceOrientationPortrait;
@@ -1188,12 +1215,15 @@
 				CODE_SIGN_ENTITLEMENTS = Hexbound/Hexbound.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Hexbound/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Hexbound;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 1.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hexbound.app;
 				SDKROOT = iphoneos;
 				SUPPORTED_INTERFACE_ORIENTATIONS = UIInterfaceOrientationPortrait;
