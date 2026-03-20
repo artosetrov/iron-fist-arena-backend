@@ -1,186 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ItemType, Rarity, ConsumableType } from '@prisma/client'
+import { ItemType, Rarity } from '@prisma/client'
+import { getGameConfig } from '@/lib/game/config'
 
-// Gem packages purchasable with gold (1 gem = 15 gold)
-const GEM_CATALOG = [
-  {
-    id: 'gem_pack_small',
-    catalog_id: 'gem_pack_small',
-    item_name: 'Small Gem Pouch',
-    item_type: 'consumable',
-    rarity: 'uncommon',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 150,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Contains 10 gems.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'gem_pack_small',
-  },
-  {
-    id: 'gem_pack_medium',
-    catalog_id: 'gem_pack_medium',
-    item_name: 'Medium Gem Pouch',
-    item_type: 'consumable',
-    rarity: 'rare',
-    item_level: 1,
-    required_level: 5,
-    gold_price: 750,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Contains 50 gems.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'gem_pack_medium',
-  },
-  {
-    id: 'gem_pack_large',
-    catalog_id: 'gem_pack_large',
-    item_name: 'Large Gem Pouch',
-    item_type: 'consumable',
-    rarity: 'epic',
-    item_level: 1,
-    required_level: 10,
-    gold_price: 1500,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Contains 100 gems.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'gem_pack_large',
-  },
-]
+// Hardcoded price fallbacks — overridden by GameConfig consumable.price.* keys
+const DEFAULT_CONSUMABLE_PRICES: Record<string, number> = {
+  stamina_potion_small: 100,
+  stamina_potion_medium: 250,
+  stamina_potion_large: 500,
+  health_potion_small: 150,
+  health_potion_medium: 350,
+  health_potion_large: 700,
+}
 
-// Consumable catalog for the shop display
-const CONSUMABLE_CATALOG = [
-  {
-    id: 'consumable_stamina_potion_small',
-    catalog_id: 'stamina_potion_small',
-    item_name: 'Small Stamina Potion',
-    item_type: 'consumable',
-    rarity: 'common',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 100,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Restores 30 stamina.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'stamina_potion_small',
-  },
-  {
-    id: 'consumable_stamina_potion_medium',
-    catalog_id: 'stamina_potion_medium',
-    item_name: 'Medium Stamina Potion',
-    item_type: 'consumable',
-    rarity: 'uncommon',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 250,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Restores 60 stamina.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'stamina_potion_medium',
-  },
-  {
-    id: 'consumable_stamina_potion_large',
-    catalog_id: 'stamina_potion_large',
-    item_name: 'Large Stamina Potion',
-    item_type: 'consumable',
-    rarity: 'rare',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 500,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Fully restores stamina.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'stamina_potion_large',
-  },
-  {
-    id: 'consumable_health_potion_small',
-    catalog_id: 'health_potion_small',
-    item_name: 'Small Health Potion',
-    item_type: 'consumable',
-    rarity: 'common',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 150,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Restores 25% of max HP.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'health_potion_small',
-  },
-  {
-    id: 'consumable_health_potion_medium',
-    catalog_id: 'health_potion_medium',
-    item_name: 'Medium Health Potion',
-    item_type: 'consumable',
-    rarity: 'uncommon',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 350,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Restores 50% of max HP.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'health_potion_medium',
-  },
-  {
-    id: 'consumable_health_potion_large',
-    catalog_id: 'health_potion_large',
-    item_name: 'Large Health Potion',
-    item_type: 'consumable',
-    rarity: 'rare',
-    item_level: 1,
-    required_level: 1,
-    gold_price: 700,
-    gem_price: 0,
-    sell_price: 0,
-    base_stats: {},
-    description: 'Fully restores HP.',
-    image_url: null,
-    special_effect: null,
-    unique_passive: null,
-    set_name: null,
-    consumable_type: 'health_potion_large',
-  },
-]
+// Gem packs: required level to unlock each tier
+const GEM_PACK_REQUIRED_LEVELS: Record<string, number> = {
+  gem_pack_small: 1,
+  gem_pack_medium: 5,
+  gem_pack_large: 10,
+}
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -207,12 +46,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
 
-    // Build filter — always exclude consumables from DB (served from CONSUMABLE_CATALOG)
-    const where: {
-      itemType?: ItemType | { not: ItemType };
-      rarity?: Rarity;
-      itemLevel?: { lte: number };
-      equipment?: { none: { characterId: string } };
+    // --- Load equipment items (non-consumable) ---
+    const equipWhere: {
+      itemType?: ItemType | { not: ItemType }
+      rarity?: Rarity
+      itemLevel?: { lte: number }
+      equipment?: { none: { characterId: string } }
     } = { itemType: { not: ItemType.consumable } }
 
     if (typeParam && typeParam !== 'consumable') {
@@ -222,7 +61,7 @@ export async function GET(req: NextRequest) {
           { status: 400 }
         )
       }
-      where.itemType = typeParam as ItemType
+      equipWhere.itemType = typeParam as ItemType
     }
 
     if (rarityParam) {
@@ -232,15 +71,14 @@ export async function GET(req: NextRequest) {
           { status: 400 }
         )
       }
-      where.rarity = rarityParam as Rarity
+      equipWhere.rarity = rarityParam as Rarity
     }
 
-    // Level-based assortment: show items up to character level + 2
-    where.itemLevel = { lte: character.level + 2 }
-    where.equipment = { none: { characterId } }
+    equipWhere.itemLevel = { lte: character.level + 2 }
+    equipWhere.equipment = { none: { characterId } }
 
-    const items = await prisma.item.findMany({
-      where,
+    const equipmentItems = await prisma.item.findMany({
+      where: equipWhere,
       select: {
         id: true,
         catalogId: true,
@@ -261,8 +99,31 @@ export async function GET(req: NextRequest) {
       orderBy: [{ itemLevel: 'asc' }, { itemName: 'asc' }],
     })
 
-    // Transform to snake_case format expected by iOS client
-    const shopItems = items.map((item) => ({
+    // --- Load consumable items from DB ---
+    const consumableItems = await prisma.item.findMany({
+      where: { itemType: ItemType.consumable },
+      select: {
+        id: true,
+        catalogId: true,
+        itemName: true,
+        itemType: true,
+        rarity: true,
+        itemLevel: true,
+        buyPrice: true,
+        sellPrice: true,
+        baseStats: true,
+        description: true,
+        imageUrl: true,
+        imageKey: true,
+        specialEffect: true,
+        uniquePassive: true,
+        setName: true,
+      },
+      orderBy: { catalogId: 'asc' },
+    })
+
+    // Transform equipment items to snake_case
+    const shopItems = equipmentItems.map((item) => ({
       id: item.id,
       catalog_id: item.catalogId,
       item_name: item.itemName,
@@ -282,11 +143,56 @@ export async function GET(req: NextRequest) {
       set_name: item.setName,
     }))
 
-    // Filter gem catalog by character level
-    const availableGems = GEM_CATALOG.filter((g) => character.level >= g.required_level)
+    // Transform consumable items — use GameConfig price if available, else DB buyPrice
+    const consumableShopItems = await Promise.all(
+      consumableItems.map(async (item) => {
+        const catalogId = item.catalogId
+        const isGemPack = catalogId.startsWith('gem_pack')
 
-    // Append consumable + gem catalog entries (always available)
-    const allItems = [...shopItems, ...CONSUMABLE_CATALOG, ...availableGems]
+        // For gem packs, check required level
+        if (isGemPack) {
+          const requiredLevel = GEM_PACK_REQUIRED_LEVELS[catalogId] ?? 1
+          if (character.level < requiredLevel) return null
+        }
+
+        // Try to read price from GameConfig (only for potions, not gem packs)
+        let goldPrice = item.buyPrice
+        if (!isGemPack && DEFAULT_CONSUMABLE_PRICES[catalogId] !== undefined) {
+          goldPrice = await getGameConfig<number>(
+            `consumable.price.${catalogId}`,
+            item.buyPrice
+          )
+        }
+
+        return {
+          id: item.id,
+          catalog_id: catalogId,
+          item_name: item.itemName,
+          item_type: 'consumable',
+          rarity: item.rarity.toLowerCase(),
+          item_level: item.itemLevel,
+          required_level: isGemPack ? (GEM_PACK_REQUIRED_LEVELS[catalogId] ?? 1) : 1,
+          gold_price: goldPrice,
+          gem_price: 0,
+          sell_price: item.sellPrice,
+          base_stats: item.baseStats,
+          description: item.description,
+          image_url: item.imageUrl,
+          image_key: item.imageKey,
+          special_effect: item.specialEffect,
+          unique_passive: item.uniquePassive,
+          set_name: item.setName,
+          consumable_type: catalogId,
+        }
+      })
+    )
+
+    // Filter out nulls (gem packs gated by level)
+    const filteredConsumables = consumableShopItems.filter(
+      (c): c is NonNullable<typeof c> => c !== null
+    )
+
+    const allItems = [...shopItems, ...filteredConsumables]
 
     return NextResponse.json({
       items: allItems,
