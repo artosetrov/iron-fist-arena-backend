@@ -108,7 +108,7 @@ struct CharacterDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Avatar — full-width square
             GeometryReader { geo in
-                let side = geo.size.width - LayoutConstants.screenPadding * 2
+                let side = max(geo.size.width - LayoutConstants.screenPadding * 2, 0)
                 ZStack {
                     RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                         .fill(DarkFantasyTheme.bgSecondary)

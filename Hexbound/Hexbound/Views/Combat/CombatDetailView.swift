@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CombatDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var viewModel: CombatViewModel?
     @State private var screenShake: CGFloat = 0
     @State private var animatePulse = false
@@ -97,7 +98,12 @@ struct CombatDetailView: View {
     /// Find the boss portraitImage by matching the fighter's name against all dungeon bosses.
     private func bossPortraitImage(for name: String) -> String? {
         let lowered = name.lowercased()
-        for dungeon in DungeonInfo.all {
+        // Search cached server dungeons first, then fallback
+        let dungeonSources: [DungeonInfo] = {
+            let cached = cache.cachedDungeonList()
+            return (cached != nil && !cached!.isEmpty) ? cached! : DungeonInfo.fallback
+        }()
+        for dungeon in dungeonSources {
             if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
                 return boss.portraitImage
             }
@@ -220,7 +226,6 @@ struct CombatDetailView: View {
         isPlayer: Bool
     ) -> some View {
         let borderColor = isPlayer ? DarkFantasyTheme.success : DarkFantasyTheme.danger
-        let hpPct = maxHp > 0 ? Double(currentHp) / Double(maxHp) : 0
 
         VStack(spacing: LayoutConstants.spaceSM) {
             // YOU / ENEMY label

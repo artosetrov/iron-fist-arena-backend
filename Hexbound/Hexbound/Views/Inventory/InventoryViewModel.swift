@@ -15,9 +15,6 @@ final class InventoryViewModel {
     // Search & Sort
     var searchText = ""
     var sortMode: InventorySortMode = .rarity
-    var filterType: ItemType? = nil  // nil = all
-
-    static let filterTypes: [ItemType] = [.weapon, .helmet, .chest, .gloves, .legs, .boots, .accessory, .consumable]
 
     init(appState: AppState) {
         self.appState = appState
@@ -32,11 +29,6 @@ final class InventoryViewModel {
 
     var sortedItems: [Item] {
         var result = items.filter { $0.isEquipped != true }
-
-        // Filter by type
-        if let filterType {
-            result = result.filter { $0.itemType == filterType }
-        }
 
         // Filter by search text
         if !searchText.isEmpty {

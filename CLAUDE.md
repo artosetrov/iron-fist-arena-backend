@@ -55,6 +55,33 @@ Generate unique 24-character hex IDs for `{ID1}` and `{ID2}`. Keep entries alpha
 - Cache: `GameDataCache` environment object, cache-first pattern
 - Views pass `@Bindable var vm` to child components (not `@State`)
 
+## Unified Hero Widget (CRITICAL)
+
+**Always use `UnifiedHeroWidget` for character summary display.** Never create inline character displays, duplicate stamina bars, or ad-hoc currency rows on screens.
+
+- Component: `Hexbound/Hexbound/Views/Components/UnifiedHeroWidget.swift`
+- Pill system: `Hexbound/Hexbound/Views/Components/WidgetPill.swift`
+- XP ring shape: `Hexbound/Hexbound/Views/Components/XPRingShape.swift`
+- Contexts: `.hub` (full), `.arena` (PvP pills), `.dungeon` (minimal), `.hero` (with XP)
+- **Deprecated:** `HubCharacterCard.swift`, `HubCharacterCardWrapper` — do NOT use, do NOT create new code referencing them
+- Pill tokens: `LayoutConstants.pill*` for sizing, `DarkFantasyTheme.pill*` for colors
+- Widget tokens: `LayoutConstants.widget*` for layout
+- Accessibility: all pill text ≥ 12px, contrast ≥ 4.5:1 (use `textTertiaryAA` not `textTertiary` in widget)
+
+## Hero Page Integration (CRITICAL)
+
+**Hero page uses `HeroIntegratedCard`** (NOT UnifiedHeroWidget) — equipment-first layout with portrait, bars inside, universal slots.
+
+- Component: `Hexbound/Hexbound/Views/Components/HeroIntegratedCard.swift`
+- Combines: equipment grid + portrait + name overlay + HP/XP bars + resources + stance pill + repair action
+- Replaces: `equipmentSection()` + `stanceSummaryCard()` + `UnifiedHeroWidget` on Hero tab
+- Universal slots: `amulet` accepts amulet OR necklace; `relic` accepts relic OR accessory OR weapon off-hand
+- Portrait: 2×3 cell grid with name overlay (gradient transparent→black, Oswald 16px), level badge (gold circle top-right), class badge (top-left)
+- Bars: HP 24px tall with text centered inside; XP 20px tall with absolute values not percentage
+- Bottom action pills: stance (always), repair all (conditional on broken items), stat points (conditional), heal (conditional)
+- Layout tokens: `LayoutConstants.hero*` for card/slot sizing and bar heights
+- Integration: see `HeroDetailView.tabContent()` for callback pattern (onTapPortrait, onEditStance, onRepairAll, etc.)
+
 ## Admin Panel (Next.js / TypeScript)
 
 - **Strict null checks:** When a function returns `T | null`, always narrow the type before use. Prefer `if (!x) throw` followed by explicit non-null assertion or destructuring, not bare `x.property` access.
@@ -182,6 +209,14 @@ These are the **actual** backend enums. Do not invent values.
 - **`prisma generate` must run before `tsc`/`next build`.** Without it, TS reports false errors for all Prisma models (`mailRecipient`, `shopOffer`, etc. "not found on PrismaClient"). On Vercel this runs automatically via build command. Locally: `cd backend && npx prisma generate` first.
 - **`ignoreBuildErrors` is REMOVED.** TypeScript errors now block the Vercel deploy. Do not reintroduce this flag. Fix TS errors properly.
 - **Prisma `Json` fields need double cast.** When casting Prisma `Json` type to a concrete interface (e.g. `OfferContent[]`), use `as unknown as OfferContent[]` — direct cast fails in strict mode.
+
+## Replacing / Refactoring Code (CRITICAL)
+
+When replacing a struct, class, function, or view with a new version:
+1. **Delete the old code first** — do not leave both old and new versions in the file. Duplicate symbols cause "Invalid redeclaration" and argument-mismatch build errors.
+2. **Search the file for the old name** before finishing — if the old struct/function still exists anywhere, remove it.
+3. **Search all callers** — if the old type was used in other files, update those call sites to match the new signature.
+4. Common mistake: replacing `CloudLayer` → `SkyCloudsFrontLayer` but leaving the old `CloudLayer` + `DriftingCloud` in the same file → redeclaration error.
 
 ## Self-Documenting Rules (META — MANDATORY)
 

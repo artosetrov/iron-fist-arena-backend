@@ -129,22 +129,6 @@ struct LoginView: View {
                     }
                     .padding(.top, LayoutConstants.spaceXS)
 
-                    // 6. Guest login with warning
-                    VStack(spacing: LayoutConstants.spaceXS) {
-                        Button {
-                            Task { await vm.guestLogin(appState: appState) }
-                        } label: {
-                            Text("PLAY AS GUEST")
-                        }
-                        .buttonStyle(.neutral)
-
-                        Text("⚠️ Guest progress may be lost. Link your account later in Settings to save.")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textWarning)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, LayoutConstants.spaceSM)
-
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.bottom, 60)

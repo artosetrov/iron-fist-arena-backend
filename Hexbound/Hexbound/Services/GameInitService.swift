@@ -17,8 +17,9 @@ final class GameInitService {
     func loadGameData() async {
         guard let charId = appState.currentCharacter?.id else { return }
 
-        // Load cached hub layout from disk immediately (before network)
+        // Load cached layouts from disk immediately (before network)
         cache.loadHubLayoutFromDisk()
+        cache.loadDungeonMapLayoutFromDisk()
 
         do {
             let response = try await APIClient.shared.getRaw(
@@ -83,6 +84,11 @@ final class GameInitService {
             // Parse hub layout (admin-defined building positions)
             if let hubLayout = response["hubLayout"] as? [String: Any] {
                 cache.cacheHubLayout(from: hubLayout)
+            }
+
+            // Parse dungeon map layout (admin-defined dungeon node positions)
+            if let dungeonMapLayout = response["dungeonMapLayout"] as? [String: Any] {
+                cache.cacheDungeonMapLayout(from: dungeonMapLayout)
             }
 
             // Calculate server time delta for client-side stamina calculation

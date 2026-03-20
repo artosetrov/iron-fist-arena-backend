@@ -77,9 +77,9 @@ enum LayoutConstants {
     static let textCard: CGFloat = 18
     static let textButton: CGFloat = 18
     static let textBody: CGFloat = 16
-    static let textLabel: CGFloat = 14
-    static let textCaption: CGFloat = 12
-    static let textBadge: CGFloat = 11
+    static let textLabel: CGFloat = 16          // was 14 — minimum 16px rule
+    static let textCaption: CGFloat = 16        // was 12 — minimum 16px rule
+    static let textBadge: CGFloat = 16          // was 11 — minimum 16px rule
 
     // MARK: - Compact Card Sizing
 
@@ -110,16 +110,20 @@ enum LayoutConstants {
     static let pillSpacing: CGFloat = 8            // Gap between pills in row-3
 
     // Widget Avatar
-    static let widgetAvatarSize: CGFloat = 48      // Matches touchMin (48×48)
+    static let widgetAvatarFullSize: CGFloat = 72  // Full-height avatar (1:1 square, matches content height)
+    static let widgetAvatarSize: CGFloat = 48      // Legacy small avatar
     static let widgetAvatarRadius: CGFloat = 8     // Rounded square corners
     static let widgetXpRingInset: CGFloat = 4      // SVG offset from avatar edge
     static let widgetXpRingWidth: CGFloat = 3      // Stroke width for XP border
     static let widgetLevelBadgeFont: CGFloat = 11  // Matches textBadge
+    static let widgetBarHeight: CGFloat = 22         // HP/Stamina bars with text inside
+    static let widgetBarRadius: CGFloat = 6          // Bar corner radius
+    static let widgetBarFont: CGFloat = 11           // Text inside bars (matches textBadge)
 
     // MARK: - Merchant Strip
 
-    static let merchantAvatarSize: CGFloat = 64       // Large portrait, breaks out of strip
-    static let merchantAvatarOverflow: CGFloat = 28    // How far avatar extends above strip
+    static let merchantAvatarSize: CGFloat = 256      // Full merchant portrait, no frame
+    static let merchantAvatarOverflow: CGFloat = 200   // How far avatar extends above strip
     static let merchantMiniSize: CGFloat = 56          // Collapsed floating avatar (== avatarSizeMD)
     static let merchantStripMinHeight: CGFloat = 56    // Strip content height
     static let merchantBubbleRadius: CGFloat = 8       // Speech bubble corners (== panelRadius)
@@ -131,4 +135,18 @@ enum LayoutConstants {
     static let packagePriceBtnHeight: CGFloat = 48     // Price button height (== touchMin)
     static let packageAmountFont: CGFloat = 22         // Amount text size
     static let packageBestValueAmountFont: CGFloat = 26 // Best Value amount text size
+
+    // MARK: - Hero Integrated Card
+
+    static let heroCardRadius: CGFloat = 12
+    static let heroCardPadding: CGFloat = 12
+    static let heroSlotSize: CGFloat = 84          // same as inventory cell
+    static let heroSlotGap: CGFloat = 8            // same as inventoryGap
+    static let heroSlotRadius: CGFloat = 12        // same as cardRadius
+    static let heroBarHeight: CGFloat = 24         // HP bar with text inside
+    static let heroBarXpHeight: CGFloat = 20       // XP bar with text inside
+    static let heroBarRadius: CGFloat = 4
+    static let heroBarFont: CGFloat = 11           // text inside bars
+    static let heroPortraitNameFont: CGFloat = 16  // name overlay on portrait
+    static let heroBottomSlots: Int = 4            // Ring, Weapon, Relic, Belt
 }

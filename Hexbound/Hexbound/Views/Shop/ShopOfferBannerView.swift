@@ -65,7 +65,7 @@ private struct OfferCard: View {
                 if let remaining = offer.timeRemaining {
                     HStack(spacing: 2) {
                         Image(systemName: "clock")
-                            .font(.system(size: 10))
+                            .font(.system(size: 16))
                         Text(remaining)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     }

@@ -5,7 +5,7 @@ final class DungeonSelectViewModel {
     private let appState: AppState
     private let service: DungeonService
 
-    var dungeons = DungeonInfo.all
+    var dungeons: [DungeonInfo] = []
     var isLoading = false
 
     // Progress: dungeonId → number of bosses defeated
@@ -69,13 +69,46 @@ final class DungeonSelectViewModel {
     // MARK: - Load Progress
 
     func loadProgress() async {
-        // Serve cached progress instantly
+        // Serve cached dungeon list + progress instantly
+        if let cachedList = cache.cachedDungeonList() {
+            dungeons = cachedList
+        }
         if let cached = cache.cachedDungeonProgress() {
             dungeonProgress = cached
-        } else {
+        }
+
+        // Show loading only if we have zero data
+        if dungeons.isEmpty && dungeonProgress.isEmpty {
             isLoading = true
         }
-        let data = await service.getProgress()
+
+        // If dungeons are empty (no cache), use fallback while loading
+        if dungeons.isEmpty {
+            dungeons = DungeonInfo.fallback
+        }
+
+        // Fetch dungeon list from server in parallel with progress
+        async let serverDungeons = service.listDungeons()
+        async let progressData = service.getProgress()
+
+        // Process dungeon list
+        if let rawDungeons = await serverDungeons {
+            let parsed = rawDungeons.compactMap { DungeonInfo.from(serverData: $0) }
+            if !parsed.isEmpty {
+                // Merge: prefer server data, but keep rich client data for known dungeons
+                dungeons = parsed.map { serverDungeon in
+                    // If we have a hardcoded version with richer data (loot, portraits), use it
+                    if let local = DungeonInfo.fallback.first(where: { $0.id == serverDungeon.id }) {
+                        return local
+                    }
+                    return serverDungeon
+                }
+                cache.cacheDungeonList(dungeons)
+            }
+        }
+
+        // Process progress
+        let data = await progressData
         if let progress = data?["progress"] as? [String: Any] {
             for (key, value) in progress {
                 if let defeated = value as? Int {

@@ -28,15 +28,6 @@ struct TavernDetailView: View {
                         }
 
                         TavernGameCard(
-                            icon: "⛏️",
-                            title: "GOLD MINE",
-                            subtitle: "Send miners to dig. Collect gold over time.",
-                            accentColor: DarkFantasyTheme.stamina
-                        ) {
-                            appState.mainPath.append(AppRoute.goldMine)
-                        }
-
-                        TavernGameCard(
                             icon: "💀",
                             title: "DUNGEON RUSH",
                             subtitle: "Endless waves. How far can you go?",

@@ -10,30 +10,23 @@ struct HubView: View {
         VStack(spacing: 0) {
             // HUD widgets at top
             VStack(spacing: 10) {
-                // Stamina Bar → Potions tab
+                // Unified Hero Widget (replaces StaminaBarView + HubCharacterCardWrapper)
                 if let char = appState.currentCharacter {
-                    Button {
-                        appState.shopInitialTab = 3
-                        appState.mainPath.append(AppRoute.shop)
-                    } label: {
-                        StaminaBarView(
-                            currentStamina: char.currentStamina,
-                            maxStamina: char.maxStamina,
-                            recoveryText: staminaRecoveryText(current: char.currentStamina, max: char.maxStamina)
-                        )
-                    }
-                    .buttonStyle(.scalePress(0.97))
-                    .contentShape(Rectangle())
-                    .tutorialAnchor(.hubStamina)
+                    UnifiedHeroWidget(
+                        character: char,
+                        context: .hub,
+                        onTap: { appState.mainPath.append(AppRoute.hero) },
+                        onUseHealthPotion: {
+                            Task { await useHealthPotion() }
+                        },
+                        onUseStaminaPotion: {
+                            Task { await useStaminaPotion() }
+                        },
+                        onAllocateStats: { appState.mainPath.append(AppRoute.hero) },
+                        onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                    )
+                    .tutorialAnchor(.hubCharacterCard)
                     .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceSM)
-                }
-
-                // Character Card
-                if let char = appState.currentCharacter {
-                    HubCharacterCardWrapper(character: char)
-                        .tutorialAnchor(.hubCharacterCard)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
                 }
 
                 // First Win Bonus — prominent above fold
@@ -231,6 +224,68 @@ struct HubView: View {
             return "Full in \(hours)h \(minutes)m"
         } else {
             return "Full in \(minutes)m"
+        }
+    }
+
+    private func useHealthPotion() async {
+        // Find the first available health potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
+        }
+
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No health potions", subtitle: "Buy potions at the shop", type: .error)
+            return
+        }
+
+        let hpBefore = appState.currentCharacter?.currentHp ?? 0
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
+
+        if success {
+            let hpAfter = appState.currentCharacter?.currentHp ?? 0
+            let healAmount = hpAfter - hpBefore
+            appState.showToast(
+                "+\(healAmount) HP restored!",
+                type: .reward
+            )
+        }
+    }
+
+    private func useStaminaPotion() async {
+        // Find the first available stamina potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
+        }
+
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("stamina_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No stamina potions", subtitle: "Buy potions at the shop", type: .error)
+            return
+        }
+
+        let staminaBefore = appState.currentCharacter?.currentStamina ?? 0
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
+
+        if success {
+            let staminaAfter = appState.currentCharacter?.currentStamina ?? 0
+            let recoveredAmount = staminaAfter - staminaBefore
+            appState.showToast(
+                "+\(recoveredAmount) Stamina restored!",
+                type: .reward
+            )
         }
     }
 }

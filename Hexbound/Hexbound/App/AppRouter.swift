@@ -26,6 +26,8 @@ enum AppRoute: Hashable {
     case premiumPurchase
 
     // Dungeon
+    case dungeonMap
+    case dungeonMapEditor
     case dungeonSelect
     case dungeonRoom
 
@@ -119,6 +121,7 @@ struct MainRouterView: View {
         case .premiumPurchase: PremiumPurchaseView()
         
         // Dungeon
+        case .dungeonMap: DungeonMapView()
         case .dungeonSelect: DungeonSelectDetailView()
         case .dungeonRoom: DungeonRoomDetailView()
         
@@ -151,8 +154,9 @@ struct MainRouterView: View {
         case .screenCatalog: ScreenCatalogView()
         case .designSystem: DesignSystemPreview()
         case .hubEditor: HubEditorDetailView()
+        case .dungeonMapEditor: DungeonMapEditorView()
         #else
-        case .screenCatalog, .designSystem, .hubEditor:
+        case .screenCatalog, .designSystem, .hubEditor, .dungeonMapEditor:
             PlaceholderView()
         #endif
         
@@ -197,7 +201,7 @@ struct PlaceholderView: View {
                 Image(systemName: "hammer.fill")
                     .font(.system(size: 48))
                     .foregroundStyle(DarkFantasyTheme.gold)
-                    .symbolEffect(.bounce, options: .repeating)
+                    .modifier(BounceEffectModifier())
                 
                 Text("Coming Soon")
                     .font(DarkFantasyTheme.title(size: 28))
@@ -228,6 +232,18 @@ struct PlaceholderView: View {
                     .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Availability-safe bounce symbol effect
+
+private struct BounceEffectModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.symbolEffect(.bounce, options: .repeating)
+        } else {
+            content
         }
     }
 }

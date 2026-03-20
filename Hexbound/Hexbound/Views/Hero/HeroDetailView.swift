@@ -85,62 +85,28 @@ struct HeroDetailView: View {
         }
     }
 
-    // MARK: - Compact Header
+    // MARK: - Actions
 
-    @ViewBuilder
-    private func heroHeader(_ char: Character) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            // Name + Class + Origin
-            HStack(spacing: 6) {
-                Text(char.characterClass.icon)
-                Text(char.characterName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                Text("\u{2022}")
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                Text(char.characterClass.displayName)
-                    .foregroundStyle(DarkFantasyTheme.classColor(for: char.characterClass))
-                Text("\u{2022}")
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                Text(char.origin.displayName)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-
-            // Level + XP bar
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Text("Lv.\(char.level)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DarkFantasyTheme.bgPrimary)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                            )
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DarkFantasyTheme.xpGradient)
-                            .frame(width: geo.size.width * char.xpPercentage)
-                    }
-                }
-                .frame(height: 8)
-
-                Text("\(char.experience ?? 0)/\(char.xpNeeded)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-            }
-
-            if let prestige = char.prestige, prestige > 0 {
-                Text("\u{2605} Prestige \(prestige)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(DarkFantasyTheme.stamina)
-            }
+    private func repairAllBrokenItems() async {
+        guard let items = inventoryVM?.items else { return }
+        let brokenItems = items.filter { ($0.durability ?? 1) <= 0 && ($0.isEquipped ?? false) }
+        let service = ShopService(appState: appState)
+        for item in brokenItems {
+            let _ = await service.repair(inventoryId: item.id)
         }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.vertical, LayoutConstants.spaceSM)
+        appState.invalidateCache("inventory")
+        await inventoryVM?.loadInventory()
+        appState.showToast("All gear repaired!", type: .reward)
+    }
+
+    private func useHealthPotion() async {
+        guard let items = appState.cachedInventory else { return }
+        guard let potion = items.first(where: { $0.consumableType?.contains("health_potion") == true }) else { return }
+        let service = InventoryService(appState: appState)
+        let _ = await service.useItem(inventoryId: potion.id, consumableType: potion.consumableType)
+        appState.invalidateCache("inventory")
+        await inventoryVM?.loadInventory()
+        appState.showToast("Healed!", type: .reward)
     }
 
     // MARK: - Tab Selector
@@ -207,11 +173,18 @@ struct HeroDetailView: View {
 
         ScrollView {
             VStack(spacing: LayoutConstants.spaceMD) {
-                // ── Always-visible: Equipment Section ──
-                equipmentSection(char, equippedItems: equippedItems)
-
-                // ── Stance card ──
-                stanceSummaryCard(char)
+                // ── Hero Integrated Card (equipment + portrait + bars + actions) ──
+                HeroIntegratedCard(
+                    character: char,
+                    equippedItems: equippedItems,
+                    onTapPortrait: { appState.mainPath.append(AppRoute.appearanceEditor) },
+                    onTapSlot: { item in inventoryVM?.selectItem(item) },
+                    onEditStance: { appState.mainPath.append(AppRoute.stanceSelector) },
+                    onRepairAll: { Task { await repairAllBrokenItems() } },
+                    onAllocateStats: { appState.mainPath.append(AppRoute.character) },
+                    onUseHealthPotion: { Task { await useHealthPotion() } },
+                    onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                )
 
                 GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
 
@@ -237,19 +210,7 @@ struct HeroDetailView: View {
             .padding(.top, LayoutConstants.spaceMD)
             .padding(.bottom, LayoutConstants.spaceLG)
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            Button {
-                appState.shopInitialTab = 3
-                appState.mainPath.append(AppRoute.shop)
-            } label: {
-                StaminaBarView(currentStamina: char.currentStamina, maxStamina: char.maxStamina, showPlus: true)
-            }
-            .buttonStyle(.scalePress(0.97))
-            .contentShape(Rectangle())
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .background(DarkFantasyTheme.bgPrimary)
-        }
+        // safeAreaInset removed — HeroIntegratedCard is inside scroll
         .animation(.none, value: selectedTab)
     }
 
@@ -335,7 +296,7 @@ struct HeroDetailView: View {
         }
         .frame(height: {
             let screenW = UIScreen.main.bounds.width
-            let cw = (screenW - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols)
+            let cw = max((screenW - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols), 0)
             return 3 * cw + 2 * LayoutConstants.inventoryGap   // col height
                 + LayoutConstants.spaceMD                       // VStack gap
                 + cw                                            // bottom row 1
@@ -1086,27 +1047,31 @@ struct HeroDetailView: View {
     private func inventoryInlineContent(_ vm: InventoryViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Header + count
-            HStack {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Text("INVENTORY")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Spacer()
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("💰").font(.system(size: 14)) // emoji — keep as is
+                HStack(spacing: 4) {
+                    Image("icon-gold").resizable().frame(width: 14, height: 14)
                     Text("\(vm.gold)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .monospacedDigit()
                 }
-                Text("·")
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                HStack(spacing: 4) {
+                    Image("icon-gems").resizable().frame(width: 14, height: 14)
+                    Text("\(appState.currentCharacter?.gems ?? 0)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
+                        .foregroundStyle(DarkFantasyTheme.cyan)
+                        .monospacedDigit()
+                }
+                Text("·").foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("\(vm.items.count) items")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-
-            // Search + Sort bar
-            inventorySearchBar(vm)
 
             // Item grid — always show all 28 slots
             if vm.isLoading {
@@ -1233,38 +1198,7 @@ struct HeroDetailView: View {
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
 
-            // Filter chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    filterChip("All", isActive: vm.filterType == nil) {
-                        vm.filterType = nil
-                    }
-                    ForEach(InventoryViewModel.filterTypes, id: \.self) { type in
-                        filterChip(type.displayName, isActive: vm.filterType == type) {
-                            vm.filterType = vm.filterType == type ? nil : type
-                        }
-                    }
-                }
-            }
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
-    @ViewBuilder
-    private func filterChip(_ label: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                .foregroundStyle(isActive ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(
-                    Capsule().fill(isActive ? DarkFantasyTheme.gold : DarkFantasyTheme.bgSecondary)
-                )
-                .overlay(
-                    Capsule().stroke(isActive ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                )
-        }
-        .buttonStyle(.scalePress(0.95))
     }
 }

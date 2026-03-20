@@ -40,6 +40,20 @@ final class EquipmentViewModel {
         "belt": "icon-belt", "relic": "icon-relic", "necklace": "icon-amulet"
     ]
 
+    /// Universal slots: which item types each visual slot accepts
+    static let slotAccepts: [String: [String]] = [
+        "helmet": ["helmet"],
+        "chest":  ["chest"],
+        "legs":   ["legs"],
+        "amulet": ["amulet", "necklace"],          // UNIVERSAL: amulet OR necklace
+        "gloves": ["gloves"],
+        "boots":  ["boots"],
+        "ring":   ["ring"],                         // ring + ring2 via dual logic
+        "weapon": ["weapon"],
+        "relic":  ["relic", "accessory", "weapon"], // UNIVERSAL: off-hand
+        "belt":   ["belt"],
+    ]
+
     init(appState: AppState) {
         self.appState = appState
         self.service = InventoryService(appState: appState)

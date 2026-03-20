@@ -19,7 +19,7 @@ final class PushNotificationService {
             let granted = try await center.requestAuthorization(options: [.alert, .badge, .sound])
             if granted {
                 // Register with APNS — this triggers AppDelegate.didRegisterForRemoteNotificationsWithDeviceToken
-                await UIApplication.shared.registerForRemoteNotifications()
+                UIApplication.shared.registerForRemoteNotifications()
             }
         } catch {
             #if DEBUG

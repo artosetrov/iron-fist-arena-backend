@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Paperdoll with Equipment Tabs</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-abyss:#08080C;--bg-primary:#0D0D12;--bg-secondary:#1A1A2E;--bg-tertiary:#16213E;--bg-elevated:#1E2240;
+    --bg-card-start:#1C1C30;--bg-card-end:#2A2A40;--bg-card-border:#3A3A55;
+    --gold:#D4A537;--gold-bright:#FFD700;--gold-dim:#8B6914;
+    --danger:#E63946;--success:#2ECC71;--cyan:#00D4FF;--purple:#9B59B6;--stamina-orange:#E67E22;
+    --text-primary:#F5F5F5;--text-secondary:#A0A0B0;--text-aa:#8A8AA0;--text-gold:#FFD700;
+    --text-warning:#FFA502;--text-good:#7BED9F;--text-danger:#FF6B6B;
+    --border-subtle:#2A2A3E;--border-medium:#3A3A50;
+    --xp-ring:#5DADE2;--xp-ring-track:#2A2A4A;
+    --font-t:'Oswald',sans-serif;--font-b:'Inter',sans-serif;
+    --s4:4px;--s8:8px;--s12:12px;--s16:16px;--s24:24px;
+    --slot:72px;--slot-r:12px;--slot-gap:8px;--portrait:204px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg-abyss);color:var(--text-primary);font-family:var(--font-b);padding:20px;-webkit-font-smoothing:antialiased}
+  h1{font-family:var(--font-t);color:var(--gold-bright);font-size:24px;text-align:center;margin-bottom:var(--s4);letter-spacing:2px}
+  .sub{text-align:center;color:var(--text-aa);font-size:12px;margin-bottom:var(--s24)}
+
+  /* Phone */
+  .phone{width:393px;margin:0 auto;background:var(--bg-primary);border-radius:24px;border:2px solid var(--border-subtle);overflow:hidden}
+  .ph-bar{height:54px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:12px;color:var(--text-aa)}
+  .ph-body{padding:0;overflow-y:auto;max-height:800px}
+
+  /* Toolbar */
+  .toolbar{display:flex;align-items:center;padding:var(--s8) var(--s16);justify-content:space-between}
+  .toolbar .logo{width:28px;height:28px;border-radius:50%;background:var(--bg-tertiary);border:1px solid var(--gold-dim)}
+  .toolbar .title{font-family:var(--font-t);font-size:20px;color:var(--gold-bright);letter-spacing:1.5px}
+  .toolbar .gear{width:24px;height:24px;border-radius:50%;background:var(--bg-tertiary);border:1px solid var(--border-subtle)}
+
+  /* Resource strip */
+  .res-strip{display:flex;align-items:center;gap:var(--s12);padding:var(--s8) var(--s16);
+    background:linear-gradient(135deg,var(--bg-card-start),var(--bg-card-end));
+    border-top:1px solid var(--bg-card-border);border-bottom:1px solid var(--bg-card-border);min-height:40px}
+  .res{display:flex;align-items:center;gap:var(--s4);font-size:12px;font-weight:600;white-space:nowrap}
+  .res-stam{color:var(--stamina-orange)}.res-gold{color:var(--text-gold)}.res-gems{color:var(--cyan)}
+  .res-sep{width:1px;height:16px;background:var(--border-subtle);flex-shrink:0}
+  .refill-sm{background:linear-gradient(90deg,#D35400,#F39C12);border:none;border-radius:4px;color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+  /* Bars */
+  .bars-sec{padding:var(--s12) var(--s16) var(--s8)}
+  .bar-row{display:flex;align-items:center;gap:var(--s8);margin-bottom:var(--s4)}
+  .bar-lbl{width:20px;font-size:12px;font-weight:700;flex-shrink:0}
+  .bar-trk{flex:1;height:12px;background:rgba(255,255,255,.06);border-radius:6px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px}
+  .bar-hp{background:linear-gradient(90deg,#2ECC71,#55EFC4)}
+  .bar-xp{background:linear-gradient(90deg,#5DADE2,#3498DB)}
+  .bar-val{font-size:12px;color:var(--text-secondary);white-space:nowrap;min-width:80px;text-align:right}
+
+  /* ═══ EQUIPMENT CATEGORY TABS ═══ */
+  .eq-tabs{display:flex;margin:0 var(--s16);border-radius:var(--s8);overflow:hidden;border:1px solid var(--border-subtle);background:var(--bg-secondary)}
+  .eq-tab{flex:1;padding:var(--s8) 0;text-align:center;font-family:var(--font-t);font-size:13px;letter-spacing:.5px;
+    color:var(--text-aa);cursor:pointer;position:relative;transition:all .2s;border:none;background:none}
+  .eq-tab.on{color:var(--gold-bright);background:var(--bg-elevated)}
+  .eq-tab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:var(--gold);border-radius:1px}
+  .eq-tab .count{font-size:10px;color:var(--text-aa);font-family:var(--font-b);font-weight:400}
+  .eq-tab.on .count{color:var(--gold)}
+
+  /* Equipment grid */
+  .equip-zone{padding:var(--s12) var(--s16)}
+  .equip-main{display:flex;gap:var(--slot-gap);justify-content:center;align-items:center;min-height:calc(var(--slot) * 3 + var(--slot-gap) * 2)}
+  .eq-col{display:flex;flex-direction:column;gap:var(--slot-gap)}
+
+  /* Slot */
+  .eq-slot{
+    width:var(--slot);height:var(--slot);border-radius:var(--slot-r);
+    background:var(--bg-tertiary);border:1.5px solid var(--border-subtle);
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    position:relative;overflow:hidden;cursor:pointer;transition:all .2s;
+  }
+  .eq-slot:active{transform:scale(.95)}
+  .eq-slot.filled{border-color:var(--success);border-width:2px;background:rgba(46,204,113,.06)}
+  .eq-slot.epic{border-color:var(--purple);background:rgba(155,89,182,.08)}
+  .eq-slot.leg{border-color:var(--gold-bright);background:rgba(255,215,0,.06)}
+  .eq-slot.rare{border-color:#4D80FF;background:rgba(77,128,255,.06)}
+  .eq-slot .dots{position:absolute;bottom:2px;display:flex;gap:2px;justify-content:center;width:100%}
+  .eq-slot .dots span{width:4px;height:4px;border-radius:50%;background:var(--gold-bright)}
+  .eq-slot .slot-name{position:absolute;top:3px;left:0;right:0;font-size:9px;color:var(--text-aa);text-align:center;text-transform:uppercase;letter-spacing:.3px;opacity:.7}
+  .eq-slot.empty{opacity:.5}
+  .eq-slot.empty .slot-name{opacity:1;font-size:10px;top:50%;transform:translateY(-50%)}
+
+  /* Portrait */
+  .portrait{
+    width:var(--portrait);height:var(--portrait);border-radius:var(--slot-r);
+    background:linear-gradient(var(--bg-tertiary),var(--bg-secondary));
+    border:2px solid rgba(212,165,55,.4);
+    display:flex;align-items:center;justify-content:center;
+    font-size:80px;position:relative;overflow:hidden;cursor:pointer;
+    box-shadow:0 0 20px rgba(212,165,55,.08);flex-shrink:0;
+  }
+  .portrait .lvl{position:absolute;top:var(--s8);right:var(--s8);background:var(--gold);color:var(--bg-primary);
+    width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;box-shadow:0 2px 8px rgba(212,165,55,.4)}
+  .portrait .cls{position:absolute;top:var(--s8);left:var(--s8);background:var(--bg-tertiary);border:1px solid var(--border-medium);
+    border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:16px}
+
+  /* Weapon centered layout */
+  .equip-weapon{display:flex;justify-content:center;align-items:center;gap:var(--s24);padding:var(--s16);min-height:calc(var(--portrait) + 20px)}
+  .weapon-main{display:flex;flex-direction:column;align-items:center;gap:var(--s8)}
+  .weapon-side{display:flex;flex-direction:column;gap:var(--s8);align-items:center}
+  .weapon-label{font-size:10px;color:var(--text-aa);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:2px}
+
+  /* Jewelry layout */
+  .equip-jewel{display:flex;justify-content:center;align-items:center;gap:var(--s16);padding:var(--s16);min-height:calc(var(--portrait) + 20px);flex-wrap:wrap}
+  .jewel-col{display:flex;flex-direction:column;align-items:center;gap:var(--s8)}
+
+  /* Gold divider */
+  .gold-div{height:1px;margin:0 var(--s16);background:linear-gradient(90deg,transparent,var(--gold-dim),transparent)}
+
+  /* Main page tabs */
+  .tab-sel{display:flex;background:var(--bg-primary);border-bottom:1px solid var(--border-subtle)}
+  .tab-btn{flex:1;padding:var(--s12) 0;text-align:center;font-family:var(--font-t);font-size:16px;color:var(--text-aa);cursor:pointer;position:relative}
+  .tab-btn.on{color:var(--gold-bright)}
+  .tab-btn.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:3px;background:var(--gold);border-radius:2px}
+  .tab-btn .notif{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);display:inline-block;margin-left:4px;vertical-align:super;animation:blink 1.2s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+  .ph-content{padding:var(--s16);color:var(--text-aa);font-size:12px;text-align:center;min-height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--s4)}
+
+  /* Stance */
+  .stance{margin:var(--s8) var(--s16);padding:var(--s8) var(--s12);background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--s8);display:flex;align-items:center;gap:var(--s12);font-size:12px}
+  .stance-lbl{color:var(--text-aa);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .stance-z{padding:2px 8px;border-radius:4px;font-size:11px}
+  .z-atk{background:rgba(230,57,70,.15);color:#E66666;border:1px solid rgba(230,57,70,.2)}
+  .z-def{background:rgba(102,153,230,.15);color:#6699E6;border:1px solid rgba(102,153,230,.2)}
+
+  /* Tab panes */
+  .eq-pane{display:none}.eq-pane.on{display:block}
+</style>
+</head>
+<body>
+
+<h1>HERO PAPERDOLL — TABS</h1>
+<p class="sub">Armor · Weapons · Jewelry — same portrait, different slots</p>
+
+<div class="phone"><div class="ph-bar">6:01 PM</div><div class="ph-body">
+
+  <div class="toolbar">
+    <div class="logo"></div>
+    <span class="title">HERO</span>
+    <div class="gear"></div>
+  </div>
+
+  <!-- Resource Strip -->
+  <div class="res-strip">
+    <div class="res res-stam"><span>⚡</span>87<span style="color:var(--text-aa)">/120</span><button class="refill-sm">+</button></div>
+    <div class="res-sep"></div>
+    <div class="res res-gold"><span>🪙</span>18,640</div>
+    <div class="res-sep"></div>
+    <div class="res res-gems"><span>💎</span>146</div>
+  </div>
+
+  <!-- HP / XP -->
+  <div class="bars-sec">
+    <div class="bar-row">
+      <span class="bar-lbl" style="color:#2ECC71">HP</span>
+      <div class="bar-trk"><div class="bar-fill bar-hp" style="width:100%"></div></div>
+      <span class="bar-val">1,030 / 1,030</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-lbl" style="color:var(--xp-ring)">XP</span>
+      <div class="bar-trk"><div class="bar-fill bar-xp" style="width:78%"></div></div>
+      <span class="bar-val">78%</span>
+    </div>
+  </div>
+
+  <!-- ═══ EQUIPMENT CATEGORY TABS ═══ -->
+  <div class="eq-tabs" id="eqTabs">
+    <button class="eq-tab on" data-eq="armor">ARMOR <span class="count">6</span></button>
+    <button class="eq-tab" data-eq="weapons">WEAPONS <span class="count">3</span></button>
+    <button class="eq-tab" data-eq="jewelry">JEWELRY <span class="count">4</span></button>
+  </div>
+
+  <!-- ═══ ARMOR TAB: 6 core body slots around portrait ═══ -->
+  <div class="eq-pane on" id="eq-armor">
+    <div class="equip-zone">
+      <div class="equip-main">
+        <div class="eq-col">
+          <div class="eq-slot epic"><span class="slot-name">Head</span>🪖<div class="dots"><span></span><span></span><span></span></div></div>
+          <div class="eq-slot leg"><span class="slot-name">Chest</span>🛡️<div class="dots"><span></span><span></span><span></span><span></span><span></span></div></div>
+          <div class="eq-slot filled"><span class="slot-name">Legs</span>🦿<div class="dots"><span></span><span></span></div></div>
+        </div>
+        <div class="portrait">🐂<div class="cls">⚔</div><div class="lvl">14</div></div>
+        <div class="eq-col">
+          <div class="eq-slot filled"><span class="slot-name">Gloves</span>🧤<div class="dots"><span></span><span></span></div></div>
+          <div class="eq-slot filled"><span class="slot-name">Boots</span>👢<div class="dots"><span></span></div></div>
+          <div class="eq-slot filled"><span class="slot-name">Belt</span>🎗️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ WEAPONS TAB: weapon + relic + accessory around portrait ═══ -->
+  <div class="eq-pane" id="eq-weapons">
+    <div class="equip-weapon">
+      <div class="weapon-side">
+        <div class="eq-slot leg" style="width:88px;height:88px;font-size:24px"><span class="slot-name">Weapon</span>⚔️<div class="dots"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+        <div class="weapon-label">Main Hand</div>
+      </div>
+      <div class="portrait" style="width:160px;height:160px;font-size:64px">🐂<div class="cls">⚔</div><div class="lvl">14</div></div>
+      <div class="weapon-side">
+        <div class="eq-slot filled" style="width:88px;height:88px;font-size:22px"><span class="slot-name">Relic</span>🔮</div>
+        <div class="weapon-label">Off-Hand</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;padding:0 var(--s16) var(--s12)">
+      <div class="eq-slot epic" style="width:88px;height:88px;font-size:22px"><span class="slot-name">Accessory</span>🏵️<div class="dots"><span></span><span></span><span></span></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ JEWELRY TAB: amulet, necklace, 2 rings around portrait ═══ -->
+  <div class="eq-pane" id="eq-jewelry">
+    <div class="equip-jewel">
+      <div class="jewel-col">
+        <div class="eq-slot epic"><span class="slot-name">Amulet</span>📿<div class="dots"><span></span><span></span><span></span></div></div>
+        <div class="eq-slot filled"><span class="slot-name">Ring 1</span>💍</div>
+      </div>
+      <div class="portrait" style="width:160px;height:160px;font-size:64px">🐂<div class="cls">⚔</div><div class="lvl">14</div></div>
+      <div class="jewel-col">
+        <div class="eq-slot filled"><span class="slot-name">Necklace</span>💎</div>
+        <div class="eq-slot epic"><span class="slot-name">Ring 2</span>💍<div class="dots"><span></span><span></span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stance -->
+  <div class="stance">
+    <span class="stance-lbl">Stance</span>
+    <div style="display:flex;gap:var(--s8)">
+      <span class="stance-z z-atk">⚔ Chest</span>
+      <span class="stance-z z-def">🛡 Chest</span>
+    </div>
+    <span style="margin-left:auto;color:var(--text-aa);font-size:11px">Edit →</span>
+  </div>
+
+  <div class="gold-div"></div>
+
+  <!-- Main page tabs -->
+  <div class="tab-sel">
+    <div class="tab-btn on">INVENTORY</div>
+    <div class="tab-btn">STATUS <span class="notif"></span></div>
+  </div>
+
+  <div class="ph-content" style="min-height:100px">
+    Inventory grid / Status content
+  </div>
+
+</div></div>
+
+<script>
+// Equipment category tab switching
+document.querySelectorAll('.eq-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.eq-tab').forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('.eq-pane').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('eq-' + t.dataset.eq).classList.add('on');
+  });
+});
+</script>
+</body>
+</html>

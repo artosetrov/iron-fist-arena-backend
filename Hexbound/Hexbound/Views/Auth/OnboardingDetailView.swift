@@ -127,17 +127,21 @@ struct OnboardingDetailView: View {
     private var bottomButton: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack(spacing: LayoutConstants.spaceMD) {
-                if vm.step > 0 {
-                    Button {
-                        vm.prevStep()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("BACK")
+                Button {
+                    if vm.step == 0 {
+                        if !appState.authPath.isEmpty {
+                            appState.authPath.removeLast()
                         }
+                    } else {
+                        vm.prevStep()
                     }
-                    .buttonStyle(.secondary)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("BACK")
+                    }
                 }
+                .buttonStyle(.secondary)
 
                 Button {
                     if vm.step == OnboardingViewModel.totalSteps - 1 {

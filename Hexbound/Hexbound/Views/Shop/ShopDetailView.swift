@@ -37,7 +37,7 @@ struct ShopDetailView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 Image(systemName: "plus")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 16, weight: .bold))
                                 Text("GET MORE")
                             }
                         }
@@ -154,41 +154,8 @@ struct ShopDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
-                        // Merchant strip as bottom inset
-                        .safeAreaInset(edge: .bottom) {
-                            if showMerchant {
-                                MerchantStripView(
-                                    tipProvider: tipProvider,
-                                    onCollapse: {
-                                        withAnimation(.easeOut(duration: 0.3)) {
-                                            showMerchant = false
-                                            showMerchantMini = true
-                                        }
-                                    },
-                                    onDismiss: {
-                                        withAnimation(.easeOut(duration: 0.2)) {
-                                            showMerchant = false
-                                        }
-                                    }
-                                )
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-                            }
-                        }
-                    }
-                }
-
-                // Collapsed merchant mini avatar
-                .overlay(alignment: .bottomLeading) {
-                    if showMerchantMini {
-                        MerchantMiniButton {
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                showMerchantMini = false
-                                showMerchant = true
-                            }
-                        }
-                        .padding(.leading, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceMD)
-                        .transition(.scale.combined(with: .opacity))
+                        // Bottom padding so items don't hide behind merchant
+                        .contentMargins(.bottom, showMerchant ? 80 : 0, for: .scrollContent)
                     }
                 }
 
@@ -219,6 +186,48 @@ struct ShopDetailView: View {
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.2), value: vm.showItemDetail)
                 }
+            }
+
+            // Merchant overlay — pinned to bottom-left of screen, above all content
+            if showMerchant {
+                VStack {
+                    Spacer()
+                    MerchantStripView(
+                        tipProvider: tipProvider,
+                        onCollapse: {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showMerchant = false
+                                showMerchantMini = true
+                            }
+                        },
+                        onDismiss: {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showMerchant = false
+                            }
+                        }
+                    )
+                }
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            // Collapsed merchant mini avatar
+            if showMerchantMini {
+                VStack {
+                    Spacer()
+                    HStack {
+                        MerchantMiniButton {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showMerchantMini = false
+                                showMerchant = true
+                            }
+                        }
+                        .padding(.leading, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceMD)
+                        Spacer()
+                    }
+                }
+                .transition(.scale.combined(with: .opacity))
             }
         }
         .confirmationDialog(

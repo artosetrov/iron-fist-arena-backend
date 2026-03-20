@@ -6,20 +6,22 @@ import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
 
-// Map item types to the equipment slot they occupy (consumable items are not equippable)
-const ITEM_TYPE_TO_SLOT: Partial<Record<ItemType, EquippedSlot>> = {
-  weapon: 'weapon',
-  helmet: 'helmet',
-  chest: 'chest',
-  gloves: 'gloves',
-  legs: 'legs',
-  boots: 'boots',
-  accessory: 'accessory',
-  amulet: 'amulet',
-  belt: 'belt',
-  relic: 'relic',
-  necklace: 'necklace',
-  ring: 'ring',
+// Map item types to possible equipment slots (priority order).
+// Universal slots: amulet accepts necklace, relic accepts accessory + weapon (off-hand).
+// Ring supports dual slots (ring + ring2).
+const ITEM_TYPE_TO_SLOTS: Partial<Record<ItemType, EquippedSlot[]>> = {
+  weapon:    ['weapon', 'relic'],     // main hand primary, off-hand secondary (dual wield)
+  helmet:    ['helmet'],
+  chest:     ['chest'],
+  gloves:    ['gloves'],
+  legs:      ['legs'],
+  boots:     ['boots'],
+  accessory: ['relic'],               // goes to off-hand (relic) slot
+  amulet:    ['amulet'],
+  necklace:  ['amulet'],              // shares amulet slot
+  belt:      ['belt'],
+  relic:     ['relic'],               // off-hand slot
+  ring:      ['ring', 'ring2'],       // dual ring slots
 }
 
 export async function POST(req: NextRequest) {
@@ -93,40 +95,38 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Determine the slot from the item type
-    let slot = ITEM_TYPE_TO_SLOT[inventoryItem.item.itemType]
+    // Determine possible slots from item type (universal slot support)
+    const possibleSlots = ITEM_TYPE_TO_SLOTS[inventoryItem.item.itemType]
 
-    if (!slot) {
+    if (!possibleSlots?.length) {
       return NextResponse.json({ error: 'Item cannot be equipped' }, { status: 400 })
     }
 
-    // Rings support two slots: ring and ring2
-    if (slot === 'ring') {
-      const equippedRings = await prisma.equipmentInventory.findMany({
+    // If item is already equipped, keep its current slot
+    if (inventoryItem.isEquipped && inventoryItem.equippedSlot) {
+      return NextResponse.json({ message: 'Item is already equipped' })
+    }
+
+    // Generic multi-slot logic: find first empty slot, or replace first occupied
+    let slot: EquippedSlot | null = null
+
+    for (const candidate of possibleSlots) {
+      const occupied = await prisma.equipmentInventory.findFirst({
         where: {
           characterId: character_id,
-          equippedSlot: { in: ['ring', 'ring2'] },
+          equippedSlot: candidate,
           isEquipped: true,
         },
       })
-
-      const ring1 = equippedRings.find(r => r.equippedSlot === 'ring')
-      const ring2 = equippedRings.find(r => r.equippedSlot === 'ring2')
-
-      // If re-equipping the same item, keep its current slot
-      const alreadyEquipped = equippedRings.find(r => r.id === inventory_id)
-      if (alreadyEquipped) {
-        return NextResponse.json({ message: 'Item is already equipped' })
+      if (!occupied) {
+        slot = candidate
+        break
       }
+    }
 
-      if (!ring1) {
-        slot = 'ring'
-      } else if (!ring2) {
-        slot = 'ring2'
-      } else {
-        // Both slots full — replace ring1 (oldest)
-        slot = 'ring'
-      }
+    // If all possible slots are full, replace the first slot in priority order
+    if (!slot) {
+      slot = possibleSlots[0]
     }
 
     // Unequip any item currently in that slot, then equip the new one

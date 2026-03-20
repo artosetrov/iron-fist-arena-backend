@@ -271,6 +271,63 @@ enum DarkFantasyTheme {
     static let toastInfo        = Color(hex: 0xCCCCDA)           // Neutral light for info
     static let toastError       = textDanger                     // Red dot for errors
 
+    // MARK: - Unified Hero Widget Pill Colors
+
+    /// WCAG AA compliant tertiary text (≥4.5:1 on dark bg). Use in widget + pills.
+    static let textTertiaryAA = Color(hex: 0x8A8AA0)
+
+    // Pill: Heal (green, for health potion action)
+    static let pillHealBg = Color(hex: 0x2ECC71, opacity: 0.12)
+    static let pillHealBorder = Color(hex: 0x2ECC71, opacity: 0.25)
+    static let pillHealText = textStatusGood
+
+    // Pill: Urgent Heal (red, critical HP + potion available)
+    static let pillUrgentBg = Color(hex: 0xE63946, opacity: 0.12)
+    static let pillUrgentBorder = Color(hex: 0xE63946, opacity: 0.30)
+    static let pillUrgentText = textDanger
+
+    // Pill: Energy (orange, stamina potion action)
+    static let pillEnergyBg = Color(hex: 0xE67E22, opacity: 0.12)
+    static let pillEnergyBorder = Color(hex: 0xE67E22, opacity: 0.25)
+    static let pillEnergyText = stamina
+
+    // Pill: Stat Points (gold, level up → allocate)
+    static let pillStatBg = Color(hex: 0xD4A537, opacity: 0.12)
+    static let pillStatBorder = Color(hex: 0xD4A537, opacity: 0.30)
+    static let pillStatText = goldBright
+
+    // Pill: Warning (red, broken gear / critical / no potions)
+    static let pillWarnBg = Color(hex: 0xE63946, opacity: 0.10)
+    static let pillWarnBorder = Color(hex: 0xE63946, opacity: 0.20)
+    static let pillWarnText = textDanger
+
+    // Pill: PvP (gold tint, arena rating)
+    static let pillPvpBg = Color(hex: 0xD4A537, opacity: 0.08)
+    static let pillPvpBorder = Color(hex: 0xD4A537, opacity: 0.15)
+
+    // Pill: Win Streak (red tint)
+    static let pillStreakBg = Color(hex: 0xE63946, opacity: 0.08)
+    static let pillStreakBorder = Color(hex: 0xE63946, opacity: 0.15)
+
+    // Pill: Bonus (green tint, first win)
+    static let pillBonusBg = Color(hex: 0x2ECC71, opacity: 0.10)
+    static let pillBonusBorder = Color(hex: 0x2ECC71, opacity: 0.20)
+
+    // Pill: Error (red, API failure)
+    static let pillErrorBg = Color(hex: 0xE63946, opacity: 0.10)
+    static let pillErrorBorder = Color(hex: 0xE63946, opacity: 0.20)
+
+    // Pill: Offline (neutral, cached data indicator)
+    static let pillOfflineBg = Color.white.opacity(0.04)
+    static let pillOfflineBorder = Color.white.opacity(0.08)
+    static let pillOfflineText = textSecondary
+
+    // XP bar golden variant (for level-up imminent state)
+    static let xpGoldenGradient = LinearGradient(
+        colors: [gold, goldBright],
+        startPoint: .leading, endPoint: .trailing
+    )
+
     // MARK: - Misc UI Colors
 
     static let upgradeBlue = Color(hex: 0x60A5FA)          // Max upgrade level highlight

@@ -573,7 +573,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "gift.fill")
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("50 gems instantly upon purchase")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -581,7 +581,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "calendar")
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("10 gems daily for 30 days (300 total)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -589,7 +589,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "sparkles")
                         .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("7x more value than buying gems directly!")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
@@ -690,7 +690,7 @@ struct PremiumBenefitChip: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(.system(size: 16))
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
         }

@@ -7,24 +7,28 @@ struct CurrencyDisplay: View {
     var onAdd: (() -> Void)? = nil
 
     var body: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            VStack(alignment: .trailing, spacing: 4) {
-                HStack(spacing: 5) {
-                    Text("\u{1FA99}")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                    Text(formatGold(gold))
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                }
+        HStack(spacing: LayoutConstants.spaceMD) {
+            // Gold
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("icon-gold")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+                Text(formatGold(gold))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+            }
 
-                if let gems = gems, gems > 0 {
-                    HStack(spacing: 5) {
-                        Text("\u{1F48E}")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                        Text("\(gems)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                            .foregroundStyle(DarkFantasyTheme.cyan)
-                    }
+            // Gems
+            if let gems = gems, gems > 0 {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image("icon-gems")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 18, height: 18)
+                    Text("\(gems)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.cyan)
                 }
             }
 

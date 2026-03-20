@@ -40,6 +40,23 @@ export async function GET(req: NextRequest) {
             sortOrder: true,
           },
         },
+        drops: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                itemName: true,
+                itemType: true,
+                rarity: true,
+                itemLevel: true,
+                imageUrl: true,
+                imageKey: true,
+                description: true,
+              },
+            },
+          },
+          orderBy: { dropChance: 'desc' },
+        },
       },
     })
 
@@ -72,6 +89,22 @@ export async function GET(req: NextRequest) {
         description: b.description,
         image_url: b.imageUrl,
         floor_number: b.floorNumber,
+      })),
+      drops: d.drops.map((dr) => ({
+        id: dr.id,
+        drop_chance: dr.dropChance,
+        min_quantity: dr.minQuantity,
+        max_quantity: dr.maxQuantity,
+        item: {
+          id: dr.item.id,
+          name: dr.item.itemName,
+          type: dr.item.itemType,
+          rarity: dr.item.rarity,
+          level: dr.item.itemLevel,
+          image_url: dr.item.imageUrl,
+          image_key: dr.item.imageKey,
+          description: dr.item.description,
+        },
       })),
     }))
 

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DungeonRoomDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var vm: DungeonRoomViewModel?
 
     // Animation states
@@ -54,7 +55,19 @@ struct DungeonRoomDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                HubLogoButton()
+                Button {
+                    if !appState.mainPath.isEmpty {
+                        appState.mainPath.removeLast()
+                    }
+                } label: {
+                    Image("ui-arrow-left")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
+                .frame(minWidth: LayoutConstants.touchMin, minHeight: LayoutConstants.touchMin)
             }
             ToolbarItem(placement: .principal) {
                 Text(vm?.dungeon?.name.uppercased() ?? "DUNGEON")
@@ -76,7 +89,7 @@ struct DungeonRoomDetailView: View {
         }
         .task {
             if vm == nil {
-                vm = DungeonRoomViewModel(appState: appState)
+                vm = DungeonRoomViewModel(appState: appState, cache: cache)
             }
             await vm?.loadState()
         }
@@ -119,9 +132,19 @@ struct DungeonRoomDetailView: View {
     @ViewBuilder
     private var compactHeroWidget: some View {
         if let char = appState.currentCharacter {
-            HubCharacterCard(character: char, showChevron: false)
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, LayoutConstants.spaceSM)
+            UnifiedHeroWidget(
+                character: char,
+                context: .dungeon,
+                showCurrencies: false,
+                onUseHealthPotion: {
+                    Task { await useHealthPotion() }
+                },
+                onUseStaminaPotion: {
+                    Task { await useStaminaPotion() }
+                }
+            )
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.top, LayoutConstants.spaceSM)
         }
     }
 
@@ -276,7 +299,7 @@ struct DungeonRoomDetailView: View {
         )
 
         GeometryReader { geo in
-            let cardWidth = geo.size.width - 2 * LayoutConstants.screenPadding
+            let cardWidth = max(geo.size.width - 2 * LayoutConstants.screenPadding, 0)
             let cardHeight: CGFloat = 520
 
             TabView(selection: selection) {
@@ -520,7 +543,7 @@ struct DungeonRoomDetailView: View {
     @ViewBuilder
     private func lootSection(loot: [LootPreview]) -> some View {
         // Calculate cell width to match inventory/shop icon size
-        let cellWidth = (UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols)
+        let cellWidth = max((UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols), 0)
 
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack {
@@ -750,6 +773,44 @@ struct DungeonRoomDetailView: View {
             .repeatForever(autoreverses: true)
         ) {
             currentNodePulse = true
+        }
+    }
+
+    // MARK: - Potion Usage
+
+    private func useHealthPotion() async {
+        guard let cachedInventory = appState.cachedInventory else { return }
+        guard let healthPotion = cachedInventory.first(where: { $0.consumableType?.contains("health_potion") == true }) else {
+            appState.showToast("No health potions available", type: .error)
+            return
+        }
+
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(inventoryId: healthPotion.id, consumableType: healthPotion.consumableType)
+
+        if success {
+            appState.invalidateCache("inventory")
+            appState.showToast("Health restored!", type: .reward)
+        } else {
+            appState.showToast("Failed to use health potion", type: .error)
+        }
+    }
+
+    private func useStaminaPotion() async {
+        guard let cachedInventory = appState.cachedInventory else { return }
+        guard let staminaPotion = cachedInventory.first(where: { $0.consumableType?.contains("stamina_potion") == true }) else {
+            appState.showToast("No stamina potions available", type: .error)
+            return
+        }
+
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(inventoryId: staminaPotion.id, consumableType: staminaPotion.consumableType)
+
+        if success {
+            appState.invalidateCache("inventory")
+            appState.showToast("Stamina restored!", type: .reward)
+        } else {
+            appState.showToast("Failed to use stamina potion", type: .error)
         }
     }
 }

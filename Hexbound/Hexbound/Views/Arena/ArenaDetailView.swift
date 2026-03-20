@@ -23,27 +23,30 @@ struct ArenaDetailView: View {
 
             if let vm {
                 VStack(spacing: 0) {
-                    staminaBar(vm)
-
                 ScrollView {
                     VStack(spacing: LayoutConstants.spaceLG) {
                         // Active quest banner
                         ActiveQuestBanner(questTypes: ["pvp_wins"])
                             .padding(.horizontal, LayoutConstants.screenPadding)
 
-                        // Arena Header (Rating, Record, Rank)
-                        arenaHeader(vm)
+                        // Unified Hero Widget (replaces staminaBar + arenaHeader + HubCharacterCardWrapper)
+                        if let char = appState.currentCharacter {
+                            UnifiedHeroWidget(
+                                character: char,
+                                context: .arena,
+                                onTap: { appState.mainPath.append(AppRoute.hero) },
+                                onUseHealthPotion: {
+                                    Task { await useHealthPotion() }
+                                },
+                                onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                            )
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                        }
 
                         // Current stance indicator
                         if let stance = appState.currentCharacter?.combatStance {
                             stancePreview(stance)
                                 .tutorialAnchor(.arenaStance)
-                        }
-
-                        // Character card (from Hub)
-                        if let char = appState.currentCharacter {
-                            HubCharacterCardWrapper(character: char)
-                                .padding(.horizontal, LayoutConstants.screenPadding)
                         }
 
                         GoldDivider()
@@ -148,92 +151,37 @@ struct ArenaDetailView: View {
         }
     }
 
-    // MARK: - Stamina Bar
+    // MARK: - Health Potion Handler
 
-    @ViewBuilder
-    private func staminaBar(_ vm: ArenaViewModel) -> some View {
-        let current = vm.currentStamina
-        let max = vm.maxStamina
-        let fraction = max > 0 ? Double(current) / Double(max) : 0
+    private func useHealthPotion() async {
+        // Find the first available health potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
+        }
 
-        Button {
-            vm.goToShop()
-        } label: {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
-                    .foregroundStyle(DarkFantasyTheme.stamina)
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No health potions", subtitle: "Buy potions at the shop", type: .error)
+            return
+        }
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(DarkFantasyTheme.bgDarkPanel)
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(DarkFantasyTheme.staminaGradient)
-                            .frame(width: geo.size.width * fraction)
-                    }
-                }
-                .frame(height: 6)
+        let hpBefore = appState.currentCharacter?.currentHp ?? 0
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
 
-                Text("\(current)/\(max)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.stamina)
-                    .monospacedDigit()
-
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16)) // SF Symbol icon — keep
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-            }
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
+        if success {
+            let hpAfter = appState.currentCharacter?.currentHp ?? 0
+            let healAmount = hpAfter - hpBefore
+            appState.showToast(
+                "+\(healAmount) HP restored!",
+                type: .reward
             )
         }
-        .buttonStyle(.scalePress(0.97))
-        .contentShape(Rectangle())
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.top, LayoutConstants.spaceSM)
-        .padding(.bottom, LayoutConstants.spaceSM)
-    }
-
-    // MARK: - Arena Header
-
-    @ViewBuilder
-    private func arenaHeader(_ vm: ArenaViewModel) -> some View {
-        HStack(spacing: 0) {
-            arenaPvpStat("RATING", value: "\(vm.pvpRating)", color: DarkFantasyTheme.xpRing)
-            arenaPvpStat("RECORD", value: "\(vm.character?.pvpWins ?? 0)W / \(vm.character?.pvpLosses ?? 0)L", color: DarkFantasyTheme.textPrimary)
-            arenaPvpStat("RANK", value: vm.character?.rankName ?? vm.rank.rawValue, color: DarkFantasyTheme.arenaRankGold)
-        }
-        .padding(LayoutConstants.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DarkFantasyTheme.bgDarkPanel)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 1)
-        )
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
-    @ViewBuilder
-    private func arenaPvpStat(_ label: String, value: String, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            Text(value)
-                .font(DarkFantasyTheme.section(size: 14))
-                .foregroundStyle(color)
-            Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
-                .foregroundStyle(DarkFantasyTheme.textDimLabel)
-        }
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Stance Preview

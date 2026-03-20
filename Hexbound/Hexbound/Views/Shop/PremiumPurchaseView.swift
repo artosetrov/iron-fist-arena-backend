@@ -118,7 +118,7 @@ struct PremiumPurchaseView: View {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "crown.fill")
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("PREMIUM")
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
