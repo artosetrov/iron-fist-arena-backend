@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
       activeEvents,
       userRecord,
       hubLayoutConfig,
+      dungeonMapLayoutConfig,
     ] = await Promise.all([
       prisma.character.findUnique({
         where: { id: characterId },
@@ -166,6 +167,10 @@ export async function GET(req: NextRequest) {
       }),
       prisma.gameConfig.findUnique({
         where: { key: 'hub_layout' },
+        select: { value: true },
+      }),
+      prisma.gameConfig.findUnique({
+        where: { key: 'dungeon_map_layout' },
         select: { value: true },
       }),
     ])
@@ -294,6 +299,7 @@ export async function GET(req: NextRequest) {
       config,
       featureFlags,
       hubLayout: hubLayoutConfig?.value ?? {},
+      dungeonMapLayout: dungeonMapLayoutConfig?.value ?? {},
       serverTime: now.toISOString(),
     })
   } catch (error) {

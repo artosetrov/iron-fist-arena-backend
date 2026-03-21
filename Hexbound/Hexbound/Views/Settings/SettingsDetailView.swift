@@ -13,15 +13,19 @@ struct SettingsDetailView: View {
 
             if let vm {
                 ScrollView {
-                    VStack(spacing: LayoutConstants.spaceLG) {
+                    VStack(spacing: LayoutConstants.sectionGap) {
                         audioSection(vm: vm)
+                            .staggeredAppear(index: 0)
                         notificationsSection(vm: vm)
-                        languageSection(vm: vm)
+                            .staggeredAppear(index: 1)
                         accountSection(vm: vm)
+                            .staggeredAppear(index: 2)
                         #if DEBUG
                         devToolsSection
+                            .staggeredAppear(index: 3)
                         #endif
                         versionLabel
+                            .staggeredAppear(index: 4)
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceMD)
@@ -121,38 +125,6 @@ struct SettingsDetailView: View {
         }
     }
 
-    // MARK: - Language
-
-    @ViewBuilder
-    private func languageSection(vm: SettingsViewModel) -> some View {
-        settingsCard {
-            sectionHeader("Language")
-
-            Menu {
-                ForEach(0..<SettingsViewModel.languageNames.count, id: \.self) { index in
-                    Button(SettingsViewModel.languageNames[index]) {
-                        vm.selectedLanguageIndex = index
-                    }
-                }
-            } label: {
-                HStack {
-                    Text(SettingsViewModel.languageNames[vm.selectedLanguageIndex])
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .frame(height: LayoutConstants.buttonHeightMD)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
-                        .fill(DarkFantasyTheme.bgTertiary)
-                )
-            }
-        }
-    }
-
     // MARK: - Account
 
     @ViewBuilder
@@ -247,6 +219,24 @@ struct SettingsDetailView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.scalePress(0.97))
+
+            Button {
+                appState.mainPath.append(AppRoute.dungeonMapEditor)
+            } label: {
+                HStack {
+                    Image(systemName: "map.fill")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    Text("Dungeon Map Editor")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .frame(height: LayoutConstants.buttonHeightMD)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.scalePress(0.97))
         }
     }
     #endif
@@ -290,5 +280,8 @@ struct SettingsDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
         }
         .tint(DarkFantasyTheme.gold)
+        .accessibilityLabel(label)
+        .accessibilityValue(isOn.wrappedValue ? "enabled" : "disabled")
+        .accessibilityAddTraits(.isToggle)
     }
 }

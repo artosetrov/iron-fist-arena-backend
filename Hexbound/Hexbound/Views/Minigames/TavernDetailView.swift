@@ -19,7 +19,7 @@ struct TavernDetailView: View {
                     // Minigame cards
                     VStack(spacing: LayoutConstants.spaceSM) {
                         TavernGameCard(
-                            icon: "🐚",
+                            icon: "checkmark.circle",
                             title: "SHELL GAME",
                             subtitle: "Bet gold, find the ball. Double or nothing.",
                             accentColor: DarkFantasyTheme.gold
@@ -28,16 +28,7 @@ struct TavernDetailView: View {
                         }
 
                         TavernGameCard(
-                            icon: "⛏️",
-                            title: "GOLD MINE",
-                            subtitle: "Send miners to dig. Collect gold over time.",
-                            accentColor: DarkFantasyTheme.stamina
-                        ) {
-                            appState.mainPath.append(AppRoute.goldMine)
-                        }
-
-                        TavernGameCard(
-                            icon: "💀",
+                            icon: "person.slash",
                             title: "DUNGEON RUSH",
                             subtitle: "Endless waves. How far can you go?",
                             accentColor: DarkFantasyTheme.danger

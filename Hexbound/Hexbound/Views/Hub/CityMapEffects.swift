@@ -8,21 +8,21 @@ struct LanternGlowLayer: View {
     // Lantern positions (relative 0…1 on terrain) — matched to image
     private let lanterns: [(x: CGFloat, y: CGFloat, color: Color, radius: CGFloat)] = [
         // Gate torches (large, warm)
-        (0.385, 0.52, Color(hex: 0xFF6600), 25),
-        (0.435, 0.52, Color(hex: 0xFF6600), 25),
+        (0.385, 0.52, DarkFantasyTheme.glowFire, 25),
+        (0.435, 0.52, DarkFantasyTheme.glowFire, 25),
         // Left wall lanterns
-        (0.22, 0.55, Color(hex: 0xFFAA33), 14),
-        (0.30, 0.48, Color(hex: 0xFFAA33), 12),
+        (0.22, 0.55, DarkFantasyTheme.glowWarm, 14),
+        (0.30, 0.48, DarkFantasyTheme.glowWarm, 12),
         // Right wall lanterns
-        (0.55, 0.50, Color(hex: 0xFFAA33), 14),
-        (0.62, 0.48, Color(hex: 0xFFAA33), 12),
+        (0.55, 0.50, DarkFantasyTheme.glowWarm, 14),
+        (0.62, 0.48, DarkFantasyTheme.glowWarm, 12),
         // Far right lanterns
-        (0.75, 0.55, Color(hex: 0xFFAA33), 14),
-        (0.82, 0.48, Color(hex: 0xFFAA33), 10),
+        (0.75, 0.55, DarkFantasyTheme.glowWarm, 14),
+        (0.82, 0.48, DarkFantasyTheme.glowWarm, 10),
         // Tavern area warm glow
-        (0.65, 0.58, Color(hex: 0xFF8833), 20),
+        (0.65, 0.58, DarkFantasyTheme.glowEmber, 20),
         // Arena entrance lights
-        (0.70, 0.35, Color(hex: 0xFFCC44), 16),
+        (0.70, 0.35, DarkFantasyTheme.glowTreasure, 16),
     ]
 
     var body: some View {
@@ -99,9 +99,9 @@ struct FogLayer: View {
         LinearGradient(
             colors: [
                 .clear,
-                Color(hex: 0x2A2A3A).opacity(opacity),
-                Color(hex: 0x1A1A2A).opacity(opacity * 1.5),
-                Color(hex: 0x0A0A15).opacity(opacity * 2),
+                DarkFantasyTheme.fogLight.opacity(opacity),
+                DarkFantasyTheme.fogMid.opacity(opacity * 1.5),
+                DarkFantasyTheme.fogDark.opacity(opacity * 2),
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -111,119 +111,6 @@ struct FogLayer: View {
 }
 
 // MARK: - Cloud Layer (top, drifting slowly)
-
-struct CloudLayer: View {
-    let width: CGFloat
-    let height: CGFloat
-
-    var body: some View {
-        ZStack {
-            DriftingCloud(relX: 0.15, relY: 0.05, cloudWidth: 120, opacity: 0.12, speed: 35)
-            DriftingCloud(relX: 0.45, relY: 0.08, cloudWidth: 180, opacity: 0.08, speed: 50)
-            DriftingCloud(relX: 0.75, relY: 0.03, cloudWidth: 140, opacity: 0.10, speed: 40)
-            DriftingCloud(relX: 0.30, relY: 0.12, cloudWidth: 100, opacity: 0.06, speed: 60)
-            DriftingCloud(relX: 0.85, relY: 0.10, cloudWidth: 160, opacity: 0.09, speed: 45)
-        }
-        .frame(width: width, height: height * 0.25)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .allowsHitTesting(false)
-    }
-}
-
-struct DriftingCloud: View {
-    let relX: CGFloat
-    let relY: CGFloat
-    let cloudWidth: CGFloat
-    let opacity: Double
-    let speed: Double
-    @State private var drift: CGFloat = 0
-
-    var body: some View {
-        Ellipse()
-            .fill(Color.gray.opacity(opacity))
-            .frame(width: cloudWidth, height: cloudWidth * 0.3)
-            .blur(radius: 20)
-            .offset(x: drift)
-            .position(x: relX * 1000, y: relY * 400) // relative to cloud layer frame
-            .onAppear {
-                // Start at random offset
-                drift = CGFloat.random(in: -30...30)
-                withAnimation(.linear(duration: speed).repeatForever(autoreverses: true)) {
-                    drift = CGFloat.random(in: -60...60)
-                }
-            }
-    }
-}
-
-// MARK: - Moon with Shimmer + Parallax
-
-struct MoonView: View {
-    let scrollProgress: CGFloat // 0…1
-    let viewWidth: CGFloat
-    let viewHeight: CGFloat
-
-    @State private var shimmer: CGFloat = 0.7
-
-    // Parallax: moon moves slower than scroll (opposite direction creates depth)
-    private var moonX: CGFloat {
-        let center = viewWidth * 0.5
-        let parallaxRange: CGFloat = viewWidth * 0.15
-        return center + (scrollProgress - 0.5) * parallaxRange
-    }
-
-    var body: some View {
-        ZStack {
-            // Outer glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(hex: 0xCCCCDD).opacity(shimmer * 0.15),
-                            Color(hex: 0x8888AA).opacity(shimmer * 0.05),
-                            .clear
-                        ],
-                        center: .center,
-                        startRadius: 10,
-                        endRadius: 60
-                    )
-                )
-                .frame(width: 120, height: 120)
-                .blendMode(.screen)
-
-            // Moon disc
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(hex: 0xE8E0D0).opacity(shimmer),
-                            Color(hex: 0xBBB8A8).opacity(shimmer * 0.8),
-                            Color(hex: 0x999080).opacity(shimmer * 0.4),
-                        ],
-                        center: UnitPoint(x: 0.4, y: 0.35),
-                        startRadius: 2,
-                        endRadius: 18
-                    )
-                )
-                .frame(width: 28, height: 28)
-
-            // Crescent shadow overlay
-            Circle()
-                .fill(Color.black.opacity(0.5))
-                .frame(width: 28, height: 28)
-                .offset(x: 6, y: -2)
-                .mask(
-                    Circle().frame(width: 28, height: 28)
-                )
-        }
-        .position(x: moonX, y: viewHeight * 0.08)
-        .allowsHitTesting(false)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
-                shimmer = 0.95
-            }
-        }
-    }
-}
 
 // MARK: - Wind Particles
 
@@ -252,7 +139,7 @@ struct WindParticlesLayer: View {
 
                     context.stroke(
                         path,
-                        with: .color(Color.white.opacity(alpha)),
+                        with: .color(DarkFantasyTheme.textPrimary.opacity(alpha)),
                         lineWidth: 0.5
                     )
                 }

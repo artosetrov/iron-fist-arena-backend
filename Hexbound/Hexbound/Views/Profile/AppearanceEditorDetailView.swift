@@ -224,7 +224,7 @@ struct AppearanceEditorDetailView: View {
                             Text("\(skin.priceGems)")
                                 .font(DarkFantasyTheme.body(size: 10))
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
                         .background(
@@ -246,7 +246,7 @@ struct AppearanceEditorDetailView: View {
         GeometryReader { geo in
             let spacing: CGFloat = 8
             let sideSize: CGFloat = 64
-            let avatarSize: CGFloat = min(geo.size.width - sideSize * 2 - spacing * 4, 220)
+            let avatarSize: CGFloat = max(min(geo.size.width - sideSize * 2 - spacing * 4, 220), 0)
 
             HStack(alignment: .center, spacing: spacing) {
                 // Left column: gender toggle (top) + left arrow (bottom)

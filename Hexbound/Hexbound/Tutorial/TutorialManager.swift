@@ -69,6 +69,36 @@ enum TutorialStep: String, CaseIterable {
         case .dungeonEntry:     return .top
         }
     }
+
+    /// NPC name displayed in storytelling dialogue
+    var npcName: String {
+        switch self {
+        case .shopGems:         return "Merchant"
+        case .arenaOpponent, .arenaStance: return "Arena Master"
+        case .dungeonEntry:     return "Dungeon Keeper"
+        default:                return "Guide"
+        }
+    }
+
+    /// NPC image asset for storytelling portrait
+    var npcImageAsset: String {
+        switch self {
+        case .shopGems:         return "shopkeeper"
+        case .arenaOpponent, .arenaStance: return "npc-arena-master"
+        case .dungeonEntry:     return "npc-dungeon-keeper"
+        default:                return "shopkeeper"
+        }
+    }
+
+    /// SF Symbol fallback if NPC image asset is missing
+    var npcFallbackIcon: String {
+        switch self {
+        case .shopGems:         return "bag.fill"
+        case .arenaOpponent, .arenaStance: return "shield.lefthalf.filled"
+        case .dungeonEntry:     return "door.left.hand.open"
+        default:                return "person.fill"
+        }
+    }
 }
 
 // MARK: - Tutorial Manager

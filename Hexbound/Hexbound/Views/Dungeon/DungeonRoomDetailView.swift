@@ -2,11 +2,26 @@ import SwiftUI
 
 struct DungeonRoomDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
+    @Environment(\.dismiss) private var dismiss
     @State private var vm: DungeonRoomViewModel?
 
     // Animation states
     @State private var currentNodePulse = false
     @State private var shinePhase: CGFloat = -0.5
+
+    // Boss card juice animations
+    @State private var borderGlowPhase: Bool = false
+    @State private var bossBreathing: Bool = false
+    @State private var cardAppeared: Bool = false
+    @State private var borderRotation: Double = 0
+    @State private var juiceStarted: Bool = false
+
+    // Boss fight slam overlay states
+    @State private var showBossFightSlam = false
+    @State private var bossSlamScale: CGFloat = MotionConstants.vsScaleFrom
+    @State private var bossSlamOpacity: Double = 0
+    @State private var bossSlamBgOpacity: Double = 0
 
     // Modal states
     @State private var selectedLootItem: LootPreview? = nil
@@ -31,6 +46,10 @@ struct DungeonRoomDetailView: View {
             if let vm {
                 if vm.isLoading {
                     ProgressView().tint(DarkFantasyTheme.gold)
+                } else if vm.errorMessage != nil {
+                    ErrorStateView.loadFailed {
+                        Task { await vm.loadState() }
+                    }
                 } else {
                     VStack(spacing: 0) {
                         // 1. Compact hero widget
@@ -50,11 +69,26 @@ struct DungeonRoomDetailView: View {
                     }
                 }
             }
+
+            // BOSS FIGHT slam overlay
+            if showBossFightSlam {
+                bossFightSlamOverlay
+            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                HubLogoButton()
+                Button {
+                    dismiss()
+                } label: {
+                    Image("ui-arrow-left")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
+                .frame(minWidth: LayoutConstants.touchMin, minHeight: LayoutConstants.touchMin)
             }
             ToolbarItem(placement: .principal) {
                 Text(vm?.dungeon?.name.uppercased() ?? "DUNGEON")
@@ -68,6 +102,7 @@ struct DungeonRoomDetailView: View {
                         .font(.system(size: 18))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {
@@ -76,7 +111,7 @@ struct DungeonRoomDetailView: View {
         }
         .task {
             if vm == nil {
-                vm = DungeonRoomViewModel(appState: appState)
+                vm = DungeonRoomViewModel(appState: appState, cache: cache)
             }
             await vm?.loadState()
         }
@@ -102,7 +137,7 @@ struct DungeonRoomDetailView: View {
             titleVisibility: .visible
         ) {
             Button("Fight (\(vm?.dungeon?.energyCost ?? 10) Energy)") {
-                Task { await vm?.fight() }
+                triggerBossFightSlam()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -119,9 +154,19 @@ struct DungeonRoomDetailView: View {
     @ViewBuilder
     private var compactHeroWidget: some View {
         if let char = appState.currentCharacter {
-            HubCharacterCard(character: char, showChevron: false)
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, LayoutConstants.spaceSM)
+            UnifiedHeroWidget(
+                character: char,
+                context: .dungeon,
+                showCurrencies: false,
+                onUseHealthPotion: {
+                    Task { await useHealthPotion() }
+                },
+                onUseStaminaPotion: {
+                    Task { await useStaminaPotion() }
+                }
+            )
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.top, LayoutConstants.spaceSM)
         }
     }
 
@@ -136,21 +181,28 @@ struct DungeonRoomDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Progress text + badge + cost
             HStack {
-                Text("\(defeated)/\(total)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                HStack(spacing: 0) {
+                    NumberTickUpText(
+                        value: defeated,
+                        color: DarkFantasyTheme.textPrimary,
+                        font: DarkFantasyTheme.section(size: LayoutConstants.textBody)
+                    )
+                    Text("/\(total)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                }
 
                 if vm.isDungeonComplete {
                     Text("Complete!")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(completedGreen))
                 } else {
                     Text("\(pctInt)%")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(accentOrange))
@@ -184,6 +236,7 @@ struct DungeonRoomDetailView: View {
         HStack(spacing: LayoutConstants.spaceXS) {
             ForEach(0..<bosses.count, id: \.self) { i in
                 miniNode(index: i, boss: bosses[i], size: nodeSize, vm: vm)
+                    .staggeredAppear(index: i)
             }
         }
     }
@@ -230,7 +283,7 @@ struct DungeonRoomDetailView: View {
                 case .current:
                     Text("\(boss.id)")
                         .font(DarkFantasyTheme.body(size: 10).bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                 case .locked:
                     Text("\(boss.id)")
                         .font(DarkFantasyTheme.body(size: 10))
@@ -276,7 +329,7 @@ struct DungeonRoomDetailView: View {
         )
 
         GeometryReader { geo in
-            let cardWidth = geo.size.width - 2 * LayoutConstants.screenPadding
+            let cardWidth = max(geo.size.width - 2 * LayoutConstants.screenPadding, 0)
             let cardHeight: CGFloat = 520
 
             TabView(selection: selection) {
@@ -287,6 +340,18 @@ struct DungeonRoomDetailView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .onAppear {
+                guard !juiceStarted else { return }
+                juiceStarted = true
+                // Start looping animations once
+                borderGlowPhase = true
+                bossBreathing = true
+                cardAppeared = true
+                // Rotating border animation
+                withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                    borderRotation = 360
+                }
+            }
         }
     }
 
@@ -294,30 +359,31 @@ struct DungeonRoomDetailView: View {
     private func bossCard(boss: BossInfo, bossIndex: Int, vm: DungeonRoomViewModel, cardWidth: CGFloat, cardHeight: CGFloat) -> some View {
         let state = vm.bossState(at: bossIndex)
         let borderColor = bossCardBorderColor(state: state)
+        let isActive = state == .current
 
         ZStack(alignment: .top) {
-            // Boss image as card background (fixed 256pt height, shifted up)
+            // Boss image as full-width card background with breathing
             bossImageBackground(boss: boss, state: state)
-                .frame(width: cardWidth, height: 256)
+                .frame(width: cardWidth, height: cardHeight * 0.6)
                 .clipped()
-                .frame(width: cardWidth, height: cardHeight, alignment: .top)
-                .offset(y: 40)
+                .frame(width: cardWidth, height: cardHeight, alignment: .center)
+                .offset(y: -cardHeight * 0.05)
 
-            // Top + bottom gradients for readability
+            // Bottom fade gradient for UI readability over image
             VStack(spacing: 0) {
-                LinearGradient(
-                    colors: [DarkFantasyTheme.bgDungeonPurple, DarkFantasyTheme.bgDungeonPurple.opacity(0.9), DarkFantasyTheme.bgDungeonPurple.opacity(0.5), .clear],
-                    startPoint: .top, endPoint: .bottom
-                )
-                .frame(height: cardHeight * 0.25)
-
                 Spacer(minLength: 0)
 
                 LinearGradient(
-                    colors: [.clear, DarkFantasyTheme.bgDungeonPurple.opacity(0.5), DarkFantasyTheme.bgDungeonPurple.opacity(0.9), DarkFantasyTheme.bgDungeonPurple],
+                    colors: [
+                        .clear,
+                        DarkFantasyTheme.bgDungeonPurple.opacity(0.3),
+                        DarkFantasyTheme.bgDungeonPurple.opacity(0.7),
+                        DarkFantasyTheme.bgDungeonPurple.opacity(0.95),
+                        DarkFantasyTheme.bgDungeonPurple
+                    ],
                     startPoint: .top, endPoint: .bottom
                 )
-                .frame(height: cardHeight * 0.55)
+                .frame(height: cardHeight * 0.45)
             }
             .frame(width: cardWidth, height: cardHeight)
 
@@ -333,11 +399,12 @@ struct DungeonRoomDetailView: View {
                                 .frame(width: 32, height: 32)
                             Image(systemName: "checkmark")
                                 .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.textPrimary)
                         }
                         .padding(.bottom, LayoutConstants.spaceXS)
                     }
 
+                    // Boss name with glow effect for active bosses
                     Text(boss.name.uppercased())
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textSection - 2))
                         .foregroundStyle(
@@ -346,13 +413,18 @@ struct DungeonRoomDetailView: View {
                                 : DarkFantasyTheme.textPrimary
                         )
                         .tracking(1)
-                        .shadow(color: .black.opacity(0.8), radius: 4)
+                        .shadow(color: .bgAbyss.opacity(0.8), radius: 4)
+                        .shadow(
+                            color: isActive ? bossBorderPurple.opacity(borderGlowPhase ? 0.8 : 0.2) : .clear,
+                            radius: borderGlowPhase ? 12 : 4
+                        )
+                        .animation(MotionConstants.glowLoop, value: borderGlowPhase)
 
                     Text(boss.description)
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).italic())
                         .foregroundStyle(DarkFantasyTheme.textBossDesc)
                         .multilineTextAlignment(.center)
-                        .shadow(color: .black.opacity(0.8), radius: 4)
+                        .shadow(color: .bgAbyss.opacity(0.8), radius: 4)
                 }
                 .padding(.horizontal, LayoutConstants.spaceMD)
                 .padding(.top, LayoutConstants.spaceLG)
@@ -387,13 +459,47 @@ struct DungeonRoomDetailView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
                 .fill(DarkFantasyTheme.bossCardGradient)
         )
+        // Animated rotating gradient border for active boss
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
-                .stroke(borderColor, lineWidth: 2)
+            ZStack {
+                // Base border
+                RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
+                    .stroke(borderColor, lineWidth: 2)
+
+                // Animated glow border for active boss
+                if isActive {
+                    RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
+                        .stroke(
+                            AngularGradient(
+                                colors: [
+                                    bossBorderPurple.opacity(0.1),
+                                    bossBorderPurple.opacity(0.9),
+                                    DarkFantasyTheme.gold.opacity(0.6),
+                                    bossBorderPurple.opacity(0.9),
+                                    bossBorderPurple.opacity(0.1)
+                                ],
+                                center: .center,
+                                angle: .degrees(borderRotation)
+                            ),
+                            lineWidth: 2
+                        )
+                        .blur(radius: 1)
+
+                    // Outer glow pulse
+                    RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius)
+                        .stroke(bossBorderPurple.opacity(borderGlowPhase ? 0.5 : 0.15), lineWidth: 4)
+                        .blur(radius: 6)
+                        .animation(MotionConstants.glowLoop, value: borderGlowPhase)
+                }
+            }
         )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.bossCardRadius))
-        .opacity(state == .locked ? 0.6 : 1.0)
-        .animation(.easeInOut(duration: 0.3), value: state == .locked)
+        // Shimmer sweep on active boss card
+        .shimmer(color: DarkFantasyTheme.gold, duration: 5, isActive: isActive)
+        // Card entrance animation (only on first appear of carousel)
+        .opacity(cardAppeared ? (state == .locked ? 0.6 : 1.0) : 0)
+        .offset(y: cardAppeared ? 0 : 20)
+        .animation(.easeOut(duration: MotionConstants.fast).delay(Double(bossIndex) * MotionConstants.cardStagger), value: cardAppeared)
     }
 
     // MARK: - Boss Card Header
@@ -429,7 +535,7 @@ struct DungeonRoomDetailView: View {
         case .defeated:
             Text("Defeated")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, 3)
                 .background(Capsule().fill(completedGreen))
@@ -437,7 +543,7 @@ struct DungeonRoomDetailView: View {
         case .current:
             Text("Ready")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, 3)
                 .background(Capsule().fill(accentOrange))
@@ -463,11 +569,11 @@ struct DungeonRoomDetailView: View {
             if UIImage(named: boss.fullImage) != nil {
                 Image(boss.fullImage)
                     .resizable()
-                    .scaledToFit()
+                    .scaledToFill()
             } else if UIImage(named: boss.portraitImage) != nil {
                 Image(boss.portraitImage)
                     .resizable()
-                    .scaledToFit()
+                    .scaledToFill()
             } else {
                 Text(boss.emoji)
                     .font(.system(size: 80))
@@ -520,7 +626,7 @@ struct DungeonRoomDetailView: View {
     @ViewBuilder
     private func lootSection(loot: [LootPreview]) -> some View {
         // Calculate cell width to match inventory/shop icon size
-        let cellWidth = (UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols)
+        let cellWidth = max((UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols), 0)
 
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack {
@@ -634,11 +740,12 @@ struct DungeonRoomDetailView: View {
             let hasEnergy = vm.stamina >= (vm.dungeon?.energyCost ?? 10)
 
             Button {
+                HapticManager.heavy()
                 showFightConfirmation = true
             } label: {
                 if vm.isFighting {
                     ProgressView()
-                        .tint(.white)
+                        .tint(.textPrimary)
                 } else {
                     VStack(spacing: LayoutConstants.space2XS) {
                         HStack(spacing: LayoutConstants.spaceSM) {
@@ -649,7 +756,7 @@ struct DungeonRoomDetailView: View {
 
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "bolt.fill")
-                                .font(.system(size: 9)) // SF Symbol icon — keep
+                                .font(.system(size: 11)) // SF Symbol icon
                             Text("\(vm.dungeon?.energyCost ?? 10) Energy")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1))
                         }
@@ -691,12 +798,75 @@ struct DungeonRoomDetailView: View {
         }
     }
 
+    // MARK: - Boss Fight Slam Overlay
+
+    @ViewBuilder
+    private var bossFightSlamOverlay: some View {
+        ZStack {
+            // Darkened background
+            DarkFantasyTheme.bgAbyss
+                .opacity(bossSlamBgOpacity)
+                .ignoresSafeArea()
+
+            // Boss name + "BOSS FIGHT" slam text
+            VStack(spacing: LayoutConstants.spaceSM) {
+                if let boss = vm?.currentBoss {
+                    Text(boss.name.uppercased())
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .tracking(3)
+                        .opacity(bossSlamOpacity)
+                }
+
+                Text("BOSS FIGHT")
+                    .font(DarkFantasyTheme.title(size: 38))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .tracking(4)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
+                    .shadow(color: .bgAbyss, radius: 4)
+                    .opacity(bossSlamOpacity)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func triggerBossFightSlam() {
+        // Reset states
+        bossSlamScale = MotionConstants.vsScaleFrom
+        bossSlamOpacity = 0
+        bossSlamBgOpacity = 0
+        showBossFightSlam = true
+
+        HapticManager.heavy()
+
+        // Phase 1: Background dims + text slams in (0→0.2s)
+        withAnimation(.easeOut(duration: MotionConstants.vsSlamDuration)) {
+            bossSlamScale = MotionConstants.vsScaleTo
+            bossSlamOpacity = 1
+            bossSlamBgOpacity = 0.7
+        }
+
+        // Phase 2: Hold for dramatic pause (0.2→0.8s), then fade out
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeIn(duration: 0.3)) {
+                bossSlamOpacity = 0
+                bossSlamBgOpacity = 0
+            }
+        }
+
+        // Phase 3: Cleanup + start fight (1.1s total)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            showBossFightSlam = false
+            Task { await vm?.fight() }
+        }
+    }
+
     // MARK: - Shine Overlay
 
     private var shineOverlay: some View {
         GeometryReader { geo in
             LinearGradient(
-                colors: [.clear, .white.opacity(0.12), .clear],
+                colors: [.clear, DarkFantasyTheme.borderSubtle, .clear],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -750,6 +920,44 @@ struct DungeonRoomDetailView: View {
             .repeatForever(autoreverses: true)
         ) {
             currentNodePulse = true
+        }
+    }
+
+    // MARK: - Potion Usage
+
+    private func useHealthPotion() async {
+        guard let cachedInventory = appState.cachedInventory else { return }
+        guard let healthPotion = cachedInventory.first(where: { $0.consumableType?.contains("health_potion") == true }) else {
+            appState.showToast("No health potions available", type: .error)
+            return
+        }
+
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(inventoryId: healthPotion.id, consumableType: healthPotion.consumableType)
+
+        if success {
+            appState.invalidateCache("inventory")
+            appState.showToast("Health restored!", type: .reward)
+        } else {
+            appState.showToast("Failed to use health potion", type: .error)
+        }
+    }
+
+    private func useStaminaPotion() async {
+        guard let cachedInventory = appState.cachedInventory else { return }
+        guard let staminaPotion = cachedInventory.first(where: { $0.consumableType?.contains("stamina_potion") == true }) else {
+            appState.showToast("No stamina potions available", type: .error)
+            return
+        }
+
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(inventoryId: staminaPotion.id, consumableType: staminaPotion.consumableType)
+
+        if success {
+            appState.invalidateCache("inventory")
+            appState.showToast("Stamina restored!", type: .reward)
+        } else {
+            appState.showToast("Failed to use stamina potion", type: .error)
         }
     }
 }

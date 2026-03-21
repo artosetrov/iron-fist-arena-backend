@@ -20,26 +20,39 @@ struct LeaderboardDetailView: View {
                         )
                     )
                     .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.vertical, LayoutConstants.spaceSM)
+                    .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
+                    .accessibilityLabel("Leaderboard tabs: \(LeaderboardViewModel.tabs.joined(separator: ", "))")
+                    .accessibilityValue("Current tab: \(LeaderboardViewModel.tabs[vm.selectedTab])")
 
                     // Your rank
                     HStack {
                         Text("Your Position:")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .accessibilityLabel("Your leaderboard position")
                         if let rank = vm.myRank {
-                            Text("#\(rank)")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.goldBright)
+                            HStack(spacing: 0) {
+                                Text("#")
+                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                                NumberTickUpText(
+                                    value: rank,
+                                    color: DarkFantasyTheme.goldBright,
+                                    font: DarkFantasyTheme.section(size: LayoutConstants.textLabel)
+                                )
+                                .accessibilityLabel("Rank \(rank)")
+                            }
                         } else {
                             Text("Not ranked")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
+                                .accessibilityLabel("You are not currently ranked")
                         }
                         Spacer()
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceSM)
+                    .accessibilityElement(children: .combine)
                     .background(DarkFantasyTheme.bgSecondary)
                     .overlay(
                         Rectangle()
@@ -49,37 +62,41 @@ struct LeaderboardDetailView: View {
                     )
 
                     // Content
-                    if vm.isLoading && vm.currentEntries.isEmpty {
+                    if vm.errorMessage != nil {
+                        ErrorStateView.loadFailed { Task { await vm.loadLeaderboard() } }
+                    } else if vm.isLoading && vm.currentEntries.isEmpty {
                         LazyVStack(spacing: LayoutConstants.spaceXS) {
-                            ForEach(0..<8, id: \.self) { _ in
+                            ForEach(0..<8, id: \.self) { index in
                                 SkeletonLeaderboardRow()
+                                    .staggeredAppear(index: index)
                             }
                         }
                         .padding(.horizontal, LayoutConstants.screenPadding)
                         .padding(.vertical, LayoutConstants.spaceSM)
                     } else if vm.currentEntries.isEmpty {
-                        Spacer()
-                        Text("No data available")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        Spacer()
+                        // TODO: Add error property to LeaderboardViewModel
+                        EmptyStateView.leaderboard
                     } else {
                         let tabKey = LeaderboardViewModel.tabKeys[vm.selectedTab]
                         ScrollViewReader { proxy in
                             ScrollView {
                                 LazyVStack(spacing: LayoutConstants.spaceXS) {
-                                    ForEach(vm.currentEntries) { entry in
+                                    ForEach(Array(vm.currentEntries.enumerated()), id: \.element.id) { index, entry in
+                                        let isMe = entry.characterId == vm.myCharacterId
                                         LeaderboardRowView(
                                             entry: entry,
-                                            isSelf: entry.characterId == vm.myCharacterId,
+                                            isSelf: isMe,
                                             valueLabel: tabKey
                                         )
                                         .id(entry.characterId)
+                                        .staggeredAppear(index: index)
+                                        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.3, isActive: isMe)
                                     }
                                 }
                                 .padding(.horizontal, LayoutConstants.screenPadding)
                                 .padding(.vertical, LayoutConstants.spaceSM)
                             }
+                            .transition(.opacity.combined(with: .scale(scale: 0.98)))
                             .onChange(of: vm.currentEntries.count) {
                                 scrollToSelf(proxy: proxy, vm: vm)
                             }

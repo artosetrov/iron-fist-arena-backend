@@ -19,6 +19,10 @@ enum LayoutConstants {
     static let spaceXL: CGFloat = 32   // Screen section breaks
     static let space2XL: CGFloat = 48  // Hero areas, dramatic spacing
 
+    /// Gap between major content blocks on a screen (widget → stance → tabs, etc.)
+    /// Use this instead of spaceLG for the main ScrollView VStack spacing.
+    static let sectionGap: CGFloat = 16
+
     // MARK: - Component Sizing
 
     // Buttons
@@ -44,6 +48,9 @@ enum LayoutConstants {
     static let avatarSizeLG: CGFloat = 72        // Hub, profile
     static let avatarSizeMD: CGFloat = 56        // Combat, leaderboard
     static let avatarSizeSM: CGFloat = 40        // Lists, chat
+
+    // Tab Switcher
+    static let tabSwitcherPaddingV: CGFloat = 8  // Vertical gap above & below TabSwitcher (== spaceSM)
 
     // Navigation
     static let bottomNavHeight: CGFloat = 64
@@ -77,9 +84,9 @@ enum LayoutConstants {
     static let textCard: CGFloat = 18
     static let textButton: CGFloat = 18
     static let textBody: CGFloat = 16
-    static let textLabel: CGFloat = 14
-    static let textCaption: CGFloat = 12
-    static let textBadge: CGFloat = 11
+    static let textLabel: CGFloat = 16          // was 14 — minimum 16px rule
+    static let textCaption: CGFloat = 16        // was 12 — minimum 16px rule
+    static let textBadge: CGFloat = 16          // was 11 — minimum 16px rule
 
     // MARK: - Compact Card Sizing
 
@@ -110,19 +117,33 @@ enum LayoutConstants {
     static let pillSpacing: CGFloat = 8            // Gap between pills in row-3
 
     // Widget Avatar
-    static let widgetAvatarSize: CGFloat = 48      // Matches touchMin (48×48)
+    static let widgetAvatarFullSize: CGFloat = 72  // Full-height avatar (1:1 square, matches content height)
+    static let widgetAvatarSize: CGFloat = 48      // Legacy small avatar
     static let widgetAvatarRadius: CGFloat = 8     // Rounded square corners
     static let widgetXpRingInset: CGFloat = 4      // SVG offset from avatar edge
     static let widgetXpRingWidth: CGFloat = 3      // Stroke width for XP border
     static let widgetLevelBadgeFont: CGFloat = 11  // Matches textBadge
+    static let widgetBarHeight: CGFloat = 22         // HP/Stamina bars with text inside
+    static let widgetBarRadius: CGFloat = 6          // Bar corner radius
+    static let widgetBarFont: CGFloat = 11           // Text inside bars (matches textBadge)
 
-    // MARK: - Merchant Strip
+    // MARK: - NPC Guide Widget (reusable: merchant, arena coach, dungeon guide, etc.)
+    // Use these tokens for any NPC tip/tutorial widget across screens.
 
-    static let merchantAvatarSize: CGFloat = 64       // Large portrait, breaks out of strip
-    static let merchantAvatarOverflow: CGFloat = 28    // How far avatar extends above strip
-    static let merchantMiniSize: CGFloat = 56          // Collapsed floating avatar (== avatarSizeMD)
-    static let merchantStripMinHeight: CGFloat = 56    // Strip content height
-    static let merchantBubbleRadius: CGFloat = 8       // Speech bubble corners (== panelRadius)
+    static let npcAvatarSize: CGFloat = 256           // Full NPC portrait (no frame, no clip)
+    static let npcAvatarOffset: CGFloat = -30         // Shift avatar up so it peeks above the bar
+    static let npcBarHeight: CGFloat = 90             // Fixed speech bar height (title + 2-line body + padding)
+    static let npcBarRadius: CGFloat = 12             // Rounded corners for widget card (matches widgetRadius)
+    static let npcBarPaddingH: CGFloat = 16           // Horizontal inner padding (matches screenPadding)
+    static let npcBarPaddingV: CGFloat = 12           // Vertical inner padding (matches widgetPadding)
+    static let npcMiniSize: CGFloat = 56              // Collapsed floating avatar (matches avatarSizeMD)
+    static let npcOuterPadding: CGFloat = 16          // Equal padding: left, right, bottom (matches screenPadding)
+
+    // Legacy aliases (kept for backward compat — prefer npc* tokens)
+    static let merchantAvatarSize: CGFloat = npcAvatarSize
+    static let merchantMiniSize: CGFloat = npcMiniSize
+    static let merchantBarHeight: CGFloat = npcBarHeight
+    static let merchantBubbleRadius: CGFloat = npcBarRadius
 
     // MARK: - Package Cards (Currency Purchase)
 
@@ -131,4 +152,37 @@ enum LayoutConstants {
     static let packagePriceBtnHeight: CGFloat = 48     // Price button height (== touchMin)
     static let packageAmountFont: CGFloat = 22         // Amount text size
     static let packageBestValueAmountFont: CGFloat = 26 // Best Value amount text size
+
+    // MARK: - Arena Opponent Card (Premium Redesign)
+
+    static let arenaCardRadius: CGFloat = 16
+    static let arenaCardPadding: CGFloat = 16
+    static let arenaCardPaddingTop: CGFloat = 20
+    static let arenaAvatarSize: CGFloat = 120       // Enlarged portrait
+    static let arenaAvatarRadius: CGFloat = 14
+    static let arenaCardGap: CGFloat = 16           // Horizontal gap between cards
+    static let arenaBadgePadding: CGFloat = 10
+    static let arenaRatingFont: CGFloat = 26        // Dominant power value
+    static let arenaNameFont: CGFloat = 16          // Strong player name
+    static let arenaClassFont: CGFloat = 13         // Secondary class/level
+    static let arenaStatFont: CGFloat = 14          // Stat values
+    static let arenaStatLabelFont: CGFloat = 12     // Stat labels
+    static let arenaDifficultyFont: CGFloat = 11    // Difficulty badge
+    static let arenaGlowRadius: CGFloat = 12        // Animated border glow
+    static let arenaShimmerWidth: CGFloat = 80       // Shimmer band width
+
+    // MARK: - Hero Integrated Card
+
+    static let heroCardRadius: CGFloat = 12
+    static let heroCardPadding: CGFloat = 12
+    static let heroSlotSize: CGFloat = 84          // same as inventory cell
+    static let heroSlotGap: CGFloat = 8            // same as inventoryGap
+    static let heroPortraitSideGap: CGFloat = 16  // breathing room between portrait and side slots
+    static let heroSlotRadius: CGFloat = 12        // same as cardRadius
+    static let heroBarHeight: CGFloat = 24         // HP bar with text inside
+    static let heroBarXpHeight: CGFloat = 20       // XP bar with text inside
+    static let heroBarRadius: CGFloat = 4
+    static let heroBarFont: CGFloat = 11           // text inside bars
+    static let heroPortraitNameFont: CGFloat = 16  // name overlay on portrait
+    static let heroBottomSlots: Int = 4            // Ring, Weapon, Relic, Belt
 }

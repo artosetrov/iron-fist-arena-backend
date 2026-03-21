@@ -36,6 +36,9 @@ struct BattlePassDetailView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                         .padding(.vertical, LayoutConstants.spaceSM)
                     }
+                } else if vm.errorMessage != nil {
+                    // TODO: Add error property to ViewModel
+                    ErrorStateView.loadFailed { Task { await vm.loadBattlePass() } }
                 } else if let _ = vm.data {
                     ScrollView {
                         VStack(spacing: LayoutConstants.spaceMD) {
@@ -68,9 +71,7 @@ struct BattlePassDetailView: View {
                         .padding(.vertical, LayoutConstants.spaceSM)
                     }
                 } else {
-                    Text("No battle pass data")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    EmptyStateView.generic(title: "No Battle Pass", message: "The battle pass isn't available right now. Check back later!")
                 }
             }
         }
@@ -99,15 +100,18 @@ struct BattlePassDetailView: View {
             Text(vm.seasonName)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .accessibilityLabel("Season: \(vm.seasonName)")
 
             HStack {
                 Text("Level \(vm.currentLevel)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .accessibilityLabel("Battle Pass level \(vm.currentLevel)")
                 Spacer()
                 Text("\(vm.currentXp) / \(vm.xpToNext) XP")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .accessibilityLabel("Experience: \(vm.currentXp) of \(vm.xpToNext)")
             }
         }
     }
@@ -123,9 +127,15 @@ struct BattlePassDetailView: View {
                 RoundedRectangle(cornerRadius: 4)
                     .fill(DarkFantasyTheme.progressGradient)
                     .frame(width: geo.size.width * vm.xpProgress)
+                    .animation(
+                        .easeOut(duration: MotionConstants.progressFillDuration(deltaPercent: vm.xpProgress * 100)),
+                        value: vm.xpProgress
+                    )
             }
         }
         .frame(height: 10)
+        .accessibilityLabel("Experience progress")
+        .accessibilityValue("\(Int(vm.xpProgress * 100))% complete")
     }
 
     // MARK: - Premium Button
@@ -147,6 +157,8 @@ struct BattlePassDetailView: View {
         }
         .buttonStyle(.primary)
         .disabled(vm.isBuyingPremium)
+        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: !vm.isBuyingPremium)
+        .shimmer(color: DarkFantasyTheme.gold, duration: 3)
     }
 
     // MARK: - Reward Track
@@ -161,15 +173,18 @@ struct BattlePassDetailView: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        ForEach(rewards) { reward in
+                        ForEach(Array(rewards.enumerated()), id: \.element.id) { index, reward in
                             BPRewardNodeView(
                                 reward: reward,
                                 state: vm.rewardState(reward),
                                 isClaiming: vm.claimingLevel == reward.level
                             ) {
+                                HapticManager.medium()
+                                SFXManager.shared.play(.uiRewardClaim)
                                 Task { await vm.claimReward(reward) }
                             }
                             .id(reward.level)
+                            .staggeredAppear(index: index)
                         }
                     }
                     .padding(.vertical, LayoutConstants.spaceXS)

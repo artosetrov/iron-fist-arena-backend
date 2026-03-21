@@ -7,28 +7,28 @@ struct NameStepView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: LayoutConstants.spaceLG) {
-                Text("CHOOSE YOUR NAME")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                Text("Choose Your Name")
+                    .font(DarkFantasyTheme.title(size: 14))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .tracking(1)
                     .padding(.top, LayoutConstants.spaceLG)
 
-                characterPreviewCard
+                // Unified card: avatar + info + stats
+                unifiedCharacterCard
 
-                nameInputField
-
-                if !vm.characterName.isEmpty && vm.characterName.count >= 3 {
-                    buildSummary
-                }
+                // Name input with separate dice button
+                nameInputSection
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.bottom, LayoutConstants.spaceLG)
         }
     }
 
-    // MARK: - Character Preview Card
+    // MARK: - Unified Character Card (avatar + summary merged)
 
-    private var characterPreviewCard: some View {
+    private var unifiedCharacterCard: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
+            // Avatar with level badge
             ZStack {
                 if let cls = vm.selectedClass {
                     RoundedRectangle(cornerRadius: 22)
@@ -84,6 +84,7 @@ struct NameStepView: View {
                 }
             }
 
+            // Origin + Class row
             HStack(spacing: 8) {
                 if let origin = vm.selectedOrigin {
                     Image(origin.iconAsset)
@@ -105,89 +106,118 @@ struct NameStepView: View {
                 }
             }
 
-            if !vm.combinedBonuses.isEmpty {
-                HStack(spacing: 16) {
-                    ForEach(vm.combinedBonuses, id: \.stat) { bonus in
-                        VStack(spacing: 2) {
-                            Text("\(bonus.value > 0 ? "+" : "")\(bonus.value)")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection).bold())
-                                .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
-                            Text(String(bonus.stat.prefix(3)).uppercased())
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        }
-                    }
-                }
-            }
-
-            Text(vm.selectedGender.displayName.uppercased())
+            // Gender
+            Text(vm.selectedGender.displayName)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1)
+
+            // Divider
+            GoldDivider()
+                .padding(.horizontal, LayoutConstants.spaceLG)
+
+            // Build summary: hero summary + stat bonuses (name shown only in input field)
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Text(vm.heroSummary)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                if !vm.combinedBonuses.isEmpty {
+                    HStack(spacing: LayoutConstants.spaceMD) {
+                        ForEach(vm.combinedBonuses, id: \.stat) { bonus in
+                            Text("\(bonus.value > 0 ? "+" : "")\(bonus.value) \(bonus.stat)")
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                                .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+            }
         }
-        .padding(.vertical, LayoutConstants.spaceMD)
+        .padding(LayoutConstants.cardPadding)
         .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
+        )
     }
 
-    // MARK: - Name Input Field
+    // MARK: - Name Input Section (input + dice button)
 
-    private var nameInputField: some View {
-        let borderColor: Color = {
-            if vm.characterName.isEmpty { return DarkFantasyTheme.borderSubtle.opacity(0.5) }
-            if vm.characterName.count < 3 { return DarkFantasyTheme.danger }
-            switch vm.nameAvailability {
-            case .available: return DarkFantasyTheme.success
-            case .taken: return DarkFantasyTheme.danger
-            case .checking: return DarkFantasyTheme.goldDim
-            default: return DarkFantasyTheme.goldDim
-            }
-        }()
-
-        return VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            Text("YOUR NAME")
+    private var nameInputSection: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            Text("Your Name")
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
-            HStack(spacing: 0) {
-                TextField("", text: $vm.characterName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                    .foregroundStyle(nameTextColor)
-                    .placeholder(when: vm.characterName.isEmpty) {
-                        Text("Enter hero name...")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCard))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    }
-                    .autocapitalization(.none)
-                    .disableAutocorrection(true)
-                    .onChange(of: vm.characterName) { _, newValue in
-                        if newValue.count > 16 {
-                            vm.characterName = String(newValue.prefix(16))
+            HStack(spacing: LayoutConstants.spaceSM) {
+                // Text field with status icon
+                HStack(spacing: 0) {
+                    TextField("", text: $vm.characterName)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                        .foregroundStyle(nameTextColor)
+                        .placeholder(when: vm.characterName.isEmpty) {
+                            Text("Enter hero name...")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCard))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
-                        vm.checkNameAvailability()
-                    }
+                        .autocapitalization(.none)
+                        .disableAutocorrection(true)
+                        .onChange(of: vm.characterName) { _, newValue in
+                            if newValue.count > 16 {
+                                vm.characterName = String(newValue.prefix(16))
+                            }
+                            vm.checkNameAvailability()
+                        }
 
-                if vm.characterName.count >= 3 {
-                    Group {
-                        switch vm.nameAvailability {
-                        case .checking:
-                            ProgressView()
-                                .tint(DarkFantasyTheme.goldDim)
-                                .scaleEffect(0.8)
-                        case .available:
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(DarkFantasyTheme.success)
-                        case .taken:
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(DarkFantasyTheme.danger)
-                        default:
-                            EmptyView()
+                    if vm.characterName.count >= 3 {
+                        Group {
+                            switch vm.nameAvailability {
+                            case .checking:
+                                ProgressView()
+                                    .tint(DarkFantasyTheme.goldDim)
+                                    .scaleEffect(0.8)
+                            case .available:
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(DarkFantasyTheme.success)
+                            case .taken:
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(DarkFantasyTheme.danger)
+                            default:
+                                EmptyView()
+                            }
                         }
+                        .frame(width: 28)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.2), value: vm.nameAvailability == .checking)
                     }
-                    .frame(width: 28)
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.2), value: vm.nameAvailability == .checking)
                 }
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .frame(height: LayoutConstants.inputHeight)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                )
+                .overlay(
+                    Group {
+                        if vm.characterName.isEmpty {
+                            RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
+                                .stroke(
+                                    inputBorderColor,
+                                    style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
+                                .stroke(inputBorderColor, lineWidth: 1.5)
+                        }
+                    }
+                )
 
+                // Dice button — separate, clearly tappable
                 Button {
                     vm.generateRandomName()
                     vm.checkNameAvailability()
@@ -196,32 +226,20 @@ struct NameStepView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 24, height: 24)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
                 }
+                .frame(width: LayoutConstants.inputHeight, height: LayoutConstants.inputHeight)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
+                        .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
+                )
                 .buttonStyle(.scalePress(0.85))
             }
-            .padding(.horizontal, LayoutConstants.spaceMD)
-            .frame(height: LayoutConstants.inputHeight)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
-            )
-            .overlay(
-                Group {
-                    if vm.characterName.isEmpty {
-                        RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
-                            .stroke(
-                                borderColor,
-                                style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                            )
-                    } else {
-                        RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
-                            .stroke(borderColor, lineWidth: 1.5)
-                    }
-                }
-            )
 
+            // Status text + counter
             HStack {
                 Group {
                     if !vm.characterName.isEmpty && vm.characterName.count < 3 {
@@ -246,7 +264,19 @@ struct NameStepView: View {
         }
     }
 
-    /// Name text color: green if available, red if taken or too short, gold while checking
+    // MARK: - Helpers
+
+    private var inputBorderColor: Color {
+        if vm.characterName.isEmpty { return DarkFantasyTheme.borderSubtle.opacity(0.5) }
+        if vm.characterName.count < 3 { return DarkFantasyTheme.danger }
+        switch vm.nameAvailability {
+        case .available: return DarkFantasyTheme.success
+        case .taken: return DarkFantasyTheme.danger
+        case .checking: return DarkFantasyTheme.goldDim
+        default: return DarkFantasyTheme.goldDim
+        }
+    }
+
     private var nameTextColor: Color {
         if vm.characterName.isEmpty { return DarkFantasyTheme.textPrimary }
         if vm.characterName.count < 3 { return DarkFantasyTheme.danger }
@@ -256,42 +286,5 @@ struct NameStepView: View {
         case .checking: return DarkFantasyTheme.goldBright
         default: return DarkFantasyTheme.goldBright
         }
-    }
-
-    // MARK: - Build Summary
-
-    private var buildSummary: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text(vm.characterName.uppercased())
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .tracking(2)
-
-            Text(vm.heroSummary.uppercased())
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .tracking(1)
-
-            if !vm.combinedBonuses.isEmpty {
-                HStack(spacing: LayoutConstants.spaceMD) {
-                    ForEach(vm.combinedBonuses, id: \.stat) { bonus in
-                        Text("\(bonus.value > 0 ? "+" : "")\(bonus.value) \(bonus.stat)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                            .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
-                    }
-                }
-                .padding(.top, 2)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(LayoutConstants.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
-        )
     }
 }

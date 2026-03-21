@@ -56,5 +56,6 @@ struct StaminaBarView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
         )
+        .accessibilityLabel("Stamina: \(currentStamina) of \(maxStamina)")
     }
 }

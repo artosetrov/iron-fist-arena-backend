@@ -44,8 +44,10 @@ final class CombatViewModel {
     // VFX
     let vfxManager = CombatVFXManager()
 
-    // Callbacks
-    var onHit: ((_ isCrit: Bool) -> Void)?
+    // Callbacks — combat event types for screen shake + haptics
+    enum CombatEventType { case hit, crit, block, dodge, miss }
+    var onCombatEvent: ((_ event: CombatEventType) -> Void)?
+
 
     var speedMultiplier: Double {
         speedMode == 1 ? 0.5 : 1.0
@@ -135,20 +137,25 @@ final class CombatViewModel {
         }
         try? await Task.sleep(for: .seconds(0.15 * sm))
 
-        // 2. Hit effects + VFX
+        // 2. Hit effects + VFX + SFX
         if turn.isDodge {
             // Dodge VFX on defender
             vfxManager.trigger(.dodge, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+            SFXManager.shared.play(.combatDodge)
+            onCombatEvent?(.dodge)
         } else if turn.isMiss {
             // Miss VFX on defender
             vfxManager.trigger(.miss, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+            SFXManager.shared.play(.combatMiss)
+            onCombatEvent?(.miss)
         } else if turn.isBlocked {
             // Block VFX + mild flash
             vfxManager.trigger(.block, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+            SFXManager.shared.play(.combatBlock)
             withAnimation(.easeInOut(duration: 0.1)) {
                 if isPlayerAttacking { enemyFlash = true } else { playerFlash = true }
             }
-            onHit?(false)
+            onCombatEvent?(.block)
             try? await Task.sleep(for: .seconds(0.1 * sm))
             withAnimation(.easeInOut(duration: 0.1)) {
                 enemyFlash = false
@@ -160,6 +167,7 @@ final class CombatViewModel {
             // Damage VFX — map from CombatLog
             let vfxType = VFXEffectType.from(turn)
             vfxManager.trigger(vfxType, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+            SFXManager.shared.play(SFX.from(vfxType: vfxType))
 
             // Flash on defender + screen shake
             withAnimation(.easeInOut(duration: 0.1)) {
@@ -169,7 +177,7 @@ final class CombatViewModel {
                     playerFlash = true
                 }
             }
-            onHit?(turn.isCrit)
+            onCombatEvent?(turn.isCrit ? .crit : .hit)
             try? await Task.sleep(for: .seconds(0.15 * sm))
             withAnimation(.easeInOut(duration: 0.1)) {
                 enemyFlash = false
@@ -184,6 +192,7 @@ final class CombatViewModel {
         // Heal VFX (trigger outside withAnimation)
         if let heal = turn.heal, heal > 0 {
             vfxManager.trigger(.heal, at: CGPoint(x: attackerX, y: defenderY), speed: sm)
+            SFXManager.shared.play(.combatHeal)
         }
 
         withAnimation(.easeInOut(duration: 0.3 * sm)) {
@@ -204,9 +213,10 @@ final class CombatViewModel {
         }
         try? await Task.sleep(for: .seconds(0.3 * sm))
 
-        // 5. Status effect + VFX
+        // 5. Status effect + VFX + SFX
         if let status = turn.statusApplied, !status.isEmpty {
             vfxManager.trigger(.statusProc(status), at: CGPoint(x: defenderX, y: defenderY), speed: sm)
+            SFXManager.shared.play(.combatPoison)
             let effect = StatusEffect(name: status)
             withAnimation(.easeIn(duration: 0.2)) {
                 if isPlayerAttacking {
@@ -357,6 +367,7 @@ final class CombatViewModel {
     private func finishCombat() {
         isFinished = true
         isPlaying = false
+        SFXManager.shared.play(.combatDeath)
         let isWin = combatData.result.isWin
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             turnLabel = isWin ? "VICTORY!" : "DEFEAT"

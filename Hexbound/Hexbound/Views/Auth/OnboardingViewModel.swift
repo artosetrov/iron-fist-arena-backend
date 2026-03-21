@@ -5,7 +5,7 @@ final class OnboardingViewModel {
     // 3-step wizard: 0 = Class, 1 = Appearance (race + gender + avatar), 2 = Name
     var step = 0
     var selectedClass: CharacterClass?
-    var selectedOrigin: CharacterOrigin?
+    var selectedOrigin: CharacterOrigin? = .human
     var selectedGender: CharacterGender = .male
     var selectedSkinKey: String?
 
@@ -83,6 +83,11 @@ final class OnboardingViewModel {
             let response: AppearancesResponse = try await APIClient.shared.get(APIEndpoints.appearances)
             allSkins = response.skins
             isLoadingSkins = false
+            // Auto-select first skin for the default origin (human)
+            if selectedSkinKey == nil, selectedOrigin != nil {
+                let valid = availableSkins
+                selectedSkinKey = valid.first?.skinKey
+            }
         } catch {
             isLoadingSkins = false
         }

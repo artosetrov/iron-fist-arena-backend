@@ -61,7 +61,7 @@ struct VictoryParticlesView: View {
             DarkFantasyTheme.goldBright,
             DarkFantasyTheme.gold,
             DarkFantasyTheme.goldDim,
-            .white.opacity(0.8),
+            .textPrimary.opacity(0.8),
             DarkFantasyTheme.success.opacity(0.6)
         ]
         let shapes: [AnyView] = [
@@ -91,7 +91,7 @@ struct VictoryParticlesView: View {
             DarkFantasyTheme.danger.opacity(0.4),
             DarkFantasyTheme.danger.opacity(0.2),
             Color.gray.opacity(0.3),
-            Color.white.opacity(0.1)
+            .textPrimary.opacity(0.1)
         ]
         return Particle(
             startX: startX,

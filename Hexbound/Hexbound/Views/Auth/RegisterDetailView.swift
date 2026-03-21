@@ -55,12 +55,14 @@ struct RegisterDetailView: View {
                     }
                     .buttonStyle(.primary(enabled: !vm.isLoading))
                     .disabled(vm.isLoading)
+                    .accessibilityLabel("Create account")
 
                     // Back to login
                     Button("Already have an account? LOG IN") {
                         if !appState.authPath.isEmpty { appState.authPath.removeLast() }
                     }
                     .buttonStyle(.ghost)
+                    .accessibilityLabel("Go to login")
 
                     // Error
                     if !vm.errorMessage.isEmpty {
@@ -97,6 +99,8 @@ struct RegisterDetailView: View {
                         .scaledToFit()
                         .frame(width: 24, height: 24)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Go back")
             }
         }
         .onAppear { vm.setup(appState: appState) }

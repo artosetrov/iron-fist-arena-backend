@@ -3,6 +3,9 @@ import SwiftUI
 struct DailyQuestsDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var vm: DailyQuestsViewModel?
+    @State private var showQuestBurst = false
+    @State private var burstQuestId: String?
+    @State private var appearCount = 0
 
     var body: some View {
         ZStack {
@@ -15,8 +18,11 @@ struct DailyQuestsDetailView: View {
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .padding(.top, LayoutConstants.spaceSM)
+                        .accessibilityLabel("Daily quests reset: \(vm.resetTimeText)")
 
-                    if vm.isLoading && vm.quests.isEmpty {
+                    if vm.errorMessage != nil {
+                        ErrorStateView.loadFailed { Task { await vm.loadQuests() } }
+                    } else if vm.isLoading && vm.quests.isEmpty {
                         ScrollView {
                             LazyVStack(spacing: LayoutConstants.spaceSM) {
                                 ForEach(0..<4, id: \.self) { _ in
@@ -26,6 +32,8 @@ struct DailyQuestsDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+                    } else if vm.quests.isEmpty {
+                        EmptyStateView.questsComplete
                     } else {
                         ScrollView {
                             LazyVStack(spacing: LayoutConstants.spaceSM) {
@@ -33,13 +41,15 @@ struct DailyQuestsDetailView: View {
                                 bonusPanel(vm: vm)
 
                                 // Quest cards
-                                ForEach(vm.quests) { quest in
+                                ForEach(Array(vm.quests.enumerated()), id: \.element.id) { index, quest in
                                     questCard(quest, vm: vm)
+                                        .staggeredAppear(index: index)
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
                 }
             }
@@ -57,8 +67,12 @@ struct DailyQuestsDetailView: View {
         }
         .onAppear {
             if vm == nil { vm = DailyQuestsViewModel(appState: appState) }
+            appearCount += 1
+        }
+        .task(id: appearCount) {
             // Reload quests every time view appears (e.g., after PvP/dungeon)
-            if let vm { Task { await vm.loadQuests() } }
+            guard appearCount > 0 else { return }
+            await vm?.loadQuests()
         }
     }
 
@@ -85,6 +99,7 @@ struct DailyQuestsDetailView: View {
             Text("Complete All \(vm.quests.count) Quests")
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.goldBright)
+                .accessibilityLabel("Daily quest completion challenge")
 
             // Progress
             HStack(spacing: LayoutConstants.spaceSM) {
@@ -92,18 +107,21 @@ struct DailyQuestsDetailView: View {
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(DarkFantasyTheme.bgTertiary)
-                        let fraction = vm.quests.isEmpty ? 0.0 : Double(vm.completedCount) / Double(vm.quests.count)
+                        let fraction = vm.quests.isEmpty ? 0.0 : max(0, min(1, Double(vm.completedCount) / Double(vm.quests.count)))
                         RoundedRectangle(cornerRadius: 4)
                             .fill(DarkFantasyTheme.gold)
                             .frame(width: geo.size.width * fraction)
                     }
                 }
                 .frame(height: 8)
+                .accessibilityLabel("Quest completion progress")
+                .accessibilityValue("\(vm.completedCount) of \(vm.quests.count) quests complete")
 
                 Text("\(vm.completedCount)/\(vm.quests.count)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .frame(width: 30)
+                    .accessibilityElement(children: .ignore)
             }
 
             Text("Bonus: +500 Gold, +10 Gems")
@@ -211,7 +229,7 @@ struct DailyQuestsDetailView: View {
                                     .fill(DarkFantasyTheme.bgTertiary)
                                 RoundedRectangle(cornerRadius: 3)
                                     .fill(quest.completed ? DarkFantasyTheme.success : DarkFantasyTheme.cyan)
-                                    .frame(width: geo.size.width * quest.progressFraction)
+                                    .frame(width: geo.size.width * max(0, min(1, quest.progressFraction)))
                             }
                         }
                         .frame(height: 6)
@@ -238,6 +256,10 @@ struct DailyQuestsDetailView: View {
                             .foregroundStyle(DarkFantasyTheme.success)
                     } else if quest.canClaim {
                         Button {
+                            HapticManager.success()
+                            SFXManager.shared.play(.uiQuestComplete)
+                            showQuestBurst = true
+                            burstQuestId = quest.id
                             Task { await vm.claimQuest(quest) }
                         } label: {
                             if isClaiming {
@@ -278,6 +300,15 @@ struct DailyQuestsDetailView: View {
         }
         .buttonStyle(QuestCardButtonStyle())
         .disabled(destination == nil && !quest.canClaim)
+        .overlay {
+            if showQuestBurst && burstQuestId == quest.id {
+                GeometryReader { geo in
+                    RewardBurstView(style: .claim, isActive: $showQuestBurst)
+                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
     }
 }
 
@@ -286,8 +317,6 @@ struct DailyQuestsDetailView: View {
 struct QuestCardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
             .opacity(configuration.isPressed ? 0.85 : 1.0)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }

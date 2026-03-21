@@ -31,12 +31,14 @@ struct LoginView: View {
                             keyboardType: .emailAddress,
                             autocapitalization: .never
                         )
+                        .accessibilityLabel("Email address")
 
                         StyledSecureField(
                             placeholder: "Password",
                             text: $vm.password,
                             icon: "lock.fill"
                         )
+                        .accessibilityLabel("Password")
                     }
 
                     // 3. Primary action
@@ -47,6 +49,7 @@ struct LoginView: View {
                     }
                     .buttonStyle(.primary(enabled: !vm.isLoading))
                     .disabled(vm.isLoading)
+                    .accessibilityLabel("Log in")
 
                     // Error
                     if !vm.errorMessage.isEmpty {
@@ -86,19 +89,20 @@ struct LoginView: View {
 
                                 Image(systemName: "apple.logo")
                                     .font(.system(size: 22, weight: .medium)) // SF Symbol icon — keep as is
-                                    .foregroundStyle(Color.white)
+                                    .foregroundStyle(.textPrimary)
                                     .allowsHitTesting(false)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: LayoutConstants.buttonHeightLG)
                             .background(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                    .fill(Color.black)
+                                    .fill(.bgPrimary)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                             )
+                            .accessibilityLabel("Sign in with Apple")
 
                             // Google
                             Button {
@@ -106,9 +110,10 @@ struct LoginView: View {
                             } label: {
                                 Text("G")
                                     .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Color.white)
+                                    .foregroundStyle(.textPrimary)
                             }
                             .buttonStyle(.socialAuth)
+                            .accessibilityLabel("Sign in with Google")
                         }
                     }
 
@@ -118,6 +123,7 @@ struct LoginView: View {
                             vm.showForgotPassword = true
                         }
                         .buttonStyle(.ghost)
+                        .accessibilityLabel("Reset your password")
 
                         Text("·")
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -126,24 +132,9 @@ struct LoginView: View {
                             appState.authPath.append(AppRoute.register)
                         }
                         .buttonStyle(.ghost)
+                        .accessibilityLabel("Create new account")
                     }
                     .padding(.top, LayoutConstants.spaceXS)
-
-                    // 6. Guest login with warning
-                    VStack(spacing: LayoutConstants.spaceXS) {
-                        Button {
-                            Task { await vm.guestLogin(appState: appState) }
-                        } label: {
-                            Text("PLAY AS GUEST")
-                        }
-                        .buttonStyle(.neutral)
-
-                        Text("⚠️ Guest progress may be lost. Link your account later in Settings to save.")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textWarning)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, LayoutConstants.spaceSM)
 
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
@@ -167,6 +158,8 @@ struct LoginView: View {
                         .scaledToFit()
                         .frame(width: 24, height: 24)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Go back")
             }
         }
         .onAppear {
@@ -257,6 +250,8 @@ struct StyledSecureField: View {
                 Image(systemName: isVisible ? "eye.slash" : "eye")
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isVisible ? "Hide password" : "Show password")
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
         .frame(height: LayoutConstants.inputHeight)

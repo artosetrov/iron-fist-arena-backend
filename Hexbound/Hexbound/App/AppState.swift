@@ -4,6 +4,8 @@ import SwiftUI
 final class AppState {
     // MARK: - Auth
     var isAuthenticated = false
+    var isGuest = false
+    var pendingConfirmationEmail: String?
     var currentUser: [String: Any]?
 
     // MARK: - Character
@@ -54,12 +56,12 @@ final class AppState {
     }
 
     func dismissLevelUpModal() {
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
             showLevelUpModal = false
         }
         // Show next queued modal after brief delay
         Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(350))
+            try? await Task.sleep(for: .milliseconds(400))
             self?.presentNextModal()
         }
     }
@@ -92,22 +94,25 @@ final class AppState {
         let next = modalQueue.removeFirst()
         switch next {
         case .levelUp:
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            HapticManager.rankUp()
+            withAnimation(MotionConstants.dramatic) {
                 showLevelUpModal = true
             }
         case .dailyLogin:
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            HapticManager.medium()
+            withAnimation(MotionConstants.spring) {
                 showDailyLoginPopup = true
             }
         }
     }
 
     func dismissDailyLoginPopup() {
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
             showDailyLoginPopup = false
         }
+        // Pause between modals so transitions don't overlap
         Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(350))
+            try? await Task.sleep(for: .milliseconds(400))
             self?.presentNextModal()
         }
     }

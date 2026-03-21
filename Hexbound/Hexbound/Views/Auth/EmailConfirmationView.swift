@@ -32,7 +32,6 @@ struct EmailConfirmationView: View {
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .symbolEffect(.pulse, options: .repeating)
                 }
-                .scaleEffect(envelopeScale)
                 .opacity(envelopeOpacity)
 
                 // Title
@@ -76,8 +75,9 @@ struct EmailConfirmationView: View {
                                  : "RESEND EMAIL")
                         }
                     }
-                    .buttonStyle(.secondary(enabled: !isResending && resendCooldown == 0))
+                    .buttonStyle(.secondary)
                     .disabled(isResending || resendCooldown > 0)
+                    .accessibilityLabel(resendCooldown > 0 ? "Resend available in \(resendCooldown) seconds" : "Resend confirmation email")
 
                     if !resendMessage.isEmpty {
                         Text(resendMessage)
@@ -98,6 +98,7 @@ struct EmailConfirmationView: View {
                     appState.authPath.append(AppRoute.login)
                 }
                 .buttonStyle(.ghost)
+                .accessibilityLabel("Return to login screen")
 
                 Spacer().frame(height: LayoutConstants.spaceXL)
             }

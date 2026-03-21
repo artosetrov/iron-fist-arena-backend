@@ -17,6 +17,11 @@ struct GoldMineDetailView: View {
             if let vm {
                 if vm.isLoading && vm.slots.isEmpty {
                     mineLoadingState
+                } else if vm.slots.isEmpty {
+                    // Error state — loading failed
+                    ErrorStateView.loadFailed {
+                        Task { await vm.loadStatus() }
+                    }
                 } else {
                     ScrollView {
                         VStack(spacing: LayoutConstants.spaceMD) {
@@ -57,18 +62,22 @@ struct GoldMineDetailView: View {
                 .tracking(1.5)
 
             HStack(spacing: LayoutConstants.spaceXS) {
-                Text("🪙")
-                    .font(.system(size: 22)) // emoji — keep
+                Image(systemName: "dollarsign.circle")
+                    .font(.system(size: 22))
+                    .accessibilityLabel("Gold per hour")
+                    .accessibilityElement(children: .ignore)
                 Text("\(vm.activeSlotCount * 200)/HR")
                     .font(DarkFantasyTheme.title(size: 32))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.4), value: vm.activeSlotCount)
+                    .accessibilityLabel("Mining output: \(vm.activeSlotCount * 200) gold per hour")
             }
 
             Text("\(vm.activeSlotCount) Active Slots")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .accessibilityLabel("\(vm.activeSlotCount) active mining slots")
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, LayoutConstants.spaceMD)
@@ -88,10 +97,12 @@ struct GoldMineDetailView: View {
         LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
             ForEach(0..<vm.maxSlots, id: \.self) { index in
                 MineSlotCard(index: index, vm: vm)
+                    .staggeredAppear(index: index)
             }
 
             if vm.maxSlots < 6 {
                 LockedMineCard(slotNumber: vm.maxSlots + 1, vm: vm)
+                    .staggeredAppear(index: vm.maxSlots)
             }
         }
     }
@@ -154,6 +165,9 @@ private struct MineSlotCard: View {
     let vm: GoldMineViewModel
 
     @State private var glowPulse = false
+    @State private var showCollectBurst = false
+    @State private var showCoinFly = false
+    @State private var previousStatus: String = ""
 
     private var slot: [String: Any] {
         index < vm.slots.count ? vm.slots[index] : [:]
@@ -193,12 +207,50 @@ private struct MineSlotCard: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
         .shadow(color: cardShadowColor, radius: status != "idle" ? 8 : 3, y: 2)
+        .overlay {
+            if showCollectBurst {
+                GeometryReader { geo in
+                    RewardBurstView(style: .gold, isActive: $showCollectBurst)
+                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+        .overlay {
+            if showCoinFly {
+                GeometryReader { geo in
+                    let sourcePoint = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+                    // Target is top-right corner (approximately where currency display would be)
+                    let targetPoint = CGPoint(x: UIScreen.main.bounds.width - 20, y: 60)
+                    CoinFlyAnimationView(
+                        style: .gold,
+                        count: 6,
+                        sourcePoint: sourcePoint,
+                        targetPoint: targetPoint,
+                        onComplete: { showCoinFly = false }
+                    )
+                    .allowsHitTesting(false)
+                }
+            }
+        }
         .animation(
             .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
             value: glowPulse
         )
-        .onAppear { startGlowIfNeeded() }
-        .onChange(of: status) { _, _ in startGlowIfNeeded() }
+        .onAppear {
+            previousStatus = status
+            startGlowIfNeeded()
+        }
+        .onChange(of: status) { oldVal, newVal in
+            startGlowIfNeeded()
+            // Detect collect: was "ready" → now "idle" (gold collected)
+            if previousStatus == "ready" && newVal == "idle" {
+                HapticManager.success()
+                showCollectBurst = true
+                showCoinFly = true
+            }
+            previousStatus = newVal
+        }
     }
 
     // MARK: - Mine Illustration
@@ -217,6 +269,7 @@ private struct MineSlotCard: View {
                 .resizable()
                 .scaledToFill()
                 .opacity(status == "idle" ? 0.6 : 1.0)
+                .breathing(scale: 0.006, isActive: status == "mining")
 
             // Status-specific overlays
             switch status {
@@ -251,7 +304,7 @@ private struct MineSlotCard: View {
                     .opacity(glowPulse ? 1.0 : 0.5)
 
             case "idle":
-                Color.black.opacity(0.3)
+                DarkFantasyTheme.bgScrim
 
             default:
                 EmptyView()
@@ -268,6 +321,7 @@ private struct MineSlotCard: View {
             Text("SLOT \(index + 1)")
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .accessibilityLabel("Mining slot \(index + 1)")
 
             statusLabel
 
@@ -325,7 +379,7 @@ private struct MineSlotCard: View {
                             startPoint: .leading, endPoint: .trailing
                         )
                     )
-                    .frame(width: geo.size.width * vm.miningProgress(slot))
+                    .frame(width: geo.size.width * max(0, min(1, vm.miningProgress(slot))))
                     .animation(.linear(duration: 1), value: vm.miningProgress(slot))
             }
         }
@@ -339,6 +393,7 @@ private struct MineSlotCard: View {
         switch status {
         case "idle":
             Button {
+                HapticManager.medium()
                 Task { await vm.startMining(slotIndex: index) }
             } label: {
                 Text("MINE")
@@ -349,12 +404,13 @@ private struct MineSlotCard: View {
 
         case "mining":
             Button {
+                HapticManager.light()
                 Task { await vm.boost(slotIndex: index) }
             } label: {
                 HStack(spacing: 3) {
                     Text("BOOST")
-                    Text("💎")
-                        .font(.system(size: 11)) // emoji — keep
+                    Image(systemName: "diamond")
+                        .font(.system(size: 10))
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
@@ -363,17 +419,19 @@ private struct MineSlotCard: View {
 
         case "ready":
             Button {
+                HapticManager.medium()
                 Task { await vm.collect(slotIndex: index) }
             } label: {
                 HStack(spacing: 3) {
                     Text("COLLECT")
-                    Text("🪙")
-                        .font(.system(size: 11)) // emoji — keep
+                    Image(systemName: "dollarsign.circle")
+                        .font(.system(size: 10))
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
             }
             .buttonStyle(.compactPrimary)
+            .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: true)
 
         default:
             EmptyView()
@@ -420,7 +478,7 @@ private struct LockedMineCard: View {
                     .scaledToFill()
 
                 // Darken overlay
-                Color.black.opacity(0.3)
+                DarkFantasyTheme.bgScrim
 
                 Image(systemName: "lock.fill")
                     .font(.system(size: 28)) // SF Symbol icon — keep
@@ -439,8 +497,8 @@ private struct LockedMineCard: View {
                     Text("Unlock for")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Text("💎")
-                        .font(.system(size: 11)) // emoji — keep
+                    Image(systemName: "diamond")
+                        .font(.system(size: 10))
                     Text("50")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.cyan)

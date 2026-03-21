@@ -9,6 +9,7 @@ final class LeaderboardViewModel {
     var data: [String: [LeaderboardEntry]] = [:]
     var isLoading = false
     var selectedTab = 0
+    var errorMessage: String? = nil
 
     static let tabs = ["Rating", "Level", "Gold"]
     static let tabKeys = ["rating", "level", "gold"]
@@ -40,6 +41,7 @@ final class LeaderboardViewModel {
         } else {
             isLoading = true
         }
+        errorMessage = nil
         let result = await service.loadLeaderboard()
         data = result
         cache.cacheLeaderboard(result)

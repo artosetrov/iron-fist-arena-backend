@@ -111,7 +111,7 @@ struct HubCharacterCard: View {
                 Spacer()
                 Text("Lv. \(character.level)")
                     .font(DarkFantasyTheme.body(size: 10).bold())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.textPrimary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, LayoutConstants.space2XS)
                     .background(
@@ -135,7 +135,7 @@ struct HubCharacterCard: View {
         HStack {
             Text(character.characterName)
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textBody).bold())
-                .foregroundStyle(.white)
+                .foregroundStyle(.textPrimary)
                 .lineLimit(1)
 
             Spacer()
@@ -215,7 +215,7 @@ struct HubCharacterCard: View {
                 if healthPotionCount > 0 {
                     Text("\(healthPotionCount)")
                         .font(DarkFantasyTheme.body(size: 9).bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .frame(width: LayoutConstants.spaceMD, height: LayoutConstants.spaceMD)
                         .background(Circle().fill(DarkFantasyTheme.success))
                         .offset(x: LayoutConstants.spaceXS, y: -LayoutConstants.spaceXS)
@@ -295,14 +295,14 @@ private struct PulseModifier: ViewModifier {
     }
 }
 
-/// Pulsating scale effect for critical HP potion button
+/// Pulsating opacity effect for critical HP potion button
 private struct PulseScaleModifier: ViewModifier {
     let active: Bool
     @State private var pulse = false
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(active ? (pulse ? 1.08 : 1.0) : 1.0)
+            .opacity(active && pulse ? 0.85 : 1.0)
             .onAppear {
                 guard active else { return }
                 withAnimation(.easeInOut(duration: 0.75).repeatForever(autoreverses: true)) {

@@ -111,11 +111,11 @@ struct ActiveQuestBanner: View {
         .padding(.vertical, LayoutConstants.spaceXS + 2)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.cyan.opacity(0.08))
+                .fill(DarkFantasyTheme.bgSecondary)
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.cyan.opacity(0.25), lineWidth: 1)
+                .stroke(DarkFantasyTheme.cyan.opacity(0.5), lineWidth: 1.5)
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
     }

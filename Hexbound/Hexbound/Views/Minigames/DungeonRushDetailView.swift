@@ -9,7 +9,11 @@ struct DungeonRushDetailView: View {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             if let vm {
-                if vm.isGameOver {
+                if vm.errorMessage != nil {
+                    ErrorStateView.loadFailed {
+                        Task { await vm.checkActiveRush() }
+                    }
+                } else if vm.isGameOver {
                     gameOverView(vm: vm)
                 } else if vm.isActive {
                     rushView(vm: vm)
@@ -58,8 +62,8 @@ struct DungeonRushDetailView: View {
         VStack(spacing: LayoutConstants.spaceLG) {
             Spacer()
 
-            Text("🏰")
-                .font(.system(size: 64)) // emoji — keep
+            Image(systemName: "building.columns")
+                .font(.system(size: 64))
 
             Text("Dungeon Rush")
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
@@ -102,12 +106,12 @@ struct DungeonRushDetailView: View {
 
     @ViewBuilder
     private func roomPreviewStrip() -> some View {
-        let types = ["⚔️", "❓", "⚔️", "📦", "🗡️", "👹", "🏪", "⚔️", "❓", "🗡️", "⚔️", "👹"]
+        let types = ["swords", "questionmark.circle", "swords", "shippingbox", "figure.fencing", "figure.wave", "storefront", "swords", "questionmark.circle", "figure.fencing", "swords", "figure.wave"]
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 4) {
                 ForEach(0..<types.count, id: \.self) { i in
-                    Text(types[i])
-                        .font(.system(size: 16)) // emoji — keep
+                    Image(systemName: types[i])
+                        .font(.system(size: 14))
                         .frame(width: 28, height: 28)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
@@ -128,13 +132,17 @@ struct DungeonRushDetailView: View {
             VStack(spacing: LayoutConstants.spaceSM) {
                 // Room progress strip
                 roomProgressStrip(vm: vm)
+                .accessibilityLabel("Room progress")
 
                 // HP bar + rewards
                 HStack(spacing: LayoutConstants.spaceSM) {
                     hpBar(percent: vm.currentHpPercent)
+                        .accessibilityLabel("Character health: \(vm.currentHpPercent)%")
                     Spacer()
-                    rewardPill(icon: "💰", value: "\(vm.accumulatedGold)")
-                    rewardPill(icon: "✨", value: "\(vm.accumulatedXp)")
+                    rewardPill(icon: "dollarsign.circle", value: "\(vm.accumulatedGold)")
+                        .accessibilityLabel("Gold earned: \(vm.accumulatedGold)")
+                    rewardPill(icon: "sparkles", value: "\(vm.accumulatedXp)")
+                        .accessibilityLabel("Experience earned: \(vm.accumulatedXp)")
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
@@ -215,7 +223,7 @@ struct DungeonRushDetailView: View {
                         .fill(DarkFantasyTheme.bgTertiary)
                     RoundedRectangle(cornerRadius: 3)
                         .fill(DarkFantasyTheme.hpBlood.opacity(percent > 25 ? 0.9 : 0.7))
-                        .frame(width: geo.size.width * CGFloat(percent) / 100)
+                        .frame(width: geo.size.width * max(0, min(1, CGFloat(percent) / 100)))
                 }
             }
             .frame(width: 80, height: 8)
@@ -238,7 +246,7 @@ struct DungeonRushDetailView: View {
                         Text(buff.icon)
                             .font(.system(size: 12)) // emoji — keep
                         Text("+\(buff.value)")
-                            .font(DarkFantasyTheme.body(size: 10))
+                            .font(DarkFantasyTheme.body(size: 12))
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .padding(.horizontal, 6)
@@ -262,13 +270,17 @@ struct DungeonRushDetailView: View {
             Text("ROOM \(room.index + 1) / \(vm.totalRooms)")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .accessibilityLabel("Room \(room.index + 1) of \(vm.totalRooms)")
 
             Text(room.icon)
                 .font(.system(size: 56)) // emoji — keep
+                .accessibilityLabel("Room icon: \(room.label)")
+                .accessibilityElement(children: .ignore)
 
             Text(room.label.uppercased())
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                 .foregroundStyle(DarkFantasyTheme.goldBright)
+                .accessibilityLabel("Current room: \(room.label)")
 
             // Room-specific info
             switch room.type {
@@ -395,6 +407,7 @@ struct DungeonRushDetailView: View {
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.stamina)
             }
+            .buttonStyle(.secondary)
             .disabled(vm.isFighting || vm.isLoading)
         }
     }
@@ -408,8 +421,8 @@ struct DungeonRushDetailView: View {
                 .onTapGesture {} // Block taps
 
             VStack(spacing: LayoutConstants.spaceLG) {
-                Text("🏪")
-                    .font(.system(size: 48)) // emoji — keep
+                Image(systemName: "storefront")
+                    .font(.system(size: 48))
 
                 Text("SHOP")
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -445,8 +458,8 @@ struct DungeonRushDetailView: View {
     @ViewBuilder
     private func shopItemRow(vm: DungeonRushViewModel, item: RushShopItem) -> some View {
         HStack {
-            Text(item.icon)
-                .font(.system(size: 24)) // emoji — keep
+            Image(systemName: item.icon)
+                .font(.system(size: 20))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
@@ -467,7 +480,11 @@ struct DungeonRushDetailView: View {
                 Button {
                     Task { await vm.buyShopItem(slot: item.slot) }
                 } label: {
-                    Text("💰 \(item.price)")
+                    HStack(spacing: 4) {
+                        Image(systemName: "dollarsign.circle")
+                            .font(.system(size: 12))
+                        Text("\(item.price)")
+                    }
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.spaceXS)
                 }
@@ -486,8 +503,8 @@ struct DungeonRushDetailView: View {
             DarkFantasyTheme.bgBackdropLight.ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceLG) {
-                Text(vm.eventResultIcon)
-                    .font(.system(size: 56)) // emoji — keep
+                Image(systemName: vm.eventResultIcon)
+                    .font(.system(size: 56))
 
                 Text(vm.eventResultTitle)
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -518,8 +535,8 @@ struct DungeonRushDetailView: View {
             DarkFantasyTheme.bgBackdropLight.ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceLG) {
-                Text("📦")
-                    .font(.system(size: 56)) // emoji — keep
+                Image(systemName: "shippingbox")
+                    .font(.system(size: 56))
 
                 Text("TREASURE!")
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
@@ -528,7 +545,8 @@ struct DungeonRushDetailView: View {
                 VStack(spacing: LayoutConstants.spaceSM) {
                     if vm.treasureGold > 0 {
                         HStack {
-                            Text("💰")
+                            Image(systemName: "dollarsign.circle")
+                                .font(.system(size: 14))
                             Text("+\(vm.treasureGold) Gold")
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
                         }
@@ -562,8 +580,8 @@ struct DungeonRushDetailView: View {
         VStack(spacing: LayoutConstants.spaceLG) {
             Spacer()
 
-            Text(vm.rushComplete ? "🏆" : vm.lastFightWon ? "🏃" : "💀")
-                .font(.system(size: 64)) // emoji — keep
+            Image(systemName: vm.rushComplete ? "trophy.fill" : vm.lastFightWon ? "figure.walk" : "person.slash")
+                .font(.system(size: 64))
 
             Text(vm.rushComplete ? "Rush Complete!" : vm.lastFightWon ? "Escaped!" : "Defeated!")
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
@@ -582,7 +600,11 @@ struct DungeonRushDetailView: View {
 
                     if vm.accumulatedGold > 0 {
                         HStack {
-                            Text("💰 Gold")
+                            HStack(spacing: 4) {
+                                Image(systemName: "dollarsign.circle")
+                                    .font(.system(size: 12))
+                                Text("Gold")
+                            }
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                             Spacer()
                             Text("+\(vm.accumulatedGold)")
@@ -592,8 +614,12 @@ struct DungeonRushDetailView: View {
                     }
                     if vm.accumulatedXp > 0 {
                         HStack {
-                            Text("✨ XP")
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            HStack(spacing: 4) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 12))
+                                Text("XP")
+                            }
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
                             Spacer()
                             Text("+\(vm.accumulatedXp)")
                                 .foregroundStyle(DarkFantasyTheme.purple)
@@ -602,7 +628,11 @@ struct DungeonRushDetailView: View {
                     }
                     if vm.accumulatedItems > 0 {
                         HStack {
-                            Text("🎁 Items")
+                            HStack(spacing: 4) {
+                                Image(systemName: "gift")
+                                    .font(.system(size: 12))
+                                Text("Items")
+                            }
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                             Spacer()
                             Text("\(vm.accumulatedItems)")
@@ -659,7 +689,8 @@ struct DungeonRushDetailView: View {
     @ViewBuilder
     private func rewardPill(icon: String, value: String) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
-            Text(icon)
+            Image(systemName: icon)
+                .font(.system(size: 14))
             Text(value)
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)

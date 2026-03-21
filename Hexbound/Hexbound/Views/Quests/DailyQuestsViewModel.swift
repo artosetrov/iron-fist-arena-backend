@@ -10,6 +10,7 @@ final class DailyQuestsViewModel {
     var claimingQuestId: String?
     var isClaimingBonus = false
     var bonusClaimedToday = false
+    var errorMessage: String? = nil
 
     init(appState: AppState) {
         self.appState = appState
@@ -54,6 +55,7 @@ final class DailyQuestsViewModel {
 
     func loadQuests() async {
         if quests.isEmpty { isLoading = true }
+        errorMessage = nil
         let result = await service.loadQuests()
         quests = result.quests
         bonusClaimedToday = result.bonusClaimed

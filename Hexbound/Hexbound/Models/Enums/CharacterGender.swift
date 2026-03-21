@@ -7,7 +7,7 @@ enum CharacterGender: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var displayName: String {
-        rawValue.uppercased()
+        rawValue.capitalized
     }
 
     var icon: String {

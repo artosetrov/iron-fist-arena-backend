@@ -52,6 +52,17 @@ let defaultCityBuildings: [CityBuilding] = [
         fallbackIcon: "medal.fill"
     ),
     CityBuilding(
+        id: "gold-mine",
+        imageName: "building-gold-mine",
+        label: "GOLD MINE",
+        route: .goldMine,
+        relativeX: 0.22,
+        relativeY: 0.52,
+        relativeSize: 0.22,
+        glowColor: Color.orange,
+        fallbackIcon: "hammer.fill"
+    ),
+    CityBuilding(
         id: "tavern",
         imageName: "building-tavern",
         label: "TAVERN",
@@ -76,8 +87,8 @@ let defaultCityBuildings: [CityBuilding] = [
     CityBuilding(
         id: "dungeon",
         imageName: "building-dungeon",
-        label: "DUNGEON",
-        route: .dungeonSelect,
+        label: "DUNGEON RUSH",
+        route: .dungeonRush,
         relativeX: 0.88,
         relativeY: 0.50,
         relativeSize: 0.21,

@@ -8,6 +8,17 @@ final class DungeonService {
         self.appState = appState
     }
 
+    // MARK: - List Dungeons (Dynamic)
+
+    /// Fetches all active dungeons from the server.
+    /// Returns array of dungeon dicts with bosses, or nil on failure.
+    func listDungeons() async -> [[String: Any]]? {
+        guard let result = try? await APIClient.shared.getRaw(
+            APIEndpoints.dungeonsList
+        ) else { return nil }
+        return result["dungeons"] as? [[String: Any]]
+    }
+
     // MARK: - Dungeon Progress
 
     func getProgress() async -> [String: Any]? {

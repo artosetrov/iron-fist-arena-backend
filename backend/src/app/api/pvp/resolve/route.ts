@@ -359,7 +359,7 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(null),
       // 4. Quest + Battle Pass progress
       (async () => {
-        await Promise.all([
+        return await Promise.all([
           attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
           awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
         ])

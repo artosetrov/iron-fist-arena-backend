@@ -66,6 +66,26 @@ actor SupabaseAuthClient {
         return json
     }
 
+    // MARK: - Resend Confirmation Email
+
+    func resendConfirmation(email: String) async throws {
+        let url = URL(string: "\(authURL)/resend")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
+        request.setValue(anonKey, forHTTPHeaderField: "apikey")
+
+        let body: [String: String] = ["type": "signup", "email": email]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw APIError.clientError(statusCode: 400, message: "Failed to resend confirmation")
+        }
+    }
+
     // MARK: - Anonymous Sign In
 
     func signInAnonymous() async throws -> (accessToken: String, refreshToken: String, user: [String: Any]) {

@@ -5,18 +5,17 @@ import SwiftUI
 struct CityMapView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
-    @State private var scrollOffset: CGFloat = 0.5 // 0…1, for indicator pill only
+    // scrollOffset removed — position indicator pill was removed
 
     // Image native aspect ratio (4096×1738)
     private let imageAspect: CGFloat = 4096.0 / 1738.0
 
     var body: some View {
         GeometryReader { outerGeo in
-            let viewWidth = outerGeo.size.width
             let viewHeight = outerGeo.size.height
             let terrainWidth = viewHeight * imageAspect
             let terrainSize = CGSize(width: terrainWidth, height: viewHeight)
-            let maxScroll = max(terrainWidth - viewWidth, 0)
+
 
             let skyObjects = resolvedSkyObjects(from: cache)
             let moonObjects = skyObjects.filter { $0.layer == .moon }
@@ -24,13 +23,13 @@ struct CityMapView: View {
             let frontClouds = skyObjects.filter { $0.layer == .frontCloud }
 
             ZStack {
-                Color.black.ignoresSafeArea()
+                DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
                 // Main scrollable map
                 ScrollView(.horizontal, showsIndicators: false) {
                     ZStack(alignment: .topLeading) {
                         // Layer 0: Sky background
-                        Color(hex: 0x0A0A12)
+                        DarkFantasyTheme.skyNight
                             .frame(width: terrainWidth, height: viewHeight)
 
                         // Layer 0.5: Moon (behind everything, slowest parallax)
@@ -100,23 +99,9 @@ struct CityMapView: View {
                 }
                 .coordinateSpace(name: "hubScroll")
                 .defaultScrollAnchor(.center)
-                .onPreferenceChange(ScrollOffsetKey.self) { minX in
-                    guard maxScroll > 0 else {
-                        scrollOffset = 0.5
-                        return
-                    }
-                    let progress = -minX / maxScroll
-                    scrollOffset = min(max(progress, 0), 1)
-                }
+                // scroll offset tracking removed (indicator pill removed)
 
-                // Position indicator pill
-                VStack {
-                    Spacer()
-                    if maxScroll > 0 {
-                        ScrollPositionIndicator(progress: scrollOffset)
-                            .padding(.bottom, LayoutConstants.spaceSM)
-                    }
-                }
+                // Position indicator pill — removed per UX decision (overlaps ADVENTURES button)
             }
         }
     }
@@ -180,9 +165,9 @@ struct SkyObjectView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: 0xE8E0D0).opacity(shimmer * 0.25),
-                                Color(hex: 0xCCBBAA).opacity(shimmer * 0.12),
-                                Color(hex: 0x8888AA).opacity(shimmer * 0.05),
+                                DarkFantasyTheme.moonGlowOuter1.opacity(shimmer * 0.25),
+                                DarkFantasyTheme.moonGlowOuter2.opacity(shimmer * 0.12),
+                                DarkFantasyTheme.moonGlowOuter3.opacity(shimmer * 0.05),
                                 .clear
                             ],
                             center: .center,
@@ -197,8 +182,8 @@ struct SkyObjectView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: 0xFFF8E8).opacity(shimmer * 0.3),
-                                Color(hex: 0xDDCCAA).opacity(shimmer * 0.1),
+                                DarkFantasyTheme.moonGlowInner1.opacity(shimmer * 0.3),
+                                DarkFantasyTheme.moonGlowInner2.opacity(shimmer * 0.1),
                                 .clear
                             ],
                             center: .center,

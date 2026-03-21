@@ -305,6 +305,19 @@ final class InventoryService {
         "health_potion_large": "Large Health Potion",
     ]
 
+    /// Maps consumableType → local asset key in Assets.xcassets/Items/
+    private static let consumableImageKeys: [String: String] = [
+        "stamina_potion_small": "pot_stamina_small",
+        "stamina_potion_medium": "pot_stamina_medium",
+        "stamina_potion_large": "pot_stamina_large",
+        "health_potion_small": "pot_health_small",
+        "health_potion_medium": "pot_health_medium",
+        "health_potion_large": "pot_health_large",
+        "gem_pack_small": "gem_pack_small",
+        "gem_pack_medium": "gem_pack_medium",
+        "gem_pack_large": "gem_pack_large",
+    ]
+
     /// Maps a ConsumableInventory JSON dict to an Item for display in the inventory grid.
     private func mapConsumableToItem(_ dict: [String: Any]) -> Item? {
         guard let id = dict["id"] as? String,
@@ -313,6 +326,7 @@ final class InventoryService {
               quantity > 0 else { return nil }
 
         let displayName = Self.consumableDisplayNames[consumableType] ?? consumableType.replacingOccurrences(of: "_", with: " ").capitalized
+        let imageKey = Self.consumableImageKeys[consumableType]
 
         return Item(
             id: id,
@@ -333,9 +347,10 @@ final class InventoryService {
             durability: nil,
             maxDurability: nil,
             description: nil,
-            catalogId: nil,
+            catalogId: consumableType,
             classRestriction: nil,
             imageUrl: nil,
+            imageKey: imageKey,
             quantity: quantity,
             consumableType: consumableType
         )

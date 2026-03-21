@@ -98,14 +98,22 @@ struct OpponentCardView: View {
                         ProgressView()
                             .tint(DarkFantasyTheme.textOnGold)
                     } else {
-                        Text("⚔️ FIGHT")
+                        HStack(spacing: 4) {
+                            Image(systemName: "swords")
+                                .font(.system(size: 12))
+                            Text("FIGHT")
+                        }
                         if staminaCost > 0 {
                             Text("(\(staminaCost) STA)")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         } else {
-                            Text("(FREE)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                                .foregroundStyle(DarkFantasyTheme.success)
+                            Text("FREE")
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                                .foregroundStyle(DarkFantasyTheme.goldBright)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(DarkFantasyTheme.bgDarkPanel)
+                                .clipShape(Capsule())
                         }
                     }
                 }

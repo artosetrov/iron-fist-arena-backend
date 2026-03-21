@@ -30,6 +30,7 @@ struct WelcomeView: View {
                     }
                     .buttonStyle(.primary(enabled: !vm.isLoading))
                     .disabled(vm.isLoading)
+                    .accessibilityLabel("Play as guest without account")
 
                     // Log In — secondary
                     Button {
@@ -38,6 +39,7 @@ struct WelcomeView: View {
                         Text("LOG IN")
                     }
                     .buttonStyle(.secondary)
+                    .accessibilityLabel("Log in with email")
 
                     // Social divider
                     HStack(spacing: LayoutConstants.spaceMD) {
@@ -72,19 +74,20 @@ struct WelcomeView: View {
                                 Text("Apple")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
-                            .foregroundStyle(Color.white)
+                            .foregroundStyle(.textPrimary)
                             .allowsHitTesting(false)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)
                         .background(
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .fill(Color.black)
+                                .fill(.bgPrimary)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                         )
+                        .accessibilityLabel("Sign in with Apple")
 
                         // Google
                         Button {
@@ -96,9 +99,10 @@ struct WelcomeView: View {
                                 Text("Google")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
-                            .foregroundStyle(Color.white)
+                            .foregroundStyle(.textPrimary)
                         }
                         .buttonStyle(.socialAuth)
+                        .accessibilityLabel("Sign in with Google")
                     }
 
                     // Create Account — text link
@@ -106,6 +110,7 @@ struct WelcomeView: View {
                         appState.authPath.append(AppRoute.register)
                     }
                     .buttonStyle(.ghost)
+                    .accessibilityLabel("Create new account")
                     .padding(.top, LayoutConstants.spaceXS)
 
                     // Guest warning

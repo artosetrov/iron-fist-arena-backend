@@ -10,8 +10,8 @@ struct ShopOfferBannerView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             HStack(spacing: LayoutConstants.spaceXS) {
-                Text("🔥")
-                    .font(.system(size: 14))
+                Image(systemName: "flame")
+                    .font(.system(size: 12))
                 Text("SPECIAL OFFERS")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -21,13 +21,14 @@ struct ShopOfferBannerView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: LayoutConstants.spaceMD) {
-                    ForEach(offers) { offer in
+                    ForEach(Array(offers.enumerated()), id: \.element.id) { index, offer in
                         OfferCard(
                             offer: offer,
                             canAfford: canAfford(offer),
                             isBuying: buyingId == offer.id,
                             onBuy: { onBuy(offer) }
                         )
+                        .staggeredAppear(index: index)
                     }
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
@@ -51,7 +52,7 @@ private struct OfferCard: View {
                 if offer.hasDiscount {
                     Text("-\(offer.discountPct)%")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(
@@ -65,7 +66,7 @@ private struct OfferCard: View {
                 if let remaining = offer.timeRemaining {
                     HStack(spacing: 2) {
                         Image(systemName: "clock")
-                            .font(.system(size: 10))
+                            .font(.system(size: 16))
                         Text(remaining)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     }
@@ -117,12 +118,13 @@ private struct OfferCard: View {
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 } else {
                     Button {
+                        HapticManager.heavy()
                         onBuy()
                     } label: {
                         if isBuying {
                             ProgressView()
                                 .progressViewStyle(.circular)
-                                .tint(.white)
+                                .tint(.textPrimary)
                                 .scaleEffect(0.7)
                         } else {
                             Text("BUY")

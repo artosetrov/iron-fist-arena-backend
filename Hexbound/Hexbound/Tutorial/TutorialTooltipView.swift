@@ -1,9 +1,9 @@
 import SwiftUI
 
-// MARK: - Tutorial Tooltip View
+// MARK: - Tutorial Tooltip View (uses unified NPCGuideWidget)
 
-/// A themed tooltip bubble with arrow, title, message, and dismiss/skip controls.
-/// Attach via `.tutorialTooltip(step:)` view modifier.
+/// Wrapper around `NPCGuideWidget` for tutorial steps.
+/// Adds entrance animation (scale + fade) and maps `TutorialStep` to widget props.
 struct TutorialTooltipView: View {
     let step: TutorialStep
     let onDismiss: () -> Void
@@ -11,80 +11,21 @@ struct TutorialTooltipView: View {
 
     @State private var appeared = false
 
-    private let bubbleMaxWidth: CGFloat = 280
-
     var body: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            // Title row
-            HStack {
-                Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                Text(step.title)
-                    .font(DarkFantasyTheme.section(size: 15))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                Spacer()
-
-                Button {
-                    onDismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-            }
-
-            // Message
-            Text(step.message)
-                .font(DarkFantasyTheme.body(size: 14))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Action row
-            HStack {
-                Button {
-                    onSkipAll()
-                } label: {
-                    Text("Skip all tips")
-                        .font(DarkFantasyTheme.body(size: 12))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-
-                Spacer()
-
-                Button {
-                    onDismiss()
-                } label: {
-                    Text("Got it")
-                        .font(DarkFantasyTheme.section(size: 13))
-                        .foregroundStyle(DarkFantasyTheme.bgPrimary)
-                        .padding(.horizontal, LayoutConstants.spaceMD)
-                        .padding(.vertical, LayoutConstants.spaceXS)
-                        .background(
-                            Capsule().fill(DarkFantasyTheme.gold)
-                        )
-                }
-            }
-        }
-        .padding(LayoutConstants.spaceMD)
-        .frame(maxWidth: bubbleMaxWidth)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+        NPCGuideWidget(
+            npcTitle: step.npcName,
+            onDismiss: onDismiss,
+            npcImageName: step.npcImageAsset,
+            plainMessage: step.message,
+            onSkipAll: onSkipAll,
+            onContinue: {
+                onDismiss()
+            },
+            npcFallbackIcon: step.npcFallbackIcon
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
-        )
-        .shadow(color: DarkFantasyTheme.gold.opacity(0.15), radius: 16, y: 4)
-        .scaleEffect(appeared ? 1 : 0.85)
         .opacity(appeared ? 1 : 0)
         .onAppear {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) {
                 appeared = true
             }
         }
@@ -93,7 +34,7 @@ struct TutorialTooltipView: View {
 
 // MARK: - Spotlight Overlay
 
-/// Full-screen dimmed overlay that highlights a target rect and shows a tooltip.
+/// Full-screen dimmed overlay that highlights a target rect and shows an NPC tooltip at the bottom.
 struct TutorialSpotlightOverlay: View {
     let step: TutorialStep
     let targetFrame: CGRect
@@ -105,12 +46,21 @@ struct TutorialSpotlightOverlay: View {
             ZStack {
                 // Dimmed backdrop with cutout
                 spotlightMask(in: geo.size)
-                    .fill(Color.black.opacity(0.55))
+                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
                     .ignoresSafeArea()
                     .onTapGesture { onDismiss() }
 
-                // Tooltip positioned relative to target
-                tooltipPositioned(in: geo)
+                // Tooltip pinned to bottom of screen (uses NPCGuideWidget)
+                VStack {
+                    Spacer()
+                    TutorialTooltipView(
+                        step: step,
+                        onDismiss: onDismiss,
+                        onSkipAll: onSkipAll
+                    )
+                    .padding(.horizontal, LayoutConstants.npcOuterPadding)
+                    .padding(.bottom, LayoutConstants.npcOuterPadding)
+                }
             }
         }
         .ignoresSafeArea()
@@ -124,53 +74,6 @@ struct TutorialSpotlightOverlay: View {
         let cutout = Path(roundedRect: inset, cornerRadius: 10)
         path = path.subtracting(cutout)
         return path
-    }
-
-    @ViewBuilder
-    private func tooltipPositioned(in geo: GeometryProxy) -> some View {
-        let edge = step.arrowEdge
-        let tooltip = TutorialTooltipView(
-            step: step,
-            onDismiss: onDismiss,
-            onSkipAll: onSkipAll
-        )
-
-        switch edge {
-        case .top:
-            // Tooltip below the target
-            tooltip
-                .position(
-                    x: clampX(targetFrame.midX, in: geo.size.width),
-                    y: targetFrame.maxY + 16 + 60
-                )
-        case .bottom:
-            // Tooltip above the target
-            tooltip
-                .position(
-                    x: clampX(targetFrame.midX, in: geo.size.width),
-                    y: targetFrame.minY - 16 - 60
-                )
-        case .leading:
-            // Tooltip to the right
-            tooltip
-                .position(
-                    x: min(targetFrame.maxX + 150, geo.size.width - 20),
-                    y: targetFrame.midY
-                )
-        case .trailing:
-            // Tooltip to the left
-            tooltip
-                .position(
-                    x: max(targetFrame.minX - 150, 20),
-                    y: targetFrame.midY
-                )
-        }
-    }
-
-    private func clampX(_ x: CGFloat, in width: CGFloat) -> CGFloat {
-        let margin: CGFloat = 20
-        let halfBubble: CGFloat = 140
-        return min(max(x, margin + halfBubble), width - margin - halfBubble)
     }
 }
 

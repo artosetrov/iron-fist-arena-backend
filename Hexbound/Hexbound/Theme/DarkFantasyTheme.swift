@@ -23,7 +23,8 @@ enum DarkFantasyTheme {
     static let gold = Color(hex: 0xD4A537)           // Primary CTA, gold buttons
     static let goldBright = Color(hex: 0xFFD700)      // Highlighted text, important values
     static let goldDim = Color(hex: 0x8B6914)         // Disabled gold, inactive
-    static let goldGlow = Color(hex: 0xD4A537).opacity(0.4) // Gold glow for shadows
+    static let goldGlow = Color(hex: 0xF39C12).opacity(0.4) // Orange glow for shadows (unified)
+    static let glowOrange = Color(hex: 0xF39C12)         // Unified orange glow color
 
     // Legacy aliases
     static let goldLight = goldBright
@@ -243,6 +244,14 @@ enum DarkFantasyTheme {
     // Fight button gradient (same colors as staminaButtonGradient)
     static let fightButtonGradient = staminaButtonGradient
 
+    // Arena Premium Card
+    static let bgArenaCardPremium = LinearGradient(
+        colors: [Color(hex: 0x1A1A38), Color(hex: 0x12122A), Color(hex: 0x0E0E20)],
+        startPoint: .top, endPoint: .bottom
+    )
+    static let arenaCardInnerGlow = Color(hex: 0x2A2A50)  // Subtle inner lighting
+    static let arenaShimmerColor = Color.white.opacity(0.07) // Moving shine
+
     // Difficulty colors — semantic aliases
     static let difficultyEasy = success               // 0x2ECC71
     static let difficultyMedium = arenaRankGold        // 0xF39C12
@@ -271,6 +280,63 @@ enum DarkFantasyTheme {
     static let toastInfo        = Color(hex: 0xCCCCDA)           // Neutral light for info
     static let toastError       = textDanger                     // Red dot for errors
 
+    // MARK: - Unified Hero Widget Pill Colors
+
+    /// WCAG AA compliant tertiary text (≥4.5:1 on dark bg). Use in widget + pills.
+    static let textTertiaryAA = Color(hex: 0x8A8AA0)
+
+    // Pill: Heal (green, for health potion action)
+    static let pillHealBg = Color(hex: 0x2ECC71, opacity: 0.12)
+    static let pillHealBorder = Color(hex: 0x2ECC71, opacity: 0.25)
+    static let pillHealText = textStatusGood
+
+    // Pill: Urgent Heal (red, critical HP + potion available)
+    static let pillUrgentBg = Color(hex: 0xE63946, opacity: 0.12)
+    static let pillUrgentBorder = Color(hex: 0xE63946, opacity: 0.30)
+    static let pillUrgentText = textDanger
+
+    // Pill: Energy (orange, stamina potion action)
+    static let pillEnergyBg = Color(hex: 0xE67E22, opacity: 0.12)
+    static let pillEnergyBorder = Color(hex: 0xE67E22, opacity: 0.25)
+    static let pillEnergyText = stamina
+
+    // Pill: Stat Points (gold, level up → allocate)
+    static let pillStatBg = Color(hex: 0xD4A537, opacity: 0.12)
+    static let pillStatBorder = Color(hex: 0xD4A537, opacity: 0.30)
+    static let pillStatText = goldBright
+
+    // Pill: Warning (red, broken gear / critical / no potions)
+    static let pillWarnBg = Color(hex: 0xE63946, opacity: 0.10)
+    static let pillWarnBorder = Color(hex: 0xE63946, opacity: 0.20)
+    static let pillWarnText = textDanger
+
+    // Pill: PvP (gold tint, arena rating)
+    static let pillPvpBg = Color(hex: 0xD4A537, opacity: 0.08)
+    static let pillPvpBorder = Color(hex: 0xD4A537, opacity: 0.15)
+
+    // Pill: Win Streak (red tint)
+    static let pillStreakBg = Color(hex: 0xE63946, opacity: 0.08)
+    static let pillStreakBorder = Color(hex: 0xE63946, opacity: 0.15)
+
+    // Pill: Bonus (green tint, first win)
+    static let pillBonusBg = Color(hex: 0x2ECC71, opacity: 0.10)
+    static let pillBonusBorder = Color(hex: 0x2ECC71, opacity: 0.20)
+
+    // Pill: Error (red, API failure)
+    static let pillErrorBg = Color(hex: 0xE63946, opacity: 0.10)
+    static let pillErrorBorder = Color(hex: 0xE63946, opacity: 0.20)
+
+    // Pill: Offline (neutral, cached data indicator)
+    static let pillOfflineBg = Color.white.opacity(0.04)
+    static let pillOfflineBorder = Color.white.opacity(0.08)
+    static let pillOfflineText = textSecondary
+
+    // XP bar golden variant (for level-up imminent state)
+    static let xpGoldenGradient = LinearGradient(
+        colors: [gold, goldBright],
+        startPoint: .leading, endPoint: .trailing
+    )
+
     // MARK: - Misc UI Colors
 
     static let upgradeBlue = Color(hex: 0x60A5FA)          // Max upgrade level highlight
@@ -280,6 +346,44 @@ enum DarkFantasyTheme {
     static let zoneHead = Color(hex: 0xE66666)
     static let zoneChest = Color(hex: 0x6699E6)
     static let zoneLegs = Color(hex: 0x66E666)
+
+    // MARK: - City Map Sky & Atmosphere
+
+    static let skyNight = Color(hex: 0x0A0A12)             // Night sky background
+    static let moonGlowOuter1 = Color(hex: 0xE8E0D0)       // Moon halo — warm outer
+    static let moonGlowOuter2 = Color(hex: 0xCCBBAA)       // Moon halo — mid ring
+    static let moonGlowOuter3 = Color(hex: 0x8888AA)       // Moon halo — cool fringe
+    static let moonGlowInner1 = Color(hex: 0xFFF8E8)       // Moon core — bright
+    static let moonGlowInner2 = Color(hex: 0xDDCCAA)       // Moon core — warm falloff
+    static let fogLight = Color(hex: 0x2A2A3A)             // Fog strip — lightest
+    static let fogMid = Color(hex: 0x1A1A2A)               // Fog strip — mid
+    static let fogDark = Color(hex: 0x0A0A15)              // Fog strip — darkest
+
+    // MARK: - City Map Glow Effects
+
+    static let glowFire = Color(hex: 0xFF6600)            // Firepit / torch glow
+    static let glowWarm = Color(hex: 0xFFAA33)            // Warm ambient light
+    static let glowEmber = Color(hex: 0xFF8833)            // Ember glow
+
+    // MARK: - Dungeon Building Glow Colors
+
+    static let glowArena = Color(hex: 0xE68C33)           // Arena building
+    static let glowMystic = Color(hex: 0x8040B0)          // Mystic / magic building
+    static let glowForge = Color(hex: 0xFF6626)           // Forge / smithing
+    static let glowNature = Color(hex: 0x4CAF50)          // Nature / healing
+    static let glowVolcanic = Color(hex: 0xE65100)        // Volcanic / fire
+    static let glowIce = Color(hex: 0x42A5F5)             // Ice / water
+    static let glowTreasure = Color(hex: 0xFFD54F)        // Treasure / gold
+    static let glowShadow = Color(hex: 0x424242)          // Shadow / dark
+    static let glowStone = Color(hex: 0x78909C)           // Stone / neutral
+    static let glowBlood = Color(hex: 0xB71C1C)           // Blood / boss
+
+    // MARK: - Daily Login Gradients
+
+    static let dailyGradientTopGold = Color(hex: 0x3D2E0A)
+    static let dailyGradientBottomGold = Color(hex: 0x2A1F05)
+    static let dailyGradientTopGreen = Color(hex: 0x1A3A1A)
+    static let dailyGradientBottomGreen = Color(hex: 0x0A2A0A)
 
     // MARK: - Fonts (AAA Typography Scale)
 
@@ -425,4 +529,20 @@ extension Color {
             opacity: opacity
         )
     }
+}
+
+// MARK: - Color convenience accessors (enables .bgAbyss / .textPrimary shorthand)
+
+extension Color {
+    static var bgAbyss: Color { DarkFantasyTheme.bgAbyss }
+    static var bgPrimary: Color { DarkFantasyTheme.bgPrimary }
+    static var bgBackdropLight: Color { DarkFantasyTheme.bgBackdropLight }
+    static var textPrimary: Color { DarkFantasyTheme.textPrimary }
+}
+
+extension ShapeStyle where Self == Color {
+    static var bgAbyss: Color { DarkFantasyTheme.bgAbyss }
+    static var bgPrimary: Color { DarkFantasyTheme.bgPrimary }
+    static var bgBackdropLight: Color { DarkFantasyTheme.bgBackdropLight }
+    static var textPrimary: Color { DarkFantasyTheme.textPrimary }
 }

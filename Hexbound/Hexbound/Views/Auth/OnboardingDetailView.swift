@@ -10,19 +10,21 @@ struct OnboardingDetailView: View {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Step indicator bar
+                // Step indicator bar — no animation on position
                 stepIndicatorBar
                     .padding(.top, LayoutConstants.spaceSM)
+                    .animation(nil, value: vm.step)
 
-                // Step content
-                switch vm.step {
-                case 0: ClassSelectionStepView(vm: vm)
-                case 1: AppearanceStepView(vm: vm)
-                case 2: NameStepView(vm: vm)
-                default: EmptyView()
+                // Step content — fills available space so top/bottom stay pinned
+                Group {
+                    switch vm.step {
+                    case 0: ClassSelectionStepView(vm: vm)
+                    case 1: AppearanceStepView(vm: vm)
+                    case 2: NameStepView(vm: vm)
+                    default: EmptyView()
+                    }
                 }
-
-                Spacer(minLength: 0)
+                .frame(maxHeight: .infinity, alignment: .top)
 
                 // Error
                 if !vm.errorMessage.isEmpty {
@@ -34,8 +36,9 @@ struct OnboardingDetailView: View {
                         .padding(.bottom, LayoutConstants.spaceSM)
                 }
 
-                // Navigation buttons
+                // Navigation buttons — no animation on position
                 bottomButton
+                    .animation(nil, value: vm.step)
             }
         }
         .navigationBarHidden(true)
@@ -59,7 +62,7 @@ struct OnboardingDetailView: View {
                 stepTab(
                     number: i + 1,
                     title: ["CLASS", "APPEARANCE", "NAME"][i],
-                    subtitle: i == 0 ? vm.selectedClass?.sfName : nil,
+                    subtitle: nil,
                     isActive: vm.step == i,
                     isCompleted: vm.step > i
                 )
@@ -127,17 +130,21 @@ struct OnboardingDetailView: View {
     private var bottomButton: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack(spacing: LayoutConstants.spaceMD) {
-                if vm.step > 0 {
-                    Button {
-                        vm.prevStep()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("BACK")
+                Button {
+                    if vm.step == 0 {
+                        if !appState.authPath.isEmpty {
+                            appState.authPath.removeLast()
                         }
+                    } else {
+                        vm.prevStep()
                     }
-                    .buttonStyle(.secondary)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("BACK")
+                    }
                 }
+                .buttonStyle(.ghost)
 
                 Button {
                     if vm.step == OnboardingViewModel.totalSteps - 1 {

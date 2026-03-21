@@ -11,7 +11,7 @@ struct CharacterDetailView: View {
 
             if let vm = viewModel, let char = appState.currentCharacter {
                 ScrollView {
-                    VStack(spacing: LayoutConstants.spaceLG) {
+                    VStack(spacing: LayoutConstants.sectionGap) {
                         // Header
                         characterHeader(char)
 
@@ -40,9 +40,20 @@ struct CharacterDetailView: View {
                                 Text("COMBAT STANCE")
                                 Spacer()
                                 if let stance = char.combatStance {
-                                    Text("⚔️ \(stance.attack.capitalized)  |  🛡️ \(stance.defense.capitalized)")
-                                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                    HStack(spacing: LayoutConstants.spaceXS) {
+                                        Image(StanceSelectorViewModel.zoneAsset(for: stance.attack))
+                                            .resizable().scaledToFit().frame(width: 16, height: 16)
+                                        Text(stance.attack.capitalized)
+                                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                        Text("|")
+                                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                        Image(StanceSelectorViewModel.zoneAsset(for: stance.defense))
+                                            .resizable().scaledToFit().frame(width: 16, height: 16)
+                                        Text(stance.defense.capitalized)
+                                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                    }
                                 }
                                 Image(systemName: "chevron.right")
                                     .foregroundStyle(DarkFantasyTheme.goldDim)
@@ -108,7 +119,7 @@ struct CharacterDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Avatar — full-width square
             GeometryReader { geo in
-                let side = geo.size.width - LayoutConstants.screenPadding * 2
+                let side = max(geo.size.width - LayoutConstants.screenPadding * 2, 0)
                 ZStack {
                     RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                         .fill(DarkFantasyTheme.bgSecondary)
@@ -192,7 +203,11 @@ struct CharacterDetailView: View {
     @ViewBuilder
     private func statPointsBanner(_ vm: CharacterViewModel) -> some View {
         HStack {
-            Text("⭐ Stat Points: \(vm.availablePoints)")
+            HStack(spacing: 4) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 12))
+                Text("Stat Points: \(vm.availablePoints)")
+            }
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                 .foregroundStyle(DarkFantasyTheme.textSuccess)
         }
@@ -235,51 +250,66 @@ struct CharacterDetailView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 18, height: 18)
+                    .accessibilityLabel("\(stat.fullName) icon")
+                    .accessibilityElement(children: .ignore)
 
                 Text(stat.fullName)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(color)
                     .lineLimit(1)
+                    .accessibilityLabel("\(stat.fullName) statistic")
 
                 Button {
                     tooltipStat = tooltipStat == stat ? nil : stat
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11)) // SF Symbol icon
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Show information for \(stat.fullName)")
 
                 Spacer(minLength: 4)
 
                 if delta > 0 {
-                    Button { vm.decrement(stat) } label: {
+                    Button {
+                        HapticManager.selection()
+                        vm.decrement(stat)
+                    } label: {
                         Image(systemName: "minus")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .frame(width: 22, height: 22)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
                     .buttonStyle(.scalePress(0.85))
+                    .accessibilityLabel("Decrease \(stat.fullName)")
+                    .accessibilityAddTraits(.isButton)
                 }
 
                 Text("\(value)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                     .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textPrimary)
                     .frame(minWidth: 24, alignment: .trailing)
+                    .accessibilityLabel("\(stat.fullName): \(value)")
 
                 if hasPoints {
-                    Button { vm.increment(stat) } label: {
+                    Button {
+                        HapticManager.selection()
+                        vm.increment(stat)
+                    } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.textPrimary)
                             .frame(width: 22, height: 22)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                     }
                     .buttonStyle(.scalePress(0.85))
                     .disabled(vm.availablePoints <= 0)
+                    .accessibilityLabel("Increase \(stat.fullName)")
+                    .accessibilityAddTraits(.isButton)
                 }
             }
 

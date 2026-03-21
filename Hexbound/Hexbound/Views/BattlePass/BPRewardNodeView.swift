@@ -6,6 +6,8 @@ struct BPRewardNodeView: View {
     let isClaiming: Bool
     let onClaim: () -> Void
 
+    @State private var showClaimBurst = false
+
     var body: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             // Level
@@ -27,6 +29,13 @@ struct BPRewardNodeView: View {
                     .stroke(borderColor, lineWidth: state == .claimable ? 2 : 1)
             )
             .opacity(state == .locked ? 0.5 : 1)
+            .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: state == .claimable)
+            .overlay {
+                if showClaimBurst {
+                    RewardBurstView(style: burstStyleForReward, isActive: $showClaimBurst)
+                        .allowsHitTesting(false)
+                }
+            }
 
             // Name + amount
             Text(reward.rewardName)
@@ -47,7 +56,10 @@ struct BPRewardNodeView: View {
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             case .claimable:
-                Button(action: onClaim) {
+                Button {
+                    HapticManager.medium()
+                    onClaim()
+                } label: {
                     if isClaiming {
                         ProgressView()
                             .tint(DarkFantasyTheme.textOnGold)
@@ -65,6 +77,12 @@ struct BPRewardNodeView: View {
             }
         }
         .frame(width: 90)
+        .onChange(of: state) { oldState, newState in
+            if oldState == .claimable && newState == .claimed {
+                HapticManager.success()
+                showClaimBurst = true
+            }
+        }
     }
 
     private var borderColor: Color {
@@ -72,6 +90,16 @@ struct BPRewardNodeView: View {
         case .claimable: DarkFantasyTheme.goldBright
         case .claimed: DarkFantasyTheme.success.opacity(0.5)
         case .locked: DarkFantasyTheme.borderSubtle
+        }
+    }
+
+    private var burstStyleForReward: BurstStyle {
+        // Rarity-aware burst: rare/epic/legendary for special rewards, claim for normal
+        switch reward.rewardType {
+        case "skin": .epic
+        case "chest": .legendary
+        case "gems": .rare
+        default: .claim
         }
     }
 }

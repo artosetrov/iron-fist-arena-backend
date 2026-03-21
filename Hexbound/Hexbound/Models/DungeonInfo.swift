@@ -86,13 +86,153 @@ struct DungeonInfo: Identifiable {
 
     var totalBosses: Int { bosses.count }
 
-    // MARK: - Static Data
+    // MARK: - Server Data Parsing
 
-    static let all: [DungeonInfo] = [
+    /// Parse a DungeonInfo from the /api/dungeons/list response dictionary.
+    static func from(serverData d: [String: Any]) -> DungeonInfo? {
+        guard let slug = d["slug"] as? String,
+              let name = d["name"] as? String else { return nil }
+
+        let levelReq = d["level_req"] as? Int ?? 1
+        let energyCost = d["energy_cost"] as? Int ?? 10
+        let description = d["description"] as? String ?? ""
+        let sortOrder = d["sort_order"] as? Int ?? 0
+
+        // Parse dungeon-wide drops → loot previews for all bosses
+        let serverDrops = d["drops"] as? [[String: Any]] ?? []
+        let dungeonLoot: [LootPreview] = serverDrops.compactMap { dr in
+            guard let item = dr["item"] as? [String: Any],
+                  let itemName = item["name"] as? String else { return nil }
+            let rarityStr = item["rarity"] as? String ?? "common"
+            let rarity = ItemRarity(rawValue: rarityStr) ?? .common
+            let dropChance = dr["drop_chance"] as? Double ?? 0
+            let itemType = item["type"] as? String ?? "weapon"
+            return LootPreview(
+                icon: Self.iconForItemType(itemType),
+                name: itemName,
+                detail: "\(rarity.displayName) (\(Int(dropChance))%)",
+                imageUrl: item["image_url"] as? String,
+                imageKey: item["image_key"] as? String,
+                rarity: rarity
+            )
+        }
+
+        // Base loot (gold + XP are always rewarded)
+        let baseLoot: [LootPreview] = [
+            LootPreview(icon: "🪙", name: "Gold", detail: "Varies", imageKey: "loot-gold"),
+            LootPreview(icon: "⭐", name: "XP", detail: "Varies", imageKey: "loot-xp"),
+        ]
+        let combinedLoot = baseLoot + dungeonLoot
+
+        // Parse bosses
+        let serverBosses = d["bosses"] as? [[String: Any]] ?? []
+        let bosses: [BossInfo] = serverBosses.enumerated().map { idx, b in
+            let bossImageUrl = b["image_url"] as? String
+            // Use server image_url as portrait if available, fallback to generic
+            let portrait = (bossImageUrl != nil && !bossImageUrl!.isEmpty)
+                ? bossImageUrl!
+                : "boss-generic-portrait"
+            return BossInfo(
+                id: idx + 1,
+                name: b["name"] as? String ?? "Unknown",
+                level: b["level"] as? Int ?? levelReq,
+                hp: b["hp"] as? Int ?? 500,
+                description: b["description"] as? String ?? "",
+                portraitImage: portrait,
+                fullImage: portrait,  // Use same URL for full image
+                loot: combinedLoot
+            )
+        }
+
+        // Determine theme color based on sort order / difficulty tier
+        let themeColor: Color = {
+            switch sortOrder {
+            case 0: return DarkFantasyTheme.glowArena  // Training Camp orange
+            case 1: return DarkFantasyTheme.glowMystic  // Catacombs purple
+            case 2: return DarkFantasyTheme.glowForge  // Volcanic red-orange
+            case 3: return DarkFantasyTheme.glowNature  // Fungal green
+            case 4: return DarkFantasyTheme.glowVolcanic  // Scorched deep orange
+            case 5: return DarkFantasyTheme.glowIce  // Frozen blue
+            case 6: return DarkFantasyTheme.glowTreasure  // Realm of Light gold
+            case 7: return DarkFantasyTheme.glowShadow  // Shadow dark
+            case 8: return DarkFantasyTheme.glowStone  // Clockwork steel
+            case 9: return DarkFantasyTheme.bgDungeonDeep  // Abyssal deep blue
+            default: return DarkFantasyTheme.glowBlood  // Infernal red
+            }
+        }()
+
+        // Determine icon based on dungeon slug
+        let icon: String = {
+            if slug.contains("training") { return "⚔️" }
+            if slug.contains("catacomb") { return "💀" }
+            if slug.contains("volcanic") || slug.contains("forge") { return "🔥" }
+            if slug.contains("fungal") || slug.contains("grotto") { return "🍄" }
+            if slug.contains("scorched") || slug.contains("mine") { return "⛏️" }
+            if slug.contains("frozen") || slug.contains("abyss") { return "❄️" }
+            if slug.contains("light") || slug.contains("realm") { return "✨" }
+            if slug.contains("shadow") { return "🌑" }
+            if slug.contains("clockwork") || slug.contains("citadel") { return "⚙️" }
+            if slug.contains("abyssal") || slug.contains("depth") { return "🌊" }
+            if slug.contains("infernal") || slug.contains("throne") { return "👑" }
+            return "🏰"
+        }()
+
+        // Reward icons from actual drops (unique item type icons)
+        let rewardIcons: [String] = {
+            var icons = ["🪙"]  // Gold always present
+            let uniqueIcons = Array(Set(dungeonLoot.map { $0.icon })).prefix(3)
+            icons.append(contentsOf: uniqueIcons)
+            if icons.count < 4 { icons.append("📜") }
+            return Array(icons.prefix(4))
+        }()
+
+        // Max level = last boss level, or levelReq + 10
+        let maxLevel = bosses.last?.level ?? (levelReq + 10)
+
+        return DungeonInfo(
+            id: slug,
+            name: name,
+            icon: icon,
+            description: description,
+            minLevel: levelReq,
+            maxLevel: maxLevel,
+            energyCost: energyCost,
+            bosses: bosses,
+            themeColor: themeColor,
+            rewardIcons: rewardIcons
+        )
+    }
+
+    /// Map item type string to an emoji icon
+    private static func iconForItemType(_ type: String) -> String {
+        switch type {
+        case "weapon": return "🗡️"
+        case "helmet": return "🪖"
+        case "chest": return "🛡️"
+        case "gloves": return "🧤"
+        case "legs": return "👖"
+        case "boots": return "🥾"
+        case "accessory": return "💍"
+        case "amulet": return "📿"
+        case "belt": return "🎗️"
+        case "relic": return "🔮"
+        case "necklace": return "📿"
+        case "ring": return "💎"
+        case "consumable": return "🧪"
+        default: return "📦"
+        }
+    }
+
+    // MARK: - Static Fallback Data
+
+    static let fallback: [DungeonInfo] = [
         trainingCamp,
         desecratedCatacombs,
         volcanicForge,
     ]
+
+    /// Deprecated — use dynamic loading. Kept as fallback only.
+    static let all: [DungeonInfo] = fallback
 
     static let difficultyCosts: [String: Int] = [
         "easy": 15, "normal": 20, "hard": 25
@@ -190,7 +330,7 @@ struct DungeonInfo: Identifiable {
                         LootPreview(icon: "💎", name: "Gems", detail: "5–10", imageKey: "loot-gems"),
                      ]),
         ],
-        themeColor: Color(hex: 0xE68C33),
+        themeColor: DarkFantasyTheme.glowArena,
         rewardIcons: ["🪙", "🗡️", "📜", "💎"]
     )
 
@@ -285,7 +425,7 @@ struct DungeonInfo: Identifiable {
                         LootPreview(icon: "💎", name: "Gems", detail: "10–20", imageKey: "loot-gems"),
                      ]),
         ],
-        themeColor: Color(hex: 0x8040B0),
+        themeColor: DarkFantasyTheme.glowMystic,
         rewardIcons: ["🪙", "🗡️", "🛡️", "💎"]
     )
 
@@ -380,7 +520,7 @@ struct DungeonInfo: Identifiable {
                         LootPreview(icon: "💎", name: "Gems", detail: "15–30", imageKey: "loot-gems"),
                      ]),
         ],
-        themeColor: Color(hex: 0xFF6626),
+        themeColor: DarkFantasyTheme.glowForge,
         rewardIcons: ["🪙", "🗡️", "🛡️", "💎"]
     )
 }

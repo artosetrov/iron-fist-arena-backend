@@ -39,7 +39,7 @@ struct CurrencyPackage: Identifiable {
 
     enum CurrencyType: String {
         case gold, gems
-        var icon: String { self == .gold ? "💰" : "💎" }
+        var icon: String { self == .gold ? "dollarsign.circle" : "diamond" }
         var label: String { self == .gold ? "GOLD" : "GEMS" }
         var accentColor: Color { self == .gold ? DarkFantasyTheme.goldBright : DarkFantasyTheme.cyan }
     }
@@ -111,8 +111,8 @@ struct CurrencyPurchaseView: View {
                     Spacer()
                     HStack(spacing: LayoutConstants.spaceLG) {
                         HStack(spacing: 6) {
-                            Text("💰")
-                                .font(.system(size: 14)) // emoji — keep
+                            Image(systemName: "dollarsign.circle")
+                                .font(.system(size: 14))
                             Text("YOUR GOLD")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -124,8 +124,8 @@ struct CurrencyPurchaseView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(width: 1, height: 20)
                         HStack(spacing: 6) {
-                            Text("💎")
-                                .font(.system(size: 14)) // emoji — keep
+                            Image(systemName: "diamond")
+                                .font(.system(size: 14))
                             Text("YOUR GEMS")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -148,7 +148,7 @@ struct CurrencyPurchaseView: View {
                     selectedIndex: $selectedTab
                 )
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.top, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
 
                 // Content
                 ScrollView(showsIndicators: false) {
@@ -241,12 +241,15 @@ struct CurrencyPurchaseView: View {
     private var currencyHeader: some View {
         let isGold = selectedTab == 0
         VStack(spacing: LayoutConstants.spaceSM) {
-            Text(isGold ? "💰" : "💎")
-                .font(.system(size: 48)) // emoji — keep
+            Image(systemName: isGold ? "dollarsign.circle" : "diamond")
+                .font(.system(size: 48))
+                .accessibilityLabel(isGold ? "Gold currency icon" : "Gems currency icon")
+                .accessibilityElement(children: .ignore)
 
             Text(isGold ? "GOLD TREASURY" : "GEM VAULT")
                 .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
                 .foregroundStyle(isGold ? DarkFantasyTheme.goldBright : DarkFantasyTheme.cyan)
+                .accessibilityLabel("Currency vault: \(isGold ? "Gold Treasury" : "Gem Vault")")
 
             Text(isGold
                  ? "Gold fuels your journey — buy gear, potions, and upgrades."
@@ -255,6 +258,7 @@ struct CurrencyPurchaseView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, LayoutConstants.spaceLG)
+                .accessibilityLabel("Currency description")
         }
         .padding(.vertical, LayoutConstants.spaceMD)
     }
@@ -442,19 +446,24 @@ struct CurrencyPackageCard: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(accentColor.opacity(0.2), lineWidth: 1)
             )
+            .accessibilityLabel("\(package.currencyType.label) currency icon")
+            .accessibilityElement(children: .ignore)
 
             // Amount + bonus
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(package.displayAmount)
                     .font(DarkFantasyTheme.title(size: package.isBestValue ? LayoutConstants.packageBestValueAmountFont : LayoutConstants.packageAmountFont))
                     .foregroundStyle(accentColor)
+                    .accessibilityLabel("\(package.displayAmount) \(package.currencyType.label)")
                 if package.bonusAmount > 0 {
                     Text("+\(formatBonus(package.bonusAmount)) BONUS")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                         .fontWeight(.semibold)
+                        .accessibilityLabel("Bonus: \(formatBonus(package.bonusAmount)) \(package.currencyType.label)")
                 }
             }
+            .accessibilityElement(children: .combine)
 
             Spacer(minLength: 4)
 
@@ -472,6 +481,7 @@ struct CurrencyPackageCard: View {
             .buttonStyle(.compactPrimary)
             .disabled(isPurchasing)
             .contentShape(Rectangle())
+            .accessibilityLabel("Purchase \(package.displayAmount) \(package.currencyType.label) for \(package.priceUSD)")
         }
         .frame(minHeight: LayoutConstants.packageCardMinHeight)
         .padding(LayoutConstants.spaceMD)
@@ -488,10 +498,15 @@ struct CurrencyPackageCard: View {
                     lineWidth: (package.isBestValue || package.isPopular) ? 2 : 1
                 )
         )
+        .accessibilityElement(children: .contain)
         // Corner badge overlay
         .overlay(alignment: .topTrailing) {
             if package.isBestValue {
-                Text("⭐ BEST VALUE")
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 10))
+                    Text("BEST VALUE")
+                }
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
                     .padding(.horizontal, 10)
@@ -506,7 +521,7 @@ struct CurrencyPackageCard: View {
             } else if package.isPopular {
                 Text("POPULAR")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.textPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 3)
                     .background(DarkFantasyTheme.purple)
@@ -520,7 +535,7 @@ struct CurrencyPackageCard: View {
         }
         .shadow(color: package.isBestValue ? accentColor.opacity(0.15) : .clear, radius: 8)
         // Shimmer on best value
-        .modifier(package.isBestValue ? ShimmerModifier(color: accentColor, duration: 4) : ShimmerModifier(color: .clear, duration: 0))
+        .shimmer(color: accentColor, duration: 4, isActive: package.isBestValue)
         .contentShape(Rectangle())
     }
 
@@ -546,8 +561,8 @@ struct MonthlyGemCardOffer: View {
         VStack(spacing: LayoutConstants.spaceMD) {
             // Header
             HStack(spacing: LayoutConstants.spaceSM) {
-                Text("💎")
-                    .font(.system(size: 36)) // emoji — keep
+                Image(systemName: "diamond")
+                    .font(.system(size: 36))
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("MONTHLY GEM CARD")
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
@@ -560,7 +575,7 @@ struct MonthlyGemCardOffer: View {
                 // Badge
                 Text("350 GEMS")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.textPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
@@ -573,7 +588,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "gift.fill")
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("50 gems instantly upon purchase")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -581,7 +596,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "calendar")
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("10 gems daily for 30 days (300 total)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -589,7 +604,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "sparkles")
                         .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("7x more value than buying gems directly!")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
@@ -690,7 +705,7 @@ struct PremiumBenefitChip: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10))
+                .font(.system(size: 16))
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
         }

@@ -53,7 +53,8 @@ struct LootDetailView: View {
                 imageUrl: item["image_url"] as? String,
                 sfIcon: Self.consumableSFIcon(for: consumableType, type: rawType),
                 sfColor: Self.consumableSFColor(for: consumableType, type: rawType),
-                fallbackIcon: type?.icon ?? "📦"
+                fallbackIcon: type?.icon ?? "shippingbox",
+                rarityTier: rarity.tier
             )
         }
 
@@ -127,7 +128,7 @@ struct LootDetailView: View {
                             imageUrl: lootImageUrl,
                             systemIcon: sfIcon,
                             systemIconColor: sfColor,
-                            fallbackIcon: type?.icon ?? "📦"
+                            fallbackIcon: type?.icon ?? "shippingbox"
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
                     }
@@ -154,6 +155,7 @@ struct LootDetailView: View {
                                     .padding(.vertical, 2)
                                     .background(Capsule().fill(DarkFantasyTheme.bgTertiary))
                                     .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
+                                    .accessibilityLabel("Item type: \(t.displayName)")
                             }
 
                             Text(rarity.rawValue)
@@ -163,7 +165,9 @@ struct LootDetailView: View {
                                 .padding(.vertical, 2)
                                 .background(Capsule().fill(rarityColor.opacity(0.15)))
                                 .overlay(Capsule().stroke(rarityColor.opacity(0.4), lineWidth: 1))
+                                .accessibilityLabel("Rarity: \(rarity.rawValue)")
                         }
+                        .accessibilityElement(children: .combine)
 
                         if !isGold {
                             Text("Level \(level)")
@@ -206,11 +210,14 @@ struct LootDetailView: View {
                                 Text(Item.statLabels[key] ?? key.capitalized)
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                    .accessibilityLabel("Stat: \(Item.statLabels[key] ?? key)")
                                 Spacer()
                                 Text("+\(value)")
                                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                                     .foregroundStyle(DarkFantasyTheme.statColor(for: key))
+                                    .accessibilityLabel("+\(value) \(Item.statLabels[key] ?? key)")
                             }
+                            .accessibilityElement(children: .combine)
                         }
                     }
                     .padding(.horizontal, LayoutConstants.cardPadding)
@@ -257,7 +264,7 @@ struct LootDetailView: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                     .stroke(rarityColor.opacity(0.5), lineWidth: 2)
             )
-            .shadow(color: .black.opacity(0.8), radius: 32, y: 8)
+            .shadow(color: .bgAbyss.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .fixedSize(horizontal: false, vertical: true)
             .transition(.scale(scale: 0.85).combined(with: .opacity))

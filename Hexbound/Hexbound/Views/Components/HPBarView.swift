@@ -48,8 +48,8 @@ struct HPBarView: View {
                 if showTextInside && percentage < 1.0 {
                     Text("\(currentHp) / \(maxHp)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                        .foregroundStyle(.white.opacity(0.9))
-                        .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
+                        .foregroundStyle(.textPrimary)
+                        .shadow(color: .bgAbyss.opacity(0.5), radius: 1, x: 0, y: 1)
                         .frame(maxWidth: .infinity)
                         .transition(.opacity)
                 }
@@ -57,6 +57,7 @@ struct HPBarView: View {
         }
         .frame(height: height)
         .animation(.easeInOut(duration: 0.4), value: percentage)
+        .accessibilityLabel("Health: \(currentHp) of \(maxHp)")
     }
 
     @State private var pulseOpacity: Double = 1.0

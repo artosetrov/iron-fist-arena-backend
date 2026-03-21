@@ -26,8 +26,10 @@ struct PrimaryButtonStyle: ButtonStyle {
                     .stroke(effectiveEnabled ? DarkFantasyTheme.borderOrnament : DarkFantasyTheme.borderSubtle, lineWidth: 2)
             )
             .shadow(color: effectiveEnabled ? DarkFantasyTheme.goldGlow : .clear, radius: 12, y: 4)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -51,8 +53,10 @@ struct SecondaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.gold, lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -72,8 +76,10 @@ struct DangerButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .fill(DarkFantasyTheme.danger)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -116,8 +122,10 @@ struct NavGridButtonStyle: ButtonStyle {
                     )
             }
             .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -140,8 +148,7 @@ struct CombatToggleButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(isActive ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -162,8 +169,7 @@ struct CombatControlButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -182,8 +188,7 @@ struct CombatForfeitButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.danger.opacity(0.3), lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.9 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -198,8 +203,7 @@ struct CloseButtonStyle: ButtonStyle {
             .background(
                 Circle().fill(DarkFantasyTheme.bgTertiary)
             )
-            .scaleEffect(configuration.isPressed ? 0.85 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -220,8 +224,7 @@ struct SocialAuthButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -243,8 +246,7 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -267,8 +269,7 @@ struct DangerCompactButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.danger.opacity(isEnabled ? 0.5 : 0.2), lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.9 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -291,8 +292,7 @@ struct CompactOutlineButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(color.opacity(0.5), lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.9 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -316,8 +316,7 @@ struct DangerOutlineButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -337,8 +336,7 @@ struct NeutralButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .fill(isEnabled ? DarkFantasyTheme.bgTertiary : DarkFantasyTheme.bgDisabled)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -364,8 +362,7 @@ struct ColorToggleButtonStyle: ButtonStyle {
                     .stroke(isActive ? activeColor : DarkFantasyTheme.borderSubtle, lineWidth: isActive ? 2 : 1)
             )
             .opacity(isActive ? 1.0 : 0.6)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -388,33 +385,20 @@ struct FightButtonStyle: ButtonStyle {
                     .fill(isEnabled ? AnyShapeStyle(DarkFantasyTheme.fightButtonGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
             )
             .shadow(color: isEnabled ? accentColor.opacity(0.4) : .clear, radius: 15, y: 6)
-            .overlay(
-                // Shine effect
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
-                    .fill(
-                        LinearGradient(
-                            colors: [.clear, .white.opacity(0.15), .clear],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .opacity(isEnabled ? 1 : 0)
-            )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
 // MARK: - Scale Press Style (Pure press feedback — no chrome)
 // Replaces: AppearanceButtonStyle, EditorAppearanceButtonStyle, CardTapStyle
+// Now uses opacity instead of scale for consistency
 
 struct ScalePressStyle: ButtonStyle {
-    var pressedScale: CGFloat = 0.9
+    var pressedScale: CGFloat = 0.9  // kept for API compat, ignored
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? pressedScale : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
 
@@ -520,8 +504,7 @@ struct GetMoreButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.gold, lineWidth: 2)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 
@@ -557,8 +540,7 @@ struct PremiumButtonStyle: ButtonStyle {
                     .stroke(DarkFantasyTheme.premiumPink.opacity(0.6), lineWidth: 2)
             )
             .shadow(color: DarkFantasyTheme.premiumPink.opacity(0.3), radius: 12, y: 4)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 

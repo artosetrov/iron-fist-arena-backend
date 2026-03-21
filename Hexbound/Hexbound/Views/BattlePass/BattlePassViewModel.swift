@@ -7,6 +7,7 @@ final class BattlePassViewModel {
 
     var data: BattlePassData?
     var isLoading = false
+    var errorMessage: String?
     var claimingLevel: Int?
     var isBuyingPremium = false
 
@@ -44,9 +45,14 @@ final class BattlePassViewModel {
         } else {
             isLoading = true
         }
+        errorMessage = nil
         let result = await service.loadBattlePass()
-        data = result
-        if let result { cache.cacheBattlePass(result) }
+        if let result {
+            data = result
+            cache.cacheBattlePass(result)
+        } else if data == nil {
+            errorMessage = "Failed to load Battle Pass"
+        }
         isLoading = false
     }
 
@@ -62,10 +68,12 @@ final class BattlePassViewModel {
 
     func buyPremium() async {
         guard !isBuyingPremium else { return }
+        HapticManager.heavy()
         isBuyingPremium = true
         defer { isBuyingPremium = false }
         let success = await service.buyPremium()
         if success {
+            HapticManager.legendaryReveal()
             await loadBattlePass()
         }
     }

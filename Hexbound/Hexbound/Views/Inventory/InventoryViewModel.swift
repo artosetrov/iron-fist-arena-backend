@@ -11,13 +11,11 @@ final class InventoryViewModel {
     var selectedItem: Item?
     var showItemDetail = false
     var totalSlots: Int = 28
+    var errorMessage: String? = nil
 
     // Search & Sort
     var searchText = ""
     var sortMode: InventorySortMode = .rarity
-    var filterType: ItemType? = nil  // nil = all
-
-    static let filterTypes: [ItemType] = [.weapon, .helmet, .chest, .gloves, .legs, .boots, .accessory, .consumable]
 
     init(appState: AppState) {
         self.appState = appState
@@ -32,11 +30,6 @@ final class InventoryViewModel {
 
     var sortedItems: [Item] {
         var result = items.filter { $0.isEquipped != true }
-
-        // Filter by type
-        if let filterType {
-            result = result.filter { $0.itemType == filterType }
-        }
 
         // Filter by search text
         if !searchText.isEmpty {
@@ -97,6 +90,7 @@ final class InventoryViewModel {
         } else if items.isEmpty {
             isLoading = true
         }
+        errorMessage = nil
         let result = await service.loadInventory()
         items = result
         totalSlots = appState.currentCharacter?.inventorySlots ?? 28
@@ -202,7 +196,7 @@ final class InventoryViewModel {
         if result.success {
             appState.showToast("⬆ \(item.itemName) +\(result.newLevel)!", type: .reward)
         } else if result.protectionUsed {
-            appState.showToast("🛡 Protected — level kept at +\(result.newLevel)", type: .info)
+            appState.showToast("Protected — level kept at +\(result.newLevel)", type: .info)
         } else if result.levelLost {
             appState.showToast("❌ Failed! Dropped to +\(result.newLevel)", type: .error)
         } else {

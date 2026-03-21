@@ -133,7 +133,7 @@ struct ItemDetailSheet: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                     .stroke(rarityColor.opacity(0.5), lineWidth: 2)
             )
-            .shadow(color: .black.opacity(0.8), radius: 32, y: 8)
+            .shadow(color: .bgAbyss.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .frame(maxHeight: UIScreen.main.bounds.height * 0.75)
             .fixedSize(horizontal: false, vertical: true)
@@ -160,6 +160,8 @@ struct ItemDetailSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
             }
             .frame(width: 88, height: 88)
+            .accessibilityLabel("Item icon for \(item.displayName)")
+            .accessibilityElement(children: .ignore)
 
             // Item info
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
@@ -167,21 +169,26 @@ struct ItemDetailSheet: View {
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
                     .foregroundStyle(rarityColor)
                     .lineLimit(2)
+                    .accessibilityLabel("Item name")
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     badgePill(item.itemType.displayName, style: .secondary)
                     badgePill(item.rarity.displayName, style: .rarity)
                 }
+                .accessibilityLabel("\(item.itemType.displayName) \(item.rarity.displayName) rarity")
+                .accessibilityElement(children: .combine)
 
                 Text("Level \(item.itemLevel)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .accessibilityLabel("Item level: \(item.itemLevel)")
 
                 if let restriction = item.classRestriction,
                    restriction != "none", !restriction.isEmpty {
                     Text("\(restriction.capitalized) only")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.goldDim)
+                        .accessibilityLabel("Restricted to \(restriction)")
                 }
             }
 
@@ -192,6 +199,7 @@ struct ItemDetailSheet: View {
                 Image(systemName: "xmark")
             }
             .buttonStyle(.closeButton)
+            .accessibilityLabel("Close item detail")
         }
     }
 
@@ -283,11 +291,15 @@ struct ItemDetailSheet: View {
                         }
                     }
                     .frame(height: 12)
+                    .accessibilityLabel("Durability progress")
+                    .accessibilityValue("\(item.durability ?? 0) of \(item.maxDurability ?? 0)")
 
                     Text("\(item.durability ?? 0)/\(item.maxDurability ?? 0)")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         .foregroundStyle(durabilityColor)
                         .monospacedDigit()
+                        .accessibilityLabel("Durability: \(item.durability ?? 0) of \(item.maxDurability ?? 0)")
+                        .accessibilityElement(children: .ignore)
                 }
 
                 if isBroken {
@@ -511,36 +523,48 @@ struct ItemDetailSheet: View {
                 upgradeConfirmPanel
             } else if isBroken {
                 // Broken item — only REPAIR available
-                Button("REPAIR · \(repairCost) 💰") { onRepair() }
+                Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
                     .buttonStyle(.primary)
             } else {
                 if item.itemType == .consumable {
-                    Button("USE") { onUse() }
+                    Button("USE") { HapticManager.medium(); onUse() }
                         .buttonStyle(.primary)
                 } else if isEquipped {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Button("UNEQUIP") { onUnequip() }
+                        Button("UNEQUIP") {
+                            HapticManager.light()
+                            SFXManager.shared.play(.uiUnequip)
+                            onUnequip()
+                        }
                             .buttonStyle(.secondary)
                         if isDamaged {
-                            Button("REPAIR · \(repairCost) 💰") { onRepair() }
+                            Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
                                 .buttonStyle(.primary)
                         } else if canUpgrade {
-                            Button("UPGRADE") { showUpgradeConfirm = true }
+                            Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
                                 .buttonStyle(.primary)
                         }
                     }
                 } else {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Button("EQUIP") { onEquip() }
+                        Button("EQUIP") {
+                            HapticManager.medium()
+                            SFXManager.shared.play(.uiEquip)
+                            onEquip()
+                        }
                             .buttonStyle(.primary)
-                        Button("SELL") { onSell() }
+                        Button("SELL") {
+                            HapticManager.light()
+                            SFXManager.shared.play(.uiSell)
+                            onSell()
+                        }
                             .buttonStyle(.danger)
                     }
                     if isDamaged {
-                        Button("REPAIR · \(repairCost) 💰") { onRepair() }
+                        Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
                             .buttonStyle(.secondary)
                     } else if canUpgrade {
-                        Button("UPGRADE") { showUpgradeConfirm = true }
+                        Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
                             .buttonStyle(.secondary)
                     }
                 }
@@ -609,12 +633,21 @@ struct ItemDetailSheet: View {
             if currentUpgradeLevel >= 5 {
                 Toggle(isOn: $useProtection) {
                     HStack(spacing: LayoutConstants.spaceXS) {
-                        Text("🛡 Protection Scroll")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        Text("(30 💎)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(playerGems >= 30 ? DarkFantasyTheme.purple : DarkFantasyTheme.textTertiary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "shield")
+                                .font(.system(size: 10))
+                            Text("Protection Scroll")
+                        }
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        HStack(spacing: 2) {
+                            Text("(30")
+                            Image(systemName: "diamond")
+                                .font(.system(size: 10))
+                            Text(")")
+                        }
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(playerGems >= 30 ? DarkFantasyTheme.purple : DarkFantasyTheme.textTertiary)
                     }
                 }
                 .disabled(playerGems < 30)
@@ -629,6 +662,8 @@ struct ItemDetailSheet: View {
                 .buttonStyle(.secondary)
 
                 Button("UPGRADE · \(upgradeCost) 💰") {
+                    HapticManager.medium()
+                    SFXManager.shared.play(.uiUpgradeSuccess)
                     onUpgrade(useProtection)
                     showUpgradeConfirm = false
                     useProtection = false

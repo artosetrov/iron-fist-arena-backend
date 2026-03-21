@@ -11,7 +11,7 @@ struct GuestGateView: View {
     var body: some View {
         ZStack {
             // Dimmed backdrop
-            Color.black.opacity(0.7)
+            DarkFantasyTheme.bgBackdropLight
                 .ignoresSafeArea()
                 .onTapGesture { onDismiss() }
 

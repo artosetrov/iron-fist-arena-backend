@@ -19,6 +19,7 @@ final class ShopViewModel {
     var selectedTab = 0
     var buyingItemId: String?
     var buyingOfferId: String?
+    var errorMessage: String? = nil
 
     // Detail modal
     var selectedItem: ShopItem?
@@ -27,6 +28,9 @@ final class ShopViewModel {
     // Purchase confirmation (gems / expensive items)
     var pendingPurchaseItem: ShopItem?
     var showPurchaseConfirm = false
+
+    // Purchase animation trigger — set after successful buy, cleared by view
+    var lastPurchasedItemId: String?
 
     static let tabs = ["All", "Weapons", "Equipment", "Potions"]
     static let tabTypes: [[String]] = [
@@ -69,16 +73,16 @@ final class ShopViewModel {
 
         var sections: [ShopSection] = []
         if !weapons.isEmpty {
-            sections.append(ShopSection(id: "weapons", title: "Weapons", icon: "⚔️", items: weapons))
+            sections.append(ShopSection(id: "weapons", title: "Weapons", icon: "swords", items: weapons))
         }
         if !equipment.isEmpty {
-            sections.append(ShopSection(id: "equipment", title: "Equipment", icon: "🛡️", items: equipment))
+            sections.append(ShopSection(id: "equipment", title: "Equipment", icon: "shield", items: equipment))
         }
         if !potions.isEmpty {
-            sections.append(ShopSection(id: "potions", title: "Potions", icon: "🧪", items: potions))
+            sections.append(ShopSection(id: "potions", title: "Potions", icon: "pills", items: potions))
         }
         if !gemPacks.isEmpty {
-            sections.append(ShopSection(id: "gems", title: "Gems", icon: "💎", items: gemPacks))
+            sections.append(ShopSection(id: "gems", title: "Gems", icon: "diamond", items: gemPacks))
         }
         return sections
     }
@@ -92,6 +96,7 @@ final class ShopViewModel {
         } else {
             isLoading = true
         }
+        errorMessage = nil
         // Load items and offers in parallel
         async let itemsTask = service.getItems()
         async let offersTask: Void = loadOffers()
@@ -153,6 +158,7 @@ final class ShopViewModel {
                 body: ["character_id": charId, "offer_id": offer.id]
             )
             if response.success {
+                HapticManager.success()
                 appState.currentCharacter?.gold = response.gold
                 appState.currentCharacter?.gems = response.gems
                 appState.showToast("Purchased \(offer.title)!", type: .reward)
@@ -224,6 +230,7 @@ final class ShopViewModel {
     func buy(_ item: ShopItem) async {
         // Validate currency
         if !canAfford(item) {
+            HapticManager.error()
             appState.showToast(
                 item.isGemPurchase ? "Not enough gems!" : "Not enough gold!",
                 type: .error,
@@ -258,12 +265,16 @@ final class ShopViewModel {
 
         buyingItemId = nil
         if success {
+            // Haptic celebration
+            HapticManager.success()
+
             // Consumables stay available — only equipment disappears
             if !item.isConsumable {
                 items.removeAll { $0.id == item.id }
             }
             showItemDetail = false
             selectedItem = nil
+            lastPurchasedItemId = item.id
             appState.showToast("Purchased \(item.itemName)!", type: .reward)
             appState.invalidateCache("inventory")
             appState.invalidateCache("quests")

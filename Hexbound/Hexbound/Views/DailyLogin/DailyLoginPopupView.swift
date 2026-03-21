@@ -54,7 +54,6 @@ struct DailyLoginPopupView: View {
                         .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
                 )
                 .padding(.horizontal, LayoutConstants.spaceLG)
-                .scaleEffect(appear ? 1 : 0.9)
                 .opacity(appear ? 1 : 0)
                 .transition(.identity)
             }
@@ -134,7 +133,7 @@ struct DailyLoginPopupView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geo.size.width * progress)
+                        .frame(width: geo.size.width * max(0, min(1, progress)))
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 6, x: 0, y: 0)
                 }
             }
@@ -183,7 +182,7 @@ struct DailyLoginPopupView: View {
         let isCurrentDay = reward.day == data.currentDay && data.canClaim
         let isClaimed = reward.day < data.currentDay || (reward.day == data.currentDay && !data.canClaim)
         let isLocked = !isClaimed && !isCurrentDay
-        let isBouncing = vm.claimedDayBounce == reward.day
+        let _ = vm.claimedDayBounce == reward.day
 
         ZStack {
             // Background
@@ -194,7 +193,7 @@ struct DailyLoginPopupView: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius + 4)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: 0x3D2E0A), Color(hex: 0x2A1F05)],
+                            colors: [DarkFantasyTheme.dailyGradientTopGold, DarkFantasyTheme.dailyGradientBottomGold],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -248,7 +247,6 @@ struct DailyLoginPopupView: View {
                     Text(reward.icon)
                         .font(.system(size: isBonus ? 28 : 22))
                         .opacity(isLocked ? 0.3 : 1)
-                        .scaleEffect(isBouncing ? 1.3 : 1.0)
                 }
 
                 Text(reward.label)
@@ -285,8 +283,8 @@ struct DailyLoginPopupView: View {
                         .fill(
                             LinearGradient(
                                 colors: vm.hasClaimed
-                                    ? [Color(hex: 0x1A3A1A), Color(hex: 0x0A2A0A)]
-                                    : [Color(hex: 0x3D2E0A), Color(hex: 0x2A1F05)],
+                                    ? [DarkFantasyTheme.dailyGradientTopGreen, DarkFantasyTheme.dailyGradientBottomGreen]
+                                    : [DarkFantasyTheme.dailyGradientTopGold, DarkFantasyTheme.dailyGradientBottomGold],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -307,7 +305,6 @@ struct DailyLoginPopupView: View {
                     } else {
                         Text(reward.icon)
                             .font(.system(size: 26))
-                            .scaleEffect(vm.showClaimParticles ? 1.2 : 1.0)
                     }
                 }
 

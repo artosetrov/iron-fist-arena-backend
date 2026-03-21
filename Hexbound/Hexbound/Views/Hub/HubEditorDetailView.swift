@@ -12,6 +12,7 @@ struct HubEditorDetailView: View {
     @State private var selectedBuilding: String? = nil
     @State private var toastMessage: String? = nil
     @State private var isSaving = false
+    @State private var showSkyObjects = true // toggle sky objects visibility in editor
 
     // Image native aspect ratio (4096×1738)
     private let imageAspect: CGFloat = 4096.0 / 1738.0
@@ -19,6 +20,11 @@ struct HubEditorDetailView: View {
     /// Buildings with current server overrides applied
     private var buildings: [CityBuilding] {
         resolvedCityBuildings(from: cache)
+    }
+
+    /// Sky objects with current overrides applied
+    private var skyObjects: [SkyObject] {
+        resolvedSkyObjects(from: cache)
     }
 
     var body: some View {
@@ -52,6 +58,23 @@ struct HubEditorDetailView: View {
                                     }
                                 )
                             }
+
+                            // Sky objects (moon + clouds) — draggable + resizable
+                            if showSkyObjects {
+                                ForEach(skyObjects) { obj in
+                                    DraggableEditorSkyObject(
+                                        object: obj,
+                                        terrainSize: terrainSize,
+                                        dragOffset: dragOffsets[obj.id] ?? .zero,
+                                        sizeOverride: sizeOverrides[obj.id],
+                                        isSelected: selectedBuilding == obj.id,
+                                        onSelect: { selectedBuilding = obj.id },
+                                        onDragEnd: { newOffset in
+                                            dragOffsets[obj.id] = newOffset
+                                        }
+                                    )
+                                }
+                            }
                         }
                         .frame(width: terrainWidth, height: viewHeight)
                     }
@@ -67,7 +90,7 @@ struct HubEditorDetailView: View {
                     Spacer()
                     Text(msg)
                         .font(DarkFantasyTheme.body(size: 14))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                         .background(DarkFantasyTheme.success.opacity(0.9))
@@ -88,14 +111,24 @@ struct HubEditorDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Reset All") {
-                    withAnimation {
-                        dragOffsets.removeAll()
-                        sizeOverrides.removeAll()
+                HStack(spacing: 12) {
+                    Button(showSkyObjects ? "☁️ On" : "☁️ Off") {
+                        withAnimation { showSkyObjects.toggle() }
                     }
+                    .font(DarkFantasyTheme.body(size: 12))
+                    .foregroundStyle(showSkyObjects ? DarkFantasyTheme.gold : DarkFantasyTheme.textSecondary)
+                    .buttonStyle(.scalePress)
+
+                    Button("Reset All") {
+                        withAnimation {
+                            dragOffsets.removeAll()
+                            sizeOverrides.removeAll()
+                        }
+                    }
+                    .font(DarkFantasyTheme.body(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.danger)
+                    .buttonStyle(.scalePress)
                 }
-                .font(DarkFantasyTheme.body(size: 14))
-                .foregroundStyle(DarkFantasyTheme.danger)
             }
         }
     }
@@ -112,7 +145,7 @@ struct HubEditorDetailView: View {
                 var path = Path()
                 path.move(to: CGPoint(x: px, y: 0))
                 path.addLine(to: CGPoint(x: px, y: size.height))
-                context.stroke(path, with: .color(.white.opacity(0.08)), lineWidth: 0.5)
+                context.stroke(path, with: .color(DarkFantasyTheme.textPrimary.opacity(0.08)), lineWidth: 0.5)
                 x += step
             }
             var y: CGFloat = 0
@@ -121,7 +154,7 @@ struct HubEditorDetailView: View {
                 var path = Path()
                 path.move(to: CGPoint(x: 0, y: py))
                 path.addLine(to: CGPoint(x: size.width, y: py))
-                context.stroke(path, with: .color(.white.opacity(0.08)), lineWidth: 0.5)
+                context.stroke(path, with: .color(DarkFantasyTheme.textPrimary.opacity(0.08)), lineWidth: 0.5)
                 y += step
             }
         }
@@ -134,16 +167,16 @@ struct HubEditorDetailView: View {
     @ViewBuilder
     private func controlPanel(terrainSize: CGSize) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            // Selected building info
+            // Selected object info (building or sky object)
             if let sel = selectedBuilding,
-               let building = buildings.first(where: { $0.id == sel }) {
-                let offset = dragOffsets[building.id] ?? .zero
-                let finalX = building.relativeX + offset.width / terrainSize.width
-                let finalY = building.relativeY + offset.height / terrainSize.height
-                let currentSize = sizeOverrides[building.id] ?? building.relativeSize
+               let (label, baseX, baseY, baseSize) = selectedObjectInfo(sel) {
+                let offset = dragOffsets[sel] ?? .zero
+                let finalX = baseX + offset.width / terrainSize.width
+                let finalY = baseY + offset.height / terrainSize.height
+                let currentSize = sizeOverrides[sel] ?? baseSize
 
                 HStack {
-                    Text(building.label)
+                    Text(label)
                         .font(DarkFantasyTheme.section(size: 14))
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Spacer()
@@ -161,6 +194,7 @@ struct HubEditorDetailView: View {
                             .font(.system(size: 24))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
+                    .buttonStyle(.scalePress)
 
                     Slider(
                         value: Binding(
@@ -179,6 +213,7 @@ struct HubEditorDetailView: View {
                             .font(.system(size: 24))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
+                    .buttonStyle(.scalePress)
                 }
             } else {
                 Text("Tap a building to select, drag to move")
@@ -193,7 +228,7 @@ struct HubEditorDetailView: View {
                 HStack {
                     if isSaving {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: .textPrimary))
                             .scaleEffect(0.8)
                     } else {
                         Image(systemName: "icloud.and.arrow.up.fill")
@@ -238,8 +273,19 @@ struct HubEditorDetailView: View {
             layout[building.id] = ["x": finalX, "y": finalY, "size": finalSize]
         }
 
+        // Build sky overrides
+        var skyOverrides: [String: GameDataCache.BuildingOverride] = [:]
+        for obj in skyObjects {
+            let offset = dragOffsets[obj.id] ?? .zero
+            let finalX = obj.relativeX + offset.width / terrainSize.width
+            let finalY = obj.relativeY + offset.height / terrainSize.height
+            let finalSize = sizeOverrides[obj.id] ?? obj.relativeSize
+            skyOverrides[obj.id] = GameDataCache.BuildingOverride(x: finalX, y: finalY, size: finalSize)
+        }
+
         // 1. Update local cache FIRST (instant effect on hub)
         cache.cacheHubLayout(overrides)
+        cache.cacheSkyLayout(skyOverrides)
         dragOffsets.removeAll()
         sizeOverrides.removeAll()
 
@@ -274,6 +320,17 @@ struct HubEditorDetailView: View {
         print(output)
         UIPasteboard.general.string = output
         showToast("Copied to clipboard")
+    }
+
+    /// Returns (label, baseX, baseY, baseSize) for any selected object (building or sky)
+    private func selectedObjectInfo(_ id: String) -> (String, CGFloat, CGFloat, CGFloat)? {
+        if let b = buildings.first(where: { $0.id == id }) {
+            return (b.label, b.relativeX, b.relativeY, b.relativeSize)
+        }
+        if let s = skyObjects.first(where: { $0.id == id }) {
+            return (s.id.uppercased(), s.relativeX, s.relativeY, s.relativeSize)
+        }
+        return nil
     }
 
     private func showToast(_ message: String) {
@@ -319,10 +376,10 @@ struct DraggableEditorBuilding: View {
         VStack(spacing: 2) {
             Text("\(building.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white)
+                .foregroundStyle(.textPrimary)
                 .padding(.horizontal, 4)
                 .padding(.vertical, 2)
-                .background(isSelected ? Color.red.opacity(0.8) : Color.black.opacity(0.7))
+                .background(isSelected ? Color.red.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
                 .cornerRadius(4)
 
             if UIImage(named: building.imageName) != nil {
@@ -341,10 +398,10 @@ struct DraggableEditorBuilding: View {
                         VStack(spacing: 4) {
                             Image(systemName: building.fallbackIcon)
                                 .font(.system(size: 24))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.textPrimary)
                             Text(building.label)
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.textPrimary)
                         }
                     )
                     .frame(width: buildingHeight * 0.7, height: buildingHeight)
@@ -354,6 +411,93 @@ struct DraggableEditorBuilding: View {
             isSelected ?
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(Color.red, lineWidth: 2)
+                    .padding(-4)
+            : nil
+        )
+        .position(
+            x: baseX + dragOffset.width + currentDrag.width,
+            y: baseY + dragOffset.height + currentDrag.height
+        )
+        .simultaneousGesture(
+            TapGesture().onEnded { onSelect() }
+        )
+        .simultaneousGesture(
+            DragGesture()
+                .onChanged { value in
+                    currentDrag = value.translation
+                    onSelect()
+                }
+                .onEnded { value in
+                    let newOffset = CGSize(
+                        width: dragOffset.width + value.translation.width,
+                        height: dragOffset.height + value.translation.height
+                    )
+                    currentDrag = .zero
+                    onDragEnd(newOffset)
+                }
+        )
+    }
+}
+
+// MARK: - Draggable Editor Sky Object
+
+struct DraggableEditorSkyObject: View {
+    let object: SkyObject
+    let terrainSize: CGSize
+    let dragOffset: CGSize
+    var sizeOverride: CGFloat? = nil
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onDragEnd: (CGSize) -> Void
+
+    @State private var currentDrag: CGSize = .zero
+
+    private var effectiveSize: CGFloat {
+        sizeOverride ?? object.relativeSize
+    }
+
+    private var objectHeight: CGFloat {
+        terrainSize.height * effectiveSize
+    }
+
+    private var finalX: CGFloat {
+        object.relativeX + (dragOffset.width + currentDrag.width) / terrainSize.width
+    }
+    private var finalY: CGFloat {
+        object.relativeY + (dragOffset.height + currentDrag.height) / terrainSize.height
+    }
+
+    private var layerColor: Color {
+        switch object.layer {
+        case .moon: return .yellow
+        case .backCloud: return .cyan
+        case .frontCloud: return .purple
+        }
+    }
+
+    var body: some View {
+        let baseX = terrainSize.width * object.relativeX
+        let baseY = terrainSize.height * object.relativeY
+
+        VStack(spacing: 2) {
+            Text("\(object.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
+                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .foregroundStyle(.textPrimary)
+                .padding(.horizontal, 3)
+                .padding(.vertical, 1)
+                .background(isSelected ? layerColor.opacity(0.9) : layerColor.opacity(0.5))
+                .cornerRadius(3)
+
+            Image(object.imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: objectHeight)
+                .opacity(object.layer == .moon ? 1.0 : object.opacity + 0.3)
+        }
+        .overlay(
+            isSelected ?
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(layerColor, lineWidth: 2)
                     .padding(-4)
             : nil
         )

@@ -10,12 +10,12 @@ struct StanceSelectorDetailView: View {
 
             if let vm = viewModel {
                 ScrollView {
-                    VStack(spacing: LayoutConstants.spaceLG) {
+                    VStack(spacing: LayoutConstants.sectionGap) {
                         // Summary
                         stanceSummary(vm)
 
                         // Attack Zone
-                        zoneSection(title: "ATTACK ZONE", icon: "⚔️", selectedZone: vm.attackZone) { zone in
+                        zoneSection(title: "ATTACK ZONE", selectedZone: vm.attackZone) { zone in
                             vm.attackZone = zone
                         }
 
@@ -23,7 +23,7 @@ struct StanceSelectorDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
 
                         // Defense Zone
-                        zoneSection(title: "DEFENSE ZONE", icon: "🛡️", selectedZone: vm.defenseZone) { zone in
+                        zoneSection(title: "DEFENSE ZONE", selectedZone: vm.defenseZone) { zone in
                             vm.defenseZone = zone
                         }
 
@@ -73,9 +73,13 @@ struct StanceSelectorDetailView: View {
     private func stanceSummary(_ vm: StanceSelectorViewModel) -> some View {
         HStack(spacing: LayoutConstants.spaceLG) {
             VStack(spacing: LayoutConstants.spaceXS) {
-                Text("⚔️ ATTACK")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(StanceSelectorViewModel.zoneAsset(for: vm.attackZone))
+                        .resizable().scaledToFit().frame(width: 18, height: 18)
+                    Text("ATTACK")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
                 Text(vm.attackZone.uppercased())
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                     .foregroundStyle(StanceSelectorViewModel.zoneColor(for: vm.attackZone))
@@ -86,9 +90,13 @@ struct StanceSelectorDetailView: View {
                 .frame(width: 1, height: 40)
 
             VStack(spacing: LayoutConstants.spaceXS) {
-                Text("🛡️ DEFENSE")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(StanceSelectorViewModel.zoneAsset(for: vm.defenseZone))
+                        .resizable().scaledToFit().frame(width: 18, height: 18)
+                    Text("DEFENSE")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
                 Text(vm.defenseZone.uppercased())
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                     .foregroundStyle(StanceSelectorViewModel.zoneColor(for: vm.defenseZone))
@@ -103,13 +111,17 @@ struct StanceSelectorDetailView: View {
     // MARK: - Zone Section
 
     @ViewBuilder
-    private func zoneSection(title: String, icon: String, selectedZone: String, onSelect: @escaping (String) -> Void) -> some View {
+    private func zoneSection(title: String, selectedZone: String, onSelect: @escaping (String) -> Void) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            Text("\(icon) \(title)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, LayoutConstants.screenPadding)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(StanceSelectorViewModel.zoneAsset(for: selectedZone))
+                    .resizable().scaledToFit().frame(width: 20, height: 20)
+                Text(title)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, LayoutConstants.screenPadding)
 
             HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(StanceSelectorViewModel.zones, id: \.self) { zone in
@@ -128,11 +140,14 @@ struct StanceSelectorDetailView: View {
 
         Button(action: action) {
             VStack(spacing: LayoutConstants.spaceXS) {
-                Text(StanceSelectorViewModel.zoneIcon(for: zone))
-                    .font(.system(size: 28)) // emoji — keep
+                Image(StanceSelectorViewModel.zoneAsset(for: zone))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
+                    .colorMultiply(isSelected ? .white : DarkFantasyTheme.textSecondary)
                 Text(zone.uppercased())
             }
         }
-        .buttonStyle(.colorToggle(isActive: isSelected, color: color, height: LayoutConstants.buttonHeightMD))
+        .buttonStyle(.colorToggle(isActive: isSelected, color: color, height: 80))
     }
 }

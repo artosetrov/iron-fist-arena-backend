@@ -2,8 +2,10 @@ import SwiftUI
 
 struct CombatDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var viewModel: CombatViewModel?
     @State private var screenShake: CGFloat = 0
+    @State private var critFlashOpacity: Double = 0
     @State private var animatePulse = false
     @State private var showForfeitConfirmation = false
 
@@ -41,6 +43,13 @@ struct CombatDetailView: View {
                 // Damage Popups Overlay
                 damagePopupsOverlay(vm)
 
+                // Crit flash overlay (brief red flash on critical hits)
+                Rectangle()
+                    .fill(DarkFantasyTheme.danger)
+                    .opacity(critFlashOpacity)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+
                 // Victory/Defeat tint
                 if vm.isFinished {
                     Rectangle()
@@ -69,6 +78,7 @@ struct CombatDetailView: View {
             Text("You will lose the battle and any rewards. Are you sure?")
         }
         .onAppear {
+            SFXManager.shared.play(.battleStart)
             setupCombatIfReady()
         }
         .onChange(of: appState.combatData != nil) { _, hasData in
@@ -78,17 +88,65 @@ struct CombatDetailView: View {
         }
     }
 
-    private func triggerScreenShake(isCrit: Bool) {
-        let magnitude: CGFloat = isCrit ? 12 : 6
-        withAnimation(.linear(duration: 0.05)) { screenShake = magnitude }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            withAnimation(.linear(duration: 0.05)) { screenShake = -magnitude * 0.7 }
+    // MARK: - Combat Event Handler (haptics + shake + flash)
+
+    private func handleCombatEvent(_ event: CombatViewModel.CombatEventType) {
+        switch event {
+        case .crit:
+            // Heavy haptic + extended shake + red flash
+            HapticManager.heavy()
+            triggerScreenShake(magnitude: 14, cycles: 4)
+            triggerCritFlash()
+        case .hit:
+            // Medium haptic + standard shake
+            HapticManager.medium()
+            triggerScreenShake(magnitude: MotionConstants.shakeIntensity, cycles: MotionConstants.shakeCycles)
+        case .block:
+            // Light haptic + mild shake
+            HapticManager.light()
+            triggerScreenShake(magnitude: MotionConstants.shakeLightIntensity, cycles: 2)
+        case .dodge:
+            // Selection haptic only — no shake (they dodged!)
+            HapticManager.selection()
+        case .miss:
+            // No haptic — whiff feel
+            break
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.linear(duration: 0.05)) { screenShake = magnitude * 0.4 }
+    }
+
+    private func triggerScreenShake(magnitude: CGFloat, cycles: Int) {
+        let stepDuration: Double = MotionConstants.shakeDuration / Double(cycles * 2)
+        var delay: Double = 0
+
+        for i in 0..<cycles {
+            let fraction = 1.0 - (CGFloat(i) / CGFloat(cycles)) // diminishes each cycle
+            let mag = magnitude * fraction
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.linear(duration: stepDuration)) { screenShake = mag }
+            }
+            delay += stepDuration
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.linear(duration: stepDuration)) { screenShake = -mag * 0.7 }
+            }
+            delay += stepDuration
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.linear(duration: 0.05)) { screenShake = 0 }
+
+        // Settle to zero
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(.linear(duration: stepDuration)) { screenShake = 0 }
+        }
+    }
+
+    private func triggerCritFlash() {
+        withAnimation(.easeIn(duration: 0.05)) {
+            critFlashOpacity = 0.3
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            withAnimation(.easeOut(duration: 0.15)) {
+                critFlashOpacity = 0
+            }
         }
     }
 
@@ -97,7 +155,12 @@ struct CombatDetailView: View {
     /// Find the boss portraitImage by matching the fighter's name against all dungeon bosses.
     private func bossPortraitImage(for name: String) -> String? {
         let lowered = name.lowercased()
-        for dungeon in DungeonInfo.all {
+        // Search cached server dungeons first, then fallback
+        let dungeonSources: [DungeonInfo] = {
+            let cached = cache.cachedDungeonList()
+            return (cached != nil && !cached!.isEmpty) ? cached! : DungeonInfo.fallback
+        }()
+        for dungeon in dungeonSources {
             if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
                 return boss.portraitImage
             }
@@ -110,7 +173,7 @@ struct CombatDetailView: View {
     private func setupCombatIfReady() {
         guard let data = appState.combatData, viewModel == nil else { return }
         let vm = CombatViewModel(appState: appState, combatData: data)
-        vm.onHit = { [self] isCrit in triggerScreenShake(isCrit: isCrit) }
+        vm.onCombatEvent = { [self] event in handleCombatEvent(event) }
         viewModel = vm
         Task { await vm.play() }
     }
@@ -123,10 +186,9 @@ struct CombatDetailView: View {
             Spacer()
 
             // Pulsing swords icon
-            Text("⚔️")
-                .font(DarkFantasyTheme.title(size: 72))
+            Image(systemName: "swords")
+                .font(.system(size: 72))
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: animatePulse ? 20 : 8)
-                .scaleEffect(animatePulse ? 1.05 : 0.95)
                 .animation(
                     .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
                     value: animatePulse
@@ -220,7 +282,6 @@ struct CombatDetailView: View {
         isPlayer: Bool
     ) -> some View {
         let borderColor = isPlayer ? DarkFantasyTheme.success : DarkFantasyTheme.danger
-        let hpPct = maxHp > 0 ? Double(currentHp) / Double(maxHp) : 0
 
         VStack(spacing: LayoutConstants.spaceSM) {
             // YOU / ENEMY label
@@ -242,6 +303,7 @@ struct CombatDetailView: View {
                             .resizable()
                             .scaledToFill()
                             .frame(width: side, height: side)
+                            .scaleEffect(x: -1, y: 1)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
                     } else {
                         AvatarImageView(
@@ -249,6 +311,7 @@ struct CombatDetailView: View {
                             characterClass: fighter.characterClass,
                             size: side
                         )
+                        .scaleEffect(x: isPlayer ? 1 : -1, y: 1)
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
                         .frame(width: side, height: side)
                     }
@@ -276,6 +339,7 @@ struct CombatDetailView: View {
             // HP Bar
             VStack(spacing: 3) {
                 HPBarView(currentHp: currentHp, maxHp: maxHp, height: 14)
+                    .accessibilityLabel("Health \(currentHp) of \(maxHp)")
 
                 Text("\(currentHp)/\(maxHp)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -290,15 +354,16 @@ struct CombatDetailView: View {
                     ForEach(statuses) { status in
                         HStack(spacing: 3) {
                             Image(systemName: status.icon)
-                                .font(.system(size: 8))
+                                .font(.system(size: 11))
                             Text(status.abbreviation)
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .background(status.color.opacity(0.8))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .accessibilityLabel(status.name)
                     }
                 }
             }
@@ -396,12 +461,12 @@ struct CombatDetailView: View {
                                         HStack(spacing: 2) {
                                             if let icon = entry.damageTypeIcon {
                                                 Image(systemName: icon)
-                                                    .font(.system(size: 7))
+                                                    .font(.system(size: 11))
                                             }
                                             Text(label)
-                                                .font(DarkFantasyTheme.body(size: 8).bold())
+                                                .font(DarkFantasyTheme.body(size: 11).bold())
                                         }
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.textPrimary)
                                         .padding(.horizontal, 4)
                                         .padding(.vertical, 2)
                                         .background(color.opacity(0.7))
@@ -472,6 +537,7 @@ struct CombatDetailView: View {
                     Text("1X")
                 }
                 .buttonStyle(.combatToggle(isActive: vm.speedMode == 0))
+                .accessibilityLabel("Normal speed 1X")
 
                 // 2X button
                 Button {
@@ -480,6 +546,7 @@ struct CombatDetailView: View {
                     Text("2X")
                 }
                 .buttonStyle(.combatToggle(isActive: vm.speedMode == 1))
+                .accessibilityLabel("Fast speed 2X")
 
                 // SKIP button
                 Button {
@@ -488,6 +555,7 @@ struct CombatDetailView: View {
                     Text("SKIP")
                 }
                 .buttonStyle(.combatControl)
+                .accessibilityLabel("Skip battle")
 
                 // FORFEIT button
                 Button {
@@ -497,6 +565,7 @@ struct CombatDetailView: View {
                         .font(.system(size: 14))
                 }
                 .buttonStyle(.combatForfeit)
+                .accessibilityLabel("Forfeit battle")
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceMD)

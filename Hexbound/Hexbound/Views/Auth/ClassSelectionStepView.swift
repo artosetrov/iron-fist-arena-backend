@@ -33,7 +33,7 @@ struct ClassSelectionStepView: View {
                 Spacer(minLength: LayoutConstants.spaceMD)
 
                 classCarousel
-                    .padding(.bottom, LayoutConstants.spaceLG + LayoutConstants.spaceMD)
+                    .padding(.bottom, LayoutConstants.spaceLG)
             }
         }
     }
@@ -107,6 +107,8 @@ struct ClassSelectionStepView: View {
                     .frame(width: 28, height: 28)
                     .frame(width: 36, height: 36)
             }
+            .buttonStyle(.scalePress)
+            .accessibilityLabel("Previous class")
 
             HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(Array(CharacterClass.allCases.enumerated()), id: \.element.id) { index, charClass in
@@ -124,6 +126,8 @@ struct ClassSelectionStepView: View {
                     .frame(width: 28, height: 28)
                     .frame(width: 36, height: 36)
             }
+            .buttonStyle(.scalePress)
+            .accessibilityLabel("Next class")
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
@@ -149,7 +153,6 @@ struct ClassSelectionStepView: View {
                 .frame(width: 36, height: 36)
         }
         .shadow(color: isSelected ? color.opacity(0.4) : .clear, radius: 8)
-        .scaleEffect(isSelected ? 1.1 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
+        .opacity(isSelected ? 1.0 : 0.6)
     }
 }

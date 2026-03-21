@@ -9,7 +9,7 @@ enum CharacterClass: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var displayName: String {
-        rawValue.uppercased()
+        rawValue.capitalized
     }
 
     var icon: String {
@@ -59,10 +59,10 @@ enum CharacterClass: String, Codable, CaseIterable, Identifiable {
 
     var sfName: String {
         switch self {
-        case .warrior: "WARRIOR"
-        case .rogue: "ASSASSIN"
-        case .mage: "MAGE"
-        case .tank: "GUARDIAN"
+        case .warrior: "Warrior"
+        case .rogue: "Assassin"
+        case .mage: "Mage"
+        case .tank: "Guardian"
         }
     }
 

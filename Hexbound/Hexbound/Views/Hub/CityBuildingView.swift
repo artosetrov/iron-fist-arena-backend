@@ -10,7 +10,6 @@ struct CityBuildingView: View {
 
     @State private var isPressed = false
     @State private var showLabel = false
-    @State private var idleGlow: CGFloat = 0.3
 
     private var buildingHeight: CGFloat {
         terrainSize.height * building.relativeSize
@@ -33,11 +32,10 @@ struct CityBuildingView: View {
             buildingImage
                 .frame(height: buildingHeight)
                 .shadow(
-                    color: building.glowColor.opacity(idleGlow),
+                    color: building.glowColor.opacity(0.35),
                     radius: isPressed ? 16 : 8
                 )
-                .scaleEffect(isPressed ? 1.08 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+                .opacity(isPressed ? 0.7 : 1.0)
         }
         .position(x: posX, y: posY)
         .onTapGesture {
@@ -46,9 +44,7 @@ struct CityBuildingView: View {
         .onLongPressGesture(minimumDuration: 0.4, perform: {}) { pressing in
             showLabel = pressing
         }
-        .onAppear {
-            startIdleAnimation()
-        }
+        .onAppear {}
     }
 
     // MARK: - Building Image (with fallback)
@@ -85,9 +81,7 @@ struct CityBuildingView: View {
     // MARK: - Tap Handler
 
     private func handleTap() {
-        // Haptic
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        HapticManager.medium()
 
         // Visual feedback
         withAnimation {
@@ -109,34 +103,4 @@ struct CityBuildingView: View {
         }
     }
 
-    // MARK: - Idle Animations
-
-    private func startIdleAnimation() {
-        let (low, high, duration) = idleParams(for: building.id)
-
-        // Start at low
-        idleGlow = low
-
-        withAnimation(
-            .easeInOut(duration: duration)
-            .repeatForever(autoreverses: true)
-        ) {
-            idleGlow = high
-        }
-    }
-
-    private func idleParams(for id: String) -> (low: CGFloat, high: CGFloat, duration: Double) {
-        switch id {
-        case "arena":
-            return (0.3, 0.7, 3.0)       // strong gold pulse
-        case "tavern":
-            return (0.2, 0.55, 2.5)      // warm orange flicker
-        case "dungeon":
-            return (0.2, 0.55, 2.5)      // warm orange flicker
-        case "battlepass":
-            return (0.2, 0.55, 2.5)      // warm orange flicker
-        default:
-            return (0.2, 0.45, 3.5)      // subtle torch glow
-        }
-    }
 }

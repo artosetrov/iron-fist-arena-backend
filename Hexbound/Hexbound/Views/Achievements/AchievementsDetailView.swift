@@ -16,10 +16,12 @@ struct AchievementsDetailView: View {
                         Text("\(vm.completedCount) / \(vm.totalCount)")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .accessibilityLabel("Achievements: \(vm.completedCount) of \(vm.totalCount) completed")
                         if vm.unclaimedCount > 0 {
                             Text("(\(vm.unclaimedCount) unclaimed!)")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
+                                .accessibilityLabel("\(vm.unclaimedCount) unclaimed achievements available")
                         }
                         Spacer()
                     }
@@ -35,6 +37,9 @@ struct AchievementsDetailView: View {
                         )
                     )
                     .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
+                    .accessibilityLabel("Achievement tabs: \(AchievementsViewModel.tabs.joined(separator: ", "))")
+                    .accessibilityValue("Current tab: \(AchievementsViewModel.tabs[vm.selectedTab])")
 
                     // Content
                     if vm.isLoading && vm.achievements.isEmpty {
@@ -47,28 +52,31 @@ struct AchievementsDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+                    } else if vm.errorMessage != nil {
+                        // TODO: Add error property to ViewModel
+                        ErrorStateView.loadFailed { Task { await vm.loadAchievements() } }
                     } else if vm.filteredAchievements.isEmpty {
-                        Spacer()
-                        Text("No achievements in this category")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        Spacer()
+                        EmptyStateView.noAchievements
                     } else {
                         ScrollView {
                             LazyVStack(spacing: LayoutConstants.spaceSM) {
-                                ForEach(vm.filteredAchievements) { achievement in
+                                ForEach(Array(vm.filteredAchievements.enumerated()), id: \.element.id) { index, achievement in
                                     AchievementCardView(
                                         achievement: achievement,
                                         isClaiming: vm.claimingKey == achievement.key,
                                         onClaim: {
+                                            HapticManager.success()
+                                            SFXManager.shared.play(.uiRewardClaim)
                                             Task { await vm.claim(achievement) }
                                         }
                                     )
+                                    .staggeredAppear(index: index)
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
                 }
             }

@@ -36,6 +36,12 @@ struct DungeonSelectDetailView: View {
                             .padding(.bottom, LayoutConstants.space2XL)
                         }
                     }
+                } else if vm.errorMessage != nil {
+                    ErrorStateView.loadFailed {
+                        Task { await vm.loadProgress() }
+                    }
+                } else if vm.dungeons.isEmpty {
+                    EmptyStateView.dungeonLocked
                 } else {
                     dungeonWorldContent(vm: vm)
                 }
@@ -78,8 +84,9 @@ struct DungeonSelectDetailView: View {
                     ActiveQuestBanner(questTypes: ["dungeons_complete"])
                         .padding(.horizontal, LayoutConstants.screenPadding)
 
-                    ForEach(vm.dungeons) { dungeon in
+                    ForEach(Array(vm.dungeons.enumerated()), id: \.element.id) { index, dungeon in
                         dungeonCard(dungeon, vm: vm)
+                            .staggeredAppear(index: index)
                     }
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
@@ -105,6 +112,8 @@ struct DungeonSelectDetailView: View {
                 Image(systemName: "bolt.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(DarkFantasyTheme.stamina)
+                    .accessibilityLabel("Stamina icon")
+                    .accessibilityElement(children: .ignore)
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
@@ -116,15 +125,20 @@ struct DungeonSelectDetailView: View {
                     }
                 }
                 .frame(height: 14)
+                .accessibilityLabel("Stamina remaining")
+                .accessibilityValue("\(current) of \(max)")
 
                 Text("\(current)/\(max)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.stamina)
                     .monospacedDigit()
+                    .accessibilityElement(children: .ignore)
 
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .accessibilityLabel("Tap to purchase stamina")
+                    .accessibilityElement(children: .ignore)
             }
             .padding(.horizontal, LayoutConstants.cardPadding)
             .padding(.vertical, LayoutConstants.spaceSM)
@@ -142,6 +156,9 @@ struct DungeonSelectDetailView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)
         .padding(.bottom, LayoutConstants.spaceSM)
+        .accessibilityLabel("Stamina bar, currently \(current) of \(max)")
+        .accessibilityHint("Double tap to purchase stamina")
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Dungeon Card
@@ -160,6 +177,7 @@ struct DungeonSelectDetailView: View {
 
         Button {
             if !isLocked && !isEnteringDungeon {
+                HapticManager.selection()
                 isEnteringDungeon = true
                 Task {
                     try? await Task.sleep(for: .milliseconds(600))
@@ -256,12 +274,14 @@ struct DungeonSelectDetailView: View {
                         Text(dungeon.name.uppercased())
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textPrimary)
+                            .accessibilityLabel("Dungeon: \(dungeon.name)")
 
                         Spacer()
 
                         Text("Lv. \(dungeon.minLevel)–\(dungeon.maxLevel)")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            .accessibilityLabel("Difficulty: Level \(dungeon.minLevel) to \(dungeon.maxLevel)")
                     }
 
                     // Description

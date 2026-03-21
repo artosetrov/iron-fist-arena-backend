@@ -71,7 +71,7 @@ struct DungeonInfoSheet: View {
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.up.right")
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                     Text("Lv. \(dungeon.minLevel)–\(dungeon.maxLevel)")
                         .font(DarkFantasyTheme.section(size: 14))
                 }
@@ -82,7 +82,7 @@ struct DungeonInfoSheet: View {
 
                 HStack(spacing: 4) {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                     Text("\(dungeon.energyCost) Energy")
                         .font(DarkFantasyTheme.section(size: 14))
                 }
@@ -93,7 +93,7 @@ struct DungeonInfoSheet: View {
 
                 HStack(spacing: 4) {
                     Image(systemName: "person.3.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 12))
                     Text("\(dungeon.totalBosses) Bosses")
                         .font(DarkFantasyTheme.section(size: 14))
                 }
@@ -146,10 +146,10 @@ struct DungeonInfoSheet: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 10))
+                    .font(.system(size: 12))
                     .foregroundStyle(color)
                 Text(label)
-                    .font(DarkFantasyTheme.body(size: 10))
+                    .font(DarkFantasyTheme.body(size: 11))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             Text(value)
@@ -206,10 +206,10 @@ struct DungeonInfoSheet: View {
                         // HP
                         HStack(spacing: 4) {
                             Image(systemName: "heart.fill")
-                                .font(.system(size: 8))
+                                .font(.system(size: 10))
                                 .foregroundStyle(DarkFantasyTheme.danger)
                             Text("\(boss.hp) HP")
-                                .font(DarkFantasyTheme.body(size: 10))
+                                .font(DarkFantasyTheme.body(size: 11))
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }

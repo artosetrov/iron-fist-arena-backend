@@ -250,7 +250,7 @@ enum DamageHitEffects {
     // MARK: - True Damage (White/Gold divine burst + rays)
 
     static func trueDamage(origin: CGPoint, isCrit: Bool) -> ActiveVFXEffect {
-        let primary = Color.white
+        let primary = DarkFantasyTheme.textPrimary
         let secondary = DarkFantasyTheme.goldBright
         let count = isCrit ? 26 : 16
         let dur = isCrit ? 0.85 : 0.7

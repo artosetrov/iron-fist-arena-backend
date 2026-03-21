@@ -18,7 +18,6 @@ struct LoadingOverlay: View {
                     .scaledToFit()
                     .frame(width: 180)
                     .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: animatePulse ? 20 : 8)
-                    .scaleEffect(animatePulse ? 1.05 : 0.95)
                     .animation(
                         .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
                         value: animatePulse

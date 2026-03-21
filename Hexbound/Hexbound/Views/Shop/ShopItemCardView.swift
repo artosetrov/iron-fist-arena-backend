@@ -31,14 +31,13 @@ struct ShopItemCardView: View {
                         fallbackIcon: item.typeIcon
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
                 }
             }
             .overlay(alignment: .bottom) {
                 // Price bar at bottom
                 HStack(spacing: 2) {
-                    Text(item.isGemPurchase ? "💎" : "💰")
-                        .font(.system(size: 10))
+                    Image(systemName: item.isGemPurchase ? "diamond" : "dollarsign.circle")
+                        .font(.system(size: 14))
                     Text(item.isGemPurchase ? "\(item.gemPrice)" : "\(item.goldPrice)")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                         .foregroundStyle(
@@ -50,7 +49,7 @@ struct ShopItemCardView: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .frame(maxWidth: .infinity)
-                .background(.black.opacity(0.45))
+                .background(.bgAbyss.opacity(0.45))
                 .clipShape(
                     .rect(
                         topLeadingRadius: 0,
@@ -61,6 +60,7 @@ struct ShopItemCardView: View {
                 )
             }
             .aspectRatio(1, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(

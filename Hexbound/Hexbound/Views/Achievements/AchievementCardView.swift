@@ -5,6 +5,8 @@ struct AchievementCardView: View {
     let isClaiming: Bool
     let onClaim: () -> Void
 
+    @State private var showClaimBurst = false
+
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Category icon
@@ -35,7 +37,7 @@ struct AchievementCardView: View {
                                 .fill(DarkFantasyTheme.bgTertiary)
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(achievement.completed ? DarkFantasyTheme.success : DarkFantasyTheme.gold)
-                                .frame(width: geo.size.width * achievement.progressFraction)
+                                .frame(width: geo.size.width * max(0, min(1, achievement.progressFraction)))
                         }
                     }
                     .frame(height: 6)
@@ -63,7 +65,11 @@ struct AchievementCardView: View {
 
             // Claim button
             if achievement.canClaim {
-                Button(action: onClaim) {
+                Button(action: {
+                    HapticManager.success()
+                    showClaimBurst = true
+                    onClaim()
+                }) {
                     if isClaiming {
                         ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
                     } else {
@@ -90,5 +96,17 @@ struct AchievementCardView: View {
                 )
         )
         .opacity(achievement.rewardClaimed ? 0.6 : 1.0)
+        .overlay {
+            if showClaimBurst {
+                GeometryReader { geo in
+                    RewardBurstView(
+                        style: .gold,
+                        isActive: $showClaimBurst
+                    )
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                    .allowsHitTesting(false)
+                }
+            }
+        }
     }
 }

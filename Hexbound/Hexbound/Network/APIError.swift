@@ -11,6 +11,11 @@ enum APIError: LocalizedError {
     case noData
     case unknown(String)
 
+    /// User-friendly message suitable for display in the UI
+    var userMessage: String {
+        errorDescription ?? "Something went wrong. Please try again."
+    }
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:

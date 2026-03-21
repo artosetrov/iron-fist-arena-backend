@@ -50,10 +50,19 @@ final class StanceSelectorViewModel {
 
     static func zoneIcon(for zone: String) -> String {
         switch zone {
-        case "head": "🎯"
-        case "chest": "🛡️"
-        case "legs": "🦿"
-        default: "❓"
+        case "head": "target"
+        case "chest": "shield"
+        case "legs": "person.crop.circle.badge.checkmark"
+        default: "questionmark.circle"
+        }
+    }
+
+    static func zoneAsset(for zone: String) -> String {
+        switch zone {
+        case "head": "icon-helmet"
+        case "chest": "icon-chest"
+        case "legs": "icon-legs"
+        default: "icon-helmet"
         }
     }
 

@@ -118,7 +118,7 @@ struct PremiumPurchaseView: View {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "crown.fill")
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                     Text("PREMIUM")
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
@@ -164,7 +164,7 @@ struct PremiumPurchaseView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(price)
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.textPrimary)
                 Text("ONE TIME")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -235,7 +235,7 @@ struct PremiumPurchaseView: View {
             } label: {
                 if isPurchasing {
                     ProgressView()
-                        .tint(.white)
+                        .tint(.textPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)
                 } else {
@@ -274,7 +274,7 @@ struct PremiumPurchaseView: View {
             } label: {
                 Text("RESTORE PURCHASE")
             }
-            .buttonStyle(.ghost)
+            .buttonStyle(.secondary)
 
             // Legal
             Text("One-time purchase. No subscriptions. No recurring charges.")

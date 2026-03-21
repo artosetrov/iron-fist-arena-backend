@@ -4,10 +4,10 @@ import SwiftUI
 
 /// A single merchant tip with styled text segments.
 @MainActor
-struct MerchantTip: Equatable {
+struct MerchantTip: Equatable, Hashable {
     let segments: [Segment]
 
-    enum Segment: Equatable {
+    enum Segment: Equatable, Hashable {
         case plain(String)
         case gold(String)    // Rendered in goldBright, semibold
         case gem(String)     // Rendered in cyan, semibold

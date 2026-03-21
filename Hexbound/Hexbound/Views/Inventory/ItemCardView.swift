@@ -49,7 +49,7 @@ struct ItemCardView: View {
                 // Comparison indicator vs equipped item
                 if let delta = comparisonDelta {
                     Image(systemName: delta > 0 ? "arrow.up" : "arrow.down")
-                        .font(.system(size: 9, weight: .bold)) // SF Symbol icon — keep as is
+                        .font(.system(size: 10, weight: .bold)) // SF Symbol icon
                         .foregroundStyle(delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
                         .padding(3)
                         .background(
@@ -63,7 +63,7 @@ struct ItemCardView: View {
                 // Equipped badge
                 if item.isEquipped == true {
                     Text("E")
-                        .font(DarkFantasyTheme.body(size: 9).bold())
+                        .font(DarkFantasyTheme.body(size: 11).bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
@@ -90,8 +90,8 @@ struct ItemCardView: View {
                 // Quantity badge for consumables
                 if let qty = item.quantity, qty > 1 {
                     Text("x\(qty)")
-                        .font(DarkFantasyTheme.body(size: 10).bold())
-                        .foregroundStyle(.white)
+                        .font(DarkFantasyTheme.body(size: 11).bold())
+                        .foregroundStyle(.textPrimary)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
                         .background(DarkFantasyTheme.bgElevated.opacity(0.85))

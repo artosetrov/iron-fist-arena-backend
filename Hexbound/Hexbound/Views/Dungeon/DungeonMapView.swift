@@ -6,6 +6,11 @@ struct DungeonMapView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
 
+    /// Optional closures for when presented as a fullScreenCover (from Adventures button).
+    /// When nil, falls back to standard NavigationStack behavior.
+    var onBack: (() -> Void)? = nil
+    var onNavigate: ((AppRoute) -> Void)? = nil
+
     // Image native aspect ratio (3535×1500)
     private let imageAspect: CGFloat = 3535.0 / 1500.0
 
@@ -21,16 +26,16 @@ struct DungeonMapView: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             GeometryReader { outerGeo in
-                let viewWidth = outerGeo.size.width
                 let viewHeight = outerGeo.size.height
                 let terrainWidth = viewHeight * imageAspect
                 let terrainSize = CGSize(width: terrainWidth, height: viewHeight)
 
+
                 ZStack {
-                    // Main scrollable map
+                    // Main scrollable map — fills entire screen
                     ScrollView(.horizontal, showsIndicators: false) {
                         ZStack(alignment: .topLeading) {
                             // Layer 0: Dark background
@@ -65,70 +70,27 @@ struct DungeonMapView: View {
                     }
                     .defaultScrollAnchor(.leading)
 
-                    // Castle button overlay (return to hub) — bottom-left
-                    VStack {
-                        Spacer()
-                        HStack {
-                            castleButton
-                            Spacer()
-                        }
-                    }
-                    .padding(.leading, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceLG)
+                    // Note: CASTLE button is now in HubView overlay (shared with ADVENTURES toggle)
                 }
             }
+            .ignoresSafeArea()
         }
+        .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                HubLogoButton()
-            }
-            ToolbarItem(placement: .principal) {
-                Text("ADVENTURES")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-            }
-            #if DEBUG
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    appState.mainPath.append(AppRoute.dungeonMapEditor)
-                } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                }
-            }
-            #endif
-        }
+        .toolbar(.hidden, for: .navigationBar)
     }
 
-    // MARK: - Castle Button (return to hub)
+    // MARK: - Next Dungeon (first uncompleted or first locked)
 
-    private var castleButton: some View {
-        Button {
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-            if !appState.mainPath.isEmpty {
-                appState.mainPath.removeLast()
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "building.columns.fill")
-                    .font(.system(size: 16, weight: .bold))
-                Text("CASTLE")
-                    .font(DarkFantasyTheme.section(size: 13))
-            }
-            .foregroundStyle(DarkFantasyTheme.goldBright)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.85))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1.5)
-            )
+    /// The next dungeon the player should tackle: first uncompleted unlocked, or first locked.
+    private var nextDungeon: DungeonMapBuilding? {
+        let buildings = resolvedDungeonMapBuildings(from: cache).sorted { $0.sortOrder < $1.sortOrder }
+        // First: find first unlocked but not completed
+        if let next = buildings.first(where: { characterLevel >= $0.minLevel && !isDungeonCompleted($0.id) }) {
+            return next
         }
+        // Fallback: first locked dungeon
+        return buildings.first(where: { characterLevel < $0.minLevel })
     }
 
     // MARK: - Helpers
@@ -140,9 +102,15 @@ struct DungeonMapView: View {
     }
 
     private func navigateToDungeon(_ building: DungeonMapBuilding) {
-        // Set the selected dungeon context, then navigate to dungeon select
-        // which shows the boss list for this specific dungeon
+        // Set the selected dungeon context, then navigate directly to dungeon room (boss list)
         appState.selectedDungeonId = building.id
-        appState.mainPath.append(AppRoute.dungeonSelect)
+        if let onNavigate {
+            onNavigate(.dungeonRoom)
+        } else {
+            appState.mainPath.append(AppRoute.dungeonRoom)
+        }
     }
 }
+
+// Note: DungeonMapCoverView removed — dungeon map is now embedded in HubView
+// with slide transition. Navigation handled by HubView's dungeonPath NavigationStack.

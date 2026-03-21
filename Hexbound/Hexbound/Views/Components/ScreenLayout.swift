@@ -1,22 +1,25 @@
 import SwiftUI
 
-// MARK: - Hub Logo Button (Unified back-to-hub navigation)
+// MARK: - Hub Logo Button (Unified back navigation)
 
 struct HubLogoButton: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
         Button {
-            appState.mainPath = NavigationPath()
+            if !appState.mainPath.isEmpty {
+                appState.mainPath.removeLast()
+            }
         } label: {
-            Image("hexbound-logo")
+            Image("ui-arrow-left")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 40, height: 40)
+                .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
         .frame(minWidth: LayoutConstants.touchMin, minHeight: LayoutConstants.touchMin)
+        .accessibilityLabel("Go back")
     }
 }
 

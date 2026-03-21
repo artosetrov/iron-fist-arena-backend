@@ -7,6 +7,7 @@ final class AchievementsViewModel {
 
     var achievements: [Achievement] = []
     var isLoading = false
+    var errorMessage: String? = nil
     var selectedTab = 0
     var claimingKey: String?
 

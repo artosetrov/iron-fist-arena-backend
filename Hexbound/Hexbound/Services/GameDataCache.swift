@@ -48,6 +48,9 @@ final class GameDataCache {
     private(set) var dungeonProgress: [String: Int] = [:]
     private var dungeonProgressFetchedAt: Date?
 
+    private(set) var dungeonList: [DungeonInfo] = []
+    private var dungeonListFetchedAt: Date?
+
     private(set) var goldMineSlots: [[String: Any]] = []
     var goldMineMaxSlots: Int = 3
     private var goldMineFetchedAt: Date?
@@ -145,6 +148,104 @@ final class GameDataCache {
             dict[id] = entry
         }
         UserDefaults.standard.set(dict, forKey: Self.hubLayoutKey)
+    }
+
+    // MARK: - Dungeon Map Layout (admin-defined dungeon node positions + sizes)
+
+    private static let dungeonMapLayoutKey = "dungeon_map_layout_cache"
+
+    private(set) var dungeonMapLayout: [String: BuildingOverride] = GameDataCache.loadDungeonMapFromDisk() {
+        didSet { persistDungeonMapLayout() }
+    }
+
+    private static func loadDungeonMapFromDisk() -> [String: BuildingOverride] {
+        guard let dict = UserDefaults.standard.dictionary(forKey: dungeonMapLayoutKey) as? [String: [String: Double]] else {
+            return [:]
+        }
+        var result: [String: BuildingOverride] = [:]
+        for (id, coords) in dict {
+            if let x = coords["x"], let y = coords["y"] {
+                result[id] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: coords["size"].map { CGFloat($0) })
+            }
+        }
+        return result
+    }
+
+    func cacheDungeonMapLayout(_ layout: [String: BuildingOverride]) {
+        dungeonMapLayout = layout
+    }
+
+    func cacheDungeonMapLayout(from dict: [String: Any]) {
+        var result: [String: BuildingOverride] = [:]
+        for (buildingId, value) in dict {
+            if let coords = value as? [String: Any],
+               let x = coords["x"] as? Double,
+               let y = coords["y"] as? Double {
+                let size = coords["size"] as? Double
+                result[buildingId] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: size.map { CGFloat($0) })
+            }
+        }
+        dungeonMapLayout = result
+    }
+
+    func loadDungeonMapLayoutFromDisk() {
+        guard dungeonMapLayout.isEmpty,
+              let dict = UserDefaults.standard.dictionary(forKey: Self.dungeonMapLayoutKey) as? [String: [String: Double]]
+        else { return }
+        var result: [String: BuildingOverride] = [:]
+        for (id, coords) in dict {
+            if let x = coords["x"], let y = coords["y"] {
+                result[id] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: coords["size"].map { CGFloat($0) })
+            }
+        }
+        dungeonMapLayout = result
+    }
+
+    private func persistDungeonMapLayout() {
+        guard !dungeonMapLayout.isEmpty else { return }
+        var dict: [String: [String: Double]] = [:]
+        for (id, o) in dungeonMapLayout {
+            var entry: [String: Double] = ["x": Double(o.x), "y": Double(o.y)]
+            if let s = o.size { entry["size"] = Double(s) }
+            dict[id] = entry
+        }
+        UserDefaults.standard.set(dict, forKey: Self.dungeonMapLayoutKey)
+    }
+
+    // MARK: - Sky Layout (admin-defined sky object positions + sizes)
+
+    private static let skyLayoutKey = "sky_layout_cache"
+
+    private(set) var skyLayout: [String: BuildingOverride] = GameDataCache.loadSkyFromDisk() {
+        didSet { persistSkyLayout() }
+    }
+
+    private static func loadSkyFromDisk() -> [String: BuildingOverride] {
+        guard let dict = UserDefaults.standard.dictionary(forKey: skyLayoutKey) as? [String: [String: Double]] else {
+            return [:]
+        }
+        var result: [String: BuildingOverride] = [:]
+        for (id, coords) in dict {
+            if let x = coords["x"], let y = coords["y"] {
+                result[id] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: coords["size"].map { CGFloat($0) })
+            }
+        }
+        return result
+    }
+
+    func cacheSkyLayout(_ layout: [String: BuildingOverride]) {
+        skyLayout = layout
+    }
+
+    private func persistSkyLayout() {
+        guard !skyLayout.isEmpty else { return }
+        var dict: [String: [String: Double]] = [:]
+        for (id, o) in skyLayout {
+            var entry: [String: Double] = ["x": Double(o.x), "y": Double(o.y)]
+            if let s = o.size { entry["size"] = Double(s) }
+            dict[id] = entry
+        }
+        UserDefaults.standard.set(dict, forKey: Self.skyLayoutKey)
     }
 
     // MARK: - TTLs
@@ -266,6 +367,26 @@ final class GameDataCache {
         dungeonProgressFetchedAt = nil
     }
 
+    // MARK: - Dungeon List Cache
+
+    private let dungeonListTTL: TimeInterval = 300 // 5 minutes
+
+    func cachedDungeonList() -> [DungeonInfo]? {
+        guard let fetchedAt = dungeonListFetchedAt,
+              Date().timeIntervalSince(fetchedAt) < dungeonListTTL,
+              !dungeonList.isEmpty else { return nil }
+        return dungeonList
+    }
+
+    func cacheDungeonList(_ data: [DungeonInfo]) {
+        dungeonList = data
+        dungeonListFetchedAt = Date()
+    }
+
+    func invalidateDungeonList() {
+        dungeonListFetchedAt = nil
+    }
+
     // MARK: - Gold Mine Cache
 
     func cachedGoldMine() -> (slots: [[String: Any]], maxSlots: Int)? {
@@ -331,6 +452,8 @@ final class GameDataCache {
         battlePassFetchedAt = nil
         dungeonProgress = [:]
         dungeonProgressFetchedAt = nil
+        dungeonList = []
+        dungeonListFetchedAt = nil
         goldMineSlots = []
         goldMineFetchedAt = nil
         revengeList = []

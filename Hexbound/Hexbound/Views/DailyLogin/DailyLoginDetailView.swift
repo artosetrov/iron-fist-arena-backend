@@ -128,7 +128,7 @@ struct DailyLoginDetailView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geo.size.width * progress)
+                        .frame(width: geo.size.width * max(0, min(1, progress)))
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 8, x: 0, y: 0)
                 }
             }
@@ -177,7 +177,7 @@ struct DailyLoginDetailView: View {
         let isCurrentDay = reward.day == data.currentDay && data.canClaim
         let isClaimed = reward.day < data.currentDay || (reward.day == data.currentDay && !data.canClaim)
         let isLocked = !isClaimed && !isCurrentDay
-        let isBouncing = vm.claimedDayBounce == reward.day
+        let _ = vm.claimedDayBounce == reward.day
 
         ZStack {
             // Background
@@ -188,7 +188,7 @@ struct DailyLoginDetailView: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .fill(
                         LinearGradient(
-                            colors: [Color(hex: 0x3D2E0A), Color(hex: 0x2A1F05)],
+                            colors: [DarkFantasyTheme.dailyGradientTopGold, DarkFantasyTheme.dailyGradientBottomGold],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -241,7 +241,6 @@ struct DailyLoginDetailView: View {
                     Text(reward.icon)
                         .font(.system(size: isBonus ? 32 : 26))
                         .opacity(isLocked ? 0.3 : 1)
-                        .scaleEffect(isBouncing ? 1.3 : 1.0)
                 }
 
                 Text(reward.label)
@@ -278,8 +277,8 @@ struct DailyLoginDetailView: View {
                         .fill(
                             LinearGradient(
                                 colors: vm.hasClaimed
-                                    ? [Color(hex: 0x1A3A1A), Color(hex: 0x0A2A0A)]
-                                    : [Color(hex: 0x3D2E0A), Color(hex: 0x2A1F05)],
+                                    ? [DarkFantasyTheme.dailyGradientTopGreen, DarkFantasyTheme.dailyGradientBottomGreen]
+                                    : [DarkFantasyTheme.dailyGradientTopGold, DarkFantasyTheme.dailyGradientBottomGold],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -300,7 +299,6 @@ struct DailyLoginDetailView: View {
                     } else {
                         Text(reward.icon)
                             .font(.system(size: 28))
-                            .scaleEffect(vm.showClaimParticles ? 1.2 : 1.0)
                     }
                 }
 
@@ -352,6 +350,7 @@ struct DailyLoginDetailView: View {
             .buttonStyle(.primary)
         } else {
             Button {
+                HapticManager.success()
                 Task { await vm.claimReward() }
             } label: {
                 if vm.isClaiming {

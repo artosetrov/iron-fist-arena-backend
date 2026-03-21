@@ -14,13 +14,13 @@ struct RushRoom {
 
     var icon: String {
         switch type {
-        case "combat":   return "⚔️"
-        case "elite":    return "🗡️"
-        case "miniboss": return "👹"
-        case "treasure": return "📦"
-        case "event":    return "❓"
-        case "shop":     return "🏪"
-        default:         return "❔"
+        case "combat":   return "swords"
+        case "elite":    return "figure.fencing"
+        case "miniboss": return "figure.wave"
+        case "treasure": return "shippingbox"
+        case "event":    return "questionmark.circle"
+        case "shop":     return "storefront"
+        default:         return "questionmark"
         }
     }
 
@@ -69,6 +69,7 @@ final class DungeonRushViewModel {
     var isLoading = false
     var isGameOver = false
     var lastFightWon = true
+    var errorMessage: String?
 
     // Room system
     var rooms: [RushRoom] = []
@@ -135,9 +136,13 @@ final class DungeonRushViewModel {
 
     func startRush() async {
         isLoading = true
+        errorMessage = nil
         let result = await service.rushStart()
         isLoading = false
-        guard let result else { return }
+        guard let result else {
+            errorMessage = "Failed to start the dungeon rush. Please check your connection and try again."
+            return
+        }
         applyStartResult(result)
     }
 
@@ -145,9 +150,13 @@ final class DungeonRushViewModel {
 
     func checkActiveRush() async {
         isLoading = true
+        errorMessage = nil
         let result = await service.rushStatus()
         isLoading = false
-        guard let result else { return }
+        guard let result else {
+            errorMessage = "Failed to load dungeon rush. Please check your connection and try again."
+            return
+        }
         if result["active"] as? Bool == true {
             applyStatusResult(result)
         }
@@ -209,7 +218,7 @@ final class DungeonRushViewModel {
                     slot: item["slot"] as? Int ?? 0,
                     type: item["type"] as? String ?? "buff",
                     name: item["name"] as? String ?? "",
-                    icon: item["icon"] as? String ?? "🛒",
+                    icon: item["icon"] as? String ?? "shoppingcart",
                     description: item["description"] as? String ?? "",
                     price: item["price"] as? Int ?? 0,
                     purchased: item["purchased"] as? Bool ?? false
@@ -455,7 +464,7 @@ final class DungeonRushViewModel {
             showTreasureResult = true
 
         case "event":
-            eventResultIcon = result["eventIcon"] as? String ?? "❓"
+            eventResultIcon = result["eventIcon"] as? String ?? "questionmark.circle"
             eventResultTitle = result["eventName"] as? String ?? "Event"
             eventResultDescription = result["description"] as? String ?? ""
             showEventResult = true

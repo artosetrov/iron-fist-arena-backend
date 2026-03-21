@@ -31,6 +31,35 @@ struct CombatResultDetailView: View {
         combatData?.source ?? "training"
     }
 
+    /// Estimate enemy remaining HP from combat log to detect near-miss losses.
+    /// Returns a subtitle string if the loss was close (enemy had <25% HP left).
+    private var nearMissSubtitle: String? {
+        guard let data = combatData, !isWin else { return nil }
+        let playerId = data.player.id
+        let enemyMaxHp = data.enemy.maxHp
+        guard enemyMaxHp > 0 else { return nil }
+
+        // Sum all damage dealt TO the enemy (by player)
+        let totalDamageToEnemy = data.combatLog
+            .filter { $0.attackerId == playerId && !$0.isMiss && !$0.isDodge }
+            .reduce(0) { $0 + $1.damage }
+        // Sum enemy heals
+        let totalEnemyHeals = data.combatLog
+            .filter { $0.attackerId != playerId }
+            .compactMap { $0.heal }
+            .reduce(0, +)
+
+        let estimatedEnemyHp = max(0, enemyMaxHp - totalDamageToEnemy + totalEnemyHeals)
+        let hpPercent = Double(estimatedEnemyHp) / Double(enemyMaxHp)
+
+        if hpPercent < 0.10 {
+            return "So close! Enemy had \(estimatedEnemyHp) HP left"
+        } else if hpPercent < 0.25 {
+            return "Almost there! A bit more and you'd win"
+        }
+        return nil
+    }
+
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
@@ -49,6 +78,8 @@ struct CombatResultDetailView: View {
         .navigationBarHidden(true)
         .onAppear {
             captureXpSnapshot()
+            // Play victory/defeat SFX
+            SFXManager.shared.play(isWin ? .battleVictory : .battleDefeat)
             // Reload character immediately to reflect new XP/level
             Task {
                 let charService = CharacterService(appState: appState)
@@ -87,33 +118,27 @@ struct CombatResultDetailView: View {
                 imageUrl: item["image_url"] as? String,
                 sfIcon: LootDetailView.consumableSFIcon(for: consumableType, type: rawType),
                 sfColor: LootDetailView.consumableSFColor(for: consumableType, type: rawType),
-                fallbackIcon: type?.icon ?? "📦"
+                fallbackIcon: type?.icon ?? "shippingbox",
+                rarityTier: rarity.tier
             )
         }
 
         var buttons: [ResultButton] = []
 
-        if !appState.pendingLoot.isEmpty {
-            // Loot is shown inline now, no separate VIEW LOOT button needed
-        }
-
         if source == "arena" || source == "pvp" {
-            buttons.append(ResultButton(title: "FIGHT AGAIN", icon: "swords", style: .primary) {
+            buttons.append(ResultButton(title: "FIGHT AGAIN", icon: "swords", style: .primary, action: {
                 goBack()
-            })
-            buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .secondary) {
-                goBack()
-            })
+            }))
         } else {
-            buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .primary) {
+            buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .primary, action: {
                 goBack()
-            })
+            }))
         }
 
         return BattleResultConfig(
             isVictory: isWin,
             title: isWin ? "VICTORY!" : "DEFEAT",
-            subtitle: nil,
+            subtitle: nearMissSubtitle,
             illustrationImage: isWin ? "result-victory" : "result-defeat",
             goldReward: res.goldReward,
             xpReward: res.xpReward,
@@ -181,7 +206,7 @@ struct CombatResultDetailView: View {
                             imageUrl: lootImageUrl,
                             systemIcon: sfIcon,
                             systemIconColor: sfColor,
-                            fallbackIcon: type?.icon ?? "📦"
+                            fallbackIcon: type?.icon ?? "shippingbox"
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
                     }
@@ -311,7 +336,7 @@ struct CombatResultDetailView: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                     .stroke(rarityColor.opacity(0.5), lineWidth: 2)
             )
-            .shadow(color: .black.opacity(0.8), radius: 32, y: 8)
+            .shadow(color: .bgAbyss.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .fixedSize(horizontal: false, vertical: true)
             .transition(.scale(scale: 0.85).combined(with: .opacity))
@@ -323,17 +348,9 @@ struct CombatResultDetailView: View {
 
     @ViewBuilder
     private var fallbackView: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Spacer()
-            Text("Battle Complete")
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-            Button("RETURN") {
-                goBack()
-            }
-            .buttonStyle(.primary)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            Spacer()
+        ErrorStateView.battleInit {
+            Task { await CharacterService(appState: appState).loadCharacter() }
+            goBack()
         }
     }
 

@@ -27,7 +27,7 @@ struct InboxRowView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.subject)
-                            .font(.system(size: 15, weight: message.isRead ? .regular : .semibold))
+                            .font(.system(size: 16, weight: message.isRead ? .regular : .semibold))
                             .foregroundColor(DarkFantasyTheme.textPrimary)
                             .lineLimit(1)
                         
@@ -42,7 +42,7 @@ struct InboxRowView: View {
                                 
                                 if attachments.count > 3 {
                                     Text("+\(attachments.count - 3)")
-                                        .font(.system(size: 11, weight: .semibold))
+                                        .font(.system(size: 13, weight: .semibold))
                                         .foregroundColor(DarkFantasyTheme.textSecondary)
                                 }
                             }
@@ -51,13 +51,13 @@ struct InboxRowView: View {
                     
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.senderName)
-                            .font(.system(size: 13))
+                            .font(.system(size: 14))
                             .foregroundColor(DarkFantasyTheme.textSecondary)
                         
                         Spacer()
                         
                         Text(formatDate(message.createdAt))
-                            .font(.system(size: 12))
+                            .font(.system(size: 13))
                             .foregroundColor(DarkFantasyTheme.textSecondary)
                     }
                 }
@@ -89,7 +89,7 @@ struct InboxRowView: View {
                     
                     // Message body
                     Text(message.body)
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                         .foregroundColor(DarkFantasyTheme.textPrimary)
                         .lineLimit(nil)
                     
@@ -97,7 +97,7 @@ struct InboxRowView: View {
                     if let attachments = message.attachments, !attachments.isEmpty {
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                             Text("Attachments")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(DarkFantasyTheme.textSecondary)
                             
                             ForEach(attachments, id: \.type) { attachment in
@@ -105,7 +105,7 @@ struct InboxRowView: View {
                                     AttachmentIcon(type: attachment.type, amount: attachment.amount)
                                     
                                     Text(formatAttachment(attachment))
-                                        .font(.system(size: 13))
+                                        .font(.system(size: 14))
                                         .foregroundColor(DarkFantasyTheme.textPrimary)
                                     
                                     Spacer()
@@ -213,11 +213,11 @@ private struct AttachmentIcon: View {
     var body: some View {
         HStack(spacing: 2) {
             Image(systemName: iconName)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(iconColor)
-            
+
             Text("\(amount)")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DarkFantasyTheme.textSecondary)
         }
         .padding(.horizontal, 6)

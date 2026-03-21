@@ -6,30 +6,30 @@ struct AppearanceStepView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("CHOOSE YOUR APPEARANCE")
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textBody))
+            Text("Choose Your Appearance")
+                .font(DarkFantasyTheme.title(size: 14))
                 .foregroundStyle(DarkFantasyTheme.goldBright)
-                .tracking(2)
+                .tracking(1)
                 .padding(.top, LayoutConstants.spaceMD)
 
-            raceRow
-                .padding(.top, LayoutConstants.spaceSM)
-
             if vm.selectedOrigin != nil {
-                thumbnailRow
-                    .padding(.top, LayoutConstants.spaceMD)
-
-                avatarArea
+                raceBonusWidget
                     .padding(.top, LayoutConstants.spaceSM)
 
-                raceBonusWidget
+                avatarArea
                     .padding(.top, LayoutConstants.spaceMD)
-                    .padding(.bottom, LayoutConstants.spaceLG)
+
+                thumbnailRow
+                    .padding(.top, LayoutConstants.spaceSM)
             } else {
                 emptyState
                     .padding(.top, LayoutConstants.spaceSM)
                     .padding(.bottom, LayoutConstants.spaceSM)
             }
+
+            raceRow
+                .padding(.top, LayoutConstants.spaceMD)
+                .padding(.bottom, LayoutConstants.spaceLG)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
@@ -38,8 +38,8 @@ struct AppearanceStepView: View {
 
     private var raceRow: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
-            Text("RACE")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+            Text("Race")
+                .font(DarkFantasyTheme.body(size: 14))
                 .foregroundStyle(DarkFantasyTheme.textDimLabel)
 
             HStack(spacing: 6) {
@@ -66,16 +66,16 @@ struct AppearanceStepView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 36)
-                    .frame(width: 56, height: 56)
+                    .frame(width: LayoutConstants.touchComfortable, height: LayoutConstants.touchComfortable)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                             .fill(isSelected ? DarkFantasyTheme.gold.opacity(0.1) : DarkFantasyTheme.bgDarkPanel)
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                             .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2.5)
                     )
-                    .shadow(color: isSelected ? DarkFantasyTheme.gold.opacity(0.3) : .clear, radius: 7)
+                    .shadow(color: isSelected ? DarkFantasyTheme.goldGlow : .clear, radius: 7)
 
                 Text(origin.displayName)
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -89,17 +89,17 @@ struct AppearanceStepView: View {
 
     private var raceBonusWidget: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                 .fill(DarkFantasyTheme.bgSecondary)
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
 
             if let origin = vm.selectedOrigin {
-                HStack(spacing: 12) {
+                HStack(spacing: LayoutConstants.spaceMS) {
                     Image(origin.iconAsset)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 48, height: 48)
+                        .frame(width: LayoutConstants.touchMin, height: LayoutConstants.touchMin)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(origin.displayName)
@@ -138,7 +138,7 @@ struct AppearanceStepView: View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Spacer()
 
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                 .strokeBorder(DarkFantasyTheme.bgDarkPanelBorder, style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
                 .frame(width: 160, height: 160)
                 .overlay(
@@ -161,9 +161,9 @@ struct AppearanceStepView: View {
 
     private var avatarArea: some View {
         GeometryReader { geo in
-            let spacing: CGFloat = 8
-            let sideSize: CGFloat = 64
-            let avatarSize: CGFloat = min(geo.size.width - sideSize * 2 - spacing * 4, 220)
+            let spacing = LayoutConstants.spaceSM
+            let sideSize = LayoutConstants.avatarInnerSize
+            let avatarSize: CGFloat = max(min(geo.size.width - sideSize * 2 - spacing * 4, 220), 0)
 
             HStack(alignment: .center, spacing: spacing) {
                 // Left column: gender toggle (top) + left arrow (bottom)
@@ -232,11 +232,11 @@ struct AppearanceStepView: View {
             content
                 .frame(width: size, height: size)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                         .fill(bg)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                         .stroke(border, lineWidth: 2)
                 )
                 .shadow(color: shadow, radius: 5)
@@ -268,7 +268,7 @@ struct AppearanceStepView: View {
             RoundedRectangle(cornerRadius: 22)
                 .stroke(DarkFantasyTheme.gold, lineWidth: 3)
         )
-        .shadow(color: DarkFantasyTheme.gold.opacity(0.2), radius: 20, y: 8)
+        .shadow(color: DarkFantasyTheme.goldGlow, radius: 20, y: 8)
         .animation(.easeInOut(duration: 0.25), value: vm.avatarIndex)
     }
 
@@ -300,19 +300,19 @@ struct AppearanceStepView: View {
                     }
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                             .fill(DarkFantasyTheme.bgDarkPanel)
 
                         skinImage(skin)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
                     }
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                             .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2)
                     )
-                    .shadow(color: isSelected ? DarkFantasyTheme.gold.opacity(0.25) : .clear, radius: 5)
+                    .shadow(color: isSelected ? DarkFantasyTheme.goldGlow : .clear, radius: 5)
                 }
                 .buttonStyle(.scalePress(0.95))
             }

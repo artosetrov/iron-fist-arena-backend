@@ -148,7 +148,7 @@ struct UpgradeGuestView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                BackButton()
+                HubLogoButton()
             }
             ToolbarItem(placement: .principal) {
                 Text("REGISTER")

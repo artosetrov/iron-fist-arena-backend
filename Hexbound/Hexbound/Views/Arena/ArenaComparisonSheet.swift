@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Bottom sheet for comparing player stats vs opponent before a fight.
+/// Shows VS header, full stat comparison (combat + base stats), win prediction, and fight CTA.
 struct ArenaComparisonSheet: View {
     let opponent: Opponent
     let character: Character
@@ -18,33 +19,53 @@ struct ArenaComparisonSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // Handle
-            RoundedRectangle(cornerRadius: 2)
-                .fill(DarkFantasyTheme.textTertiary)
-                .frame(width: 36, height: 4)
-                .padding(.top, LayoutConstants.spaceMD)
-                .padding(.bottom, LayoutConstants.spaceLG)
+        VStack(spacing: 0) {
+            // Handle + Close button
+            ZStack {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(DarkFantasyTheme.textTertiary)
+                    .frame(width: 36, height: 4)
 
-            // VS Header
-            vsHeader
+                HStack {
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .buttonStyle(.closeButton)
+                    .padding(.trailing, LayoutConstants.screenPadding)
+                }
+            }
+            .padding(.top, LayoutConstants.spaceMD)
+            .padding(.bottom, LayoutConstants.spaceSM)
 
-            // Combat Stats
-            combatStatsSection
+            ScrollView {
+                VStack(spacing: LayoutConstants.spaceMD) {
+                    // VS Header
+                    vsHeader
 
-            // Win Rate & Record
-            winRateSection
+                    // Combat Stats
+                    combatStatsSection
 
-            // Win chance prediction
-            winPrediction
+                    // Base Stats
+                    baseStatsSection
 
-            // Fight button
+                    // Win Rate & Record
+                    winRateSection
+
+                    // Win chance prediction
+                    winPrediction
+                }
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.spaceSM)
+            }
+
+            // Fight button pinned to bottom
             fightButton
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
                 .padding(.top, LayoutConstants.spaceXS)
         }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
-        .presentationDetents([.height(620)])
+        .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .presentationBackground(DarkFantasyTheme.bgArenaSheet)
         .presentationCornerRadius(20)
@@ -83,13 +104,14 @@ struct ArenaComparisonSheet: View {
                 .font(DarkFantasyTheme.title(size: 32))
                 .foregroundStyle(DarkFantasyTheme.gold)
 
-            // Opponent avatar
+            // Opponent avatar (mirrored to face player)
             VStack(spacing: LayoutConstants.spaceSM) {
                 AvatarImageView(
                     skinKey: opponent.avatar,
                     characterClass: opponent.characterClass,
                     size: 100
                 )
+                .scaleEffect(x: -1, y: 1)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18)
@@ -113,10 +135,7 @@ struct ArenaComparisonSheet: View {
 
     private var combatStatsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            Text("COMBAT STATS")
-                .font(DarkFantasyTheme.body(size: 12))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(2)
+            sectionHeader("Combat Stats")
 
             statRow(label: "Attack", myValue: character.attackPower, theirValue: opponent.strength ?? 0)
             statRow(label: "Defense", myValue: character.armor ?? 0, theirValue: opponent.vitality ?? 0)
@@ -132,6 +151,36 @@ struct ArenaComparisonSheet: View {
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+    }
+
+    // MARK: - Base Stats Section
+
+    private var baseStatsSection: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            sectionHeader("Base Stats")
+
+            statRow(label: "Strength", myValue: character.strength ?? 0, theirValue: opponent.strength ?? 0)
+            statRow(label: "Agility", myValue: character.agility ?? 0, theirValue: opponent.agility ?? 0)
+            statRow(label: "Vitality", myValue: character.vitality ?? 0, theirValue: opponent.vitality ?? 0)
+        }
+        .padding(LayoutConstants.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Section Header
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(DarkFantasyTheme.body(size: 12))
+            .foregroundStyle(DarkFantasyTheme.textTertiary)
+            .tracking(2)
     }
 
     @ViewBuilder
@@ -200,6 +249,7 @@ struct ArenaComparisonSheet: View {
 
     private var fightButton: some View {
         Button {
+            HapticManager.heavy()
             if staminaCost > 0 {
                 showStaminaConfirm = true
             } else {
@@ -209,22 +259,27 @@ struct ArenaComparisonSheet: View {
             HStack(spacing: LayoutConstants.spaceXS) {
                 if isFighting {
                     ProgressView()
-                        .tint(.white)
+                        .tint(.textPrimary)
                 } else {
                     Text("FIGHT")
                     if staminaCost > 0 {
                         Text("(\(staminaCost) STA)")
                             .font(DarkFantasyTheme.body(size: 13))
                     } else {
-                        Text("(FREE)")
-                            .font(DarkFantasyTheme.body(size: 13))
-                            .foregroundStyle(DarkFantasyTheme.success)
+                        Text("FREE")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(DarkFantasyTheme.bgDarkPanel)
+                            .clipShape(Capsule())
                     }
                 }
             }
         }
         .buttonStyle(.fight)
         .disabled(isFighting || !canFight)
+        .glowPulse(color: DarkFantasyTheme.arenaRankGold, intensity: 0.6, isActive: canFight && !isFighting)
         .confirmationDialog(
             "SPEND STAMINA",
             isPresented: $showStaminaConfirm,

@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum AppRoute: Hashable {
+enum AppRoute: Hashable, Codable {
     // Auth
     case login
     case register
@@ -26,6 +26,8 @@ enum AppRoute: Hashable {
     case premiumPurchase
 
     // Dungeon
+    case dungeonMap
+    case dungeonMapEditor
     case dungeonSelect
     case dungeonRoom
 
@@ -52,6 +54,9 @@ enum AppRoute: Hashable {
     // Settings
     case settings
     case appearanceEditor
+
+    // Guest upgrade
+    case upgradeGuest
 
     // Dev (routed to PlaceholderView in Release builds)
     case screenCatalog
@@ -92,12 +97,12 @@ struct MainRouterView: View {
         @Bindable var state = appState
         NavigationStack(path: $state.mainPath) {
             HubView()
-                .navigationDestination(for: AppRoute.self) { routeView(for: $0) }
+                .navigationDestination(for: AppRoute.self) { MainRouterView.destination(for: $0) }
         }
     }
 
     @ViewBuilder
-    private func routeView(for route: AppRoute) -> some View {
+    static func destination(for route: AppRoute) -> some View {
         switch route {
         // Hub
         case .hub: HubView()
@@ -119,6 +124,7 @@ struct MainRouterView: View {
         case .premiumPurchase: PremiumPurchaseView()
         
         // Dungeon
+        case .dungeonMap: DungeonMapView()
         case .dungeonSelect: DungeonSelectDetailView()
         case .dungeonRoom: DungeonRoomDetailView()
         
@@ -145,14 +151,16 @@ struct MainRouterView: View {
         // Settings
         case .settings: SettingsDetailView()
         case .appearanceEditor: AppearanceEditorDetailView()
+        case .upgradeGuest: UpgradeGuestView()
         
         // Dev screens
         #if DEBUG
         case .screenCatalog: ScreenCatalogView()
         case .designSystem: DesignSystemPreview()
         case .hubEditor: HubEditorDetailView()
+        case .dungeonMapEditor: DungeonMapEditorView()
         #else
-        case .screenCatalog, .designSystem, .hubEditor:
+        case .screenCatalog, .designSystem, .hubEditor, .dungeonMapEditor:
             PlaceholderView()
         #endif
         
@@ -197,7 +205,7 @@ struct PlaceholderView: View {
                 Image(systemName: "hammer.fill")
                     .font(.system(size: 48))
                     .foregroundStyle(DarkFantasyTheme.gold)
-                    .symbolEffect(.bounce, options: .repeating)
+                    .modifier(BounceEffectModifier())
                 
                 Text("Coming Soon")
                     .font(DarkFantasyTheme.title(size: 28))
@@ -228,6 +236,18 @@ struct PlaceholderView: View {
                     .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Availability-safe bounce symbol effect
+
+private struct BounceEffectModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.symbolEffect(.bounce, options: .repeating)
+        } else {
+            content
         }
     }
 }

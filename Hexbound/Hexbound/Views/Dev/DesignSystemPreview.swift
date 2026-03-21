@@ -301,7 +301,7 @@ struct DesignSystemPreview: View {
                         Text(style.label)
                             .font(DarkFantasyTheme.body(size: 8).bold())
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.textPrimary)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
                     .background(style.color.opacity(0.7))
@@ -324,7 +324,7 @@ struct DesignSystemPreview: View {
                         Text(effect.abbreviation)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.textPrimary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(effect.color.opacity(0.8))

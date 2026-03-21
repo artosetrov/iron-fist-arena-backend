@@ -15,6 +15,7 @@ final class DungeonRoomViewModel {
     var runId = ""
     var isFighting = false
     var isLoading = false
+    var errorMessage: String?
 
     // Victory overlay
     var showVictory = false
@@ -22,10 +23,19 @@ final class DungeonRoomViewModel {
     var victoryXP = 0
     var victoryItems: [[String: Any]] = []
 
-    init(appState: AppState) {
+    private let cache: GameDataCache
+
+    init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
+        self.cache = cache
         self.service = DungeonService(appState: appState)
         self.characterService = CharacterService(appState: appState)
+    }
+
+    /// Resolve dungeon list: cached server data → fallback hardcoded
+    private var allDungeons: [DungeonInfo] {
+        let cached = cache.cachedDungeonList()
+        return (cached != nil && !cached!.isEmpty) ? cached! : DungeonInfo.fallback
     }
 
     // MARK: - Computed
@@ -73,6 +83,7 @@ final class DungeonRoomViewModel {
 
     func loadState() async {
         isLoading = true
+        errorMessage = nil
 
         // Resolve which dungeon to show from appState or active run
         let selectedId = appState.selectedDungeonId
@@ -80,9 +91,14 @@ final class DungeonRoomViewModel {
         let data = await service.getProgress()
         isLoading = false
 
+        guard data != nil else {
+            errorMessage = "Failed to load dungeon data. Check your connection and try again."
+            return
+        }
+
         // Try to find dungeon from selected ID first
         if let selectedId {
-            dungeon = DungeonInfo.all.first { $0.id == selectedId }
+            dungeon = allDungeons.first { $0.id == selectedId }
         }
 
         // Check for active run
@@ -93,7 +109,7 @@ final class DungeonRoomViewModel {
 
             // If we didn't have a selected dungeon, use the run's dungeon
             if dungeon == nil, !runDungeonId.isEmpty {
-                dungeon = DungeonInfo.all.first { $0.id == runDungeonId }
+                dungeon = allDungeons.first { $0.id == runDungeonId }
             }
 
             // If run's dungeon matches our selected dungeon, use its floor

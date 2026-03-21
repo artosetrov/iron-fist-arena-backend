@@ -4,11 +4,15 @@ import SwiftUI
 ///
 /// Used by:  CombatResultDetailView, DungeonVictoryView, LootDetailView
 /// Follows the "card on dimmed background" pattern with:
+///  • Screen flash (gold=victory, red=defeat) (Motion Audit §2.12)
+///  • Dramatic title slam (scale 2.5→1.0 with bounce)
+///  • RewardBurstView particle explosion on victory
 ///  • Pulsing title glow (victory=gold, defeat=red)
-///  • Staggered reward counters
-///  • Inline loot cards (scale-in)
-///  • Shake on defeat
-///  • Particle overlay
+///  • Staggered reward counters with tick-up
+///  • Inline loot cards (scale-in with per-item haptics)
+///  • Shake + haptic on defeat
+///  • FIGHT AGAIN: gold glowPulse + shimmer (victory) / red glowPulse (defeat)
+///  • HapticManager integration throughout ceremony
 struct BattleResultCardView: View {
 
     // MARK: - Config
@@ -25,6 +29,11 @@ struct BattleResultCardView: View {
     @State private var titleGlowPulse = false
     @State private var shakeOffset: CGFloat = 0
     @State private var revealedLootIndices: Set<Int> = []
+
+    // Ceremony enhancements (Motion Audit §2.12, §3.8)
+    @State private var screenFlashOpacity: Double = 0
+    @State private var titleScale: CGFloat = MotionConstants.vsScaleFrom // 2.5 → 1.0 slam
+    @State private var showRewardBurst = false
 
     // Reward counter roll-ups
     @State private var goldDisplay = 0
@@ -44,6 +53,25 @@ struct BattleResultCardView: View {
             )
             .ignoresSafeArea()
 
+            // Screen flash overlay (gold on victory, red on defeat)
+            accentColor
+                .ignoresSafeArea()
+                .opacity(screenFlashOpacity)
+                .allowsHitTesting(false)
+
+            // Reward burst particles (victory only)
+            if config.isVictory {
+                GeometryReader { geo in
+                    RewardBurstView(
+                        style: .victory,
+                        isActive: $showRewardBurst
+                    )
+                    .position(x: geo.size.width / 2, y: geo.size.height * 0.35)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
+
             // Color glow behind card
             RadialGradient(
                 colors: [
@@ -57,6 +85,13 @@ struct BattleResultCardView: View {
             )
             .ignoresSafeArea()
             .opacity(showCard ? 1 : 0)
+
+            // Spinning rays behind card
+            SpinningRaysView()
+                .ignoresSafeArea()
+                .opacity(showCard ? 0.7 : 0)
+                .animation(.easeIn(duration: 0.6), value: showCard)
+                .allowsHitTesting(false)
 
             // Main card
             ScrollView(showsIndicators: false) {
@@ -75,15 +110,7 @@ struct BattleResultCardView: View {
                         .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
                         .padding(.horizontal, LayoutConstants.screenPadding)
                         .offset(x: shakeOffset)
-                        .scaleEffect(showCard ? 1 : 0.9)
                         .opacity(showCard ? 1 : 0)
-
-                    // Buttons below card
-                    buttonsSection
-                        .padding(.top, LayoutConstants.spaceLG)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .opacity(showButtons ? 1 : 0)
-                        .offset(y: showButtons ? 0 : 15)
 
                     Spacer(minLength: LayoutConstants.spaceLG)
                 }
@@ -125,19 +152,19 @@ struct BattleResultCardView: View {
             titleView
                 .padding(.bottom, LayoutConstants.spaceXS)
 
-            // Subtitle
+            // Subtitle (near-miss motivation or general)
             if let subtitle = config.subtitle {
                 Text(subtitle)
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
                     .opacity(showTitle ? 1 : 0)
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
 
             // First Win Bonus
             if config.firstWinBonus {
                 firstWinBadge
                     .opacity(showRewards ? 1 : 0)
-                    .scaleEffect(showRewards ? 1 : 0.8)
             }
 
             // Divider
@@ -172,7 +199,14 @@ struct BattleResultCardView: View {
                     .opacity(showLoot ? 1 : 0)
             }
 
-            Spacer().frame(height: LayoutConstants.spaceMD)
+            // Buttons inside card
+            buttonsSection
+                .padding(.top, LayoutConstants.spaceMD)
+                .padding(.horizontal, LayoutConstants.cardPadding)
+                .opacity(showButtons ? 1 : 0)
+                .offset(y: showButtons ? 0 : 15)
+
+            Spacer().frame(height: LayoutConstants.spaceLG)
         }
     }
 
@@ -187,7 +221,6 @@ struct BattleResultCardView: View {
                 color: accentColor.opacity(titleGlowPulse ? 0.6 : 0.2),
                 radius: titleGlowPulse ? 20 : 8
             )
-            .scaleEffect(showTitle ? 1 : 0.5)
             .opacity(showTitle ? 1 : 0)
     }
 
@@ -397,6 +430,7 @@ struct BattleResultCardView: View {
                     }
                 }
                 .padding(.horizontal, LayoutConstants.cardPadding)
+                .frame(maxWidth: .infinity)
             }
         }
     }
@@ -450,8 +484,9 @@ struct BattleResultCardView: View {
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                 .foregroundStyle(rarityColor)
         }
-        .scaleEffect(isRevealed ? 1.0 : 0.3)
         .opacity(isRevealed ? 1.0 : 0.0)
+        // Epic+ items get ambient glow pulse after reveal
+        .glowPulse(color: rarityColor, intensity: item.rarityTier >= 3 ? 0.5 : 0, isActive: isRevealed && item.rarityTier >= 3)
     }
 
     // MARK: - Buttons
@@ -459,21 +494,42 @@ struct BattleResultCardView: View {
     @ViewBuilder
     private var buttonsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            ForEach(Array(config.buttons.enumerated()), id: \.offset) { _, button in
-                Button {
-                    button.action()
-                } label: {
-                    if let icon = button.icon {
-                        HStack(spacing: LayoutConstants.spaceSM) {
-                            Image(systemName: icon)
-                                .font(.system(size: 16, weight: .bold))
-                            Text(button.title)
-                        }
-                    } else {
-                        Text(button.title)
-                    }
-                }
+            ForEach(Array(config.buttons.enumerated()), id: \.offset) { index, button in
+                resultButton(button, index: index)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func resultButton(_ button: ResultButton, index: Int) -> some View {
+        if button.style == .primary && config.isVictory {
+            buttonLabel(button)
                 .buttonStyle(resolveButtonStyle(button.style))
+                .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: showButtons)
+                .shimmer(color: DarkFantasyTheme.gold, duration: 3)
+        } else if button.style == .primary && !config.isVictory {
+            buttonLabel(button)
+                .buttonStyle(resolveButtonStyle(button.style))
+                .glowPulse(color: DarkFantasyTheme.danger, intensity: 0.4, isActive: showButtons)
+        } else {
+            buttonLabel(button)
+                .buttonStyle(resolveButtonStyle(button.style))
+        }
+    }
+
+    private func buttonLabel(_ button: ResultButton) -> some View {
+        Button {
+            HapticManager.medium()
+            button.action()
+        } label: {
+            if let icon = button.icon {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .bold))
+                    Text(button.title)
+                }
+            } else {
+                Text(button.title)
             }
         }
     }
@@ -486,64 +542,107 @@ struct BattleResultCardView: View {
         }
     }
 
-    // MARK: - Animation Sequence
+    // MARK: - Animation Sequence (Motion Audit §2.12)
+    // Victory: flash gold → title slam (2.5→1.0) → particles → reward burst → counters → loot → CTAs
+    // Defeat:  flash red → title fade → shake + haptic → counters → CTAs (red glow)
 
     private func runAnimationSequence() {
-        // 0.0s — card scales in
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+        // ── 0.0s — Screen flash + card scales in ──
+        screenFlashOpacity = config.isVictory ? 0.4 : 0.25
+        withAnimation(.easeOut(duration: MotionConstants.fast)) {
+            screenFlashOpacity = 0
+        }
+        withAnimation(MotionConstants.dramatic) {
             showCard = true
         }
 
-        // 0.3s — title slams in
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.65).delay(0.3)) {
-            showTitle = true
-        }
-
-        // 0.4s — defeat shake
-        if !config.isVictory {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                shakeSequence()
+        // ── 0.25s — Title SLAMS in (scale 2.5→1.0 with bounce) ──
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.fast) {
+            if config.isVictory {
+                HapticManager.heavy()
+            } else {
+                HapticManager.defeat()
+            }
+            withAnimation(MotionConstants.springBouncy) {
+                showTitle = true
             }
         }
 
-        // 0.6s — start title glow pulsing
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+        // ── 0.4s — Defeat shake / Victory burst ──
+        if config.isVictory {
+            DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.normal) {
+                showRewardBurst = true
+                HapticManager.victory()
+            }
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.normal) {
+                shakeSequence()
+                HapticManager.shake()
+            }
+        }
+
+        // ── 0.6s — Title glow pulsing begins ──
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.reward) {
+            withAnimation(MotionConstants.pulse) {
                 titleGlowPulse = true
             }
         }
 
-        // 0.8s — rewards appear
+        // ── 0.8s — Rewards appear + counters tick up ──
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showRewards = true
             }
-            // Roll up counters
-            rollUp(to: config.goldReward ?? 0, binding: $goldDisplay, duration: 0.6)
-            rollUp(to: config.xpReward ?? 0, binding: $xpDisplay, duration: 0.6)
+            rollUp(to: config.goldReward ?? 0, binding: $goldDisplay, duration: MotionConstants.tickUpDuration)
+            rollUp(to: config.xpReward ?? 0, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
         }
 
-        // 1.4s — loot section appears
+        // ── 1.4s — Loot section with RARITY-BASED reveal (Audit §7 #11) ──
         if !config.lootItems.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                withAnimation(.easeOut(duration: 0.3)) {
+                withAnimation(.easeOut(duration: MotionConstants.fast)) {
                     showLoot = true
                 }
-                // Stagger loot card reveals
+                // Calculate cumulative delay based on rarity tiers
+                var cumulativeDelay: Double = 0
                 for i in config.lootItems.indices {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.2) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                    let tier = config.lootItems[i].rarityTier
+                    let itemDelay = cumulativeDelay
+                    cumulativeDelay += rarityRevealDelay(tier: tier)
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + itemDelay) {
+                        // Epic/Legendary: anticipation pause (dim + glow)
+                        if tier >= 3 {
+                            HapticManager.medium()
+                        }
+                    }
+
+                    // Reveal the item
+                    let revealTime = tier >= 3 ? itemDelay + MotionConstants.anticipationDuration : itemDelay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + revealTime) {
+                        let animation: Animation = tier >= 3
+                            ? MotionConstants.springBouncy
+                            : tier >= 2 ? MotionConstants.spring : MotionConstants.snappy
+                        withAnimation(animation) {
                             _ = revealedLootIndices.insert(i)
+                        }
+                        // Rarity-scaled haptic
+                        switch tier {
+                        case 4: HapticManager.legendaryReveal()
+                        case 3: HapticManager.heavy()
+                        case 2: HapticManager.medium()
+                        default: HapticManager.light()
                         }
                     }
                 }
             }
         }
 
-        // 1.8s (or 1.4s if no loot) — buttons
-        let buttonDelay = config.lootItems.isEmpty ? 1.4 : 1.8 + Double(config.lootItems.count) * 0.2
+        // ── Buttons appear last ──
+        let lootTotalDelay = config.lootItems.reduce(0.0) { acc, item in acc + rarityRevealDelay(tier: item.rarityTier) }
+        let buttonDelay = config.lootItems.isEmpty ? 1.4 : 1.4 + lootTotalDelay + 0.3
         DispatchQueue.main.asyncAfter(deadline: .now() + buttonDelay) {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showButtons = true
             }
         }
@@ -559,6 +658,19 @@ struct BattleResultCardView: View {
                     shakeOffset = offset
                 }
             }
+        }
+    }
+
+    // MARK: - Rarity Reveal Timing
+
+    /// Per-item delay based on rarity tier (Audit §3.5)
+    private func rarityRevealDelay(tier: Int) -> Double {
+        switch tier {
+        case 0: return 0.12      // common — instant pop
+        case 1: return 0.18      // uncommon — quick
+        case 2: return 0.28      // rare — noticeable pause
+        case 3: return 0.45      // epic — anticipation + reveal
+        default: return 0.65     // legendary — full ceremony
         }
     }
 
@@ -632,6 +744,8 @@ struct LootItemDisplay {
     let sfIcon: String?
     let sfColor: Color?
     let fallbackIcon: String
+    /// 0=common, 1=uncommon, 2=rare, 3=epic, 4=legendary
+    var rarityTier: Int = 0
 }
 
 struct ResultButton {
@@ -658,5 +772,60 @@ struct AnyButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         _makeBody(configuration)
+    }
+}
+
+// MARK: - Spinning Rays Background
+
+/// Animated spinning rays (spokes) like a light wheel — orange radial beams rotating continuously.
+struct SpinningRaysView: View {
+    @State private var rotation: Double = 0
+    let spokeCount: Int = 14
+    let color: Color = DarkFantasyTheme.goldBright
+
+    var body: some View {
+        GeometryReader { geo in
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.4)
+            let radius = max(geo.size.width, geo.size.height) * 1.2
+
+            Canvas { context, size in
+                let angleStep = .pi * 2 / Double(spokeCount)
+                let halfWidth: Double = 0.06 // half-angle of each spoke in radians
+
+                for i in 0..<spokeCount {
+                    let angle = Double(i) * angleStep + rotation * .pi / 180
+
+                    var path = Path()
+                    path.move(to: center)
+                    path.addLine(to: CGPoint(
+                        x: center.x + radius * cos(angle - halfWidth),
+                        y: center.y + radius * sin(angle - halfWidth)
+                    ))
+                    path.addLine(to: CGPoint(
+                        x: center.x + radius * cos(angle + halfWidth),
+                        y: center.y + radius * sin(angle + halfWidth)
+                    ))
+                    path.closeSubpath()
+
+                    context.fill(path, with: .linearGradient(
+                        Gradient(colors: [
+                            color.opacity(0.35),
+                            color.opacity(0.08),
+                            color.opacity(0)
+                        ]),
+                        startPoint: center,
+                        endPoint: CGPoint(
+                            x: center.x + radius * cos(angle),
+                            y: center.y + radius * sin(angle)
+                        )
+                    ))
+                }
+            }
+            .onAppear {
+                withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
+                    rotation = 360
+                }
+            }
+        }
     }
 }

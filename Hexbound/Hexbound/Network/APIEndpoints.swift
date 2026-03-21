@@ -8,6 +8,7 @@ enum APIEndpoints {
     static let authForgotPassword = "/api/auth/forgot-password"
     static let authApple = "/api/auth/apple"
     static let authGoogle = "/api/auth/google"
+    static let authUpgradeGuest = "/api/auth/upgrade-guest"
 
     // MARK: - Characters
     static let characters = "/api/characters"
@@ -69,6 +70,7 @@ enum APIEndpoints {
 
     // MARK: - Dungeons
     static let dungeons = "/api/dungeons"
+    static let dungeonsList = "/api/dungeons/list"
     static let dungeonsStart = "/api/dungeons/start"
     static let dungeonsFight = "/api/dungeons/fight"
 
@@ -118,4 +120,5 @@ enum APIEndpoints {
 
     // MARK: - Admin
     static let adminHubLayout = "/api/admin/hub-layout"
+    static let adminDungeonMapLayout = "/api/admin/dungeon-map-layout"
 }

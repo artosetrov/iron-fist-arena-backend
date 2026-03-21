@@ -40,7 +40,8 @@ struct DungeonVictoryView: View {
                 imageUrl: item["image_url"] as? String,
                 sfIcon: LootDetailView.consumableSFIcon(for: consumableType, type: rawType),
                 sfColor: LootDetailView.consumableSFColor(for: consumableType, type: rawType),
-                fallbackIcon: type?.icon ?? "📦"
+                fallbackIcon: type?.icon ?? "shippingbox",
+                rarityTier: rarity.tier
             )
         }
 

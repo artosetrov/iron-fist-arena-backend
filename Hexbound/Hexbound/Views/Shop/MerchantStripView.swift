@@ -1,108 +1,85 @@
 import SwiftUI
 
-// MARK: - Merchant Strip (Fixed Bottom — Shop Only)
+// MARK: - DEPRECATED — Use NPCGuideWidget instead
 
-/// Fixed bottom bar with merchant avatar (overflows upward) + speech bubble with contextual tips.
-/// Avatar: 64pt, extends 28pt above strip border. Tap avatar → next tip.
-/// Collapsible (mini floating avatar) and dismissible (hidden until next session).
+/// **DEPRECATED**: Use `NPCGuideWidget` from `Views/Components/NPCGuideWidget.swift`.
+/// This file is kept temporarily for reference. All call sites have been migrated.
+@available(*, deprecated, renamed: "NPCGuideWidget", message: "Use NPCGuideWidget instead")
 struct MerchantStripView: View {
     @Bindable var tipProvider: MerchantTipProvider
     let onCollapse: () -> Void
     let onDismiss: () -> Void
+    var npcImageName: String = "shopkeeper"
 
     @State private var avatarBounce = false
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // Background strip
-            HStack(spacing: LayoutConstants.spaceMS) {
-                // Spacer for avatar area
+            // Layer 1 (back): NPC image, bottom-left, peeks out behind card
+            HStack(alignment: .bottom) {
+                npcAvatar
+                    .offset(y: LayoutConstants.npcAvatarOffset)
                 Spacer()
-                    .frame(width: LayoutConstants.merchantAvatarSize + LayoutConstants.spaceSM)
-
-                // Speech bubble
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("MERCHANT")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                    Text(tipProvider.currentTip.attributedText)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .lineLimit(2)
-                        .id(tipProvider.currentTip) // force re-render on tip change
-                        .transition(.opacity)
-                }
-                .padding(.horizontal, LayoutConstants.spaceMS)
-                .padding(.vertical, LayoutConstants.spaceSM)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.merchantBubbleRadius)
-                        .fill(DarkFantasyTheme.bgElevated)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.merchantBubbleRadius)
-                        .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
-                )
-
-                // Action buttons (collapse / dismiss)
-                VStack(spacing: 2) {
-                    Button {
-                        onCollapse()
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.scalePress(0.85))
-
-                    Button {
-                        onDismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.scalePress(0.85))
-                }
-            }
-            .padding(.vertical, 10)
-            .padding(.leading, LayoutConstants.spaceMS)
-            .padding(.trailing, LayoutConstants.screenPadding)
-            .background(
-                LinearGradient(
-                    colors: [
-                        DarkFantasyTheme.bgSecondary.opacity(0.95),
-                        DarkFantasyTheme.bgPrimary.opacity(0.98)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(DarkFantasyTheme.borderOrnament)
-                    .frame(height: 1)
             }
 
-            // Avatar — overflows upward beyond strip
-            merchantAvatar
-                .offset(
-                    x: LayoutConstants.spaceMS,
-                    y: -LayoutConstants.merchantAvatarOverflow
-                )
-                .zIndex(1)
+            // Layer 2 (front): speech card widget
+            speechCard
         }
     }
 
-    // MARK: - Merchant Avatar
+    // MARK: - Speech Card (widget style, equal padding)
 
     @ViewBuilder
-    private var merchantAvatar: some View {
+    private var speechCard: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("MERCHANT")
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+
+                Text(tipProvider.currentTip.attributedText)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .lineLimit(3)
+                    .id(tipProvider.currentTip)
+                    .transition(.opacity)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Dismiss button
+            Button {
+                onDismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .frame(width: 36, height: 36)
+            }
+            .buttonStyle(.scalePress(0.85))
+        }
+        .padding(.horizontal, LayoutConstants.npcBarPaddingH)
+        .padding(.vertical, LayoutConstants.npcBarPaddingV)
+        .frame(height: LayoutConstants.npcBarHeight)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius)
+                .fill(DarkFantasyTheme.bgElevated.opacity(0.95))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius)
+                .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius))
+        .onTapGesture {
+            tipProvider.nextTip()
+        }
+    }
+
+    // MARK: - NPC Avatar (peeks out behind card, bottom-left)
+
+    @ViewBuilder
+    private var npcAvatar: some View {
         Button {
-            // Bounce + next tip
             avatarBounce = true
             tipProvider.nextTip()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -110,54 +87,30 @@ struct MerchantStripView: View {
             }
         } label: {
             Group {
-                if UIImage(named: "avatar_knight") != nil {
-                    Image("avatar_knight")
+                if UIImage(named: npcImageName) != nil {
+                    Image(npcImageName)
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                 } else {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 32))
+                        .font(.system(size: 40))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
             .frame(
-                width: LayoutConstants.merchantAvatarSize,
-                height: LayoutConstants.merchantAvatarSize
+                width: LayoutConstants.npcAvatarSize,
+                height: LayoutConstants.npcAvatarSize
             )
-            .clipShape(Circle())
-            .background(
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.bgCardGradientStart, DarkFantasyTheme.bgTertiary],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            )
-            .overlay(
-                Circle()
-                    .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 3)
-            )
-            // Outer glow ring
-            .overlay(
-                Circle()
-                    .stroke(DarkFantasyTheme.gold.opacity(0.15), lineWidth: 1)
-                    .padding(-4)
-            )
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
-            .shadow(color: .black.opacity(0.5), radius: 4, y: 4)
+            .shadow(color: .bgAbyss.opacity(0.5), radius: 8, y: 2)
         }
         .buttonStyle(.plain)
-        .scaleEffect(avatarBounce ? 1.15 : 1)
-        .animation(.easeOut(duration: 0.2), value: avatarBounce)
     }
 }
 
-// MARK: - Merchant Mini Button (Collapsed State)
+// MARK: - DEPRECATED — Use NPCMiniButton instead
 
-/// Floating avatar button shown when merchant strip is collapsed.
-/// Subtle bounce animation to indicate interactivity.
+/// **DEPRECATED**: Use `NPCMiniButton` from `Views/Components/NPCGuideWidget.swift`.
+@available(*, deprecated, renamed: "NPCMiniButton", message: "Use NPCMiniButton instead")
 struct MerchantMiniButton: View {
     let onTap: () -> Void
 
@@ -166,8 +119,8 @@ struct MerchantMiniButton: View {
     var body: some View {
         Button(action: onTap) {
             Group {
-                if UIImage(named: "avatar_knight") != nil {
-                    Image("avatar_knight")
+                if UIImage(named: "shopkeeper") != nil {
+                    Image("shopkeeper")
                         .resizable()
                         .scaledToFill()
                 } else {
@@ -195,7 +148,7 @@ struct MerchantMiniButton: View {
                 Circle()
                     .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 3)
             )
-            .shadow(color: .black.opacity(0.6), radius: 8, y: 2)
+            .shadow(color: .bgAbyss.opacity(0.6), radius: 8, y: 2)
             .shadow(color: DarkFantasyTheme.goldGlow.opacity(0.5), radius: 10)
         }
         .buttonStyle(.plain)

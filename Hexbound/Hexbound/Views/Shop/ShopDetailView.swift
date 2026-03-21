@@ -37,15 +37,17 @@ struct ShopDetailView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 Image(systemName: "plus")
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 16, weight: .bold))
                                 Text("GET MORE")
                             }
                         }
                         .buttonStyle(.getMore)
+                        .shimmer(color: DarkFantasyTheme.goldBright, duration: 3)
                     }
                     .tutorialAnchor(.shopGems)
                     .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.vertical, LayoutConstants.spaceSM)
+                    .padding(.top, LayoutConstants.spaceMD)
+                    .padding(.bottom, LayoutConstants.spaceSM)
                     .background(DarkFantasyTheme.bgSecondary)
                     .overlay(alignment: .bottom) {
                         Rectangle()
@@ -56,6 +58,7 @@ struct ShopDetailView: View {
                     // Active quest banner
                     ActiveQuestBanner(questTypes: ["gold_spent"])
                         .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.top, LayoutConstants.spaceSM)
                         .padding(.bottom, LayoutConstants.spaceSM)
 
                     // Special Offers carousel
@@ -78,34 +81,34 @@ struct ShopDetailView: View {
                         )
                     )
                     .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceSM)
+                    .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
+                    .accessibilityLabel("Shop tabs: \(ShopViewModel.tabs.joined(separator: ", "))")
+                    .accessibilityValue("Current tab: \(ShopViewModel.tabs[vm.selectedTab])")
                     .onChange(of: vm.selectedTab) { _, newTab in
                         tipProvider.updateTab(newTab)
                     }
 
                     // Content
-                    if vm.isLoading && vm.items.isEmpty {
+                    if let error = vm.errorMessage {
+                        ErrorStateView.loadFailed { await vm.loadItems() }
+                    } else if vm.isLoading && vm.items.isEmpty {
                         ScrollView {
                             LazyVGrid(
                                 columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.shopGap), count: LayoutConstants.shopCols),
                                 spacing: LayoutConstants.shopGap
                             ) {
-                                ForEach(0..<8, id: \.self) { _ in
+                                ForEach(0..<8, id: \.self) { index in
                                     SkeletonShopItemCard()
+                                        .staggeredAppear(index: index)
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
                     } else if vm.filteredItems.isEmpty {
+                        // TODO: Add error property to ShopViewModel
                         Spacer()
-                        VStack(spacing: LayoutConstants.spaceSM) {
-                            Text("🛒")
-                                .font(.system(size: 40)) // emoji — keep
-                            Text("No items available")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        }
+                        EmptyStateView.shopEmpty
                         Spacer()
                     } else {
                         ScrollView {
@@ -117,7 +120,7 @@ struct ShopDetailView: View {
                                     // All tab — sectioned by category
                                     ForEach(vm.sectionedItems) { section in
                                         Section {
-                                            ForEach(section.items) { item in
+                                            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
                                                 ShopItemCardView(
                                                     item: item,
                                                     canAfford: vm.canAfford(item),
@@ -125,6 +128,7 @@ struct ShopDetailView: View {
                                                     isBuying: vm.buyingItemId == item.id,
                                                     onTap: { vm.selectItem(item) }
                                                 )
+                                                .staggeredAppear(index: index)
                                             }
                                         } header: {
                                             HStack(spacing: LayoutConstants.spaceXS) {
@@ -140,7 +144,7 @@ struct ShopDetailView: View {
                                     }
                                 } else {
                                     // Filtered tab — flat grid
-                                    ForEach(vm.filteredItems) { item in
+                                    ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
                                         ShopItemCardView(
                                             item: item,
                                             canAfford: vm.canAfford(item),
@@ -148,47 +152,35 @@ struct ShopDetailView: View {
                                             isBuying: vm.buyingItemId == item.id,
                                             onTap: { vm.selectItem(item) }
                                         )
+                                        .staggeredAppear(index: index)
                                     }
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
-                        // Merchant strip as bottom inset
-                        .safeAreaInset(edge: .bottom) {
-                            if showMerchant {
-                                MerchantStripView(
-                                    tipProvider: tipProvider,
-                                    onCollapse: {
-                                        withAnimation(.easeOut(duration: 0.3)) {
-                                            showMerchant = false
-                                            showMerchantMini = true
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                        // Bottom padding so items don't hide behind merchant
+                        .contentMargins(.bottom, showMerchant ? 80 : 0, for: .scrollContent)
+                        .gesture(
+                            DragGesture(minimumDistance: 50, coordinateSpace: .local)
+                                .onEnded { value in
+                                    let horizontal = value.translation.width
+                                    let vertical = abs(value.translation.height)
+                                    guard abs(horizontal) > vertical * 1.5 else { return }
+                                    if horizontal < 0 && vm.selectedTab < ShopViewModel.tabs.count - 1 {
+                                        HapticManager.selection()
+                                        withAnimation(MotionConstants.tabIndicatorSlide) {
+                                            vm.selectedTab += 1
                                         }
-                                    },
-                                    onDismiss: {
-                                        withAnimation(.easeOut(duration: 0.2)) {
-                                            showMerchant = false
+                                    } else if horizontal > 0 && vm.selectedTab > 0 {
+                                        HapticManager.selection()
+                                        withAnimation(MotionConstants.tabIndicatorSlide) {
+                                            vm.selectedTab -= 1
                                         }
                                     }
-                                )
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
-                            }
-                        }
-                    }
-                }
-
-                // Collapsed merchant mini avatar
-                .overlay(alignment: .bottomLeading) {
-                    if showMerchantMini {
-                        MerchantMiniButton {
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                showMerchantMini = false
-                                showMerchant = true
-                            }
-                        }
-                        .padding(.leading, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceMD)
-                        .transition(.scale.combined(with: .opacity))
+                                }
+                        )
                     }
                 }
 
@@ -219,6 +211,47 @@ struct ShopDetailView: View {
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.2), value: vm.showItemDetail)
                 }
+            }
+
+            // NPC Guide Widget — equal padding like UnifiedHeroWidget
+            if showMerchant {
+                VStack {
+                    Spacer()
+                    NPCGuideWidget(
+                        npcTitle: "Merchant",
+                        onDismiss: {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showMerchant = false
+                            }
+                        },
+                        npcImageName: "shopkeeper",
+                        attributedMessage: tipProvider.currentTip.attributedText,
+                        onTapCard: { tipProvider.nextTip() },
+                        messageId: AnyHashable(tipProvider.currentTip)
+                    )
+                    .padding(.horizontal, LayoutConstants.npcOuterPadding)
+                    .padding(.bottom, LayoutConstants.npcOuterPadding)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            // Collapsed merchant mini avatar
+            if showMerchantMini {
+                VStack {
+                    Spacer()
+                    HStack {
+                        NPCMiniButton(npcImageName: "shopkeeper", onTap: {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showMerchantMini = false
+                                showMerchant = true
+                            }
+                        })
+                        .padding(.leading, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceMD)
+                        Spacer()
+                    }
+                }
+                .transition(.scale.combined(with: .opacity))
             }
         }
         .confirmationDialog(

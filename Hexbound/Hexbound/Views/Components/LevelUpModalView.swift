@@ -5,6 +5,7 @@ struct LevelUpModalView: View {
     @State private var appear = false
     @State private var glowPulse = false
     @State private var showDetails = false
+    @State private var showBurst = false
 
     var body: some View {
         ZStack {
@@ -27,7 +28,6 @@ struct LevelUpModalView: View {
                     )
                 )
                 .frame(width: 400, height: 400)
-                .scaleEffect(glowPulse ? 1.15 : 0.85)
                 .opacity(appear ? 1 : 0)
 
             // Card content
@@ -39,11 +39,17 @@ struct LevelUpModalView: View {
                     .font(.system(size: LayoutConstants.textHero))
                     .padding(.bottom, LayoutConstants.spaceSM)
 
-                // Title
-                Text("LEVEL UP!")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textCinematic))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
+                // Title with burst
+                ZStack {
+                    if showBurst {
+                        RewardBurstView(style: .levelUp, isActive: $showBurst)
+                            .allowsHitTesting(false)
+                    }
+                    Text("LEVEL UP!")
+                        .font(DarkFantasyTheme.title(size: LayoutConstants.textCinematic))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
+                }
 
                 // New level
                 Text("LEVEL \(appState.levelUpNewLevel)")
@@ -79,21 +85,27 @@ struct LevelUpModalView: View {
 
                 // Continue button
                 Button("CONTINUE") {
+                    HapticManager.medium()
                     appState.dismissLevelUpModal()
                 }
                 .buttonStyle(.primary)
+                .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: showDetails)
+                .shimmer(color: DarkFantasyTheme.gold, duration: 3)
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.bottom, LayoutConstants.spaceLG * 2)
             }
-            .scaleEffect(appear ? 1 : 0.85)
             .opacity(appear ? 1 : 0)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(MotionConstants.dramatic) {
                 appear = true
             }
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+            withAnimation(MotionConstants.glowLoop) {
                 glowPulse = true
+            }
+            // Burst after card appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                showBurst = true
             }
             withAnimation(.easeOut(duration: 0.4).delay(0.5)) {
                 showDetails = true

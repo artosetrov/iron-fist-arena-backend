@@ -53,6 +53,7 @@ struct ToastView: View {
                         )
                 }
                 .buttonStyle(.scalePress(0.9))
+                .accessibilityLabel(label)
             }
         }
         .padding(LayoutConstants.spaceSM)
@@ -64,6 +65,8 @@ struct ToastView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(toast.type.color.opacity(0.5), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+        .shadow(color: .bgAbyss.opacity(0.4), radius: 8, y: 4)
+        .accessibilityLabel("\(toast.title): \(toast.subtitle)")
+        .accessibilityElement(children: .combine)
     }
 }
