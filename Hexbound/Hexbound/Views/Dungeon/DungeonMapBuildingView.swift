@@ -33,8 +33,15 @@ struct DungeonMapBuildingView: View {
                         : building.glowColor.opacity(idleGlow),
                     radius: isPressed ? 16 : 8
                 )
+<<<<<<< HEAD
                 .opacity(isPressed ? 0.7 : (isLocked ? 0.6 : 1.0))
                 .saturation(isLocked ? 0.3 : 1.0)
+=======
+                .scaleEffect(isPressed ? 1.08 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+                .saturation(isLocked ? 0.3 : 1.0)
+                .opacity(isLocked ? 0.6 : 1.0)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
         }
         .position(x: posX, y: posY)
         .onTapGesture {
@@ -58,11 +65,19 @@ struct DungeonMapBuildingView: View {
 
             if isLocked {
                 Image(systemName: "lock.fill")
+<<<<<<< HEAD
                     .font(.system(size: 11))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             } else if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 11))
+=======
+                    .font(.system(size: 9))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            } else if isCompleted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 10))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }

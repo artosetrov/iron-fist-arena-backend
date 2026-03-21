@@ -130,6 +130,7 @@ enum LayoutConstants {
     // MARK: - NPC Guide Widget (reusable: merchant, arena coach, dungeon guide, etc.)
     // Use these tokens for any NPC tip/tutorial widget across screens.
 
+<<<<<<< HEAD
     static let npcAvatarSize: CGFloat = 256           // Full NPC portrait (no frame, no clip)
     static let npcAvatarOffset: CGFloat = -30         // Shift avatar up so it peeks above the bar
     static let npcBarHeight: CGFloat = 90             // Fixed speech bar height (title + 2-line body + padding)
@@ -144,6 +145,13 @@ enum LayoutConstants {
     static let merchantMiniSize: CGFloat = npcMiniSize
     static let merchantBarHeight: CGFloat = npcBarHeight
     static let merchantBubbleRadius: CGFloat = npcBarRadius
+=======
+    static let merchantAvatarSize: CGFloat = 256      // Full merchant portrait, no frame
+    static let merchantAvatarOverflow: CGFloat = 200   // How far avatar extends above strip
+    static let merchantMiniSize: CGFloat = 56          // Collapsed floating avatar (== avatarSizeMD)
+    static let merchantStripMinHeight: CGFloat = 56    // Strip content height
+    static let merchantBubbleRadius: CGFloat = 8       // Speech bubble corners (== panelRadius)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
     // MARK: - Package Cards (Currency Purchase)
 
@@ -153,6 +161,7 @@ enum LayoutConstants {
     static let packageAmountFont: CGFloat = 22         // Amount text size
     static let packageBestValueAmountFont: CGFloat = 26 // Best Value amount text size
 
+<<<<<<< HEAD
     // MARK: - Arena Opponent Card (Premium Redesign)
 
     static let arenaCardRadius: CGFloat = 16
@@ -171,13 +180,18 @@ enum LayoutConstants {
     static let arenaGlowRadius: CGFloat = 12        // Animated border glow
     static let arenaShimmerWidth: CGFloat = 80       // Shimmer band width
 
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     // MARK: - Hero Integrated Card
 
     static let heroCardRadius: CGFloat = 12
     static let heroCardPadding: CGFloat = 12
     static let heroSlotSize: CGFloat = 84          // same as inventory cell
     static let heroSlotGap: CGFloat = 8            // same as inventoryGap
+<<<<<<< HEAD
     static let heroPortraitSideGap: CGFloat = 16  // breathing room between portrait and side slots
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     static let heroSlotRadius: CGFloat = 12        // same as cardRadius
     static let heroBarHeight: CGFloat = 24         // HP bar with text inside
     static let heroBarXpHeight: CGFloat = 20       // XP bar with text inside

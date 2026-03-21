@@ -36,8 +36,13 @@ struct ShopItemCardView: View {
             .overlay(alignment: .bottom) {
                 // Price bar at bottom
                 HStack(spacing: 2) {
+<<<<<<< HEAD
                     Image(systemName: item.isGemPurchase ? "diamond" : "dollarsign.circle")
                         .font(.system(size: 14))
+=======
+                    Text(item.isGemPurchase ? "💎" : "💰")
+                        .font(.system(size: 16))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     Text(item.isGemPurchase ? "\(item.gemPrice)" : "\(item.goldPrice)")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                         .foregroundStyle(

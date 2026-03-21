@@ -144,7 +144,11 @@ struct OnboardingDetailView: View {
                         Text("BACK")
                     }
                 }
+<<<<<<< HEAD
                 .buttonStyle(.ghost)
+=======
+                .buttonStyle(.secondary)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                 Button {
                     if vm.step == OnboardingViewModel.totalSteps - 1 {

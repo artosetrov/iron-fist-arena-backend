@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Unified Hero Widget Prototype</title>
+<style>
+  :root {
+    /* Exact DarkFantasyTheme tokens */
+    --bg-abyss: #08080C;
+    --bg-primary: #0D0D12;
+    --bg-secondary: #1A1A2E;
+    --bg-tertiary: #16213E;
+    --bg-elevated: #1E2240;
+    --bg-card-start: #1C1C30;
+    --bg-card-end: #2A2A40;
+    --bg-card-border: #3A3A55;
+    --bg-dark-panel: #141428;
+    --bg-dark-panel-border: #252545;
+    --gold: #D4A537;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B6914;
+    --danger: #E63946;
+    --success: #2ECC71;
+    --info: #3498DB;
+    --cyan: #00D4FF;
+    --purple: #9B59B6;
+    --stamina-orange: #E67E22;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6B6B80;
+    --text-gold: #FFD700;
+    --text-warning: #FFA502;
+    --text-status-good: #7BED9F;
+    --text-danger: #FF6B6B;
+    --border-subtle: #2A2A3E;
+    --border-medium: #3A3A50;
+    --border-gold: #D4A537;
+    --xp-ring: #5DADE2;
+    --xp-ring-track: #2A2A4A;
+    --rank-bronze: #B38040;
+    --rank-silver: #BFBFCC;
+    --rank-gold: #FFD600;
+    --rank-platinum: #66CCCC;
+    --rank-diamond: #99CCFF;
+    --class-warrior: #E68C33;
+    --class-rogue: #4DD958;
+    --class-mage: #6680FF;
+    --class-tank: #9999B2;
+    --hp-full-1: #2ECC71; --hp-full-2: #55EFC4;
+    --hp-good-1: #2ECC71; --hp-good-2: #7BED9F;
+    --hp-med-1: #E67E22; --hp-med-2: #F1C40F;
+    --hp-crit-1: #C0392B; --hp-crit-2: #E74C3C;
+    /* Fonts */
+    --font-title: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg-abyss);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-family: var(--font-title);
+    color: var(--gold-bright);
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+
+  /* Nav tabs */
+  .nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .nav-tab {
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-body);
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { border-color: var(--border-medium); color: var(--text-primary); }
+  .nav-tab.active {
+    background: var(--bg-elevated);
+    border-color: var(--gold);
+    color: var(--gold-bright);
+  }
+
+  /* Section headers */
+  .section-label {
+    font-family: var(--font-title);
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    margin: 32px 0 16px;
+    text-transform: uppercase;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .section-note {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Phone frame */
+  .phone-frame {
+    width: 390px;
+    margin: 0 auto 24px;
+    background: var(--bg-primary);
+    border-radius: 20px;
+    border: 2px solid var(--border-subtle);
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-statusbar {
+    height: 50px;
+    background: var(--bg-primary);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 6px;
+  }
+  .phone-statusbar span {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .phone-content {
+    padding: 0 16px 20px;
+  }
+  .screen-title {
+    font-family: var(--font-title);
+    font-size: 22px;
+    text-align: center;
+    color: var(--text-primary);
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+  .placeholder-content {
+    background: var(--bg-secondary);
+    border: 1px dashed var(--border-subtle);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    margin-top: 12px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .placeholder-content.tall { min-height: 200px; }
+
+  /* ========== WIDGET STYLES ========== */
+
+  /* Shared widget base */
+  .widget {
+    background: linear-gradient(135deg, var(--bg-card-start), var(--bg-card-end));
+    border: 1px solid var(--bg-card-border);
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .widget::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,165,55,0.3), transparent);
+  }
+
+  /* Avatar */
+  .avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .avatar {
+    border-radius: 10px;
+    border: 2px solid var(--border-medium);
+    object-fit: cover;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-placeholder {
+    font-size: 20px;
+    color: var(--text-tertiary);
+  }
+
+  /* XP ring (SVG border around square avatar) */
+  .xp-ring {
+    position: absolute;
+    top: -3px; left: -3px;
+    pointer-events: none;
+  }
+  .xp-ring rect.track {
+    fill: none;
+    stroke: var(--xp-ring-track);
+    stroke-width: 2.5;
+  }
+  .xp-ring rect.progress {
+    fill: none;
+    stroke: var(--xp-ring);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s ease;
+  }
+
+  /* Level badge */
+  .level-badge {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--gold-dim);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  /* HP bar */
+  .hp-bar-container {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .hp-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease, background 0.3s;
+  }
+  .hp-full { background: linear-gradient(90deg, var(--hp-full-1), var(--hp-full-2)); }
+  .hp-good { background: linear-gradient(90deg, var(--hp-good-1), var(--hp-good-2)); }
+  .hp-medium { background: linear-gradient(90deg, var(--hp-med-1), var(--hp-med-2)); }
+  .hp-critical { background: linear-gradient(90deg, var(--hp-crit-1), var(--hp-crit-2)); }
+
+  /* Stamina inline */
+  .stamina-inline {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .stamina-icon { color: var(--stamina-orange); font-size: 11px; }
+  .stamina-value { color: var(--text-primary); }
+  .stamina-max { color: var(--text-tertiary); }
+  .stamina-low .stamina-value { color: var(--text-warning); }
+  .stamina-empty .stamina-value { color: var(--danger); }
+
+  /* Currency */
+  .currency {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .currency-gold { color: var(--text-gold); }
+  .currency-gems { color: var(--cyan); }
+  .currency-icon { font-size: 11px; }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .badge-danger {
+    background: rgba(230,57,70,0.2);
+    color: var(--text-danger);
+    border: 1px solid rgba(230,57,70,0.3);
+  }
+  .badge-warning {
+    background: rgba(255,165,2,0.15);
+    color: var(--text-warning);
+    border: 1px solid rgba(255,165,2,0.25);
+  }
+  .badge-success {
+    background: rgba(46,204,113,0.15);
+    color: var(--text-status-good);
+    border: 1px solid rgba(46,204,113,0.25);
+  }
+  .badge-info {
+    background: rgba(155,89,182,0.15);
+    color: #C39BD3;
+    border: 1px solid rgba(155,89,182,0.25);
+  }
+  .badge-gold {
+    background: rgba(212,165,55,0.15);
+    color: var(--gold-bright);
+    border: 1px solid rgba(212,165,55,0.25);
+  }
+  .badge-streak {
+    background: rgba(230,57,70,0.12);
+    color: #FF8888;
+    border: 1px solid rgba(230,57,70,0.2);
+  }
+
+  /* PvP inline */
+  .pvp-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .pvp-rating {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .pvp-rank {
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  .pvp-dot { color: var(--text-tertiary); }
+
+  /* HP pulse animation */
+  @keyframes hpPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  .hp-critical-pulse .hp-bar-fill {
+    animation: hpPulse 1.5s ease-in-out infinite;
+  }
+
+  /* Level up glow */
+  @keyframes levelGlow {
+    0%, 100% { box-shadow: 0 0 4px rgba(212,165,55,0.3); }
+    50% { box-shadow: 0 0 12px rgba(255,215,0,0.6); }
+  }
+  .level-badge.level-up {
+    animation: levelGlow 2s ease-in-out infinite;
+    border-color: var(--gold-bright);
+  }
+
+  /* Badge pulse */
+  @keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  /* ========== VARIANT A: ULTRA COMPACT (48pt) ========== */
+  .widget-ultra {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .widget-ultra .avatar { width: 36px; height: 36px; }
+  .widget-ultra .xp-ring { display: none; }
+  .widget-ultra .level-badge { font-size: 9px; padding: 0px 4px; bottom: -3px; }
+  .widget-ultra .hero-name {
+    font-family: var(--font-title);
+    font-size: 15px;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
+  }
+  .widget-ultra .center-col {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .widget-ultra .hp-bar-container { flex: 1; height: 6px; min-width: 60px; }
+  .widget-ultra .hp-text {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .widget-ultra .right-col {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  /* ========== VARIANT B: BALANCED COMPACT (76pt) — RECOMMENDED ========== */
+  .widget-balanced {
+    padding: 10px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .widget-balanced .avatar { width: 48px; height: 48px; }
+  .widget-balanced .xp-ring svg { width: 54px; height: 54px; }
+  .widget-balanced .center-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding-top: 1px;
+  }
+  .widget-balanced .row-1 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .widget-balanced .hero-name {
+    font-family: var(--font-title);
+    font-size: 16px;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .widget-balanced .class-icon {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .widget-balanced .row-2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .widget-balanced .hp-bar-container { flex: 1; }
+  .widget-balanced .hp-text {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .widget-balanced .row-3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .widget-balanced .right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .widget-balanced .badges-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  /* ========== VARIANT C: EXPANDED (110pt) ========== */
+  .widget-expanded {
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .widget-expanded .avatar { width: 56px; height: 56px; }
+  .widget-expanded .xp-ring svg { width: 62px; height: 62px; }
+  .widget-expanded .center-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+  .widget-expanded .row-1 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .widget-expanded .hero-name {
+    font-family: var(--font-title);
+    font-size: 18px;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+  }
+  .widget-expanded .meta-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .widget-expanded .row-2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .widget-expanded .hp-bar-container { flex: 1; height: 10px; }
+  .widget-expanded .hp-text {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .widget-expanded .row-3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .widget-expanded .xp-bar-container {
+    flex: 1;
+    height: 5px;
+    background: var(--xp-ring-track);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .widget-expanded .xp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9B59B6, #8E44AD);
+    border-radius: 3px;
+  }
+  .widget-expanded .xp-text {
+    font-size: 10px;
+    color: var(--purple);
+    white-space: nowrap;
+  }
+  .widget-expanded .row-4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 2px;
+  }
+  .widget-expanded .right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  /* ========== LAYOUT HELPERS ========== */
+  .variants-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .variant-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .variant-label .rec {
+    background: var(--gold);
+    color: var(--bg-primary);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .height-marker {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  /* States grid */
+  .states-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .state-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Screens grid */
+  .screens-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(390px, 1fr));
+    gap: 24px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  .screen-label {
+    font-family: var(--font-title);
+    font-size: 14px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  /* Tab content visibility */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Refill button */
+  .refill-btn {
+    background: linear-gradient(90deg, #D35400, #F39C12);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    cursor: pointer;
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  /* Quick-use potion button */
+  .potion-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(46,204,113,0.3);
+    background: rgba(46,204,113,0.12);
+    color: var(--text-status-good);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 28px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .potion-btn:hover { background: rgba(46,204,113,0.2); border-color: rgba(46,204,113,0.5); }
+  .potion-btn .potion-icon { font-size: 13px; }
+  .potion-btn .potion-count {
+    background: rgba(46,204,113,0.25);
+    padding: 0 4px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .potion-btn.stamina-potion {
+    border-color: rgba(230,126,34,0.3);
+    background: rgba(230,126,34,0.12);
+    color: var(--stamina-orange);
+  }
+  .potion-btn.stamina-potion:hover { background: rgba(230,126,34,0.2); border-color: rgba(230,126,34,0.5); }
+  .potion-btn.stamina-potion .potion-count { background: rgba(230,126,34,0.25); }
+
+  /* Stat points action badge */
+  .stat-points-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(212,165,55,0.35);
+    background: rgba(212,165,55,0.12);
+    color: var(--gold-bright);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 28px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    animation: statPulse 2.5s ease-in-out infinite;
+  }
+  .stat-points-btn:hover { background: rgba(212,165,55,0.22); }
+  @keyframes statPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(212,165,55,0); }
+    50% { box-shadow: 0 0 8px 2px rgba(212,165,55,0.25); }
+  }
+
+  /* Mobile UX: ensure all interactive elements meet 48pt minimum */
+  .widget-balanced { min-height: 76px; padding: 10px 14px; }
+  .widget-balanced .avatar { min-width: 48px; min-height: 48px; }
+  .widget-balanced .row-3 { min-height: 28px; align-items: center; flex-wrap: wrap; gap: 6px; }
+
+  /* Comparison bar */
+  .comparison-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 20px auto;
+    max-width: 440px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .comparison-bar .label { color: var(--text-tertiary); font-size: 11px; }
+  .comparison-bar .old { color: var(--danger); text-decoration: line-through; }
+  .comparison-bar .new { color: var(--success); font-weight: 700; }
+  .comparison-bar .arrow { color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+
+<h1>UNIFIED HERO WIDGET</h1>
+<p class="subtitle">Interactive prototype · DarkFantasyTheme tokens · All 3 variants + states + per-screen</p>
+
+<div class="nav-tabs" id="mainNav">
+  <div class="nav-tab active" data-tab="variants">3 Variants</div>
+  <div class="nav-tab" data-tab="states">States</div>
+  <div class="nav-tab" data-tab="screens">Per-Screen</div>
+  <div class="nav-tab" data-tab="compare">Before / After</div>
+</div>
+
+<!-- ==================== TAB 1: VARIANTS ==================== -->
+<div class="tab-content active" id="tab-variants">
+
+  <div class="variants-grid">
+
+    <!-- ULTRA COMPACT -->
+    <div>
+      <div class="variant-label">VARIANT A · ULTRA COMPACT</div>
+      <div class="widget widget-ultra">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:36px;height:36px;">
+            <span class="avatar-placeholder">🐂</span>
+          </div>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <span class="hero-name">Degon</span>
+          <div class="hp-bar-container">
+            <div class="hp-bar-fill hp-full" style="width:100%"></div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline">
+            <span class="stamina-icon">⚡</span>
+            <span class="stamina-value">87</span>
+          </div>
+          <div class="currency currency-gold">
+            <span class="currency-icon">🪙</span>
+            <span>17.8K</span>
+          </div>
+        </div>
+      </div>
+      <div class="height-marker">~48pt · One-line density</div>
+    </div>
+
+    <!-- BALANCED COMPACT (RECOMMENDED) -->
+    <div>
+      <div class="variant-label">VARIANT B · BALANCED COMPACT <span class="rec">★ RECOMMENDED</span></div>
+      <div class="widget widget-balanced" id="demoWidget">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px;">
+            <span class="avatar-placeholder">🐂</span>
+          </div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12"
+              stroke-dasharray="192"
+              stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1">
+            <span class="hero-name">Degon</span>
+            <span class="class-icon" style="color:var(--class-warrior)">⚔ Warrior</span>
+          </div>
+          <div class="row-2">
+            <div class="hp-bar-container">
+              <div class="hp-bar-fill hp-full" style="width:100%"></div>
+            </div>
+            <span class="hp-text">1,030 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+              <div style="width:78%;height:100%;background:linear-gradient(90deg,#9B59B6,#8E44AD);border-radius:2px"></div>
+            </div>
+            <span style="font-size:10px;color:var(--purple)">78% XP</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline">
+            <span class="stamina-icon">⚡</span>
+            <span class="stamina-value">87</span><span class="stamina-max">/120</span>
+            <button class="refill-btn">+</button>
+          </div>
+          <div class="currency currency-gold">
+            <span class="currency-icon">🪙</span>
+            <span>17,864</span>
+          </div>
+          <div class="currency currency-gems">
+            <span class="currency-icon">💎</span>
+            <span>143</span>
+          </div>
+        </div>
+      </div>
+      <div class="height-marker">~76pt · Best balance of density and readability</div>
+    </div>
+
+    <!-- EXPANDED -->
+    <div>
+      <div class="variant-label">VARIANT C · EXPANDED CONTEXTUAL</div>
+      <div class="widget widget-expanded">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:56px;height:56px;">
+            <span class="avatar-placeholder" style="font-size:26px">🐂</span>
+          </div>
+          <svg class="xp-ring" width="62" height="62" viewBox="0 0 62 62">
+            <rect class="track" x="2" y="2" width="58" height="58" rx="14"/>
+            <rect class="progress" x="2" y="2" width="58" height="58" rx="14"
+              stroke-dasharray="224"
+              stroke-dashoffset="49"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1">
+            <span class="hero-name">Degon</span>
+            <span class="meta-text">Demon · Warrior</span>
+          </div>
+          <div class="row-2">
+            <div class="hp-bar-container">
+              <div class="hp-bar-fill hp-full" style="width:100%"></div>
+            </div>
+            <span class="hp-text">1,030 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <div class="xp-bar-container" style="flex:1">
+              <div class="xp-bar-fill" style="width:78%"></div>
+            </div>
+            <span class="xp-text">78% XP</span>
+          </div>
+          <div class="row-4">
+            <div class="pvp-inline">
+              <span style="color:var(--gold)">🏆</span>
+              <span class="pvp-rating">1633</span>
+              <span class="pvp-dot">·</span>
+              <span class="pvp-rank" style="background:rgba(255,214,0,0.15);color:var(--rank-gold);border:1px solid rgba(255,214,0,0.3)">Gold</span>
+              <span class="pvp-dot">·</span>
+              <span style="font-size:11px;color:var(--text-secondary)">192W / 15L</span>
+            </div>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline">
+            <span class="stamina-icon">⚡</span>
+            <span class="stamina-value">87</span><span class="stamina-max">/120</span>
+            <button class="refill-btn">+</button>
+          </div>
+          <div class="currency currency-gold">
+            <span class="currency-icon">🪙</span>
+            <span>17,864</span>
+          </div>
+          <div class="currency currency-gems">
+            <span class="currency-icon">💎</span>
+            <span>143</span>
+          </div>
+        </div>
+      </div>
+      <div class="height-marker">~110pt · Full context, all data visible</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 2: STATES ==================== -->
+<div class="tab-content" id="tab-states">
+  <div class="states-grid">
+
+    <!-- Default -->
+    <div>
+      <div class="state-label">✅ Default — Full HP, enough stamina</div>
+      <div class="widget widget-balanced">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+            <span class="hp-text">1,030 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+              <div style="width:78%;height:100%;background:linear-gradient(90deg,#9B59B6,#8E44AD);border-radius:2px"></div>
+            </div>
+            <span style="font-size:10px;color:var(--purple)">78%</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+          <div class="currency currency-gems"><span class="currency-icon">💎</span><span>143</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Low HP -->
+    <div>
+      <div class="state-label">🟡 Low HP + Has Health Potion → Quick-Use Button</div>
+      <div class="widget widget-balanced">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-medium" style="width:38%"></div></div>
+            <span class="hp-text" style="color:var(--text-warning)">392 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <button class="potion-btn"><span class="potion-icon">🧪</span> Heal <span class="potion-count">×3</span></button>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Critical HP + Potion -->
+    <div>
+      <div class="state-label">🔴 Critical HP + Has Potion → Urgent Heal Action</div>
+      <div class="widget widget-balanced hp-critical-pulse" style="border-color: rgba(230,57,70,0.4)">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px;border-color:var(--danger)"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-critical" style="width:12%"></div></div>
+            <span class="hp-text" style="color:var(--text-danger)">124 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <button class="potion-btn" style="border-color:rgba(230,57,70,0.4);background:rgba(230,57,70,0.15);color:var(--text-danger)"><span class="potion-icon">🧪</span> Heal Now! <span class="potion-count" style="background:rgba(230,57,70,0.25)">×3</span></button>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Critical HP + No Potions -->
+    <div>
+      <div class="state-label">🔴 Critical HP + No Potions → Badge only (no action)</div>
+      <div class="widget widget-balanced hp-critical-pulse" style="border-color: rgba(230,57,70,0.4)">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px;border-color:var(--danger)"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-critical" style="width:12%"></div></div>
+            <span class="hp-text" style="color:var(--text-danger)">124 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <span class="badge badge-danger">💀 Critical — No Potions</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Low Stamina -->
+    <div>
+      <div class="state-label">⚡ Low Stamina + Has Stamina Potion → Quick Restore</div>
+      <div class="widget widget-balanced">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+            <span class="hp-text">1,030 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <button class="potion-btn stamina-potion"><span class="potion-icon">⚡</span> Restore <span class="potion-count">×2</span></button>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline stamina-low"><span class="stamina-icon">⚡</span><span class="stamina-value">3</span><span class="stamina-max">/120</span><button class="refill-btn">+</button></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Up Imminent -->
+    <div>
+      <div class="state-label">⬆️ Level Up Imminent (XP ≥ 90%) — Glowing level badge</div>
+      <div class="widget widget-balanced">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="14" style="stroke:var(--gold-bright)"/>
+          </svg>
+          <div class="level-badge level-up">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+            <span class="hp-text">1,030 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+              <div style="width:93%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright));border-radius:2px"></div>
+            </div>
+            <span style="font-size:10px;color:var(--gold-bright);font-weight:700">93% ⬆</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Points + Broken Gear -->
+    <div>
+      <div class="state-label">⭐ Level Up! Stat Points Available → Tappable CTA + ⚠️ Broken Gear</div>
+      <div class="widget widget-balanced">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-good" style="width:82%"></div></div>
+            <span class="hp-text">845 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <button class="stat-points-btn">⭐ +3 Stat Points → Allocate</button>
+            <span class="badge badge-danger">⚠ Broken Gear</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arena Context: PvP + First Win + Streak -->
+    <div>
+      <div class="state-label">🏟 Arena Context — PvP data + First Win + Win Streak</div>
+      <div class="widget widget-balanced">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+          <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+            <rect class="track" x="2" y="2" width="50" height="50" rx="12"/>
+            <rect class="progress" x="2" y="2" width="50" height="50" rx="12" stroke-dasharray="192" stroke-dashoffset="42"/>
+          </svg>
+          <div class="level-badge">Lv.14</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+          <div class="row-2">
+            <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+            <span class="hp-text">1,030 / 1,030</span>
+          </div>
+          <div class="row-3">
+            <div class="pvp-inline">
+              <span style="color:var(--gold)">🏆</span>
+              <span class="pvp-rating">1633</span>
+              <span class="pvp-rank" style="background:rgba(255,214,0,0.15);color:var(--rank-gold);border:1px solid rgba(255,214,0,0.3)">Gold</span>
+            </div>
+            <span class="badge badge-streak">🔥 5</span>
+            <span class="badge badge-success">⭐ 1st Win</span>
+          </div>
+        </div>
+        <div class="right-col">
+          <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+          <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skeleton / Loading -->
+    <div>
+      <div class="state-label">⏳ Loading / Skeleton</div>
+      <div class="widget widget-balanced" style="opacity: 0.7">
+        <div class="avatar-wrap">
+          <div class="avatar" style="width:48px;height:48px;background:var(--bg-tertiary)"></div>
+          <div class="level-badge" style="background:var(--bg-tertiary);color:transparent;border-color:var(--border-subtle)">Lv.00</div>
+        </div>
+        <div class="center-col">
+          <div class="row-1"><div style="width:80px;height:14px;background:var(--bg-tertiary);border-radius:4px"></div></div>
+          <div class="row-2"><div class="hp-bar-container" style="background:var(--bg-tertiary)"></div></div>
+          <div class="row-3"><div style="width:60px;height:10px;background:var(--bg-tertiary);border-radius:4px"></div></div>
+        </div>
+        <div class="right-col">
+          <div style="width:50px;height:12px;background:var(--bg-tertiary);border-radius:4px"></div>
+          <div style="width:60px;height:12px;background:var(--bg-tertiary);border-radius:4px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== TAB 3: PER-SCREEN ==================== -->
+<div class="tab-content" id="tab-screens">
+  <div class="screens-grid">
+
+    <!-- HUB -->
+    <div>
+      <div class="screen-label">Hub Screen</div>
+      <div class="phone-frame">
+        <div class="phone-statusbar"><span>4:42 PM</span></div>
+        <div class="phone-content">
+          <!-- Widget in Hub context -->
+          <div class="widget widget-balanced" style="margin-bottom:12px">
+            <div class="avatar-wrap">
+              <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+              <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+                <circle class="track" cx="27" cy="27" r="25"/>
+                <circle class="progress" cx="27" cy="27" r="25" stroke-dasharray="157" stroke-dashoffset="35"/>
+              </svg>
+              <div class="level-badge">Lv.14</div>
+            </div>
+            <div class="center-col">
+              <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+              <div class="row-2">
+                <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+                <span class="hp-text">1,030 / 1,030</span>
+              </div>
+              <div class="row-3">
+                <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+                  <div style="width:78%;height:100%;background:linear-gradient(90deg,#9B59B6,#8E44AD);border-radius:2px"></div>
+                </div>
+                <span style="font-size:10px;color:var(--purple)">78%</span>
+              </div>
+            </div>
+            <div class="right-col">
+              <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span><button class="refill-btn">+</button></div>
+              <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+              <div class="currency currency-gems"><span class="currency-icon">💎</span><span>143</span></div>
+            </div>
+          </div>
+
+          <div class="placeholder-content tall">
+            ↑ Widget: ~76pt<br>
+            <br>
+            🏰 City / Map area<br>
+            Dungeon entrance, Arena gates, Shop, etc.<br>
+            <br>
+            <span style="color:var(--success)">~140pt saved vs current layout</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARENA -->
+    <div>
+      <div class="screen-label">Arena Screen</div>
+      <div class="phone-frame">
+        <div class="phone-statusbar"><span>4:42 PM</span></div>
+        <div class="phone-content">
+          <div class="screen-title">ARENA</div>
+
+          <!-- Widget in Arena context -->
+          <div class="widget widget-balanced" style="margin-bottom:12px">
+            <div class="avatar-wrap">
+              <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+              <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+                <circle class="track" cx="27" cy="27" r="25"/>
+                <circle class="progress" cx="27" cy="27" r="25" stroke-dasharray="157" stroke-dashoffset="35"/>
+              </svg>
+              <div class="level-badge">Lv.14</div>
+            </div>
+            <div class="center-col">
+              <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+              <div class="row-2">
+                <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+                <span class="hp-text">1,030 / 1,030</span>
+              </div>
+              <div class="row-3">
+                <div class="pvp-inline">
+                  <span style="color:var(--gold)">🏆</span>
+                  <span class="pvp-rating">1633</span>
+                  <span class="pvp-rank" style="background:rgba(255,214,0,0.15);color:var(--rank-gold);border:1px solid rgba(255,214,0,0.3)">Gold</span>
+                </div>
+                <span class="badge badge-success" style="font-size:9px">⭐ 1st Win</span>
+              </div>
+            </div>
+            <div class="right-col">
+              <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+              <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+            </div>
+          </div>
+
+          <div class="placeholder-content">
+            Stance Selector<br>
+            CHEST · CHEST
+          </div>
+          <div class="placeholder-content" style="margin-top:8px">
+            Opponents / Revenge / History tabs<br>
+            <span style="color:var(--success)">~180pt saved vs current layout</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DUNGEON -->
+    <div>
+      <div class="screen-label">Dungeon Screen</div>
+      <div class="phone-frame">
+        <div class="phone-statusbar"><span>4:42 PM</span></div>
+        <div class="phone-content">
+          <div class="screen-title">DUNGEON</div>
+
+          <!-- Widget in Dungeon context (minimal) -->
+          <div class="widget widget-balanced" style="margin-bottom:12px">
+            <div class="avatar-wrap">
+              <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+              <div class="level-badge">Lv.14</div>
+            </div>
+            <div class="center-col">
+              <div class="row-1"><span class="hero-name">Degon</span></div>
+              <div class="row-2">
+                <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+                <span class="hp-text">1,030 / 1,030</span>
+              </div>
+              <!-- Row 3 hidden in dungeon context -->
+            </div>
+            <div class="right-col">
+              <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+              <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+            </div>
+          </div>
+
+          <div class="placeholder-content tall">
+            Dungeon Selection<br>
+            Floor progress cards<br>
+            Boss encounters<br>
+            <span style="color:var(--success)">~48pt saved</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO -->
+    <div>
+      <div class="screen-label">Hero Screen</div>
+      <div class="phone-frame">
+        <div class="phone-statusbar"><span>4:42 PM</span></div>
+        <div class="phone-content">
+          <div class="screen-title">HERO</div>
+
+          <!-- Widget in Hero context -->
+          <div class="widget widget-balanced" style="margin-bottom:12px">
+            <div class="avatar-wrap">
+              <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+              <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+                <circle class="track" cx="27" cy="27" r="25"/>
+                <circle class="progress" cx="27" cy="27" r="25" stroke-dasharray="157" stroke-dashoffset="35"/>
+              </svg>
+              <div class="level-badge">Lv.14</div>
+            </div>
+            <div class="center-col">
+              <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔ Warrior · Demon</span></div>
+              <div class="row-2">
+                <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+                <span class="hp-text">1,030 / 1,030</span>
+              </div>
+              <div class="row-3">
+                <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+                  <div style="width:78%;height:100%;background:linear-gradient(90deg,#9B59B6,#8E44AD);border-radius:2px"></div>
+                </div>
+                <span style="font-size:10px;color:var(--purple)">78%</span>
+              </div>
+            </div>
+            <div class="right-col">
+              <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span></div>
+              <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+              <div class="currency currency-gems"><span class="currency-icon">💎</span><span>143</span></div>
+            </div>
+          </div>
+
+          <div class="placeholder-content">
+            Equipment Grid (no portrait)<br>
+            3×4 clean layout<br>
+            <span style="color:var(--success)">Portrait moved to widget above</span>
+          </div>
+          <div class="placeholder-content" style="margin-top:8px">
+            INVENTORY · STATUS tabs<br>
+            Stats, Derived Stats, etc.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB 4: BEFORE/AFTER ==================== -->
+<div class="tab-content" id="tab-compare">
+
+  <div class="comparison-bar">
+    <span class="label">Hub vertical space:</span>
+    <span class="old">~220pt</span>
+    <span class="arrow">→</span>
+    <span class="new">~76pt</span>
+    <span style="color:var(--success);font-size:11px">−65%</span>
+  </div>
+  <div class="comparison-bar">
+    <span class="label">Arena vertical space:</span>
+    <span class="old">~280pt</span>
+    <span class="arrow">→</span>
+    <span class="new">~100pt</span>
+    <span style="color:var(--success);font-size:11px">−64%</span>
+  </div>
+  <div class="comparison-bar">
+    <span class="label">Components deleted:</span>
+    <span class="old">StaminaBarView + HubCharacterCard + HubCharacterCardWrapper</span>
+    <span class="arrow">→</span>
+    <span class="new">1 UnifiedHeroWidget</span>
+  </div>
+
+  <div class="section-label" style="text-align:center;max-width:440px;margin:32px auto 16px">BEFORE vs AFTER — HUB</div>
+
+  <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
+    <!-- Before -->
+    <div>
+      <div class="screen-label" style="text-align:center">❌ Before (~220pt)</div>
+      <div class="phone-frame" style="width:340px">
+        <div class="phone-statusbar"><span>CURRENT</span></div>
+        <div class="phone-content">
+          <!-- Old stamina bar -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 0">
+            <span style="font-size:12px">⚡</span>
+            <div style="flex:1;height:8px;background:var(--xp-ring-track);border-radius:4px;overflow:hidden">
+              <div style="width:73%;height:100%;background:linear-gradient(90deg,#E67E22,#D35400);border-radius:4px"></div>
+            </div>
+            <span style="font-size:11px;color:var(--text-secondary)">87/120</span>
+            <span style="font-size:11px;color:var(--cyan)">+</span>
+          </div>
+          <!-- Old character card -->
+          <div style="background:linear-gradient(135deg,var(--bg-card-start),var(--bg-card-end));border:1px solid var(--bg-card-border);border-radius:14px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="width:60px;height:60px;border-radius:10px;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;border:2px solid var(--border-medium)">
+                <span style="font-size:28px">🐂</span>
+              </div>
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-family:var(--font-title);font-size:18px">Degon</span>
+                  <span style="font-size:11px;color:var(--text-status-good)">Battle Ready</span>
+                </div>
+                <div style="font-size:11px;color:var(--text-secondary);margin:4px 0">Lv.14 · Demon · Warrior</div>
+                <!-- HP bar -->
+                <div style="display:flex;align-items:center;gap:6px">
+                  <div style="flex:1;height:10px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden">
+                    <div style="width:100%;height:100%;background:linear-gradient(90deg,#2ECC71,#55EFC4);border-radius:5px"></div>
+                  </div>
+                </div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:2px">HP 1,030 / 1,030</div>
+                <!-- XP -->
+                <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+                  <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+                    <div style="width:78%;height:100%;background:linear-gradient(90deg,#9B59B6,#8E44AD);border-radius:2px"></div>
+                  </div>
+                  <span style="font-size:10px;color:var(--purple)">78%</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border-subtle)">
+              <div style="font-size:12px"><span style="color:var(--text-gold)">🪙 17,864</span></div>
+              <div style="font-size:12px"><span style="color:var(--cyan)">💎 143</span></div>
+            </div>
+          </div>
+          <div class="placeholder-content" style="min-height:60px;font-size:11px">
+            Map area starts here<br>
+            <span style="color:var(--text-tertiary)">Content pushed down ~220pt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- After -->
+    <div>
+      <div class="screen-label" style="text-align:center">✅ After (~76pt)</div>
+      <div class="phone-frame" style="width:340px">
+        <div class="phone-statusbar"><span>UNIFIED</span></div>
+        <div class="phone-content">
+          <div class="widget widget-balanced" style="margin-bottom:12px">
+            <div class="avatar-wrap">
+              <div class="avatar" style="width:48px;height:48px"><span class="avatar-placeholder">🐂</span></div>
+              <svg class="xp-ring" width="54" height="54" viewBox="0 0 54 54">
+                <circle class="track" cx="27" cy="27" r="25"/>
+                <circle class="progress" cx="27" cy="27" r="25" stroke-dasharray="157" stroke-dashoffset="35"/>
+              </svg>
+              <div class="level-badge">Lv.14</div>
+            </div>
+            <div class="center-col">
+              <div class="row-1"><span class="hero-name">Degon</span><span class="class-icon" style="color:var(--class-warrior)">⚔</span></div>
+              <div class="row-2">
+                <div class="hp-bar-container"><div class="hp-bar-fill hp-full" style="width:100%"></div></div>
+                <span class="hp-text">1,030 / 1,030</span>
+              </div>
+              <div class="row-3">
+                <div style="flex:1;height:4px;background:var(--xp-ring-track);border-radius:2px;overflow:hidden">
+                  <div style="width:78%;height:100%;background:linear-gradient(90deg,#9B59B6,#8E44AD);border-radius:2px"></div>
+                </div>
+                <span style="font-size:10px;color:var(--purple)">78%</span>
+              </div>
+            </div>
+            <div class="right-col">
+              <div class="stamina-inline"><span class="stamina-icon">⚡</span><span class="stamina-value">87</span><span class="stamina-max">/120</span><button class="refill-btn">+</button></div>
+              <div class="currency currency-gold"><span class="currency-icon">🪙</span><span>17,864</span></div>
+              <div class="currency currency-gems"><span class="currency-icon">💎</span><span>143</span></div>
+            </div>
+          </div>
+          <div class="placeholder-content" style="min-height:150px;font-size:11px">
+            🏰 Map area starts here<br><br>
+            <span style="color:var(--success)">+144pt more visible content!</span><br>
+            <span style="color:var(--text-tertiary)">Dungeon, Arena, Shop all visible without scroll</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

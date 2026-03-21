@@ -7,7 +7,10 @@ struct WidgetPill: View {
     let icon: String                    // SF Symbol name or emoji string
     let text: String
     var count: String? = nil            // e.g. "×3"
+<<<<<<< HEAD
     var imageAsset: String? = nil       // Asset catalog image name (replaces emoji icon)
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     let style: PillStyle
     var isInteractive: Bool = false
     var action: (() -> Void)? = nil
@@ -73,6 +76,7 @@ struct WidgetPill: View {
     private var pillContent: some View {
         HStack(spacing: LayoutConstants.pillGap) {
             // Icon
+<<<<<<< HEAD
             if let asset = imageAsset {
                 Image(asset)
                     .resizable().scaledToFit()
@@ -81,6 +85,10 @@ struct WidgetPill: View {
                 Text(icon)
                     .font(.system(size: LayoutConstants.pillIconSize))
             }
+=======
+            Text(icon)
+                .font(.system(size: LayoutConstants.pillIconSize))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
             // Text
             Text(text)
@@ -142,6 +150,7 @@ extension View {
 #if DEBUG
 #Preview {
     VStack(spacing: 16) {
+<<<<<<< HEAD
         WidgetPill(icon: "bandage", text: "Heal", style: .heal)
         WidgetPill(icon: "exclamationmark.triangle", text: "Critical", style: .urgent)
         WidgetPill(icon: "bolt", text: "Energy", count: "×2", style: .energy, isInteractive: true, action: {})
@@ -150,6 +159,16 @@ extension View {
         WidgetPill(icon: "trophy.fill", text: "1750 Rating", style: .pvp)
         WidgetPill(icon: "flame", text: "Streak: 3", style: .streak)
         WidgetPill(icon: "gift", text: "First Win!", style: .bonus)
+=======
+        WidgetPill(icon: "🩹", text: "Heal", style: .heal)
+        WidgetPill(icon: "⚠️", text: "Critical", style: .urgent)
+        WidgetPill(icon: "⚡", text: "Energy", count: "×2", style: .energy, isInteractive: true, action: {})
+        WidgetPill(icon: "✨", text: "Stats Ready", style: .stat)
+        WidgetPill(icon: "🔨", text: "Broken Gear", style: .warn)
+        WidgetPill(icon: "🏆", text: "1750 Rating", style: .pvp)
+        WidgetPill(icon: "🔥", text: "Streak: 3", style: .streak)
+        WidgetPill(icon: "🎁", text: "First Win!", style: .bonus)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     }
     .padding()
     .background(DarkFantasyTheme.bgPrimary)

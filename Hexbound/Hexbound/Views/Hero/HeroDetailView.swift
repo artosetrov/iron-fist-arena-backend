@@ -176,6 +176,7 @@ struct HeroDetailView: View {
                     onTapPortrait: { appState.mainPath.append(AppRoute.appearanceEditor) },
                     onTapSlot: { item in inventoryVM?.selectItem(item) },
                     onEditStance: { appState.mainPath.append(AppRoute.stanceSelector) },
+<<<<<<< HEAD
                     onRepairAll: { let _ = Task { await repairAllBrokenItems() } },
                     onAllocateStats: { appState.mainPath.append(AppRoute.character) },
                     onUseHealthPotion: { let _ = Task { await useHealthPotion() } },
@@ -184,6 +185,13 @@ struct HeroDetailView: View {
 
                 // ── Low Resources Widget ──
                 lowResourcesWidget(char)
+=======
+                    onRepairAll: { Task { await repairAllBrokenItems() } },
+                    onAllocateStats: { appState.mainPath.append(AppRoute.character) },
+                    onUseHealthPotion: { Task { await useHealthPotion() } },
+                    onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                )
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                 GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
 

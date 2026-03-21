@@ -59,7 +59,11 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.22,
         relativeY: 0.52,
         relativeSize: 0.22,
+<<<<<<< HEAD
         glowColor: Color.orange,
+=======
+        glowColor: Color.yellow,
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
         fallbackIcon: "hammer.fill"
     ),
     CityBuilding(
@@ -87,8 +91,13 @@ let defaultCityBuildings: [CityBuilding] = [
     CityBuilding(
         id: "dungeon",
         imageName: "building-dungeon",
+<<<<<<< HEAD
         label: "DUNGEON RUSH",
         route: .dungeonRush,
+=======
+        label: "ADVENTURES",
+        route: .dungeonMap,
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
         relativeX: 0.88,
         relativeY: 0.50,
         relativeSize: 0.21,

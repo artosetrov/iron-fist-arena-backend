@@ -67,7 +67,11 @@ struct DungeonMapEditorView: View {
                     Spacer()
                     Text(msg)
                         .font(DarkFantasyTheme.body(size: 14))
+<<<<<<< HEAD
                         .foregroundStyle(.textPrimary)
+=======
+                        .foregroundStyle(.white)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                         .background(DarkFantasyTheme.success.opacity(0.9))
@@ -112,7 +116,11 @@ struct DungeonMapEditorView: View {
                 var path = Path()
                 path.move(to: CGPoint(x: px, y: 0))
                 path.addLine(to: CGPoint(x: px, y: size.height))
+<<<<<<< HEAD
                 context.stroke(path, with: .color(DarkFantasyTheme.textPrimary.opacity(0.08)), lineWidth: 0.5)
+=======
+                context.stroke(path, with: .color(.white.opacity(0.08)), lineWidth: 0.5)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 x += step
             }
             var y: CGFloat = 0
@@ -121,7 +129,11 @@ struct DungeonMapEditorView: View {
                 var path = Path()
                 path.move(to: CGPoint(x: 0, y: py))
                 path.addLine(to: CGPoint(x: size.width, y: py))
+<<<<<<< HEAD
                 context.stroke(path, with: .color(DarkFantasyTheme.textPrimary.opacity(0.08)), lineWidth: 0.5)
+=======
+                context.stroke(path, with: .color(.white.opacity(0.08)), lineWidth: 0.5)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 y += step
             }
         }
@@ -161,7 +173,10 @@ struct DungeonMapEditorView: View {
                             .font(.system(size: 24))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
+<<<<<<< HEAD
                     .buttonStyle(.scalePress)
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                     Slider(
                         value: Binding(
@@ -180,7 +195,10 @@ struct DungeonMapEditorView: View {
                             .font(.system(size: 24))
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
+<<<<<<< HEAD
                     .buttonStyle(.scalePress)
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 }
             } else {
                 Text("Tap a dungeon to select, drag to move")
@@ -195,7 +213,11 @@ struct DungeonMapEditorView: View {
                 HStack {
                     if isSaving {
                         ProgressView()
+<<<<<<< HEAD
                             .progressViewStyle(CircularProgressViewStyle(tint: .textPrimary))
+=======
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                             .scaleEffect(0.8)
                     } else {
                         Image(systemName: "icloud.and.arrow.up.fill")
@@ -320,10 +342,17 @@ struct DraggableEditorDungeonBuilding: View {
         VStack(spacing: 2) {
             Text("\(building.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
+<<<<<<< HEAD
                 .foregroundStyle(.textPrimary)
                 .padding(.horizontal, 4)
                 .padding(.vertical, 2)
                 .background(isSelected ? Color.red.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
+=======
+                .foregroundStyle(.white)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(isSelected ? Color.red.opacity(0.8) : Color.black.opacity(0.7))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .cornerRadius(4)
 
             if UIImage(named: building.imageName) != nil {
@@ -342,10 +371,17 @@ struct DraggableEditorDungeonBuilding: View {
                         VStack(spacing: 4) {
                             Image(systemName: building.fallbackIcon)
                                 .font(.system(size: 24))
+<<<<<<< HEAD
                                 .foregroundStyle(.textPrimary)
                             Text(building.label)
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(.textPrimary)
+=======
+                                .foregroundStyle(.white)
+                            Text(building.label)
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         }
                     )
                     .frame(width: buildingHeight * 0.7, height: buildingHeight)

@@ -159,6 +159,7 @@ struct ShopDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+<<<<<<< HEAD
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
                         // Bottom padding so items don't hide behind merchant
                         .contentMargins(.bottom, showMerchant ? 80 : 0, for: .scrollContent)
@@ -181,6 +182,10 @@ struct ShopDetailView: View {
                                     }
                                 }
                         )
+=======
+                        // Bottom padding so items don't hide behind merchant
+                        .contentMargins(.bottom, showMerchant ? 80 : 0, for: .scrollContent)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     }
                 }
 
@@ -213,16 +218,32 @@ struct ShopDetailView: View {
                 }
             }
 
+<<<<<<< HEAD
             // NPC Guide Widget — equal padding like UnifiedHeroWidget
             if showMerchant {
                 VStack {
                     Spacer()
                     NPCGuideWidget(
                         npcTitle: "Merchant",
+=======
+            // Merchant overlay — pinned to bottom-left of screen, above all content
+            if showMerchant {
+                VStack {
+                    Spacer()
+                    MerchantStripView(
+                        tipProvider: tipProvider,
+                        onCollapse: {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                showMerchant = false
+                                showMerchantMini = true
+                            }
+                        },
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         onDismiss: {
                             withAnimation(.easeOut(duration: 0.2)) {
                                 showMerchant = false
                             }
+<<<<<<< HEAD
                         },
                         npcImageName: "shopkeeper",
                         attributedMessage: tipProvider.currentTip.attributedText,
@@ -232,6 +253,12 @@ struct ShopDetailView: View {
                     .padding(.horizontal, LayoutConstants.npcOuterPadding)
                     .padding(.bottom, LayoutConstants.npcOuterPadding)
                 }
+=======
+                        }
+                    )
+                }
+                .ignoresSafeArea(edges: .bottom)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
@@ -240,12 +267,20 @@ struct ShopDetailView: View {
                 VStack {
                     Spacer()
                     HStack {
+<<<<<<< HEAD
                         NPCMiniButton(npcImageName: "shopkeeper", onTap: {
+=======
+                        MerchantMiniButton {
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                             withAnimation(.easeOut(duration: 0.3)) {
                                 showMerchantMini = false
                                 showMerchant = true
                             }
+<<<<<<< HEAD
                         })
+=======
+                        }
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         .padding(.leading, LayoutConstants.screenPadding)
                         .padding(.bottom, LayoutConstants.spaceMD)
                         Spacer()

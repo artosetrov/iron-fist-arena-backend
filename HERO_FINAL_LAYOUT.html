@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Hero Final Layout</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-abyss:#08080C;--bg-primary:#0D0D12;--bg-secondary:#1A1A2E;--bg-tertiary:#16213E;--bg-elevated:#1E2240;
+    --bg-card-start:#1C1C30;--bg-card-end:#2A2A40;--bg-card-border:#3A3A55;
+    --gold:#D4A537;--gold-bright:#FFD700;--gold-dim:#8B6914;
+    --danger:#E63946;--success:#2ECC71;--cyan:#00D4FF;--purple:#9B59B6;--stamina-orange:#E67E22;
+    --text-primary:#F5F5F5;--text-secondary:#A0A0B0;--text-aa:#8A8AA0;--text-gold:#FFD700;
+    --text-danger:#FF6B6B;--text-good:#7BED9F;--text-warning:#FFA502;
+    --border-subtle:#2A2A3E;--border-medium:#3A3A50;
+    --xp-ring:#5DADE2;
+    --font-t:'Oswald',sans-serif;--font-b:'Inter',sans-serif;
+    --s4:4px;--s8:8px;--s12:12px;--s16:16px;--s24:24px;
+    --slot:56px;--slot-r:8px;--gap:8px;  /* slot-r: 10→8 (4px grid) */
+    --portrait-w:233px;--portrait-h:248px; /* computed, not token */
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg-abyss);color:var(--text-primary);font-family:var(--font-b);padding:20px;-webkit-font-smoothing:antialiased}
+  h1{font-family:var(--font-t);color:var(--gold-bright);font-size:24px;text-align:center;margin-bottom:var(--s4);letter-spacing:2px}
+  .sub{text-align:center;color:var(--text-aa);font-size:12px;margin-bottom:var(--s24)}
+
+  .phone{width:393px;margin:0 auto;background:var(--bg-primary);border-radius:24px;border:2px solid var(--border-subtle);overflow:hidden}
+  .ph-bar{height:54px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:12px;color:var(--text-aa)}
+  .toolbar{display:flex;align-items:center;padding:var(--s8) var(--s16);justify-content:space-between}
+  .toolbar .logo{width:28px;height:28px;border-radius:50%;background:var(--bg-tertiary);border:1px solid var(--gold-dim)}
+  .toolbar .title{font-family:var(--font-t);font-size:20px;color:var(--gold-bright);letter-spacing:1.5px}
+  .toolbar .gear{width:24px;height:24px;border-radius:50%;background:var(--bg-tertiary);border:1px solid var(--border-subtle)}
+
+  /* ═══ HERO CARD ═══ */
+  .hc{margin:0 var(--s16) var(--s8);background:linear-gradient(135deg,var(--bg-card-start),var(--bg-card-end));
+    border:1px solid var(--bg-card-border);border-radius:12px;overflow:hidden;position:relative}
+  .hc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,165,55,.25),transparent)}
+
+  /* Header */
+  .hc-h{padding:var(--s12) var(--s12) var(--s8)}
+  .hc-id{display:flex;align-items:baseline;gap:var(--s8);margin-bottom:var(--s8)}
+  .hc-nm{font-family:var(--font-t);font-size:16px;color:var(--text-primary);letter-spacing:.5px}
+  .hc-cl{font-size:12px;color:var(--text-aa)}
+  .hc-lv{font-size:12px;font-weight:700;color:var(--gold-bright);margin-left:auto}
+
+  .hc-bar{display:flex;align-items:center;gap:var(--s8);margin-bottom:var(--s4)}
+  .hc-bl{width:20px;font-size:12px;font-weight:700;flex-shrink:0}
+  .hc-bt{flex:1;height:12px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden} /* h:10→12, r:5→4 */
+  .hc-bf{height:100%;border-radius:4px}
+  .hc-hp{background:linear-gradient(90deg,#2ECC71,#55EFC4)}
+  .hc-xp{background:linear-gradient(90deg,#5DADE2,#3498DB)}
+  .hc-bv{font-size:12px;color:var(--text-secondary);white-space:nowrap;min-width:80px;text-align:right}
+  .hc-xt{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden} /* h:6→8, r:3→4 */
+
+  .hc-res{display:flex;align-items:center;gap:var(--s12);margin-top:var(--s8)}
+  .hc-r{display:flex;align-items:center;gap:var(--s4);font-size:12px;font-weight:600;white-space:nowrap}
+  .hc-rs{color:var(--stamina-orange)}.hc-rg{color:var(--text-gold)}.hc-rd{color:var(--cyan)}
+  .hc-sep{width:1px;height:14px;background:var(--border-subtle);flex-shrink:0}
+  .ref-wrap{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-12px -12px -12px 0;cursor:pointer} /* 44px tap area */
+  .ref{background:linear-gradient(90deg,#D35400,#F39C12);border:none;border-radius:4px;color:#fff;font-size:12px;font-weight:700;width:24px;height:24px;display:flex;align-items:center;justify-content:center;pointer-events:none}
+
+  .hc-act{display:flex;align-items:center;gap:var(--s8);margin-top:var(--s8);flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:var(--s4);height:32px;padding:0 var(--s12);border-radius:var(--s8);
+    font-size:12px;font-weight:600;white-space:nowrap;border:1px solid;cursor:pointer;transition:all .15s} /* h:28→32, px:10→12 */
+  .pill:active{transform:scale(.97)}
+  .pill-st{background:rgba(255,255,255,.04);color:var(--text-secondary);border-color:var(--border-subtle)}
+  .pill-st .za{font-weight:700;color:#E66666}.pill-st .zd{font-weight:700;color:#6699E6}
+  .pill-ed{font-size:12px;color:var(--text-aa);margin-left:2px} /* 11→12 */
+  .pill-rep{background:rgba(230,57,70,.1);color:var(--text-danger);border-color:rgba(230,57,70,.25)}
+  .pill-heal{background:rgba(46,204,113,.12);color:var(--text-good);border-color:rgba(46,204,113,.25)}
+  .pill-stats{background:rgba(212,165,55,.12);color:var(--gold-bright);border-color:rgba(212,165,55,.3);animation:glow 2.5s ease-in-out infinite}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(212,165,55,0)}50%{box-shadow:0 0 8px 2px rgba(212,165,55,.2)}}
+  .sl.broken{border-color:var(--danger)!important;border-width:2px!important;background:rgba(230,57,70,.08)!important}
+  .sl .brk{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--danger);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff} /* 14→16 */
+
+  .hc-div{height:1px;margin:0 var(--s12);background:linear-gradient(90deg,transparent,var(--border-subtle),transparent)}
+
+  /* ═══ EQUIPMENT: 4 left + portrait + 4 right + 3 bottom ═══ */
+  .hc-eq{padding:var(--s8) var(--s12) var(--s12)}
+  .hc-grid{display:flex;gap:var(--gap);justify-content:center;align-items:stretch}
+  .hc-col{display:flex;flex-direction:column;gap:var(--gap);justify-content:space-between}
+
+  .sl{width:var(--slot);height:var(--slot);border-radius:var(--slot-r);background:var(--bg-tertiary);
+    border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;
+    font-size:16px;position:relative;overflow:hidden;cursor:pointer;transition:all .15s;flex-shrink:0} /* border:1.5→1 */
+  .sl:active{transform:scale(.95)}
+  .sl.f{border-color:var(--success);border-width:2px;background:rgba(46,204,113,.06)}
+  .sl.epic{border-color:var(--purple);background:rgba(155,89,182,.08)}
+  .sl.leg{border-color:var(--gold-bright);background:rgba(255,215,0,.06)}
+  .sl .nm{display:none} /* removed: 7px labels too small, icons are self-explanatory */
+  .sl .dots{position:absolute;bottom:1px;display:flex;gap:2px;justify-content:center;width:100%}
+  .sl .dots span{width:3px;height:3px;border-radius:50%;background:var(--gold-bright)}
+
+  /* Portrait — fills center, height = 4 slots + 3 gaps */
+  .portrait{
+    width:var(--portrait-w);height:var(--portrait-h);border-radius:12px;flex-shrink:0; /* 12px = card inner radius */
+    background:linear-gradient(var(--bg-tertiary),var(--bg-secondary));
+    border:2px solid rgba(212,165,55,.35);
+    display:flex;align-items:center;justify-content:center;
+    font-size:90px;position:relative;overflow:hidden;cursor:pointer;
+    box-shadow:0 0 16px rgba(212,165,55,.06);
+  }
+  .portrait .lv{position:absolute;top:var(--s8);right:var(--s8);background:var(--gold);color:var(--bg-primary);
+    width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;box-shadow:0 2px 8px rgba(212,165,55,.4)}
+  .portrait .cls{position:absolute;top:var(--s8);left:var(--s8);background:var(--bg-tertiary);border:1px solid var(--border-medium);
+    border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:16px}
+
+  /* Bottom row */
+  .hc-bot{display:flex;gap:var(--gap);justify-content:center;margin-top:var(--gap)}
+
+  /* Dividers & tabs below */
+  .gold-div{height:1px;margin:0 var(--s16);background:linear-gradient(90deg,transparent,var(--gold-dim),transparent)}
+  .tab-sel{display:flex;background:var(--bg-primary);border-bottom:1px solid var(--border-subtle)}
+  .tab-btn{flex:1;padding:var(--s12) 0;text-align:center;font-family:var(--font-t);font-size:16px;color:var(--text-aa);cursor:pointer;position:relative}
+  .tab-btn.on{color:var(--gold-bright)}
+  .tab-btn.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:3px;background:var(--gold);border-radius:2px}
+  .tab-btn .notif{width:7px;height:7px;border-radius:50%;background:var(--gold-bright);display:inline-block;margin-left:4px;vertical-align:super;animation:blink 1.2s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+  .ph-content{padding:var(--s16);color:var(--text-aa);font-size:12px;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--s4)}
+</style>
+</head>
+<body>
+
+<h1>HERO — FINAL LAYOUT</h1>
+<p class="sub">All 11 slots on one screen · 4+4 sides + 3 bottom · Portrait 59% width</p>
+
+<div class="phone"><div class="ph-bar">6:01 PM</div><div style="padding:0">
+  <div class="toolbar"><div class="logo"></div><span class="title">HERO</span><div class="gear"></div></div>
+
+  <div class="hc">
+    <!-- Header -->
+    <div class="hc-h">
+      <div class="hc-id">
+        <span class="hc-nm">Degon</span>
+        <span class="hc-cl">⚔ Warrior</span>
+        <span class="hc-lv">Lv.14</span>
+      </div>
+      <div class="hc-bar">
+        <span class="hc-bl" style="color:#2ECC71">HP</span>
+        <div class="hc-bt"><div class="hc-bf hc-hp" style="width:100%"></div></div>
+        <span class="hc-bv">1,030 / 1,030</span>
+      </div>
+      <div class="hc-bar">
+        <span class="hc-bl" style="color:var(--xp-ring)">XP</span>
+        <div class="hc-xt"><div class="hc-bf hc-xp" style="width:78%"></div></div>
+        <span class="hc-bv">78%</span>
+      </div>
+      <div class="hc-res">
+        <div class="hc-r hc-rs"><span>⚡</span>87<span style="color:var(--text-aa)">/120</span><div class="ref-wrap"><div class="ref">+</div></div></div>
+        <div class="hc-sep"></div>
+        <div class="hc-r hc-rg"><span>🪙</span>18,640</div>
+        <div class="hc-sep"></div>
+        <div class="hc-r hc-rd"><span>💎</span>146</div>
+      </div>
+      <div class="hc-act">
+        <div class="pill pill-st"><span class="za">⚔ Chest</span><span style="color:var(--text-aa);margin:0 2px">·</span><span class="zd">🛡 Chest</span><span class="pill-ed">Edit</span></div>
+        <div class="pill pill-rep">⚠ Repair All (2) · 280🪙</div>
+      </div>
+    </div>
+
+    <div class="hc-div"></div>
+
+    <!-- Equipment: 4 left | Portrait | 4 right -->
+    <div class="hc-eq">
+      <div class="hc-grid">
+        <!-- Left: Head, Chest, Legs, Ring 1 -->
+        <div class="hc-col">
+          <div class="sl epic"><span class="nm">Head</span>🪖<div class="dots"><span></span><span></span><span></span></div></div>
+          <div class="sl leg"><span class="nm">Chest</span>🛡️<div class="dots"><span></span><span></span><span></span><span></span><span></span></div></div>
+          <div class="sl broken"><span class="nm">Legs</span>🦿<div class="brk">!</div><div class="dots"><span></span><span></span></div></div>
+          <div class="sl f"><span class="nm">Ring</span>💍</div>
+        </div>
+
+        <!-- Portrait (tall: 4 slots height) -->
+        <div class="portrait">🐂<div class="cls">⚔</div><div class="lv">14</div></div>
+
+        <!-- Right: Amulet, Gloves, Boots, Ring 2 -->
+        <div class="hc-col">
+          <div class="sl epic"><span class="nm">Amulet</span>📿<div class="dots"><span></span><span></span><span></span></div></div>
+          <div class="sl f"><span class="nm">Gloves</span>🧤<div class="dots"><span></span><span></span></div></div>
+          <div class="sl broken"><span class="nm">Boots</span>👢<div class="brk">!</div><div class="dots"><span></span></div></div>
+          <div class="sl epic"><span class="nm">Ring</span>💍<div class="dots"><span></span><span></span></div></div>
+        </div>
+      </div>
+
+      <!-- Bottom: Weapon, Belt, Relic -->
+      <div class="hc-bot">
+        <div class="sl leg"><span class="nm">Weapon</span>⚔️<div class="dots"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+        <div class="sl f"><span class="nm">Belt</span>🎗️</div>
+        <div class="sl f"><span class="nm">Relic</span>🔮</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gold-div"></div>
+  <div class="tab-sel">
+    <div class="tab-btn on">INVENTORY</div>
+    <div class="tab-btn">STATUS <span class="notif"></span></div>
+  </div>
+  <div class="ph-content">Inventory / Status content</div>
+</div></div>
+
+</body>
+</html>

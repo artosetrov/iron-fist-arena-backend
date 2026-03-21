@@ -117,7 +117,10 @@ struct HubEditorDetailView: View {
                     }
                     .font(DarkFantasyTheme.body(size: 12))
                     .foregroundStyle(showSkyObjects ? DarkFantasyTheme.gold : DarkFantasyTheme.textSecondary)
+<<<<<<< HEAD
                     .buttonStyle(.scalePress)
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                     Button("Reset All") {
                         withAnimation {
@@ -127,7 +130,10 @@ struct HubEditorDetailView: View {
                     }
                     .font(DarkFantasyTheme.body(size: 14))
                     .foregroundStyle(DarkFantasyTheme.danger)
+<<<<<<< HEAD
                     .buttonStyle(.scalePress)
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 }
             }
         }
@@ -482,7 +488,11 @@ struct DraggableEditorSkyObject: View {
         VStack(spacing: 2) {
             Text("\(object.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
                 .font(.system(size: 8, weight: .bold, design: .monospaced))
+<<<<<<< HEAD
                 .foregroundStyle(.textPrimary)
+=======
+                .foregroundStyle(.white)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .padding(.horizontal, 3)
                 .padding(.vertical, 1)
                 .background(isSelected ? layerColor.opacity(0.9) : layerColor.opacity(0.5))

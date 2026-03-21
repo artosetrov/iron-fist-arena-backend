@@ -46,6 +46,7 @@ struct HeroIntegratedCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
+<<<<<<< HEAD
             // ═══ STAMINA BAR ON TOP ═══
             staminaBarInside
                 .padding(.horizontal, LayoutConstants.heroCardPadding)
@@ -56,6 +57,11 @@ struct HeroIntegratedCard: View {
             equipmentGrid
                 .padding(.horizontal, LayoutConstants.heroCardPadding)
                 .padding(.bottom, LayoutConstants.spaceMD)
+=======
+            // ═══ EQUIPMENT FIRST ═══
+            equipmentGrid
+                .padding(LayoutConstants.heroCardPadding)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
             // ═══ DIVIDER ═══
             Rectangle()
@@ -83,6 +89,7 @@ struct HeroIntegratedCard: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroCardRadius))
     }
 
+<<<<<<< HEAD
     // MARK: - Equipment Grid (GeometryReader for accurate width)
 
     private var equipmentGrid: some View {
@@ -136,6 +143,48 @@ struct HeroIntegratedCard: View {
         let cw = max((availableW - 3 * slotGap) / 4, 0)
         // Top section (3 rows) + gap + bottom row (1 row) + 1pt rounding buffer
         return ceil(4 * cw + 3 * slotGap)
+=======
+    // MARK: - Equipment Grid (no GeometryReader — computed cell width)
+
+    /// Cell width for 4-column grid inside the card
+    private var cellWidth: CGFloat {
+        let cardInnerW = UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - 2 * LayoutConstants.heroCardPadding
+        return max((cardInnerW - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.heroSlotGap) / CGFloat(LayoutConstants.inventoryCols), 0)
+    }
+
+    private var equipmentGrid: some View {
+        let cw = cellWidth
+        let portraitW = 2 * cw + LayoutConstants.heroSlotGap
+        let portraitH = 3 * cw + 2 * LayoutConstants.heroSlotGap
+
+        return VStack(spacing: LayoutConstants.heroSlotGap) {
+            // Top: 3 left | portrait | 3 right
+            HStack(alignment: .top, spacing: LayoutConstants.heroSlotGap) {
+                VStack(spacing: LayoutConstants.heroSlotGap) {
+                    equipSlot("helmet", size: cw)
+                    equipSlot("chest", size: cw)
+                    equipSlot("legs", size: cw)
+                }
+
+                heroPortrait()
+                    .frame(width: portraitW, height: portraitH)
+
+                VStack(spacing: LayoutConstants.heroSlotGap) {
+                    equipSlot("amulet", size: cw)
+                    equipSlot("gloves", size: cw)
+                    equipSlot("boots", size: cw)
+                }
+            }
+
+            // Bottom: Ring, Weapon, Relic, Belt
+            HStack(spacing: LayoutConstants.heroSlotGap) {
+                equipSlot("ring", size: cw, index: 0)
+                equipSlot("weapon", size: cw)
+                equipSlot("relic", size: cw)
+                equipSlot("belt", size: cw)
+            }
+        }
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     }
 
     // MARK: - Data Section (below divider)
@@ -148,6 +197,7 @@ struct HeroIntegratedCard: View {
             // XP bar with label + value INSIDE
             xpBarInside
 
+<<<<<<< HEAD
             // Action pills (conditional — stance, repair, stats, heal)
             actionPillsRow
         }
@@ -212,6 +262,28 @@ struct HeroIntegratedCard: View {
                 if !brokenItems.isEmpty {
                     WidgetPill(
                         icon: "exclamationmark.triangle",
+=======
+            // Stamina bar with label + value INSIDE (orange)
+            staminaBarInside
+
+            // Action pills (no gold/gems — moved to inventory header)
+            HStack(spacing: LayoutConstants.spaceSM) {
+                // Stance (always)
+                if let stance = character.combatStance {
+                    WidgetPill(
+                        icon: "⚔️",
+                        text: "\(stance.attack.capitalized) · 🛡 \(stance.defense.capitalized)",
+                        style: .pvp,
+                        isInteractive: true,
+                        action: { onEditStance?() }
+                    )
+                }
+
+                // Repair All (conditional: broken items exist)
+                if !brokenItems.isEmpty {
+                    WidgetPill(
+                        icon: "⚠️",
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         text: "Repair All(\(brokenItems.count))",
                         style: .warn,
                         isInteractive: true,
@@ -219,9 +291,16 @@ struct HeroIntegratedCard: View {
                     )
                 }
 
+<<<<<<< HEAD
                 if hasStatPoints {
                     WidgetPill(
                         icon: "star.fill",
+=======
+                // Stat Points (conditional)
+                if hasStatPoints {
+                    WidgetPill(
+                        icon: "⭐",
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         text: "+\(character.statPoints ?? 0) Stats",
                         style: .stat,
                         isInteractive: true,
@@ -229,6 +308,10 @@ struct HeroIntegratedCard: View {
                     )
                 }
 
+<<<<<<< HEAD
+=======
+                // Heal (conditional: HP low + potion available)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 if character.hpPercentage < 0.5 && healthPotionCount > 0 {
                     WidgetPill(
                         icon: "🧪",
@@ -240,8 +323,12 @@ struct HeroIntegratedCard: View {
                     )
                 }
 
+<<<<<<< HEAD
                     Spacer()
                 }
+=======
+                Spacer()
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
             }
         }
     }
@@ -252,7 +339,11 @@ struct HeroIntegratedCard: View {
         ZStack(alignment: .leading) {
             // Track
             RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
+<<<<<<< HEAD
                 .fill(DarkFantasyTheme.textPrimary.opacity(0.06))
+=======
+                .fill(Color.white.opacity(0.06))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .frame(height: LayoutConstants.heroBarHeight)
 
             // Fill
@@ -268,8 +359,13 @@ struct HeroIntegratedCard: View {
                 Spacer()
                 Text("HP  \(character.currentHp) / \(character.maxHp)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
+<<<<<<< HEAD
                     .foregroundStyle(.textPrimary)
                     .shadow(color: .bgAbyss.opacity(0.6), radius: 2)
+=======
+                    .foregroundStyle(.white.opacity(0.95))
+                    .shadow(color: .black.opacity(0.6), radius: 2)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     .monospacedDigit()
                 Spacer()
             }
@@ -288,7 +384,11 @@ struct HeroIntegratedCard: View {
         return ZStack(alignment: .leading) {
             // Track
             RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
+<<<<<<< HEAD
                 .fill(DarkFantasyTheme.textPrimary.opacity(0.06))
+=======
+                .fill(Color.white.opacity(0.06))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .frame(height: LayoutConstants.heroBarXpHeight)
 
             // Fill
@@ -304,8 +404,13 @@ struct HeroIntegratedCard: View {
                 Spacer()
                 Text("XP  \(xpCurrent) / \(xpMax)\(isNearLevelUp ? " ⬆" : "")")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
+<<<<<<< HEAD
                     .foregroundStyle(isNearLevelUp ? DarkFantasyTheme.goldBright : .textPrimary)
                     .shadow(color: .bgAbyss.opacity(0.6), radius: 2)
+=======
+                    .foregroundStyle(isNearLevelUp ? DarkFantasyTheme.goldBright : .white.opacity(0.9))
+                    .shadow(color: .black.opacity(0.6), radius: 2)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     .monospacedDigit()
                 Spacer()
             }
@@ -321,7 +426,11 @@ struct HeroIntegratedCard: View {
 
         return ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
+<<<<<<< HEAD
                 .fill(DarkFantasyTheme.textPrimary.opacity(0.06))
+=======
+                .fill(Color.white.opacity(0.06))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .frame(height: LayoutConstants.heroBarXpHeight)
 
             GeometryReader { geo in
@@ -335,8 +444,13 @@ struct HeroIntegratedCard: View {
                 Spacer()
                 Text("Stamina  \(character.currentStamina) / \(character.maxStamina)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
+<<<<<<< HEAD
                     .foregroundStyle(isLow ? DarkFantasyTheme.textWarning : .textPrimary)
                     .shadow(color: .bgAbyss.opacity(0.6), radius: 2)
+=======
+                    .foregroundStyle(isLow ? DarkFantasyTheme.textWarning : .white.opacity(0.9))
+                    .shadow(color: .black.opacity(0.6), radius: 2)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     .monospacedDigit()
                 Spacer()
             }
@@ -367,6 +481,7 @@ struct HeroIntegratedCard: View {
                 size: 200
             )
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
+<<<<<<< HEAD
             .overlay(
                 VStack {
                     Spacer()
@@ -399,6 +514,23 @@ struct HeroIntegratedCard: View {
                         startPoint: .top, endPoint: .bottom
                     )
                 )
+=======
+
+            // Name overlay at bottom
+            VStack {
+                Spacer()
+                Text(character.characterName)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.heroPortraitNameFont))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .padding(.vertical, 6)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.black.opacity(0), Color.black.opacity(0.7)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
             }
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius))
 
@@ -414,6 +546,7 @@ struct HeroIntegratedCard: View {
 
                     Spacer()
 
+<<<<<<< HEAD
                     Text("Lv. \(character.level)")
                         .font(DarkFantasyTheme.section(size: 10).bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
@@ -422,11 +555,19 @@ struct HeroIntegratedCard: View {
                         .background(
                             Capsule().fill(DarkFantasyTheme.gold)
                         )
+=======
+                    Text("\(character.level)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption).bold())
+                        .foregroundStyle(DarkFantasyTheme.textOnGold)
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(DarkFantasyTheme.gold))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 }
                 Spacer()
             }
             .padding(LayoutConstants.spaceSM)
         }
+<<<<<<< HEAD
         // Low HP red pulse overlay
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
@@ -434,6 +575,8 @@ struct HeroIntegratedCard: View {
                 .opacity(character.hpPercentage < 0.25 ? 0.8 : 0)
                 .glowPulse(color: DarkFantasyTheme.danger, intensity: 0.5, isActive: character.hpPercentage < 0.25)
         )
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
         .contentShape(Rectangle())
         .onTapGesture { onTapPortrait?() }
     }
@@ -491,10 +634,16 @@ struct HeroIntegratedCard: View {
                     }
                 } else if let assetName {
                     Image(assetName)
+<<<<<<< HEAD
                         .renderingMode(.template)
                         .resizable().scaledToFit()
                         .frame(width: size * 0.5, height: size * 0.5)
                         .foregroundStyle(DarkFantasyTheme.textSecondary.opacity(0.3))
+=======
+                        .resizable().scaledToFit()
+                        .frame(width: size * 0.5, height: size * 0.5)
+                        .opacity(0.35)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 }
 
                 // Broken indicator
@@ -503,8 +652,13 @@ struct HeroIntegratedCard: View {
                         HStack {
                             Spacer()
                             Text("!")
+<<<<<<< HEAD
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(.textPrimary)
+=======
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.white)
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                                 .frame(width: 16, height: 16)
                                 .background(Circle().fill(DarkFantasyTheme.danger))
                         }
@@ -525,7 +679,11 @@ struct HeroIntegratedCard: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 3)
                     .frame(maxWidth: .infinity)
+<<<<<<< HEAD
                     .background(.bgAbyss.opacity(0.45))
+=======
+                    .background(.black.opacity(0.45))
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     .clipShape(.rect(
                         topLeadingRadius: 0,
                         bottomLeadingRadius: LayoutConstants.heroSlotRadius,
@@ -542,6 +700,7 @@ struct HeroIntegratedCard: View {
                         lineWidth: item != nil ? 2 : 1
                     )
             )
+<<<<<<< HEAD
             // Durability ring contour (same as inventory)
             .overlay {
                 if let item,
@@ -556,6 +715,8 @@ struct HeroIntegratedCard: View {
                     }
                 }
             }
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
             .contentShape(Rectangle())
         }
         .buttonStyle(.scalePress(0.95))

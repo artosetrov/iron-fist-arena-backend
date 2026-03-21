@@ -49,6 +49,7 @@ struct ArenaDetailView: View {
                             )
                             .padding(.horizontal, LayoutConstants.screenPadding)
                         }
+<<<<<<< HEAD
 
                         // Low HP potion banner — shown when HP < 30%
                         if LowHPPotionBanner.shouldShow(character: appState.currentCharacter) {
@@ -66,6 +67,8 @@ struct ArenaDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                         // Current stance indicator
                         if let stance = appState.currentCharacter?.combatStance {
@@ -73,6 +76,12 @@ struct ArenaDetailView: View {
                                 .tutorialAnchor(.arenaStance)
                         }
 
+<<<<<<< HEAD
+=======
+                        GoldDivider()
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         // Tab Switcher
                         TabSwitcher(
                             tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
@@ -221,6 +230,7 @@ struct ArenaDetailView: View {
         }
     }
 
+<<<<<<< HEAD
     // MARK: - Potion Helpers
 
     /// Whether the player has at least one health potion in cached inventory
@@ -232,6 +242,10 @@ struct ArenaDetailView: View {
 
     // MARK: - Health Potion Handler
 
+=======
+    // MARK: - Health Potion Handler
+
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     private func useHealthPotion() async {
         // Find the first available health potion from cached inventory
         guard let items = appState.cachedInventory else {

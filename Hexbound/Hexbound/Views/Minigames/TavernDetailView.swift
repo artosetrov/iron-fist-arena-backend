@@ -28,7 +28,11 @@ struct TavernDetailView: View {
                         }
 
                         TavernGameCard(
+<<<<<<< HEAD
                             icon: "person.slash",
+=======
+                            icon: "💀",
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                             title: "DUNGEON RUSH",
                             subtitle: "Endless waves. How far can you go?",
                             accentColor: DarkFantasyTheme.danger

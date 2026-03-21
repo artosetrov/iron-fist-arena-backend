@@ -3,7 +3,10 @@ import SwiftUI
 struct DungeonRoomDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
+<<<<<<< HEAD
     @Environment(\.dismiss) private var dismiss
+=======
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     @State private var vm: DungeonRoomViewModel?
 
     // Animation states
@@ -79,7 +82,13 @@ struct DungeonRoomDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
+<<<<<<< HEAD
                     dismiss()
+=======
+                    if !appState.mainPath.isEmpty {
+                        appState.mainPath.removeLast()
+                    }
+>>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 } label: {
                     Image("ui-arrow-left")
                         .resizable()
