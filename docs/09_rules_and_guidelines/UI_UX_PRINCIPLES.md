@@ -1,8 +1,11 @@
 # UI/UX Design Principles
 
-Canonical design and UX standards for Hexbound. Use this guide when designing new screens, auditing existing screens, or reviewing SwiftUI code for UX quality.
+> **⚠️ Этот файл — вспомогательный.** Каноническим источником истины является **[DESIGN_SYSTEM.md](../07_ui_ux/DESIGN_SYSTEM.md)** (v2.0.0).
+>
+> Данный документ содержит высокоуровневые продуктовые принципы и чеклисты для быстрого доступа.
+> Все токены, компоненты, размеры и спецификации — в Design System.
 
-*Updated: 2026-03-19*
+*Updated: 2026-03-21*
 
 ---
 
@@ -245,6 +248,36 @@ Cite actual tokens from the design system:
 
 ---
 
+## Game System Design Quality (UI Implications)
+
+UI reflects the underlying system design. If a system is poorly designed, no amount of UI polish will fix it. Before designing screens for any game system, verify that the system itself passes the Five Hallmarks test:
+
+### Parameters → Rules → Content (Display Strategy)
+
+- **Parameters** (stats, currencies, timers) → Show clearly on character/HUD screens. Player must always know their current state.
+- **Rules** (damage formulas, XP curves, drop chances) → Communicate through feedback: damage numbers, XP bars, progress indicators. The player shouldn't need to read the formula, but should *feel* it working predictably.
+- **Content** (items, skills, dungeons) → Present through browsable collections with clear sorting, filtering, and comparison. Content should be discoverable and comprehensible at a glance.
+
+### Consistency Implications for UI
+
+If the game system is consistent (same armor formula everywhere), the UI can use the same stat display patterns everywhere. If the system has exceptions — the UI must make them visible, not hide them.
+
+- Same stat card format across character screen, shop comparison, loot preview
+- Same currency display pattern everywhere gold/gems appear
+- Same progress bar behavior for XP, battle pass, quest completion
+
+### Extensibility Implications for UI
+
+Screens must accommodate new content without redesign. If adding a 5th class or 6th rarity tier breaks the UI layout — the UI isn't extensible enough.
+
+- Use dynamic lists/grids instead of hardcoded layouts
+- Design tab/filter patterns that scale (not "exactly 4 class tabs")
+- Card-based layouts that work with N items, not a fixed number
+
+Reference: `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md` → "Game System Design Principles (Five Hallmarks)"
+
+---
+
 ## Game Systems Checklist
 
 Every UX decision must account for these factors:
@@ -299,6 +332,37 @@ Every UX decision must account for these factors:
 - **Battle pass ready:** Screen design supports pass tiers, rewards, cosmetics
 - **Shop extensibility:** Can new items be added without redesign?
 - **Analytics hooks:** Can you track which screens players visit, which actions they take?
+
+---
+
+## RPG UI Screens Coverage
+
+Every RPG needs a specific set of UI screens. Use this checklist to track which screens Hexbound has designed and implemented. When designing a new screen, check here first to ensure it follows the established patterns.
+
+| UI Screen | Hexbound Status | Priority | Notes |
+|-----------|----------------|----------|-------|
+| **Main Menu** | ✅ Implemented | Critical | Hub screen with navigation to all systems |
+| **HUD (Combat)** | ✅ Implemented | Critical | HP bars, stance indicator, skill cooldowns, timer |
+| **Combat UI** | ✅ Implemented | Critical | Skill buttons, target info, damage numbers |
+| **Inventory UI** | ✅ Implemented | Critical | Grid-based, sorting by type/rarity, drag-equip |
+| **Character Info UI** | ✅ Implemented | Critical | Stats overview, equipped gear, class info |
+| **Skill Tree UI** | ✅ Implemented | Critical | Passive node tree with branches and unlock paths |
+| **Settings Menu** | ✅ Implemented | High | Audio, controls, accessibility, account |
+| **Quest Log UI** | ✅ Implemented | High | Daily/weekly quests with progress tracking |
+| **Shop UI** | ✅ Implemented | High | Items, bundles, battle pass with comparison view |
+| **Notifications/Alerts** | ⚠️ Partial | High | Level-up, loot drops — needs event alerts |
+| **Tutorial/Help Overlay** | ⚠️ Partial | High | Onboarding exists — needs in-context tooltips |
+| **Contextual Tooltips** | 🔲 Not started | Medium | Tap-and-hold for item/skill details in combat |
+| **Mini-Map** | ➖ N/A | — | Not needed — no open world, hub-based navigation |
+| **Dialogue Box** | ➖ N/A | — | No dialogue system (Narrativist = minimal) |
+| **Party Management** | ➖ N/A | — | Solo PvP, no party system |
+
+### UI Design Principles (RPG-Specific)
+
+- **Cohesive visual language:** Every UI screen uses the same DarkFantasyTheme tokens — gold accents, dark backgrounds, pen-and-ink styling. A skill tree and an inventory screen should feel like parts of the same game.
+- **Information density tolerance:** RPG players tolerate complex UIs (stat sheets, skill trees) — but the HUD must be glanceable in combat. Separate "study" screens (inventory, passive tree) from "action" screens (combat HUD).
+- **Item comparison at a glance:** When viewing new loot, always show delta vs. current equipment ("+5 STR", "−2 AGI"). Players shouldn't need to navigate away to compare.
+- **Skill cooldown clarity:** Cooldowns must use radial sweep animation + numeric countdown. Players in real-time combat need instant visual feedback on skill availability.
 
 ---
 

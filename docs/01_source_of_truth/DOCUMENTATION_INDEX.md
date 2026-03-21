@@ -1,6 +1,6 @@
 # Hexbound — Documentation Index (Master Reference)
 
-*Master index of all active project documentation. Last updated: 2026-03-19*
+*Master index of all active project documentation. Last updated: 2026-03-21*
 
 ---
 
@@ -30,6 +30,8 @@ Game design, systems overview, economy, and feature specs.
 |----------|----------|---------|
 | **Game Systems** | `docs/02_product_and_features/GAME_SYSTEMS.md` | PvP combat, dungeons, skills, passives, equipment, daily systems, battle pass, achievements, leaderboards, mail, cosmetics |
 | **Economy & Monetization** | `docs/02_product_and_features/ECONOMY.md` | Currency types (gold, gems, arena tokens), pricing, IAP tiers, shop rotation, gold sinks/faucets, daily gem card, prestige costs |
+| **World & Lore** | `docs/02_product_and_features/WORLD_AND_LORE.md` | Setting (The Hex), origins/races lore, class archetypes, key locations, tone guide for writing, narrative approach |
+| **Audio Design** | `docs/02_product_and_features/AUDIO_DESIGN.md` | Music vision, SFX list (combat/UI/dungeon), haptic feedback, technical requirements, asset sourcing strategy |
 
 ---
 
@@ -251,6 +253,10 @@ Superseded, legacy, or reference-only documents.
 ### Mail/Inbox
 - **GAME_SYSTEMS.md** — Mail system
 - **ADMIN_CAPABILITIES.md** — Mail composition page
+
+### World, Lore & Audio
+- **WORLD_AND_LORE.md** — Setting, origins, classes, tone, locations, narrative approach
+- **AUDIO_DESIGN.md** — Music, SFX, haptics, technical requirements
 
 ### Art & Asset Generation
 - **ART_STYLE_GUIDE.md** — Art style rules

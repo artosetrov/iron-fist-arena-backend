@@ -5,35 +5,30 @@ import SwiftUI
 struct HubView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
+    @State private var showDungeonMap = false
+    @State private var dungeonPath = NavigationPath()
 
     var body: some View {
         VStack(spacing: 0) {
-            // HUD widgets at top
+            // HUD widgets at top — stays in place during map transition
             VStack(spacing: 10) {
-                // Stamina Bar → Potions tab
+                // Unified Hero Widget (replaces StaminaBarView + HubCharacterCardWrapper)
                 if let char = appState.currentCharacter {
-                    Button {
-                        appState.shopInitialTab = 3
-                        appState.mainPath.append(AppRoute.shop)
-                    } label: {
-                        StaminaBarView(
-                            currentStamina: char.currentStamina,
-                            maxStamina: char.maxStamina,
-                            recoveryText: staminaRecoveryText(current: char.currentStamina, max: char.maxStamina)
-                        )
-                    }
-                    .buttonStyle(.scalePress(0.97))
-                    .contentShape(Rectangle())
-                    .tutorialAnchor(.hubStamina)
+                    UnifiedHeroWidget(
+                        character: char,
+                        context: .hub,
+                        onTap: { appState.mainPath.append(AppRoute.hero) },
+                        onUseHealthPotion: {
+                            Task { await useHealthPotion() }
+                        },
+                        onUseStaminaPotion: {
+                            Task { await useStaminaPotion() }
+                        },
+                        onAllocateStats: { appState.mainPath.append(AppRoute.hero) },
+                        onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                    )
+                    .tutorialAnchor(.hubCharacterCard)
                     .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceSM)
-                }
-
-                // Character Card
-                if let char = appState.currentCharacter {
-                    HubCharacterCardWrapper(character: char)
-                        .tutorialAnchor(.hubCharacterCard)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
                 }
 
                 // First Win Bonus — prominent above fold
@@ -43,59 +38,136 @@ struct HubView: View {
                 }
             }
             .background(DarkFantasyTheme.bgPrimary)
+            .zIndex(10) // Keep HUD above map transitions
 
-            // City map — fills remaining space, bleeds to bottom edge
-            CityMapView()
-                .tutorialAnchor(.hubCityMap)
-                .clipped()
-                .overlay(alignment: .topTrailing) {
-                    VStack(spacing: 10) {
-                        FloatingActionIcon(
-                            customIcon: "hud-gift",
-                            badgeActive: appState.dailyLoginCanClaim,
-                            accentColor: DarkFantasyTheme.goldBright,
-                            size: 50
-                        ) {
-                            appState.mainPath.append(AppRoute.dailyLogin)
+            // Map area — CityMap and DungeonMap with crossfade transition
+            ZStack {
+                // Black base to avoid any white flashes
+                DarkFantasyTheme.bgPrimary
+
+                // Hub city map
+                CityMapView()
+                    .tutorialAnchor(.hubCityMap)
+                    .opacity(showDungeonMap ? 0 : 1)
+
+                // Dungeon map
+                NavigationStack(path: $dungeonPath) {
+                    DungeonMapView(
+                        onBack: {
+                            withAnimation(.easeInOut(duration: 0.45)) {
+                                showDungeonMap = false
+                            }
+                        },
+                        onNavigate: { route in
+                            dungeonPath.append(route)
                         }
-                        .tutorialAnchor(.hubDailyLogin)
-
-                        FloatingActionIcon(
-                            customIcon: "hud-quests",
-                            badgeActive: {
-                                let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
-                                let total = appState.cachedTypedQuests?.count ?? 0
-                                return total > 0 && completed < total
-                            }(),
-                            accentColor: DarkFantasyTheme.gold,
-                            size: 50
-                        ) {
-                            appState.mainPath.append(AppRoute.dailyQuests)
-                        }
-
-                        FloatingActionIcon(
-                            systemIcon: "envelope.fill",
-                            badgeActive: appState.unreadMailCount > 0,
-                            accentColor: DarkFantasyTheme.gold,
-                            size: 50
-                        ) {
-                            appState.mainPath.append(AppRoute.inbox)
-                        }
-
-                        FloatingSoundToggle(size: 50)
+                    )
+                    .navigationDestination(for: AppRoute.self) { route in
+                        MainRouterView.destination(for: route)
                     }
-                    .padding(.top, LayoutConstants.spaceSM)
-                    .padding(.trailing, LayoutConstants.screenPadding)
                 }
+                .opacity(showDungeonMap ? 1 : 0)
+            }
+            .clipped()
+            .overlay(alignment: .top) {
+                // Top fade gradient — smooth transition from HUD to map
+                LinearGradient(
+                    colors: [
+                        DarkFantasyTheme.bgPrimary,
+                        DarkFantasyTheme.bgPrimary.opacity(0.7),
+                        DarkFantasyTheme.bgPrimary.opacity(0.3),
+                        Color.clear
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 40)
+                .allowsHitTesting(false)
+            }
+            .overlay(alignment: .topTrailing) {
+                // Floating action icons — stay in place during transition
+                VStack(spacing: 10) {
+                    FloatingActionIcon(
+                        customIcon: "hud-gift",
+                        badgeActive: appState.dailyLoginCanClaim,
+                        accentColor: DarkFantasyTheme.goldBright,
+                        size: 50
+                    ) {
+                        appState.mainPath.append(AppRoute.dailyLogin)
+                    }
+                    .accessibilityLabel("Daily Login")
+                    .tutorialAnchor(.hubDailyLogin)
+
+                    FloatingActionIcon(
+                        customIcon: "hud-quests",
+                        badgeActive: {
+                            let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
+                            let total = appState.cachedTypedQuests?.count ?? 0
+                            return total > 0 && completed < total
+                        }(),
+                        accentColor: DarkFantasyTheme.gold,
+                        size: 50
+                    ) {
+                        appState.mainPath.append(AppRoute.dailyQuests)
+                    }
+                    .accessibilityLabel("Daily Quests")
+
+                    FloatingActionIcon(
+                        systemIcon: "envelope.fill",
+                        badgeActive: appState.unreadMailCount > 0,
+                        accentColor: DarkFantasyTheme.gold,
+                        size: 50
+                    ) {
+                        appState.mainPath.append(AppRoute.inbox)
+                    }
+                    .accessibilityLabel("Inbox")
+
+                    FloatingSoundToggle(size: 50)
+                        .accessibilityLabel("Toggle sound")
+                }
+                .padding(.top, LayoutConstants.spaceLG)
+                .padding(.trailing, LayoutConstants.screenPadding)
+            }
+            .overlay(alignment: .bottom) {
+                // Bottom button — switches between ADVENTURES and CASTLE
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    withAnimation(.easeInOut(duration: 0.45)) {
+                        showDungeonMap.toggle()
+                    }
+                    // Reset dungeon navigation path when going back to hub
+                    if !showDungeonMap {
+                        dungeonPath = NavigationPath()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(showDungeonMap ? "icon-lobby" : "icon-dungeons")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
+                        Text(showDungeonMap ? "CASTLE" : "ADVENTURES")
+                    }
+                    .padding(.horizontal, LayoutConstants.buttonPaddingH)
+                    .padding(.vertical, LayoutConstants.spaceMD)
+                }
+                .buttonStyle(.compactPrimary)
+                .accessibilityLabel(showDungeonMap ? "Go to Adventures" : "Go to Castle")
+                .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
+                // Hide when navigated into a dungeon room
+                .opacity(dungeonPath.isEmpty ? 1 : 0)
+                .animation(.easeInOut(duration: 0.2), value: dungeonPath.isEmpty)
+            }
         }
         .ignoresSafeArea(edges: .bottom)
+        .persistentSystemOverlays(.hidden)
         .navigationBarHidden(true)
         .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])
         .task { await checkDailyLogin() }
         .task { await fetchUnreadMailCount() }
         .onAppear {
             // Start BGM
-            AudioManager.shared.playBGM("Stray City.mp3")
+            AudioManager.shared.playBGM("stray-city.mp3")
             // Reload quests if cache was invalidated (e.g., after PvP/dungeon)
             if appState.cachedTypedQuests == nil {
                 Task { await loadQuests() }
@@ -233,6 +305,68 @@ struct HubView: View {
             return "Full in \(minutes)m"
         }
     }
+
+    private func useHealthPotion() async {
+        // Find the first available health potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
+        }
+
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No health potions", subtitle: "Buy potions at the shop", type: .error)
+            return
+        }
+
+        let hpBefore = appState.currentCharacter?.currentHp ?? 0
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
+
+        if success {
+            let hpAfter = appState.currentCharacter?.currentHp ?? 0
+            let healAmount = hpAfter - hpBefore
+            appState.showToast(
+                "+\(healAmount) HP restored!",
+                type: .reward
+            )
+        }
+    }
+
+    private func useStaminaPotion() async {
+        // Find the first available stamina potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
+        }
+
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("stamina_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No stamina potions", subtitle: "Buy potions at the shop", type: .error)
+            return
+        }
+
+        let staminaBefore = appState.currentCharacter?.currentStamina ?? 0
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
+
+        if success {
+            let staminaAfter = appState.currentCharacter?.currentStamina ?? 0
+            let recoveredAmount = staminaAfter - staminaBefore
+            appState.showToast(
+                "+\(recoveredAmount) Stamina restored!",
+                type: .reward
+            )
+        }
+    }
 }
 
 // MARK: - Top Currency Bar
@@ -245,7 +379,7 @@ struct TopCurrencyBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // Gold
+            // Gold (animated tick-up)
             Button {
                 onTapCurrency?()
             } label: {
@@ -253,18 +387,21 @@ struct TopCurrencyBar: View {
                     Image("icon-gold")
                         .resizable()
                         .frame(width: 20, height: 20)
-                    Text(formatGold(character?.gold ?? 0))
-                        .font(DarkFantasyTheme.section(size: 15))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                    NumberTickUpText(
+                        value: character?.gold ?? 0,
+                        color: DarkFantasyTheme.goldBright,
+                        font: DarkFantasyTheme.section(size: 15)
+                    )
                 }
                 .frame(minHeight: LayoutConstants.touchMin)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.scalePress(0.95))
+            .accessibilityLabel("Gold: \(character?.gold ?? 0)")
 
             Spacer()
 
-            // Gems
+            // Gems (animated tick-up)
             Button {
                 onTapCurrency?()
             } label: {
@@ -272,22 +409,19 @@ struct TopCurrencyBar: View {
                     Image("icon-gems")
                         .resizable()
                         .frame(width: 20, height: 20)
-                    Text("\(character?.gems ?? 0)")
-                        .font(DarkFantasyTheme.section(size: 15))
-                        .foregroundStyle(DarkFantasyTheme.cyan)
+                    NumberTickUpText(
+                        value: character?.gems ?? 0,
+                        color: DarkFantasyTheme.cyan,
+                        font: DarkFantasyTheme.section(size: 15)
+                    )
                 }
                 .frame(minHeight: LayoutConstants.touchMin)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.scalePress(0.95))
+            .accessibilityLabel("Gems: \(character?.gems ?? 0)")
 
         }
-    }
-
-    private func formatGold(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 }
 
@@ -431,7 +565,7 @@ struct DailyQuestsCard: View {
                     if total > 0 {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(appState.cachedBonusClaimedToday ? DarkFantasyTheme.success : DarkFantasyTheme.gold)
-                            .frame(width: geo.size.width * (Double(completed) / Double(total)))
+                            .frame(width: geo.size.width * max(0, min(1, Double(completed) / Double(total))))
                     }
                 }
             }
@@ -497,30 +631,48 @@ struct BattlePassCard: View {
 // MARK: - First Win Bonus Card
 
 struct FirstWinBonusCard: View {
+    @Environment(AppState.self) private var appState
+
     var body: some View {
-        HStack(spacing: 12) {
-            Text("🎯").font(.system(size: 30))
+        Button {
+            SFXManager.shared.play(.uiTap)
+            HapticManager.medium()
+            appState.mainPath.append(AppRoute.arena)
+        } label: {
+            HStack(spacing: 12) {
+                Image("reward-first-win")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 36, height: 36)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("FIRST WIN BONUS")
-                    .font(DarkFantasyTheme.section(size: 14))
-                    .foregroundStyle(DarkFantasyTheme.success)
-                Text("Win a PvP match for ×2 Gold & ×2 XP")
-                    .font(DarkFantasyTheme.body(size: 12))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("FIRST WIN BONUS")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.success)
+                    Text("Win a PvP match for ×2 Gold & ×2 XP")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: LayoutConstants.textBody, weight: .semibold))
+                    .foregroundStyle(DarkFantasyTheme.success.opacity(0.7))
             }
-
-            Spacer()
+            .padding(LayoutConstants.bannerPadding)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.success.opacity(0.6), lineWidth: 1.5)
+            )
+            .glowPulse(color: DarkFantasyTheme.success, intensity: 0.4)
+            .shimmer(color: DarkFantasyTheme.success.opacity(0.3), duration: 5)
         }
-        .padding(LayoutConstants.bannerPadding)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.success.opacity(0.6), lineWidth: 1.5)
-        )
+        .buttonStyle(.plain)
     }
 }
 
@@ -538,10 +690,10 @@ struct DailyLoginCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("DAILY LOGIN")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                     .foregroundStyle(canClaim ? DarkFantasyTheme.goldBright : DarkFantasyTheme.gold)
                 Text(canClaim ? "Tap to claim today's reward!" : "Reward claimed today ✓")
-                    .font(DarkFantasyTheme.body(size: 12))
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                     .foregroundStyle(canClaim ? DarkFantasyTheme.goldBright : DarkFantasyTheme.success)
             }
 
@@ -641,8 +793,8 @@ struct FloatingActionIcon: View {
                             Circle()
                                 .stroke(DarkFantasyTheme.bgPrimary, lineWidth: 2)
                         )
-                        .scaleEffect(badgePulse ? 1.15 : 0.95)
                         .offset(x: 2, y: -2)
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -679,7 +831,7 @@ struct FloatingSoundToggle: View {
                 AudioManager.shared.stopBGM()
             } else {
                 AudioManager.shared.syncVolume()
-                AudioManager.shared.playBGM("Stray City.mp3")
+                AudioManager.shared.playBGM("stray-city.mp3")
             }
         } label: {
             Image(isMuted ? "hud-sound-off" : "hud-sound-on")
@@ -726,5 +878,6 @@ struct NavTile: View {
             }
         }
         .buttonStyle(.navGrid)
+        .accessibilityLabel(label)
     }
 }

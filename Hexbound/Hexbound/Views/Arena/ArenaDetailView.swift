@@ -6,6 +6,13 @@ struct ArenaDetailView: View {
     @State private var vm: ArenaViewModel?
     @State private var refreshRotation: Double = 0
     @State private var revengeConfirmEntry: RevengeEntry?
+    // Opponent card refresh animation
+    @State private var opponentCardsVisible = true
+    @State private var opponentCardPhase: RefreshPhase = .idle
+    @State private var cardShineActive = false
+    // NPC guide widget state
+    @State private var showArenaGuide = true
+    @State private var showArenaGuideMini = false
 
     var body: some View {
         ZStack {
@@ -23,16 +30,42 @@ struct ArenaDetailView: View {
 
             if let vm {
                 VStack(spacing: 0) {
-                    staminaBar(vm)
-
                 ScrollView {
-                    VStack(spacing: LayoutConstants.spaceLG) {
+                    VStack(spacing: LayoutConstants.sectionGap) {
                         // Active quest banner
                         ActiveQuestBanner(questTypes: ["pvp_wins"])
                             .padding(.horizontal, LayoutConstants.screenPadding)
 
-                        // Arena Header (Rating, Record, Rank)
-                        arenaHeader(vm)
+                        // Unified Hero Widget (replaces staminaBar + arenaHeader + HubCharacterCardWrapper)
+                        if let char = appState.currentCharacter {
+                            UnifiedHeroWidget(
+                                character: char,
+                                context: .arena,
+                                onTap: { appState.mainPath.append(AppRoute.hero) },
+                                onUseHealthPotion: {
+                                    Task { await useHealthPotion() }
+                                },
+                                onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                            )
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                        }
+
+                        // Low HP potion banner — shown when HP < 30%
+                        if LowHPPotionBanner.shouldShow(character: appState.currentCharacter) {
+                            LowHPPotionBanner(
+                                character: appState.currentCharacter!,
+                                hasHealthPotion: hasHealthPotion,
+                                onDrinkPotion: {
+                                    Task { await useHealthPotion() }
+                                },
+                                onGoToShop: {
+                                    appState.shopInitialTab = 3 // Potions tab
+                                    appState.mainPath.append(AppRoute.shop)
+                                }
+                            )
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
 
                         // Current stance indicator
                         if let stance = appState.currentCharacter?.combatStance {
@@ -40,18 +73,9 @@ struct ArenaDetailView: View {
                                 .tutorialAnchor(.arenaStance)
                         }
 
-                        // Character card (from Hub)
-                        if let char = appState.currentCharacter {
-                            HubCharacterCardWrapper(character: char)
-                                .padding(.horizontal, LayoutConstants.screenPadding)
-                        }
-
-                        GoldDivider()
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-
                         // Tab Switcher
                         TabSwitcher(
-                            tabs: ["⚔ OPPONENTS", "🔄 REVENGE", "📜 HISTORY"],
+                            tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
                             selectedIndex: Binding(
                                 get: { vm.selectedTab },
                                 set: { newValue in
@@ -60,7 +84,9 @@ struct ArenaDetailView: View {
                                 }
                             )
                         )
+                        .accessibilityLabel("Arena tabs")
                         .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
 
                         // Tab Content
                         switch vm.selectedTab {
@@ -99,6 +125,53 @@ struct ArenaDetailView: View {
                     }
                 }
             }
+
+            // NPC Guide Widget — player's own avatar as arena coach
+            if showArenaGuide, let char = appState.currentCharacter {
+                VStack {
+                    Spacer()
+                    NPCGuideWidget(
+                        npcTitle: "Arena Master",
+                        onDismiss: {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                showArenaGuide = false
+                            }
+                        },
+                        avatarSkinKey: char.avatar,
+                        avatarClass: char.characterClass,
+                        plainMessage: "Your stance affects attack and defense zones. Tap to change it before battle.",
+                        onTapCard: {
+                            appState.mainPath.append(AppRoute.stanceSelector)
+                        }
+                    )
+                    .padding(.horizontal, LayoutConstants.npcOuterPadding)
+                    .padding(.bottom, LayoutConstants.npcOuterPadding)
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            // Collapsed NPC mini avatar
+            if showArenaGuideMini, let char = appState.currentCharacter {
+                VStack {
+                    Spacer()
+                    HStack {
+                        NPCMiniButton(
+                            avatarSkinKey: char.avatar,
+                            avatarClass: char.characterClass,
+                            onTap: {
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    showArenaGuideMini = false
+                                    showArenaGuide = true
+                                }
+                            }
+                        )
+                        .padding(.leading, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceMD)
+                        Spacer()
+                    }
+                }
+                .transition(.scale.combined(with: .opacity))
+            }
         }
         .navigationBarBackButtonHidden(true)
         .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
@@ -135,10 +208,10 @@ struct ArenaDetailView: View {
             }
         }
         .onAppear {
-            AudioManager.shared.playBGM("Arena : PvP.mp3")
+            AudioManager.shared.playBGM("arena-pvp.mp3")
         }
         .onDisappear {
-            AudioManager.shared.playBGM("Stray City.mp3")
+            AudioManager.shared.playBGM("stray-city.mp3")
         }
         .task {
             if vm == nil {
@@ -148,92 +221,46 @@ struct ArenaDetailView: View {
         }
     }
 
-    // MARK: - Stamina Bar
+    // MARK: - Potion Helpers
 
-    @ViewBuilder
-    private func staminaBar(_ vm: ArenaViewModel) -> some View {
-        let current = vm.currentStamina
-        let max = vm.maxStamina
-        let fraction = max > 0 ? Double(current) / Double(max) : 0
-
-        Button {
-            vm.goToShop()
-        } label: {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
-                    .foregroundStyle(DarkFantasyTheme.stamina)
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(DarkFantasyTheme.bgDarkPanel)
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(DarkFantasyTheme.staminaGradient)
-                            .frame(width: geo.size.width * fraction)
-                    }
-                }
-                .frame(height: 6)
-
-                Text("\(current)/\(max)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.stamina)
-                    .monospacedDigit()
-
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16)) // SF Symbol icon — keep
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-            }
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.scalePress(0.97))
-        .contentShape(Rectangle())
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.top, LayoutConstants.spaceSM)
-        .padding(.bottom, LayoutConstants.spaceSM)
+    /// Whether the player has at least one health potion in cached inventory
+    private var hasHealthPotion: Bool {
+        appState.cachedInventory?.contains(where: {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }) ?? false
     }
 
-    // MARK: - Arena Header
+    // MARK: - Health Potion Handler
 
-    @ViewBuilder
-    private func arenaHeader(_ vm: ArenaViewModel) -> some View {
-        HStack(spacing: 0) {
-            arenaPvpStat("RATING", value: "\(vm.pvpRating)", color: DarkFantasyTheme.xpRing)
-            arenaPvpStat("RECORD", value: "\(vm.character?.pvpWins ?? 0)W / \(vm.character?.pvpLosses ?? 0)L", color: DarkFantasyTheme.textPrimary)
-            arenaPvpStat("RANK", value: vm.character?.rankName ?? vm.rank.rawValue, color: DarkFantasyTheme.arenaRankGold)
+    private func useHealthPotion() async {
+        // Find the first available health potion from cached inventory
+        guard let items = appState.cachedInventory else {
+            appState.showToast("Open inventory first", type: .info)
+            return
         }
-        .padding(LayoutConstants.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(DarkFantasyTheme.bgDarkPanel)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 1)
-        )
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
 
-    @ViewBuilder
-    private func arenaPvpStat(_ label: String, value: String, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            Text(value)
-                .font(DarkFantasyTheme.section(size: 14))
-                .foregroundStyle(color)
-            Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
-                .foregroundStyle(DarkFantasyTheme.textDimLabel)
+        guard let potion = items.first(where: {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }) else {
+            appState.showToast("No health potions", subtitle: "Buy potions at the shop", type: .error)
+            return
         }
-        .frame(maxWidth: .infinity)
+
+        let hpBefore = appState.currentCharacter?.currentHp ?? 0
+        let service = InventoryService(appState: appState)
+        let success = await service.useItem(
+            inventoryId: potion.id,
+            consumableType: potion.consumableType
+        )
+
+        if success {
+            let hpAfter = appState.currentCharacter?.currentHp ?? 0
+            let healAmount = hpAfter - hpBefore
+            appState.showToast(
+                "+\(healAmount) HP restored!",
+                type: .reward
+            )
+        }
     }
 
     // MARK: - Stance Preview
@@ -246,7 +273,8 @@ struct ArenaDetailView: View {
             HStack(spacing: LayoutConstants.spaceMD) {
                 // Attack zone
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("⚔️")
+                    Image(StanceSelectorViewModel.zoneAsset(for: stance.attack))
+                        .resizable().scaledToFit().frame(width: 18, height: 18)
                     Text(stance.attack.uppercased())
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                         .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.attack))
@@ -265,7 +293,8 @@ struct ArenaDetailView: View {
                     Text(stance.defense.uppercased())
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                         .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.defense))
-                    Text("🛡️")
+                    Image(StanceSelectorViewModel.zoneAsset(for: stance.defense))
+                        .resizable().scaledToFit().frame(width: 18, height: 18)
                 }
             }
             .padding(.horizontal, LayoutConstants.cardPadding)
@@ -290,14 +319,14 @@ struct ArenaDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             if vm.isLoadingOpponents && vm.opponents.isEmpty {
                 // Skeleton loading state
-                HStack(spacing: LayoutConstants.spaceSM) {
+                HStack(spacing: LayoutConstants.arenaCardGap) {
                     ForEach(0..<2, id: \.self) { _ in
                         SkeletonOpponentCard()
                     }
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
             } else if vm.opponents.isEmpty {
-                emptyState(icon: "⚔️", message: "No opponents available.") {
+                emptyState(icon: "swords", message: "No opponents available.") {
                     Button {
                         Task { await vm.refreshOpponents() }
                     } label: {
@@ -307,19 +336,36 @@ struct ArenaDetailView: View {
                     .padding(.horizontal, LayoutConstants.screenPadding)
                 }
             } else {
-                // Two opponent cards side by side
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    ForEach(vm.displayedOpponents) { opponent in
+                // Two opponent cards side by side — animated
+                HStack(spacing: LayoutConstants.arenaCardGap) {
+                    ForEach(Array(vm.displayedOpponents.enumerated()), id: \.element.id) { index, opponent in
                         ArenaOpponentCard(
                             opponent: opponent,
                             playerRating: vm.pvpRating,
                             onTap: { vm.selectOpponent(opponent) }
                         )
                         .frame(maxWidth: .infinity)
+                        .opacity(opponentCardsVisible ? 1 : 0)
+                        .offset(y: opponentCardsVisible ? 0 : 12)
+                        .animation(
+                            .spring(response: 0.35, dampingFraction: 0.72)
+                            .delay(opponentCardsVisible ? Double(index) * 0.08 : 0),
+                            value: opponentCardsVisible
+                        )
                     }
                 }
                 .tutorialAnchor(.arenaOpponent)
                 .padding(.horizontal, LayoutConstants.screenPadding)
+                .onAppear {
+                    // Initial entrance animation
+                    if opponentCardPhase == .idle {
+                        opponentCardsVisible = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            opponentCardsVisible = true
+                            opponentCardPhase = .shown
+                        }
+                    }
+                }
             }
         }
     }
@@ -332,16 +378,44 @@ struct ArenaDetailView: View {
             withAnimation(.linear(duration: 0.5)) {
                 refreshRotation += 360
             }
-            Task { await vm.refreshOpponents() }
+            Task { await animatedRefresh(vm) }
         } label: {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "arrow.clockwise")
                     .rotationEffect(.degrees(refreshRotation))
-                Text("NEW OPPONENTS")
+                Text("New Opponents")
             }
         }
-        .buttonStyle(.primary)
-        .disabled(vm.isRefreshing)
+        .buttonStyle(.secondary)
+        .disabled(vm.isRefreshing || opponentCardPhase == .animatingOut)
+        .accessibilityLabel("Find new opponents")
+    }
+
+    /// Animated opponent refresh: cards slide out → data refreshes → cards slide back in.
+    private func animatedRefresh(_ vm: ArenaViewModel) async {
+        guard opponentCardPhase != .animatingOut else { return }
+        opponentCardPhase = .animatingOut
+
+        // 1. Animate current cards OUT
+        withAnimation(.easeIn(duration: 0.2)) {
+            opponentCardsVisible = false
+        }
+
+        // 2. Wait for exit animation
+        try? await Task.sleep(nanoseconds: 220_000_000) // 220ms
+
+        // 3. Fetch new opponents
+        await vm.refreshOpponents()
+
+        // 4. Small beat before entrance
+        try? await Task.sleep(nanoseconds: 60_000_000) // 60ms
+
+        // 5. Animate new cards IN with stagger
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+            opponentCardsVisible = true
+        }
+
+        opponentCardPhase = .shown
     }
 
     // MARK: - Revenge Tab
@@ -355,7 +429,7 @@ struct ArenaDetailView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
             } else if vm.revengeList.isEmpty {
-                emptyState(icon: "🛡️", message: "No one has attacked you yet.\nYou're safe... for now.")
+                emptyState(icon: "shield", message: "No one has attacked you yet.\nYou're safe... for now.")
             } else {
                 ForEach(vm.revengeList) { entry in
                     revengeCard(entry, vm: vm)
@@ -405,17 +479,20 @@ struct ArenaDetailView: View {
                 HStack(spacing: 4) {
                     if vm.fightingOpponentId == entry.id {
                         ProgressView()
-                            .tint(.white)
+                            .tint(.textPrimary)
                             .scaleEffect(0.8)
                     } else {
-                        Text("⚔️")
-                            .font(.system(size: 14)) // emoji — keep
-                        Text("REVENGE")
+                        HStack(spacing: 4) {
+                            Image(systemName: "swords")
+                                .font(.system(size: 12))
+                            Text("REVENGE")
+                        }
                     }
                 }
             }
             .buttonStyle(.dangerCompact)
             .disabled(vm.fightingOpponentId == entry.id || !vm.canFight)
+            .accessibilityLabel("Fight \(entry.attackerName) for revenge")
         }
         .panelCard()
     }
@@ -431,7 +508,7 @@ struct ArenaDetailView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
             } else if vm.history.isEmpty {
-                emptyState(icon: "📜", message: "No match history yet.\nFight to see your results!")
+                emptyState(icon: "doc.text", message: "No match history yet.\nFight to see your results!")
             } else {
                 ForEach(vm.history) { match in
                     historyRow(match)
@@ -512,4 +589,12 @@ struct ArenaDetailView: View {
         }
         .padding(.top, LayoutConstants.spaceXL)
     }
+}
+
+// MARK: - Refresh Animation Phase
+
+private enum RefreshPhase {
+    case idle         // Initial state — first entrance not yet triggered
+    case shown        // Cards are visible
+    case animatingOut // Cards are leaving before refresh
 }
