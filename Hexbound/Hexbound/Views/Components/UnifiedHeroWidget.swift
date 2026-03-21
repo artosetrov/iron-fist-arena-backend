@@ -169,11 +169,7 @@ struct UnifiedHeroWidget: View {
 
             Spacer(minLength: LayoutConstants.spaceXS)
 
-<<<<<<< HEAD
             // Currencies (when visible — animated tick-up)
-=======
-            // Currencies (when visible)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
             if showCurrencies {
                 HStack(spacing: LayoutConstants.spaceMS) {
                     // Gold
@@ -182,20 +178,12 @@ struct UnifiedHeroWidget: View {
                             .resizable()
                             .frame(width: 14, height: 14)
 
-<<<<<<< HEAD
                         NumberTickUpText(
                             value: character.gold,
                             color: DarkFantasyTheme.textGold,
                             font: DarkFantasyTheme.body(size: LayoutConstants.textLabel)
                         )
                         .lineLimit(1)
-=======
-                        Text(formatGold(character.gold))
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                            .foregroundStyle(DarkFantasyTheme.textGold)
-                            .monospacedDigit()
-                            .lineLimit(1)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     }
 
                     // Gems (hub and hero only)
@@ -205,20 +193,12 @@ struct UnifiedHeroWidget: View {
                                 .resizable()
                                 .frame(width: 14, height: 14)
 
-<<<<<<< HEAD
                             NumberTickUpText(
                                 value: character.gems ?? 0,
                                 color: DarkFantasyTheme.gems,
                                 font: DarkFantasyTheme.body(size: LayoutConstants.textLabel)
                             )
                             .lineLimit(1)
-=======
-                            Text("\(character.gems ?? 0)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.gems)
-                                .monospacedDigit()
-                                .lineLimit(1)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         }
                     }
                 }
@@ -248,13 +228,8 @@ struct UnifiedHeroWidget: View {
                 // Text centered inside
                 Text("\(character.currentHp)/\(character.maxHp)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold())
-<<<<<<< HEAD
-                    .foregroundStyle(.textPrimary)
-                    .shadow(color: .bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)
-=======
-                    .foregroundStyle(.white.opacity(0.95))
-                    .shadow(color: .black.opacity(0.6), radius: 1, x: 0, y: 1)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -282,19 +257,18 @@ struct UnifiedHeroWidget: View {
                     .fill(DarkFantasyTheme.staminaGradient)
                     .frame(width: geo.size.width * max(0.02, min(1, staminaPercent)))
 
-<<<<<<< HEAD
                 // Text centered inside (animated tick-up)
                 HStack(spacing: 2) {
                     NumberTickUpText(
                         value: character.currentStamina,
-                        color: .textPrimary,
+                        color: DarkFantasyTheme.textPrimary,
                         font: DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold()
                     )
                     Text("/\(character.maxStamina)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold())
-                        .foregroundStyle(.textPrimary)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
-                .shadow(color: .bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)
                 .frame(maxWidth: .infinity)
             }
         }
@@ -302,18 +276,6 @@ struct UnifiedHeroWidget: View {
         .animation(.easeInOut(duration: MotionConstants.normal), value: staminaPercent)
         // Low stamina: subtle breathing pulse as urgency hint
         .breathing(scale: 0.01, isActive: isLowStamina)
-=======
-                // Text centered inside
-                Text("\(character.currentStamina)/\(character.maxStamina)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold())
-                    .foregroundStyle(.white.opacity(0.95))
-                    .shadow(color: .black.opacity(0.6), radius: 1, x: 0, y: 1)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .frame(height: LayoutConstants.widgetBarHeight)
-        .animation(.easeInOut(duration: 0.4), value: staminaPercent)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     }
 
     // MARK: - Row 4: Pills (Context-dependent, shown below bars)
@@ -323,11 +285,7 @@ struct UnifiedHeroWidget: View {
         // Priority logic: first match wins
         if isCriticalHP && healthPotionCount > 0 {
             WidgetPill(
-<<<<<<< HEAD
                 icon: "bandage",
-=======
-                icon: "🩹",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 text: "Heal",
                 count: healthPotionCount > 0 ? "×\(healthPotionCount)" : nil,
                 style: .urgent,
@@ -339,19 +297,11 @@ struct UnifiedHeroWidget: View {
             )
             .frame(height: LayoutConstants.pillHeight)
         } else if isCriticalHP && healthPotionCount == 0 {
-<<<<<<< HEAD
             WidgetPill(icon: "exclamationmark.triangle", text: "Critical HP", style: .warn)
                 .frame(height: LayoutConstants.pillHeight)
         } else if isLowHP && healthPotionCount > 0 {
             WidgetPill(
                 icon: "bandage",
-=======
-            WidgetPill(icon: "⚠️", text: "Critical HP", style: .warn)
-                .frame(height: LayoutConstants.pillHeight)
-        } else if isLowHP && healthPotionCount > 0 {
-            WidgetPill(
-                icon: "🩹",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 text: "Heal",
                 count: "×\(healthPotionCount)",
                 style: .heal,
@@ -364,11 +314,7 @@ struct UnifiedHeroWidget: View {
             .frame(height: LayoutConstants.pillHeight)
         } else if isLowStamina && staminaPotionCount > 0 {
             WidgetPill(
-<<<<<<< HEAD
                 icon: "bolt",
-=======
-                icon: "⚡",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 text: "Energy",
                 count: "×\(staminaPotionCount)",
                 style: .energy,
@@ -380,11 +326,7 @@ struct UnifiedHeroWidget: View {
             .frame(height: LayoutConstants.pillHeight)
         } else if statPointsAvailable > 0 && !hasBrokenGear {
             WidgetPill(
-<<<<<<< HEAD
                 icon: "sparkles",
-=======
-                icon: "✨",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 text: "Allocate Stats",
                 style: .stat,
                 isInteractive: true,
@@ -396,11 +338,7 @@ struct UnifiedHeroWidget: View {
         } else if statPointsAvailable > 0 && hasBrokenGear {
             HStack(spacing: LayoutConstants.pillSpacing) {
                 WidgetPill(
-<<<<<<< HEAD
                     icon: "sparkles",
-=======
-                    icon: "✨",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     text: "Allocate Stats",
                     style: .stat,
                     isInteractive: true,
@@ -410,19 +348,11 @@ struct UnifiedHeroWidget: View {
                 )
                 .frame(height: LayoutConstants.pillHeight)
 
-<<<<<<< HEAD
                 WidgetPill(icon: "hammer", text: "Repair", style: .warn)
                     .frame(height: LayoutConstants.pillHeight)
             }
         } else if hasBrokenGear {
             WidgetPill(icon: "hammer", text: "Repair Gear", style: .warn)
-=======
-                WidgetPill(icon: "🔨", text: "Repair", style: .warn)
-                    .frame(height: LayoutConstants.pillHeight)
-            }
-        } else if hasBrokenGear {
-            WidgetPill(icon: "🔨", text: "Repair Gear", style: .warn)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 .frame(height: LayoutConstants.pillHeight)
         } else if context == .arena {
             arenaRow4Pills
@@ -445,11 +375,7 @@ struct UnifiedHeroWidget: View {
 
             if (character.pvpWinStreak ?? 0) > 0 {
                 WidgetPill(
-<<<<<<< HEAD
                     icon: "flame",
-=======
-                    icon: "🔥",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     text: "Streak: \(character.pvpWinStreak ?? 0)",
                     style: .streak
                 )
@@ -458,14 +384,9 @@ struct UnifiedHeroWidget: View {
 
             if character.firstWinToday == true {
                 WidgetPill(
-<<<<<<< HEAD
                     icon: "",
                     text: "First Win!",
                     imageAsset: "reward-first-win",
-=======
-                    icon: "🎁",
-                    text: "First Win!",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     style: .bonus
                 )
                 .frame(height: LayoutConstants.pillHeight)
