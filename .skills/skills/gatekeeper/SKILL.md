@@ -78,6 +78,22 @@ After push, user must run:
 git subtree push --prefix=admin admin-deploy main
 ```
 
+### 3a. Merge Conflict Marker Scan (CRITICAL — after any merge/pull)
+
+After `git merge` or `git pull`, **always** scan for leftover conflict markers before committing:
+
+```bash
+# Must return 0 results or commit will break builds
+grep -rn "^<<<<<<<\|^=======\|^>>>>>>>" backend/ admin/ Hexbound/Hexbound/
+```
+
+**Past incident:** A merge with ~25 conflicts was committed via `git add -A` without resolving markers. `seed-dungeon-drops.ts` had `<<<<<<< HEAD` at line 330 → Vercel build failed with "Merge conflict marker encountered." Required a second fix commit.
+
+Special cases:
+- **`tsconfig.tsbuildinfo`** — auto-generated, delete if conflicted (`rm -f admin/tsconfig.tsbuildinfo`)
+- **Binary files** (`.png`, `.mp3`) — `git checkout --ours <file>` or `--theirs <file>` to pick one version
+- **Seed scripts** (`seed*.ts`) — check `.finally()` blocks, a common conflict site
+
 ### 4. Junk Files & .env Leaks
 
 ```bash

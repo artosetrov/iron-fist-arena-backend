@@ -210,6 +210,30 @@ These are the **actual** backend enums. Do not invent values.
 - **`ignoreBuildErrors` is REMOVED.** TypeScript errors now block the Vercel deploy. Do not reintroduce this flag. Fix TS errors properly.
 - **Prisma `Json` fields need double cast.** When casting Prisma `Json` type to a concrete interface (e.g. `OfferContent[]`), use `as unknown as OfferContent[]` — direct cast fails in strict mode.
 
+## Merge Conflict Resolution (CRITICAL)
+
+After ANY `git merge` or `git pull --no-rebase`, **NEVER** blindly `git add -A && git commit`. This stages unresolved conflict markers (`<<<<<<<`) which break builds.
+
+**Mandatory steps after merge with conflicts:**
+1. **Grep for markers first:** `grep -rn "^<<<<<<<" backend/ admin/` — if any hits, fix them before committing.
+2. **For `add/add` conflicts** (both sides added the same file) — one version overwrites the other. Pick the correct version explicitly.
+3. **For auto-generated files** (`tsconfig.tsbuildinfo`, `*.lock`) — delete the conflicted file; it will regenerate on next build.
+4. **Never trust `git checkout --theirs`/`--ours` during rebase** — "theirs" and "ours" are swapped compared to merge. Verify the file content after.
+5. **Seed scripts / Prisma files** — particularly prone to conflicts since both local and remote may have edited the same `.finally()` block.
+
+**Past incident:** Merge with ~25 conflicts was committed with `git add -A` without resolving. `seed-dungeon-drops.ts` had `<<<<<<< HEAD` at line 330, which broke the Vercel build. Required a second commit to fix.
+
+## Color Token Shorthand in SwiftUI (CRITICAL)
+
+When using DarkFantasyTheme colors in SwiftUI views, **always use the full prefix**: `DarkFantasyTheme.textPrimary`, NOT `.textPrimary`.
+
+Bare shorthand like `.textPrimary` only works if a `Color` extension exists in `DarkFantasyTheme.swift`. If it doesn't, the build fails silently or picks a wrong type. **Always use the full form to be safe.**
+
+Common violations caught post-merge:
+- `.foregroundStyle(.textPrimary)` → `.foregroundStyle(DarkFantasyTheme.textPrimary)`
+- `color: .bgAbyss` → `color: DarkFantasyTheme.bgAbyss`
+- `CircularProgressViewStyle(tint: .textPrimary)` → `CircularProgressViewStyle(tint: DarkFantasyTheme.textPrimary)`
+
 ## Replacing / Refactoring Code (CRITICAL)
 
 When replacing a struct, class, function, or view with a new version:
