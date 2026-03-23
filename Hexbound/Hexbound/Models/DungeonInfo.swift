@@ -147,7 +147,6 @@ struct DungeonInfo: Identifiable {
         // Determine theme color based on sort order / difficulty tier
         let themeColor: Color = {
             switch sortOrder {
-<<<<<<< HEAD
             case 0: return DarkFantasyTheme.glowArena  // Training Camp orange
             case 1: return DarkFantasyTheme.glowMystic  // Catacombs purple
             case 2: return DarkFantasyTheme.glowForge  // Volcanic red-orange
@@ -159,19 +158,6 @@ struct DungeonInfo: Identifiable {
             case 8: return DarkFantasyTheme.glowStone  // Clockwork steel
             case 9: return DarkFantasyTheme.bgDungeonDeep  // Abyssal deep blue
             default: return DarkFantasyTheme.glowBlood  // Infernal red
-=======
-            case 0: return Color(hex: 0xE68C33)  // Training Camp orange
-            case 1: return Color(hex: 0x8040B0)  // Catacombs purple
-            case 2: return Color(hex: 0xFF6626)  // Volcanic red-orange
-            case 3: return Color(hex: 0x4CAF50)  // Fungal green
-            case 4: return Color(hex: 0xE65100)  // Scorched deep orange
-            case 5: return Color(hex: 0x42A5F5)  // Frozen blue
-            case 6: return Color(hex: 0xFFD54F)  // Realm of Light gold
-            case 7: return Color(hex: 0x424242)  // Shadow dark
-            case 8: return Color(hex: 0x78909C)  // Clockwork steel
-            case 9: return Color(hex: 0x1A237E)  // Abyssal deep blue
-            default: return Color(hex: 0xB71C1C)  // Infernal red
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
             }
         }()
 

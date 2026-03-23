@@ -61,13 +61,23 @@ struct GuestGateView: View {
             }
             .padding(LayoutConstants.spaceMD)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.14)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 3, inset: 3, color: DarkFantasyTheme.goldDim.opacity(0.1))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 2)
             )
+            .cornerBrackets(color: DarkFantasyTheme.goldDim, length: 12, thickness: 1.5)
+            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 4)
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.1), radius: 8)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 6, y: 3)
             .padding(.horizontal, LayoutConstants.screenPadding * 2)
         }
         .transition(.opacity)

@@ -90,9 +90,9 @@ struct HubEditorDetailView: View {
                     Spacer()
                     Text(msg)
                         .font(DarkFantasyTheme.body(size: 14))
-                        .foregroundStyle(.textPrimary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .padding(.horizontal, LayoutConstants.spaceMD)
+                        .padding(.vertical, LayoutConstants.spaceMS)
                         .background(DarkFantasyTheme.success.opacity(0.9))
                         .clipShape(Capsule())
                         .padding(.bottom, 140)
@@ -111,16 +111,13 @@ struct HubEditorDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 12) {
+                HStack(spacing: LayoutConstants.spaceMS) {
                     Button(showSkyObjects ? "☁️ On" : "☁️ Off") {
                         withAnimation { showSkyObjects.toggle() }
                     }
                     .font(DarkFantasyTheme.body(size: 12))
                     .foregroundStyle(showSkyObjects ? DarkFantasyTheme.gold : DarkFantasyTheme.textSecondary)
-<<<<<<< HEAD
                     .buttonStyle(.scalePress)
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                     Button("Reset All") {
                         withAnimation {
@@ -130,10 +127,7 @@ struct HubEditorDetailView: View {
                     }
                     .font(DarkFantasyTheme.body(size: 14))
                     .foregroundStyle(DarkFantasyTheme.danger)
-<<<<<<< HEAD
                     .buttonStyle(.scalePress)
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 }
             }
         }
@@ -382,11 +376,11 @@ struct DraggableEditorBuilding: View {
         VStack(spacing: 2) {
             Text("\(building.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundStyle(.textPrimary)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .padding(.horizontal, LayoutConstants.spaceXS)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(isSelected ? Color.red.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
-                .cornerRadius(4)
+                .cornerRadius(LayoutConstants.radiusXS)
 
             if UIImage(named: building.imageName) != nil {
                 Image(building.imageName)
@@ -394,20 +388,20 @@ struct DraggableEditorBuilding: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(height: buildingHeight)
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                     .fill(isSelected ? Color.red.opacity(0.4) : Color.orange.opacity(0.3))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                             .stroke(isSelected ? Color.red : Color.orange, lineWidth: 2)
                     )
                     .overlay(
                         VStack(spacing: 4) {
                             Image(systemName: building.fallbackIcon)
                                 .font(.system(size: 24))
-                                .foregroundStyle(.textPrimary)
+                                .foregroundStyle(DarkFantasyTheme.textPrimary)
                             Text(building.label)
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.textPrimary)
+                                .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                     )
                     .frame(width: buildingHeight * 0.7, height: buildingHeight)
@@ -415,7 +409,7 @@ struct DraggableEditorBuilding: View {
         }
         .overlay(
             isSelected ?
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .stroke(Color.red, lineWidth: 2)
                     .padding(-4)
             : nil
@@ -485,18 +479,14 @@ struct DraggableEditorSkyObject: View {
         let baseX = terrainSize.width * object.relativeX
         let baseY = terrainSize.height * object.relativeY
 
-        VStack(spacing: 2) {
+        VStack(spacing: LayoutConstants.space2XS) {
             Text("\(object.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
                 .font(.system(size: 8, weight: .bold, design: .monospaced))
-<<<<<<< HEAD
-                .foregroundStyle(.textPrimary)
-=======
-                .foregroundStyle(.white)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
-                .padding(.horizontal, 3)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .padding(.horizontal, LayoutConstants.space2XS)
                 .padding(.vertical, 1)
                 .background(isSelected ? layerColor.opacity(0.9) : layerColor.opacity(0.5))
-                .cornerRadius(3)
+                .cornerRadius(LayoutConstants.radiusXS)
 
             Image(object.imageName)
                 .resizable()
@@ -506,7 +496,7 @@ struct DraggableEditorSkyObject: View {
         }
         .overlay(
             isSelected ?
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .stroke(layerColor, lineWidth: 2)
                     .padding(-4)
             : nil

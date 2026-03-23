@@ -260,9 +260,17 @@ struct SettingsDetailView: View {
         }
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.2), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
     }
 
     @ViewBuilder

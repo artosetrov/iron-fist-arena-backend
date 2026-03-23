@@ -22,6 +22,8 @@ final class DungeonRoomViewModel {
     var victoryGold = 0
     var victoryXP = 0
     var victoryItems: [[String: Any]] = []
+    /// HP fraction after battle (0.0–1.0) for star rating. nil if unknown.
+    var hpFractionAfterBattle: Double?
 
     private let cache: GameDataCache
 
@@ -205,6 +207,19 @@ final class DungeonRoomViewModel {
                 ?? 0
             victoryItems = result["loot"] as? [[String: Any]] ?? []
 
+            // HP fraction for star rating (server sends playerHpPercent or we compute from character)
+            if let hpPct = result["playerHpPercent"] as? Double {
+                hpFractionAfterBattle = hpPct
+            } else if let rewards = result["rewards"] as? [String: Any],
+                      let hpPct = rewards["hpPercent"] as? Double {
+                hpFractionAfterBattle = hpPct
+            } else {
+                // Fallback: use current character HP if available
+                if let char = appState.currentCharacter {
+                    hpFractionAfterBattle = Double(char.currentHp) / Double(max(char.maxHp, 1))
+                }
+            }
+
             defeatedCount += 1
             showVictory = true
 
@@ -224,6 +239,8 @@ final class DungeonRoomViewModel {
             let serverDungeonComplete = result["dungeonComplete"] as? Bool ?? false
             if isDungeonComplete || serverDungeonComplete {
                 runId = ""
+                // FTUE: mark explore dungeon complete
+                TutorialManager.shared.completeFTUEObjective(.exploreDungeon)
             }
 
             // Refresh character data (gold, xp, level may have changed)

@@ -108,14 +108,18 @@ struct DungeonRushDetailView: View {
     private func roomPreviewStrip() -> some View {
         let types = ["swords", "questionmark.circle", "swords", "shippingbox", "figure.fencing", "figure.wave", "storefront", "swords", "questionmark.circle", "figure.fencing", "swords", "figure.wave"]
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(0..<types.count, id: \.self) { i in
                     Image(systemName: types[i])
                         .font(.system(size: 14))
                         .frame(width: 28, height: 28)
                         .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(DarkFantasyTheme.bgSecondary)
+                            RadialGlowBackground(
+                                baseColor: DarkFantasyTheme.bgSecondary,
+                                glowColor: DarkFantasyTheme.bgTertiary,
+                                glowIntensity: 0.3,
+                                cornerRadius: LayoutConstants.radiusXS
+                            )
                         )
                 }
             }
@@ -175,7 +179,7 @@ struct DungeonRushDetailView: View {
     private func roomProgressStrip(vm: DungeonRushViewModel) -> some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 3) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     ForEach(0..<vm.rooms.count, id: \.self) { i in
                         let room = vm.rooms[i]
                         let isCurrent = i == vm.currentRoomIndex
@@ -185,7 +189,7 @@ struct DungeonRushDetailView: View {
                             .font(.system(size: isCurrent ? 20 : 14)) // emoji — keep
                             .frame(width: isCurrent ? 36 : 26, height: isCurrent ? 36 : 26)
                             .background(
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .fill(isCurrent
                                           ? DarkFantasyTheme.gold.opacity(0.3)
                                           : isResolved
@@ -193,7 +197,7 @@ struct DungeonRushDetailView: View {
                                               : DarkFantasyTheme.bgSecondary)
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .stroke(isCurrent ? DarkFantasyTheme.goldBright : Color.clear, lineWidth: 2)
                             )
                             .opacity(isResolved ? 0.5 : 1.0)
@@ -219,9 +223,9 @@ struct DungeonRushDetailView: View {
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.bgTertiary)
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.hpBlood.opacity(percent > 25 ? 0.9 : 0.7))
                         .frame(width: geo.size.width * max(0, min(1, CGFloat(percent) / 100)))
                 }
@@ -242,17 +246,17 @@ struct DungeonRushDetailView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(buffs, id: \.id) { buff in
-                    HStack(spacing: 2) {
+                    HStack(spacing: LayoutConstants.space2XS) {
                         Text(buff.icon)
                             .font(.system(size: 12)) // emoji — keep
                         Text("+\(buff.value)")
                             .font(DarkFantasyTheme.body(size: 12))
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(DarkFantasyTheme.bgTertiary)
                     )
                 }
@@ -297,9 +301,9 @@ struct DungeonRushDetailView: View {
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                             .foregroundStyle(DarkFantasyTheme.stamina)
                             .padding(.horizontal, LayoutConstants.spaceSM)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .fill(DarkFantasyTheme.stamina.opacity(0.15))
                             )
                     } else if room.type == "miniboss" {
@@ -307,9 +311,9 @@ struct DungeonRushDetailView: View {
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .padding(.horizontal, LayoutConstants.spaceSM)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .fill(DarkFantasyTheme.danger.opacity(0.15))
                             )
                     }
@@ -435,9 +439,17 @@ struct DungeonRushDetailView: View {
                 }
                 .padding(LayoutConstants.cardPadding)
                 .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .fill(DarkFantasyTheme.bgSecondary)
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.4,
+                        cornerRadius: LayoutConstants.cardRadius
+                    )
                 )
+                .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+                .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+                .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
 
                 Button {
                     Task { await vm.leaveShop() }
@@ -461,7 +473,7 @@ struct DungeonRushDetailView: View {
             Image(systemName: item.icon)
                 .font(.system(size: 20))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(item.name)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -480,7 +492,7 @@ struct DungeonRushDetailView: View {
                 Button {
                     Task { await vm.buyShopItem(slot: item.slot) }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "dollarsign.circle")
                             .font(.system(size: 12))
                         Text("\(item.price)")
@@ -600,7 +612,7 @@ struct DungeonRushDetailView: View {
 
                     if vm.accumulatedGold > 0 {
                         HStack {
-                            HStack(spacing: 4) {
+                            HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "dollarsign.circle")
                                     .font(.system(size: 12))
                                 Text("Gold")
@@ -614,7 +626,7 @@ struct DungeonRushDetailView: View {
                     }
                     if vm.accumulatedXp > 0 {
                         HStack {
-                            HStack(spacing: 4) {
+                            HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 12))
                                 Text("XP")
@@ -628,7 +640,7 @@ struct DungeonRushDetailView: View {
                     }
                     if vm.accumulatedItems > 0 {
                         HStack {
-                            HStack(spacing: 4) {
+                            HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "gift")
                                     .font(.system(size: 12))
                                 Text("Items")
@@ -643,9 +655,17 @@ struct DungeonRushDetailView: View {
                 }
                 .padding(LayoutConstants.cardPadding)
                 .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .fill(DarkFantasyTheme.bgSecondary)
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.4,
+                        cornerRadius: LayoutConstants.cardRadius
+                    )
                 )
+                .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+                .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+                .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
                 .padding(.horizontal, LayoutConstants.spaceXL)
             } else if !vm.lastFightWon {
                 Text("All rewards lost!")
@@ -698,8 +718,12 @@ struct DungeonRushDetailView: View {
         .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.vertical, LayoutConstants.spaceXS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
     }
 }

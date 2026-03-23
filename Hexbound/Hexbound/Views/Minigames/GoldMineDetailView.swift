@@ -82,13 +82,22 @@ struct GoldMineDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, LayoutConstants.spaceMD)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.goldBright.opacity(0.4), length: 16, thickness: 2.0)
+        .shadow(color: DarkFantasyTheme.gold.opacity(0.1), radius: 8)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
     // MARK: - Slots Grid
@@ -121,8 +130,12 @@ struct GoldMineDetailView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, LayoutConstants.spaceMD)
                 .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .fill(DarkFantasyTheme.bgSecondary)
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.3,
+                        cornerRadius: LayoutConstants.cardRadius
+                    )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -145,8 +158,12 @@ struct GoldMineDetailView: View {
                             .padding(LayoutConstants.spaceSM)
                         }
                         .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                                .fill(DarkFantasyTheme.bgSecondary)
+                            RadialGlowBackground(
+                                baseColor: DarkFantasyTheme.bgSecondary,
+                                glowColor: DarkFantasyTheme.bgTertiary,
+                                glowIntensity: 0.3,
+                                cornerRadius: LayoutConstants.cardRadius
+                            )
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
                     }
@@ -194,9 +211,15 @@ private struct MineSlotCard: View {
             infoPanel
         }
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(
@@ -207,6 +230,7 @@ private struct MineSlotCard: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
         .shadow(color: cardShadowColor, radius: status != "idle" ? 8 : 3, y: 2)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .overlay {
             if showCollectBurst {
                 GeometryReader { geo in
@@ -369,10 +393,10 @@ private struct MineSlotCard: View {
     private var mineProgressBar: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 3)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(DarkFantasyTheme.borderSubtle)
 
-                RoundedRectangle(cornerRadius: 3)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(
                         LinearGradient(
                             colors: [slotAccent, DarkFantasyTheme.gold],
@@ -407,7 +431,7 @@ private struct MineSlotCard: View {
                 HapticManager.light()
                 Task { await vm.boost(slotIndex: index) }
             } label: {
-                HStack(spacing: 3) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Text("BOOST")
                     Image(systemName: "diamond")
                         .font(.system(size: 10))
@@ -422,7 +446,7 @@ private struct MineSlotCard: View {
                 HapticManager.medium()
                 Task { await vm.collect(slotIndex: index) }
             } label: {
-                HStack(spacing: 3) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Text("COLLECT")
                     Image(systemName: "dollarsign.circle")
                         .font(.system(size: 10))
@@ -493,7 +517,7 @@ private struct LockedMineCard: View {
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
-                HStack(spacing: 3) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Text("Unlock for")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -518,8 +542,12 @@ private struct LockedMineCard: View {
             .padding(.vertical, LayoutConstants.spaceSM)
         }
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)

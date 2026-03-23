@@ -42,7 +42,7 @@ struct AppearanceStepView: View {
                 .font(DarkFantasyTheme.body(size: 14))
                 .foregroundStyle(DarkFantasyTheme.textDimLabel)
 
-            HStack(spacing: 6) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(CharacterOrigin.allCases) { origin in
                     raceIcon(origin)
                         .frame(maxWidth: .infinity)
@@ -89,8 +89,12 @@ struct AppearanceStepView: View {
 
     private var raceBonusWidget: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.buttonRadiusLG
+            )
             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
 
@@ -251,21 +255,25 @@ struct AppearanceStepView: View {
         let skins = vm.availableSkins
 
         ZStack {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.radius2XL
+            )
 
             if vm.avatarIndex < skins.count {
                 let skin = skins[vm.avatarIndex]
                 skinImage(skin)
                     .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
                     .id(skin.skinKey)
                     .transition(avatarTransition)
             }
         }
         .frame(width: size, height: size)
         .overlay(
-            RoundedRectangle(cornerRadius: 22)
+            RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
                 .stroke(DarkFantasyTheme.gold, lineWidth: 3)
         )
         .shadow(color: DarkFantasyTheme.goldGlow, radius: 20, y: 8)
@@ -290,7 +298,7 @@ struct AppearanceStepView: View {
     private var thumbnailRow: some View {
         let skins = vm.availableSkins
 
-        return HStack(spacing: 6) {
+        return HStack(spacing: LayoutConstants.spaceXS) {
             ForEach(Array(skins.enumerated()), id: \.element.id) { index, skin in
                 let isSelected = vm.avatarIndex == index
 

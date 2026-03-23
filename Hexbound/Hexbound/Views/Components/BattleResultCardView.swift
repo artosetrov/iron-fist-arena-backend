@@ -39,6 +39,9 @@ struct BattleResultCardView: View {
     @State private var goldDisplay = 0
     @State private var xpDisplay = 0
 
+    // Victory stars
+    @State private var revealedStars: Int = 0
+
     var body: some View {
         ZStack {
             // Dimmed background
@@ -100,14 +103,23 @@ struct BattleResultCardView: View {
 
                     cardContent
                         .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                                .fill(DarkFantasyTheme.bgSecondary)
+                            RadialGlowBackground(
+                                baseColor: DarkFantasyTheme.bgSecondary,
+                                glowColor: DarkFantasyTheme.bgTertiary,
+                                glowIntensity: 0.4,
+                                cornerRadius: LayoutConstants.modalRadius
+                            )
                         )
+                        .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+                        .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: accentColor.opacity(0.1))
                         .overlay(
                             RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                                 .stroke(accentColor.opacity(0.5), lineWidth: 2)
                         )
+                        .cornerBrackets(color: accentColor.opacity(0.4), length: 18, thickness: 2.0)
+                        .cornerDiamonds(color: accentColor.opacity(0.5), size: 6)
                         .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
                         .padding(.horizontal, LayoutConstants.screenPadding)
                         .offset(x: shakeOffset)
                         .opacity(showCard ? 1 : 0)
@@ -152,13 +164,19 @@ struct BattleResultCardView: View {
             titleView
                 .padding(.bottom, LayoutConstants.spaceXS)
 
+            // Victory Stars (dungeon: 1-3 stars based on performance)
+            if let starRating = config.starRating, config.isVictory {
+                victoryStarsView(earned: starRating, total: 3)
+                    .padding(.bottom, LayoutConstants.spaceXS)
+            }
+
             // Subtitle (near-miss motivation or general)
             if let subtitle = config.subtitle {
                 Text(subtitle)
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                     .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
                     .opacity(showTitle ? 1 : 0)
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .transition(.opacity)
             }
 
             // First Win Bonus
@@ -238,11 +256,11 @@ struct BattleResultCardView: View {
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, 6)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(DarkFantasyTheme.goldBright.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.goldBright.opacity(0.3), lineWidth: 1)
         )
     }
@@ -338,20 +356,20 @@ struct BattleResultCardView: View {
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .shadow(color: DarkFantasyTheme.goldBright.opacity(0.6), radius: 8)
                     }
-                    .transition(.scale.combined(with: .opacity))
+                    .transition(.opacity)
                 }
             }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 5)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .fill(DarkFantasyTheme.bgTertiary)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 5)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                         )
 
-                    RoundedRectangle(cornerRadius: 5)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .fill(DarkFantasyTheme.xpGradient)
                         .frame(width: geo.size.width * min(xpConfig.progress, 1.0))
                 }
@@ -383,9 +401,9 @@ struct BattleResultCardView: View {
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                         .fill(DarkFantasyTheme.bgTertiary)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                         .fill(
                             progress.isComplete
                                 ? DarkFantasyTheme.canonicalHpGradient(percentage: 1.0)
@@ -407,6 +425,42 @@ struct BattleResultCardView: View {
         .padding(.top, LayoutConstants.spaceSM)
     }
 
+    // MARK: - Victory Stars
+
+    @ViewBuilder
+    private func victoryStarsView(earned: Int, total: Int) -> some View {
+        HStack(spacing: LayoutConstants.spaceMD) {
+            ForEach(0..<total, id: \.self) { index in
+                let isEarned = index < earned
+                let isRevealed = index < revealedStars
+
+                ZStack {
+                    // Glow behind earned star
+                    if isEarned && isRevealed {
+                        Circle()
+                            .fill(DarkFantasyTheme.goldBright.opacity(0.25))
+                            .frame(width: 48, height: 48)
+                            .blur(radius: 8)
+                    }
+
+                    Image(systemName: isEarned ? "star.fill" : "star")
+                        .font(.system(size: 32, weight: .bold))
+                        .foregroundStyle(
+                            isEarned
+                                ? DarkFantasyTheme.goldBright
+                                : DarkFantasyTheme.borderMedium.opacity(0.4)
+                        )
+                        .shadow(
+                            color: isEarned ? DarkFantasyTheme.gold.opacity(0.6) : .clear,
+                            radius: 8
+                        )
+                        .opacity(isRevealed ? 1 : 0.3)
+                        .offset(y: isRevealed && isEarned ? 0 : 8)
+                }
+            }
+        }
+    }
+
     // MARK: - Loot Section
 
     @ViewBuilder
@@ -424,9 +478,6 @@ struct BattleResultCardView: View {
                 HStack(spacing: LayoutConstants.spaceMD) {
                     ForEach(Array(config.lootItems.enumerated()), id: \.offset) { index, item in
                         inlineLootCard(item, index: index)
-                            .onTapGesture {
-                                config.onLootTap?(index)
-                            }
                     }
                 }
                 .padding(.horizontal, LayoutConstants.cardPadding)
@@ -440,51 +491,79 @@ struct BattleResultCardView: View {
         let isRevealed = revealedLootIndices.contains(index)
         let rarityColor = item.rarityColor
 
-        VStack(spacing: LayoutConstants.spaceXS) {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
+        ZStack {
+            // Card back (shown before flip)
+            if !isRevealed {
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                        .fill(
+                            LinearGradient(
+                                colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 72, height: 72)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                                .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1.5)
+                        )
+                        .overlay(
+                            Text("?")
+                                .font(DarkFantasyTheme.title(size: 28))
+                                .foregroundStyle(DarkFantasyTheme.borderStrong)
+                        )
 
-                if let imageKey = item.imageKey {
-                    ItemImageView(
-                        imageKey: imageKey,
+                    Text("???")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .frame(width: 80)
+
+                    Text(" ")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                }
+                .rotation3DEffect(
+                    .degrees(isRevealed ? -90 : 0),
+                    axis: (x: 0, y: 1, z: 0)
+                )
+            }
+
+            // Card front (shown after flip)
+            if isRevealed {
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    ItemCardView(
+                        rarity: item.rarity,
+                        imageKey: item.imageKey,
                         imageUrl: item.imageUrl,
+                        fallbackIcon: item.fallbackIcon,
                         systemIcon: item.sfIcon,
                         systemIconColor: item.sfColor,
-                        fallbackIcon: item.fallbackIcon
-                    )
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                } else if let sfIcon = item.sfIcon {
-                    Image(systemName: sfIcon)
-                        .font(.system(size: 24))
-                        .foregroundStyle(item.sfColor ?? rarityColor)
-                } else {
-                    Text(item.fallbackIcon)
-                        .font(.system(size: 28))
+                        context: .loot
+                    ) {
+                        config.onLootTap?(index)
+                    }
+                    .frame(width: 72, height: 72)
+
+                    Text(item.name)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .textCase(.uppercase)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 80)
+
+                    Text(item.rarityName)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(rarityColor)
                 }
+                .rotation3DEffect(
+                    .degrees(isRevealed ? 0 : 90),
+                    axis: (x: 0, y: 1, z: 0)
+                )
             }
-            .frame(width: 72, height: 72)
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(rarityColor, lineWidth: 2)
-            )
-            .shadow(color: rarityColor.opacity(0.4), radius: 8)
-
-            Text(item.name)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .textCase(.uppercase)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .multilineTextAlignment(.center)
-                .frame(width: 80)
-
-            Text(item.rarityName)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(rarityColor)
         }
-        .opacity(isRevealed ? 1.0 : 0.0)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isRevealed)
         // Epic+ items get ambient glow pulse after reveal
         .glowPulse(color: rarityColor, intensity: item.rarityTier >= 3 ? 0.5 : 0, isActive: isRevealed && item.rarityTier >= 3)
     }
@@ -581,6 +660,20 @@ struct BattleResultCardView: View {
             }
         }
 
+        // ── 0.5s — Victory stars stagger reveal ──
+        if let starRating = config.starRating, config.isVictory {
+            for i in 0..<starRating {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + Double(i) * 0.25) {
+                    withAnimation(MotionConstants.springBouncy) {
+                        revealedStars = i + 1
+                    }
+                    if i < starRating {
+                        HapticManager.medium()
+                    }
+                }
+            }
+        }
+
         // ── 0.6s — Title glow pulsing begins ──
         DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.reward) {
             withAnimation(MotionConstants.pulse) {
@@ -588,8 +681,11 @@ struct BattleResultCardView: View {
             }
         }
 
-        // ── 0.8s — Rewards appear + counters tick up ──
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        // ── 0.8s+ — Rewards appear + counters tick up ──
+        // (delayed further if stars are showing)
+        let starsDelay: Double = (config.starRating != nil && config.isVictory) ? Double(config.starRating ?? 0) * 0.25 : 0
+        let rewardsTime = 0.8 + starsDelay
+        DispatchQueue.main.asyncAfter(deadline: .now() + rewardsTime) {
             withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showRewards = true
             }
@@ -597,9 +693,10 @@ struct BattleResultCardView: View {
             rollUp(to: config.xpReward ?? 0, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
         }
 
-        // ── 1.4s — Loot section with RARITY-BASED reveal (Audit §7 #11) ──
+        // ── Loot section with RARITY-BASED reveal (Audit §7 #11) ──
+        let lootStartTime = rewardsTime + 0.6
         if !config.lootItems.isEmpty {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + lootStartTime) {
                 withAnimation(.easeOut(duration: MotionConstants.fast)) {
                     showLoot = true
                 }
@@ -640,7 +737,7 @@ struct BattleResultCardView: View {
 
         // ── Buttons appear last ──
         let lootTotalDelay = config.lootItems.reduce(0.0) { acc, item in acc + rarityRevealDelay(tier: item.rarityTier) }
-        let buttonDelay = config.lootItems.isEmpty ? 1.4 : 1.4 + lootTotalDelay + 0.3
+        let buttonDelay = config.lootItems.isEmpty ? rewardsTime + 0.6 : lootStartTime + lootTotalDelay + 0.3
         DispatchQueue.main.asyncAfter(deadline: .now() + buttonDelay) {
             withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showButtons = true
@@ -699,6 +796,9 @@ struct BattleResultConfig {
     let subtitle: String?
     let illustrationImage: String?
 
+    // Victory Stars (0-3, nil = don't show stars)
+    var starRating: Int? = nil
+
     // Rewards
     let goldReward: Int?
     let xpReward: Int?
@@ -746,6 +846,11 @@ struct LootItemDisplay {
     let fallbackIcon: String
     /// 0=common, 1=uncommon, 2=rare, 3=epic, 4=legendary
     var rarityTier: Int = 0
+
+    /// Derived ItemRarity from tier (for unified ItemCardView)
+    var rarity: ItemRarity {
+        ItemRarity.allCases.first { $0.tier == rarityTier } ?? .common
+    }
 }
 
 struct ResultButton {

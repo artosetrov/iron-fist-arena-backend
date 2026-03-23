@@ -1,8 +1,8 @@
 # HEXBOUND — Система дизайна (Design System)
 
-**Версия:** 2.0.0
-**Статус:** Production-ready
-**Дата:** 21 марта 2026
+**Версия:** 2.1.0
+**Статус:** Production-ready (v2.1 — Structural Rebranding)
+**Дата:** 22 марта 2026
 **Платформа:** iOS SwiftUI (Portrait, 1170×2532)
 **Язык:** Русский + технические термины на английском
 
@@ -881,19 +881,95 @@ ZStack(alignment: .leading) {
 ```
 **Использование:** Visual separator between sections, premium indicator
 
-#### OrnamentalDivider
+#### OrnamentalDivider (v2 — DiamondDividerMotif)
 ```swift
-HStack(spacing: .SM) {
-    Text("---")
-        .font(.caption)
-        .foregroundColor(.goldDim)
-    Spacer()
-    Text("---")
-        .font(.caption)
-        .foregroundColor(.goldDim)
-}
+// Uses DiamondDividerMotif from OrnamentalStyles.swift
+// Gradient lines + ◆◇◆ center motif
+OrnamentalDivider()
 ```
-**Использование:** Decorative separator, fantasy aesthetic
+**Использование:** Decorative separator, fantasy aesthetic. Center diamond motif with gradient lines.
+
+#### Ornamental Primitives (`OrnamentalStyles.swift`)
+
+Все орнаментальные элементы UI — чистый SwiftUI (без PNG). Файл: `Hexbound/Hexbound/Theme/OrnamentalStyles.swift`.
+
+**Основные компоненты:**
+- `RadialGlowBackground(baseColor:glowColor:glowIntensity:cornerRadius:)` — замена плоского `bgSecondary` fill
+- `BarFillHighlight(cornerRadius:)` — глянцевый блик на верхней кромке progress bars
+- `CornerBracketOverlay` / `.cornerBrackets()` — L-brackets на углах
+- `CornerDiamondOverlay` / `.cornerDiamonds()` — ромбы на углах
+- `SideDiamondOverlay` / `.sideDiamonds()` — ромбы на боковых центрах
+- `InnerBorderOverlay` / `.innerBorder()` — gradient inner bevel stroke
+- `SurfaceLightingOverlay` / `.surfaceLighting()` — convex surface effect (top bright → bottom dark)
+- `.ornamentalFrame()` — комбо: brackets + diamonds + inner border
+
+**Дополнительные структурные компоненты (v2.1):**
+- `DoubleBorderOverlay` / `.doubleBorder()` — двойная рамка (inner + outer) с gap
+- `ScrollworkDivider` — декоративный разделитель со свитками и ромбами
+- `FiligreeLine` — тонкая филигранная линия с точками
+- `EtchedGroove` — гравированная канавка между секциями
+- `.premiumFrame()` — продвинутая комбо: double border + brackets + diamonds + etched groove
+
+**Press state:** `.brightness(-0.06)` вместо `.opacity(0.85)` — более натуральный "pressed plate" эффект.
+
+#### Standard Application Patterns (MANDATORY for new UI)
+
+**Статус: 100% COMPLETE (v2.1 Structural Rebranding)** — 34+ файлов переделаны. Все панели усилены: surfaceLighting + cornerBrackets + abyss shadow. Модали — полный набор (brackets + diamonds + dual shadow). Завершено 2026-03-22.
+
+**Standard panel pattern (регулярные карточки, детальные секции, игровые здания):**
+```swift
+RadialGlowBackground(
+  baseColor: DarkFantasyTheme.bgSecondary,
+  glowColor: DarkFantasyTheme.bgTertiary,
+  glowIntensity: 0.4,  // усилена с 0.3 → 0.4
+  cornerRadius: LayoutConstants.cardRadius
+)
+.innerBorder(
+  cornerRadius: LayoutConstants.cardRadius - 2,
+  inset: 2,
+  color: DarkFantasyTheme.borderMedium.opacity(0.15)  // или accentColor.opacity(0.08) для акцентов
+)
+.surfaceLighting(cornerRadius: LayoutConstants.cardRadius)  // convex surface effect
+.cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 12, thickness: 1.5)
+.shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)  // depth shadow
+```
+
+**Standard modal pattern (боевые результаты, лут, дневной логин, авторизация, детали предмета):**
+```swift
+RadialGlowBackground(
+  baseColor: DarkFantasyTheme.bgSecondary,
+  glowColor: DarkFantasyTheme.bgTertiary,
+  glowIntensity: 0.4,  // усилена
+  cornerRadius: LayoutConstants.modalRadius
+)
+.innerBorder(
+  cornerRadius: LayoutConstants.modalRadius - 3,
+  inset: 3,
+  color: rarityColor.opacity(0.1)  // или .gold.opacity(0.1) для нейтральных
+)
+.surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+.cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.4), length: 18, thickness: 2.0)
+.cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.3), size: 6)
+// Двойной shadow: accent glow + abyss depth
+.shadow(color: accentColor.opacity(0.3), radius: 8)
+.shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 10, y: 4)
+```
+
+**Circle exception (XP rings, stat rings, progress circles):**
+- Используй `RadialGradient` напрямую, НЕ `RadialGlowBackground` (который для RoundedRectangle)
+- `RadialGlowBackground` работает ТОЛЬКО для панелей с закругленными углами
+- Паттерн: `RadialGradient(gradient: Gradient(...), center: .center, startRadius: 0, endRadius: radius)`
+
+**Dual shadow pattern (для глубины и выделения):**
+- Основное: tint-colored или accent-colored glow shadow
+- Вторичное: тёмный `bgAbyss` shadow для глубины
+- Используется в: ItemCardView, боевые карточки, лут, детальные листы
+- Паттерн: `shadow(color: accentColor.opacity(0.6), radius: 12)` + `shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 8)`
+
+**Исключения (плоское bgSecondary — НАМЕРЕННО):**
+- `HubView` — base слой под RadialGradient небом
+- `ToastOverlayView` — base перед эффектом виньетки
+- `ScreenCatalogView` — инструменты разработчика
 
 ---
 

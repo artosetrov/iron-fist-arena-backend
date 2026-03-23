@@ -52,19 +52,20 @@ private struct OfferCard: View {
                 if offer.hasDiscount {
                     Text("-\(offer.discountPct)%")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                        .foregroundStyle(.textPrimary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .padding(.horizontal, LayoutConstants.spaceXS)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.red.opacity(0.8))
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                .fill(DarkFantasyTheme.danger)
                         )
+                        .shadow(color: DarkFantasyTheme.danger.opacity(0.4), radius: 4)
                 }
 
                 Spacer()
 
                 if let remaining = offer.timeRemaining {
-                    HStack(spacing: 2) {
+                    HStack(spacing: LayoutConstants.space2XS) {
                         Image(systemName: "clock")
                             .font(.system(size: 16))
                         Text(remaining)
@@ -124,8 +125,7 @@ private struct OfferCard: View {
                         if isBuying {
                             ProgressView()
                                 .progressViewStyle(.circular)
-                                .tint(.textPrimary)
-                                .scaleEffect(0.7)
+                                .tint(DarkFantasyTheme.textPrimary)
                         } else {
                             Text("BUY")
                                 .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
@@ -147,26 +147,33 @@ private struct OfferCard: View {
         .padding(LayoutConstants.spaceMD)
         .frame(width: 220, height: 200)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            DarkFantasyTheme.bgSecondary,
-                            DarkFantasyTheme.bgTertiary.opacity(0.6),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(
+            cornerRadius: LayoutConstants.cardRadius - 2,
+            inset: 2,
+            color: (offer.hasDiscount ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold).opacity(0.08)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(
                     offer.hasDiscount
                         ? DarkFantasyTheme.stamina.opacity(0.5)
                         : DarkFantasyTheme.gold.opacity(0.3),
-                    lineWidth: 1
+                    lineWidth: 1.5
                 )
         )
+        .cornerBrackets(
+            color: (offer.hasDiscount ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold).opacity(0.3),
+            length: 12,
+            thickness: 1.5
+        )
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 }

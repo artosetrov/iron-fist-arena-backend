@@ -11,8 +11,8 @@ final class AchievementsViewModel {
     var selectedTab = 0
     var claimingKey: String?
 
-    static let tabs = ["Combat", "Progress", "Collect", "Dungeon", "Economy", "Rank"]
-    static let tabCategories = ["combat", "progression", "collection", "dungeon", "economy", "rank"]
+    static let tabs = ["PvP", "Progress", "Ranking"]
+    static let tabCategories = ["pvp", "progression", "ranking"]
 
     private let cache: GameDataCache
 

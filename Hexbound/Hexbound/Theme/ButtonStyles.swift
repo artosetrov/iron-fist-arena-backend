@@ -10,6 +10,7 @@ struct PrimaryButtonStyle: ButtonStyle {
     private var effectiveEnabled: Bool { isEnabled && envEnabled }
 
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
             .textCase(.uppercase)
@@ -18,17 +19,45 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightLG)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(effectiveEnabled ? AnyShapeStyle(DarkFantasyTheme.goldGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                ZStack {
+                    // Base gold fill
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(effectiveEnabled ? AnyShapeStyle(DarkFantasyTheme.goldGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                    // Radial highlight for convex surface
+                    if effectiveEnabled {
+                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color.white.opacity(0.18), Color.clear],
+                                    center: .init(x: 0.5, y: 0.35),
+                                    startRadius: 0,
+                                    endRadius: 100
+                                )
+                            )
+                        // Surface lighting (top bright → bottom dark)
+                        SurfaceLightingOverlay(cornerRadius: LayoutConstants.buttonRadius)
+                    }
+                }
             )
+            // Inner bevel border (bright top, dark bottom)
+            .innerBorder(
+                cornerRadius: LayoutConstants.buttonRadius - 3,
+                inset: 3,
+                color: effectiveEnabled ? DarkFantasyTheme.goldBright.opacity(0.35) : Color.clear
+            )
+            // Outer ornamental frame
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(effectiveEnabled ? DarkFantasyTheme.borderOrnament : DarkFantasyTheme.borderSubtle, lineWidth: 2)
             )
-            .shadow(color: effectiveEnabled ? DarkFantasyTheme.goldGlow : .clear, radius: 12, y: 4)
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            // Corner brackets + diamonds
+            .cornerBrackets(color: effectiveEnabled ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderSubtle)
+            .cornerDiamonds(color: effectiveEnabled ? DarkFantasyTheme.goldBright : DarkFantasyTheme.bgDisabled)
+            .sideDiamonds(color: effectiveEnabled ? DarkFantasyTheme.goldBright : Color.clear)
+            .shadow(color: effectiveEnabled ? DarkFantasyTheme.goldGlow : .clear, radius: pressed ? 16 : 10, y: pressed ? 2 : 4)
+            .brightness(pressed ? -0.06 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed { SFXManager.shared.play(.uiTapHeavy) }
             }
     }
 }
@@ -38,6 +67,7 @@ struct PrimaryButtonStyle: ButtonStyle {
 
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
             .textCase(.uppercase)
@@ -46,16 +76,36 @@ struct SecondaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightMD)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(configuration.isPressed ? DarkFantasyTheme.gold.opacity(0.1) : .clear)
+                ZStack {
+                    // Subtle radial glow on hover/press
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(
+                            RadialGradient(
+                                colors: [DarkFantasyTheme.gold.opacity(pressed ? 0.08 : 0.03), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 120
+                            )
+                        )
+                }
             )
+            // Outer ornamental border
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(DarkFantasyTheme.gold, lineWidth: 1)
+                    .stroke(DarkFantasyTheme.goldDim, lineWidth: 1.5)
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed { SFXManager.shared.play(.uiTap) }
+            // Inner bevel
+            .innerBorder(
+                cornerRadius: LayoutConstants.buttonRadius - 3,
+                inset: 3,
+                color: DarkFantasyTheme.gold.opacity(0.12)
+            )
+            // Corner brackets + diamonds
+            .cornerBrackets(color: DarkFantasyTheme.gold)
+            .cornerDiamonds(color: DarkFantasyTheme.gold)
+            .brightness(pressed ? -0.05 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed { SFXManager.shared.play(.uiTap) }
             }
     }
 }
@@ -65,6 +115,7 @@ struct SecondaryButtonStyle: ButtonStyle {
 
 struct DangerButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
             .textCase(.uppercase)
@@ -73,12 +124,33 @@ struct DangerButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightMD)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(DarkFantasyTheme.danger)
+                ZStack {
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(Color(hex: 0x8B1A22))
+                    // Radial glow center
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(
+                            RadialGradient(
+                                colors: [DarkFantasyTheme.danger.opacity(0.2), Color.clear],
+                                center: .init(x: 0.5, y: 0.4),
+                                startRadius: 0,
+                                endRadius: 100
+                            )
+                        )
+                    SurfaceLightingOverlay(cornerRadius: LayoutConstants.buttonRadius, topHighlight: 0.06, bottomShadow: 0.2)
+                }
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            .innerBorder(cornerRadius: LayoutConstants.buttonRadius - 3, inset: 3, color: DarkFantasyTheme.danger.opacity(0.2))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(Color(hex: 0x5A0A10), lineWidth: 2)
+            )
+            .cornerBrackets(color: DarkFantasyTheme.danger)
+            .cornerDiamonds(color: Color(hex: 0xFF6B6B))
+            .shadow(color: DarkFantasyTheme.dangerGlow, radius: pressed ? 16 : 8, y: pressed ? 2 : 4)
+            .brightness(pressed ? -0.08 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed { SFXManager.shared.play(.uiTapHeavy) }
             }
     }
 }
@@ -91,6 +163,9 @@ struct GhostButtonStyle: ButtonStyle {
             .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .opacity(configuration.isPressed ? 0.6 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -106,9 +181,14 @@ struct NavGridButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.navButtonHeight)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
             )
+            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
@@ -149,6 +229,9 @@ struct CombatToggleButtonStyle: ButtonStyle {
                     .stroke(isActive ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -162,14 +245,21 @@ struct CombatControlButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightMD)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.buttonRadius
+                )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -189,6 +279,9 @@ struct CombatForfeitButtonStyle: ButtonStyle {
                     .stroke(DarkFantasyTheme.danger.opacity(0.3), lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -204,6 +297,9 @@ struct CloseButtonStyle: ButtonStyle {
                 Circle().fill(DarkFantasyTheme.bgTertiary)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiClose) }
+            }
     }
 }
 
@@ -225,6 +321,9 @@ struct SocialAuthButtonStyle: ButtonStyle {
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -239,14 +338,32 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
             .foregroundStyle(isEnabled ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textDisabled)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(isEnabled ? AnyShapeStyle(DarkFantasyTheme.goldGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                ZStack {
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(isEnabled ? AnyShapeStyle(DarkFantasyTheme.goldGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                    if isEnabled {
+                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color.white.opacity(0.15), Color.clear],
+                                    center: .init(x: 0.5, y: 0.35),
+                                    startRadius: 0,
+                                    endRadius: 60
+                                )
+                            )
+                    }
+                }
             )
+            .innerBorder(cornerRadius: LayoutConstants.buttonRadius - 2, inset: 2, color: isEnabled ? DarkFantasyTheme.goldBright.opacity(0.25) : Color.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 1)
+                    .stroke(isEnabled ? DarkFantasyTheme.borderOrnament : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .shadow(color: isEnabled ? DarkFantasyTheme.goldGlow.opacity(0.5) : .clear, radius: 6)
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -270,6 +387,9 @@ struct DangerCompactButtonStyle: ButtonStyle {
                     .stroke(DarkFantasyTheme.danger.opacity(isEnabled ? 0.5 : 0.2), lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -293,6 +413,9 @@ struct CompactOutlineButtonStyle: ButtonStyle {
                     .stroke(color.opacity(0.5), lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -317,6 +440,9 @@ struct DangerOutlineButtonStyle: ButtonStyle {
                     .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -337,6 +463,9 @@ struct NeutralButtonStyle: ButtonStyle {
                     .fill(isEnabled ? DarkFantasyTheme.bgTertiary : DarkFantasyTheme.bgDisabled)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed && isEnabled { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -363,6 +492,9 @@ struct ColorToggleButtonStyle: ButtonStyle {
             )
             .opacity(isActive ? 1.0 : 0.6)
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -374,6 +506,7 @@ struct FightButtonStyle: ButtonStyle {
     var accentColor: Color = DarkFantasyTheme.arenaRankGold
 
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
             .tracking(2)
@@ -381,11 +514,66 @@ struct FightButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightLG)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
-                    .fill(isEnabled ? AnyShapeStyle(DarkFantasyTheme.fightButtonGradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                ZStack {
+                    // Base ember gradient (deeper red → orange)
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
+                        .fill(isEnabled ? AnyShapeStyle(
+                            LinearGradient(
+                                colors: [Color(hex: 0x8B1A00), Color(hex: 0xD35400), Color(hex: 0xC44200)],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        ) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                    if isEnabled {
+                        // Radial ember glow in center
+                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color(hex: 0xFF6600).opacity(0.25), Color.clear],
+                                    center: .init(x: 0.5, y: 0.4),
+                                    startRadius: 0,
+                                    endRadius: 100
+                                )
+                            )
+                        SurfaceLightingOverlay(cornerRadius: LayoutConstants.buttonRadiusLG, topHighlight: 0.08, bottomShadow: 0.25)
+                    }
+                }
             )
-            .shadow(color: isEnabled ? accentColor.opacity(0.4) : .clear, radius: 15, y: 6)
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            // Inner bevel
+            .innerBorder(
+                cornerRadius: LayoutConstants.buttonRadiusLG - 3,
+                inset: 3,
+                color: isEnabled ? Color(hex: 0xFF6600).opacity(0.25) : Color.clear
+            )
+            // Outer dark iron frame
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
+                    .stroke(isEnabled ? Color(hex: 0x4A1500) : DarkFantasyTheme.borderSubtle, lineWidth: 2)
+            )
+            // Ember highlight line along top
+            .overlay(alignment: .top) {
+                if isEnabled {
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, Color(hex: 0xFF7832).opacity(0.5), .clear],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 1)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 4)
+                }
+            }
+            // Corner brackets + diamonds
+            .cornerBrackets(color: isEnabled ? Color(hex: 0xFF6600) : DarkFantasyTheme.borderSubtle)
+            .cornerDiamonds(color: isEnabled ? Color(hex: 0xFF8833) : DarkFantasyTheme.bgDisabled)
+            .sideDiamonds(color: isEnabled ? Color(hex: 0xFF8833) : Color.clear)
+            .shadow(color: isEnabled ? accentColor.opacity(pressed ? 0.55 : 0.35) : .clear, radius: pressed ? 20 : 15, y: pressed ? 3 : 6)
+            .shadow(color: isEnabled ? Color(hex: 0xFF5000).opacity(pressed ? 0.3 : 0.15) : .clear, radius: 8)
+            .brightness(pressed ? -0.08 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -399,6 +587,9 @@ struct ScalePressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTap) }
+            }
     }
 }
 
@@ -505,6 +696,9 @@ struct GetMoreButtonStyle: ButtonStyle {
                     .stroke(DarkFantasyTheme.gold, lineWidth: 2)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 
@@ -520,27 +714,55 @@ struct PremiumButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     private let gradient = LinearGradient(
-        colors: [DarkFantasyTheme.purple, DarkFantasyTheme.premiumPink],
+        colors: [Color(hex: 0x7B2D8E), DarkFantasyTheme.purple, Color(hex: 0xC77DDF)],
         startPoint: .leading,
         endPoint: .trailing
     )
 
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
             .textCase(.uppercase)
             .tracking(2)
             .foregroundStyle(.white)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(isEnabled ? AnyShapeStyle(gradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                ZStack {
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(isEnabled ? AnyShapeStyle(gradient) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                    if isEnabled {
+                        // Radial arcane glow
+                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                            .fill(
+                                RadialGradient(
+                                    colors: [DarkFantasyTheme.premiumPink.opacity(0.15), Color.clear],
+                                    center: .init(x: 0.5, y: 0.35),
+                                    startRadius: 0,
+                                    endRadius: 100
+                                )
+                            )
+                        SurfaceLightingOverlay(cornerRadius: LayoutConstants.buttonRadius, topHighlight: 0.08, bottomShadow: 0.15)
+                    }
+                }
+            )
+            .innerBorder(
+                cornerRadius: LayoutConstants.buttonRadius - 3,
+                inset: 3,
+                color: isEnabled ? DarkFantasyTheme.premiumPink.opacity(0.2) : Color.clear
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(DarkFantasyTheme.premiumPink.opacity(0.6), lineWidth: 2)
+                    .stroke(isEnabled ? Color(hex: 0x6C3483) : DarkFantasyTheme.borderSubtle, lineWidth: 2)
             )
-            .shadow(color: DarkFantasyTheme.premiumPink.opacity(0.3), radius: 12, y: 4)
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .cornerBrackets(color: isEnabled ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.borderSubtle)
+            .cornerDiamonds(color: isEnabled ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.bgDisabled)
+            .sideDiamonds(color: isEnabled ? DarkFantasyTheme.premiumPink : Color.clear)
+            .shadow(color: isEnabled ? DarkFantasyTheme.purple.opacity(pressed ? 0.45 : 0.3) : .clear, radius: pressed ? 16 : 12, y: pressed ? 2 : 4)
+            .shadow(color: isEnabled ? DarkFantasyTheme.premiumPink.opacity(pressed ? 0.2 : 0.1) : .clear, radius: 8)
+            .brightness(pressed ? -0.05 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
+            }
     }
 }
 

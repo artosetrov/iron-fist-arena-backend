@@ -86,6 +86,7 @@ For every interactive element, verify these states exist or are handled:
 
 - **Every Button needs `.accessibilityLabel()`.** Count buttons without labels — report the number. Icon-only buttons (arrows, close, toggles) are critical.
 - **No emoji as functional icons.** Zone selectors, navigation arrows, status badges must use asset images. Emoji in decorative text is OK.
+- **Emoji in reward pills / badges must be replaced with assets.** Pattern: add `assetIcon` computed property to the model, create a helper view with asset-first fallback to emoji. Examples: Daily Login pill assets, Battle Pass reward icons. This is an ongoing consolidation — check any new reward/status screens for unreplaced emoji.
 
 ### Existing Components Check
 

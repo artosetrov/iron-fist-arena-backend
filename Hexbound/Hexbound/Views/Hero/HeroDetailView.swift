@@ -23,6 +23,7 @@ struct HeroDetailView: View {
     @State private var characterVM: CharacterViewModel?
     @State private var inventoryVM: InventoryViewModel?
     @State private var showRespecConfirm = false
+    @State private var showSaveConfirm = false
     @State private var statsBadgePulse = false
     @State private var tooltipStat: StatType?
 
@@ -52,6 +53,11 @@ struct HeroDetailView: View {
                 }
             } else {
                 ProgressView().tint(DarkFantasyTheme.gold)
+            }
+
+            // Sticky Save Bar (stats tab)
+            if selectedTab == .stats, let vm = characterVM, vm.hasChanges {
+                statsStickyBar(vm: vm)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -118,35 +124,64 @@ struct HeroDetailView: View {
 
     @ViewBuilder
     private func tabSelector() -> some View {
+        let statPoints = appState.currentCharacter?.statPoints ?? 0
+
         HStack(spacing: 0) {
             ForEach(HeroTab.allCases, id: \.rawValue) { tab in
                 Button {
                     selectedTab = tab
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
                         Text(tab.label)
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                             .foregroundStyle(selectedTab == tab ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary)
 
-                        // Stat points available — no dot, full tab gets glow
-                        EmptyView()
+                        // Stat points badge on STATUS tab (gold capsule, matches avatar badge)
+                        if tab == .stats && statPoints > 0 {
+                            Text("+\(statPoints)")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                                .foregroundStyle(DarkFantasyTheme.textOnGold)
+                                .padding(.horizontal, LayoutConstants.spaceXS)
+                                .padding(.vertical, 2)
+                                .background(
+                                    Capsule()
+                                        .fill(DarkFantasyTheme.goldBright)
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5)
+                                )
+                                .shadow(
+                                    color: DarkFantasyTheme.goldBright.opacity(statsBadgePulse ? 0.8 : 0.2),
+                                    radius: statsBadgePulse ? 8 : 3
+                                )
+                                .accessibilityLabel("\(statPoints) stat points available")
+                        }
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, LayoutConstants.spaceSM + 4)
                     .background(
                         selectedTab == tab
                             ? DarkFantasyTheme.bgSecondary
-                            : Color.clear
+                            : tab == .stats && hasStatPoints && selectedTab != .stats
+                                ? DarkFantasyTheme.purple.opacity(0.06)
+                                : Color.clear
                     )
                     .overlay(alignment: .bottom) {
                         Rectangle()
-                            .fill(selectedTab == tab ? DarkFantasyTheme.gold : Color.clear)
+                            .fill(
+                                selectedTab == tab
+                                    ? DarkFantasyTheme.gold
+                                    : tab == .stats && hasStatPoints && selectedTab != .stats
+                                        ? DarkFantasyTheme.purple.opacity(0.5)
+                                        : Color.clear
+                            )
                             .frame(height: 3)
                     }
-                    // Shimmer on STATUS tab when stat points available
+                    // Brighter shimmer on STATUS tab when stat points available
                     .shimmer(
-                        color: DarkFantasyTheme.goldBright,
-                        duration: 2.0,
+                        color: DarkFantasyTheme.purple,
+                        duration: 1.8,
                         isActive: tab == .stats && hasStatPoints && selectedTab != .stats
                     )
                     .contentShape(Rectangle())
@@ -156,9 +191,25 @@ struct HeroDetailView: View {
         }
         .background(DarkFantasyTheme.bgPrimary)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(DarkFantasyTheme.borderSubtle).frame(height: 1)
+            EtchedGroove()
         }
         .animation(.none, value: selectedTab)
+        .onAppear {
+            if hasStatPoints {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    statsBadgePulse = true
+                }
+            }
+        }
+        .onChange(of: hasStatPoints) { _, newVal in
+            if newVal && !statsBadgePulse {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    statsBadgePulse = true
+                }
+            } else if !newVal {
+                statsBadgePulse = false
+            }
+        }
     }
 
     // MARK: - Tab Content Router
@@ -167,369 +218,55 @@ struct HeroDetailView: View {
     private func tabContent(_ char: Character) -> some View {
         let equippedItems = inventoryVM?.items.filter { $0.isEquipped == true } ?? []
 
-        ScrollView {
-            VStack(spacing: LayoutConstants.spaceMD) {
-                // ── Hero Integrated Card (equipment + portrait + bars + actions) ──
-                HeroIntegratedCard(
-                    character: char,
-                    equippedItems: equippedItems,
-                    onTapPortrait: { appState.mainPath.append(AppRoute.appearanceEditor) },
-                    onTapSlot: { item in inventoryVM?.selectItem(item) },
-                    onEditStance: { appState.mainPath.append(AppRoute.stanceSelector) },
-                    onRepairAll: { let _ = Task { await repairAllBrokenItems() } },
-                    onAllocateStats: { appState.mainPath.append(AppRoute.character) },
-                    onUseHealthPotion: { let _ = Task { await useHealthPotion() } },
-                    onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
-                )
+        VStack(spacing: 0) {
+            // ── Sticky tab selector (pinned at top, does NOT scroll) ──
+            tabSelector()
 
-                // ── Low Resources Widget ──
-                lowResourcesWidget(char)
+            ScrollView {
+                VStack(spacing: LayoutConstants.spaceMD) {
+                    // ── Tab-specific content ──
+                    switch selectedTab {
+                    case .equipment:
+                        // Hero card only on Inventory tab
+                        HeroIntegratedCard(
+                            character: char,
+                            equippedItems: equippedItems,
+                            onTapPortrait: { appState.mainPath.append(AppRoute.appearanceEditor) },
+                            onTapSlot: { item in inventoryVM?.selectItem(item) },
+                            onRepairAll: { let _ = Task { await repairAllBrokenItems() } },
+                            onUseHealthPotion: { let _ = Task { await useHealthPotion() } },
+                            onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                        )
 
-                GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
-
-                // ── Tab selector (scrolls with content) ──
-                tabSelector()
-
-                // Active quest banner (under tabs)
-                ActiveQuestBanner(questTypes: ["item_upgrade", "consumable_use"])
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-
-                // ── Tab-specific content ──
-                switch selectedTab {
-                case .equipment:
-                    if let vm = inventoryVM {
-                        inventoryInlineContent(vm)
-                    }
-                case .stats:
-                    if let vm = characterVM {
-                        statsTabContent(char, vm: vm)
-                    }
-                }
-            }
-            .padding(.top, LayoutConstants.spaceMD)
-            .padding(.bottom, LayoutConstants.spaceLG)
-        }
-        // safeAreaInset removed — HeroIntegratedCard is inside scroll
-        .animation(.none, value: selectedTab)
-    }
-
-    // ========================================
-    // MARK: - EQUIPMENT SECTION (always visible above tabs)
-    // ========================================
-
-    @ViewBuilder
-    private func equipmentSection(_ char: Character, equippedItems: [Item]) -> some View {
-        GeometryReader { geo in
-            // cellWidth = same as inventory/shop cells
-            let cw = max((geo.size.width - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols), 0)
-            let portraitSize = 2 * cw + LayoutConstants.inventoryGap
-            let colHeight = 3 * cw + 2 * LayoutConstants.inventoryGap
-
-            VStack(spacing: LayoutConstants.spaceMD) {
-                // RPG layout: left slots | portrait + bars | right slots
-                HStack(alignment: .top, spacing: LayoutConstants.inventoryGap) {
-                    // Left column: Helmet, Chest, Legs
-                    VStack(spacing: LayoutConstants.inventoryGap) {
-                        equipSlot("helmet", from: equippedItems, size: cw)
-                        equipSlot("chest", from: equippedItems, size: cw)
-                        equipSlot("legs", from: equippedItems, size: cw)
-                    }
-
-                    // Center: portrait + HP / XP bars
-                    VStack(spacing: LayoutConstants.spaceXS) {
-                        heroPortrait(char)
-                            .frame(width: portraitSize, height: portraitSize)
-
-                        VStack(spacing: 5) {
-                            HStack(spacing: 6) {
-                                Text("HP")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                    .frame(width: 20, alignment: .leading)
-
-                                HPBarView(currentHp: char.currentHp, maxHp: char.maxHp, height: 10)
-
-                                Text("\(char.currentHp)/\(char.maxHp)")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                    .frame(width: 58, alignment: .trailing)
-                            }
-                            HubStatBar(
-                                label: "XP",
-                                valueText: "\(Int(char.xpPercentage * 100))%",
-                                percentage: char.xpPercentage,
-                                color: DarkFantasyTheme.cyan
+                        // ── Stance widget (separate from equipment card) ──
+                        if let stance = char.combatStance {
+                            StanceDisplayView(
+                                stance: stance,
+                                isInteractive: true,
+                                onTap: { appState.mainPath.append(AppRoute.stanceSelector) }
                             )
+                            .padding(.horizontal, LayoutConstants.screenPadding)
                         }
-                        .frame(width: portraitSize)
-                    }
 
-                    // Right column: Amulet, Gloves, Boots
-                    VStack(spacing: LayoutConstants.inventoryGap) {
-                        equipSlot("amulet", from: equippedItems, size: cw)
-                        equipSlot("gloves", from: equippedItems, size: cw)
-                        equipSlot("boots", from: equippedItems, size: cw)
-                    }
-                }
-                .frame(height: colHeight)
-                .padding(.horizontal, LayoutConstants.screenPadding)
+                        lowResourcesWidget(char)
 
-                // Bottom row 1: Belt, Weapon, Relic, Necklace
-                HStack(spacing: LayoutConstants.inventoryGap) {
-                    equipSlot("belt", from: equippedItems, size: cw)
-                    equipSlot("weapon", from: equippedItems, size: cw)
-                    equipSlot("relic", from: equippedItems, size: cw)
-                    equipSlot("necklace", from: equippedItems, size: cw)
-                }
-                .padding(.horizontal, LayoutConstants.screenPadding)
+                        ActiveQuestBanner(questTypes: ["item_upgrade", "consumable_use"])
+                            .padding(.horizontal, LayoutConstants.screenPadding)
 
-                // Bottom row 2: Ring, (spacer), (spacer), Ring
-                HStack(spacing: LayoutConstants.inventoryGap) {
-                    equipSlot("ring", from: equippedItems, size: cw, index: 0)
-                    Color.clear.frame(width: cw, height: cw)
-                    Color.clear.frame(width: cw, height: cw)
-                    equipSlot("ring", from: equippedItems, size: cw, index: 1)
-                }
-                .padding(.horizontal, LayoutConstants.screenPadding)
-            }
-        }
-        .frame(height: {
-            let screenW = UIScreen.main.bounds.width
-            let cw = max((screenW - 2 * LayoutConstants.screenPadding - CGFloat(LayoutConstants.inventoryCols - 1) * LayoutConstants.inventoryGap) / CGFloat(LayoutConstants.inventoryCols), 0)
-            return 3 * cw + 2 * LayoutConstants.inventoryGap   // col height
-                + LayoutConstants.spaceMD                       // VStack gap
-                + cw                                            // bottom row 1
-                + LayoutConstants.spaceMD                       // gap
-                + cw                                            // bottom row 2 (rings)
-        }())
-    }
-
-    // MARK: - Hero Portrait
-
-    @ViewBuilder
-    private func heroPortrait(_ char: Character) -> some View {
-        GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
-                            startPoint: .top, endPoint: .bottom
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                            .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
-                    )
-
-                AvatarImageView(
-                    skinKey: char.avatar,
-                    characterClass: char.characterClass,
-                    size: side
-                )
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 4))
-
-                // Name overlay at bottom
-                VStack {
-                    Spacer()
-                    Text(char.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .padding(.vertical, 4)
-                        .frame(maxWidth: .infinity)
-                        .background(.bgAbyss.opacity(0.45))
-                }
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
-
-                // Badges (top corners)
-                VStack {
-                    HStack {
-                        // Class icon (top-left)
-                        Image(char.characterClass.iconAsset)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 26, height: 26)
-                            .background(Circle().fill(DarkFantasyTheme.bgTertiary))
-                            .clipShape(Circle())
-
-                        Spacer()
-
-                        // Level badge (top-right)
-                        Text("\(char.level)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption).bold())
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .frame(width: 26, height: 26)
-                            .background(Circle().fill(DarkFantasyTheme.gold))
-                    }
-                    Spacer()
-                }
-                .padding(LayoutConstants.spaceSM)
-            }
-        }
-        .aspectRatio(1, contentMode: .fit)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            appState.mainPath.append(AppRoute.appearanceEditor)
-        }
-    }
-
-    // MARK: - Equipment Slot (Compact)
-
-    private func findEquippedItem(slot: String, from items: [Item], index: Int) -> Item? {
-        switch slot {
-        case "ring":
-            let rings = items.filter { $0.equippedSlot == "ring" || ($0.equippedSlot == nil && $0.itemType == .ring) }
-            return index < rings.count ? rings[index] : nil
-        case "ring2":
-            return items.first { $0.equippedSlot == "ring2" }
-        case "belt":
-            return items.first { $0.equippedSlot == "belt" || $0.itemType == .belt }
-        case "relic":
-            return items.first { $0.equippedSlot == "relic" || $0.itemType == .relic }
-        case "necklace":
-            return items.first { $0.equippedSlot == "necklace" || $0.itemType == .necklace }
-        default:
-            return items.first { $0.equippedSlot == slot || $0.itemType.rawValue == slot }
-        }
-    }
-
-    @ViewBuilder
-    private func equipSlot(_ slot: String, from items: [Item], size: CGFloat, index: Int = 0) -> some View {
-        let item = findEquippedItem(slot: slot, from: items, index: index)
-        let assetName = EquipmentViewModel.slotAssets[slot]
-        let _ = EquipmentViewModel.slotLabels[slot] ?? slot.capitalized
-
-        let rarityColor = item.map { DarkFantasyTheme.rarityColor(for: $0.rarity) } ?? DarkFantasyTheme.borderSubtle
-
-        Button {
-            if let item { inventoryVM?.selectItem(item) }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(item != nil ? rarityColor.opacity(0.15) : DarkFantasyTheme.bgTertiary.opacity(0.4))
-
-                if let item {
-                    if let key = item.imageKey, UIImage(named: key) != nil {
-                        Image(key)
-                            .resizable().scaledToFit()
-                            .frame(width: size * 0.65, height: size * 0.65)
-                    } else if let imageUrl = item.imageUrl, let url = URL(string: imageUrl) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let img):
-                                img.resizable().scaledToFit()
-                                    .frame(width: size * 0.65, height: size * 0.65)
-                            default:
-                                itemFallbackIcon(item: item, assetName: assetName, size: size)
-                            }
+                        if let vm = inventoryVM {
+                            inventoryInlineContent(vm)
                         }
-                    } else {
-                        itemFallbackIcon(item: item, assetName: assetName, size: size)
-                    }
-                } else if let assetName {
-                    Image(assetName)
-                        .renderingMode(.template)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: size * 0.5, height: size * 0.5)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary.opacity(0.3))
-                }
-            }
-            .overlay(alignment: .bottom) {
-                // Upgrade dots
-                if let item, let level = item.upgradeLevel, level > 0 {
-                    HStack(spacing: 2) {
-                        ForEach(0..<level, id: \.self) { _ in
-                            Circle()
-                                .fill(DarkFantasyTheme.goldBright)
-                                .frame(width: 5, height: 5)
+
+                    case .stats:
+                        if let vm = characterVM {
+                            statsTabContent(char, vm: vm)
                         }
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 3)
-                    .frame(maxWidth: .infinity)
-                    .background(.bgAbyss.opacity(0.45))
-                    .clipShape(.rect(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: LayoutConstants.cardRadius,
-                        bottomTrailingRadius: LayoutConstants.cardRadius,
-                        topTrailingRadius: 0
-                    ))
                 }
+                .padding(.top, LayoutConstants.spaceMD)
+                .padding(.bottom, LayoutConstants.spaceLG)
             }
-            .frame(width: size, height: size)
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(
-                        item != nil ? rarityColor.opacity(0.6) : DarkFantasyTheme.borderSubtle,
-                        lineWidth: item != nil ? 2 : 1
-                    )
-            )
-            // Durability ring contour
-            .overlay {
-                if let item,
-                   let maxDur = item.maxDurability, maxDur > 0 {
-                    let fraction = Double(item.durability ?? 0) / Double(maxDur)
-                    if fraction < 1.0 {
-                        DurabilityRingOverlay(
-                            fraction: fraction,
-                            cornerRadius: LayoutConstants.cardRadius,
-                            lineWidth: 2
-                        )
-                    }
-                }
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.scalePress(0.95))
-        .disabled(item == nil)
-    }
-
-    @ViewBuilder
-    private func itemFallbackIcon(item: Item, assetName: String?, size: CGFloat) -> some View {
-        let asset = assetName ?? item.itemType.iconAsset
-        if let asset {
-            Image(asset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size * 0.55, height: size * 0.55)
-        } else {
-            Text(item.itemType.icon)
-                .font(.system(size: 22))
-        }
-    }
-
-
-    // MARK: - Resource Bar
-
-    @ViewBuilder
-    private func resourceBar(_ label: String, current: Int, max: Int, color: Color) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                .foregroundStyle(color)
-                .frame(width: 26, alignment: .leading)
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(DarkFantasyTheme.bgPrimary)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color)
-                        .frame(width: max > 0 ? geo.size.width * CGFloat(current) / CGFloat(max) : 0)
-                }
-            }
-            .frame(height: 8)
-
-            Text("\(current)/\(max)")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(width: 65, alignment: .trailing)
+            .animation(.none, value: selectedTab)
         }
     }
 
@@ -580,84 +317,37 @@ struct HeroDetailView: View {
     @ViewBuilder
     private func statsTabContent(_ char: Character, vm: CharacterViewModel) -> some View {
         VStack(spacing: LayoutConstants.sectionGap) {
-            // Base Stats (8 attributes grid)
+            // Stat Points Banner (unified component)
             VStack(spacing: LayoutConstants.spaceSM) {
-                // Stat Points Banner
                 if vm.availablePoints > 0 {
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        Text("SP: \(vm.availablePoints)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel).bold())
-                            .foregroundStyle(DarkFantasyTheme.bgPrimary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(DarkFantasyTheme.textSuccess)
-                            .clipShape(Capsule())
-
-                        Text("Free points")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-                        Spacer()
-                    }
-                }
-
-                LazyVGrid(
-                    columns: [GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-                              GridItem(.flexible(), spacing: LayoutConstants.spaceSM)],
-                    spacing: LayoutConstants.spaceSM
-                ) {
-                    ForEach(Array(StatType.allCases.enumerated()), id: \.element) { index, stat in
-                        statCell(stat, vm: vm)
-                            .staggeredAppear(index: index)
-                    }
-                }
-
-                // Save / Reset (visible when stat changes pending)
-                if vm.hasChanges {
-                    VStack(spacing: LayoutConstants.spaceSM) {
-                        Button {
-                            Task { await vm.saveStats() }
-                        } label: {
-                            if vm.isSaving {
-                                ProgressView().tint(DarkFantasyTheme.textOnGold)
-                            } else {
-                                Text("SAVE STATS")
-                            }
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        StatPointsBadge(points: vm.availablePoints, style: .banner)
+                        if vm.hasChanges {
+                            Text("(\(vm.pointsSpent) spent)")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
-                        .buttonStyle(.primary)
-                        .disabled(vm.isSaving)
+                    }
+                }
 
-                        Button("RESET") { vm.resetChanges() }
-                            .buttonStyle(.ghost)
+                // Grouped Stats
+                ForEach(StatGroup.allCases, id: \.self) { group in
+                    VStack(spacing: LayoutConstants.spaceSM) {
+                        // Section header with ornamental lines
+                        statGroupHeader(group.rawValue)
+
+                        ForEach(Array(group.stats.enumerated()), id: \.element) { index, stat in
+                            statCell(stat, vm: vm, char: char)
+                                .staggeredAppear(index: index)
+                        }
                     }
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
+            // Extra bottom padding when sticky bar is visible
+            .padding(.bottom, vm.hasChanges ? 80 : 0)
 
             GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
-
-            // Health
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                Text("HEALTH")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack {
-                    Text("HP")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.hpBlood)
-                    Spacer()
-                    Text("\(char.currentHp) / \(char.maxHp)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                }
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .background(DarkFantasyTheme.bgSecondary.opacity(0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .padding(.horizontal, LayoutConstants.screenPadding)
 
             // Derived Stats
             VStack(spacing: LayoutConstants.spaceSM) {
@@ -671,10 +361,8 @@ struct HeroDetailView: View {
                     spacing: LayoutConstants.spaceSM
                 ) {
                     derivedRow("Atk Power", value: "\(char.attackPower) \(char.damageTypeName)", color: DarkFantasyTheme.statSTR)
-                    derivedRow("Max HP", value: "\(char.maxHp)", color: DarkFantasyTheme.hpBlood)
                     derivedRow("Armor", value: "\(char.armor ?? 0)", color: DarkFantasyTheme.statEND)
                     derivedRow("Magic Resist", value: "\(char.magicResist ?? 0)", color: DarkFantasyTheme.statWIS)
-                    derivedRow("Max Stamina", value: "\(char.maxStamina)", color: DarkFantasyTheme.stamina)
                     derivedRow("Crit Chance", value: String(format: "%.1f%%", char.critChance), color: DarkFantasyTheme.statLUK)
                     derivedRow("Dodge", value: String(format: "%.1f%%", char.dodgeChance), color: DarkFantasyTheme.statAGI)
                 }
@@ -694,28 +382,26 @@ struct HeroDetailView: View {
             // PvP
             pvpSection(char)
 
-            // Resources
-            resourcesSection(char)
-
         }
     }
 
-    // MARK: - Stat Cell
+    // MARK: - Stat Cell (3-row layout)
 
     @ViewBuilder
-    private func statCell(_ stat: StatType, vm: CharacterViewModel) -> some View {
+    private func statCell(_ stat: StatType, vm: CharacterViewModel, char: Character) -> some View {
         let value = vm.currentValue(for: stat)
         let delta = vm.pendingChanges[stat] ?? 0
         let color = DarkFantasyTheme.statColor(for: stat.rawValue)
         let hasPoints = (appState.currentCharacter?.statPoints ?? 0) > 0
+        let isClassPrimary = StatType.primaryStats(for: char.characterClass).contains(stat)
 
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-            // Row 1: Icon + Stat name + value + buttons
-            HStack(spacing: 6) {
+            // ── Row 1: Icon + Name + Info + Spacer + [-] Value [+] ──
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(stat.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 18, height: 18)
+                    .frame(width: 22, height: 22)
 
                 Text(stat.fullName)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -723,142 +409,246 @@ struct HeroDetailView: View {
                     .lineLimit(1)
 
                 Button {
-                    tooltipStat = tooltipStat == stat ? nil : stat
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        tooltipStat = tooltipStat == stat ? nil : stat
+                    }
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 11)) // SF Symbol icon — keep as is
+                        .font(.system(size: 14)) // SF Symbol — enlarged from 11
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .buttonStyle(.plain)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+                .accessibilityLabel("\(stat.fullName) info")
+
+                // Class recommendation badge
+                if isClassPrimary {
+                    Text(char.characterClass.displayName.uppercased())
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
+                }
 
                 Spacer(minLength: 4)
 
+                // Minus button (only when pending delta > 0)
                 if delta > 0 {
                     Button { HapticManager.light(); vm.decrement(stat) } label: {
                         Image(systemName: "minus")
-                            .font(.system(size: 11, weight: .bold)) // SF Symbol icon
+                            .font(.system(size: 13, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.danger)
-                            .frame(width: 22, height: 22)
+                            .frame(width: 32, height: 32)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
-                    .buttonStyle(.scalePress(0.85))
+                    .buttonStyle(.scalePress)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
+                    .accessibilityLabel("Decrease \(stat.fullName)")
                 }
 
+                // Value display
                 NumberTickUpText(
                     value: value,
                     color: delta > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textPrimary,
                     font: DarkFantasyTheme.section(size: LayoutConstants.textCard)
                 )
-                .frame(minWidth: 24, alignment: .trailing)
+                .frame(minWidth: 28, alignment: .trailing)
 
+                // Plus button
                 if hasPoints {
                     Button { HapticManager.selection(); vm.increment(stat) } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .bold)) // SF Symbol icon
-                            .foregroundStyle(.textPrimary)
-                            .frame(width: 22, height: 22)
+                            .font(.system(size: 13, weight: .bold)) // SF Symbol
+                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                            .frame(width: 32, height: 32)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
-                    .buttonStyle(.scalePress(0.85))
+                    .buttonStyle(.scalePress)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
                     .disabled(vm.availablePoints <= 0)
+                    .accessibilityLabel("Increase \(stat.fullName)")
                 }
             }
 
-            // Row 2: Primary derived stat (updates live)
-            Text(vm.primaryDerivedLabel(for: stat))
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
+            // ── Row 2: Derived stat + benefit pills (moved here from Row 1) ──
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Text(vm.primaryDerivedLabel(for: stat))
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
 
-            // Row 2b: Stat description tooltip
+                if hasPoints {
+                    HStack(spacing: 4) {
+                        ForEach(vm.perPointBenefits(for: stat), id: \.self) { hint in
+                            Text(hint)
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .foregroundStyle(DarkFantasyTheme.textSuccess)
+                                .padding(.horizontal, LayoutConstants.spaceXS)
+                                .padding(.vertical, LayoutConstants.space2XS)
+                                .background(DarkFantasyTheme.success.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+            }
+            .padding(.leading, 30) // Align under name (past icon)
+
+            // ── Row 3: Tooltip (conditional, on info tap) ──
             if tooltipStat == stat {
                 Text(stat.description)
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .padding(LayoutConstants.spaceXS)
+                    .padding(LayoutConstants.spaceSM)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(DarkFantasyTheme.bgTertiary)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
-            }
-
-            // Row 3: Per-point benefit hints
-            if hasPoints {
-                HStack(spacing: 4) {
-                    ForEach(vm.perPointBenefits(for: stat), id: \.self) { hint in
-                        Text(hint)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                            .foregroundStyle(DarkFantasyTheme.textSuccess)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(DarkFantasyTheme.success.opacity(0.1))
-                            .clipShape(Capsule())
-                    }
-                }
+                    .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: color.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(color.opacity(0.2), lineWidth: 0.5)
+                    )
+                    .transition(.opacity)
             }
         }
         .padding(LayoutConstants.spaceSM + 2)
-        .background(DarkFantasyTheme.bgSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: delta > 0 ? color.opacity(0.06) : DarkFantasyTheme.bgTertiary,
+                glowIntensity: delta > 0 ? 0.4 : 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 2,
+            inset: 2,
+            color: delta > 0 ? color.opacity(0.15) : DarkFantasyTheme.borderMedium.opacity(0.15)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(delta > 0 ? color.opacity(0.5) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+        .cornerBrackets(color: delta > 0 ? color.opacity(0.4) : DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+    }
+
+    // MARK: - Sticky Save Bar
+
+    @ViewBuilder
+    private func statsStickyBar(vm: CharacterViewModel) -> some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            VStack(spacing: 0) {
+                // Top shadow edge
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.clear, DarkFantasyTheme.bgPrimary.opacity(0.95)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .frame(height: 20)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Button("RESET") { vm.resetChanges() }
+                        .buttonStyle(.ghost)
+                        .frame(maxWidth: .infinity)
+
+                    Button {
+                        showSaveConfirm = true
+                    } label: {
+                        if vm.isSaving {
+                            ProgressView().tint(DarkFantasyTheme.textOnGold)
+                        } else {
+                            Text("SAVE STATS")
+                        }
+                    }
+                    .buttonStyle(.primary)
+                    .disabled(vm.isSaving)
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.top, LayoutConstants.spaceSM)
+                .padding(.bottom, LayoutConstants.spaceMD)
+                .background(DarkFantasyTheme.bgPrimary.opacity(0.95))
+                .overlay(alignment: .top) {
+                    FiligreeLine(color: DarkFantasyTheme.gold.opacity(0.3), notchColor: DarkFantasyTheme.gold.opacity(0.5), notchCount: 5, notchSize: 3)
+                }
+            }
+        }
+        .ignoresSafeArea(.container, edges: .bottom)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .animation(.easeOut(duration: 0.25), value: vm.hasChanges)
+        .confirmationDialog(
+            "Confirm Allocation",
+            isPresented: $showSaveConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Save Stats") {
+                Task { await vm.saveStats() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            let summary = vm.pendingChanges
+                .filter { $0.value > 0 }
+                .sorted(by: { $0.key.rawValue < $1.key.rawValue })
+                .map { "\($0.key.fullName) +\($0.value)" }
+                .joined(separator: ", ")
+            Text("\(summary)\n\nRespec costs 50 gems. Make sure this is the build you want.")
+        }
+    }
+
+    // MARK: - Stat Group Header
+
+    @ViewBuilder
+    private func statGroupHeader(_ label: String) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Left line with diamond end
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, DarkFantasyTheme.goldDim.opacity(0.4)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+                Rectangle()
+                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
+                    .frame(width: 4, height: 4)
+                    .rotationEffect(.degrees(45))
+            }
+
+            Text(label)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
+                .lineLimit(1)
+                .fixedSize()
+
+            // Right line with diamond end
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
+                    .frame(width: 4, height: 4)
+                    .rotationEffect(.degrees(45))
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [DarkFantasyTheme.goldDim.opacity(0.4), .clear],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+            }
+        }
+        .padding(.top, LayoutConstants.spaceXS)
     }
 
     // MARK: - Derived Stat Row
-
-    // MARK: - Stance Summary Card
-
-    @ViewBuilder
-    private func stanceSummaryCard(_ char: Character) -> some View {
-        let stance = char.combatStance ?? .default
-
-        Button {
-            appState.mainPath.append(AppRoute.stanceSelector)
-        } label: {
-            HStack(spacing: LayoutConstants.spaceLG) {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(StanceSelectorViewModel.zoneAsset(for: stance.attack))
-                            .resizable().scaledToFit().frame(width: 18, height: 18)
-                        Text("ATTACK")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-                    Text(stance.attack.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.attack))
-                }
-
-                Rectangle()
-                    .fill(DarkFantasyTheme.borderSubtle)
-                    .frame(width: 1, height: 40)
-
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(StanceSelectorViewModel.zoneAsset(for: stance.defense))
-                            .resizable().scaledToFit().frame(width: 18, height: 18)
-                        Text("DEFENSE")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-                    Text(stance.defense.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.defense))
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .panelCard(highlight: true)
-        }
-        .buttonStyle(.scalePress(0.97))
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
 
     @ViewBuilder
     private func derivedRow(_ label: String, value: String, color: Color) -> some View {
@@ -876,8 +666,16 @@ struct HeroDetailView: View {
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.vertical, LayoutConstants.spaceXS)
-        .background(DarkFantasyTheme.bgSecondary.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary.opacity(0.5),
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.2,
+                cornerRadius: LayoutConstants.radiusSM
+            )
+        )
+        .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
     }
 
     // MARK: - Respec Stats Card
@@ -913,7 +711,7 @@ struct HeroDetailView: View {
                             if vm.isRespeccing {
                                 ProgressView().tint(DarkFantasyTheme.textOnGold)
                             } else {
-                                HStack(spacing: 4) {
+                                HStack(spacing: LayoutConstants.spaceXS) {
                                     Text("CONFIRM")
                                     Text("(\(gemCost)")
                                     Image("icon-gem")
@@ -938,7 +736,7 @@ struct HeroDetailView: View {
                         Text("RESPEC STATS")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         Spacer()
-                        HStack(spacing: 2) {
+                        HStack(spacing: LayoutConstants.space2XS) {
                             Text("\(gemCost)")
                                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                             Image("icon-gem")
@@ -950,13 +748,21 @@ struct HeroDetailView: View {
                     .foregroundStyle(canAfford ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textTertiary)
                     .padding(LayoutConstants.cardPadding)
                     .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                            .fill(DarkFantasyTheme.bgSecondary)
+                        RadialGlowBackground(
+                            baseColor: DarkFantasyTheme.bgSecondary,
+                            glowColor: DarkFantasyTheme.bgTertiary,
+                            glowIntensity: 0.4,
+                            cornerRadius: LayoutConstants.panelRadius
+                        )
                     )
+                    .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+                    .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.12))
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                             .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                     )
+                    .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 12, thickness: 1.5)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
                 }
                 .buttonStyle(.scalePress(0.95))
             }
@@ -981,13 +787,21 @@ struct HeroDetailView: View {
             }
             .padding(LayoutConstants.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.4), length: 12, thickness: 1.5)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
@@ -1008,53 +822,6 @@ struct HeroDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Resources Section
-
-    @ViewBuilder
-    private func resourcesSection(_ char: Character) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            Text("RESOURCES")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("\u{1F4B0}").font(.system(size: 18)) // emoji — keep as is
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Gold")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        Text("\(char.gold)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                    }
-                }
-                Spacer()
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("\u{1F48E}").font(.system(size: 18)) // emoji — keep as is
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Gems")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        Text("\(char.gems ?? 0)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                            .foregroundStyle(DarkFantasyTheme.cyan)
-                    }
-                }
-            }
-            .padding(LayoutConstants.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
-        }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
 
     // MARK: - Low Resources Widget
 
@@ -1120,7 +887,7 @@ struct HeroDetailView: View {
                         .frame(width: 36, height: 36)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(title)
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         .foregroundStyle(accentColor)
@@ -1142,13 +909,22 @@ struct HeroDetailView: View {
             }
             .padding(LayoutConstants.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(accentColor.opacity(0.08))
+                RadialGlowBackground(
+                    baseColor: accentColor.opacity(0.08),
+                    glowColor: accentColor.opacity(0.04),
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: accentColor.opacity(0.10))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
             )
+            .cornerBrackets(color: accentColor.opacity(0.4), length: 12, thickness: 1.5)
+            .shadow(color: accentColor.opacity(0.1), radius: 4, y: 1)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         }
         .buttonStyle(.scalePress(0.97))
         .padding(.horizontal, LayoutConstants.screenPadding)
@@ -1164,23 +940,14 @@ struct HeroDetailView: View {
             // Header + count
             HStack(spacing: LayoutConstants.spaceSM) {
                 Text("INVENTORY")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Spacer()
-                HStack(spacing: 4) {
-                    Image("icon-gold").resizable().frame(width: 14, height: 14)
-                    Text("\(vm.gold)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .monospacedDigit()
-                }
-                HStack(spacing: 4) {
-                    Image("icon-gems").resizable().frame(width: 14, height: 14)
-                    Text("\(appState.currentCharacter?.gems ?? 0)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                        .monospacedDigit()
-                }
+                CurrencyDisplay(
+                    gold: vm.gold,
+                    gems: appState.currentCharacter?.gems ?? 0,
+                    animated: false
+                )
                 Text("·").foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("\(vm.items.count) items")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
@@ -1190,19 +957,12 @@ struct HeroDetailView: View {
 
             // Item grid — always show all 28 slots
             if vm.errorMessage != nil {
-                ErrorStateView.loadFailed { Task { await vm.loadInventory() } }
+                ErrorStateView.loadFailed { let _ = Task { await vm.loadInventory() } }
             } else if vm.isLoading && vm.items.isEmpty {
                 // Loading state
                 inventoryLoadingGrid()
-            } else if vm.items.isEmpty {
-                // Empty state — no items in inventory
-                EmptyStateView.generic(
-                    title: "No Items Yet",
-                    message: "Win battles to collect gear."
-                )
-                .frame(height: 300)
             } else {
-                // Content state
+                // Content state (shows empty slots when no items)
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.inventoryGap), count: LayoutConstants.inventoryCols),
                     spacing: LayoutConstants.inventoryGap
@@ -1211,7 +971,7 @@ struct HeroDetailView: View {
                         if index < vm.sortedItems.count {
                             ItemCardView(
                                 item: vm.sortedItems[index],
-                                equippedItem: vm.equippedBySlot[vm.sortedItems[index].equipSlot]
+                                context: .inventory(equippedItem: vm.equippedBySlot[vm.sortedItems[index].equipSlot])
                             ) {
                                 vm.selectItem(vm.sortedItems[index])
                             }
@@ -1225,6 +985,7 @@ struct HeroDetailView: View {
                                         RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                                             .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                                     )
+                                    .innerBorder(cornerRadius: LayoutConstants.cardRadius - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.06))
                             }
                             .frame(maxWidth: .infinity)
                             .aspectRatio(1, contentMode: .fit)
@@ -1233,22 +994,18 @@ struct HeroDetailView: View {
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
-                // Expand inventory button — secondary style, content-width
+                // Expand inventory button — secondary style, full width
                 if vm.canExpand {
-                    HStack {
-                        Spacer()
-                        Button {
-                            Task { await vm.expandInventory() }
-                        } label: {
-                            HStack(spacing: LayoutConstants.spaceXS) {
-                                Image(systemName: "plus.square.dashed")
-                                Text("+10 Slots (\(vm.expandCost) gold)")
-                            }
+                    Button {
+                        Task { await vm.expandInventory() }
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "plus.square.dashed")
+                            Text("+10 Slots (\(vm.expandCost) gold)")
                         }
-                        .buttonStyle(.secondary)
-                        .disabled(vm.gold < vm.expandCost)
-                        Spacer()
                     }
+                    .buttonStyle(.secondary)
+                    .disabled(vm.gold < vm.expandCost)
                     .padding(.horizontal, LayoutConstants.screenPadding)
                 }
             }
@@ -1320,9 +1077,14 @@ struct HeroDetailView: View {
             .padding(.horizontal, LayoutConstants.spaceSM)
             .frame(height: LayoutConstants.buttonHeightSM)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgTertiary,
+                    glowColor: DarkFantasyTheme.bgSecondary,
+                    glowIntensity: 0.2,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
             )
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)

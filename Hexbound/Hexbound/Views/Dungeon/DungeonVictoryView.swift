@@ -69,11 +69,17 @@ struct DungeonVictoryView: View {
             })
         }
 
+        // Star rating based on HP remaining (server should send this in future)
+        // For now: 3★ if >75% HP, 2★ if >25%, 1★ otherwise
+        let hpFraction = vm.hpFractionAfterBattle ?? 1.0
+        let stars: Int = hpFraction > 0.75 ? 3 : hpFraction > 0.25 ? 2 : 1
+
         return BattleResultConfig(
             isVictory: true,
             title: "VICTORY",
             subtitle: subtitle,
             illustrationImage: nil, // uses SF Symbol fallback (shield.checkered)
+            starRating: stars,
             goldReward: vm.victoryGold > 0 ? vm.victoryGold : nil,
             xpReward: vm.victoryXP > 0 ? vm.victoryXP : nil,
             ratingChange: nil,

@@ -78,7 +78,7 @@ struct SeasonSummaryModalView: View {
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .tracking(3)
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
-                            .shadow(color: .bgAbyss, radius: 4)
+                            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4)
                             .opacity(newSeasonOpacity)
 
                         RewardBurstView(style: .levelUp, isActive: $showBurst)
@@ -123,17 +123,24 @@ struct SeasonSummaryModalView: View {
             statCell(label: "TOTAL BATTLES", value: summary.totalBattles, icon: "swords", index: 1)
             statCell(label: "VICTORIES", value: summary.wins, icon: "trophy.fill", index: 2)
             statCell(label: "PEAK RANK", value: summary.peakRank, icon: "crown", prefix: "#", index: 3)
-            statCell(label: "GOLD EARNED", value: summary.goldEarned, icon: "dollarsign.circle", index: 4)
+            statCell(label: "GOLD EARNED", value: summary.goldEarned, icon: "dollarsign.circle", assetIcon: "icon-gold", index: 4)
             statCell(label: "REWARDS CLAIMED", value: summary.rewardsClaimed, icon: "gift", index: 5)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
     @ViewBuilder
-    private func statCell(label: String, value: Int, icon: String, prefix: String = "", index: Int) -> some View {
+    private func statCell(label: String, value: Int, icon: String, assetIcon: String? = nil, prefix: String = "", index: Int) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
-            Text(icon)
-                .font(.system(size: 24))
+            if let assetIcon {
+                Image(assetIcon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+            } else {
+                Text(icon)
+                    .font(.system(size: 24))
+            }
 
             HStack(spacing: 0) {
                 if !prefix.isEmpty {
@@ -156,13 +163,21 @@ struct SeasonSummaryModalView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, LayoutConstants.spaceMD)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.gold.opacity(0.15), lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.25), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .staggeredAppear(index: index)
     }
 

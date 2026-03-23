@@ -290,6 +290,9 @@ final class ArenaViewModel {
         // Single write-back — triggers one @Observable notification
         appState.currentCharacter = char
 
+        // FTUE: mark first battle complete
+        TutorialManager.shared.completeFTUEObjective(.firstBattle)
+
         // Store loot for display
         if !result.loot.isEmpty {
             appState.pendingLoot = result.loot

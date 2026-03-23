@@ -62,7 +62,7 @@ struct ArenaCarouselView: View {
     private var pageDots: some View {
         HStack(spacing: 6) {
             ForEach(0..<pages.count, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(index == currentPage ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder)
                     .frame(
                         width: index == currentPage ? 20 : 8,

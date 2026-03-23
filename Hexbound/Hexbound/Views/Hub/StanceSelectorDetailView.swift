@@ -71,39 +71,10 @@ struct StanceSelectorDetailView: View {
 
     @ViewBuilder
     private func stanceSummary(_ vm: StanceSelectorViewModel) -> some View {
-        HStack(spacing: LayoutConstants.spaceLG) {
-            VStack(spacing: LayoutConstants.spaceXS) {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(StanceSelectorViewModel.zoneAsset(for: vm.attackZone))
-                        .resizable().scaledToFit().frame(width: 18, height: 18)
-                    Text("ATTACK")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                Text(vm.attackZone.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                    .foregroundStyle(StanceSelectorViewModel.zoneColor(for: vm.attackZone))
-            }
-
-            Rectangle()
-                .fill(DarkFantasyTheme.borderSubtle)
-                .frame(width: 1, height: 40)
-
-            VStack(spacing: LayoutConstants.spaceXS) {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(StanceSelectorViewModel.zoneAsset(for: vm.defenseZone))
-                        .resizable().scaledToFit().frame(width: 18, height: 18)
-                    Text("DEFENSE")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                Text(vm.defenseZone.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                    .foregroundStyle(StanceSelectorViewModel.zoneColor(for: vm.defenseZone))
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .panelCard(highlight: true)
+        StanceDisplayView(
+            attack: vm.attackZone,
+            defense: vm.defenseZone
+        )
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceMD)
     }

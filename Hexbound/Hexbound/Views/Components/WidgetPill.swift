@@ -1,16 +1,15 @@
 import SwiftUI
 
-/// Compact action pill used in UnifiedHeroWidget row-3 to display contextual actions
-/// and status (heal, energy, stats, warnings, PvP, etc.).
+/// Action pill used in UnifiedHeroWidget row-4 to display contextual actions
+/// and status (heal, energy, warnings, PvP, etc.).
+///
+/// Redesigned for comfortable touch targets (44pt height, 14px font, icon in circle).
 @MainActor
 struct WidgetPill: View {
     let icon: String                    // SF Symbol name or emoji string
     let text: String
     var count: String? = nil            // e.g. "×3"
-<<<<<<< HEAD
     var imageAsset: String? = nil       // Asset catalog image name (replaces emoji icon)
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     let style: PillStyle
     var isInteractive: Bool = false
     var action: (() -> Void)? = nil
@@ -20,6 +19,17 @@ struct WidgetPill: View {
     }
 
     @State private var isGlowing = false
+
+    private var accentColor: Color {
+        switch style {
+        case .heal, .bonus: DarkFantasyTheme.success
+        case .urgent, .warn, .streak, .error: DarkFantasyTheme.danger
+        case .energy: DarkFantasyTheme.stamina
+        case .stat: DarkFantasyTheme.gold
+        case .pvp: DarkFantasyTheme.gold
+        case .offline: DarkFantasyTheme.textSecondary
+        }
+    }
 
     private var backgroundColor: Color {
         switch style {
@@ -76,58 +86,94 @@ struct WidgetPill: View {
     private var pillContent: some View {
         HStack(spacing: LayoutConstants.pillGap) {
             // Icon
-<<<<<<< HEAD
-            if let asset = imageAsset {
-                Image(asset)
-                    .resizable().scaledToFit()
-                    .frame(width: LayoutConstants.pillIconSize + 4, height: LayoutConstants.pillIconSize + 4)
-            } else {
-                Text(icon)
-                    .font(.system(size: LayoutConstants.pillIconSize))
-            }
-=======
-            Text(icon)
-                .font(.system(size: LayoutConstants.pillIconSize))
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+            iconView
 
-            // Text
+            // Label
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.pillFont).weight(.semibold))
                 .foregroundStyle(textColor)
                 .lineLimit(1)
 
-            // Count badge (if present)
+            // Count badge (right-aligned)
             if let count = count {
+                Spacer(minLength: 0)
                 Text(count)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.pillFont - 1).weight(.bold))
-                    .foregroundStyle(textColor.opacity(0.7))
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.pillCountFont).weight(.bold))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(accentColor.opacity(0.2))
+                    )
             }
         }
         .frame(height: LayoutConstants.pillHeight)
         .padding(.horizontal, LayoutConstants.pillPaddingH)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.pillRadius)
-                .fill(backgroundColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.pillRadius)
-                        .stroke(borderColor, lineWidth: 1)
-                )
+            ZStack {
+                RoundedRectangle(cornerRadius: LayoutConstants.pillRadius)
+                    .fill(backgroundColor)
+                // Inner top highlight for convex look
+                RoundedRectangle(cornerRadius: LayoutConstants.pillRadius)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.08), .clear, Color.black.opacity(0.06)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                // Subtle radial glow from accent color
+                RoundedRectangle(cornerRadius: LayoutConstants.pillRadius)
+                    .fill(
+                        RadialGradient(
+                            colors: [accentColor.opacity(0.08), .clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 60
+                        )
+                    )
+                // Border
+                RoundedRectangle(cornerRadius: LayoutConstants.pillRadius)
+                    .stroke(borderColor, lineWidth: 1.5)
+                // Inner bevel
+                RoundedRectangle(cornerRadius: LayoutConstants.pillRadius - 2)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.06), .clear, Color.black.opacity(0.08)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.5
+                    )
+                    .padding(2)
+            }
         )
-        // Pulsing glow for stat pills
-        .if(style == .stat && isGlowing) { view in
-            view.shadow(
-                color: DarkFantasyTheme.gold.opacity(0.3),
-                radius: 6,
-                x: 0,
-                y: 0
-            )
-        }
+        // Pulsing glow for urgent pills
+        .shadow(
+            color: style == .urgent && isGlowing ? accentColor.opacity(0.4) : accentColor.opacity(0.08),
+            radius: style == .urgent && isGlowing ? 8 : 3
+        )
         .onAppear {
-            if style == .stat {
+            if style == .urgent {
                 withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
                     isGlowing = true
                 }
             }
+        }
+    }
+
+    // MARK: - Icon View
+
+    @ViewBuilder
+    private var iconView: some View {
+        if let asset = imageAsset {
+            Image(asset)
+                .resizable().scaledToFit()
+                .frame(width: LayoutConstants.pillIconSize + 4, height: LayoutConstants.pillIconSize + 4)
+        } else if !icon.isEmpty {
+            Text(icon)
+                .font(.system(size: LayoutConstants.pillIconSize))
         }
     }
 }
@@ -150,25 +196,19 @@ extension View {
 #if DEBUG
 #Preview {
     VStack(spacing: 16) {
-<<<<<<< HEAD
-        WidgetPill(icon: "bandage", text: "Heal", style: .heal)
-        WidgetPill(icon: "exclamationmark.triangle", text: "Critical", style: .urgent)
-        WidgetPill(icon: "bolt", text: "Energy", count: "×2", style: .energy, isInteractive: true, action: {})
-        WidgetPill(icon: "sparkles", text: "Stats Ready", style: .stat)
-        WidgetPill(icon: "hammer", text: "Broken Gear", style: .warn)
-        WidgetPill(icon: "trophy.fill", text: "1750 Rating", style: .pvp)
-        WidgetPill(icon: "flame", text: "Streak: 3", style: .streak)
-        WidgetPill(icon: "gift", text: "First Win!", style: .bonus)
-=======
-        WidgetPill(icon: "🩹", text: "Heal", style: .heal)
-        WidgetPill(icon: "⚠️", text: "Critical", style: .urgent)
-        WidgetPill(icon: "⚡", text: "Energy", count: "×2", style: .energy, isInteractive: true, action: {})
-        WidgetPill(icon: "✨", text: "Stats Ready", style: .stat)
-        WidgetPill(icon: "🔨", text: "Broken Gear", style: .warn)
-        WidgetPill(icon: "🏆", text: "1750 Rating", style: .pvp)
-        WidgetPill(icon: "🔥", text: "Streak: 3", style: .streak)
-        WidgetPill(icon: "🎁", text: "First Win!", style: .bonus)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "pot_health_small", style: .heal, isInteractive: true, action: {})
+        WidgetPill(icon: "", text: "Heal", count: "×1", imageAsset: "pot_health_small", style: .urgent, isInteractive: true, action: {})
+        WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "pot_stamina_small", style: .energy, isInteractive: true, action: {})
+        WidgetPill(icon: "", text: "Repair Gear", imageAsset: "icon-strength", style: .warn)
+        WidgetPill(icon: "", text: "1750 Rating", imageAsset: "icon-pvp-rating", style: .pvp)
+        WidgetPill(icon: "", text: "Streak: 3", imageAsset: "icon-wins", style: .streak)
+        WidgetPill(icon: "", text: "First Win!", imageAsset: "reward-first-win", style: .bonus)
+
+        // Two pills side by side
+        HStack(spacing: LayoutConstants.pillSpacing) {
+            WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "pot_health_small", style: .heal, isInteractive: true, action: {})
+            WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "pot_stamina_small", style: .energy, isInteractive: true, action: {})
+        }
     }
     .padding()
     .background(DarkFantasyTheme.bgPrimary)

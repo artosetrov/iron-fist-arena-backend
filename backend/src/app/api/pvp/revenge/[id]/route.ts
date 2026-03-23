@@ -19,6 +19,7 @@ import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { degradeEquipment } from '@/lib/game/durability'
+import { updateMultipleAchievements } from '@/lib/game/achievements'
 
 function isFirstWinOfDay(firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -252,6 +253,35 @@ export async function POST(
 
     // Degrade attacker's equipped items after combat
     const durabilityResult = await degradeEquipment(prisma, attacker.id)
+
+    // Track PvP + revenge + ranking achievements (fire-and-forget)
+    try {
+      const achievementUpdates: { key: string; increment: number; absolute?: boolean }[] = []
+      if (attackerWon) {
+        const newStreak = attacker.pvpWinStreak + 1
+        achievementUpdates.push(
+          { key: 'pvp_first_blood', increment: 1 },
+          { key: 'pvp_wins_10', increment: 1 },
+          { key: 'pvp_wins_50', increment: 1 },
+          { key: 'pvp_wins_100', increment: 1 },
+          { key: 'pvp_wins_500', increment: 1 },
+          { key: 'pvp_streak_5', increment: newStreak, absolute: true },
+          { key: 'pvp_streak_10', increment: newStreak, absolute: true },
+          { key: 'revenge_first', increment: 1 },
+          { key: 'revenge_wins_10', increment: 1 },
+        )
+      }
+      // Ranking achievements — absolute rating
+      achievementUpdates.push(
+        { key: 'rank_silver', increment: attackerNewRating, absolute: true },
+        { key: 'rank_gold', increment: attackerNewRating, absolute: true },
+        { key: 'rank_diamond', increment: attackerNewRating, absolute: true },
+        { key: 'rank_grandmaster', increment: attackerNewRating, absolute: true },
+      )
+      await updateMultipleAchievements(prisma, attacker.id, achievementUpdates)
+    } catch (e) {
+      console.error('Achievement tracking error (pvp/revenge):', e)
+    }
 
     return NextResponse.json({
       loot,

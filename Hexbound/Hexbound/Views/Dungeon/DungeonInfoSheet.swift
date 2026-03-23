@@ -47,7 +47,7 @@ struct DungeonInfoSheet: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 28))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .padding(LayoutConstants.spaceMD)
+                    .padding(LayoutConstants.space2XL)
             }
             .buttonStyle(.scalePress(0.85))
         }
@@ -159,11 +159,11 @@ struct DungeonInfoSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(LayoutConstants.spaceMS)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                 .fill(DarkFantasyTheme.textPrimary.opacity(0.03))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                 .stroke(DarkFantasyTheme.textPrimary.opacity(0.06), lineWidth: 1)
         )
     }

@@ -286,4 +286,30 @@ enum StatType: String, CaseIterable {
         case .charisma: character.charisma ?? 0
         }
     }
+
+    /// Primary stats for each class — used for recommendation badges
+    static func primaryStats(for characterClass: CharacterClass) -> Set<StatType> {
+        switch characterClass {
+        case .warrior: [.strength, .endurance]
+        case .rogue:   [.agility, .luck]
+        case .mage:    [.intelligence, .wisdom]
+        case .tank:    [.endurance, .vitality]
+        }
+    }
+}
+
+// MARK: - Stat Group
+
+enum StatGroup: String, CaseIterable {
+    case offensive = "OFFENSIVE"
+    case defensive = "DEFENSIVE"
+    case magicUtility = "MAGIC & UTILITY"
+
+    var stats: [StatType] {
+        switch self {
+        case .offensive:    [.strength, .agility, .luck]
+        case .defensive:    [.vitality, .endurance]
+        case .magicUtility: [.intelligence, .wisdom, .charisma]
+        }
+    }
 }

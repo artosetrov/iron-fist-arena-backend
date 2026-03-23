@@ -59,6 +59,8 @@ enum AppConstants {
     static let udLanguage = "language"
     static let udPushNotifications = "push_notifications"
     static let udTutorialCompleted = "tutorial_completed_steps"
+    static let udFTUECompleted = "ftue_completed_objectives"
+    static let udFTUEDismissed = "ftue_dismissed"
 
     // MARK: - Game
     static let maxStamina = 120

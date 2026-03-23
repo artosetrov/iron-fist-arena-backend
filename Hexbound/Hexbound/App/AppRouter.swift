@@ -9,7 +9,6 @@ enum AppRoute: Hashable, Codable {
     // Hub
     case hub
     case hero
-    case character
     case stanceSelector
 
     // Combat
@@ -57,6 +56,9 @@ enum AppRoute: Hashable, Codable {
 
     // Guest upgrade
     case upgradeGuest
+
+    // Tutorial
+    case tutorial
 
     // Dev (routed to PlaceholderView in Release builds)
     case screenCatalog
@@ -107,7 +109,6 @@ struct MainRouterView: View {
         // Hub
         case .hub: HubView()
         case .hero: HeroDetailView()
-        case .character: CharacterDetailView()
         case .stanceSelector: StanceSelectorDetailView()
         
         // Combat
@@ -164,6 +165,9 @@ struct MainRouterView: View {
             PlaceholderView()
         #endif
         
+        // Tutorial
+        case .tutorial: TutorialView()
+
         // Auth (should not reach here in MainRouter)
         case .login, .register, .onboarding:
             PlaceholderView()

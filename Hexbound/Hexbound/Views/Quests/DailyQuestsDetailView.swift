@@ -105,10 +105,10 @@ struct DailyQuestsDetailView: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                             .fill(DarkFantasyTheme.bgTertiary)
                         let fraction = vm.quests.isEmpty ? 0.0 : max(0, min(1, Double(vm.completedCount) / Double(vm.quests.count)))
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                             .fill(DarkFantasyTheme.gold)
                             .frame(width: geo.size.width * fraction)
                     }
@@ -159,13 +159,21 @@ struct DailyQuestsDetailView: View {
         }
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
     // MARK: - Quest Type → Destination Mapping
@@ -225,9 +233,9 @@ struct DailyQuestsDetailView: View {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .fill(DarkFantasyTheme.bgTertiary)
-                                RoundedRectangle(cornerRadius: 3)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .fill(quest.completed ? DarkFantasyTheme.success : DarkFantasyTheme.cyan)
                                     .frame(width: geo.size.width * max(0, min(1, quest.progressFraction)))
                             }
@@ -317,6 +325,6 @@ struct DailyQuestsDetailView: View {
 struct QuestCardButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.85 : 1.0)
+            .brightness(configuration.isPressed ? -0.06 : 0)
     }
 }

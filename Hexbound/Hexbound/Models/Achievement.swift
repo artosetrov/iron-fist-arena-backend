@@ -25,12 +25,9 @@ struct Achievement: Codable, Identifiable {
 
     var categoryIcon: String {
         switch category {
-        case "combat": "⚔️"
+        case "pvp": "⚔️"
         case "progression": "📈"
-        case "collection": "🎒"
-        case "dungeon": "🏰"
-        case "economy": "💰"
-        case "rank": "🏆"
+        case "ranking": "🏆"
         default: "⭐"
         }
     }

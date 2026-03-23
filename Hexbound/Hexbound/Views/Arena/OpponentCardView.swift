@@ -60,10 +60,10 @@ struct OpponentCardView: View {
                         Text(difficultyLabel)
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                             .foregroundStyle(difficultyColor)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, LayoutConstants.spaceXS)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                     .fill(difficultyColor.opacity(0.15))
                             )
                     }

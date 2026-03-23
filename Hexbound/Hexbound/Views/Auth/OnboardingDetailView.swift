@@ -112,15 +112,15 @@ struct OnboardingDetailView: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .fill(bgColor)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .stroke(borderColor, lineWidth: isActive ? 1.5 : 1)
         )
     }
@@ -141,14 +141,11 @@ struct OnboardingDetailView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
                         Text("BACK")
                     }
                 }
-<<<<<<< HEAD
-                .buttonStyle(.ghost)
-=======
                 .buttonStyle(.secondary)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                 Button {
                     if vm.step == OnboardingViewModel.totalSteps - 1 {

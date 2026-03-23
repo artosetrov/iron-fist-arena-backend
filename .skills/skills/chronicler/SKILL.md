@@ -40,12 +40,14 @@ bash .skills/skills/chronicler/scripts/gather_metrics.sh <project-root> [days-ba
 **Step 2:** Read current state of all rules and agents:
 1. `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md`
 2. `CLAUDE.md` (project root)
-3. All 5 agent SKILL.md files:
+3. All 7 agent SKILL.md files:
    - `.skills/skills/guardian/SKILL.md`
    - `.skills/skills/oracle/SKILL.md`
    - `.skills/skills/mirror/SKILL.md`
    - `.skills/skills/gatekeeper/SKILL.md`
    - `.skills/skills/blacksmith/SKILL.md`
+   - `.skills/skills/herald/SKILL.md`
+   - `.skills/skills/context-auditor/SKILL.md`
 4. Scanner scripts:
    - `.skills/skills/guardian/scripts/check_design_system.sh`
    - `.skills/skills/oracle/scripts/check_async_await.sh`
@@ -104,6 +106,8 @@ For each finding, determine WHERE the fix belongs:
 | Backend code quality pattern | `oracle/SKILL.md` |
 | UX/accessibility pattern | `mirror/SKILL.md` |
 | Structural/build issue | `gatekeeper/SKILL.md` |
+| Deploy process change | `herald/SKILL.md` |
+| Chat-derived convention | `context-auditor/SKILL.md` |
 | Scanner bug/improvement | Relevant `scripts/*.sh` |
 | Design system extension | `docs/07_ui_ux/DESIGN_SYSTEM.md` |
 

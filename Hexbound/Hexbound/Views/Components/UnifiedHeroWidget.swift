@@ -18,11 +18,12 @@ struct UnifiedHeroWidget: View {
     var onTap: (() -> Void)? = nil
     var onUseHealthPotion: (() -> Void)? = nil
     var onUseStaminaPotion: (() -> Void)? = nil
-    var onAllocateStats: (() -> Void)? = nil
     var onRefillStamina: (() -> Void)? = nil
 
     @Environment(AppState.self) private var appState
     @State private var healFlash = false
+    @State private var lowHPPulse = false
+    @State private var statBadgePulse = false
 
     enum WidgetContext {
         case hub
@@ -107,9 +108,20 @@ struct UnifiedHeroWidget: View {
             onTap?()
         }
         .animation(.easeInOut(duration: 0.3), value: hpPercent)
+        .task {
+            if isCriticalHP {
+                while true {
+                    try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
+                    withAnimation(.easeInOut(duration: 0.8)) {
+                        lowHPPulse.toggle()
+                    }
+                }
+            }
+        }
+
     }
 
-    // MARK: - Avatar Section (fixed 72×72 square with XP Ring)
+    // MARK: - Avatar Section (fixed 72×72 square with XP Ring + Stat Badge)
 
     private var avatarSection: some View {
         let size = LayoutConstants.widgetAvatarFullSize
@@ -138,7 +150,10 @@ struct UnifiedHeroWidget: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.widgetAvatarRadius))
 
-            // Level badge (bottom-left)
+            // Corner diamond accents on avatar frame
+            CornerDiamondOverlay(color: DarkFantasyTheme.xpRing.opacity(0.6), size: 3)
+
+            // Level badge (bottom-left) with glow
             Text("Lv. \(character.level)")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.widgetLevelBadgeFont).weight(.bold))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -150,11 +165,66 @@ struct UnifiedHeroWidget: View {
                 )
                 .overlay(
                     Capsule()
-                        .stroke(DarkFantasyTheme.xpRing, lineWidth: 1)
+                        .stroke(
+                            LinearGradient(
+                                colors: [DarkFantasyTheme.xpRing, DarkFantasyTheme.xpRing.opacity(0.5)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
                 )
+                .shadow(color: DarkFantasyTheme.xpRing.opacity(0.3), radius: 4)
                 .offset(y: LayoutConstants.space2XS)
+
+            // Low HP red pulsing overlay
+            if isCriticalHP {
+                Circle()
+                    .fill(DarkFantasyTheme.danger.opacity(lowHPPulse ? 0.3 : 0))
+                    .animation(.easeInOut(duration: 0.8).repeatForever(), value: lowHPPulse)
+            }
         }
         .frame(width: size, height: size)
+        // Stat points badge (top-right of avatar, pulsing)
+        .overlay(alignment: .topTrailing) {
+            if statPointsAvailable > 0 {
+                Text("+\(statPointsAvailable)")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                .foregroundStyle(DarkFantasyTheme.textOnGold)
+                .padding(.horizontal, LayoutConstants.spaceXS)
+                .padding(.vertical, 2)
+                .background(
+                    Capsule()
+                        .fill(DarkFantasyTheme.goldBright)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5)
+                )
+                .shadow(
+                    color: DarkFantasyTheme.goldBright.opacity(statBadgePulse ? 0.8 : 0.2),
+                    radius: statBadgePulse ? 8 : 3
+                )
+                .offset(x: 4, y: -4)
+                .accessibilityLabel("\(statPointsAvailable) stat points available")
+            }
+        }
+        .onAppear {
+            if statPointsAvailable > 0 {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    statBadgePulse = true
+                }
+            }
+        }
+        .onChange(of: statPointsAvailable) { _, newVal in
+            if newVal > 0 && !statBadgePulse {
+                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                    statBadgePulse = true
+                }
+            } else if newVal == 0 {
+                statBadgePulse = false
+            }
+        }
     }
 
     // MARK: - Row 1: Name + Currencies
@@ -169,82 +239,36 @@ struct UnifiedHeroWidget: View {
 
             Spacer(minLength: LayoutConstants.spaceXS)
 
-            // Currencies (when visible — animated tick-up)
+            // Currencies (unified component, compact size)
             if showCurrencies {
-                HStack(spacing: LayoutConstants.spaceMS) {
-                    // Gold
-                    HStack(spacing: LayoutConstants.space2XS) {
-                        Image("icon-gold")
-                            .resizable()
-                            .frame(width: 14, height: 14)
-
-                        NumberTickUpText(
-                            value: character.gold,
-                            color: DarkFantasyTheme.textGold,
-                            font: DarkFantasyTheme.body(size: LayoutConstants.textLabel)
-                        )
-                        .lineLimit(1)
-                    }
-
-                    // Gems (hub and hero only)
-                    if context == .hub || context == .hero {
-                        HStack(spacing: LayoutConstants.space2XS) {
-                            Image("icon-gems")
-                                .resizable()
-                                .frame(width: 14, height: 14)
-
-                            NumberTickUpText(
-                                value: character.gems ?? 0,
-                                color: DarkFantasyTheme.gems,
-                                font: DarkFantasyTheme.body(size: LayoutConstants.textLabel)
-                            )
-                            .lineLimit(1)
-                        }
-                    }
-                }
+                CurrencyDisplay(
+                    gold: character.gold,
+                    gems: character.gems,
+                    size: .compact,
+                    showGems: context == .hub || context == .hero
+                )
             }
         }
     }
 
-    // MARK: - Row 2: HP Bar (full width, text inside)
+    // MARK: - Row 2: HP Bar (unified component, widget size)
 
     private var hpBarSection: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                // Background track
-                RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
-                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
-                    )
-
-                // Fill
-                RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
-                    .fill(DarkFantasyTheme.canonicalHpGradient(percentage: hpPercent))
-                    .frame(width: geo.size.width * max(0.02, min(1, hpPercent)))
-                    .opacity(isCriticalHP ? pulseOpacity : 1)
-
-                // Text centered inside
-                Text("\(character.currentHp)/\(character.maxHp)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold())
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .frame(height: LayoutConstants.widgetBarHeight)
-        .animation(.easeInOut(duration: 0.4), value: hpPercent)
+        HPBarView(
+            currentHp: character.currentHp,
+            maxHp: character.maxHp,
+            size: .widget,
+            pulseOnCritical: isCriticalHP
+        )
     }
 
-    @State private var pulseOpacity: Double = 1.0
-
-    // MARK: - Row 3: Stamina Bar (full width, text inside)
+    // MARK: - Row 3: Stamina Bar (widget-size inline bar with tick-up text)
+    // Note: StaminaBarView doesn't have a .widget size with NumberTickUpText,
+    // so we keep a slim custom version here that delegates to the shared gradient.
 
     private var staminaBarSection: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                // Background track
                 RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
                     .fill(DarkFantasyTheme.bgTertiary)
                     .overlay(
@@ -252,12 +276,10 @@ struct UnifiedHeroWidget: View {
                             .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
                     )
 
-                // Fill
                 RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
                     .fill(DarkFantasyTheme.staminaGradient)
                     .frame(width: geo.size.width * max(0.02, min(1, staminaPercent)))
 
-                // Text centered inside (animated tick-up)
                 HStack(spacing: 2) {
                     NumberTickUpText(
                         value: character.currentStamina,
@@ -274,7 +296,6 @@ struct UnifiedHeroWidget: View {
         }
         .frame(height: LayoutConstants.widgetBarHeight)
         .animation(.easeInOut(duration: MotionConstants.normal), value: staminaPercent)
-        // Low stamina: subtle breathing pulse as urgency hint
         .breathing(scale: 0.01, isActive: isLowStamina)
     }
 
@@ -285,9 +306,10 @@ struct UnifiedHeroWidget: View {
         // Priority logic: first match wins
         if isCriticalHP && healthPotionCount > 0 {
             WidgetPill(
-                icon: "bandage",
+                icon: "",
                 text: "Heal",
-                count: healthPotionCount > 0 ? "×\(healthPotionCount)" : nil,
+                count: "×\(healthPotionCount)",
+                imageAsset: "pot_health_small",
                 style: .urgent,
                 isInteractive: true,
                 action: {
@@ -297,13 +319,14 @@ struct UnifiedHeroWidget: View {
             )
             .frame(height: LayoutConstants.pillHeight)
         } else if isCriticalHP && healthPotionCount == 0 {
-            WidgetPill(icon: "exclamationmark.triangle", text: "Critical HP", style: .warn)
+            WidgetPill(icon: "", text: "Critical HP", imageAsset: "icon-vitality", style: .warn)
                 .frame(height: LayoutConstants.pillHeight)
         } else if isLowHP && healthPotionCount > 0 {
             WidgetPill(
-                icon: "bandage",
+                icon: "",
                 text: "Heal",
                 count: "×\(healthPotionCount)",
+                imageAsset: "pot_health_small",
                 style: .heal,
                 isInteractive: true,
                 action: {
@@ -314,9 +337,10 @@ struct UnifiedHeroWidget: View {
             .frame(height: LayoutConstants.pillHeight)
         } else if isLowStamina && staminaPotionCount > 0 {
             WidgetPill(
-                icon: "bolt",
+                icon: "",
                 text: "Energy",
                 count: "×\(staminaPotionCount)",
+                imageAsset: "pot_stamina_small",
                 style: .energy,
                 isInteractive: true,
                 action: {
@@ -324,35 +348,8 @@ struct UnifiedHeroWidget: View {
                 }
             )
             .frame(height: LayoutConstants.pillHeight)
-        } else if statPointsAvailable > 0 && !hasBrokenGear {
-            WidgetPill(
-                icon: "sparkles",
-                text: "Allocate Stats",
-                style: .stat,
-                isInteractive: true,
-                action: {
-                    onAllocateStats?()
-                }
-            )
-            .frame(height: LayoutConstants.pillHeight)
-        } else if statPointsAvailable > 0 && hasBrokenGear {
-            HStack(spacing: LayoutConstants.pillSpacing) {
-                WidgetPill(
-                    icon: "sparkles",
-                    text: "Allocate Stats",
-                    style: .stat,
-                    isInteractive: true,
-                    action: {
-                        onAllocateStats?()
-                    }
-                )
-                .frame(height: LayoutConstants.pillHeight)
-
-                WidgetPill(icon: "hammer", text: "Repair", style: .warn)
-                    .frame(height: LayoutConstants.pillHeight)
-            }
         } else if hasBrokenGear {
-            WidgetPill(icon: "hammer", text: "Repair Gear", style: .warn)
+            WidgetPill(icon: "", text: "Repair Gear", imageAsset: "icon-strength", style: .warn)
                 .frame(height: LayoutConstants.pillHeight)
         } else if context == .arena {
             arenaRow4Pills
@@ -364,19 +361,19 @@ struct UnifiedHeroWidget: View {
 
     private var arenaRow4Pills: some View {
         HStack(spacing: LayoutConstants.pillSpacing) {
-            let rank = PvPRank.fromRating(character.pvpRating)
-
             WidgetPill(
-                icon: rank.icon,
+                icon: "",
                 text: "\(character.pvpRating)",
+                imageAsset: "icon-pvp-rating",
                 style: .pvp
             )
             .frame(height: LayoutConstants.pillHeight)
 
             if (character.pvpWinStreak ?? 0) > 0 {
                 WidgetPill(
-                    icon: "flame",
+                    icon: "",
                     text: "Streak: \(character.pvpWinStreak ?? 0)",
+                    imageAsset: "icon-wins",
                     style: .streak
                 )
                 .frame(height: LayoutConstants.pillHeight)

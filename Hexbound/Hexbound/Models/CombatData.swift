@@ -132,18 +132,24 @@ struct CombatRewards: Codable {
 struct CombatLootItem: Codable, Identifiable {
     let id: String?
     let itemName: String?
+    let name: String?          // backend sends both `name` and `item_name`
     let itemType: String?
     let rarity: String?
     let itemLevel: Int?
     let upgradeLevel: Int?
     let baseStats: [String: Int]?
+    let imageKey: String?
+    let imageUrl: String?
 
     /// Stable identifier for SwiftUI — generated once, not on every access
     private let _stableId: String = UUID().uuidString
     var identifier: String { id ?? _stableId }
 
+    /// Resolved display name — prefers itemName, falls back to name
+    var displayName: String { itemName ?? name ?? "Unknown Item" }
+
     private enum CodingKeys: String, CodingKey {
-        case id, itemName, itemType, rarity, itemLevel, upgradeLevel, baseStats
+        case id, itemName, name, itemType, rarity, itemLevel, upgradeLevel, baseStats, imageKey, imageUrl
     }
 }
 

@@ -28,11 +28,7 @@ struct TavernDetailView: View {
                         }
 
                         TavernGameCard(
-<<<<<<< HEAD
                             icon: "person.slash",
-=======
-                            icon: "💀",
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                             title: "DUNGEON RUSH",
                             subtitle: "Endless waves. How far can you go?",
                             accentColor: DarkFantasyTheme.danger
@@ -98,13 +94,21 @@ struct TavernGameCard: View {
             }
             .padding(LayoutConstants.bannerPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: accentColor.opacity(0.08))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(accentColor.opacity(0.3), lineWidth: 1)
             )
+            .cornerBrackets(color: accentColor.opacity(0.3), length: 14, thickness: 1.5)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
             .contentShape(Rectangle())
         }
         .buttonStyle(.scalePress(0.97))

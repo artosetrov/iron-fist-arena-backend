@@ -209,7 +209,7 @@ enum AnyShapeStyle_Wrapper {
         switch self {
         case .circle: Circle().foregroundStyle(color)
         case .rectangle: Rectangle().foregroundStyle(color)
-        case .roundedRect: RoundedRectangle(cornerRadius: 2).foregroundStyle(color)
+        case .roundedRect: RoundedRectangle(cornerRadius: LayoutConstants.radiusXS).foregroundStyle(color)
         }
     }
 }

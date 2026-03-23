@@ -57,7 +57,7 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - **Zone icons.** Never emoji (⚔️🛡️🎯🦿) for attack/defense zones. Must use asset images via `StanceSelectorViewModel.zoneAsset(for:)`.
 - **HUD cards over map.** Must use `DarkFantasyTheme.bgSecondary` fill, not translucent `opacity(0.08)`.
 - **Card icons.** Never emoji in HUD cards/banners. Use asset images from Assets.xcassets.
-- **SFX.** Sound effects go through `SFXManager.shared.play(...)`, never direct `AVAudioPlayer`.
+- **SFX.** Sound effects go through `SFXManager.shared.play(...)`, never direct `AVAudioPlayer`. **CRITICAL:** If `SFX` enum has a case (e.g., `SFX.uiBack`), the corresponding `.wav` file MUST exist in the bundle. If missing, `SFXManager` silently skips the sound. Check for gaps: if a case exists but no WAV, generate the audio file. This is a runtime silent failure, not a compile error.
 - **Haptics.** Use `HapticManager` static methods, never raw `UIImpactFeedbackGenerator`.
 - **UnifiedHeroWidget.** Never create inline character displays. Use `UnifiedHeroWidget` with appropriate context.
 - **HeroIntegratedCard.** Hero page uses this, not UnifiedHeroWidget.
@@ -74,6 +74,8 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - Before using a model property, verify it exists in the struct definition. Different models (`Item`, `ShopItem`, `LootPreview`, `EquippedItem`) have different property sets.
 - For manually constructed `Item(...)`, check that `imageKey`, `catalogId`, `consumableType` are passed.
 - New consumable types need mappings in both `consumableDisplayNames` AND `consumableImageKeys` in `InventoryService.swift`.
+- **Character model specifics:** Character has `.avatar` (appearance key), NOT `.skinKey`. The `.skinKey` is on `AppearanceSkin`, not `Character`.
+- **PvP data specifics:** `PvPRank` has NO `.displayName` — use `.rawValue` instead. `LeaderboardEntry` has ONLY: `characterId`, `characterName`, `characterClass` (String), `value`, `rank`. No avatar/equipment/stats.
 
 ### 5. Enum Exhaustiveness
 

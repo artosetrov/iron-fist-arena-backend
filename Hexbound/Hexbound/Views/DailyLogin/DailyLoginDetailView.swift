@@ -117,10 +117,10 @@ struct DailyLoginDetailView: View {
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                         .fill(DarkFantasyTheme.bgTertiary)
 
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                         .fill(
                             LinearGradient(
                                 colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
@@ -230,16 +230,14 @@ struct DailyLoginDetailView: View {
             VStack(spacing: 6) {
                 if isClaimed {
                     ZStack {
-                        Text(reward.icon)
-                            .font(.system(size: isBonus ? 28 : 24))
+                        rewardIcon(reward, size: isBonus ? 28 : 24)
                             .opacity(0.4)
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 18))
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 } else {
-                    Text(reward.icon)
-                        .font(.system(size: isBonus ? 32 : 26))
+                    rewardIcon(reward, size: isBonus ? 32 : 26)
                         .opacity(isLocked ? 0.3 : 1)
                 }
 
@@ -297,8 +295,7 @@ struct DailyLoginDetailView: View {
                             .font(.system(size: 24, weight: .bold))
                             .foregroundStyle(DarkFantasyTheme.success)
                     } else {
-                        Text(reward.icon)
-                            .font(.system(size: 28))
+                        rewardIcon(reward, size: 28)
                     }
                 }
 
@@ -323,13 +320,21 @@ struct DailyLoginDetailView: View {
             }
             .padding(LayoutConstants.spaceMD)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(DarkFantasyTheme.borderSubtle.opacity(0.4), lineWidth: 1)
             )
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 12, thickness: 1.5)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         }
     }
 
@@ -375,15 +380,37 @@ struct DailyLoginDetailView: View {
                     Text("Come back tomorrow for")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Text("\(nextReward.icon) \(nextReward.label)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody).weight(.bold))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    HStack(spacing: 4) {
+                        rewardIcon(nextReward, size: 16)
+                        Text(nextReward.label)
+                    }
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody).weight(.bold))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             } else {
-                Text("Tomorrow: \(nextReward.icon) \(nextReward.label)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                HStack(spacing: 4) {
+                    Text("Tomorrow:")
+                    rewardIcon(nextReward, size: 14)
+                    Text(nextReward.label)
+                }
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
+        }
+    }
+
+    // MARK: - Reward Icon (asset-first, emoji fallback)
+
+    @ViewBuilder
+    private func rewardIcon(_ reward: DailyReward, size: CGFloat) -> some View {
+        if let assetName = reward.assetIcon, UIImage(named: assetName) != nil {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            Text(reward.icon)
+                .font(.system(size: size))
         }
     }
 }

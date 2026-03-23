@@ -36,18 +36,6 @@ final class SettingsViewModel {
         set { settings.pushNotifications = newValue }
     }
 
-    var selectedLanguageIndex: Int {
-        get { Self.languages.firstIndex(of: settings.language) ?? 0 }
-        set {
-            let code = Self.languages[newValue]
-            settings.language = code
-            LocalizationManager.shared.setLanguage(code)
-        }
-    }
-
-    static let languages = LocalizationManager.supportedLanguages.map(\.code)
-    static let languageNames = LocalizationManager.supportedLanguages.map(\.nativeName)
-
     var linkAccountMessage: String?
 
     init(appState: AppState) {

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum ItemRarity: String, Codable, CaseIterable {
     case common
@@ -9,6 +10,11 @@ enum ItemRarity: String, Codable, CaseIterable {
 
     var displayName: String {
         rawValue.uppercased()
+    }
+
+    /// Rarity color from the design system
+    var color: Color {
+        DarkFantasyTheme.rarityColor(for: self)
     }
 
     /// Numeric tier for animation scaling: 0=common → 4=legendary

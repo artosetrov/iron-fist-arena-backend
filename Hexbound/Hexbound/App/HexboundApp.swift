@@ -42,12 +42,28 @@ struct HexboundApp: App {
                 if isAuth {
                     // Request push permission after login
                     Task { await pushService.requestPermissionAndRegister() }
+                    // Check if FTUE tutorial should be shown
+                    checkFTUE()
                 } else {
                     // Unregister push token on logout
                     Task { await pushService.unregisterToken() }
                     cache.invalidateAll()
                 }
             }
+        }
+    }
+
+    /// Show FTUE tutorial screen if the player hasn't completed or dismissed it.
+    /// Navigates to .tutorial route with a small delay so the Hub renders first.
+    private func checkFTUE() {
+        let tutorial = TutorialManager.shared
+        guard tutorial.shouldShowFTUE else { return }
+
+        // Small delay so Hub appears first, then tutorial slides in
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard appState.isAuthenticated else { return }
+            appState.mainPath.append(AppRoute.tutorial)
         }
     }
 

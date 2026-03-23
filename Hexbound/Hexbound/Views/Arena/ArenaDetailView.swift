@@ -32,6 +32,10 @@ struct ArenaDetailView: View {
                 VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: LayoutConstants.sectionGap) {
+                        // Screen title
+                        OrnamentalTitle("ARENA", subtitle: "Prove your worth")
+                            .padding(.top, LayoutConstants.spaceXS)
+
                         // Active quest banner
                         ActiveQuestBanner(questTypes: ["pvp_wins"])
                             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -49,7 +53,6 @@ struct ArenaDetailView: View {
                             )
                             .padding(.horizontal, LayoutConstants.screenPadding)
                         }
-<<<<<<< HEAD
 
                         // Low HP potion banner — shown when HP < 30%
                         if LowHPPotionBanner.shouldShow(character: appState.currentCharacter) {
@@ -67,8 +70,6 @@ struct ArenaDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                         }
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
                         // Current stance indicator
                         if let stance = appState.currentCharacter?.combatStance {
@@ -76,12 +77,6 @@ struct ArenaDetailView: View {
                                 .tutorialAnchor(.arenaStance)
                         }
 
-<<<<<<< HEAD
-=======
-                        GoldDivider()
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         // Tab Switcher
                         TabSwitcher(
                             tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
@@ -230,7 +225,6 @@ struct ArenaDetailView: View {
         }
     }
 
-<<<<<<< HEAD
     // MARK: - Potion Helpers
 
     /// Whether the player has at least one health potion in cached inventory
@@ -242,10 +236,6 @@ struct ArenaDetailView: View {
 
     // MARK: - Health Potion Handler
 
-=======
-    // MARK: - Health Potion Handler
-
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     private func useHealthPotion() async {
         // Find the first available health potion from cached inventory
         guard let items = appState.cachedInventory else {
@@ -281,48 +271,11 @@ struct ArenaDetailView: View {
 
     @ViewBuilder
     private func stancePreview(_ stance: CombatStance) -> some View {
-        Button {
-            appState.mainPath.append(AppRoute.stanceSelector)
-        } label: {
-            HStack(spacing: LayoutConstants.spaceMD) {
-                // Attack zone
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(StanceSelectorViewModel.zoneAsset(for: stance.attack))
-                        .resizable().scaledToFit().frame(width: 18, height: 18)
-                    Text(stance.attack.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.attack))
-                }
-
-                Spacer()
-
-                Text("STANCE")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.textDimLabel)
-
-                Spacer()
-
-                // Defense zone
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text(stance.defense.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                        .foregroundStyle(StanceSelectorViewModel.zoneColor(for: stance.defense))
-                    Image(StanceSelectorViewModel.zoneAsset(for: stance.defense))
-                        .resizable().scaledToFit().frame(width: 18, height: 18)
-                }
-            }
-            .padding(.horizontal, LayoutConstants.cardPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.scalePress(0.97))
+        StanceDisplayView(
+            stance: stance,
+            isInteractive: true,
+            onTap: { appState.mainPath.append(AppRoute.stanceSelector) }
+        )
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
@@ -576,8 +529,17 @@ struct ArenaDetailView: View {
         }
         .padding(LayoutConstants.spaceSM)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(match.isWin ? DarkFantasyTheme.success.opacity(0.05) : DarkFantasyTheme.danger.opacity(0.05))
+            RadialGlowBackground(
+                baseColor: match.isWin ? DarkFantasyTheme.success.opacity(0.06) : DarkFantasyTheme.danger.opacity(0.06),
+                glowColor: match.isWin ? DarkFantasyTheme.success.opacity(0.03) : DarkFantasyTheme.danger.opacity(0.03),
+                glowIntensity: 0.2,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 1,
+            inset: 1,
+            color: (match.isWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger).opacity(0.08)
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)

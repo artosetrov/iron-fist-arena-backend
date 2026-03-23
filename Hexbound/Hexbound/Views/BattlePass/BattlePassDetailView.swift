@@ -26,7 +26,7 @@ struct BattlePassDetailView: View {
                         VStack(spacing: LayoutConstants.spaceMD) {
                             SkeletonRect(width: 120, height: 14)
                             SkeletonRect(height: 10)
-                            SkeletonRect(height: 40, cornerRadius: 8)
+                            SkeletonRect(height: 40, cornerRadius: LayoutConstants.radiusMD)
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 ForEach(0..<6, id: \.self) { _ in
                                     SkeletonBPNode()
@@ -122,9 +122,9 @@ struct BattlePassDetailView: View {
     private func xpProgressSection(vm: BattlePassViewModel) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                     .fill(DarkFantasyTheme.bgTertiary)
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                     .fill(DarkFantasyTheme.progressGradient)
                     .frame(width: geo.size.width * vm.xpProgress)
                     .animation(
@@ -205,8 +205,16 @@ struct BattlePassDetailView: View {
         }
         .padding(LayoutConstants.spaceSM)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 }

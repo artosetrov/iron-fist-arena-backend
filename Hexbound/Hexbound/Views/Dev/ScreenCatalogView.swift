@@ -65,7 +65,7 @@ struct ScreenCatalogView: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 4)
+                                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                         .fill(DarkFantasyTheme.bgTertiary)
                                 )
                         }
@@ -154,7 +154,6 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
         case .hub:
             return [
                 CatalogItem(id: "hub", name: "Hub (Main Screen)", icon: "house.fill", route: .hub),
-                CatalogItem(id: "character", name: "Character Detail", icon: "person.text.rectangle", route: .character),
                 CatalogItem(id: "stance-selector", name: "Stance Selector", icon: "figure.martial.arts", route: .stanceSelector),
             ]
         case .hero:

@@ -21,8 +21,7 @@ struct BPRewardNodeView: View {
                     .fill(DarkFantasyTheme.bgTertiary)
                     .frame(width: 64, height: 64)
 
-                Text(reward.icon)
-                    .font(.system(size: 28)) // emoji text — keep as is
+                rewardIcon(reward, size: 32)
             }
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
@@ -82,6 +81,19 @@ struct BPRewardNodeView: View {
                 HapticManager.success()
                 showClaimBurst = true
             }
+        }
+    }
+
+    @ViewBuilder
+    private func rewardIcon(_ reward: BPReward, size: CGFloat) -> some View {
+        if let assetName = reward.assetIcon, UIImage(named: assetName) != nil {
+            Image(assetName)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            Text(reward.icon)
+                .font(.system(size: size * 0.875))
         }
     }
 

@@ -33,12 +33,21 @@ enum LayoutConstants {
     static let buttonRadius: CGFloat = 8
     static let buttonRadiusLG: CGFloat = 14     // Fight / boss card buttons
 
+    // MARK: - Radius Scale (standardized corner radius tokens)
+    // Use these generic tokens when no component-specific token applies.
+    static let radiusXS: CGFloat = 3       // Micro: progress bars, tiny indicators, particles
+    static let radiusSM: CGFloat = 6       // Small: badges, stat bars, tag chips
+    static let radiusMD: CGFloat = 8       // Medium: buttons, panels, pills, inputs
+    static let radiusLG: CGFloat = 12      // Large: cards, widgets
+    static let radiusXL: CGFloat = 16      // Extra-large: modals, featured cards
+    static let radius2XL: CGFloat = 22     // Capsule-like: auth inputs, large CTAs
+
     // Cards
     static let cardPadding: CGFloat = 16
-    static let cardRadius: CGFloat = 12
-    static let panelRadius: CGFloat = 8
-    static let modalRadius: CGFloat = 16
-    static let bossCardRadius: CGFloat = 20     // Dungeon boss card
+    static let cardRadius: CGFloat = 12       // == radiusLG
+    static let panelRadius: CGFloat = 8       // == radiusMD
+    static let modalRadius: CGFloat = 16      // == radiusXL
+    static let bossCardRadius: CGFloat = 20   // Dungeon boss card (between radiusXL and radius2XL)
 
     // Inputs
     static let inputHeight: CGFloat = 52
@@ -108,12 +117,14 @@ enum LayoutConstants {
     static let widgetRowGap: CGFloat = 4           // Gap between row-1, row-2, row-3
 
     // Pill System (Unified Action Elements)
-    static let pillHeight: CGFloat = 32            // Dense control min (Rulebook §2.5)
-    static let pillRadius: CGFloat = 8             // radius-md (4px grid)
-    static let pillPaddingH: CGFloat = 12          // Horizontal padding (4px grid: 3×4)
-    static let pillIconSize: CGFloat = 12          // icon-xs
-    static let pillGap: CGFloat = 4                // Internal element gap
-    static let pillFont: CGFloat = 12              // Minimum readable font (12px absolute min)
+    static let pillHeight: CGFloat = 44            // Apple HIG minimum touch target
+    static let pillRadius: CGFloat = 12            // Rounded corners (4px grid: 3×4)
+    static let pillPaddingH: CGFloat = 16          // Horizontal padding (4px grid: 4×4)
+    static let pillIconSize: CGFloat = 16          // icon-sm (readable)
+    static let pillIconBgSize: CGFloat = 28        // Circular icon background
+    static let pillGap: CGFloat = 8                // Internal element gap
+    static let pillFont: CGFloat = 14              // Comfortable reading size
+    static let pillCountFont: CGFloat = 12         // Count badge font
     static let pillSpacing: CGFloat = 8            // Gap between pills in row-3
 
     // Widget Avatar
@@ -130,7 +141,6 @@ enum LayoutConstants {
     // MARK: - NPC Guide Widget (reusable: merchant, arena coach, dungeon guide, etc.)
     // Use these tokens for any NPC tip/tutorial widget across screens.
 
-<<<<<<< HEAD
     static let npcAvatarSize: CGFloat = 256           // Full NPC portrait (no frame, no clip)
     static let npcAvatarOffset: CGFloat = -30         // Shift avatar up so it peeks above the bar
     static let npcBarHeight: CGFloat = 90             // Fixed speech bar height (title + 2-line body + padding)
@@ -145,13 +155,6 @@ enum LayoutConstants {
     static let merchantMiniSize: CGFloat = npcMiniSize
     static let merchantBarHeight: CGFloat = npcBarHeight
     static let merchantBubbleRadius: CGFloat = npcBarRadius
-=======
-    static let merchantAvatarSize: CGFloat = 256      // Full merchant portrait, no frame
-    static let merchantAvatarOverflow: CGFloat = 200   // How far avatar extends above strip
-    static let merchantMiniSize: CGFloat = 56          // Collapsed floating avatar (== avatarSizeMD)
-    static let merchantStripMinHeight: CGFloat = 56    // Strip content height
-    static let merchantBubbleRadius: CGFloat = 8       // Speech bubble corners (== panelRadius)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
     // MARK: - Package Cards (Currency Purchase)
 
@@ -161,7 +164,6 @@ enum LayoutConstants {
     static let packageAmountFont: CGFloat = 22         // Amount text size
     static let packageBestValueAmountFont: CGFloat = 26 // Best Value amount text size
 
-<<<<<<< HEAD
     // MARK: - Arena Opponent Card (Premium Redesign)
 
     static let arenaCardRadius: CGFloat = 16
@@ -180,18 +182,13 @@ enum LayoutConstants {
     static let arenaGlowRadius: CGFloat = 12        // Animated border glow
     static let arenaShimmerWidth: CGFloat = 80       // Shimmer band width
 
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     // MARK: - Hero Integrated Card
 
     static let heroCardRadius: CGFloat = 12
     static let heroCardPadding: CGFloat = 12
     static let heroSlotSize: CGFloat = 84          // same as inventory cell
     static let heroSlotGap: CGFloat = 8            // same as inventoryGap
-<<<<<<< HEAD
     static let heroPortraitSideGap: CGFloat = 16  // breathing room between portrait and side slots
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     static let heroSlotRadius: CGFloat = 12        // same as cardRadius
     static let heroBarHeight: CGFloat = 24         // HP bar with text inside
     static let heroBarXpHeight: CGFloat = 20       // XP bar with text inside

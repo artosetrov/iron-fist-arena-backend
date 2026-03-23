@@ -26,6 +26,65 @@ Generate unique 24-character hex IDs for `{ID1}` and `{ID2}`. Keep entries alpha
 - The theme file is at `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift`
 - Button styles are at `Hexbound/Hexbound/Theme/ButtonStyles.swift`
 - Layout constants are at `Hexbound/Hexbound/Theme/LayoutConstants.swift`
+- **Ornamental styles** are at `Hexbound/Hexbound/Theme/OrnamentalStyles.swift`
+- Card/panel styles are at `Hexbound/Hexbound/Theme/CardStyles.swift`
+
+## Ornamental Design System (CRITICAL)
+
+All UI elements use a pure SwiftUI ornamental system — **no PNG assets for UI chrome**. Ornamental primitives are in `OrnamentalStyles.swift`. **Status: 100% complete across all production views** (completed 2026-03-22).
+
+**Reusable components:**
+- `RadialGlowBackground` — replaces flat `bgSecondary` fill on panels/cards. Always use instead of plain `.fill(DarkFantasyTheme.bgSecondary)` for panels.
+- `BarFillHighlight` — top-edge shine on progress bar fills. **Must be applied to ALL progress bars** (HP, XP, Stamina) via `.overlay(BarFillHighlight(cornerRadius:))`.
+- `DiamondDividerMotif` — ◆◇◆ center motif for dividers. Used in `GoldDivider` and `OrnamentalDivider`.
+- `CornerBracketOverlay` — L-brackets at 4 corners (Path-based).
+- `CornerDiamondOverlay` — rotated Rectangle diamonds at corners.
+- `SideDiamondOverlay` — diamonds at left/right center edges.
+- `InnerBorderOverlay` — inset gradient stroke (highlight top → shadow bottom).
+- `SurfaceLightingOverlay` — top-bright/bottom-dark convex surface effect.
+
+**Additional structural components (added 2026-03-22):**
+- `DoubleBorderOverlay` — two concentric rounded-rect strokes with gap (frame-within-frame)
+- `ScrollworkDivider` — curving end-caps with center diamond motif
+- `FiligreeLine` — decorative line with diamond notches at intervals
+- `EtchedGroove` — double-line groove (dark top + bright bottom hairline)
+
+**Convenience extensions (prefer these over raw structs):**
+- `.cornerBrackets(color:length:thickness:)`, `.cornerDiamonds(color:size:)`, `.sideDiamonds(color:size:)`
+- `.innerBorder(cornerRadius:inset:color:)`, `.surfaceLighting(cornerRadius:)`
+- `.doubleBorder()`, `.etchedGroove()`, `.premiumFrame()` — combo ornamentals
+- `.ornamentalFrame(cornerRadius:bracketColor:bracketLength:diamondColor:)` — combo of all
+
+**Standard panel pattern (MANDATORY):**
+- Base: `RadialGlowBackground(baseColor: DarkFantasyTheme.bgSecondary, glowColor: DarkFantasyTheme.bgTertiary, glowIntensity: 0.4, cornerRadius: LayoutConstants.cardRadius)`
+- Surface: `.surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)`
+- Border: `.innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))` for neutral panels
+- For accent-tinted panels: use `accentColor.opacity(0.08)` instead of `borderMedium.opacity(0.15)`
+- Brackets: `.cornerBrackets(color: accentOrBorder.opacity(0.3), length: 14, thickness: 1.5)` on visible panels
+- Shadow: `.shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)` — always add abyss shadow
+
+**Standard modal/important panel pattern (MANDATORY):**
+- Base: `RadialGlowBackground(baseColor: DarkFantasyTheme.bgSecondary, glowColor: DarkFantasyTheme.bgTertiary, glowIntensity: 0.4, cornerRadius: LayoutConstants.modalRadius)`
+- Surface: `.surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)`
+- Border: `.innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: rarityColor.opacity(0.1))` or `.gold.opacity(0.1)` for neutral
+- Brackets: `.cornerBrackets(color: accentColor.opacity(0.5), length: 18, thickness: 2.0)` + `.cornerDiamonds(color: accentColor.opacity(0.4), size: 6)`
+- Shadow: dual — `.shadow(color: accentColor.opacity(0.18), radius: 10)` + `.shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)`
+- Used in: battle results, loot previews, item detail sheets, daily login popups, auth steps
+
+**Circle exception:**
+- Progress circles, stat rings, XP rings: use `RadialGradient` directly (NOT `RadialGlowBackground` which uses RoundedRectangle)
+- Pattern: `RadialGradient(gradient: Gradient(...), center: .center, startRadius: 0, endRadius: radius)`
+
+**Intentional flat bgSecondary fills (exceptions):**
+- `HubView` background under `RadialGradient` sky overlay
+- `ToastOverlayView` base before vignette effect
+- `ScreenCatalogView` (dev tools)
+
+**Press state rule:** Use `.brightness(-0.06)` instead of `.opacity(0.85)` for button press feedback — gives more natural "pressed plate" feel.
+
+**Color.white / Color.black exception:** These are allowed ONLY in ornamental overlays (surface lighting, inner bevels) at very low opacity (0.06–0.08). Never use them for text, backgrounds, or borders.
+
+**Shadow pattern:** Use dual shadows for depth: type-colored glow shadow + dark `bgAbyss` shadow. Never use a single flat shadow.
 
 ## Art Style (for AI image generation prompts)
 
@@ -81,6 +140,31 @@ Generate unique 24-character hex IDs for `{ID1}` and `{ID2}`. Keep entries alpha
 - Bottom action pills: stance (always), repair all (conditional on broken items), stat points (conditional), heal (conditional)
 - Layout tokens: `LayoutConstants.hero*` for card/slot sizing and bar heights
 - Integration: see `HeroDetailView.tabContent()` for callback pattern (onTapPortrait, onEditStance, onRepairAll, etc.)
+
+**Tab layout (updated 2026-03-22):**
+- `HeroDetailView` has **sticky tabs** (INVENTORY / STATUS) pinned above `ScrollView` — they do NOT scroll with content
+- Structure: `VStack(spacing: 0) { tabSelector() → ScrollView { ... } }`
+- `HeroIntegratedCard` is **INVENTORY tab only** — it does NOT appear on STATUS tab
+- STATUS tab shows: stat points banner → grouped stats → derived stats → equipment bonuses → respec → PvP
+- Tab badge: STATUS tab shows purple circle badge with stat points count when `statPoints > 0`
+- Shimmer: purple shimmer on STATUS tab when stat points available and tab is not selected
+- `onAllocateStats` callback switches to STATUS tab (`selectedTab = .stats`), not navigates away
+
+## Unified Item Card (CRITICAL)
+
+**Always use `ItemCardView` as the single source of truth for item cell rendering.** Never create inline item displays, duplicate card styles, or context-specific card views in other files.
+
+- Component: `Hexbound/Hexbound/Views/Components/ItemCardView.swift`
+- Contexts via `ItemCardContext` enum:
+  - `.inventory(equippedItem:)` — comparison arrows, equipped badge, quantity, durability
+  - `.shop(price:isGem:canAfford:meetsLevel:isBuying:)` — price bar with `CurrencyDisplay`, affordability dimming
+  - `.equipment(slotAsset:)` — empty slot placeholder, broken indicator
+  - `.loot` — minimal card for battle result reveal
+  - `.preview` — full detail for sheet views
+- Visual style: gradient background (rarity → abyss), RadialGradient for epic/legendary, bottom vignette (28pt), double border (inner bevel via `.innerBorder()` + outer rarity 2.5px), corner L-bracket accents (`CornerAccentsOverlay`), corner diamonds (`.cornerDiamonds()`), rarity stars (1-5)
+- **Deprecated:** `ShopItemCardView.swift` — dead code, all shop items now use `ItemCardView` with `.shop` context
+- Price display: use `CurrencyDisplay` component with `.mini` size (not SF Symbol icons like `dollarsign.circle`)
+- Loot bridge: `LootItemDisplay` has computed `rarity: ItemRarity` property derived from `rarityTier` for ItemCardView compatibility
 
 ## Admin Panel (Next.js / TypeScript)
 
@@ -184,6 +268,7 @@ These files no longer exist in root. If you see old references, use the replacem
 | `HEXBOUND_UX_AUDIT_V2.md` | `docs/07_ui_ux/UX_AUDIT.md` |
 | `BALANCE_AUDIT_REPORT.md` | `docs/06_game_systems/BALANCE_CONSTANTS.md` |
 | Prompt files in root | Moved to `docs/08_prompts/` |
+| `ShopItemCardView.swift` (DEPRECATED) | Use `ItemCardView` with `.shop` context instead |
 
 ## Game Enums (VERIFY BEFORE USE)
 
@@ -241,6 +326,54 @@ When replacing a struct, class, function, or view with a new version:
 2. **Search the file for the old name** before finishing — if the old struct/function still exists anywhere, remove it.
 3. **Search all callers** — if the old type was used in other files, update those call sites to match the new signature.
 4. Common mistake: replacing `CloudLayer` → `SkyCloudsFrontLayer` but leaving the old `CloudLayer` + `DriftingCloud` in the same file → redeclaration error.
+
+## SwiftUI Code Patterns (CRITICAL)
+
+### Extension Closures & Compilation
+- `extension ButtonStyle where Self == X { ... }` MUST have matching closing `}`. Missing braces cause "Declaration only valid at file scope" errors on unrelated files.
+- When adding closures (`.onChange`, etc.) to multiple extensions, verify each extension's closing brace is present. Common mistake: last extension is missing its `}`.
+
+### Collection Types in SwiftUI
+- `stride(from:to:by:)` returns `StrideTo<Int>`, which does NOT conform to `RandomAccessCollection`. SwiftUI `ForEach` requires a collection. Must wrap: `ForEach(Array(stride(...)))`.
+- Other similar iterators (e.g., `sequence(first:next:)`) have the same constraint.
+
+### Graphics & Strokes
+- `.stroke()` has NO `dash:` parameter. Must use `StrokeStyle`: `.stroke(color, style: StrokeStyle(lineWidth: 1, dash: [4]))`.
+- This applies to all `Shape` stroke calls.
+
+### Character Model Properties
+- Character has `.avatar` (the appearance key), NOT `.skinKey`. The skin key is on `AppearanceSkin` model.
+- Before accessing model properties — **verify in the struct definition**, especially for appearance/equipment data.
+
+### PvP & Rating Data Models
+- `PvPRank` has NO `.displayName` computed property. Use `.rawValue` instead ("Bronze", "Silver", etc.).
+- `LeaderboardEntry` contains ONLY: `characterId`, `characterName`, `characterClass` (String, not enum), `value` (rating), `rank`. No avatar, no equipment, no stats.
+- `OpponentProfile` is the model for full public character profiles (via `GET /api/characters/:id/profile`). Contains: stats, equipment, avatar, HP with regen, stance, rating, record, win rate. Use this when displaying opponent details in PvP sheet.
+- Convert `characterClass` String to enum: `CharacterClass(rawValue: entry.characterClass) ?? .warrior`.
+- **ItemRarity.color** is now a computed property — use it for rarity-colored borders, badges, and UI elements in opponent profile grids.
+
+### UI Effects & Interaction Feedback
+- **Glow effects must be tap-only, not idle.** Both Hub buildings and Dungeon map buildings had permanent idle glow. Remove `.startIdleAnimation()` from map buildings. Set `opacity: 0` and `shadowRadius: 0` in default state; only apply glow on `.isPressed`.
+- This prevents visual clutter and respects the no-scale-animations rule (glow is opacity/shadow, not scale).
+
+### Assets vs. Emojis
+- When an emoji system is in place (e.g., Daily Login rewards, Battle Pass rewards), replace ALL emojis with game assets.
+- Pattern: add `assetIcon` computed property to the model, create a helper view (`rewardIcon()`) with asset-first fallback to emoji.
+- Applies to any screen with reward pills, badges, or status indicators.
+
+### Currency Display Icons
+- **Never use SF Symbols for currency** (e.g., `dollarsign.circle`, `diamond`). Use `CurrencyDisplay` component instead.
+- Component: `Hexbound/Hexbound/Views/Components/CurrencyDisplay.swift`
+- Sizes: `.full` (default), `.mini` (for item cards, shop rows, compact displays)
+- Uses game assets `icon-gold` and `icon-gems` — consistent across all screens
+- Shop price bar and item card prices both use `CurrencyDisplay` with `.mini` size
+
+### Public Profile & Sheet Presentation
+- **Opponent profile sheet** uses `.sheet(item:onDismiss:content:)` with `.large` detent (NOT ZStack overlay).
+- Model: `OpponentProfile.swift` — public character data returned by `GET /api/characters/:id/profile`.
+- Profile card layout: portrait + level/rank badges → HP bar → PvP stats grid → equipment grid → base stats (8 cols in 2-col grid) → derived stats → action buttons.
+- **Social features (Challenge, Message, Add Friend) are stub TODOs.** Closures exist but have no backend routes or implementation yet.
+- When extending opponent profile, verify endpoint returns the needed fields (check `OpponentProfileResponse` wrapper in backend).
 
 ## Self-Documenting Rules (META — MANDATORY)
 

@@ -46,13 +46,23 @@ struct DailyLoginPopupView: View {
                         .padding(.bottom, LayoutConstants.spaceLG)
                 }
                 .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                        .fill(DarkFantasyTheme.bgSecondary)
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.4,
+                        cornerRadius: LayoutConstants.modalRadius
+                    )
                 )
+                .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.12)
+                .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                         .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
                 )
+                .cornerBrackets(color: DarkFantasyTheme.goldBright.opacity(0.5), length: 16, thickness: 2.0)
+                .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 5)
+                .shadow(color: DarkFantasyTheme.gold.opacity(0.1), radius: 12)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 6, y: 3)
                 .padding(.horizontal, LayoutConstants.spaceLG)
                 .opacity(appear ? 1 : 0)
                 .transition(.identity)
@@ -121,11 +131,11 @@ struct DailyLoginPopupView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     // Track
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.bgTertiary)
 
                     // Fill
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(
                             LinearGradient(
                                 colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],

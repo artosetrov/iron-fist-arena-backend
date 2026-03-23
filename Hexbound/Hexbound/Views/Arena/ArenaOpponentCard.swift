@@ -55,6 +55,7 @@ struct ArenaOpponentCard: View {
                 .font(DarkFantasyTheme.section(size: LayoutConstants.arenaRatingFont))
                 .foregroundStyle(DarkFantasyTheme.rankColor(for: opponent.pvpRating))
                 .shadow(color: DarkFantasyTheme.rankColor(for: opponent.pvpRating).opacity(0.3), radius: 6)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
 
             // Stats — clean grid
             statsSection
@@ -69,6 +70,7 @@ struct ArenaOpponentCard: View {
         .overlay(alignment: .topTrailing) { difficultyBadge }
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
         .shadow(color: difficulty.glowColor.opacity(0.25), radius: LayoutConstants.arenaGlowRadius, y: 3)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
     }
 
     // MARK: - Avatar
@@ -82,7 +84,7 @@ struct ArenaOpponentCard: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaAvatarRadius))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.arenaAvatarRadius)
-                .stroke(
+                .strokeBorder(
                     LinearGradient(
                         colors: [
                             difficulty.glowColor.opacity(0.6),
@@ -128,9 +130,17 @@ struct ArenaOpponentCard: View {
 
     private var cardBackground: some View {
         ZStack {
-            // Base gradient
+            // Premium gradient base
             RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
                 .fill(DarkFantasyTheme.bgArenaCardPremium)
+
+            // Difficulty glow on top
+            RadialGlowBackground(
+                baseColor: .clear,
+                glowColor: difficulty.glowColor.opacity(0.05),
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.arenaCardRadius
+            )
 
             // Inner top lighting
             RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
@@ -144,6 +154,16 @@ struct ArenaOpponentCard: View {
                         endPoint: .center
                     )
                 )
+
+            // Surface lighting for 3D depth
+            SurfaceLightingOverlay(cornerRadius: LayoutConstants.arenaCardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+
+            // Inner bevel
+            InnerBorderOverlay(
+                cornerRadius: LayoutConstants.arenaCardRadius - 3,
+                inset: 3,
+                baseColor: difficulty.glowColor.opacity(0.08)
+            )
         }
     }
 
@@ -165,6 +185,19 @@ struct ArenaOpponentCard: View {
                     endAngle: .degrees(glowPhase + 360)
                 ),
                 lineWidth: 1.5
+            )
+            .overlay(
+                CornerBracketOverlay(
+                    color: difficulty.glowColor.opacity(0.5),
+                    length: 16,
+                    thickness: 1.5
+                )
+            )
+            .overlay(
+                CornerDiamondOverlay(
+                    color: difficulty.glowColor.opacity(0.4),
+                    size: 5
+                )
             )
     }
 
@@ -195,16 +228,17 @@ struct ArenaOpponentCard: View {
         Text(difficulty.label)
             .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
             .foregroundStyle(difficulty.textColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.space2XS)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .fill(difficulty.textColor.opacity(0.12))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(difficulty.textColor.opacity(0.2), lineWidth: 0.5)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(difficulty.textColor.opacity(0.25), lineWidth: 0.5)
                     )
             )
+            .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: difficulty.textColor.opacity(0.08))
             .padding(LayoutConstants.arenaBadgePadding)
     }
 
@@ -239,7 +273,7 @@ struct ArenaCardPressStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .brightness(configuration.isPressed ? -0.06 : 0)
             .shadow(
                 color: configuration.isPressed ? glowColor.opacity(0.4) : .clear,
                 radius: configuration.isPressed ? 20 : 0,

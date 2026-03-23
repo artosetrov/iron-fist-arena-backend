@@ -84,33 +84,43 @@ struct LoginView: View {
                                 } onCompletion: { result in
                                     Task { await vm.handleAppleSignIn(result: result, appState: appState) }
                                 }
-                                .signInWithAppleButtonStyle(.white)
-                                .blendMode(.overlay)
+                                .signInWithAppleButtonStyle(.black)
+                                .blendMode(.destinationOver)
+                                .opacity(0.01)
 
-                                Image(systemName: "apple.logo")
-                                    .font(.system(size: 22, weight: .medium)) // SF Symbol icon — keep as is
-                                    .foregroundStyle(.textPrimary)
-                                    .allowsHitTesting(false)
+                                HStack(spacing: LayoutConstants.spaceSM) {
+                                    Image(systemName: "apple.logo")
+                                        .font(.system(size: 22, weight: .medium))
+                                    Text("Apple")
+                                        .font(.system(size: 18, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .allowsHitTesting(false)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: LayoutConstants.buttonHeightLG)
                             .background(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                    .fill(.bgPrimary)
+                                    .fill(Color.black)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                             )
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                             .accessibilityLabel("Sign in with Apple")
 
                             // Google
                             Button {
                                 Task { await vm.handleGoogleSignIn(appState: appState) }
                             } label: {
-                                Text("G")
-                                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                                    .foregroundStyle(.textPrimary)
+                                HStack(spacing: LayoutConstants.spaceSM) {
+                                    Text("G")
+                                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                                    Text("Google")
+                                        .font(.system(size: 18, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
                             }
                             .buttonStyle(.socialAuth)
                             .accessibilityLabel("Sign in with Google")

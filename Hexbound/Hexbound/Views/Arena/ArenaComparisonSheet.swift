@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Bottom sheet for comparing player stats vs opponent before a fight.
-/// Shows VS header, full stat comparison (combat + base stats), win prediction, and fight CTA.
+/// Shows VS header, equipment comparison, full stat comparison (combat + base stats), win prediction, and fight CTA.
 struct ArenaComparisonSheet: View {
     let opponent: Opponent
     let character: Character
@@ -12,6 +12,7 @@ struct ArenaComparisonSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(GameDataCache.self) private var cache
+    @Environment(AppState.self) private var appState
     @State private var showStaminaConfirm = false
 
     private var winChance: Int {
@@ -22,7 +23,7 @@ struct ArenaComparisonSheet: View {
         VStack(spacing: 0) {
             // Handle + Close button
             ZStack {
-                RoundedRectangle(cornerRadius: 2)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(DarkFantasyTheme.textTertiary)
                     .frame(width: 36, height: 4)
 
@@ -42,6 +43,9 @@ struct ArenaComparisonSheet: View {
                 VStack(spacing: LayoutConstants.spaceMD) {
                     // VS Header
                     vsHeader
+
+                    // Equipment Section
+                    equipmentSection
 
                     // Combat Stats
                     combatStatsSection
@@ -82,12 +86,13 @@ struct ArenaComparisonSheet: View {
                     characterClass: character.characterClass,
                     size: 100
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
                         .stroke(DarkFantasyTheme.success, lineWidth: 2)
                 )
                 .shadow(color: DarkFantasyTheme.success.opacity(0.3), radius: 8)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 3, y: 2)
 
                 Text(character.characterName)
                     .font(DarkFantasyTheme.section(size: 15))
@@ -112,12 +117,13 @@ struct ArenaComparisonSheet: View {
                     size: 100
                 )
                 .scaleEffect(x: -1, y: 1)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
                         .stroke(DarkFantasyTheme.danger, lineWidth: 2)
                 )
                 .shadow(color: DarkFantasyTheme.danger.opacity(0.3), radius: 8)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 3, y: 2)
 
                 Text(opponent.characterName)
                     .font(DarkFantasyTheme.section(size: 15))
@@ -128,6 +134,168 @@ struct ArenaComparisonSheet: View {
                     .font(DarkFantasyTheme.body(size: 12).bold())
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
+        }
+    }
+
+    // MARK: - Equipment Section
+
+    private var equipmentSection: some View {
+        let playerItems = appState.cachedInventory?.filter { $0.isEquipped == true } ?? []
+        
+        return VStack(spacing: LayoutConstants.spaceSM) {
+            sectionHeader("Equipment")
+
+            HStack(spacing: LayoutConstants.spaceLG) {
+                // Player equipment
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    Text("YOUR GEAR")
+                        .font(DarkFantasyTheme.body(size: 10))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .tracking(1)
+
+                    equippedItemsGrid(items: playerItems)
+                }
+                .frame(maxWidth: .infinity)
+
+                Divider()
+                    .frame(height: 120)
+                    .overlay(DarkFantasyTheme.borderSubtle)
+
+                // Opponent placeholder
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    Text("OPPONENT")
+                        .font(DarkFantasyTheme.body(size: 10))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .tracking(1)
+
+                    opponentPlaceholder
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(LayoutConstants.cardPadding)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.4), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+    }
+
+    private func equippedItemsGrid(items: [Item]) -> some View {
+        VStack(spacing: LayoutConstants.equipmentGap) {
+            ForEach(Array(stride(from: 0, to: max(1, items.count), by: 3)), id: \.self) { rowStart in
+                HStack(spacing: LayoutConstants.equipmentGap) {
+                    ForEach(0..<3, id: \.self) { colIndex in
+                        let itemIndex = rowStart + colIndex
+                        if itemIndex < items.count {
+                            equippedItemSlot(items[itemIndex])
+                        } else {
+                            emptyItemSlot
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func equippedItemSlot(_ item: Item) -> some View {
+        VStack(spacing: 4) {
+            ZStack(alignment: .topTrailing) {
+                // Item background
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .fill(DarkFantasyTheme.bgDarkPanel)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                            .stroke(DarkFantasyTheme.rarityColor(for: item.rarity), lineWidth: 1.5)
+                    )
+                    .frame(height: 60)
+
+                // Item image
+                ItemImageView(
+                    imageKey: item.imageKey,
+                    imageUrl: item.imageUrl,
+                    fallbackIcon: "📦"
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+
+                // Rarity badge
+                Text(item.rarity.displayName.prefix(1).uppercased())
+                    .font(DarkFantasyTheme.body(size: 9).bold())
+                    .foregroundStyle(.white)
+                    .padding(3)
+                    .background(Circle().fill(DarkFantasyTheme.rarityColor(for: item.rarity)))
+                    .padding(4)
+            }
+
+            // Item name
+            Text(item.displayName)
+                .font(DarkFantasyTheme.body(size: 9))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+        }
+    }
+
+    private var emptyItemSlot: some View {
+        VStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgDarkPanel.opacity(0.5))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .stroke(DarkFantasyTheme.borderSubtle, style: StrokeStyle(lineWidth: 1, dash: [4]))
+                )
+                .frame(height: 60)
+
+            Text("Empty")
+                .font(DarkFantasyTheme.body(size: 9))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+        }
+    }
+
+    private var opponentPlaceholder: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                // Class icon
+                Text(opponent.characterClass.icon)
+                    .font(.system(size: 32))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(opponent.characterClass.displayName)
+                        .font(DarkFantasyTheme.body(size: 12))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                    Text("Lv. \(opponent.level)")
+                        .font(DarkFantasyTheme.body(size: 10))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+
+                Spacer()
+            }
+            .padding(LayoutConstants.spaceSM)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .fill(DarkFantasyTheme.bgDarkPanel)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+
+            Text("Equipment data\nunavailable")
+                .font(DarkFantasyTheme.body(size: 9))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .multilineTextAlignment(.center)
         }
     }
 
@@ -144,13 +312,21 @@ struct ArenaComparisonSheet: View {
         }
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.4), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
     }
 
     // MARK: - Base Stats Section
@@ -165,13 +341,21 @@ struct ArenaComparisonSheet: View {
         }
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.4), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
     }
 
     // MARK: - Section Header
@@ -269,8 +453,8 @@ struct ArenaComparisonSheet: View {
                         Text("FREE")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                             .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, LayoutConstants.spaceSM)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(DarkFantasyTheme.bgDarkPanel)
                             .clipShape(Capsule())
                     }
@@ -279,7 +463,6 @@ struct ArenaComparisonSheet: View {
         }
         .buttonStyle(.fight)
         .disabled(isFighting || !canFight)
-        .glowPulse(color: DarkFantasyTheme.arenaRankGold, intensity: 0.6, isActive: canFight && !isFighting)
         .confirmationDialog(
             "SPEND STAMINA",
             isPresented: $showStaminaConfirm,

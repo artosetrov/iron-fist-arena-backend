@@ -24,17 +24,17 @@ struct InboxRowView: View {
                         .frame(width: 8, height: 8)
                 }
                 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.subject)
                             .font(.system(size: 16, weight: message.isRead ? .regular : .semibold))
                             .foregroundColor(DarkFantasyTheme.textPrimary)
                             .lineLimit(1)
-                        
+
                         Spacer()
-                        
+
                         // Attachment icons
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             if let attachments = message.attachments, !attachments.isEmpty {
                                 ForEach(attachments.prefix(3), id: \.type) { attachment in
                                     AttachmentIcon(type: attachment.type, amount: attachment.amount)
@@ -114,7 +114,7 @@ struct InboxRowView: View {
                         }
                         .padding(LayoutConstants.spaceMD)
                         .background(DarkFantasyTheme.bgTertiary)
-                        .cornerRadius(6)
+                        .cornerRadius(LayoutConstants.radiusSM)
                     }
                     
                     // Actions
@@ -147,7 +147,7 @@ struct InboxRowView: View {
             }
         }
         .background(DarkFantasyTheme.bgSecondary)
-        .cornerRadius(8)
+        .cornerRadius(LayoutConstants.radiusMD)
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.vertical, LayoutConstants.spaceSM)
     }
@@ -211,7 +211,7 @@ private struct AttachmentIcon: View {
     let amount: Int
     
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: LayoutConstants.space2XS) {
             Image(systemName: iconName)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(iconColor)
@@ -220,10 +220,10 @@ private struct AttachmentIcon: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(DarkFantasyTheme.textSecondary)
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 3)
+        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(.vertical, LayoutConstants.space2XS)
         .background(DarkFantasyTheme.bgTertiary)
-        .cornerRadius(4)
+        .cornerRadius(LayoutConstants.radiusXS)
     }
     
     private var iconName: String {

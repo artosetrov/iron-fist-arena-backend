@@ -4,6 +4,7 @@
 
 import { xpForLevel } from './balance';
 import { getPrestigeConfig, getPassivesConfig } from './live-config';
+import { updateMultipleAchievements } from './achievements';
 
 // Re-export for convenience
 export { xpForLevel };
@@ -39,6 +40,18 @@ export async function applyLevelUp(
       passivePointsAvailable: { increment: result.passivePointsAwarded },
     },
   });
+
+  // Track level-up achievements (fire-and-forget — uses main prisma, not tx)
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    await updateMultipleAchievements(prisma, characterId, [
+      { key: 'reach_level_10', increment: result.newLevel, absolute: true },
+      { key: 'reach_level_25', increment: result.newLevel, absolute: true },
+      { key: 'reach_level_50', increment: result.newLevel, absolute: true },
+    ]);
+  } catch (e) {
+    console.error('Achievement tracking error (level-up):', e);
+  }
 
   return result;
 }

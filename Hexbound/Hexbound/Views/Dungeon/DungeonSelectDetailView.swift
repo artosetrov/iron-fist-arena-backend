@@ -117,9 +117,9 @@ struct DungeonSelectDetailView: View {
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .fill(DarkFantasyTheme.bgTertiary)
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .fill(DarkFantasyTheme.staminaGradient)
                             .frame(width: geo.size.width * fraction)
                     }
@@ -143,13 +143,21 @@ struct DungeonSelectDetailView: View {
             .padding(.horizontal, LayoutConstants.cardPadding)
             .padding(.vertical, LayoutConstants.spaceSM)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.stamina.opacity(0.08))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
             )
+            .cornerBrackets(color: DarkFantasyTheme.stamina.opacity(0.3), length: 12, thickness: 1.5)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
         }
         .buttonStyle(.scalePress(0.97))
         .contentShape(Rectangle())
@@ -308,9 +316,15 @@ struct DungeonSelectDetailView: View {
                 .padding(LayoutConstants.cardPadding)
             }
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(
@@ -322,7 +336,9 @@ struct DungeonSelectDetailView: View {
                         lineWidth: isLocked ? 1 : 1.5
                     )
             )
+            .cornerBrackets(color: isCompleted ? DarkFantasyTheme.success.opacity(0.3) : isLocked ? DarkFantasyTheme.borderSubtle.opacity(0.3) : dungeon.themeColor.opacity(0.3), length: 14, thickness: 1.5)
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 8, y: 4)
             .contentShape(Rectangle())
         }
         .buttonStyle(.scalePress(0.97))
@@ -341,9 +357,9 @@ struct DungeonSelectDetailView: View {
             // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                         .fill(DarkFantasyTheme.bgTertiary)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
                         .fill(
                             fraction >= 1.0
                                 ? DarkFantasyTheme.canonicalHpGradient(percentage: 1.0)

@@ -119,11 +119,11 @@ struct DesignSystemPreview: View {
             HStack(spacing: 8) {
                 ForEach([ItemRarity.common, .uncommon, .rare, .epic, .legendary], id: \.self) { rarity in
                     VStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .fill(DarkFantasyTheme.bgTertiary)
                             .frame(height: 36)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 6)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                     .stroke(DarkFantasyTheme.rarityColor(for: rarity), lineWidth: 2)
                             )
                             .shadow(color: DarkFantasyTheme.rarityGlow(for: rarity), radius: 6)
@@ -305,7 +305,7 @@ struct DesignSystemPreview: View {
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
                     .background(style.color.opacity(0.7))
-                    .clipShape(RoundedRectangle(cornerRadius: 3))
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                 }
             }
         }
@@ -328,7 +328,7 @@ struct DesignSystemPreview: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(effect.color.opacity(0.8))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                 }
             }
         }
@@ -352,11 +352,11 @@ struct DesignSystemPreview: View {
 
     private func colorSwatch(_ name: String, _ color: Color) -> some View {
         VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(color)
                 .frame(height: 36)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                 )
             Text(name)
@@ -390,7 +390,7 @@ struct DesignSystemPreview: View {
                 .font(DarkFantasyTheme.body(size: 10))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(width: 80, alignment: .leading)
-            RoundedRectangle(cornerRadius: 2)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                 .fill(DarkFantasyTheme.gold.opacity(0.6))
                 .frame(width: width * 3, height: 8)
         }

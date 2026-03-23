@@ -24,6 +24,7 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { degradeEquipment } from '@/lib/game/durability'
+import { updateMultipleAchievements } from '@/lib/game/achievements'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -318,6 +319,34 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(null),
       // 6. Degrade attacker's equipped items
       degradeEquipment(prisma, attacker.id),
+      // 7. Track PvP + ranking achievements (fire-and-forget, non-blocking)
+      (async () => {
+        try {
+          const achievementUpdates: { key: string; increment: number; absolute?: boolean }[] = []
+          if (attackerWon) {
+            const newStreak = attacker.pvpWinStreak + 1
+            achievementUpdates.push(
+              { key: 'pvp_first_blood', increment: 1 },
+              { key: 'pvp_wins_10', increment: 1 },
+              { key: 'pvp_wins_50', increment: 1 },
+              { key: 'pvp_wins_100', increment: 1 },
+              { key: 'pvp_wins_500', increment: 1 },
+              { key: 'pvp_streak_5', increment: newStreak, absolute: true },
+              { key: 'pvp_streak_10', increment: newStreak, absolute: true },
+            )
+          }
+          // Ranking achievements — set absolute rating value
+          achievementUpdates.push(
+            { key: 'rank_silver', increment: attackerNewRating, absolute: true },
+            { key: 'rank_gold', increment: attackerNewRating, absolute: true },
+            { key: 'rank_diamond', increment: attackerNewRating, absolute: true },
+            { key: 'rank_grandmaster', increment: attackerNewRating, absolute: true },
+          )
+          await updateMultipleAchievements(prisma, attacker.id, achievementUpdates)
+        } catch (e) {
+          console.error('Achievement tracking error (pvp/fight):', e)
+        }
+      })(),
     ])
 
     const loot: LootResponseItem[] = []

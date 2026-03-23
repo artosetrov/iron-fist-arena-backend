@@ -29,11 +29,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.08,
         relativeY: 0.70,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowArena,
-=======
-        glowColor: Color(hex: 0xE68C33),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "shield.lefthalf.filled",
         sortOrder: 0
     ),
@@ -45,11 +41,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.20,
         relativeY: 0.45,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowMystic,
-=======
-        glowColor: Color(hex: 0x8040B0),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "building.columns.fill",
         sortOrder: 1
     ),
@@ -61,11 +53,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.32,
         relativeY: 0.65,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowForge,
-=======
-        glowColor: Color(hex: 0xFF6626),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "flame.fill",
         sortOrder: 2
     ),
@@ -77,11 +65,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.42,
         relativeY: 0.35,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowNature,
-=======
-        glowColor: Color(hex: 0x4CAF50),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "leaf.fill",
         sortOrder: 3
     ),
@@ -93,11 +77,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.52,
         relativeY: 0.60,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowVolcanic,
-=======
-        glowColor: Color(hex: 0xE65100),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "hammer.fill",
         sortOrder: 4
     ),
@@ -109,11 +89,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.62,
         relativeY: 0.30,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowIce,
-=======
-        glowColor: Color(hex: 0x42A5F5),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "snowflake",
         sortOrder: 5
     ),
@@ -125,11 +101,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.72,
         relativeY: 0.55,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowTreasure,
-=======
-        glowColor: Color(hex: 0xFFD54F),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "sun.max.fill",
         sortOrder: 6
     ),
@@ -141,11 +113,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.80,
         relativeY: 0.40,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowShadow,
-=======
-        glowColor: Color(hex: 0x424242),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "moon.fill",
         sortOrder: 7
     ),
@@ -157,11 +125,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.88,
         relativeY: 0.60,
         relativeSize: 0.18,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowStone,
-=======
-        glowColor: Color(hex: 0x78909C),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "gearshape.2.fill",
         sortOrder: 8
     ),
@@ -173,11 +137,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.94,
         relativeY: 0.35,
         relativeSize: 0.20,
-<<<<<<< HEAD
-        glowColor: DarkFantasyTheme.glowBlood,
-=======
-        glowColor: Color(hex: 0xB71C1C),
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+        glowColor: Color.orange,
         fallbackIcon: "crown.fill",
         sortOrder: 9
     ),

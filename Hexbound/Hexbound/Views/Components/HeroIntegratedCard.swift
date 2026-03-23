@@ -9,9 +9,7 @@ struct HeroIntegratedCard: View {
 
     var onTapPortrait: (() -> Void)? = nil
     var onTapSlot: ((Item) -> Void)? = nil
-    var onEditStance: (() -> Void)? = nil
     var onRepairAll: (() -> Void)? = nil
-    var onAllocateStats: (() -> Void)? = nil
     var onUseHealthPotion: (() -> Void)? = nil
     var onRefillStamina: (() -> Void)? = nil
 
@@ -32,10 +30,6 @@ struct HeroIntegratedCard: View {
         brokenItems.reduce(0) { $0 + (($1.maxDurability ?? 0) - ($1.durability ?? 0)) * 2 }
     }
 
-    private var hasStatPoints: Bool {
-        (character.statPoints ?? 0) > 0
-    }
-
     private func formatGold(_ n: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -46,16 +40,11 @@ struct HeroIntegratedCard: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // ═══ STAMINA BAR ON TOP ═══
-            staminaBarInside
-                .padding(.horizontal, LayoutConstants.heroCardPadding)
-                .padding(.top, LayoutConstants.heroCardPadding)
-                .padding(.bottom, LayoutConstants.spaceSM)
-
             // ═══ EQUIPMENT GRID ═══
             equipmentGrid
                 .padding(.horizontal, LayoutConstants.heroCardPadding)
-                .padding(.bottom, LayoutConstants.spaceMD)
+                .padding(.top, LayoutConstants.heroCardPadding)
+                .padding(.bottom, LayoutConstants.spaceLG)
 
             // ═══ DIVIDER ═══
             Rectangle()
@@ -83,115 +72,99 @@ struct HeroIntegratedCard: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroCardRadius))
     }
 
-    // MARK: - Equipment Grid (GeometryReader for accurate width)
+    // MARK: - Equipment Grid (computed cell width, no GeometryReader)
 
-    private var equipmentGrid: some View {
-        GeometryReader { geo in
-            let availableW = geo.size.width
-            let slotGap = LayoutConstants.heroSlotGap
-            // Uniform 4-column grid: all gaps equal
-            let cw = max((availableW - 3 * slotGap) / 4, 0)
-            // Portrait = exactly 2 cells wide + 1 gap between them (centered)
-            let portraitW = 2 * cw + slotGap
-            let portraitH = 3 * cw + 2 * slotGap
-
-            VStack(spacing: slotGap) {
-                // Top: 3 left | portrait (2-col) | 3 right
-                HStack(alignment: .top, spacing: slotGap) {
-                    VStack(spacing: slotGap) {
-                        equipSlot("helmet", size: cw)
-                        equipSlot("chest", size: cw)
-                        equipSlot("legs", size: cw)
-                    }
-                    .frame(width: cw)
-
-                    heroPortrait()
-                        .frame(width: portraitW, height: portraitH)
-
-                    VStack(spacing: slotGap) {
-                        equipSlot("amulet", size: cw)
-                        equipSlot("gloves", size: cw)
-                        equipSlot("boots", size: cw)
-                    }
-                    .frame(width: cw)
-                }
-
-                // Bottom: Ring, Weapon, Relic, Belt
-                HStack(spacing: slotGap) {
-                    equipSlot("ring", size: cw, index: 0)
-                    equipSlot("weapon", size: cw)
-                    equipSlot("relic", size: cw)
-                    equipSlot("belt", size: cw)
-                }
-            }
-        }
-        .frame(height: equipmentGridHeight)
+    /// Cell width for uniform 4-column grid
+    private var gridCellWidth: CGFloat {
+        let cardInnerW = UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - 2 * LayoutConstants.heroCardPadding
+        return floor((cardInnerW - 3 * LayoutConstants.heroSlotGap) / 4)
     }
 
-    /// Pre-computed grid height so GeometryReader doesn't collapse
-    private var equipmentGridHeight: CGFloat {
-        let screenW = UIScreen.main.bounds.width
-        let availableW = screenW - 2 * LayoutConstants.screenPadding - 2 * LayoutConstants.heroCardPadding
+    private var equipmentGrid: some View {
+        let cw = gridCellWidth
         let slotGap = LayoutConstants.heroSlotGap
-        let cw = max((availableW - 3 * slotGap) / 4, 0)
-        // Top section (3 rows) + gap + bottom row (1 row) + 1pt rounding buffer
-        return ceil(4 * cw + 3 * slotGap)
+        // Portrait = exactly 2 cells + 1 gap (centered in grid)
+        let portraitW = 2 * cw + slotGap
+        let portraitH = 3 * cw + 2 * slotGap
+
+        return VStack(spacing: slotGap) {
+            // Top: 3 left | portrait (2-col) | 3 right
+            HStack(alignment: .top, spacing: slotGap) {
+                VStack(spacing: slotGap) {
+                    equipSlot("helmet", size: cw)
+                    equipSlot("chest", size: cw)
+                    equipSlot("legs", size: cw)
+                }
+                .frame(width: cw)
+
+                heroPortrait()
+                    .frame(width: portraitW, height: portraitH)
+
+                VStack(spacing: slotGap) {
+                    equipSlot("amulet", size: cw)
+                    equipSlot("gloves", size: cw)
+                    equipSlot("boots", size: cw)
+                }
+                .frame(width: cw)
+            }
+
+            // Bottom: Ring, Weapon, Relic, Belt
+            HStack(spacing: slotGap) {
+                equipSlot("ring", size: cw, index: 0)
+                equipSlot("weapon", size: cw)
+                equipSlot("relic", size: cw)
+                equipSlot("belt", size: cw)
+            }
+        }
     }
 
     // MARK: - Data Section (below divider)
 
     private var dataSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            // HP bar with label + value INSIDE
-            hpBarInside
+            // HP bar (unified component, large size)
+            HPBarView(
+                currentHp: character.currentHp,
+                maxHp: character.maxHp,
+                size: .large,
+                label: "HP"
+            )
 
-            // XP bar with label + value INSIDE
-            xpBarInside
+            // XP bar (unified component, large size)
+            XPBarView(
+                currentXp: character.experience ?? 0,
+                xpNeeded: character.xpNeeded,
+                size: .large
+            )
 
-            // Stamina bar with label + value INSIDE (orange)
-            staminaBarInside
+            // Stamina bar (unified component, large size)
+            StaminaBarView(
+                currentStamina: character.currentStamina,
+                maxStamina: character.maxStamina,
+                size: .large
+            )
 
-            // Action pills (no gold/gems — moved to inventory header)
+            // Action pills
             HStack(spacing: LayoutConstants.spaceSM) {
-                // Stance (always)
-                if let stance = character.combatStance {
-                    WidgetPill(
-                        icon: "⚔️",
-                        text: "\(stance.attack.capitalized) · 🛡 \(stance.defense.capitalized)",
-                        style: .pvp,
-                        isInteractive: true,
-                        action: { onEditStance?() }
-                    )
-                }
-
                 // Repair All (conditional: broken items exist)
                 if !brokenItems.isEmpty {
                     WidgetPill(
-                        icon: "⚠️",
+                        icon: "",
                         text: "Repair All(\(brokenItems.count))",
+                        imageAsset: "icon-strength",
                         style: .warn,
                         isInteractive: true,
                         action: { onRepairAll?() }
                     )
                 }
 
-                // Stat Points (conditional)
-                if hasStatPoints {
-                    WidgetPill(
-                        icon: "⭐",
-                        text: "+\(character.statPoints ?? 0) Stats",
-                        style: .stat,
-                        isInteractive: true,
-                        action: { onAllocateStats?() }
-                    )
-                }
-
                 // Heal (conditional: HP low + potion available)
                 if character.hpPercentage < 0.5 && healthPotionCount > 0 {
                     WidgetPill(
-                        icon: "🧪",
+                        icon: "",
                         text: "Heal",
                         count: "×\(healthPotionCount)",
+                        imageAsset: "pot_health_small",
                         style: character.hpPercentage < 0.25 ? .urgent : .heal,
                         isInteractive: true,
                         action: { onUseHealthPotion?() }
@@ -200,104 +173,6 @@ struct HeroIntegratedCard: View {
 
                 Spacer()
             }
-        }
-    }
-
-    // MARK: - HP Bar (label + value inside)
-
-    private var hpBarInside: some View {
-        ZStack(alignment: .leading) {
-            // Track
-            RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                .fill(DarkFantasyTheme.textPrimary.opacity(0.06))
-                .frame(height: LayoutConstants.heroBarHeight)
-
-            // Fill
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                    .fill(DarkFantasyTheme.canonicalHpGradient(percentage: character.hpPercentage))
-                    .frame(width: geo.size.width * character.hpPercentage)
-            }
-            .frame(height: LayoutConstants.heroBarHeight)
-
-            // Label + Value centered
-            HStack {
-                Spacer()
-                Text("HP  \(character.currentHp) / \(character.maxHp)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
-                    .foregroundStyle(.textPrimary)
-                    .shadow(color: .bgAbyss.opacity(0.6), radius: 2)
-                    .monospacedDigit()
-                Spacer()
-            }
-            .frame(height: LayoutConstants.heroBarHeight)
-        }
-    }
-
-    // MARK: - XP Bar (label + value inside, absolute numbers)
-
-    private var xpBarInside: some View {
-        let xpCurrent = character.experience ?? 0
-        let xpMax = character.xpNeeded
-        let fraction = min(Double(xpCurrent) / Double(max(xpMax, 1)), 1.0)
-        let isNearLevelUp = fraction >= 0.9
-
-        return ZStack(alignment: .leading) {
-            // Track
-            RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                .fill(DarkFantasyTheme.textPrimary.opacity(0.06))
-                .frame(height: LayoutConstants.heroBarXpHeight)
-
-            // Fill
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                    .fill(isNearLevelUp ? DarkFantasyTheme.xpGoldenGradient : DarkFantasyTheme.xpGradient)
-                    .frame(width: geo.size.width * fraction)
-            }
-            .frame(height: LayoutConstants.heroBarXpHeight)
-
-            // Label + Value centered
-            HStack {
-                Spacer()
-                Text("XP  \(xpCurrent) / \(xpMax)\(isNearLevelUp ? " ⬆" : "")")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
-                    .foregroundStyle(isNearLevelUp ? DarkFantasyTheme.goldBright : .textPrimary)
-                    .shadow(color: .bgAbyss.opacity(0.6), radius: 2)
-                    .monospacedDigit()
-                Spacer()
-            }
-            .frame(height: LayoutConstants.heroBarXpHeight)
-        }
-    }
-
-    // MARK: - Stamina Bar (orange, same style as HP/XP)
-
-    private var staminaBarInside: some View {
-        let fraction = character.maxStamina > 0 ? Double(character.currentStamina) / Double(character.maxStamina) : 0
-        let isLow = character.currentStamina < 10
-
-        return ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                .fill(DarkFantasyTheme.textPrimary.opacity(0.06))
-                .frame(height: LayoutConstants.heroBarXpHeight)
-
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                    .fill(DarkFantasyTheme.staminaGradient)
-                    .frame(width: geo.size.width * fraction)
-            }
-            .frame(height: LayoutConstants.heroBarXpHeight)
-
-            HStack {
-                Spacer()
-                Text("Stamina  \(character.currentStamina) / \(character.maxStamina)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
-                    .foregroundStyle(isLow ? DarkFantasyTheme.textWarning : .textPrimary)
-                    .shadow(color: .bgAbyss.opacity(0.6), radius: 2)
-                    .monospacedDigit()
-                Spacer()
-            }
-            .frame(height: LayoutConstants.heroBarXpHeight)
         }
     }
 
@@ -348,7 +223,7 @@ struct HeroIntegratedCard: View {
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, LayoutConstants.spaceXS)
                 .frame(maxWidth: .infinity)
                 .background(
                     LinearGradient(
@@ -374,8 +249,8 @@ struct HeroIntegratedCard: View {
                     Text("Lv. \(character.level)")
                         .font(DarkFantasyTheme.section(size: 10).bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, LayoutConstants.spaceXS)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(
                             Capsule().fill(DarkFantasyTheme.gold)
                         )
@@ -417,121 +292,26 @@ struct HeroIntegratedCard: View {
     @ViewBuilder
     private func equipSlot(_ slot: String, size: CGFloat, index: Int = 0) -> some View {
         let item = findEquippedItem(slot: slot, index: index)
-        let assetName = EquipmentViewModel.slotAssets[slot]
-        let rarityColor = item.map { DarkFantasyTheme.rarityColor(for: $0.rarity) } ?? DarkFantasyTheme.borderSubtle
-        let isBroken = (item?.durability ?? 1) <= 0
+        let slotAsset = EquipmentViewModel.slotAssets[slot]
 
-        Button {
-            if let item { onTapSlot?(item) }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
-                    .fill(item != nil ? rarityColor.opacity(0.15) : DarkFantasyTheme.bgTertiary.opacity(0.4))
-
-                if let item {
-                    if let key = item.imageKey, UIImage(named: key) != nil {
-                        Image(key)
-                            .resizable().scaledToFit()
-                            .frame(width: size * 0.65, height: size * 0.65)
-                    } else if let imageUrl = item.imageUrl, let url = URL(string: imageUrl) {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let img):
-                                img.resizable().scaledToFit()
-                                    .frame(width: size * 0.65, height: size * 0.65)
-                            default:
-                                itemFallbackIcon(item: item, assetName: assetName, size: size)
-                            }
-                        }
-                    } else {
-                        itemFallbackIcon(item: item, assetName: assetName, size: size)
-                    }
-                } else if let assetName {
-                    Image(assetName)
-                        .renderingMode(.template)
-                        .resizable().scaledToFit()
-                        .frame(width: size * 0.5, height: size * 0.5)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary.opacity(0.3))
-                }
-
-                // Broken indicator
-                if isBroken {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("!")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.textPrimary)
-                                .frame(width: 16, height: 16)
-                                .background(Circle().fill(DarkFantasyTheme.danger))
-                        }
-                        Spacer()
-                    }
-                    .padding(4)
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if let item, let level = item.upgradeLevel, level > 0 {
-                    HStack(spacing: 2) {
-                        ForEach(0..<level, id: \.self) { _ in
-                            Circle()
-                                .fill(DarkFantasyTheme.goldBright)
-                                .frame(width: 4, height: 4)
-                        }
-                    }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 3)
-                    .frame(maxWidth: .infinity)
-                    .background(.bgAbyss.opacity(0.45))
-                    .clipShape(.rect(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: LayoutConstants.heroSlotRadius,
-                        bottomTrailingRadius: LayoutConstants.heroSlotRadius,
-                        topTrailingRadius: 0
-                    ))
-                }
+        if let item {
+            ItemCardView(
+                item: item,
+                context: .equipment(slotAsset: slotAsset)
+            ) {
+                onTapSlot?(item)
             }
             .frame(width: size, height: size)
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
-                    .stroke(
-                        isBroken ? DarkFantasyTheme.danger : (item != nil ? rarityColor.opacity(0.6) : DarkFantasyTheme.borderSubtle),
-                        lineWidth: item != nil ? 2 : 1
-                    )
-            )
-<<<<<<< HEAD
-            // Durability ring contour (same as inventory)
-            .overlay {
-                if let item,
-                   let maxDur = item.maxDurability, maxDur > 0 {
-                    let fraction = Double(item.durability ?? 0) / Double(maxDur)
-                    if fraction < 1.0 {
-                        DurabilityRingOverlay(
-                            fraction: fraction,
-                            cornerRadius: LayoutConstants.heroSlotRadius,
-                            lineWidth: 2
-                        )
-                    }
-                }
-            }
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.scalePress(0.95))
-        .disabled(item == nil)
-    }
-
-    @ViewBuilder
-    private func itemFallbackIcon(item: Item, assetName: String?, size: CGFloat) -> some View {
-        let asset = assetName ?? item.itemType.iconAsset
-        if let asset {
-            Image(asset)
-                .resizable().scaledToFit()
-                .frame(width: size * 0.55, height: size * 0.55)
         } else {
-            Text(item.itemType.icon)
-                .font(.system(size: 22))
+            // Empty slot — uses ItemCardView with equipment context
+            ItemCardView(
+                rarity: .common,
+                imageKey: nil,
+                imageUrl: nil,
+                fallbackIcon: "",
+                context: .equipment(slotAsset: slotAsset)
+            ) { }
+            .frame(width: size, height: size)
         }
     }
 }

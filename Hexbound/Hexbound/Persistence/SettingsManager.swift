@@ -20,10 +20,6 @@ final class SettingsManager {
         didSet { UserDefaults.standard.set(isMuted, forKey: AppConstants.udIsMuted) }
     }
 
-    var language: String {
-        didSet { UserDefaults.standard.set(language, forKey: AppConstants.udLanguage) }
-    }
-
     var pushNotifications: Bool {
         didSet { UserDefaults.standard.set(pushNotifications, forKey: AppConstants.udPushNotifications) }
     }
@@ -34,7 +30,6 @@ final class SettingsManager {
         self.bgmVolume = UserDefaults.standard.object(forKey: AppConstants.udBGMVolume) as? Float ?? 0.2
         self.sfxVolume = UserDefaults.standard.object(forKey: AppConstants.udSFXVolume) as? Float ?? 0.2
         self.isMuted = UserDefaults.standard.bool(forKey: AppConstants.udIsMuted)
-        self.language = UserDefaults.standard.string(forKey: AppConstants.udLanguage) ?? "en"
         self.pushNotifications = UserDefaults.standard.object(forKey: AppConstants.udPushNotifications) as? Bool ?? true
     }
 }

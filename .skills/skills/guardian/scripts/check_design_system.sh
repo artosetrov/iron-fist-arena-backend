@@ -12,6 +12,18 @@ if [ -f "$THEME" ]; then
   VALID_TOKENS=$(grep -oP 'static\s+(let|var)\s+\K\w+' "$THEME" | sort -u | tr '\n' '|')
 fi
 
+# Collect Color/ShapeStyle extension shorthand tokens (bare .tokenName is safe for these)
+# These are defined in `extension Color { static var xxx }` and `extension ShapeStyle where Self == Color`
+EXTENSION_TOKENS=""
+if [ -f "$THEME" ]; then
+  EXTENSION_TOKENS=$(grep -A1 'extension Color {' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)
+  EXTENSION_TOKENS="$EXTENSION_TOKENS
+$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)"
+  EXTENSION_TOKENS=$(echo "$EXTENSION_TOKENS" | sort -u | grep -v '^$')
+  # Build grep exclusion pattern: bgAbyss|bgPrimary|textPrimary|...
+  EXTENSION_EXCLUDE=$(echo "$EXTENSION_TOKENS" | tr '\n' '|' | sed 's/|$//')
+fi
+
 echo "=== DESIGN SYSTEM SCAN ==="
 echo ""
 
@@ -39,6 +51,31 @@ grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|t
   grep -v '#Preview' | \
   while IFS= read -r line; do
     echo "❌ $line"
+  done
+
+echo ""
+
+# --- 1b. Bare DarkFantasyTheme tokens (without DarkFantasyTheme. prefix) ---
+echo "## Bare Theme Tokens (without DarkFantasyTheme. prefix)"
+echo ""
+# Find .foregroundStyle(.xxx), .shadow(color: .xxx), .background(.xxx) where xxx looks like a theme token
+# but is NOT a system color and NOT in the Color/ShapeStyle extension
+BARE_UNSAFE=0
+BARE_SAFE=0
+grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|tint|shadow\(color:)\s*\(\.' "$TARGET" 2>/dev/null | \
+  grep -v 'DarkFantasyTheme' | \
+  grep -v '^\s*//' | \
+  grep -v '#Preview' | \
+  grep -v '\.\(white\|black\|red\|blue\|green\|gray\|orange\|yellow\|pink\|purple\|cyan\|mint\|indigo\|brown\|clear\|primary\|secondary\)' | \
+  while IFS= read -r line; do
+    # Extract the token name after (. pattern, e.g. .foregroundStyle(.textPrimary) → textPrimary
+    token=$(echo "$line" | grep -oP '\(\.\K\w+' | head -1)
+    if [ -n "$EXTENSION_EXCLUDE" ] && echo "$token" | grep -qwE "$EXTENSION_EXCLUDE"; then
+      # Covered by Color/ShapeStyle extension — safe but noted
+      echo "ℹ️  [extension-covered] $line"
+    else
+      echo "❌ [UNSAFE bare token] $line"
+    fi
   done
 
 echo ""
@@ -87,8 +124,13 @@ grep -rn --include="*.swift" -E 'Button\s*\{' "$TARGET" 2>/dev/null | \
   while IFS= read -r line; do
     file=$(echo "$line" | cut -d: -f1)
     lineno=$(echo "$line" | cut -d: -f2)
-    # Check next 5 lines for .buttonStyle — if missing, flag it
-    has_style=$(sed -n "$((lineno)),$(( lineno + 8 ))p" "$file" 2>/dev/null | grep -c 'buttonStyle\|\.plain\|\.borderless')
+    # Validate lineno is a number before arithmetic
+    if ! [[ "$lineno" =~ ^[0-9]+$ ]]; then
+      continue
+    fi
+    # Check next 8 lines for .buttonStyle — if missing, flag it
+    end_line=$((lineno + 8))
+    has_style=$(sed -n "${lineno},${end_line}p" "$file" 2>/dev/null | grep -c 'buttonStyle\|\.plain\|\.borderless')
     if [ "$has_style" -eq 0 ]; then
       echo "⚠️  No .buttonStyle: $line"
     fi

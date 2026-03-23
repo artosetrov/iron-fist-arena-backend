@@ -59,6 +59,18 @@ struct NPCGuideWidget: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
+            // Layer 0: dark-to-transparent fade behind the whole widget
+            LinearGradient(
+                colors: [
+                    Color.clear,
+                    DarkFantasyTheme.bgAbyss.opacity(0.6),
+                    DarkFantasyTheme.bgAbyss.opacity(0.9)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+
             // Layer 1 (back): NPC/player image, bottom-left, peeks out behind card
             HStack(alignment: .bottom) {
                 npcAvatar
@@ -197,7 +209,14 @@ struct NPCGuideWidget: View {
                     // Fallback: themed circle with icon
                     ZStack {
                         Circle()
-                            .fill(DarkFantasyTheme.bgSecondary)
+                            .fill(
+                                RadialGradient(
+                                    colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: 30
+                                )
+                            )
                             .overlay(
                                 Circle()
                                     .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 2)
@@ -213,7 +232,7 @@ struct NPCGuideWidget: View {
                 width: LayoutConstants.npcAvatarSize,
                 height: LayoutConstants.npcAvatarSize
             )
-            .shadow(color: .bgAbyss.opacity(0.5), radius: 8, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 8, y: 2)
         }
         .buttonStyle(.scalePress)
     }
@@ -276,7 +295,7 @@ struct NPCMiniButton: View {
                 Circle()
                     .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 3)
             )
-            .shadow(color: .bgAbyss.opacity(0.6), radius: 8, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 8, y: 2)
             .shadow(color: DarkFantasyTheme.goldGlow.opacity(0.5), radius: 10)
         }
         .buttonStyle(.plain)

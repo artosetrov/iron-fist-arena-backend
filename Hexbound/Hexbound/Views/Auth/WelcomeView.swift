@@ -66,7 +66,7 @@ struct WelcomeView: View {
                                 Task { await vm.handleAppleSignIn(result: result, appState: appState) }
                             }
                             .signInWithAppleButtonStyle(.white)
-                            .blendMode(.overlay)
+                            .opacity(0.01)
 
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
@@ -74,14 +74,14 @@ struct WelcomeView: View {
                                 Text("Apple")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
-                            .foregroundStyle(.textPrimary)
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .allowsHitTesting(false)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)
                         .background(
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .fill(.bgPrimary)
+                                .fill(DarkFantasyTheme.bgPrimary)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
@@ -99,7 +99,7 @@ struct WelcomeView: View {
                                 Text("Google")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
-                            .foregroundStyle(.textPrimary)
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                         .buttonStyle(.socialAuth)
                         .accessibilityLabel("Sign in with Google")
@@ -120,7 +120,7 @@ struct WelcomeView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, 48)
+                .padding(.bottom, LayoutConstants.space2XL)
 
                 // Error
                 if !vm.errorMessage.isEmpty {

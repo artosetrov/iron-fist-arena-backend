@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-const LEVEL_RANGE = 3
+const LEVEL_RANGE = 10
 const MAX_OPPONENTS = 5
-const GEAR_SCORE_TOLERANCE = 0.3 // ±30% gear score range
+const GEAR_SCORE_TOLERANCE = 0.8 // ±80% gear score range
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -85,6 +85,22 @@ export async function GET(req: NextRequest) {
       })
       const seenIds = new Set(candidates.map((c) => c.id))
       for (const fb of fallback) {
+        if (!seenIds.has(fb.id)) candidates.push(fb)
+      }
+    }
+
+    // Final fallback: if still too few, fetch ANY characters (no level/gear filter)
+    if (candidates.length < MAX_OPPONENTS) {
+      const anyFallback = await prisma.character.findMany({
+        where: {
+          id: { not: characterId },
+        },
+        select: selectFields,
+        orderBy: { level: 'asc' },
+        take: 15,
+      })
+      const seenIds = new Set(candidates.map((c) => c.id))
+      for (const fb of anyFallback) {
         if (!seenIds.has(fb.id)) candidates.push(fb)
       }
     }

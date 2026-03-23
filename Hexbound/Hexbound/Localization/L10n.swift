@@ -22,31 +22,9 @@ final class LocalizationManager {
     /// Bundle for the current language's .lproj folder.
     private(set) var bundle: Bundle
 
-    /// Supported languages with display names.
-    static let supportedLanguages: [(code: String, name: String, nativeName: String)] = [
-        ("en", "English", "English"),
-        ("ru", "Russian", "Русский"),
-        ("es", "Spanish", "Español"),
-        ("fr", "French", "Français"),
-        ("de", "German", "Deutsch"),
-        ("pt", "Portuguese", "Português"),
-        ("ja", "Japanese", "日本語"),
-        ("ko", "Korean", "한국어"),
-        ("zh", "Chinese", "中文"),
-    ]
-
     private init() {
-        let saved = UserDefaults.standard.string(forKey: "app_language")
-            ?? Locale.current.language.languageCode?.identifier
-            ?? "en"
-        self.currentLanguage = saved
-        self.bundle = Self.bundle(for: saved)
-    }
-
-    /// Switch to a different language at runtime.
-    func setLanguage(_ code: String) {
-        guard currentLanguage != code else { return }
-        currentLanguage = code
+        self.currentLanguage = "en"
+        self.bundle = Self.bundle(for: "en")
     }
 
     /// Look up a localized string by key, with optional format arguments.

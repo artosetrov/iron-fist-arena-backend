@@ -72,6 +72,8 @@ final class InventoryService {
                 APIEndpoints.inventoryEquip,
                 body: body
             )
+            // FTUE: mark gear up complete on first equip
+            TutorialManager.shared.completeFTUEObjective(.gearUp)
             return parseInventoryResponse(response)
         } catch let error as APIError {
             if case .clientError(_, let message) = error {

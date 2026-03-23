@@ -4,6 +4,7 @@ struct LeaderboardDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: LeaderboardViewModel?
+    @State private var selectedPlayerForDetail: LeaderboardEntry?
 
     var body: some View {
         ZStack {
@@ -11,6 +12,10 @@ struct LeaderboardDetailView: View {
 
             if let vm {
                 VStack(spacing: 0) {
+                    // Screen title
+                    OrnamentalTitle("LEADERBOARD", titleSize: LayoutConstants.textSection)
+                        .padding(.top, LayoutConstants.spaceSM)
+
                     // Tab switcher
                     TabSwitcher(
                         tabs: LeaderboardViewModel.tabs,
@@ -86,7 +91,10 @@ struct LeaderboardDetailView: View {
                                         LeaderboardRowView(
                                             entry: entry,
                                             isSelf: isMe,
-                                            valueLabel: tabKey
+                                            valueLabel: tabKey,
+                                            onTap: {
+                                                selectedPlayerForDetail = entry
+                                            }
                                         )
                                         .id(entry.characterId)
                                         .staggeredAppear(index: index)
@@ -103,6 +111,27 @@ struct LeaderboardDetailView: View {
                         }
                     }
                 }
+            }
+
+        }
+        .sheet(item: $selectedPlayerForDetail) { player in
+            if let character = appState.currentCharacter {
+                LeaderboardPlayerDetailSheet(
+                    entry: player,
+                    playerCharacter: character,
+                    onChallenge: {
+                        selectedPlayerForDetail = nil
+                        // TODO: Navigate to PvP challenge flow
+                    },
+                    onMessage: {
+                        selectedPlayerForDetail = nil
+                        // TODO: Navigate to messaging
+                    },
+                    onAddFriend: {
+                        selectedPlayerForDetail = nil
+                        // TODO: Send friend request
+                    }
+                )
             }
         }
         .navigationBarBackButtonHidden(true)

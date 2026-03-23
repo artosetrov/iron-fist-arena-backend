@@ -97,9 +97,9 @@ struct ActiveQuestBanner: View {
                 // Mini progress bar
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 3)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(DarkFantasyTheme.bgTertiary)
-                        RoundedRectangle(cornerRadius: 3)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(DarkFantasyTheme.cyan)
                             .frame(width: geo.size.width * quest.progressFraction)
                     }
@@ -110,13 +110,20 @@ struct ActiveQuestBanner: View {
         .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.vertical, LayoutConstants.spaceXS + 2)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.cyan.opacity(0.08))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.cyan.opacity(0.5), lineWidth: 1.5)
         )
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 

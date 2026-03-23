@@ -109,31 +109,11 @@ struct CurrencyPurchaseView: View {
                 // Current balance strip
                 HStack {
                     Spacer()
-                    HStack(spacing: LayoutConstants.spaceLG) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "dollarsign.circle")
-                                .font(.system(size: 14))
-                            Text("YOUR GOLD")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            Text(formatBalance(appState.currentCharacter?.gold ?? 0))
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                                .foregroundStyle(DarkFantasyTheme.goldBright)
-                        }
-                        Rectangle()
-                            .fill(DarkFantasyTheme.borderSubtle)
-                            .frame(width: 1, height: 20)
-                        HStack(spacing: 6) {
-                            Image(systemName: "diamond")
-                                .font(.system(size: 14))
-                            Text("YOUR GEMS")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            Text("\(appState.currentCharacter?.gems ?? 0)")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                                .foregroundStyle(DarkFantasyTheme.cyan)
-                        }
-                    }
+                    CurrencyDisplay(
+                        gold: appState.currentCharacter?.gold ?? 0,
+                        gems: appState.currentCharacter?.gems ?? 0,
+                        size: .standard
+                    )
                     Spacer()
                 }
                 .padding(.vertical, LayoutConstants.spaceSM)
@@ -409,11 +389,6 @@ struct CurrencyPurchaseView: View {
         }
     }
 
-    private func formatBalance(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
-    }
 }
 
 // MARK: - Currency Package Card
@@ -502,15 +477,15 @@ struct CurrencyPackageCard: View {
         // Corner badge overlay
         .overlay(alignment: .topTrailing) {
             if package.isBestValue {
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "star.fill")
                         .font(.system(size: 10))
                     Text("BEST VALUE")
                 }
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(DarkFantasyTheme.goldGradient)
                     .clipShape(UnevenRoundedRectangle(
                         topLeadingRadius: 0,
@@ -521,9 +496,9 @@ struct CurrencyPackageCard: View {
             } else if package.isPopular {
                 Text("POPULAR")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(.textPrimary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 3)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(DarkFantasyTheme.purple)
                     .clipShape(UnevenRoundedRectangle(
                         topLeadingRadius: 0,
@@ -575,9 +550,9 @@ struct MonthlyGemCardOffer: View {
                 // Badge
                 Text("350 GEMS")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                    .foregroundStyle(.textPrimary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceXS)
                     .background(
                         Capsule().fill(DarkFantasyTheme.cyan.opacity(0.3))
                     )
@@ -703,15 +678,15 @@ struct PremiumBenefitChip: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
                 .font(.system(size: 16))
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
         }
         .foregroundStyle(DarkFantasyTheme.premiumPink)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
             Capsule().fill(DarkFantasyTheme.premiumPink.opacity(0.12))
         )

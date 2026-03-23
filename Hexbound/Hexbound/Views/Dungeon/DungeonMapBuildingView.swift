@@ -10,7 +10,6 @@ struct DungeonMapBuildingView: View {
     let onTap: (DungeonMapBuilding) -> Void
 
     @State private var isPressed = false
-    @State private var idleGlow: CGFloat = 0.3
 
     private var buildingHeight: CGFloat {
         terrainSize.height * building.relativeSize
@@ -30,65 +29,47 @@ struct DungeonMapBuildingView: View {
                 .shadow(
                     color: isLocked
                         ? Color.clear
-                        : building.glowColor.opacity(idleGlow),
-                    radius: isPressed ? 16 : 8
+                        : building.glowColor.opacity(isPressed ? 0.6 : 0),
+                    radius: isPressed ? 16 : 0
                 )
-<<<<<<< HEAD
-                .opacity(isPressed ? 0.7 : (isLocked ? 0.6 : 1.0))
-                .saturation(isLocked ? 0.3 : 1.0)
-=======
-                .scaleEffect(isPressed ? 1.08 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-                .saturation(isLocked ? 0.3 : 1.0)
+                .brightness(isPressed ? -0.06 : 0)
                 .opacity(isLocked ? 0.6 : 1.0)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
+                .saturation(isLocked ? 0.3 : 1.0)
         }
         .position(x: posX, y: posY)
         .onTapGesture {
             handleTap()
         }
-        .onAppear {
-            if !isLocked {
-                startIdleAnimation()
-            }
-        }
+        .onAppear {}
     }
 
     // MARK: - Label
 
     @ViewBuilder
     private var dungeonLabel: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Text(building.label.uppercased())
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
             if isLocked {
                 Image(systemName: "lock.fill")
-<<<<<<< HEAD
                     .font(.system(size: 11))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             } else if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 11))
-=======
-                    .font(.system(size: 9))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            } else if isCompleted {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 10))
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
+        .padding(.horizontal, LayoutConstants.spaceMS)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                 .fill(DarkFantasyTheme.bgAbyss.opacity(0.85))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                 .stroke(
                     isLocked
                         ? DarkFantasyTheme.textSecondary.opacity(0.4)
@@ -110,14 +91,14 @@ struct DungeonMapBuildingView: View {
             } else {
                 // Placeholder fallback
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .fill(DarkFantasyTheme.bgSecondary.opacity(0.7))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                                 .stroke(building.glowColor.opacity(0.5), lineWidth: 1.5)
                         )
 
-                    VStack(spacing: 6) {
+                    VStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: building.fallbackIcon)
                             .font(.system(size: 28))
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : building.glowColor)
@@ -131,7 +112,7 @@ struct DungeonMapBuildingView: View {
 
             // Lock overlay for locked dungeons
             if isLocked {
-                VStack(spacing: 2) {
+                VStack(spacing: LayoutConstants.space2XS) {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
@@ -139,7 +120,7 @@ struct DungeonMapBuildingView: View {
                         .font(DarkFantasyTheme.section(size: 10))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
-                .padding(8)
+                .padding(LayoutConstants.spaceSM)
                 .background(
                     Circle()
                         .fill(DarkFantasyTheme.bgAbyss.opacity(0.7))
@@ -180,15 +161,4 @@ struct DungeonMapBuildingView: View {
         }
     }
 
-    // MARK: - Idle Animation
-
-    private func startIdleAnimation() {
-        idleGlow = 0.2
-        withAnimation(
-            .easeInOut(duration: 2.5)
-            .repeatForever(autoreverses: true)
-        ) {
-            idleGlow = 0.6
-        }
-    }
 }

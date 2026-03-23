@@ -67,7 +67,7 @@ struct VictoryParticlesView: View {
         let shapes: [AnyView] = [
             AnyView(Rectangle()),
             AnyView(Circle()),
-            AnyView(RoundedRectangle(cornerRadius: 2))
+            AnyView(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
         ]
         return Particle(
             startX: startX,

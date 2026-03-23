@@ -291,8 +291,12 @@ struct CombatDetailView: View {
 
             // Avatar box with colored border
             ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
 
                 GeometryReader { geo in
                     let side = min(geo.size.width, geo.size.height)
@@ -304,7 +308,7 @@ struct CombatDetailView: View {
                             .scaledToFill()
                             .frame(width: side, height: side)
                             .scaleEffect(x: -1, y: 1)
-                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     } else {
                         AvatarImageView(
                             skinKey: fighter.avatar,
@@ -312,7 +316,7 @@ struct CombatDetailView: View {
                             size: side
                         )
                         .scaleEffect(x: isPlayer ? 1 : -1, y: 1)
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius - 4))
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                         .frame(width: side, height: side)
                     }
                 }
@@ -337,8 +341,8 @@ struct CombatDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             // HP Bar
-            VStack(spacing: 3) {
-                HPBarView(currentHp: currentHp, maxHp: maxHp, height: 14)
+            VStack(spacing: LayoutConstants.space2XS) {
+                HPBarView(currentHp: currentHp, maxHp: maxHp, size: .compact)
                     .accessibilityLabel("Health \(currentHp) of \(maxHp)")
 
                 Text("\(currentHp)/\(maxHp)")
@@ -350,19 +354,19 @@ struct CombatDetailView: View {
 
             // Status Effects
             if !statuses.isEmpty {
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     ForEach(statuses) { status in
-                        HStack(spacing: 3) {
+                        HStack(spacing: LayoutConstants.space2XS) {
                             Image(systemName: status.icon)
                                 .font(.system(size: 11))
                             Text(status.abbreviation)
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                         }
-                        .foregroundStyle(.textPrimary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .padding(.horizontal, LayoutConstants.spaceXS)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(status.color.opacity(0.8))
-                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                         .accessibilityLabel(status.name)
                     }
                 }
@@ -377,7 +381,7 @@ struct CombatDetailView: View {
     private func actionIndicators(_ vm: CombatViewModel) -> some View {
         HStack(spacing: LayoutConstants.spaceLG) {
             // Attack zone
-            VStack(spacing: 4) {
+            VStack(spacing: LayoutConstants.spaceXS) {
                 Text("Attack")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -387,7 +391,7 @@ struct CombatDetailView: View {
                     .padding(.horizontal, LayoutConstants.spaceMS)
                     .padding(.vertical, LayoutConstants.spaceXS)
                     .background(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .stroke(zoneColor(vm.currentAttackZone).opacity(0.5), lineWidth: 1)
                     )
             }
@@ -397,7 +401,7 @@ struct CombatDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
 
             // Defend zone
-            VStack(spacing: 4) {
+            VStack(spacing: LayoutConstants.spaceXS) {
                 Text("Defend")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -407,7 +411,7 @@ struct CombatDetailView: View {
                     .padding(.horizontal, LayoutConstants.spaceMS)
                     .padding(.vertical, LayoutConstants.spaceXS)
                     .background(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .stroke(zoneColor(vm.currentDefendZone).opacity(0.5), lineWidth: 1)
                     )
             }
@@ -444,7 +448,7 @@ struct CombatDetailView: View {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(vm.visibleLogEntries) { entry in
                             VStack(alignment: .leading, spacing: 0) {
-                                HStack(spacing: 4) {
+                                HStack(spacing: LayoutConstants.spaceXS) {
                                     Text(entry.text)
                                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                                         .foregroundStyle(DarkFantasyTheme.textSecondary)
@@ -458,7 +462,7 @@ struct CombatDetailView: View {
                                         .foregroundStyle(entry.resultColor)
 
                                     if let label = entry.damageTypeLabel, let color = entry.damageTypeColor {
-                                        HStack(spacing: 2) {
+                                        HStack(spacing: LayoutConstants.space2XS) {
                                             if let icon = entry.damageTypeIcon {
                                                 Image(systemName: icon)
                                                     .font(.system(size: 11))
@@ -466,14 +470,14 @@ struct CombatDetailView: View {
                                             Text(label)
                                                 .font(DarkFantasyTheme.body(size: 11).bold())
                                         }
-                                        .foregroundStyle(.textPrimary)
-                                        .padding(.horizontal, 4)
-                                        .padding(.vertical, 2)
+                                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                                        .padding(.horizontal, LayoutConstants.spaceXS)
+                                        .padding(.vertical, LayoutConstants.space2XS)
                                         .background(color.opacity(0.7))
-                                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                                     }
                                 }
-                                .padding(.vertical, 6)
+                                .padding(.vertical, LayoutConstants.spaceXS)
 
                                 Divider()
                                     .background(DarkFantasyTheme.borderSubtle)
@@ -495,12 +499,22 @@ struct CombatDetailView: View {
         }
         .padding(LayoutConstants.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DarkFantasyTheme.bgSecondary.opacity(0.6))
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.08))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.danger.opacity(0.3), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)
         .frame(maxHeight: .infinity)

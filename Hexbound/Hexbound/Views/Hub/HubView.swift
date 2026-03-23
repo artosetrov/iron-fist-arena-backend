@@ -8,10 +8,26 @@ struct HubView: View {
     @State private var showDungeonMap = false
     @State private var dungeonPath = NavigationPath()
 
+    // Onboarding flow state
+    @State private var currentOnboardingStep = 0
+    private let onboardingSteps = [
+        (title: "Welcome, Adventurer!", message: "This is your Hub — the center of your journey."),
+        (title: "Explore the City", message: "Visit the SHOP to gear up, the ARENA to fight other players, or the DUNGEON to explore."),
+        (title: "Earn & Reward", message: "Check the GOLD MINE to earn gold, and don't forget your DAILY LOGIN rewards!")
+    ]
+
+    private var shouldShowOnboarding: Bool {
+        // Check if this is the first time visiting hub (no onboarding completed yet)
+        guard let char = appState.currentCharacter else { return false }
+        let tutorial = TutorialManager.shared
+        // Show onboarding if hubCharacterCard hasn't been shown (first-time visit indicator)
+        return tutorial.shouldShow(.hubCharacterCard) && currentOnboardingStep < onboardingSteps.count
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // HUD widgets at top — stays in place during map transition
-            VStack(spacing: 10) {
+            VStack(spacing: LayoutConstants.spaceMS) {
                 // Unified Hero Widget (replaces StaminaBarView + HubCharacterCardWrapper)
                 if let char = appState.currentCharacter {
                     UnifiedHeroWidget(
@@ -24,7 +40,6 @@ struct HubView: View {
                         onUseStaminaPotion: {
                             Task { await useStaminaPotion() }
                         },
-                        onAllocateStats: { appState.mainPath.append(AppRoute.hero) },
                         onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
                     )
                     .tutorialAnchor(.hubCharacterCard)
@@ -86,7 +101,7 @@ struct HubView: View {
             }
             .overlay(alignment: .topTrailing) {
                 // Floating action icons — stay in place during transition
-                VStack(spacing: 10) {
+                VStack(spacing: LayoutConstants.spaceMS) {
                     FloatingActionIcon(
                         customIcon: "hud-gift",
                         badgeActive: appState.dailyLoginCanClaim,
@@ -141,7 +156,7 @@ struct HubView: View {
                         dungeonPath = NavigationPath()
                     }
                 } label: {
-                    HStack(spacing: 8) {
+                    HStack(spacing: LayoutConstants.spaceSM) {
                         Image(showDungeonMap ? "icon-lobby" : "icon-dungeons")
                             .resizable()
                             .scaledToFit()
@@ -162,6 +177,29 @@ struct HubView: View {
         .ignoresSafeArea(edges: .bottom)
         .persistentSystemOverlays(.hidden)
         .navigationBarHidden(true)
+        .overlay(alignment: .bottom) {
+            // Onboarding NPCGuideWidget overlay (first-time visit)
+            if shouldShowOnboarding, let char = appState.currentCharacter {
+                VStack(spacing: 0) {
+                    Spacer()
+                    NPCGuideWidget(
+                        npcTitle: onboardingSteps[currentOnboardingStep].title,
+                        onDismiss: { dismissOnboarding() },
+                        avatarSkinKey: char.avatar,
+                        avatarClass: char.characterClass,
+                        plainMessage: onboardingSteps[currentOnboardingStep].message,
+                        onContinue: { advanceOnboarding() },
+                        messageId: currentOnboardingStep  // Animate message transitions
+                    )
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.bottom, LayoutConstants.screenPadding + LayoutConstants.safeAreaBottom)
+                }
+                .background(DarkFantasyTheme.bgAbyss.opacity(0.5))
+                .ignoresSafeArea(edges: .bottom)
+                .transition(.opacity)
+                .zIndex(100)
+            }
+        }
         .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])
         .task { await checkDailyLogin() }
         .task { await fetchUnreadMailCount() }
@@ -292,6 +330,26 @@ struct HubView: View {
         }
     }
 
+    // MARK: - Onboarding Methods
+
+    private func advanceOnboarding() {
+        currentOnboardingStep += 1
+        if currentOnboardingStep >= onboardingSteps.count {
+            // Mark onboarding as complete by dismissing the hub tutorial
+            markOnboardingComplete()
+        }
+    }
+
+    private func dismissOnboarding() {
+        // Mark onboarding as complete immediately if dismissed
+        markOnboardingComplete()
+    }
+
+    private func markOnboardingComplete() {
+        // Mark all hub onboarding steps as complete
+        TutorialManager.shared.completeHubOnboarding()
+    }
+
     private func staminaRecoveryText(current: Int, max: Int) -> String? {
         guard current < max else { return nil }
         let missing = max - current
@@ -383,7 +441,7 @@ struct TopCurrencyBar: View {
             Button {
                 onTapCurrency?()
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Image("icon-gold")
                         .resizable()
                         .frame(width: 20, height: 20)
@@ -405,7 +463,7 @@ struct TopCurrencyBar: View {
             Button {
                 onTapCurrency?()
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Image("icon-gems")
                         .resizable()
                         .frame(width: 20, height: 20)
@@ -421,88 +479,6 @@ struct TopCurrencyBar: View {
             .buttonStyle(.scalePress(0.95))
             .accessibilityLabel("Gems: \(character?.gems ?? 0)")
 
-        }
-    }
-}
-
-// MARK: - Hub Stat Bar (used by CompactHeroWidget and other views)
-
-struct HubStatBar: View {
-    let label: String
-    let valueText: String
-    let percentage: Double
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(label)
-                .font(DarkFantasyTheme.body(size: 11).bold())
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(width: 20, alignment: .leading)
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(DarkFantasyTheme.bgTertiary)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color)
-                        .frame(width: geo.size.width * max(0, min(1, percentage)))
-                }
-            }
-            .frame(height: 10)
-
-            Text(valueText)
-                .font(DarkFantasyTheme.body(size: 11))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(width: 58, alignment: .trailing)
-        }
-    }
-}
-
-// MARK: - Hub Character Card Wrapper (handles navigation vs potion tap)
-
-struct HubCharacterCardWrapper: View {
-    let character: Character
-    @Environment(AppState.self) private var appState
-
-    var body: some View {
-        HubCharacterCard(
-            character: character,
-            onUsePotion: { Task { await useHealthPotion() } }
-        )
-        .contentShape(Rectangle())
-        .onTapGesture {
-            appState.mainPath.append(AppRoute.hero)
-        }
-    }
-
-    private func useHealthPotion() async {
-        // Find the first available health potion from cached inventory
-        guard let items = appState.cachedInventory else {
-            appState.showToast("Open inventory first", type: .info)
-            return
-        }
-
-        guard let potion = items.first(where: {
-            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
-        }) else {
-            appState.showToast("No health potions", subtitle: "Buy potions at the shop", type: .error)
-            return
-        }
-
-        let service = InventoryService(appState: appState)
-        let success = await service.useItem(
-            inventoryId: potion.id,
-            consumableType: potion.consumableType
-        )
-
-        if success {
-            let healed = (appState.currentCharacter?.currentHp ?? 0) - character.currentHp
-            let healAmount = max(healed, 0)
-            appState.showToast(
-                "+\(healAmount) HP restored!",
-                type: .reward
-            )
         }
     }
 }
@@ -533,13 +509,13 @@ struct DailyQuestsCard: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             Image("hud-quests")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 34, height: 34)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY QUESTS")
                     .font(DarkFantasyTheme.section(size: 14))
                     .foregroundStyle(DarkFantasyTheme.gold)
@@ -560,12 +536,13 @@ struct DailyQuestsCard: View {
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.bgTertiary)
                     if total > 0 {
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(appState.cachedBonusClaimedToday ? DarkFantasyTheme.success : DarkFantasyTheme.gold)
                             .frame(width: geo.size.width * max(0, min(1, Double(completed) / Double(total))))
+                            .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
                     }
                 }
             }
@@ -573,13 +550,21 @@ struct DailyQuestsCard: View {
         }
         .padding(LayoutConstants.bannerPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(appState.cachedBonusClaimedToday ? DarkFantasyTheme.success.opacity(0.4) : DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
         )
+        .cornerBrackets(color: appState.cachedBonusClaimedToday ? DarkFantasyTheme.success.opacity(0.5) : DarkFantasyTheme.gold.opacity(0.5), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }
 
@@ -591,10 +576,10 @@ struct BattlePassCard: View {
     var maxLevel: Int = 30
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             Text("🎖️").font(.system(size: 30))
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("BATTLE PASS")
                     .font(DarkFantasyTheme.section(size: 14))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -607,24 +592,33 @@ struct BattlePassCard: View {
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.bgTertiary)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.gold)
                         .frame(width: geo.size.width * (maxLevel > 0 ? Double(level) / Double(maxLevel) : 0))
+                        .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
                 }
             }
             .frame(width: 80, height: 10)
         }
         .padding(LayoutConstants.bannerPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }
 
@@ -639,13 +633,13 @@ struct FirstWinBonusCard: View {
             HapticManager.medium()
             appState.mainPath.append(AppRoute.arena)
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: LayoutConstants.spaceMS) {
                 Image("reward-first-win")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 36)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                     Text("FIRST WIN BONUS")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                         .foregroundStyle(DarkFantasyTheme.success)
@@ -662,13 +656,23 @@ struct FirstWinBonusCard: View {
             }
             .padding(LayoutConstants.bannerPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.success.opacity(0.12))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.success.opacity(0.6), lineWidth: 1.5)
             )
+            .cornerBrackets(color: DarkFantasyTheme.success.opacity(0.6), length: 14, thickness: 1.5)
+            .cornerDiamonds(color: DarkFantasyTheme.success.opacity(0.5), size: 5)
+            .shadow(color: DarkFantasyTheme.success.opacity(0.15), radius: 8, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
             .glowPulse(color: DarkFantasyTheme.success, intensity: 0.4)
             .shimmer(color: DarkFantasyTheme.success.opacity(0.3), duration: 5)
         }
@@ -682,13 +686,13 @@ struct DailyLoginCard: View {
     let canClaim: Bool
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             Image("hud-gift")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 34, height: 34)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY LOGIN")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                     .foregroundStyle(canClaim ? DarkFantasyTheme.goldBright : DarkFantasyTheme.gold)
@@ -713,9 +717,15 @@ struct DailyLoginCard: View {
         }
         .padding(LayoutConstants.bannerPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: canClaim ? DarkFantasyTheme.goldDim.opacity(0.12) : DarkFantasyTheme.borderMedium.opacity(0.15))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(
@@ -723,6 +733,8 @@ struct DailyLoginCard: View {
                     lineWidth: canClaim ? 1.5 : 1
                 )
         )
+        .cornerBrackets(color: canClaim ? DarkFantasyTheme.goldBright.opacity(0.6) : DarkFantasyTheme.success.opacity(0.4), length: 12, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }
 
@@ -775,14 +787,52 @@ struct FloatingActionIcon: View {
                 }
                     .frame(width: size, height: size)
                     .background(
-                        Circle()
-                            .fill(DarkFantasyTheme.bgSecondary)
+                        ZStack {
+                            Circle()
+                                .fill(DarkFantasyTheme.bgSecondary)
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [accentColor.opacity(0.08), .clear],
+                                        center: .center,
+                                        startRadius: 0,
+                                        endRadius: size / 2
+                                    )
+                                )
+                            // Surface lighting on circle
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.08),
+                                            Color.clear,
+                                            Color.black.opacity(0.12)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                        }
                     )
                     .overlay(
                         Circle()
                             .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
                     )
-                    .shadow(color: accentColor.opacity(0.3), radius: 8, y: 2)
+                    .overlay(
+                        // Inner bevel on circle
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.08), Color.clear, Color.black.opacity(0.12)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                ),
+                                lineWidth: 1
+                            )
+                            .padding(3)
+                    )
+                    .shadow(color: accentColor.opacity(0.25), radius: 8, y: 2)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
 
                 // Notification badge
                 if badgeActive {
@@ -840,14 +890,52 @@ struct FloatingSoundToggle: View {
                 .frame(width: size * 0.75, height: size * 0.75)
                 .frame(width: size, height: size)
                 .background(
-                    Circle()
-                        .fill(DarkFantasyTheme.bgSecondary)
+                    ZStack {
+                        Circle()
+                            .fill(DarkFantasyTheme.bgSecondary)
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [accentColor.opacity(0.08), .clear],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: size / 2
+                                )
+                            )
+                        // Surface lighting on circle
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.08),
+                                        Color.clear,
+                                        Color.black.opacity(0.12)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                    }
                 )
                 .overlay(
                     Circle()
                         .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
                 )
-                .shadow(color: accentColor.opacity(0.3), radius: 8, y: 2)
+                .overlay(
+                    // Inner bevel on circle
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.08), Color.clear, Color.black.opacity(0.12)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                        .padding(3)
+                )
+                .shadow(color: accentColor.opacity(0.25), radius: 8, y: 2)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
         }
         .buttonStyle(.scalePress(0.9))
         .contentShape(Circle())

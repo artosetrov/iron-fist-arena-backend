@@ -220,6 +220,7 @@ struct DungeonMapEditorView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.vertical, LayoutConstants.spaceSM)
         .background(DarkFantasyTheme.bgSecondary)
+        // Toast padding at line 75 uses 140 (screen-specific large offset) — keep as-is
     }
 
     // MARK: - Save to Server
@@ -321,10 +322,10 @@ struct DraggableEditorDungeonBuilding: View {
             Text("\(building.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 2)
+                .padding(.horizontal, LayoutConstants.spaceXS)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(isSelected ? Color.red.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
-                .cornerRadius(4)
+                .cornerRadius(LayoutConstants.radiusXS)
 
             if UIImage(named: building.imageName) != nil {
                 Image(building.imageName)
@@ -332,14 +333,14 @@ struct DraggableEditorDungeonBuilding: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(height: buildingHeight)
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                     .fill(isSelected ? Color.red.opacity(0.4) : building.glowColor.opacity(0.3))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                             .stroke(isSelected ? Color.red : building.glowColor, lineWidth: 2)
                     )
                     .overlay(
-                        VStack(spacing: 4) {
+                        VStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: building.fallbackIcon)
                                 .font(.system(size: 24))
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -353,9 +354,9 @@ struct DraggableEditorDungeonBuilding: View {
         }
         .overlay(
             isSelected ?
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .stroke(Color.red, lineWidth: 2)
-                    .padding(-4)
+                    .padding(-LayoutConstants.spaceXS)
             : nil
         )
         .position(

@@ -151,8 +151,8 @@ struct LootDetailView: View {
                                 Text(t.displayName.lowercased())
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
+                                    .padding(.horizontal, LayoutConstants.spaceXS)
+                                    .padding(.vertical, LayoutConstants.space2XS)
                                     .background(Capsule().fill(DarkFantasyTheme.bgTertiary))
                                     .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
                                     .accessibilityLabel("Item type: \(t.displayName)")
@@ -161,8 +161,8 @@ struct LootDetailView: View {
                             Text(rarity.rawValue)
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                                 .foregroundStyle(rarityColor)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, LayoutConstants.spaceXS)
+                                .padding(.vertical, LayoutConstants.space2XS)
                                 .background(Capsule().fill(rarityColor.opacity(0.15)))
                                 .overlay(Capsule().stroke(rarityColor.opacity(0.4), lineWidth: 1))
                                 .accessibilityLabel("Rarity: \(rarity.rawValue)")
@@ -257,14 +257,23 @@ struct LootDetailView: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.14)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: rarityColor.opacity(0.12))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                     .stroke(rarityColor.opacity(0.5), lineWidth: 2)
             )
-            .shadow(color: .bgAbyss.opacity(0.8), radius: 32, y: 8)
+            .cornerBrackets(color: rarityColor.opacity(0.5), length: 18, thickness: 2.0)
+            .cornerDiamonds(color: rarityColor.opacity(0.4), size: 6)
+            .shadow(color: rarityColor.opacity(0.18), radius: 10, y: 0)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .fixedSize(horizontal: false, vertical: true)
             .transition(.scale(scale: 0.85).combined(with: .opacity))

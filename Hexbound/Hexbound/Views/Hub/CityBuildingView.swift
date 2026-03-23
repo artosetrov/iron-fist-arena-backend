@@ -23,7 +23,7 @@ struct CityBuildingView: View {
         let posX = terrainSize.width * building.relativeX
         let posY = terrainSize.height * building.relativeY
 
-        VStack(spacing: 4) {
+        VStack(spacing: LayoutConstants.spaceXS) {
             // Label above building (always visible)
             CityBuildingLabel(text: building.label, visible: true, badge: badge)
                 .offset(y: building.labelYOffset * terrainSize.height)
@@ -32,10 +32,10 @@ struct CityBuildingView: View {
             buildingImage
                 .frame(height: buildingHeight)
                 .shadow(
-                    color: building.glowColor.opacity(0.35),
-                    radius: isPressed ? 16 : 8
+                    color: building.glowColor.opacity(isPressed ? 0.6 : 0),
+                    radius: isPressed ? 16 : 0
                 )
-                .opacity(isPressed ? 0.7 : 1.0)
+                .brightness(isPressed ? -0.06 : 0)
         }
         .position(x: posX, y: posY)
         .onTapGesture {
@@ -58,14 +58,14 @@ struct CityBuildingView: View {
         } else {
             // Placeholder fallback
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                     .fill(DarkFantasyTheme.bgSecondary.opacity(0.7))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                             .stroke(building.glowColor.opacity(0.5), lineWidth: 1.5)
                     )
 
-                VStack(spacing: 6) {
+                VStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: building.fallbackIcon)
                         .font(.system(size: 28))
                         .foregroundStyle(building.glowColor)
@@ -82,6 +82,7 @@ struct CityBuildingView: View {
 
     private func handleTap() {
         HapticManager.medium()
+        SFXManager.shared.play(.uiTap)
 
         // Visual feedback
         withAnimation {

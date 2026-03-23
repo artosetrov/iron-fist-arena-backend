@@ -9,27 +9,42 @@ struct PanelCardModifier: ViewModifier {
         content
             .padding(LayoutConstants.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: highlight ? DarkFantasyTheme.gold.opacity(0.06) : DarkFantasyTheme.bgTertiary,
+                    glowIntensity: highlight ? 0.4 : 0.6,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
             )
+            // Surface lighting for 3D convexity
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            // Inner bevel border
+            .innerBorder(
+                cornerRadius: LayoutConstants.cardRadius - 4,
+                inset: 4,
+                color: highlight ? DarkFantasyTheme.gold.opacity(0.15) : DarkFantasyTheme.borderMedium.opacity(0.25)
+            )
+            // Outer frame
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(
-                        highlight ? DarkFantasyTheme.borderGold : DarkFantasyTheme.borderSubtle,
-                        lineWidth: highlight ? 2 : 1
+                        highlight ? DarkFantasyTheme.borderGold.opacity(0.6) : DarkFantasyTheme.borderSubtle,
+                        lineWidth: highlight ? 1.5 : 1
                     )
             )
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
-                    .mask(
-                        Rectangle().frame(height: 1).frame(maxHeight: .infinity, alignment: .top)
-                    )
-            }
+            // Corner brackets + diamonds
+            .cornerBrackets(color: highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderMedium)
+            .cornerDiamonds(color: highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderStrong)
+            // Dual shadow: type-colored glow + dark depth
             .shadow(
-                color: highlight ? DarkFantasyTheme.goldGlow : .black.opacity(0.4),
-                radius: highlight ? 12 : 4,
+                color: highlight ? DarkFantasyTheme.goldGlow : .black.opacity(0.3),
+                radius: highlight ? 12 : 6,
                 y: 2
+            )
+            .shadow(
+                color: DarkFantasyTheme.bgAbyss.opacity(0.5),
+                radius: 2,
+                y: 1
             )
     }
 }
@@ -39,21 +54,47 @@ struct PanelCardModifier: ViewModifier {
 struct RarityCardModifier: ViewModifier {
     let rarity: ItemRarity
 
+    private var rarityColor: Color { DarkFantasyTheme.rarityColor(for: rarity) }
+    private var isHighRarity: Bool { rarity == .epic || rarity == .legendary }
+
     func body(content: Content) -> some View {
         content
             .padding(LayoutConstants.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgTertiary,
+                    glowColor: rarityColor,
+                    glowIntensity: rarity == .legendary ? 0.15 : 0.10,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
+            )
+            // Surface lighting — stronger for high rarity
+            .surfaceLighting(
+                cornerRadius: LayoutConstants.cardRadius,
+                topHighlight: isHighRarity ? 0.10 : 0.06,
+                bottomShadow: isHighRarity ? 0.15 : 0.10
+            )
+            .innerBorder(
+                cornerRadius: LayoutConstants.cardRadius - 3,
+                inset: 3,
+                color: rarityColor.opacity(0.18)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(DarkFantasyTheme.rarityColor(for: rarity), lineWidth: 2)
+                    .stroke(rarityColor, lineWidth: 2.5)
             )
+            .cornerBrackets(color: rarityColor, length: isHighRarity ? 20 : 18)
+            .cornerDiamonds(color: rarityColor, size: isHighRarity ? 7 : 6)
+            // Dual shadow
             .shadow(
                 color: DarkFantasyTheme.rarityGlow(for: rarity),
-                radius: rarity == .legendary ? 12 : 8,
+                radius: rarity == .legendary ? 16 : 10,
                 y: 2
+            )
+            .shadow(
+                color: DarkFantasyTheme.bgAbyss.opacity(0.5),
+                radius: 2,
+                y: 1
             )
     }
 }
@@ -65,20 +106,30 @@ struct InfoPanelModifier: ViewModifier {
         content
             .padding(LayoutConstants.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgPrimary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgPrimary,
+                    glowColor: DarkFantasyTheme.bgSecondary,
+                    glowIntensity: 0.5,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(
+                cornerRadius: LayoutConstants.panelRadius - 3,
+                inset: 3,
+                color: DarkFantasyTheme.borderMedium.opacity(0.25)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
-                    .mask(
-                        Rectangle().frame(height: 1).frame(maxHeight: .infinity, alignment: .top)
-                    )
-            }
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 14)
+            .cornerDiamonds(color: DarkFantasyTheme.borderStrong, size: 5)
+            .shadow(
+                color: DarkFantasyTheme.bgAbyss.opacity(0.4),
+                radius: 3,
+                y: 1
+            )
     }
 }
 
@@ -89,14 +140,34 @@ struct ModalOverlayModifier: ViewModifier {
         content
             .padding(LayoutConstants.spaceLG)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.6,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 3)
+            // Surface lighting for premium depth
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+            // Double border frame
+            .doubleBorder(
+                outerColor: DarkFantasyTheme.borderOrnament,
+                innerColor: DarkFantasyTheme.borderOrnament.opacity(0.4),
+                cornerRadius: LayoutConstants.modalRadius,
+                gap: 4
             )
-            .shadow(color: .black.opacity(0.8), radius: 32, y: 8)
+            .innerBorder(
+                cornerRadius: LayoutConstants.modalRadius - 6,
+                inset: 6,
+                color: DarkFantasyTheme.gold.opacity(0.10)
+            )
+            // Ornamental accents
+            .cornerBrackets(color: DarkFantasyTheme.goldBright, length: 22, thickness: 2.0)
+            .cornerDiamonds(color: DarkFantasyTheme.goldBright, size: 7)
+            .sideDiamonds(color: DarkFantasyTheme.borderOrnament)
+            // Dual shadow: ornament glow + deep abyss
+            .shadow(color: DarkFantasyTheme.borderOrnament.opacity(0.18), radius: 24)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 32, y: 8)
     }
 }
 
@@ -135,36 +206,76 @@ extension View {
     }
 }
 
-// MARK: - Gold Divider (ornamental gradient)
+// MARK: - Gold Divider (ornamental gradient + diamond motif)
 
 struct GoldDivider: View {
     var body: some View {
-        Rectangle()
-            .fill(
-                LinearGradient(
-                    colors: [.clear, DarkFantasyTheme.goldDim, DarkFantasyTheme.gold, DarkFantasyTheme.goldDim, .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
+        HStack(spacing: 0) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, DarkFantasyTheme.goldDim, DarkFantasyTheme.gold],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
                 )
+                .frame(height: 1.5)
+
+            DiamondDividerMotif(
+                accentColor: DarkFantasyTheme.gold,
+                dotColor: DarkFantasyTheme.goldDim,
+                accentSize: 8,
+                dotSize: 5
             )
-            .frame(height: 1)
+            .padding(.horizontal, 8)
+
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [DarkFantasyTheme.gold, DarkFantasyTheme.goldDim, .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1.5)
+        }
+        .frame(height: 10)
     }
 }
 
-// MARK: - Ornamental Divider
+// MARK: - Ornamental Divider (diamond motif center)
 
 struct OrnamentalDivider: View {
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 0) {
             Rectangle()
-                .fill(DarkFantasyTheme.borderSubtle)
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, DarkFantasyTheme.borderSubtle, DarkFantasyTheme.borderMedium],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .frame(height: 1)
-            Text("---")
-                .font(DarkFantasyTheme.caption)
-                .foregroundStyle(DarkFantasyTheme.goldDim)
+
+            DiamondDividerMotif(
+                accentColor: DarkFantasyTheme.goldDim,
+                dotColor: DarkFantasyTheme.borderMedium,
+                accentSize: 6,
+                dotSize: 4
+            )
+            .padding(.horizontal, 8)
+
             Rectangle()
-                .fill(DarkFantasyTheme.borderSubtle)
+                .fill(
+                    LinearGradient(
+                        colors: [DarkFantasyTheme.borderMedium, DarkFantasyTheme.borderSubtle, .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .frame(height: 1)
         }
+        .frame(height: 8)
     }
 }

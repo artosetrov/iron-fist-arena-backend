@@ -24,6 +24,7 @@ struct ToastView: View {
             Circle()
                 .fill(toast.type.color)
                 .frame(width: 8, height: 8)
+                .shadow(color: toast.type.color.opacity(0.6), radius: 4)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(toast.title)
@@ -58,14 +59,32 @@ struct ToastView: View {
         }
         .padding(LayoutConstants.spaceSM)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            ZStack {
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+                // Subtle radial tint from toast type color
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(
+                        RadialGradient(
+                            colors: [toast.type.color.opacity(0.06), .clear],
+                            center: .leading,
+                            startRadius: 0,
+                            endRadius: 120
+                        )
+                    )
+            }
+        )
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 2,
+            inset: 2,
+            color: toast.type.color.opacity(0.1)
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(toast.type.color.opacity(0.5), lineWidth: 1)
         )
-        .shadow(color: .bgAbyss.opacity(0.4), radius: 8, y: 4)
+        .shadow(color: toast.type.color.opacity(0.15), radius: 6, y: 0)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 8, y: 4)
         .accessibilityLabel("\(toast.title): \(toast.subtitle)")
         .accessibilityElement(children: .combine)
     }

@@ -31,7 +31,7 @@ struct NameStepView: View {
             // Avatar with level badge
             ZStack {
                 if let cls = vm.selectedClass {
-                    RoundedRectangle(cornerRadius: 22)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
                         .fill(
                             RadialGradient(
                                 colors: [
@@ -68,9 +68,9 @@ struct NameStepView: View {
                         }
                     }
                     .frame(width: 180, height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 22)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
                             .stroke(DarkFantasyTheme.gold, lineWidth: 3)
                     )
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.2), radius: 20, y: 8)
@@ -85,7 +85,7 @@ struct NameStepView: View {
             }
 
             // Origin + Class row
-            HStack(spacing: 8) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 if let origin = vm.selectedOrigin {
                     Image(origin.iconAsset)
                         .resizable()
@@ -137,13 +137,21 @@ struct NameStepView: View {
         .padding(LayoutConstants.cardPadding)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
         )
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
     // MARK: - Name Input Section (input + dice button)

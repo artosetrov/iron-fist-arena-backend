@@ -19,23 +19,9 @@ struct LootPreviewSheet: View {
             VStack(spacing: 0) {
                 // Header
                 HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
-                    // Item image
-                    ZStack {
-                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                            .fill(rarityColor.opacity(0.15))
-
-                        ItemImageView(
-                            imageKey: loot.imageKey,
-                            imageUrl: loot.imageUrl,
-                            fallbackIcon: loot.icon
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
-                    }
-                    .frame(width: 88, height: 88)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                            .stroke(rarityColor.opacity(0.5), lineWidth: 1)
-                    )
+                    // Item image — unified ItemCardView
+                    ItemCardView(loot: loot, context: .preview) { }
+                        .frame(width: 88, height: 88)
 
                     // Info
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
@@ -48,8 +34,8 @@ struct LootPreviewSheet: View {
                             Text(loot.rarity.rawValue)
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                                 .foregroundStyle(rarityColor)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, LayoutConstants.spaceXS)
+                                .padding(.vertical, LayoutConstants.space2XS)
                                 .background(
                                     Capsule().fill(rarityColor.opacity(0.15))
                                 )
@@ -117,14 +103,23 @@ struct LootPreviewSheet: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.14)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: rarityColor.opacity(0.12))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                     .stroke(rarityColor.opacity(0.5), lineWidth: 2)
             )
-            .shadow(color: .bgAbyss.opacity(0.8), radius: 32, y: 8)
+            .cornerBrackets(color: rarityColor.opacity(0.5), length: 18, thickness: 2.0)
+            .cornerDiamonds(color: rarityColor.opacity(0.4), size: 6)
+            .shadow(color: rarityColor.opacity(0.18), radius: 10, y: 0)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .frame(maxHeight: UIScreen.main.bounds.height * 0.75)
             .fixedSize(horizontal: false, vertical: true)

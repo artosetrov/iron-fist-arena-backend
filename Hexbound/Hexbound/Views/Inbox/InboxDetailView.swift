@@ -136,7 +136,7 @@ private struct ErrorBanner: View {
         }
         .padding(LayoutConstants.spaceMD)
         .background(DarkFantasyTheme.bgSecondary)
-        .cornerRadius(8)
+        .cornerRadius(LayoutConstants.radiusMD)
     }
 }
 

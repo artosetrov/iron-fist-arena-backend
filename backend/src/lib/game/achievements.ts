@@ -80,10 +80,21 @@ export async function updateAchievementProgress(
  * Loads all relevant achievements in one query, computes updates in memory,
  * then batch-writes all changes in a single transaction (eliminates N+1).
  */
+/**
+ * Bulk-check multiple achievement keys at once.
+ * Useful after a PVP match where several counters might update.
+ *
+ * Supports two modes per update:
+ * - `absolute: false` (default) — progress += increment
+ * - `absolute: true` — progress = increment (for streaks, ratings, levels)
+ *
+ * Loads all relevant achievements in one query, computes updates in memory,
+ * then batch-writes all changes in a single transaction (eliminates N+1).
+ */
 export async function updateMultipleAchievements(
   prisma: PrismaClient,
   characterId: string,
-  updates: { key: string; increment: number }[],
+  updates: { key: string; increment: number; absolute?: boolean }[],
 ): Promise<void> {
   // Filter to valid catalog keys only
   const validUpdates = updates.filter(u => ACHIEVEMENT_CATALOG[u.key]);
@@ -105,7 +116,7 @@ export async function updateMultipleAchievements(
   const dbUpdates: ReturnType<typeof prisma.achievement.update>[] = [];
   const dbCreates: ReturnType<typeof prisma.achievement.create>[] = [];
 
-  for (const { key, increment } of validUpdates) {
+  for (const { key, increment, absolute } of validUpdates) {
     const catalogEntry = ACHIEVEMENT_CATALOG[key];
     const row = existingMap.get(key);
 
@@ -113,8 +124,12 @@ export async function updateMultipleAchievements(
       // Already completed — skip
       if (row.completed) continue;
 
-      const newProgress = Math.min(row.progress + increment, catalogEntry.target);
+      const rawProgress = absolute ? increment : row.progress + increment;
+      const newProgress = Math.min(rawProgress, catalogEntry.target);
       const isNowComplete = newProgress >= catalogEntry.target;
+
+      // Skip update if nothing changed
+      if (newProgress === row.progress && !isNowComplete) continue;
 
       dbUpdates.push(
         prisma.achievement.update({
@@ -128,7 +143,8 @@ export async function updateMultipleAchievements(
       );
     } else {
       // Create new achievement row
-      const newProgress = Math.min(increment, catalogEntry.target);
+      const rawProgress = absolute ? increment : increment;
+      const newProgress = Math.min(rawProgress, catalogEntry.target);
       const isNowComplete = newProgress >= catalogEntry.target;
 
       dbCreates.push(

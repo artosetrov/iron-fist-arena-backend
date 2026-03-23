@@ -6,6 +6,7 @@ struct ShellGameDetailView: View {
 
     // Animation state
     @State private var cupLiftOffsets: [CGFloat] = [0, 0, 0]
+    @State private var cupXOffsets: [CGFloat] = [0, 0, 0]
 
     // Juice states
     @State private var showWinBurst = false
@@ -80,17 +81,13 @@ struct ShellGameDetailView: View {
                     ActiveQuestBanner(questTypes: ["shell_game_play"])
                         .padding(.horizontal, LayoutConstants.screenPadding)
 
-                    // Gold display
+                    // Gold display — matches shop currency bar style
                     HStack {
+                        CurrencyDisplay(
+                            gold: vm.gold,
+                            gems: appState.currentCharacter?.gems ?? 0
+                        )
                         Spacer()
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Text("\u{1FA99}")
-                            NumberTickUpText(
-                                value: vm.gold,
-                                color: DarkFantasyTheme.goldBright,
-                                font: DarkFantasyTheme.section(size: LayoutConstants.textLabel)
-                            )
-                        }
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
 
@@ -108,14 +105,16 @@ struct ShellGameDetailView: View {
                             .animation(.easeInOut(duration: 0.2), value: gamePhase)
                     }
 
-                    // ─── CUPS (no labels, no horizontal movement) ───────
-                    HStack(spacing: LayoutConstants.spaceLG) {
+                    // ─── CUPS (with shuffle animation) ───────
+                    HStack(spacing: LayoutConstants.spaceSM) {
                         ForEach(vm.cups, id: \.self) { cup in
                             cupView(cup: cup, vm: vm)
+                                .offset(x: cupXOffsets[cup])
+                                .animation(.spring(response: 0.4, dampingFraction: 0.65), value: cupXOffsets[cup])
                         }
                     }
                     .offset(x: shakeOffset)
-                    .padding(.top, LayoutConstants.spaceLG)
+                    .padding(.top, LayoutConstants.spaceXL)
 
                     // ─── RESULT ──────────────────────────────────────────
                     if gamePhase == .result, let result = vm.result {
@@ -252,7 +251,7 @@ struct ShellGameDetailView: View {
                     .opacity(gamePhase == .result && !isWinner ? 0.4 : 1.0)
                     .animation(.spring(response: 0.38, dampingFraction: 0.62), value: cupLiftOffsets[cup])
             }
-            .frame(width: 110, height: 130)
+            .frame(width: 110, height: 120)
         }
         .buttonStyle(.scalePress(0.95))
         .disabled(gamePhase != .guessing)
@@ -280,7 +279,29 @@ struct ShellGameDetailView: View {
         }
         try? await Task.sleep(for: .seconds(0.5))
 
-        // Skip shuffle — cups stay in place
+        // Shuffle animation — swap cups 4 times
+        gamePhase = .shuffling
+        let swapCount = 4
+        for _ in 0..<swapCount {
+            // Randomize which two cups swap
+            let cup1 = Int.random(in: 0..<3)
+            var cup2 = Int.random(in: 0..<3)
+            while cup2 == cup1 { cup2 = Int.random(in: 0..<3) }
+
+            let offset: CGFloat = 100
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                cupXOffsets[cup1] = offset
+                cupXOffsets[cup2] = -offset
+            }
+            try? await Task.sleep(for: .seconds(0.45))
+
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) {
+                cupXOffsets[cup1] = 0
+                cupXOffsets[cup2] = 0
+            }
+            try? await Task.sleep(for: .seconds(0.45))
+        }
+
         // Ready for user to pick
         gamePhase = .guessing
     }
@@ -352,6 +373,7 @@ struct ShellGameDetailView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             vm.reset()
             cupLiftOffsets = [0, 0, 0]
+            cupXOffsets = [0, 0, 0]
             revealedCup = nil
             gamePhase = .idle
             showWinBurst = false

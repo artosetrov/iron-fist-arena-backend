@@ -57,7 +57,7 @@ struct AppearanceEditorDetailView: View {
                             if vm.isSaving {
                                 ProgressView().tint(DarkFantasyTheme.textOnGold)
                             } else {
-                                HStack(spacing: 6) {
+                                HStack(spacing: LayoutConstants.spaceXS) {
                                     Text("SAVE")
                                     if let cost = vm.costText {
                                         Text("(\(cost))")
@@ -103,19 +103,23 @@ struct AppearanceEditorDetailView: View {
     @ViewBuilder
     private func editorRaceBonusWidget(vm: AppearanceEditorViewModel) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(DarkFantasyTheme.bgSecondary)
-            RoundedRectangle(cornerRadius: 14)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.buttonRadiusLG
+            )
+            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
 
             if let origin = vm.selectedOrigin {
-                HStack(spacing: 12) {
+                HStack(spacing: LayoutConstants.spaceMS) {
                     Image(origin.iconAsset)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 48, height: 48)
 
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                         Text(origin.displayName)
                             .font(DarkFantasyTheme.section(size: 16))
                             .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -134,7 +138,7 @@ struct AppearanceEditorDetailView: View {
                         .multilineTextAlignment(.trailing)
                         .lineLimit(2)
                 }
-                .padding(.horizontal, 14)
+                .padding(.horizontal, LayoutConstants.bannerPadding)
             }
         }
         .frame(height: 88)
@@ -151,7 +155,7 @@ struct AppearanceEditorDetailView: View {
                 vm.showPremiumSkins.toggle()
             }
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: LayoutConstants.spaceMS) {
                 Image(systemName: "crown.fill")
                     .font(.system(size: 16)) // SF Symbol icon — keep as is
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
@@ -166,14 +170,14 @@ struct AppearanceEditorDetailView: View {
                     .font(.system(size: 12, weight: .bold)) // SF Symbol icon — keep as is
                     .foregroundStyle(DarkFantasyTheme.premiumPink.opacity(0.6))
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, LayoutConstants.spaceMD)
             .frame(height: 48)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                     .fill(DarkFantasyTheme.bgPremium)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                     .stroke(DarkFantasyTheme.premiumPink.opacity(0.3), lineWidth: 1.5)
             )
         }
@@ -187,9 +191,9 @@ struct AppearanceEditorDetailView: View {
 
     @ViewBuilder
     private func editorPremiumGrid(vm: AppearanceEditorViewModel) -> some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 4)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.spaceSM), count: 4)
 
-        LazyVGrid(columns: columns, spacing: 8) {
+        LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
             ForEach(vm.premiumSkins) { skin in
                 let isSelected = vm.selectedSkinKey == skin.skinKey
 
@@ -205,28 +209,28 @@ struct AppearanceEditorDetailView: View {
                 } label: {
                     ZStack(alignment: .bottomTrailing) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                                 .fill(DarkFantasyTheme.bgPremiumDeep)
 
                             editorSkinImage(skin)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
                         }
                         .aspectRatio(1, contentMode: .fit)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                                 .stroke(isSelected ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.borderPremium, lineWidth: 2)
                         )
 
                         // Gem price badge
-                        HStack(spacing: 2) {
+                        HStack(spacing: LayoutConstants.space2XS) {
                             Image(systemName: "diamond.fill")
                                 .font(.system(size: 8)) // SF Symbol icon — keep as is
                             Text("\(skin.priceGems)")
                                 .font(DarkFantasyTheme.body(size: 10))
                         }
-                        .foregroundStyle(.textPrimary)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .padding(.horizontal, LayoutConstants.spaceXS)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(
                             Capsule().fill(DarkFantasyTheme.premiumPink.opacity(0.8))
                         )
@@ -236,7 +240,7 @@ struct AppearanceEditorDetailView: View {
                 .buttonStyle(.scalePress(0.95))
             }
         }
-        .padding(.top, 4)
+        .padding(.top, LayoutConstants.spaceXS)
     }
 
     // MARK: - Avatar Area (gender + arrows + central avatar + dice)
@@ -316,11 +320,11 @@ struct AppearanceEditorDetailView: View {
             content
                 .frame(width: size, height: size)
                 .background(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                         .fill(bg)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                         .stroke(border, lineWidth: 2)
                 )
                 .shadow(color: shadow, radius: 5)
@@ -334,20 +338,24 @@ struct AppearanceEditorDetailView: View {
         let borderColor = isPremium ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.gold
 
         ZStack {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.radius2XL
+            )
 
             if let skin = vm.selectedSkin {
                 editorSkinImage(skin)
                     .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
                     .id(skin.skinKey)
                     .transition(editorAvatarTransition(vm: vm))
             }
         }
         .frame(width: size, height: size)
         .overlay(
-            RoundedRectangle(cornerRadius: 22)
+            RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
                 .stroke(borderColor, lineWidth: 3)
         )
         .shadow(color: borderColor.opacity(0.2), radius: 20, y: 8)
@@ -373,7 +381,7 @@ struct AppearanceEditorDetailView: View {
     private func editorThumbnailRow(vm: AppearanceEditorViewModel) -> some View {
         let skins = vm.defaultSkins
 
-        HStack(spacing: 6) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             ForEach(Array(skins.enumerated()), id: \.element.id) { index, skin in
                 let isSelected = vm.avatarIndex == index
 
@@ -383,16 +391,16 @@ struct AppearanceEditorDetailView: View {
                     }
                 } label: {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                             .fill(DarkFantasyTheme.bgDarkPanel)
 
                         editorSkinImage(skin)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
                     }
                     .frame(maxWidth: .infinity)
                     .aspectRatio(1, contentMode: .fit)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                             .stroke(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgDarkPanelBorder, lineWidth: 2)
                     )
                     .shadow(color: isSelected ? DarkFantasyTheme.gold.opacity(0.25) : .clear, radius: 5)

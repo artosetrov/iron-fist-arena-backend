@@ -36,6 +36,9 @@ final class AppState {
     // MARK: - Shop
     var shopInitialTab: Int = 0
 
+    // MARK: - FTUE
+    var shouldCheckFTUE = false  // set true after first login to trigger tutorial check
+
     // MARK: - UI State
     var isLoading = false
     var toasts: [ToastMessage] = []

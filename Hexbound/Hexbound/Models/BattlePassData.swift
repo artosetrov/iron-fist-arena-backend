@@ -56,4 +56,18 @@ struct BPReward: Codable, Identifiable {
         default: "🏆"
         }
     }
+
+    /// Asset name from xcassets — preferred over emoji icon
+    var assetIcon: String? {
+        switch rewardType {
+        case "gold": "icon-gold"
+        case "gems": "icon-gems"
+        case "item": "icon-chest"
+        case "xp": "icon-xp"
+        case "chest": "icon-chest"
+        case "skin": "icon-rogue"
+        case "stamina": "icon-stamina"
+        default: nil
+        }
+    }
 }

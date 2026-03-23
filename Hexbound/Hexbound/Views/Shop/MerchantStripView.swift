@@ -2,15 +2,9 @@ import SwiftUI
 
 // MARK: - DEPRECATED — Use NPCGuideWidget instead
 
-<<<<<<< HEAD
 /// **DEPRECATED**: Use `NPCGuideWidget` from `Views/Components/NPCGuideWidget.swift`.
 /// This file is kept temporarily for reference. All call sites have been migrated.
 @available(*, deprecated, renamed: "NPCGuideWidget", message: "Use NPCGuideWidget instead")
-=======
-/// Merchant overlay: large shopkeeper image pinned to bottom-left corner,
-/// speech bubble floats on top of the image. No background strip.
-/// Tap avatar → next tip. Collapsible and dismissible.
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 struct MerchantStripView: View {
     @Bindable var tipProvider: MerchantTipProvider
     let onCollapse: () -> Void
@@ -22,7 +16,6 @@ struct MerchantStripView: View {
     var body: some View {
         // Full-width bottom area: avatar bottom-left, bubble overlaid
         ZStack(alignment: .bottomLeading) {
-<<<<<<< HEAD
             // Layer 1 (back): NPC image, bottom-left, peeks out behind card
             HStack(alignment: .bottom) {
                 npcAvatar
@@ -36,20 +29,6 @@ struct MerchantStripView: View {
     }
 
     // MARK: - Speech Card (widget style, equal padding)
-=======
-            // Large shopkeeper image — pinned to bottom-left, no frame
-            merchantAvatar
-
-            // Speech bubble — overlays on top of the shopkeeper image
-            speechBubble
-                .padding(.leading, LayoutConstants.merchantAvatarSize * 0.45)
-                .padding(.bottom, LayoutConstants.spaceSM)
-                .padding(.trailing, LayoutConstants.screenPadding)
-        }
-    }
-
-    // MARK: - Merchant Avatar (256pt, bottom-left, no frame)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
 
     @ViewBuilder
     private var speechCard: some View {
@@ -109,13 +88,8 @@ struct MerchantStripView: View {
             }
         } label: {
             Group {
-<<<<<<< HEAD
                 if UIImage(named: npcImageName) != nil {
                     Image(npcImageName)
-=======
-                if UIImage(named: "shopkeeper") != nil {
-                    Image("shopkeeper")
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                         .resizable()
                         .scaledToFit()
                 } else {
@@ -128,17 +102,9 @@ struct MerchantStripView: View {
                 width: LayoutConstants.npcAvatarSize,
                 height: LayoutConstants.npcAvatarSize
             )
-<<<<<<< HEAD
-            .shadow(color: .bgAbyss.opacity(0.5), radius: 8, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 8, y: 2)
         }
         .buttonStyle(.plain)
-=======
-            .shadow(color: .black.opacity(0.5), radius: 8, y: 2)
-        }
-        .buttonStyle(.plain)
-        .scaleEffect(avatarBounce ? 1.05 : 1, anchor: .bottom)
-        .animation(.easeOut(duration: 0.2), value: avatarBounce)
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     }
 
     // MARK: - Speech Bubble (overlays on shopkeeper)
@@ -225,7 +191,7 @@ struct MerchantMiniButton: View {
                 Circle()
                     .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 3)
             )
-            .shadow(color: .bgAbyss.opacity(0.6), radius: 8, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 8, y: 2)
             .shadow(color: DarkFantasyTheme.goldGlow.opacity(0.5), radius: 10)
         }
         .buttonStyle(.plain)

@@ -33,9 +33,9 @@ struct AchievementCardView: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 3)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                 .fill(DarkFantasyTheme.bgTertiary)
-                            RoundedRectangle(cornerRadius: 3)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                 .fill(achievement.completed ? DarkFantasyTheme.success : DarkFantasyTheme.gold)
                                 .frame(width: geo.size.width * max(0, min(1, achievement.progressFraction)))
                         }

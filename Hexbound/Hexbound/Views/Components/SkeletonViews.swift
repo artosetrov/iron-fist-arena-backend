@@ -5,7 +5,7 @@ import SwiftUI
 struct SkeletonRect: View {
     var width: CGFloat? = nil
     var height: CGFloat = 16
-    var cornerRadius: CGFloat = 6
+    var cornerRadius: CGFloat = LayoutConstants.radiusSM
 
     @State private var shimmerOffset: CGFloat = -1
 
@@ -14,13 +14,28 @@ struct SkeletonRect: View {
             .fill(DarkFantasyTheme.bgTertiary)
             .frame(width: width, height: height)
             .overlay(
+                // Radial tint for depth
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(
+                        RadialGradient(
+                            colors: [DarkFantasyTheme.borderSubtle.opacity(0.08), .clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 80
+                        )
+                    )
+            )
+            .overlay(
+                // Shimmer sweep
                 GeometryReader { geo in
                     RoundedRectangle(cornerRadius: cornerRadius)
                         .fill(
                             LinearGradient(
                                 colors: [
                                     .clear,
-                                    DarkFantasyTheme.textSecondary.opacity(0.08),
+                                    DarkFantasyTheme.textSecondary.opacity(0.06),
+                                    DarkFantasyTheme.goldDim.opacity(0.04),
+                                    DarkFantasyTheme.textSecondary.opacity(0.06),
                                     .clear,
                                 ],
                                 startPoint: UnitPoint(x: shimmerOffset - 0.3, y: 0.5),
@@ -28,6 +43,11 @@ struct SkeletonRect: View {
                             )
                         )
                 }
+            )
+            .overlay(
+                // Subtle border
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle.opacity(0.3), lineWidth: 0.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .onAppear {
@@ -45,26 +65,34 @@ struct SkeletonRect: View {
 
 struct SkeletonOpponentCard: View {
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             // Avatar placeholder
-            SkeletonRect(width: 52, height: 52, cornerRadius: 26)
+            SkeletonRect(width: 52, height: 52, cornerRadius: 26) // circle: half of width
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 120, height: 14)
                 SkeletonRect(width: 80, height: 12)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 6) {
+            VStack(alignment: .trailing, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 50, height: 14)
                 SkeletonRect(width: 60, height: 12)
             }
         }
         .padding(LayoutConstants.bannerPadding)
         .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+                .stroke(DarkFantasyTheme.borderSubtle.opacity(0.4), lineWidth: 0.5)
         )
     }
 }
@@ -73,8 +101,8 @@ struct SkeletonOpponentCard: View {
 
 struct SkeletonInventoryItem: View {
     var body: some View {
-        VStack(spacing: 6) {
-            SkeletonRect(height: 56, cornerRadius: 8)
+        VStack(spacing: LayoutConstants.spaceXS) {
+            SkeletonRect(height: 56, cornerRadius: LayoutConstants.radiusMD)
             SkeletonRect(width: 50, height: 10)
         }
         .frame(maxWidth: .infinity)
@@ -85,22 +113,26 @@ struct SkeletonInventoryItem: View {
 
 struct SkeletonQuestCard: View {
     var body: some View {
-        HStack(spacing: 12) {
-            SkeletonRect(width: 36, height: 36, cornerRadius: 8)
+        HStack(spacing: LayoutConstants.spaceMS) {
+            SkeletonRect(width: 36, height: 36, cornerRadius: LayoutConstants.radiusMD)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 100, height: 14)
                 SkeletonRect(height: 10)
             }
 
             Spacer()
 
-            SkeletonRect(width: 44, height: 20, cornerRadius: 10)
+            SkeletonRect(width: 44, height: 20, cornerRadius: LayoutConstants.spaceMS) // pill-like half-height
         }
         .padding(LayoutConstants.bannerPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
     }
 }
@@ -109,9 +141,9 @@ struct SkeletonQuestCard: View {
 
 struct SkeletonLeaderboardRow: View {
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: LayoutConstants.spaceMS) {
             SkeletonRect(width: 28, height: 14) // rank
-            SkeletonRect(width: 36, height: 36, cornerRadius: 18) // avatar
+            SkeletonRect(width: 36, height: 36, cornerRadius: 18) // circle: half of width // avatar
             VStack(alignment: .leading, spacing: 4) {
                 SkeletonRect(width: 110, height: 14)
                 SkeletonRect(width: 70, height: 10)
@@ -121,8 +153,12 @@ struct SkeletonLeaderboardRow: View {
         }
         .padding(LayoutConstants.spaceMS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
     }
 }
@@ -131,8 +167,8 @@ struct SkeletonLeaderboardRow: View {
 
 struct SkeletonShopItemCard: View {
     var body: some View {
-        VStack(spacing: 6) {
-            SkeletonRect(height: 64, cornerRadius: 8)
+        VStack(spacing: LayoutConstants.spaceXS) {
+            SkeletonRect(height: 64, cornerRadius: LayoutConstants.radiusMD)
             SkeletonRect(width: 60, height: 10)
             SkeletonRect(width: 40, height: 10)
         }
@@ -144,10 +180,10 @@ struct SkeletonShopItemCard: View {
 
 struct SkeletonAchievementCard: View {
     var body: some View {
-        HStack(spacing: 12) {
-            SkeletonRect(width: 44, height: 44, cornerRadius: 8)
+        HStack(spacing: LayoutConstants.spaceMS) {
+            SkeletonRect(width: 44, height: 44, cornerRadius: LayoutConstants.radiusMD)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 140, height: 14)
                 SkeletonRect(height: 10)
                 SkeletonRect(height: 6) // progress bar
@@ -155,12 +191,16 @@ struct SkeletonAchievementCard: View {
 
             Spacer()
 
-            SkeletonRect(width: 50, height: 24, cornerRadius: 12)
+            SkeletonRect(width: 50, height: 24, cornerRadius: LayoutConstants.radiusLG)
         }
         .padding(LayoutConstants.bannerPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
     }
 }
@@ -169,8 +209,8 @@ struct SkeletonAchievementCard: View {
 
 struct SkeletonBPNode: View {
     var body: some View {
-        VStack(spacing: 8) {
-            SkeletonRect(width: 60, height: 60, cornerRadius: 12)
+        VStack(spacing: LayoutConstants.spaceSM) {
+            SkeletonRect(width: 60, height: 60, cornerRadius: LayoutConstants.radiusLG)
             SkeletonRect(width: 40, height: 10)
         }
     }
@@ -182,7 +222,7 @@ struct SkeletonDungeonCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SkeletonRect(height: 140, cornerRadius: 0)
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceMS) {
                 SkeletonRect(width: 180, height: 16)
                 SkeletonRect(height: 10)
                 SkeletonRect(height: 10)
@@ -190,8 +230,12 @@ struct SkeletonDungeonCard: View {
             .padding(LayoutConstants.bannerPadding)
         }
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
     }
@@ -201,19 +245,23 @@ struct SkeletonDungeonCard: View {
 
 struct SkeletonMineSlot: View {
     var body: some View {
-        HStack(spacing: 12) {
-            SkeletonRect(width: 56, height: 56, cornerRadius: 8)
-            VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: LayoutConstants.spaceMS) {
+            SkeletonRect(width: 56, height: 56, cornerRadius: LayoutConstants.radiusMD)
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 60, height: 14)
                 SkeletonRect(width: 80, height: 10)
             }
             Spacer()
-            SkeletonRect(width: 64, height: 32, cornerRadius: 8)
+            SkeletonRect(width: 64, height: 32, cornerRadius: LayoutConstants.radiusMD)
         }
         .padding(LayoutConstants.spaceMS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
     }
 }
@@ -222,14 +270,14 @@ struct SkeletonMineSlot: View {
 
 struct SkeletonRevengeCard: View {
     var body: some View {
-        HStack(spacing: 12) {
-            SkeletonRect(width: 40, height: 40, cornerRadius: 8)
+        HStack(spacing: LayoutConstants.spaceMS) {
+            SkeletonRect(width: 40, height: 40, cornerRadius: LayoutConstants.radiusMD)
             VStack(alignment: .leading, spacing: 4) {
                 SkeletonRect(width: 100, height: 14)
                 SkeletonRect(width: 130, height: 10)
             }
             Spacer()
-            SkeletonRect(width: 76, height: 28, cornerRadius: 8)
+            SkeletonRect(width: 76, height: 28, cornerRadius: LayoutConstants.radiusMD)
         }
         .panelCard()
     }
@@ -239,8 +287,8 @@ struct SkeletonRevengeCard: View {
 
 struct SkeletonHistoryRow: View {
     var body: some View {
-        HStack(spacing: 12) {
-            SkeletonRect(width: 24, height: 24, cornerRadius: 4)
+        HStack(spacing: LayoutConstants.spaceMS) {
+            SkeletonRect(width: 24, height: 24, cornerRadius: LayoutConstants.radiusXS)
             VStack(alignment: .leading, spacing: 4) {
                 SkeletonRect(width: 100, height: 14)
                 SkeletonRect(width: 80, height: 10)
@@ -253,8 +301,12 @@ struct SkeletonHistoryRow: View {
         }
         .padding(LayoutConstants.spaceMS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
     }
 }

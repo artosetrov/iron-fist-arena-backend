@@ -28,8 +28,15 @@ struct TabSwitcher: View {
                         .overlay(alignment: .bottom) {
                             if selectedIndex == index {
                                 Rectangle()
-                                    .fill(DarkFantasyTheme.gold)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [DarkFantasyTheme.goldDim, DarkFantasyTheme.gold, DarkFantasyTheme.goldDim],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
                                     .frame(height: 2)
+                                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 4, y: 0)
                                     .matchedGeometryEffect(id: "tabIndicator", in: tabNamespace)
                             }
                         }
@@ -38,12 +45,28 @@ struct TabSwitcher: View {
                 .accessibilityLabel(tabs[index])
             }
         }
-        .background(DarkFantasyTheme.bgSecondary)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 3,
+            inset: 3,
+            color: DarkFantasyTheme.borderMedium.opacity(0.2)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 10, thickness: 1)
+        .cornerDiamonds(color: DarkFantasyTheme.borderStrong, size: 4)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .gesture(
             DragGesture(minimumDistance: 30, coordinateSpace: .local)
                 .onEnded { value in

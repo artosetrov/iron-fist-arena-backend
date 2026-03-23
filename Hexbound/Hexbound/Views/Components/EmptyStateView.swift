@@ -28,34 +28,65 @@ struct EmptyStateView: View {
         VStack(spacing: LayoutConstants.spaceLG) {
             Spacer()
 
-            // Icon
-            Image(systemName: icon)
-                .font(.system(size: 48, weight: .thin))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .padding(.bottom, LayoutConstants.spaceSM)
+            // Ornamental panel card wrapping the content
+            VStack(spacing: LayoutConstants.spaceMS) {
+                // Icon with subtle glow
+                Image(systemName: icon)
+                    .font(.system(size: 48, weight: .thin))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .shadow(color: DarkFantasyTheme.goldDim.opacity(0.2), radius: 8)
+                    .padding(.bottom, LayoutConstants.spaceSM)
 
-            // Title
-            Text(title)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .multilineTextAlignment(.center)
+                // Title
+                Text(title)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .multilineTextAlignment(.center)
 
-            // Message
-            Text(message)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, LayoutConstants.spaceXL)
+                // Ornamental divider
+                GoldDivider()
+                    .padding(.horizontal, LayoutConstants.spaceXL)
 
-            // Optional CTA
-            if let actionLabel, let action {
-                Button(action: action) {
-                    Text(actionLabel)
+                // Message
+                Text(message)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, LayoutConstants.spaceSM)
+
+                // Optional CTA
+                if let actionLabel, let action {
+                    Button(action: action) {
+                        Text(actionLabel)
+                    }
+                    .buttonStyle(.secondary)
+                    .padding(.horizontal, LayoutConstants.spaceXL)
+                    .padding(.top, LayoutConstants.spaceSM)
                 }
-                .buttonStyle(.secondary)
-                .padding(.horizontal, LayoutConstants.space2XL)
-                .padding(.top, LayoutConstants.spaceSM)
             }
+            .padding(LayoutConstants.spaceLG)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .innerBorder(
+                cornerRadius: LayoutConstants.panelRadius - 3,
+                inset: 3,
+                color: DarkFantasyTheme.borderMedium.opacity(0.15)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 14, thickness: 1.5)
+            .cornerDiamonds(color: DarkFantasyTheme.goldDim, size: 4)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .padding(.horizontal, LayoutConstants.screenPadding)
 
             Spacer()
         }

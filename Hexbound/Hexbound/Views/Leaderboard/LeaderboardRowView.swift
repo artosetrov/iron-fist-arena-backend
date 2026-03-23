@@ -4,6 +4,7 @@ struct LeaderboardRowView: View {
     let entry: LeaderboardEntry
     let isSelf: Bool
     let valueLabel: String
+    let onTap: (() -> Void)?
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
@@ -42,6 +43,9 @@ struct LeaderboardRowView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(isSelf ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: isSelf ? 2 : 1)
         )
+        .onTapGesture {
+            if !isSelf { onTap?() }
+        }
     }
 
     private var rankColor: Color {

@@ -70,11 +70,8 @@ final class DungeonSelectViewModel {
     // MARK: - Load Progress
 
     func loadProgress() async {
-<<<<<<< HEAD
         errorMessage = nil
 
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
         // Serve cached dungeon list + progress instantly
         if let cachedList = cache.cachedDungeonList() {
             dungeons = cachedList

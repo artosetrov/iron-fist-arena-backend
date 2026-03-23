@@ -7,8 +7,9 @@ struct HubLogoButton: View {
 
     var body: some View {
         Button {
+            SFXManager.shared.play(.uiBack)
             if !appState.mainPath.isEmpty {
-                appState.mainPath.removeLast()
+                appState.mainPath.removeLast(1)
             }
         } label: {
             Image("ui-arrow-left")

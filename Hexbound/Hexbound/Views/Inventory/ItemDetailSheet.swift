@@ -126,14 +126,23 @@ struct ItemDetailSheet: View {
                     .padding(.vertical, LayoutConstants.spaceMD)
             }
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                    .fill(DarkFantasyTheme.bgSecondary)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
             )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.14)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: rarityColor.opacity(0.12))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
                     .stroke(rarityColor.opacity(0.5), lineWidth: 2)
             )
-            .shadow(color: .bgAbyss.opacity(0.8), radius: 32, y: 8)
+            .cornerBrackets(color: rarityColor.opacity(0.5), length: 18, thickness: 2.0)
+            .cornerDiamonds(color: rarityColor.opacity(0.4), size: 6)
+            .shadow(color: rarityColor.opacity(0.18), radius: 10, y: 0)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
             .padding(.horizontal, LayoutConstants.screenPadding)
             .frame(maxHeight: UIScreen.main.bounds.height * 0.75)
             .fixedSize(horizontal: false, vertical: true)
@@ -258,7 +267,7 @@ struct ItemDetailSheet: View {
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
-            HStack(spacing: 2) {
+            HStack(spacing: LayoutConstants.space2XS) {
                 Text("+\(value)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.statColor(for: key))
@@ -283,9 +292,9 @@ struct ItemDetailSheet: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                 .fill(DarkFantasyTheme.bgTertiary)
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                 .fill(durabilityGradient)
                                 .frame(width: geo.size.width * durabilityFraction)
                         }
@@ -413,9 +422,12 @@ struct ItemDetailSheet: View {
                             Text("Buy:")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            Text("\(formatGold(buy))g")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.goldBright)
+                            CurrencyDisplay(
+                                gold: buy,
+                                size: .mini,
+                                currencyType: .gold,
+                                animated: false
+                            )
                         }
                     }
                     if sell > 0 {
@@ -423,9 +435,12 @@ struct ItemDetailSheet: View {
                             Text("Sell:")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            Text("\(formatGold(sell))g")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.success)
+                            CurrencyDisplay(
+                                gold: sell,
+                                size: .mini,
+                                currencyType: .gold,
+                                animated: false
+                            )
                         }
                     }
                 }
@@ -552,13 +567,13 @@ struct ItemDetailSheet: View {
                             SFXManager.shared.play(.uiEquip)
                             onEquip()
                         }
-                            .buttonStyle(.primary)
+                            .buttonStyle(.secondary)
                         Button("SELL") {
                             HapticManager.light()
                             SFXManager.shared.play(.uiSell)
                             onSell()
                         }
-                            .buttonStyle(.danger)
+                            .buttonStyle(.secondary)
                     }
                     if isDamaged {
                         Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
@@ -633,14 +648,14 @@ struct ItemDetailSheet: View {
             if currentUpgradeLevel >= 5 {
                 Toggle(isOn: $useProtection) {
                     HStack(spacing: LayoutConstants.spaceXS) {
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "shield")
                                 .font(.system(size: 10))
                             Text("Protection Scroll")
                         }
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        HStack(spacing: 2) {
+                        HStack(spacing: LayoutConstants.space2XS) {
                             Text("(30")
                             Image(systemName: "diamond")
                                 .font(.system(size: 10))
@@ -688,7 +703,7 @@ struct ItemDetailSheet: View {
     private var upgradeStatsPreview: some View {
         let stats = item.effectiveStats
         if !stats.isEmpty {
-            VStack(spacing: 4) {
+            VStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(stats.sorted(by: { $0.key < $1.key }), id: \.key) { key, currentValue in
                     HStack {
                         Text(Item.statLabels[key] ?? key.uppercased())
@@ -747,8 +762,8 @@ struct ItemDetailSheet: View {
         Text(text)
             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
             .foregroundStyle(style == .rarity ? rarityColor : DarkFantasyTheme.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
             .background(
                 Capsule()
                     .fill(style == .rarity ? rarityColor.opacity(0.15) : DarkFantasyTheme.bgTertiary)
@@ -760,14 +775,4 @@ struct ItemDetailSheet: View {
     }
 
     private enum BadgeStyle { case secondary, rarity }
-
-    private func formatGold(_ amount: Int) -> String {
-        if amount >= 1_000_000 {
-            return String(format: "%.1fM", Double(amount) / 1_000_000)
-        }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        return formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
-    }
 }

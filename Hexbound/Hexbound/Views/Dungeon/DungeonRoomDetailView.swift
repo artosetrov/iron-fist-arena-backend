@@ -3,10 +3,7 @@ import SwiftUI
 struct DungeonRoomDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
-<<<<<<< HEAD
     @Environment(\.dismiss) private var dismiss
-=======
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
     @State private var vm: DungeonRoomViewModel?
 
     // Animation states
@@ -82,13 +79,7 @@ struct DungeonRoomDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-<<<<<<< HEAD
                     dismiss()
-=======
-                    if !appState.mainPath.isEmpty {
-                        appState.mainPath.removeLast()
-                    }
->>>>>>> 42894bc5d3ff4f0da2a833ecefb491bd7e423e73
                 } label: {
                     Image("ui-arrow-left")
                         .resizable()
@@ -204,14 +195,14 @@ struct DungeonRoomDetailView: View {
                 if vm.isDungeonComplete {
                     Text("Complete!")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                        .foregroundStyle(.textPrimary)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(completedGreen))
                 } else {
                     Text("\(pctInt)%")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                        .foregroundStyle(.textPrimary)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(accentOrange))
@@ -292,7 +283,7 @@ struct DungeonRoomDetailView: View {
                 case .current:
                     Text("\(boss.id)")
                         .font(DarkFantasyTheme.body(size: 10).bold())
-                        .foregroundStyle(.textPrimary)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                 case .locked:
                     Text("\(boss.id)")
                         .font(DarkFantasyTheme.body(size: 10))
@@ -408,7 +399,7 @@ struct DungeonRoomDetailView: View {
                                 .frame(width: 32, height: 32)
                             Image(systemName: "checkmark")
                                 .font(.system(size: 16, weight: .bold)) // SF Symbol icon — keep
-                                .foregroundStyle(.textPrimary)
+                                .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                         .padding(.bottom, LayoutConstants.spaceXS)
                     }
@@ -422,7 +413,7 @@ struct DungeonRoomDetailView: View {
                                 : DarkFantasyTheme.textPrimary
                         )
                         .tracking(1)
-                        .shadow(color: .bgAbyss.opacity(0.8), radius: 4)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 4)
                         .shadow(
                             color: isActive ? bossBorderPurple.opacity(borderGlowPhase ? 0.8 : 0.2) : .clear,
                             radius: borderGlowPhase ? 12 : 4
@@ -433,7 +424,7 @@ struct DungeonRoomDetailView: View {
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).italic())
                         .foregroundStyle(DarkFantasyTheme.textBossDesc)
                         .multilineTextAlignment(.center)
-                        .shadow(color: .bgAbyss.opacity(0.8), radius: 4)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 4)
                 }
                 .padding(.horizontal, LayoutConstants.spaceMD)
                 .padding(.top, LayoutConstants.spaceLG)
@@ -544,17 +535,17 @@ struct DungeonRoomDetailView: View {
         case .defeated:
             Text("Defeated")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
-                .foregroundStyle(.textPrimary)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, 3)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(Capsule().fill(completedGreen))
 
         case .current:
             Text("Ready")
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
-                .foregroundStyle(.textPrimary)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, 3)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(Capsule().fill(accentOrange))
 
         case .locked:
@@ -563,7 +554,7 @@ struct DungeonRoomDetailView: View {
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1).bold())
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, 3)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(Capsule().fill(lockedGray))
         }
     }
@@ -615,10 +606,10 @@ struct DungeonRoomDetailView: View {
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 5)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .fill(DarkFantasyTheme.bgTertiary)
 
-                    RoundedRectangle(cornerRadius: 5)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .fill(
                             DarkFantasyTheme.dungeonHpGradient
                         )
@@ -832,7 +823,7 @@ struct DungeonRoomDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(4)
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
-                    .shadow(color: .bgAbyss, radius: 4)
+                    .shadow(color: DarkFantasyTheme.bgAbyss, radius: 4)
                     .opacity(bossSlamOpacity)
             }
         }

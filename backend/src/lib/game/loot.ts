@@ -1,12 +1,15 @@
 // =============================================================================
-// loot.ts — Item drop system (config-driven via item-balance engine)
+// loot.ts — Catalog-based item drop system
+//
+// Items are NEVER procedurally generated. All drops come from the Item catalog.
+// Each catalog item has a dropChance weight (0 = shop-only, >0 = droppable).
+// Items without imageKey automatically inherit one from a sibling of the
+// same type+rarity that already has art uploaded.
 // =============================================================================
 
-import { INVENTORY } from './balance';
 import { getDropChancesConfig, getRarityDistributionConfig, getInventoryConfig } from './live-config';
 import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
-import { generateBalancedBaseStats, calculateSellPrice, getDropTuningConfig, getRarityMultipliers } from './item-balance';
+import { getDropTuningConfig } from './item-balance';
 
 // --- Types ---
 
@@ -29,7 +32,6 @@ export type ItemType =
 export interface DroppedItem {
   rarity: Rarity;
   itemType: ItemType;
-  itemLevel: number;
 }
 
 export interface LootResponseItem {
@@ -41,19 +43,14 @@ export interface LootResponseItem {
   item_level: number;
   upgrade_level: number;
   base_stats: Record<string, number>;
+  image_key: string | null;
+  image_url: string | null;
 }
 
-// Note: MAX_INVENTORY_SLOTS is now loaded from live-config, see getMaxInventorySlots()
-/**
- * Get the maximum inventory slots from live config.
- * Cache this if calling frequently in a single request.
- */
-async function getMaxInventorySlots(): Promise<number> {
-  const config = await getInventoryConfig();
-  return config.MAX_SLOTS;
-}
+// Ordered rarities for the distribution roll
+const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
-// All possible equipment slot types
+// All possible equipment slot types (consumables excluded — never dropped)
 const ITEM_TYPES: ItemType[] = [
   'weapon',
   'helmet',
@@ -69,52 +66,20 @@ const ITEM_TYPES: ItemType[] = [
   'ring',
 ];
 
-// Ordered rarities for the distribution roll
-const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-
-// --- Item Name Tables ---
-
-const RARITY_PREFIXES: Record<Rarity, string[]> = {
-  common: ['Worn', 'Old', 'Simple', 'Crude', 'Plain'],
-  uncommon: ['Sturdy', 'Refined', 'Fine', 'Polished', 'Solid'],
-  rare: ['Enchanted', 'Arcane', 'Mystic', 'Runic', 'Blessed'],
-  epic: ['Infernal', 'Celestial', 'Draconic', 'Shadow', 'Void'],
-  legendary: ['Ancient', 'Eternal', 'Divine', 'Abyssal', 'Primordial'],
-};
-
-const ITEM_TYPE_NAMES: Record<ItemType, string[]> = {
-  weapon: ['Blade', 'Sword', 'Axe', 'Mace', 'Staff', 'Dagger', 'Warhammer'],
-  helmet: ['Helm', 'Crown', 'Hood', 'Circlet', 'Visor'],
-  chest: ['Chestplate', 'Robe', 'Cuirass', 'Vest', 'Hauberk'],
-  gloves: ['Gauntlets', 'Grips', 'Handguards', 'Bracers', 'Mitts'],
-  legs: ['Greaves', 'Leggings', 'Tassets', 'Cuisses', 'Legguards'],
-  boots: ['Treads', 'Sabatons', 'Striders', 'Boots', 'Sandals'],
-  accessory: ['Trinket', 'Charm', 'Token', 'Emblem', 'Sigil'],
-  amulet: ['Amulet', 'Pendant', 'Talisman', 'Locket', 'Medallion'],
-  belt: ['Belt', 'Sash', 'Girdle', 'Cord', 'Waistguard'],
-  relic: ['Relic', 'Artifact', 'Idol', 'Totem', 'Orb'],
-  necklace: ['Necklace', 'Chain', 'Collar', 'Choker', 'Torque'],
-  ring: ['Ring', 'Band', 'Loop', 'Signet', 'Circle'],
-};
-
 // --- Helpers ---
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/**
- * Generate a name for a dropped item based on its rarity and type.
- */
-export function generateItemName(itemType: ItemType, rarity: Rarity): string {
-  const prefix = pickRandom(RARITY_PREFIXES[rarity]);
-  const name = pickRandom(ITEM_TYPE_NAMES[itemType]);
-  return `${prefix} ${name}`;
+async function getMaxInventorySlots(): Promise<number> {
+  const config = await getInventoryConfig();
+  return config.MAX_SLOTS;
 }
 
 /**
  * Roll a rarity taking player level into account.
- * Now reads level rarity bonus config from the database.
+ * Reads level rarity bonus config from the database.
  */
 async function rollRarity(playerLevel: number): Promise<Rarity> {
   const dropTuning = await getDropTuningConfig();
@@ -122,7 +87,6 @@ async function rollRarity(playerLevel: number): Promise<Rarity> {
   const levelBonus = Math.max(0, (playerLevel - 1) * dropTuning.levelRarityBonusPerLevel);
   const distribution = dropTuning.levelRarityBonusDistribution;
 
-  // Build adjusted weights
   const weights: Record<Rarity, number> = {
     common: Math.max(rarityDist.common - levelBonus, 10),
     uncommon: rarityDist.uncommon,
@@ -131,15 +95,12 @@ async function rollRarity(playerLevel: number): Promise<Rarity> {
     legendary: rarityDist.legendary + levelBonus * (distribution.legendary ?? 0.25),
   };
 
-  // Normalise to sum
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
   let roll = Math.random() * totalWeight;
 
   for (const rarity of RARITIES) {
     roll -= weights[rarity];
-    if (roll <= 0) {
-      return rarity;
-    }
+    if (roll <= 0) return rarity;
   }
 
   return 'common';
@@ -152,11 +113,167 @@ function rollItemType(): ItemType {
   return ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
 }
 
+// --- Catalog item picker ---
+
+/**
+ * Find a droppable catalog item matching the rolled rarity + type + player level.
+ *
+ * Fallback chain:
+ *   1. Exact match: same rarity + same itemType, itemLevel ≤ playerLevel + 2
+ *   2. Same rarity, any equipment type
+ *   3. One rarity tier lower, any equipment type
+ *   4. Keep lowering rarity until we find something
+ *
+ * Within candidates, selection is weighted by the item's `dropChance` field.
+ */
+async function pickCatalogItem(
+  prisma: PrismaClient,
+  rarity: Rarity,
+  itemType: ItemType,
+  playerLevel: number,
+) {
+  const levelCap = playerLevel + 2;
+
+  // 1. Exact match: same rarity + type
+  let candidates = await prisma.item.findMany({
+    where: {
+      rarity,
+      itemType,
+      itemLevel: { lte: levelCap },
+      dropChance: { gt: 0 },
+    },
+  });
+
+  // 2. Same rarity, any equipment type
+  if (candidates.length === 0) {
+    candidates = await prisma.item.findMany({
+      where: {
+        rarity,
+        itemLevel: { lte: levelCap },
+        dropChance: { gt: 0 },
+        itemType: { not: 'consumable' },
+      },
+    });
+  }
+
+  // 3. Lower rarity fallback
+  if (candidates.length === 0) {
+    const rarityIdx = RARITIES.indexOf(rarity);
+    for (let i = rarityIdx - 1; i >= 0 && candidates.length === 0; i--) {
+      candidates = await prisma.item.findMany({
+        where: {
+          rarity: RARITIES[i],
+          itemLevel: { lte: levelCap },
+          dropChance: { gt: 0 },
+          itemType: { not: 'consumable' },
+        },
+      });
+    }
+  }
+
+  if (candidates.length === 0) return null;
+
+  // Weighted random pick by dropChance
+  const totalWeight = candidates.reduce((sum, c) => sum + (c.dropChance ?? 1), 0);
+  let roll = Math.random() * totalWeight;
+  for (const candidate of candidates) {
+    roll -= (candidate.dropChance ?? 1);
+    if (roll <= 0) return candidate;
+  }
+
+  return candidates[candidates.length - 1];
+}
+
+// --- Image resolver ---
+
+export interface ResolvedImage {
+  imageKey: string | null;
+  imageUrl: string | null;
+}
+
+/**
+ * Resolve art for an item. Checks imageKey first, then imageUrl.
+ * If the item has its own art — use it. Otherwise, borrow from a
+ * sibling of the same type+rarity that already has art uploaded.
+ * Last resort: any item of the same type with art (any rarity).
+ *
+ * Fallback chain per field:
+ *   1. Own imageKey / imageUrl
+ *   2. Same type + same rarity sibling with art
+ *   3. Same type, any rarity sibling with art
+ */
+export async function resolveImage(
+  prisma: PrismaClient,
+  item: { imageKey: string | null; imageUrl: string | null; itemType: string; rarity: string },
+): Promise<ResolvedImage> {
+  // If item already has both fields — nothing to resolve
+  if (item.imageKey && item.imageUrl) {
+    return { imageKey: item.imageKey, imageUrl: item.imageUrl };
+  }
+
+  // If item has at least one of its own fields, keep it; only resolve the missing one
+  let resolvedKey = item.imageKey;
+  let resolvedUrl = item.imageUrl;
+
+  // We need to find a sibling with art if either field is missing
+  if (!resolvedKey || !resolvedUrl) {
+    // 1. Same type + same rarity siblings with art (imageKey OR imageUrl)
+    const siblings = await prisma.item.findMany({
+      where: {
+        itemType: item.itemType as ItemType,
+        rarity: item.rarity as Rarity,
+        OR: [
+          { imageKey: { not: null } },
+          { imageUrl: { not: null } },
+        ],
+      },
+      select: { imageKey: true, imageUrl: true },
+    });
+
+    if (siblings.length > 0) {
+      const donor = pickRandom(siblings);
+      if (!resolvedKey) resolvedKey = donor.imageKey;
+      if (!resolvedUrl) resolvedUrl = donor.imageUrl;
+    }
+
+    // 2. Fallback: same type, any rarity, with art
+    if (!resolvedKey && !resolvedUrl) {
+      const anyRarity = await prisma.item.findMany({
+        where: {
+          itemType: item.itemType as ItemType,
+          OR: [
+            { imageKey: { not: null } },
+            { imageUrl: { not: null } },
+          ],
+        },
+        select: { imageKey: true, imageUrl: true },
+      });
+
+      if (anyRarity.length > 0) {
+        const donor = pickRandom(anyRarity);
+        if (!resolvedKey) resolvedKey = donor.imageKey;
+        if (!resolvedUrl) resolvedUrl = donor.imageUrl;
+      }
+    }
+  }
+
+  return { imageKey: resolvedKey, imageUrl: resolvedUrl };
+}
+
+/** @deprecated Use resolveImage() instead — kept for backwards compatibility */
+export async function resolveImageKey(
+  prisma: PrismaClient,
+  item: { imageKey: string | null; itemType: string; rarity: string },
+): Promise<string | null> {
+  const resolved = await resolveImage(prisma, { ...item, imageUrl: null });
+  return resolved.imageKey;
+}
+
 // --- Public API ---
 
 /**
- * Attempt to generate a dropped item after an activity.
- * Now reads drop chances from live config with LUK bonus and drop cap from item-balance config.
+ * Attempt a drop after an activity. Returns a DroppedItem with rarity + type
+ * if the RNG check passes, or null if nothing drops.
  */
 export async function rollDropChance(
   playerLevel: number,
@@ -176,28 +293,21 @@ export async function rollDropChance(
   const rarity = await rollRarity(playerLevel);
   const itemType = rollItemType();
 
-  // Item level scales with player level (configurable variance)
-  const variance = dropTuning.levelVariance;
-  const levelVariance = Math.floor(Math.random() * (variance * 2 + 1)) - variance;
-  const itemLevel = Math.max(1, playerLevel + levelVariance);
-
-  return {
-    rarity,
-    itemType,
-    itemLevel,
-  };
+  return { rarity, itemType };
 }
 
 /**
- * Persist a dropped item to the database.
- * Now uses the balance engine for stat generation and sell price.
+ * Pick a catalog item and add it to the character's inventory.
+ * No new Item rows are created — the EquipmentInventory references
+ * an existing catalog Item.
  */
 export async function persistLoot(
   prisma: PrismaClient,
   characterId: string,
   drop: DroppedItem,
+  playerLevel: number,
 ): Promise<LootResponseItem | null> {
-  // Check inventory capacity before creating the item
+  // Check inventory capacity
   const maxSlots = await getMaxInventorySlots();
   const inventoryCount = await prisma.equipmentInventory.count({
     where: { characterId },
@@ -206,54 +316,47 @@ export async function persistLoot(
     return null; // Inventory full — drop is lost
   }
 
-  const name = generateItemName(drop.itemType, drop.rarity);
-  const baseStats = await generateBalancedBaseStats(drop.itemType, drop.rarity, drop.itemLevel);
-  const catalogId = `loot_${randomUUID()}`;
-  const sellPrice = await calculateSellPrice(drop.rarity, drop.itemLevel);
+  // Find a matching catalog item
+  const catalogItem = await pickCatalogItem(prisma, drop.rarity, drop.itemType, playerLevel);
+  if (!catalogItem) return null;
 
-  // Create Item + EquipmentInventory in an interactive transaction
-  const result = await prisma.$transaction(async (tx) => {
-    const item = await tx.item.create({
-      data: {
-        catalogId,
-        itemName: name,
-        itemType: drop.itemType,
-        rarity: drop.rarity,
-        itemLevel: drop.itemLevel,
-        baseStats,
-        sellPrice,
-        description: `A ${drop.rarity} ${drop.itemType} dropped in combat.`,
-      },
-    });
+  // Resolve art (own art → sibling art of same type+rarity → any rarity)
+  const resolvedImage = await resolveImage(prisma, {
+    imageKey: catalogItem.imageKey,
+    imageUrl: catalogItem.imageUrl,
+    itemType: catalogItem.itemType,
+    rarity: catalogItem.rarity,
+  });
 
-    const equipment = await tx.equipmentInventory.create({
-      data: {
-        characterId,
-        itemId: item.id,
-        upgradeLevel: 0,
-        durability: 100,
-        maxDurability: 100,
-        isEquipped: false,
-      },
-    });
-
-    return { item, equipment };
+  // Create inventory entry pointing to the shared catalog item
+  const equipment = await prisma.equipmentInventory.create({
+    data: {
+      characterId,
+      itemId: catalogItem.id,
+      upgradeLevel: 0,
+      durability: 100,
+      maxDurability: 100,
+      isEquipped: false,
+    },
   });
 
   return {
-    id: result.equipment.id,
-    name,
-    type: drop.itemType,
-    item_type: drop.itemType,
-    rarity: drop.rarity,
-    item_level: drop.itemLevel,
+    id: equipment.id,
+    name: catalogItem.itemName,
+    type: catalogItem.itemType,
+    item_type: catalogItem.itemType,
+    rarity: catalogItem.rarity,
+    item_level: catalogItem.itemLevel,
     upgrade_level: 0,
-    base_stats: baseStats,
+    base_stats: (catalogItem.baseStats ?? {}) as Record<string, number>,
+    image_key: resolvedImage.imageKey,
+    image_url: resolvedImage.imageUrl,
   };
 }
 
 /**
  * Roll for loot and persist if successful. Convenience wrapper.
+ * Signature unchanged — all callers keep working without modification.
  */
 export async function rollAndPersistLoot(
   prisma: PrismaClient,
@@ -264,5 +367,5 @@ export async function rollAndPersistLoot(
 ): Promise<LootResponseItem | null> {
   const drop = await rollDropChance(playerLevel, difficulty, luk);
   if (!drop) return null;
-  return persistLoot(prisma, characterId, drop);
+  return persistLoot(prisma, characterId, drop, playerLevel);
 }

@@ -100,10 +100,10 @@ struct EventBannerView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 36, height: 36)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
         } else {
             ZStack {
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .fill(event.themeColor.opacity(0.2))
                     .frame(width: 36, height: 36)
 

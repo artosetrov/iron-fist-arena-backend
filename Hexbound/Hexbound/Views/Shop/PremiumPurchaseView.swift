@@ -164,7 +164,7 @@ struct PremiumPurchaseView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(price)
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(.textPrimary)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Text("ONE TIME")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -382,7 +382,7 @@ struct PremiumFeatureRow: View {
                 .foregroundStyle(feature.highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.premiumPink)
                 .frame(width: 36, height: 36)
                 .background(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .fill(feature.highlight
                               ? DarkFantasyTheme.goldBright.opacity(0.1)
                               : DarkFantasyTheme.premiumPink.opacity(0.1))

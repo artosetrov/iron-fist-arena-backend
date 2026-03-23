@@ -1,15 +1,8 @@
 import SwiftUI
 
-@MainActor @Observable
-final class EquipmentViewModel {
-    private let appState: AppState
-    private let service: InventoryService
-
-    var items: [Item] = []
-    var isLoading = false
-    var selectedItem: Item?
-    var showItemDetail = false
-
+/// Static utility for equipment slot metadata.
+/// Used by HeroIntegratedCard for slot matching and icon display.
+enum EquipmentViewModel {
     static let slotOrder = [
         "helmet", "amulet",
         "chest", "gloves",
@@ -53,69 +46,4 @@ final class EquipmentViewModel {
         "relic":  ["relic", "accessory", "weapon"], // UNIVERSAL: off-hand
         "belt":   ["belt"],
     ]
-
-    init(appState: AppState) {
-        self.appState = appState
-        self.service = InventoryService(appState: appState)
-    }
-
-    var equippedItems: [Item] {
-        items.filter { $0.isEquipped == true }
-    }
-
-    func equippedIn(slot: String) -> Item? {
-        switch slot {
-        case "ring":
-            return equippedItems.first { $0.equippedSlot == "ring" }
-        case "ring2":
-            return equippedItems.first { $0.equippedSlot == "ring2" }
-        case "belt":
-            return equippedItems.first { $0.equippedSlot == "belt" || $0.itemType == .belt }
-        case "relic":
-            return equippedItems.first { $0.equippedSlot == "relic" || $0.itemType == .relic }
-        case "necklace":
-            return equippedItems.first { $0.equippedSlot == "necklace" || $0.itemType == .necklace }
-        default:
-            return equippedItems.first { $0.equippedSlot == slot || $0.itemType.rawValue == slot }
-        }
-    }
-
-    var totalBonuses: [String: Int] {
-        var stats: [String: Int] = [:]
-        for item in equippedItems {
-            for (key, val) in item.totalStats {
-                stats[key, default: 0] += val
-            }
-        }
-        return stats
-    }
-
-    // MARK: - Load
-
-    func loadEquipment() async {
-        // Show cached inventory instantly, refresh in background
-        if let cached = appState.cachedInventory, items.isEmpty {
-            items = cached
-        } else {
-            isLoading = true
-        }
-        let result = await service.loadInventory()
-        items = result
-        isLoading = false
-    }
-
-    // MARK: - Actions
-
-    func selectItem(_ item: Item) {
-        selectedItem = item
-        showItemDetail = true
-    }
-
-    func unequip(_ item: Item) async {
-        if let updated = await service.unequip(inventoryId: item.id) {
-            items = updated
-            showItemDetail = false
-            appState.showToast("Unequipped \(item.displayName)", type: .info)
-        }
-    }
 }
