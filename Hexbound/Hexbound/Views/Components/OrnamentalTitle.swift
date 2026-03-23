@@ -16,6 +16,14 @@ struct OrnamentalTitle: View {
     var titleSize: CGFloat = LayoutConstants.textScreen
     var showDivider: Bool = true
 
+    init(_ title: String, subtitle: String? = nil, accentColor: Color = DarkFantasyTheme.gold, titleSize: CGFloat = LayoutConstants.textScreen, showDivider: Bool = true) {
+        self.title = title
+        self.subtitle = subtitle
+        self.accentColor = accentColor
+        self.titleSize = titleSize
+        self.showDivider = showDivider
+    }
+
     var body: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Title text
