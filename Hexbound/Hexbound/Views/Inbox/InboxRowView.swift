@@ -28,7 +28,7 @@ struct InboxRowView: View {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.subject)
                             .font(.system(size: 16, weight: message.isRead ? .regular : .semibold))
-                            .foregroundColor(DarkFantasyTheme.textPrimary)
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .lineLimit(1)
 
                         Spacer()
@@ -43,7 +43,7 @@ struct InboxRowView: View {
                                 if attachments.count > 3 {
                                     Text("+\(attachments.count - 3)")
                                         .font(.system(size: 13, weight: .semibold))
-                                        .foregroundColor(DarkFantasyTheme.textSecondary)
+                                        .foregroundStyle(DarkFantasyTheme.textSecondary)
                                 }
                             }
                         }
@@ -52,18 +52,18 @@ struct InboxRowView: View {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text(message.senderName)
                             .font(.system(size: 14))
-                            .foregroundColor(DarkFantasyTheme.textSecondary)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
                         
                         Spacer()
                         
                         Text(formatDate(message.createdAt))
                             .font(.system(size: 13))
-                            .foregroundColor(DarkFantasyTheme.textSecondary)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                 }
                 
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .foregroundColor(DarkFantasyTheme.textSecondary)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .font(.system(size: 12, weight: .semibold))
             }
             .padding(LayoutConstants.spaceMD)
@@ -85,12 +85,12 @@ struct InboxRowView: View {
             if isExpanded {
                 VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
                     Divider()
-                        .foregroundColor(DarkFantasyTheme.bgTertiary)
+                        .foregroundStyle(DarkFantasyTheme.bgTertiary)
                     
                     // Message body
                     Text(message.body)
                         .font(.system(size: 16))
-                        .foregroundColor(DarkFantasyTheme.textPrimary)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(nil)
                     
                     // Attachments details
@@ -98,7 +98,7 @@ struct InboxRowView: View {
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                             Text("Attachments")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(DarkFantasyTheme.textSecondary)
+                                .foregroundStyle(DarkFantasyTheme.textSecondary)
                             
                             ForEach(attachments, id: \.type) { attachment in
                                 HStack(spacing: LayoutConstants.spaceSM) {
@@ -106,7 +106,7 @@ struct InboxRowView: View {
                                     
                                     Text(formatAttachment(attachment))
                                         .font(.system(size: 14))
-                                        .foregroundColor(DarkFantasyTheme.textPrimary)
+                                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                                     
                                     Spacer()
                                 }
@@ -214,11 +214,11 @@ private struct AttachmentIcon: View {
         HStack(spacing: LayoutConstants.space2XS) {
             Image(systemName: iconName)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(iconColor)
+                .foregroundStyle(iconColor)
 
             Text("\(amount)")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(DarkFantasyTheme.textSecondary)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
         .padding(.horizontal, LayoutConstants.spaceXS)
         .padding(.vertical, LayoutConstants.space2XS)

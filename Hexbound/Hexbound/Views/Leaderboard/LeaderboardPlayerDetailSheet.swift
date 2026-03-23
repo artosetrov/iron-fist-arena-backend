@@ -414,6 +414,7 @@ struct LeaderboardPlayerDetailSheet: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
+            .accessibilityLabel("Challenge opponent to battle")
 
             HStack(spacing: LayoutConstants.spaceSM) {
                 Button(action: onMessage) {
@@ -424,6 +425,7 @@ struct LeaderboardPlayerDetailSheet: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.secondary)
+                .accessibilityLabel("Send message to opponent")
 
                 Button(action: onAddFriend) {
                     HStack(spacing: LayoutConstants.spaceXS) {
@@ -433,6 +435,7 @@ struct LeaderboardPlayerDetailSheet: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.secondary)
+                .accessibilityLabel("Add opponent as friend")
             }
         }
     }
