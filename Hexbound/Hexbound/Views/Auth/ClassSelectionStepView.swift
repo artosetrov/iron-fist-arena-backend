@@ -38,66 +38,78 @@ struct ClassSelectionStepView: View {
         }
     }
 
-    // MARK: - Class Showcase
+    // MARK: - Class Showcase (Unified Card)
 
     @ViewBuilder
     private func classShowcase(_ charClass: CharacterClass) -> some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
+        let accentColor = DarkFantasyTheme.classColor(for: charClass)
+
+        VStack(spacing: LayoutConstants.spaceXS) {
+            // Icon — inside the card, slightly larger
             ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                DarkFantasyTheme.classColor(for: charClass).opacity(0.2),
-                                DarkFantasyTheme.bgSecondary.opacity(0.3),
-                                Color.clear
-                            ],
-                            center: .center,
-                            startRadius: 20,
-                            endRadius: 140
-                        )
-                    )
-                    .frame(height: 340)
+                RadialGradient(
+                    colors: [
+                        accentColor.opacity(0.25),
+                        DarkFantasyTheme.bgSecondary.opacity(0.15),
+                        Color.clear
+                    ],
+                    center: .center,
+                    startRadius: 10,
+                    endRadius: 110
+                )
 
                 Image(charClass.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 256, height: 256)
-                    .shadow(color: DarkFantasyTheme.classColor(for: charClass).opacity(0.5), radius: 20)
+                    .frame(width: 160, height: 160)
+                    .shadow(color: accentColor.opacity(0.5), radius: 16)
+            }
+            .frame(height: 170)
+
+            // Class name
+            Text(charClass.sfName)
+                .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+            // Main attribute pill
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Text("MAIN ATTRIBUTE")
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                Text("–")
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                Text(charClass.mainAttribute)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
             }
 
-            VStack(spacing: LayoutConstants.spaceSM) {
-                Text(charClass.sfName)
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+            Text(charClass.mainAttributeDescription)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
 
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("MAIN ATTRIBUTE")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                    Text("–")
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                    Text(charClass.mainAttribute)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                }
+            Text(charClass.bonuses)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .foregroundStyle(DarkFantasyTheme.textSuccess)
 
-                Text(charClass.mainAttributeDescription)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-
-                Text(charClass.bonuses)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textSuccess)
-                    .padding(.top, LayoutConstants.space2XS)
-
-                // Stat distribution bars
-                classStatBars(charClass)
-                    .padding(.top, LayoutConstants.spaceSM)
-            }
-            .padding(.horizontal, LayoutConstants.screenPadding)
+            // Stat distribution bars
+            classStatBars(charClass)
         }
+        .padding(LayoutConstants.spaceMD)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: accentColor.opacity(0.08))
+        .cornerBrackets(color: accentColor.opacity(0.3), length: 14, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
     // MARK: - Class Carousel
@@ -109,7 +121,7 @@ struct ClassSelectionStepView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.scalePress)
             .accessibilityLabel("Previous class")
@@ -128,7 +140,7 @@ struct ClassSelectionStepView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 28, height: 28)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.scalePress)
             .accessibilityLabel("Next class")
@@ -168,53 +180,42 @@ struct ClassSelectionStepView: View {
     private func classStatBars(_ charClass: CharacterClass) -> some View {
         let stats = classStatProfile(charClass)
 
-        VStack(spacing: 4) {
+        VStack(spacing: 5) {
             ForEach(stats, id: \.name) { stat in
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Text(stat.abbreviation)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                        .foregroundStyle(stat.color)
-                        .frame(width: 32, alignment: .trailing)
+                GeometryReader { geo in
+                    let isBoosted = stat.value > 5
+                    let fillWidth = geo.size.width * min(1, max(0, CGFloat(stat.value) / 10.0))
 
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            // Track
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(DarkFantasyTheme.bgTertiary)
+                    ZStack(alignment: .leading) {
+                        // Track
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(DarkFantasyTheme.bgTertiary)
 
-                            // Fill — proportional to stat value (max 10 for display)
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [stat.color.opacity(0.7), stat.color],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .frame(width: geo.size.width * min(1, max(0, CGFloat(stat.value) / 10.0)))
-                                .overlay(
-                                    // Top edge highlight (ornamental)
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color.white.opacity(0.08), Color.clear],
-                                                startPoint: .top,
-                                                endPoint: .bottom
-                                            )
-                                        )
-                                        .frame(height: 3)
-                                        .frame(maxHeight: .infinity, alignment: .top),
-                                    alignment: .top
-                                )
-                        }
+                        // Fill — unified gold gradient
+                        RoundedRectangle(cornerRadius: 5)
+                            .fill(DarkFantasyTheme.statBarGradient(value: stat.value))
+                            .frame(width: fillWidth)
+                            .overlay(
+                                BarFillHighlight(cornerRadius: 5)
+                            )
+
+                        // Stat name inside the bar (left-aligned)
+                        // Dark text on gold fill for WCAG AA contrast
+                        Text(stat.name)
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                            .shadow(color: Color.white.opacity(0.08), radius: 1, x: 0, y: 1)
+                            .padding(.leading, 8)
+
+                        // Value on the right — bright for boosted, white for base
+                        Text("\(stat.value)")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                            .foregroundStyle(isBoosted ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.trailing, 8)
                     }
-                    .frame(height: 8)
-
-                    Text("\(stat.value)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                        .foregroundStyle(stat.value > 5 ? stat.color : DarkFantasyTheme.textTertiary)
-                        .frame(width: 20, alignment: .leading)
                 }
+                .frame(height: 22)
             }
         }
         .padding(LayoutConstants.spaceSM)
@@ -239,7 +240,6 @@ struct ClassSelectionStepView: View {
         let name: String
         let abbreviation: String
         let value: Int
-        let color: Color
         var id: String { name }
     }
 
@@ -254,14 +254,14 @@ struct ClassSelectionStepView: View {
             }
         }()
 
-        let allStats: [(name: String, abbr: String, color: Color)] = [
-            ("Strength",     "STR", DarkFantasyTheme.statSTR),
-            ("Agility",      "AGI", DarkFantasyTheme.statAGI),
-            ("Vitality",     "VIT", DarkFantasyTheme.statVIT),
-            ("Endurance",    "END", DarkFantasyTheme.statEND),
-            ("Intelligence", "INT", DarkFantasyTheme.statINT),
-            ("Wisdom",       "WIS", DarkFantasyTheme.statWIS),
-            ("Luck",         "LUK", DarkFantasyTheme.statLUK),
+        let allStats: [(name: String, abbr: String)] = [
+            ("Strength",     "STR"),
+            ("Agility",      "AGI"),
+            ("Vitality",     "VIT"),
+            ("Endurance",    "END"),
+            ("Intelligence", "INT"),
+            ("Wisdom",       "WIS"),
+            ("Luck",         "LUK"),
         ]
 
         return allStats.map { stat in
@@ -270,8 +270,7 @@ struct ClassSelectionStepView: View {
             return StatEntry(
                 name: stat.name,
                 abbreviation: stat.abbr,
-                value: base + bonus,
-                color: stat.color
+                value: base + bonus
             )
         }
     }

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct Achievement: Codable, Identifiable {
     var id: String { key }
@@ -23,6 +24,33 @@ struct Achievement: Codable, Identifiable {
         completed && !rewardClaimed
     }
 
+    /// Number formatter for progress display (e.g., 1,500 / 2,200).
+    private static let numberFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.groupingSeparator = ","
+        return f
+    }()
+
+    var formattedProgress: String {
+        Self.numberFormatter.string(from: NSNumber(value: progress)) ?? "\(progress)"
+    }
+
+    var formattedTarget: String {
+        Self.numberFormatter.string(from: NSNumber(value: target)) ?? "\(target)"
+    }
+
+    /// SF Symbol name + color per category. Used by AchievementCardView instead of emoji.
+    var categoryAsset: (String, Color) {
+        switch category {
+        case "pvp":         return ("swords", DarkFantasyTheme.danger)
+        case "progression": return ("arrow.up.circle", DarkFantasyTheme.purple)
+        case "ranking":     return ("trophy", DarkFantasyTheme.gold)
+        default:            return ("star.fill", DarkFantasyTheme.textSecondary)
+        }
+    }
+
+    // Legacy: kept for any code that still references it.
     var categoryIcon: String {
         switch category {
         case "pvp": "⚔️"

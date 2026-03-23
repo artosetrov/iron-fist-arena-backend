@@ -86,18 +86,20 @@ final class GoldMineViewModel {
                 APIEndpoints.goldMineCollect,
                 body: ["character_id": charId, "slot_index": slotIndex]
             )
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                slots = updatedSlots
-            }
             let collected = data["gold_collected"] as? Int ?? 0
-            if let newGold = data["gold"] as? Int {
-                appState.currentCharacter?.gold = newGold
+            withAnimation(.easeInOut(duration: 0.3)) {
+                if let updatedSlots = data["slots"] as? [[String: Any]] {
+                    slots = updatedSlots
+                }
+                if let newGold = data["gold"] as? Int {
+                    appState.currentCharacter?.gold = newGold
+                }
+                actionSlotId = nil
             }
-            actionSlotId = nil
             appState.showToast("Collected \(collected) gold!", type: .reward)
             appState.invalidateCache("quests")
         } catch {
-            actionSlotId = nil
+            withAnimation { actionSlotId = nil }
             appState.showToast("Failed to collect", subtitle: "Check connection and try again", type: .error)
         }
     }

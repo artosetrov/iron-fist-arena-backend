@@ -3,6 +3,37 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
 
+// Human-readable display metadata for achievements.
+// These are the titles and descriptions the player sees in the UI.
+const ACHIEVEMENT_DISPLAY: Record<string, { title: string; description: string }> = {
+  // PvP
+  pvp_first_blood:  { title: 'First Blood',      description: 'Win your first PvP battle' },
+  pvp_wins_10:      { title: '10 Victories',      description: 'Win 10 PvP battles' },
+  pvp_wins_50:      { title: '50 Victories',      description: 'Win 50 PvP battles' },
+  pvp_wins_100:     { title: 'Centurion',         description: 'Win 100 PvP battles' },
+  pvp_wins_500:     { title: 'Warmaster',         description: 'Win 500 PvP battles' },
+  pvp_streak_5:     { title: 'On Fire',           description: 'Win 5 PvP battles in a row' },
+  pvp_streak_10:    { title: 'Unstoppable',       description: 'Win 10 PvP battles in a row' },
+  revenge_first:    { title: 'Sweet Revenge',     description: 'Win your first revenge battle' },
+  revenge_wins_10:  { title: 'Nemesis',           description: 'Win 10 revenge battles' },
+  // Progression
+  reach_level_10:   { title: 'Adventurer',        description: 'Reach level 10' },
+  reach_level_25:   { title: 'Veteran',           description: 'Reach level 25' },
+  reach_level_50:   { title: 'Legend',             description: 'Reach level 50' },
+  first_prestige:   { title: 'Reborn',            description: 'Prestige for the first time' },
+  prestige_3:       { title: 'Thrice Forged',     description: 'Reach prestige 3' },
+  // Ranking
+  rank_silver:      { title: 'Silver Rank',       description: 'Achieve Silver rank (1,200 rating)' },
+  rank_gold:        { title: 'Gold Rank',         description: 'Achieve Gold rank (1,500 rating)' },
+  rank_diamond:     { title: 'Diamond Rank',      description: 'Achieve Diamond rank (1,800 rating)' },
+  rank_grandmaster: { title: 'Grandmaster',       description: 'Achieve Grandmaster rank (2,200 rating)' },
+}
+
+/** Fallback: convert achievement key to a readable title. */
+function formatKeyFallback(key: string): string {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -74,13 +105,13 @@ export async function GET(req: NextRequest) {
           : null
 
       const key = a.achievementKey
-      const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      const meta = ACHIEVEMENT_DISPLAY[key]
 
       return {
         key,
         category: def?.category ?? 'unknown',
-        title: label,
-        description: `Reach ${a.target} ${key.replace(/_/g, ' ')}`,
+        title: meta?.title ?? formatKeyFallback(key),
+        description: meta?.description ?? `Reach ${a.target}`,
         target: a.target,
         progress: a.progress,
         completed: a.completed || a.progress >= a.target,

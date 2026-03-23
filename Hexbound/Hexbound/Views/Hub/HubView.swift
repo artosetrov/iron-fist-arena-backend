@@ -6,7 +6,7 @@ struct HubView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var showDungeonMap = false
-    @State private var dungeonPath = NavigationPath()
+    @State private var showDailyLoginSheet = false
 
     // Onboarding flow state
     @State private var currentOnboardingStep = 0
@@ -18,7 +18,7 @@ struct HubView: View {
 
     private var shouldShowOnboarding: Bool {
         // Check if this is the first time visiting hub (no onboarding completed yet)
-        guard let char = appState.currentCharacter else { return false }
+        guard appState.currentCharacter != nil else { return false }
         let tutorial = TutorialManager.shared
         // Show onboarding if hubCharacterCard hasn't been shown (first-time visit indicator)
         return tutorial.shouldShow(.hubCharacterCard) && currentOnboardingStep < onboardingSteps.count
@@ -33,14 +33,7 @@ struct HubView: View {
                     UnifiedHeroWidget(
                         character: char,
                         context: .hub,
-                        onTap: { appState.mainPath.append(AppRoute.hero) },
-                        onUseHealthPotion: {
-                            Task { await useHealthPotion() }
-                        },
-                        onUseStaminaPotion: {
-                            Task { await useStaminaPotion() }
-                        },
-                        onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                        onTap: { appState.mainPath.append(AppRoute.hero) }
                     )
                     .tutorialAnchor(.hubCharacterCard)
                     .padding(.horizontal, LayoutConstants.screenPadding)
@@ -65,22 +58,17 @@ struct HubView: View {
                     .tutorialAnchor(.hubCityMap)
                     .opacity(showDungeonMap ? 0 : 1)
 
-                // Dungeon map
-                NavigationStack(path: $dungeonPath) {
-                    DungeonMapView(
-                        onBack: {
-                            withAnimation(.easeInOut(duration: 0.45)) {
-                                showDungeonMap = false
-                            }
-                        },
-                        onNavigate: { route in
-                            dungeonPath.append(route)
+                // Dungeon map — navigates via mainPath so DungeonRoom/Combat share one stack
+                DungeonMapView(
+                    onBack: {
+                        withAnimation(.easeInOut(duration: 0.45)) {
+                            showDungeonMap = false
                         }
-                    )
-                    .navigationDestination(for: AppRoute.self) { route in
-                        MainRouterView.destination(for: route)
+                    },
+                    onNavigate: { route in
+                        appState.mainPath.append(route)
                     }
-                }
+                )
                 .opacity(showDungeonMap ? 1 : 0)
             }
             .clipped()
@@ -108,7 +96,7 @@ struct HubView: View {
                         accentColor: DarkFantasyTheme.goldBright,
                         size: 50
                     ) {
-                        appState.mainPath.append(AppRoute.dailyLogin)
+                        showDailyLoginSheet = true
                     }
                     .accessibilityLabel("Daily Login")
                     .tutorialAnchor(.hubDailyLogin)
@@ -151,10 +139,6 @@ struct HubView: View {
                     withAnimation(.easeInOut(duration: 0.45)) {
                         showDungeonMap.toggle()
                     }
-                    // Reset dungeon navigation path when going back to hub
-                    if !showDungeonMap {
-                        dungeonPath = NavigationPath()
-                    }
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(showDungeonMap ? "icon-lobby" : "icon-dungeons")
@@ -169,9 +153,6 @@ struct HubView: View {
                 .buttonStyle(.compactPrimary)
                 .accessibilityLabel(showDungeonMap ? "Go to Adventures" : "Go to Castle")
                 .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
-                // Hide when navigated into a dungeon room
-                .opacity(dungeonPath.isEmpty ? 1 : 0)
-                .animation(.easeInOut(duration: 0.2), value: dungeonPath.isEmpty)
             }
         }
         .ignoresSafeArea(edges: .bottom)
@@ -201,6 +182,11 @@ struct HubView: View {
             }
         }
         .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])
+        .sheet(isPresented: $showDailyLoginSheet) {
+            DailyLoginDetailView()
+                .environment(appState)
+                .environment(cache)
+        }
         .task { await checkDailyLogin() }
         .task { await fetchUnreadMailCount() }
         .onAppear {
@@ -280,10 +266,10 @@ struct HubView: View {
         await MainActor.run {
             appState.dailyLoginCanClaim = canClaim
 
-            // Auto-navigate to daily login once per session
+            // Auto-show daily login sheet once per session
             if canClaim && !appState.hasAutoShownDailyLogin {
                 appState.hasAutoShownDailyLogin = true
-                appState.mainPath.append(AppRoute.dailyLogin)
+                showDailyLoginSheet = true
             }
         }
     }

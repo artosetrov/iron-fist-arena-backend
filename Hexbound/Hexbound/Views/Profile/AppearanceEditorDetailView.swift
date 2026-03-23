@@ -10,6 +10,7 @@ struct AppearanceEditorDetailView: View {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             if let vm {
+                Group {
                 if vm.isLoadingSkins && vm.allSkins.isEmpty {
                     ProgressView()
                         .tint(DarkFantasyTheme.gold)
@@ -73,6 +74,8 @@ struct AppearanceEditorDetailView: View {
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                 }
+                }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)

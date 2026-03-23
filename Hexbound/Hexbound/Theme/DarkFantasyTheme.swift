@@ -89,15 +89,48 @@ enum DarkFantasyTheme {
     static let rarityEpicGlow = Color(hex: 0xA64DE6).opacity(0.31)
     static let rarityLegendaryGlow = Color(hex: 0xFFBF1A).opacity(0.38)
 
-    // MARK: - Stat Colors
+    // MARK: - Stat Colors (Unified Gold Palette)
+    //
+    // All stats use gold shades for visual cohesion.
+    // Boosted stats (above base 5) render with statBoosted (bright gold).
+    // Base stats render with statBase (dim gold).
+    // Use statBarColor(value:base:) helper for automatic selection.
 
+    static let statBoosted = Color(hex: 0xFFD700)     // goldBright — for stats above base
+    static let statBase = Color(hex: 0x8B6914)         // goldDim — for base-level stats
+    static let statBarFill = Color(hex: 0xD4A537)      // gold — standard bar fill
+
+    /// Returns bright gold for boosted stats, dim gold for base stats.
+    static func statBarColor(value: Int, base: Int = 5) -> Color {
+        value > base ? statBoosted : statBase
+    }
+
+    /// Gradient for stat bar fill — brighter for higher values.
+    static func statBarGradient(value: Int, base: Int = 5) -> LinearGradient {
+        let color = value > base ? statBoosted : statBarFill
+        return LinearGradient(
+            colors: [color.opacity(0.7), color],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    // Legacy stat colors — DEPRECATED: use statBarColor(value:base:) instead
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statSTR = Color(hex: 0xE6594D)   // Crimson
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statAGI = Color(hex: 0x4DE666)   // Emerald
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statVIT = Color(hex: 0xE68080)   // Rose
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statEND = Color(hex: 0xB3B34D)   // Amber
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statINT = Color(hex: 0x6680FF)   // Sapphire
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statWIS = Color(hex: 0x9966E6)   // Violet
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statLUK = Color(hex: 0xE6D94D)   // Gold
+    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
     static let statCHA = Color(hex: 0xE699CC)   // Blush
 
     // MARK: - Class Colors
@@ -503,18 +536,9 @@ enum DarkFantasyTheme {
         canonicalHpGradient(percentage: percentage)
     }
 
+    /// Unified stat color — always gold. Use statBarColor(value:base:) for boosted/base distinction.
     static func statColor(for stat: String) -> Color {
-        switch stat.uppercased() {
-        case "STR", "STRENGTH": statSTR
-        case "AGI", "AGILITY": statAGI
-        case "VIT", "VITALITY": statVIT
-        case "END", "ENDURANCE": statEND
-        case "INT", "INTELLIGENCE": statINT
-        case "WIS", "WISDOM": statWIS
-        case "LUK", "LUCK": statLUK
-        case "CHA", "CHARISMA": statCHA
-        default: textSecondary
-        }
+        statBarFill
     }
 }
 

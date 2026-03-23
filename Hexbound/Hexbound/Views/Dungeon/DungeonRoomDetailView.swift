@@ -44,6 +44,7 @@ struct DungeonRoomDetailView: View {
             .ignoresSafeArea()
 
             if let vm {
+                Group {
                 if vm.isLoading {
                     ProgressView().tint(DarkFantasyTheme.gold)
                 } else if vm.errorMessage != nil {
@@ -68,6 +69,8 @@ struct DungeonRoomDetailView: View {
                             .transition(.opacity)
                     }
                 }
+                }
+                .transaction { $0.animation = nil }
             }
 
             // BOSS FIGHT slam overlay
@@ -78,17 +81,7 @@ struct DungeonRoomDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image("ui-arrow-left")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-                .contentShape(Rectangle())
-                .frame(minWidth: LayoutConstants.touchMin, minHeight: LayoutConstants.touchMin)
+                HubLogoButton()
             }
             ToolbarItem(placement: .principal) {
                 Text(vm?.dungeon?.name.uppercased() ?? "DUNGEON")
@@ -108,6 +101,14 @@ struct DungeonRoomDetailView: View {
         .onAppear {
             vm?.applyPendingResult()
             startNodePulseAnimation()
+        }
+        // Safety net: if onAppear doesn't fire reliably when combat view is popped,
+        // detect the pop via path count change and apply pending result
+        .onChange(of: appState.mainPath.count) { oldCount, newCount in
+            if newCount < oldCount {
+                // A view was popped — check if we have pending fight result
+                vm?.applyPendingResult()
+            }
         }
         .task {
             if vm == nil {
@@ -158,12 +159,7 @@ struct DungeonRoomDetailView: View {
                 character: char,
                 context: .dungeon,
                 showCurrencies: false,
-                onUseHealthPotion: {
-                    Task { await useHealthPotion() }
-                },
-                onUseStaminaPotion: {
-                    Task { await useStaminaPotion() }
-                }
+                onTap: { appState.mainPath.append(AppRoute.hero) }
             )
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.top, LayoutConstants.spaceSM)

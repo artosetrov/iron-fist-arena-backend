@@ -80,6 +80,19 @@ grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|t
 
 echo ""
 
+# --- 1c. Deprecated .foregroundColor() usage ---
+echo "## Deprecated .foregroundColor() (use .foregroundStyle() instead)"
+echo ""
+grep -rn --include="*.swift" '\.foregroundColor(' "$TARGET" 2>/dev/null | \
+  grep -v '^\s*//' | \
+  grep -v '#Preview' | \
+  grep -v 'Tests/' | \
+  while IFS= read -r line; do
+    echo "⚠️  [deprecated API] $line"
+  done
+
+echo ""
+
 # --- 2. Small fonts (< 16px) ---
 echo "## Fonts Below 16px"
 echo ""

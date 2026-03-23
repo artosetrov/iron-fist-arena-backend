@@ -20,6 +20,7 @@ struct BattlePassDetailView: View {
                 .ignoresSafeArea()
 
             if let vm {
+                Group {
                 if vm.isLoading && vm.data == nil {
                     // Skeleton battle pass
                     ScrollView {
@@ -73,6 +74,8 @@ struct BattlePassDetailView: View {
                 } else {
                     EmptyStateView.generic(title: "No Battle Pass", message: "The battle pass isn't available right now. Check back later!")
                 }
+                }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)

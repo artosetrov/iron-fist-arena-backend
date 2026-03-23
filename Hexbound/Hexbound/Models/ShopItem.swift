@@ -48,9 +48,9 @@ struct ShopItem: Codable, Identifiable {
 
     var displayPrice: String {
         if gemPrice > 0 {
-            return "\(gemPrice) 💎"
+            return "\(gemPrice) gems"
         }
-        return "\(goldPrice) 💰"
+        return "\(goldPrice) gold"
     }
 
     var isGemPurchase: Bool {
@@ -79,10 +79,10 @@ struct ShopItem: Codable, Identifiable {
     var consumableIconColor: Color? {
         guard isConsumable else { return nil }
         let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("gem_pack") { return .cyan }
-        if ct.contains("health") { return .red }
-        if ct.contains("stamina") { return .green }
-        return .yellow
+        if ct.contains("gem_pack") { return DarkFantasyTheme.cyan }
+        if ct.contains("health") { return DarkFantasyTheme.danger }
+        if ct.contains("stamina") { return DarkFantasyTheme.success }
+        return DarkFantasyTheme.goldBright
     }
 
     var level: Int {

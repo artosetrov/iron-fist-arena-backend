@@ -100,9 +100,16 @@ Special cases:
 # Junk files (macOS duplicates)
 find backend admin Hexbound -name "* 2.*" -o -name "* 2" 2>/dev/null
 
+# CRITICAL: Temp/backup files inside .xcodeproj bundle
+ls Hexbound/Hexbound.xcodeproj/ | grep -E '\.(bak|backup|tmp)$'
+# Should return NOTHING. If hits found, delete them:
+rm -f Hexbound/Hexbound.xcodeproj/*.bak Hexbound/Hexbound.xcodeproj/*.backup Hexbound/Hexbound.xcodeproj/*.tmp*
+
 # .env files in staging
 git diff --cached --name-only | grep '\.env'
 ```
+
+**Why:** Temp files inside `.xcodeproj` bundle (e.g., `project.pbxproj.backup`, `file.tmp1`) break Xcode's project parsing, causing "Couldn't load project" error even if they're not referenced in the pbxproj file. Clean bundle must only contain: `project.pbxproj`, `project.xcworkspace/`, `xcshareddata/`, `xcuserdata/`.
 
 ### 5. Design System Quick Check (changed view files only)
 

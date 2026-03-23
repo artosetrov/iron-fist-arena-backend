@@ -44,9 +44,6 @@ struct ArenaComparisonSheet: View {
                     // VS Header
                     vsHeader
 
-                    // Equipment Section
-                    equipmentSection
-
                     // Combat Stats
                     combatStatsSection
 

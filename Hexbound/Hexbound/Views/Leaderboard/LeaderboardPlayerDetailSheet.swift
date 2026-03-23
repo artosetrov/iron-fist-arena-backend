@@ -75,24 +75,11 @@ struct LeaderboardPlayerDetailSheet: View {
     private func profileContent(_ profile: OpponentProfile) -> some View {
         ScrollView {
             VStack(spacing: LayoutConstants.spaceMD) {
-                // Portrait + Name
-                portraitSection(profile)
-
-                // HP Bar
-                HPBarView(
-                    currentHp: profile.currentHp,
-                    maxHp: profile.maxHp,
-                    size: .large,
-                    label: "HP"
-                )
+                // Integrated portrait + equipment card (same layout as hero page)
+                OpponentIntegratedCard(profile: profile)
 
                 // PvP Section
                 pvpSection(profile)
-
-                // Equipment
-                if let equipment = profile.equipment, !equipment.isEmpty {
-                    equipmentSection(equipment)
-                }
 
                 // Base Stats
                 baseStatsSection(profile)
@@ -111,76 +98,7 @@ struct LeaderboardPlayerDetailSheet: View {
         }
     }
 
-    // MARK: - Portrait
-
-    private func portraitSection(_ profile: OpponentProfile) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            ZStack(alignment: .bottomTrailing) {
-                AvatarImageView(
-                    skinKey: profile.avatar,
-                    characterClass: profile.characterClass,
-                    size: 140
-                )
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXL))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXL)
-                        .stroke(
-                            LinearGradient(
-                                colors: [DarkFantasyTheme.gold, DarkFantasyTheme.goldBright],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 2.5
-                        )
-                )
-                .shadow(color: DarkFantasyTheme.gold.opacity(0.2), radius: 12)
-
-                // Level badge
-                Text("Lv.\(profile.level)")
-                    .font(DarkFantasyTheme.section(size: 12))
-                    .foregroundStyle(DarkFantasyTheme.bgAbyss)
-                    .padding(.horizontal, LayoutConstants.spaceSM)
-                    .padding(.vertical, LayoutConstants.space2XS)
-                    .background(Capsule().fill(DarkFantasyTheme.goldBright))
-                    .offset(x: 4, y: 4)
-            }
-
-            Text(profile.characterName)
-                .font(DarkFantasyTheme.title(size: 22))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Text(profile.characterClass.displayName.uppercased())
-                    .font(DarkFantasyTheme.body(size: 13).bold())
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                    .tracking(1.5)
-
-                if let prestige = profile.prestigeLevel, prestige > 0 {
-                    Text("P\(prestige)")
-                        .font(DarkFantasyTheme.section(size: 11))
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(DarkFantasyTheme.cyan.opacity(0.15))
-                                .overlay(Capsule().stroke(DarkFantasyTheme.cyan.opacity(0.3), lineWidth: 1))
-                        )
-                }
-            }
-
-            // Rank badge
-            let rank = profile.pvpRank
-            HStack(spacing: 4) {
-                Text(rank.icon)
-                    .font(.system(size: 14))
-                Text(rank.rawValue)
-                    .font(DarkFantasyTheme.section(size: 14))
-                    .foregroundStyle(rank.color)
-            }
-        }
-    }
+    // MARK: - Portrait (now handled by OpponentIntegratedCard)
 
     // MARK: - PvP Section
 
@@ -226,61 +144,7 @@ struct LeaderboardPlayerDetailSheet: View {
             .frame(width: 1, height: 36)
     }
 
-    // MARK: - Equipment Section
-
-    private func equipmentSection(_ equipment: [Item]) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            sectionHeader("EQUIPMENT")
-
-            let columns = [
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-            ]
-
-            LazyVGrid(columns: columns, spacing: LayoutConstants.spaceXS) {
-                ForEach(equipment) { item in
-                    equipmentSlotView(item)
-                }
-            }
-        }
-        .padding(LayoutConstants.cardPadding)
-        .panelCard()
-    }
-
-    private func equipmentSlotView(_ item: Item) -> some View {
-        VStack(spacing: 2) {
-            // Item icon
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(DarkFantasyTheme.bgTertiary)
-                    .frame(height: 56)
-
-                if let imageKey = item.imageKey {
-                    Image(imageKey)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 40, height: 40)
-                } else {
-                    Image(systemName: "shield.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                }
-
-                // Rarity border
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(item.rarity.color, lineWidth: 1.5)
-            }
-
-            // Item name
-            Text(item.displayName)
-                .font(DarkFantasyTheme.body(size: 9))
-                .foregroundStyle(item.rarity.color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-    }
+    // MARK: - Equipment Section (now handled by OpponentIntegratedCard)
 
     // MARK: - Base Stats
 

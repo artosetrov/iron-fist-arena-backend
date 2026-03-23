@@ -16,23 +16,6 @@ struct InboxDetailView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("Inbox")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(DarkFantasyTheme.textPrimary)
-                    
-                    Spacer()
-                    
-                    if viewModel.unreadCount > 0 {
-                        Badge(count: viewModel.unreadCount)
-                    }
-                }
-                .padding(.horizontal, LayoutConstants.spaceMD)
-                .padding(.vertical, LayoutConstants.spaceMD)
-                
-                Divider()
-                    .foregroundColor(DarkFantasyTheme.bgTertiary)
                 
                 // Content
                 if viewModel.isLoading && viewModel.messages.isEmpty {
@@ -69,6 +52,22 @@ struct InboxDetailView: View {
                 if let error = viewModel.error {
                     ErrorBanner(message: error)
                         .padding(LayoutConstants.spaceMD)
+                }
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                HubLogoButton()
+            }
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text("INBOX")
+                        .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                    if viewModel.unreadCount > 0 {
+                        Badge(count: viewModel.unreadCount)
+                    }
                 }
             }
         }

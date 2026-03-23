@@ -77,7 +77,7 @@ struct LoginView: View {
                         }
 
                         HStack(spacing: LayoutConstants.spaceMD) {
-                            // Apple
+                            // Apple — consistent bgSecondary background
                             ZStack {
                                 SignInWithAppleButton(.signIn) { request in
                                     request.requestedScopes = [.email, .fullName]
@@ -94,14 +94,14 @@ struct LoginView: View {
                                     Text("Apple")
                                         .font(.system(size: 18, weight: .semibold))
                                 }
-                                .foregroundStyle(.white)
+                                .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .allowsHitTesting(false)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: LayoutConstants.buttonHeightLG)
                             .background(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                    .fill(Color.black)
+                                    .fill(DarkFantasyTheme.bgSecondary)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
@@ -110,19 +110,35 @@ struct LoginView: View {
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                             .accessibilityLabel("Sign in with Apple")
 
-                            // Google
-                            Button {
-                                Task { await vm.handleGoogleSignIn(appState: appState) }
-                            } label: {
+                            // Google — same bgSecondary background
+                            ZStack {
+                                Button {
+                                    Task { await vm.handleGoogleSignIn(appState: appState) }
+                                } label: {
+                                    Color.clear
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Text("G")
                                         .font(.system(size: 22, weight: .bold, design: .rounded))
                                     Text("Google")
                                         .font(.system(size: 18, weight: .semibold))
                                 }
-                                .foregroundStyle(.white)
+                                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                                .allowsHitTesting(false)
                             }
-                            .buttonStyle(.socialAuth)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LayoutConstants.buttonHeightLG)
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .fill(DarkFantasyTheme.bgSecondary)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                            )
+                            .contentShape(Rectangle())
                             .accessibilityLabel("Sign in with Google")
                         }
                     }

@@ -134,9 +134,9 @@ enum LayoutConstants {
     static let widgetXpRingInset: CGFloat = 4      // SVG offset from avatar edge
     static let widgetXpRingWidth: CGFloat = 3      // Stroke width for XP border
     static let widgetLevelBadgeFont: CGFloat = 11  // Matches textBadge
-    static let widgetBarHeight: CGFloat = 22         // HP/Stamina bars with text inside
+    static let widgetBarHeight: CGFloat = 26         // HP/Stamina bars with text inside
     static let widgetBarRadius: CGFloat = 6          // Bar corner radius
-    static let widgetBarFont: CGFloat = 11           // Text inside bars (matches textBadge)
+    static let widgetBarFont: CGFloat = 13           // Text inside bars (increased from 11 for readability)
 
     // MARK: - NPC Guide Widget (reusable: merchant, arena coach, dungeon guide, etc.)
     // Use these tokens for any NPC tip/tutorial widget across screens.
@@ -164,23 +164,23 @@ enum LayoutConstants {
     static let packageAmountFont: CGFloat = 22         // Amount text size
     static let packageBestValueAmountFont: CGFloat = 26 // Best Value amount text size
 
-    // MARK: - Arena Opponent Card (Premium Redesign)
+    // MARK: - Arena Opponent Card (Variant C — Full Immersion)
 
     static let arenaCardRadius: CGFloat = 16
-    static let arenaCardPadding: CGFloat = 16
-    static let arenaCardPaddingTop: CGFloat = 20
-    static let arenaAvatarSize: CGFloat = 120       // Enlarged portrait
-    static let arenaAvatarRadius: CGFloat = 14
-    static let arenaCardGap: CGFloat = 16           // Horizontal gap between cards
-    static let arenaBadgePadding: CGFloat = 10
-    static let arenaRatingFont: CGFloat = 26        // Dominant power value
-    static let arenaNameFont: CGFloat = 16          // Strong player name
-    static let arenaClassFont: CGFloat = 13         // Secondary class/level
-    static let arenaStatFont: CGFloat = 14          // Stat values
-    static let arenaStatLabelFont: CGFloat = 12     // Stat labels
-    static let arenaDifficultyFont: CGFloat = 11    // Difficulty badge
-    static let arenaGlowRadius: CGFloat = 12        // Animated border glow
-    static let arenaShimmerWidth: CGFloat = 80       // Shimmer band width
+    static let arenaCardPadding: CGFloat = 14        // Inner padding for content overlay
+    static let arenaCardPaddingTop: CGFloat = 20     // Legacy — kept for compat
+    static let arenaAvatarSize: CGFloat = 120        // Legacy — card now uses full width
+    static let arenaAvatarRadius: CGFloat = 14       // Legacy — avatar is edge-to-edge
+    static let arenaCardGap: CGFloat = 16            // Horizontal gap between cards
+    static let arenaBadgePadding: CGFloat = 10       // Legacy — badge now inline in topBadges
+    static let arenaRatingFont: CGFloat = 32         // Dominant power value (enlarged)
+    static let arenaNameFont: CGFloat = 16           // Strong player name
+    static let arenaClassFont: CGFloat = 10          // Class tag pill font
+    static let arenaStatFont: CGFloat = 13           // Glass pill stat values
+    static let arenaStatLabelFont: CGFloat = 9       // Glass pill stat labels
+    static let arenaDifficultyFont: CGFloat = 11     // Difficulty badge
+    static let arenaGlowRadius: CGFloat = 12         // Animated border glow
+    static let arenaShimmerWidth: CGFloat = 80        // Shimmer band width
 
     // MARK: - Hero Integrated Card
 
@@ -190,10 +190,10 @@ enum LayoutConstants {
     static let heroSlotGap: CGFloat = 8            // same as inventoryGap
     static let heroPortraitSideGap: CGFloat = 16  // breathing room between portrait and side slots
     static let heroSlotRadius: CGFloat = 12        // same as cardRadius
-    static let heroBarHeight: CGFloat = 24         // HP bar with text inside
-    static let heroBarXpHeight: CGFloat = 20       // XP bar with text inside
+    static let heroBarHeight: CGFloat = 28         // HP bar with text inside
+    static let heroBarXpHeight: CGFloat = 24       // XP bar with text inside
     static let heroBarRadius: CGFloat = 4
-    static let heroBarFont: CGFloat = 11           // text inside bars
+    static let heroBarFont: CGFloat = 13           // text inside bars (increased from 11 for readability)
     static let heroPortraitNameFont: CGFloat = 16  // name overlay on portrait
     static let heroBottomSlots: Int = 4            // Ring, Weapon, Relic, Belt
 }

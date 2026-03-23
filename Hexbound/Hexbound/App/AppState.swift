@@ -8,6 +8,11 @@ final class AppState {
     var pendingConfirmationEmail: String?
     var currentUser: [String: Any]?
 
+    /// True if the logged-in user has admin role (used to show dev tools)
+    var isAdmin: Bool {
+        (currentUser?["role"] as? String) == "admin"
+    }
+
     // MARK: - Character
     var currentCharacter: Character?
 

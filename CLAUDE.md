@@ -21,7 +21,8 @@ Generate unique 24-character hex IDs for `{ID1}` and `{ID2}`. Keep entries alpha
 ## Design System
 
 - Always use `DarkFantasyTheme` color/font tokens — never hardcode `Color(hex:)` or raw color values
-- Always use `ButtonStyles.swift` styles (`.primary`, `.secondary`, `.neutral`, etc.) — never inline button styling
+- Always use `ButtonStyles.swift` styles (`.primary`, `.secondary`, `.neutral`, etc.) — never inline button styling. **Never manually build button chrome** (goldGradient + surfaceLighting + RoundedRectangle background) when a button style already exists.
+- **Gold CTA styles** (`.primary`, `.compactPrimary`, `.fight`, `.premium`, `.danger`) MUST have full ornamental treatment: `SurfaceLightingOverlay` + `cornerBrackets` + `cornerDiamonds` + `innerBorder`. If adding a new gold CTA style, include all four.
 - Always use `LayoutConstants` for spacing/sizing — minimum font size is `LayoutConstants.textBadge` (11px)
 - The theme file is at `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift`
 - Button styles are at `Hexbound/Hexbound/Theme/ButtonStyles.swift`
@@ -86,6 +87,26 @@ All UI elements use a pure SwiftUI ornamental system — **no PNG assets for UI 
 
 **Shadow pattern:** Use dual shadows for depth: type-colored glow shadow + dark `bgAbyss` shadow. Never use a single flat shadow.
 
+## Radius Scale (CRITICAL)
+
+All `cornerRadius` values MUST use `LayoutConstants` tokens. Never hardcode raw numbers.
+
+**Generic scale (prefer these for new code):**
+- `radiusXS` (3) — progress bars, tiny indicators, particles
+- `radiusSM` (6) — badges, stat bars, tag chips
+- `radiusMD` (8) — buttons, panels, pills, inputs
+- `radiusLG` (12) — cards, widgets
+- `radiusXL` (16) — modals, featured cards
+- `radius2XL` (22) — capsule-like auth inputs
+
+**Component-specific aliases (use when context matches):**
+- `cardRadius` (12), `panelRadius` (8), `modalRadius` (16), `buttonRadius` (8), `buttonRadiusLG` (14)
+- `heroCardRadius` (12), `heroSlotRadius` (12), `heroBarRadius` (4)
+- `widgetRadius` (12), `widgetBarRadius` (6), `pillRadius` (12)
+- `arenaCardRadius` (16), `arenaAvatarRadius` (14)
+
+**Exception:** Circle skeletons use `width/2` as `cornerRadius` (e.g., `cornerRadius: 26` for 52pt circle) — this is intentional and expected.
+
 ## Art Style (for AI image generation prompts)
 
 - Full art style guide: `Hexbound/ART_STYLE_GUIDE.md`
@@ -100,6 +121,21 @@ All UI elements use a pure SwiftUI ornamental system — **no PNG assets for UI 
 - **NEVER guess token names.** Before using any `DarkFantasyTheme.xxx`, open `DarkFantasyTheme.swift` and confirm the property exists. There is no `.accent` — the primary accent is `.gold`.
 - **NEVER guess button style names.** Open `ButtonStyles.swift` and verify before using.
 - Common mistake: inventing `.accent`, `.primary`, `.background`, `.text` — these DO NOT exist. Use actual tokens: `.gold`, `.bgPrimary`, `.textPrimary`, etc.
+
+## Stat Colors — Unified Gold Palette (CRITICAL)
+
+All stat bars and stat-related UI use a **unified gold palette** — never per-stat rainbow colors.
+
+- `DarkFantasyTheme.statBoosted` (`#FFD700`, goldBright) — for stats above base value
+- `DarkFantasyTheme.statBase` (`#8B6914`, goldDim) — for base-level stats
+- `DarkFantasyTheme.statBarFill` (`#D4A537`, gold) — standard bar fill color
+- `DarkFantasyTheme.statBarColor(value:base:)` — auto-selects bright/dim based on value
+- `DarkFantasyTheme.statBarGradient(value:base:)` — gradient version for bar fills
+- `DarkFantasyTheme.statColor(for:)` — returns unified `statBarFill` for any stat name
+
+**Legacy per-stat colors** (`statSTR`, `statAGI`, `statVIT`, etc.) are `@available(*, deprecated)`. Do NOT use them in new code.
+
+**Where this applies:** ClassSelectionStepView (onboarding), HeroDetailView (stats + derived stats), CombatResultDetailView, LootDetailView, ItemDetailSheet — all stat displays project-wide.
 
 ## Swift Concurrency Rules (CRITICAL)
 
@@ -132,23 +168,46 @@ All UI elements use a pure SwiftUI ornamental system — **no PNG assets for UI 
 **Hero page uses `HeroIntegratedCard`** (NOT UnifiedHeroWidget) — equipment-first layout with portrait, bars inside, universal slots.
 
 - Component: `Hexbound/Hexbound/Views/Components/HeroIntegratedCard.swift`
-- Combines: equipment grid + portrait + name overlay + HP/XP bars + resources + stance pill + repair action
+- Combines: equipment grid + portrait + name overlay + HP/XP/Stamina bars + repair/heal action pills
 - Replaces: `equipmentSection()` + `stanceSummaryCard()` + `UnifiedHeroWidget` on Hero tab
 - Universal slots: `amulet` accepts amulet OR necklace; `relic` accepts relic OR accessory OR weapon off-hand
 - Portrait: 2×3 cell grid with name overlay (gradient transparent→black, Oswald 16px), level badge (gold circle top-right), class badge (top-left)
 - Bars: HP 24px tall with text centered inside; XP 20px tall with absolute values not percentage
-- Bottom action pills: stance (always), repair all (conditional on broken items), stat points (conditional), heal (conditional)
+- Bottom action pills: repair all (conditional on broken items), heal (conditional on HP < 50% + potion)
+- **Stance is NOT inside HeroIntegratedCard** — it is a separate `StanceDisplayView` widget below the card (updated 2026-03-23)
 - Layout tokens: `LayoutConstants.hero*` for card/slot sizing and bar heights
-- Integration: see `HeroDetailView.tabContent()` for callback pattern (onTapPortrait, onEditStance, onRepairAll, etc.)
+- Integration: see `HeroDetailView.tabContent()` for callback pattern (onTapPortrait, onTapSlot, onRepairAll, etc.) — `onEditStance` was removed
 
 **Tab layout (updated 2026-03-22):**
 - `HeroDetailView` has **sticky tabs** (INVENTORY / STATUS) pinned above `ScrollView` — they do NOT scroll with content
 - Structure: `VStack(spacing: 0) { tabSelector() → ScrollView { ... } }`
 - `HeroIntegratedCard` is **INVENTORY tab only** — it does NOT appear on STATUS tab
 - STATUS tab shows: stat points banner → grouped stats → derived stats → equipment bonuses → respec → PvP
-- Tab badge: STATUS tab shows purple circle badge with stat points count when `statPoints > 0`
+- Tab badge: STATUS tab shows **gold capsule badge** ("+N", `goldBright` fill, `bgAbyss` stroke, pulsing gold shadow) — identical to avatar stat points badge in `UnifiedHeroWidget`. No star icon — text only.
 - Shimmer: purple shimmer on STATUS tab when stat points available and tab is not selected
 - `onAllocateStats` callback switches to STATUS tab (`selectedTab = .stats`), not navigates away
+
+## Stance Display (CRITICAL)
+
+**Always use `StanceDisplayView` for combat stance display.** Never create inline stance displays or duplicate the two-column layout.
+
+- Component: `Hexbound/Hexbound/Views/Components/StanceDisplayView.swift`
+- Two-slot layout: Attack (red tint) | Ornamental Divider | Defense (blue tint)
+- Role-specific coloring: Attack uses `DarkFantasyTheme.danger` tint, Defense uses `DarkFantasyTheme.info` tint (6% opacity background per slot)
+- Role icons: `bolt.fill` (attack), `shield.fill` (defense) — visually distinguish roles even without reading text
+- Zone icons: `icon-helmet`, `icon-chest`, `icon-legs` — from `StanceSelectorViewModel.zoneAsset(for:)`
+- Zone colors: `DarkFantasyTheme.zoneHead` (red), `.zoneChest` (blue), `.zoneLegs` (green)
+- Ornamental vertical divider: gradient line (borderSubtle → borderMedium → goldDim → borderMedium → borderSubtle) with center diamond motif
+- Interactive mode: `isInteractive: true` shows `chevron.right` indicator + uses `StancePressStyle` (brightness(-0.06), not scalePress)
+- **On Hero page**: standalone widget between `HeroIntegratedCard` and `lowResourcesWidget`, NOT inside the card
+- **On StanceSelectorDetailView**: non-interactive preview at bottom (`stanceConfirmation`)
+- Init from model: `StanceDisplayView(stance: CombatStance, ...)` or direct: `StanceDisplayView(attack: "head", defense: "chest", ...)`
+
+**Stance Selector screen** (`StanceSelectorDetailView`):
+- Compact zone sections with inline bonus pills (OFF%, CRIT%, DEF%, DODGE%)
+- Zone matching info panel (match +15% DEF, miss +5% OFF)
+- Sticky save button via `.safeAreaInset(edge: .bottom)` with fade gradient
+- Bonus data in `StanceSelectorViewModel`: `attackBonuses(for:)`, `defenseBonuses(for:)` — from `balance.ts STANCE_ZONES`
 
 ## Unified Item Card (CRITICAL)
 
@@ -165,6 +224,7 @@ All UI elements use a pure SwiftUI ornamental system — **no PNG assets for UI 
 - **Deprecated:** `ShopItemCardView.swift` — dead code, all shop items now use `ItemCardView` with `.shop` context
 - Price display: use `CurrencyDisplay` component with `.mini` size (not SF Symbol icons like `dollarsign.circle`)
 - Loot bridge: `LootItemDisplay` has computed `rarity: ItemRarity` property derived from `rarityTier` for ItemCardView compatibility
+- **Opponent profile equipment grid:** Each `.equipment()` slot automatically applies `ItemRarity.color` border tint (from `ItemRarity.color` computed property) — no manual color passing needed. The rarity-colored 2.5px border is dynamic per item.
 
 ## Admin Panel (Next.js / TypeScript)
 
@@ -293,7 +353,7 @@ These are the **actual** backend enums. Do not invent values.
 - **Never create files with spaces or " 2" in the name.** macOS sometimes creates `file 2.ts` copies. If you see them — delete them, they are junk.
 - **`prisma generate` must run before `tsc`/`next build`.** Without it, TS reports false errors for all Prisma models (`mailRecipient`, `shopOffer`, etc. "not found on PrismaClient"). On Vercel this runs automatically via build command. Locally: `cd backend && npx prisma generate` first.
 - **`ignoreBuildErrors` is REMOVED.** TypeScript errors now block the Vercel deploy. Do not reintroduce this flag. Fix TS errors properly.
-- **Prisma `Json` fields need double cast.** When casting Prisma `Json` type to a concrete interface (e.g. `OfferContent[]`), use `as unknown as OfferContent[]` — direct cast fails in strict mode.
+- **Prisma `Json` fields need double cast.** When casting Prisma `Json` type to a concrete interface (e.g. `OfferContent[]`), use `as unknown as OfferContent[]` — direct cast fails in strict mode. For `InputJsonValue` fields (creating/updating records): use `(value ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue` to handle null fallback.
 
 ## Merge Conflict Resolution (CRITICAL)
 
@@ -329,6 +389,15 @@ When replacing a struct, class, function, or view with a new version:
 
 ## SwiftUI Code Patterns (CRITICAL)
 
+### Optional ViewModel & NavigationStack Animation Fix (CRITICAL)
+- All screens using `@State private var vm: SomeViewModel?` with `if let vm { ... }` MUST add `.transaction { $0.animation = nil }` on the root content inside the conditional.
+- **Why:** NavigationStack applies a push/pop transition. When `.task` creates the VM (nil → non-nil), the content appearance gets caught in that transition, causing a visible "stretch from left/right" layout animation.
+- **Single-view pattern:** `if let vm { VStack { ... }.transaction { $0.animation = nil } }`
+- **Multi-branch pattern:** `if let vm { Group { if ... else ... }.transaction { $0.animation = nil } }`
+- This does NOT disable explicit `withAnimation` calls inside the view — only the implicit transition animation.
+- **Applied to (14 screens):** ArenaDetailView, ShopDetailView, SettingsDetailView, LeaderboardDetailView, DailyQuestsDetailView, AchievementsDetailView, ShellGameDetailView, GoldMineDetailView, DungeonRushDetailView, DailyLoginDetailView, AppearanceEditorDetailView, DungeonSelectDetailView, DungeonRoomDetailView, BattlePassDetailView.
+- **Any new screen** with optional VM MUST follow this pattern.
+
 ### Extension Closures & Compilation
 - `extension ButtonStyle where Self == X { ... }` MUST have matching closing `}`. Missing braces cause "Declaration only valid at file scope" errors on unrelated files.
 - When adding closures (`.onChange`, etc.) to multiple extensions, verify each extension's closing brace is present. Common mistake: last extension is missing its `}`.
@@ -361,19 +430,46 @@ When replacing a struct, class, function, or view with a new version:
 - Pattern: add `assetIcon` computed property to the model, create a helper view (`rewardIcon()`) with asset-first fallback to emoji.
 - Applies to any screen with reward pills, badges, or status indicators.
 
-### Currency Display Icons
+### Currency Display (CRITICAL)
 - **Never use SF Symbols for currency** (e.g., `dollarsign.circle`, `diamond`). Use `CurrencyDisplay` component instead.
+- **Never create inline currency HStacks** (icon + Text). Always use `CurrencyDisplay`.
 - Component: `Hexbound/Hexbound/Views/Components/CurrencyDisplay.swift`
-- Sizes: `.full` (default), `.mini` (for item cards, shop rows, compact displays)
+- **Sizes:** `.standard` (36px icons, 28px text — shop header, GET CURRENCY balance), `.compact` (14px — UnifiedHeroWidget, inventory header), `.mini` (12px — price tags on cards, item detail prices)
+- **Currency type:** `.both` (default — gold + gems), `.gold` (only gold), `.gems` (only gems) — use for single-currency displays like price tags
+- **Animated:** `animated: true` (default — tick-up animation) or `animated: false` (static text — for inline headers, price tags)
 - Uses game assets `icon-gold` and `icon-gems` — consistent across all screens
-- Shop price bar and item card prices both use `CurrencyDisplay` with `.mini` size
+- **Where used:** ShopDetailView (.standard), UnifiedHeroWidget (.compact), HeroDetailView inventory header (.compact), CurrencyPurchaseView balance (.standard), ShopItemCardView price (.mini), ItemDetailSheet buy/sell (.mini), all future currency displays
 
 ### Public Profile & Sheet Presentation
 - **Opponent profile sheet** uses `.sheet(item:onDismiss:content:)` with `.large` detent (NOT ZStack overlay).
 - Model: `OpponentProfile.swift` — public character data returned by `GET /api/characters/:id/profile`.
 - Profile card layout: portrait + level/rank badges → HP bar → PvP stats grid → equipment grid → base stats (8 cols in 2-col grid) → derived stats → action buttons.
+- Equipment grid: use `ItemCardView(.equipment(...))` — each slot automatically tints border with `ItemRarity.color`.
 - **Social features (Challenge, Message, Add Friend) are stub TODOs.** Closures exist but have no backend routes or implementation yet.
 - When extending opponent profile, verify endpoint returns the needed fields (check `OpponentProfileResponse` wrapper in backend).
+- HP bar on opponent profile: shows current HP + max HP, no regen indicator in sheet view (regen is only in detailed stats).
+
+## File Hygiene (CRITICAL)
+
+**Never leave temp/backup files inside `.xcodeproj` bundle.** Files like `.bak`, `.backup`, `.tmp1`–`.tmp5` inside `Hexbound.xcodeproj/` will cause Xcode to fail loading the project with "Couldn't load project" error.
+
+**Why:** Xcode scans the bundle for project metadata. Stray files break parsing, even if they're not referenced in `project.pbxproj`.
+
+**After ANY pbxproj editing or scripted changes:**
+1. Verify the bundle is clean:
+   ```bash
+   ls Hexbound/Hexbound.xcodeproj/ | grep -E '\.(bak|backup|tmp)$'
+   ```
+   Should return nothing. Only these directories/files should exist: `project.pbxproj`, `project.xcworkspace/`, `xcshareddata/`, `xcuserdata/`
+
+2. Delete any junk files:
+   ```bash
+   rm -f Hexbound/Hexbound.xcodeproj/*.bak Hexbound/Hexbound.xcodeproj/*.backup Hexbound/Hexbound.xcodeproj/*.tmp*
+   ```
+
+3. Verify Xcode loads: `open Hexbound/Hexbound.xcodeproj` should not produce "Couldn't load project" error.
+
+**Common culprits:** Agents running scripts that create backups with `cp file.pbxproj file.pbxproj.backup` directly in the bundle, or shell loops that generate `file.tmp1`, `file.tmp2`, etc.
 
 ## Self-Documenting Rules (META — MANDATORY)
 

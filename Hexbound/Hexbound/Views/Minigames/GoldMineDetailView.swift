@@ -15,24 +15,27 @@ struct GoldMineDetailView: View {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             if let vm {
-                if vm.isLoading && vm.slots.isEmpty {
-                    mineLoadingState
-                } else if vm.slots.isEmpty {
-                    // Error state — loading failed
-                    ErrorStateView.loadFailed {
-                        Task { await vm.loadStatus() }
-                    }
-                } else {
-                    ScrollView {
-                        VStack(spacing: LayoutConstants.spaceMD) {
-                            ActiveQuestBanner(questTypes: ["gold_mine_collect"])
-                            miningOutputCard(vm: vm)
-                            slotsGrid(vm: vm)
+                Group {
+                    if vm.isLoading && vm.slots.isEmpty {
+                        mineLoadingState
+                    } else if vm.slots.isEmpty {
+                        // Error state — loading failed
+                        ErrorStateView.loadFailed {
+                            Task { await vm.loadStatus() }
                         }
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceLG)
+                    } else {
+                        ScrollView {
+                            VStack(spacing: LayoutConstants.spaceMD) {
+                                ActiveQuestBanner(questTypes: ["gold_mine_collect"])
+                                miningOutputCard(vm: vm)
+                                slotsGrid(vm: vm)
+                            }
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                            .padding(.bottom, LayoutConstants.spaceLG)
+                        }
                     }
                 }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -422,7 +425,6 @@ private struct MineSlotCard: View {
             } label: {
                 Text("MINE")
                     .frame(maxWidth: .infinity)
-                    .frame(height: 34)
             }
             .buttonStyle(.compactPrimary)
 
@@ -437,7 +439,6 @@ private struct MineSlotCard: View {
                         .font(.system(size: 10))
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 34)
             }
             .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
 
@@ -452,7 +453,6 @@ private struct MineSlotCard: View {
                         .font(.system(size: 10))
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 34)
             }
             .buttonStyle(.compactPrimary)
             .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: true)
@@ -533,7 +533,6 @@ private struct LockedMineCard: View {
                 } label: {
                     Text("UNLOCK")
                         .frame(maxWidth: .infinity)
-                        .frame(height: 34)
                 }
                 .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
                 .disabled(vm.isBuyingSlot)

@@ -447,10 +447,8 @@ struct CurrencyPackageCard: View {
                 if isPurchasing {
                     ProgressView()
                         .tint(DarkFantasyTheme.textOnGold)
-                        .frame(width: LayoutConstants.packagePriceBtnWidth, height: LayoutConstants.packagePriceBtnHeight)
                 } else {
                     Text(package.priceUSD)
-                        .frame(width: LayoutConstants.packagePriceBtnWidth, height: LayoutConstants.packagePriceBtnHeight)
                 }
             }
             .buttonStyle(.compactPrimary)

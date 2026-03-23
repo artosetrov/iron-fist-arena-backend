@@ -494,7 +494,7 @@ enum DamageTypeStyle {
     var color: Color {
         switch self {
         case .physical:   DarkFantasyTheme.stamina
-        case .magical:    DarkFantasyTheme.statINT
+        case .magical:    DarkFantasyTheme.info
         case .poison:     DarkFantasyTheme.success
         case .trueDamage: .white
         case .unknown:    DarkFantasyTheme.danger

@@ -138,16 +138,11 @@ struct DesignSystemPreview: View {
     }
 
     private var statColorsSection: some View {
-        dsSection("Stat Colors") {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                colorSwatch("STR", DarkFantasyTheme.statSTR)
-                colorSwatch("AGI", DarkFantasyTheme.statAGI)
-                colorSwatch("VIT", DarkFantasyTheme.statVIT)
-                colorSwatch("END", DarkFantasyTheme.statEND)
-                colorSwatch("INT", DarkFantasyTheme.statINT)
-                colorSwatch("WIS", DarkFantasyTheme.statWIS)
-                colorSwatch("LUK", DarkFantasyTheme.statLUK)
-                colorSwatch("CHA", DarkFantasyTheme.statCHA)
+        dsSection("Stat Colors (Unified Gold)") {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                colorSwatch("Boosted", DarkFantasyTheme.statBoosted)
+                colorSwatch("Base", DarkFantasyTheme.statBase)
+                colorSwatch("Fill", DarkFantasyTheme.statBarFill)
             }
         }
     }

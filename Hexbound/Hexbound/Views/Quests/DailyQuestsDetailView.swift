@@ -52,6 +52,7 @@ struct DailyQuestsDetailView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
                 }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -276,7 +277,6 @@ struct DailyQuestsDetailView: View {
                                 Text("Claim")
                             }
                         }
-                        .frame(width: 60, height: 30)
                         .buttonStyle(.compactPrimary)
                         .disabled(isClaiming)
                     }

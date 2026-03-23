@@ -139,7 +139,7 @@ struct MainRouterView: View {
         case .inbox: InboxDetailView()
 
         // Quests & Achievements
-        case .dailyLogin: DailyLoginDetailView()
+        case .dailyLogin: DailyLoginDetailView() // NOTE: now shown as sheet from HubView, this route is unused
         case .dailyQuests: DailyQuestsDetailView()
         case .achievements: AchievementsDetailView()
         

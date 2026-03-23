@@ -15,9 +15,11 @@ struct ItemDetailSheet: View {
 
     // Shop mode (optional)
     var shopMode: ShopContext? = nil
+    /// Player's current level — used to show "You: Level X" in shop mode
+    var playerLevel: Int = 1
 
     struct ShopContext {
-        let displayPrice: String
+        let price: Int
         let isGemPurchase: Bool
         let canAfford: Bool
         let meetsLevel: Bool
@@ -28,6 +30,7 @@ struct ItemDetailSheet: View {
 
     @State private var showUpgradeConfirm = false
     @State private var useProtection = false
+    @State private var showSellConfirm = false
 
     private var rarityColor: Color {
         DarkFantasyTheme.rarityColor(for: item.rarity)
@@ -154,21 +157,15 @@ struct ItemDetailSheet: View {
     @ViewBuilder
     private var headerSection: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
-            // Item icon — borderless, larger
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
-
-                ItemImageView(
-                    imageKey: item.imageKey,
-                    imageUrl: item.imageUrl,
-                    systemIcon: item.consumableIcon,
-                    systemIconColor: item.consumableIconColor,
-                    fallbackIcon: item.itemType.icon
-                )
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
-            }
-            .frame(width: 88, height: 88)
+            // Item icon — no background, larger
+            ItemImageView(
+                imageKey: item.imageKey,
+                imageUrl: item.imageUrl,
+                systemIcon: item.consumableIcon,
+                systemIconColor: item.consumableIconColor,
+                fallbackIcon: item.itemType.icon
+            )
+            .frame(width: 104, height: 104)
             .accessibilityLabel("Item icon for \(item.displayName)")
             .accessibilityElement(children: .ignore)
 
@@ -187,10 +184,19 @@ struct ItemDetailSheet: View {
                 .accessibilityLabel("\(item.itemType.displayName) \(item.rarity.displayName) rarity")
                 .accessibilityElement(children: .combine)
 
-                Text("Level \(item.itemLevel)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .accessibilityLabel("Item level: \(item.itemLevel)")
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text("Level \(item.itemLevel)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .accessibilityLabel("Item level: \(item.itemLevel)")
+
+                    if let qty = item.quantity, qty > 1 {
+                        Text("×\(qty)")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .accessibilityLabel("Quantity: \(qty)")
+                    }
+                }
 
                 if let restriction = item.classRestriction,
                    restriction != "none", !restriction.isEmpty {
@@ -297,6 +303,7 @@ struct ItemDetailSheet: View {
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                 .fill(durabilityGradient)
                                 .frame(width: geo.size.width * durabilityFraction)
+                                .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusSM))
                         }
                     }
                     .frame(height: 12)
@@ -492,11 +499,16 @@ struct ItemDetailSheet: View {
 
     @ViewBuilder
     private var descriptionSection: some View {
-        let hasDesc = item.description.map { !$0.isEmpty } ?? false
-        let hasSet = item.setName.map { !$0.isEmpty } ?? false
-        let hasCatalog = item.catalogId.map { !$0.isEmpty } ?? false
-
-        if hasDesc || hasSet || hasCatalog {
+        let hasDesc = (item.description ?? "").isEmpty == false
+        let hasSet = (item.setName ?? "").isEmpty == false
+        let hasCatalogDebug: Bool = {
+            #if DEBUG
+            return (item.catalogId ?? "").isEmpty == false
+            #else
+            return false
+            #endif
+        }()
+        if hasDesc || hasSet || hasCatalogDebug {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                 if let desc = item.description, !desc.isEmpty {
                     Text(desc)
@@ -514,11 +526,13 @@ struct ItemDetailSheet: View {
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 }
+                #if DEBUG
                 if let catalogId = item.catalogId, !catalogId.isEmpty {
                     Text(catalogId)
-                        .font(.system(size: 10, design: .monospaced)) // monospaced design — keep as is
+                        .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
                 }
+                #endif
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, LayoutConstants.cardPadding)
@@ -532,14 +546,11 @@ struct ItemDetailSheet: View {
     private var actionButtons: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             if let shop = shopMode {
-                // Shop mode — BUY button
                 shopBuySection(shop)
             } else if showUpgradeConfirm {
                 upgradeConfirmPanel
             } else if isBroken {
-                // Broken item — only REPAIR available
-                Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
-                    .buttonStyle(.primary)
+                repairButton(style: .primary)
             } else {
                 if item.itemType == .consumable {
                     Button("USE") { HapticManager.medium(); onUse() }
@@ -551,10 +562,9 @@ struct ItemDetailSheet: View {
                             SFXManager.shared.play(.uiUnequip)
                             onUnequip()
                         }
-                            .buttonStyle(.secondary)
+                        .buttonStyle(.secondary)
                         if isDamaged {
-                            Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
-                                .buttonStyle(.primary)
+                            repairButton(style: .primary)
                         } else if canUpgrade {
                             Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
                                 .buttonStyle(.primary)
@@ -567,17 +577,21 @@ struct ItemDetailSheet: View {
                             SFXManager.shared.play(.uiEquip)
                             onEquip()
                         }
-                            .buttonStyle(.secondary)
+                        .buttonStyle(.secondary)
+                        // Sell with confirmation for rare+ items
                         Button("SELL") {
                             HapticManager.light()
-                            SFXManager.shared.play(.uiSell)
-                            onSell()
+                            if item.rarity.tier >= 2 {
+                                showSellConfirm = true
+                            } else {
+                                SFXManager.shared.play(.uiSell)
+                                onSell()
+                            }
                         }
-                            .buttonStyle(.secondary)
+                        .buttonStyle(.secondary)
                     }
                     if isDamaged {
-                        Button("REPAIR · \(repairCost) 💰") { HapticManager.medium(); onRepair() }
-                            .buttonStyle(.secondary)
+                        repairButton(style: .secondary)
                     } else if canUpgrade {
                         Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
                             .buttonStyle(.secondary)
@@ -585,23 +599,60 @@ struct ItemDetailSheet: View {
                 }
             }
         }
+        .confirmationDialog(
+            "SELL \(item.displayName)?",
+            isPresented: $showSellConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Sell for \(item.sellPrice ?? 0) gold", role: .destructive) {
+                SFXManager.shared.play(.uiSell)
+                onSell()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This \(item.rarity.displayName) item will be lost permanently.")
+        }
     }
+
+    /// Reusable repair button with CurrencyDisplay (no emoji)
+    @ViewBuilder
+    private func repairButton(style: ButtonStyleType) -> some View {
+        let label = HStack(spacing: LayoutConstants.spaceXS) {
+            Text("REPAIR ·")
+            CurrencyDisplay(gold: repairCost, size: .mini, currencyType: .gold, animated: false)
+        }
+        if style == .primary {
+            Button {
+                HapticManager.medium()
+                onRepair()
+            } label: { label }
+            .buttonStyle(.primary)
+        } else {
+            Button {
+                HapticManager.medium()
+                onRepair()
+            } label: { label }
+            .buttonStyle(.secondary)
+        }
+    }
+
+    private enum ButtonStyleType { case primary, secondary }
 
     @ViewBuilder
     private func shopBuySection(_ shop: ShopContext) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            // Price display
-            HStack(spacing: LayoutConstants.spaceXS) {
-                Text(shop.displayPrice)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                    .foregroundStyle(
-                        shop.isGemPurchase ? DarkFantasyTheme.cyan : DarkFantasyTheme.goldBright
-                    )
-            }
+            // Price display — asset icons, no emoji
+            CurrencyDisplay(
+                gold: shop.isGemPurchase ? 0 : shop.price,
+                gems: shop.isGemPurchase ? shop.price : nil,
+                size: .compact,
+                currencyType: shop.isGemPurchase ? .gems : .gold,
+                animated: false
+            )
 
             // Warnings
             if !shop.meetsLevel {
-                Text("Requires Level \(shop.requiredLevel)")
+                Text("Requires Level \(shop.requiredLevel) (You: Level \(playerLevel))")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.danger)
             }
@@ -611,7 +662,7 @@ struct ItemDetailSheet: View {
                     .foregroundStyle(DarkFantasyTheme.danger)
             }
 
-            // BUY button
+            // BUY button — asset icons, no emoji
             Button {
                 shop.onBuy()
             } label: {
@@ -619,7 +670,16 @@ struct ItemDetailSheet: View {
                     ProgressView()
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
-                    Text("BUY  \(shop.displayPrice)")
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text("BUY")
+                        CurrencyDisplay(
+                            gold: shop.isGemPurchase ? 0 : shop.price,
+                            gems: shop.isGemPurchase ? shop.price : nil,
+                            size: .mini,
+                            currencyType: shop.isGemPurchase ? .gems : .gold,
+                            animated: false
+                        )
+                    }
                 }
             }
             .buttonStyle(.primary)
@@ -655,14 +715,7 @@ struct ItemDetailSheet: View {
                         }
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        HStack(spacing: LayoutConstants.space2XS) {
-                            Text("(30")
-                            Image(systemName: "diamond")
-                                .font(.system(size: 10))
-                            Text(")")
-                        }
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(playerGems >= 30 ? DarkFantasyTheme.purple : DarkFantasyTheme.textTertiary)
+                        CurrencyDisplay(gold: 0, gems: 30, size: .mini, currencyType: .gems, animated: false)
                     }
                 }
                 .disabled(playerGems < 30)
@@ -676,12 +729,16 @@ struct ItemDetailSheet: View {
                 }
                 .buttonStyle(.secondary)
 
-                Button("UPGRADE · \(upgradeCost) 💰") {
+                Button {
                     HapticManager.medium()
-                    SFXManager.shared.play(.uiUpgradeSuccess)
                     onUpgrade(useProtection)
                     showUpgradeConfirm = false
                     useProtection = false
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text("UPGRADE ·")
+                        CurrencyDisplay(gold: upgradeCost, size: .mini, currencyType: .gold, animated: false)
+                    }
                 }
                 .buttonStyle(.primary)
             }
@@ -752,10 +809,8 @@ struct ItemDetailSheet: View {
     }
 
     private var sectionDivider: some View {
-        Rectangle()
-            .fill(DarkFantasyTheme.borderSubtle)
-            .frame(maxWidth: .infinity)
-            .frame(height: 1)
+        EtchedGroove()
+            .padding(.horizontal, LayoutConstants.cardPadding)
     }
 
     private func badgePill(_ text: String, style: BadgeStyle) -> some View {

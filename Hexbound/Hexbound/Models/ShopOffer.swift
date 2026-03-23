@@ -22,11 +22,11 @@ struct ShopOffer: Codable, Identifiable {
     var isGemPurchase: Bool { currency == "gems" }
 
     var displayPrice: String {
-        isGemPurchase ? "\(salePrice) 💎" : "\(salePrice) 💰"
+        isGemPurchase ? "\(salePrice) gems" : "\(salePrice) gold"
     }
 
     var displayOriginalPrice: String {
-        isGemPurchase ? "\(originalPrice) 💎" : "\(originalPrice) 💰"
+        isGemPurchase ? "\(originalPrice) gems" : "\(originalPrice) gold"
     }
 
     var hasDiscount: Bool { discountPct > 0 }
