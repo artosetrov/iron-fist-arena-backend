@@ -87,43 +87,76 @@ git add CLAUDE.md .github/ .skills/ 2>/dev/null
      - `feat(shop): add consumables from DB + redesigned merchant strip`
      - `chore(release): deploy — shop redesign, map scroll fix, admin updates`
 
-4. Commit — **prefer the git watcher** if available:
+4. **Commit + Push — automatic with fallback:**
 
-**Option A — Git Watcher (preferred in VM sessions):**
+**Step 1: Try direct git first.**
 ```bash
-# Create trigger file — watcher on Mac runs git add/commit/push automatically
-cat > .git-trigger << 'EOF'
-<generated message>
-
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-EOF
-```
-The watcher (`scripts/git-watcher.sh`) handles `git add -A`, commit, push to origin, and admin subtree push if admin/ changed.
-
-**Option B — Direct git (if no watcher running):**
-```bash
+git add backend/ admin/ Hexbound/ hexbound-site/ docs/ User/ CLAUDE.md .github/ .skills/ 2>/dev/null
 git commit -m "<generated message>"
 ```
-⚠️ Direct git from VM often fails due to `.git/index.lock` on mounted filesystem. If it fails, fall back to Option A or ask the user to commit manually.
 
-### Phase 4: Deploy (push to all remotes)
+**Step 2: If `git add` or `git commit` fails with `Unable to create .git/index.lock`:**
 
-1. **Push to origin** (deploys backend + site):
+Fall back to git-trigger watcher automatically — do NOT ask the user, do NOT stop.
+
+```bash
+# Write commit message to trigger file
+cat > .git-trigger << 'EOF'
+<generated message>
+EOF
+echo "⏳ Git-trigger created. Waiting for watcher..."
+```
+
+**Step 3: Wait for the watcher to consume the trigger (up to 60s):**
+```bash
+for i in $(seq 1 30); do
+  [ ! -f .git-trigger ] && break
+  sleep 2
+done
+```
+
+**Step 4: Verify the commit landed:**
+```bash
+# Check that the latest commit matches our message
+git log --oneline -1
+# Check that it was pushed to origin
+git log origin/main --oneline -1
+```
+
+If the trigger file still exists after 60s → watcher is not running. Tell the user:
+> Watcher не запущен. Запусти `./scripts/git-watcher.sh` в терминале на маке, или вручную:
+> `rm -f .git/index.lock && git add -A && git commit -m "$(cat .git-trigger)" && git push origin main`
+
+**If direct git succeeded (no lock error):**
+
+Continue with pushes:
 ```bash
 git push origin main
 ```
 
-2. **Push admin subtree** (deploys admin panel):
+Push admin subtree if admin/ was changed:
 ```bash
-git subtree push --prefix=admin admin-deploy main
+if git diff HEAD~1 --name-only | grep -q "^admin/"; then
+  git subtree push --prefix=admin admin-deploy main
+fi
 ```
 
-If subtree push fails with "Updates were rejected" → the admin-deploy remote has diverged. Try:
+If subtree push fails with "Updates were rejected" → try force:
 ```bash
 git push admin-deploy $(git subtree split --prefix=admin):main --force
 ```
 
-3. **Verify pushes succeeded** — check exit codes.
+### Phase 4: Verify deployment
+
+Whether using direct git or watcher, verify everything landed:
+
+```bash
+# Latest commit on origin/main
+git log origin/main --oneline -1
+
+# Confirm the hash matches local HEAD
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] && echo "✅ Synced" || echo "⚠️ Not synced"
+```
 
 ### Phase 5: Post-deploy report
 

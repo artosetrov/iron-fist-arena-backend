@@ -121,18 +121,20 @@ struct LeaderboardDetailView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .frame(width: LayoutConstants.touchMin, height: LayoutConstants.touchMin)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Clear search")
             }
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
-        .frame(height: 44)
+        .frame(height: LayoutConstants.inputHeight)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+            RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
                 .fill(DarkFantasyTheme.bgTertiary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+            RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
                 .stroke(
                     isSearchFocused ? DarkFantasyTheme.goldDim : DarkFantasyTheme.borderSubtle,
                     lineWidth: 1
@@ -220,6 +222,8 @@ struct LeaderboardDetailView: View {
 
     @ViewBuilder
     private func searchResultsContent(vm: LeaderboardViewModel) -> some View {
+        let trimmedCount = vm.searchText.trimmingCharacters(in: .whitespaces).count
+
         if vm.isSearching {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
@@ -230,7 +234,33 @@ struct LeaderboardDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
             }
-        } else if vm.searchResults.isEmpty && vm.searchText.count >= 2 {
+        } else if vm.searchError {
+            // Fix #4: Error state with retry
+            VStack(spacing: LayoutConstants.spaceMD) {
+                Spacer()
+                Image(systemName: "wifi.exclamationmark")
+                    .font(.system(size: 40))
+                    .foregroundStyle(DarkFantasyTheme.danger)
+                Text("Search failed")
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Button {
+                    vm.retrySearch()
+                } label: {
+                    Text("Retry")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .padding(.horizontal, LayoutConstants.spaceLG)
+                        .padding(.vertical, LayoutConstants.spaceSM)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                .stroke(DarkFantasyTheme.gold, lineWidth: 1)
+                        )
+                }
+                .accessibilityLabel("Retry search")
+                Spacer()
+            }
+        } else if vm.searchResults.isEmpty && trimmedCount >= 2 {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
                 Image(systemName: "person.slash")
@@ -244,7 +274,7 @@ struct LeaderboardDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
             }
-        } else if vm.searchText.count < 2 {
+        } else if trimmedCount < 2 {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
                 Text("Type at least 2 characters")
@@ -262,27 +292,37 @@ struct LeaderboardDetailView: View {
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.vertical, LayoutConstants.spaceSM)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 
     // MARK: - Search Result Row
 
+    private let searchAvatarSize: CGFloat = 40
+
     @ViewBuilder
     private func searchResultRow(result: LeaderboardSearchResult, index: Int) -> some View {
         let isMe = result.characterId == vm?.myCharacterId
+        let charClass = CharacterClass(rawValue: result.characterClass) ?? .warrior
         Button {
             guard !isMe else { return }
             selectedPlayerForDetail = result.toLeaderboardEntry()
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
-                // Class icon
-                Text(result.classIcon)
-                    .font(.system(size: 20))
-                    .frame(width: 32, height: 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .fill(DarkFantasyTheme.bgTertiary)
-                    )
+                // Portrait (Fix #1/#2 — avatar instead of emoji)
+                AvatarImageView(
+                    skinKey: result.avatar,
+                    characterClass: charClass,
+                    size: searchAvatarSize
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(
+                            isMe ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle,
+                            lineWidth: 1.5
+                        )
+                )
 
                 // Name + class
                 VStack(alignment: .leading, spacing: 2) {
@@ -309,7 +349,7 @@ struct LeaderboardDetailView: View {
                 }
             }
             .padding(.horizontal, LayoutConstants.spaceMD)
-            .padding(.vertical, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceMS)
             .background(
                 RadialGlowBackground(
                     baseColor: isMe ? DarkFantasyTheme.gold.opacity(0.08) : DarkFantasyTheme.bgSecondary,
@@ -318,12 +358,10 @@ struct LeaderboardDetailView: View {
                     cornerRadius: LayoutConstants.cardRadius
                 )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(
-                        isMe ? DarkFantasyTheme.gold.opacity(0.4) : DarkFantasyTheme.borderSubtle,
-                        lineWidth: isMe ? 2 : 1
-                    )
+            .innerBorder(
+                cornerRadius: LayoutConstants.cardRadius - 1,
+                inset: 1,
+                color: isMe ? DarkFantasyTheme.gold.opacity(0.2) : DarkFantasyTheme.borderSubtle.opacity(0.3)
             )
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
         }

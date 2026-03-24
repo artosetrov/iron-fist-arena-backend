@@ -15,6 +15,7 @@ final class LeaderboardViewModel {
     var searchText = ""
     var searchResults: [LeaderboardSearchResult] = []
     var isSearching = false
+    var searchError = false
     private var searchTask: Task<Void, Never>?
 
     static let tabs = ["Rating", "Level", "Gold"]
@@ -31,7 +32,7 @@ final class LeaderboardViewModel {
     }
 
     var isSearchActive: Bool {
-        !searchText.isEmpty
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     var myCharacterId: String? {
@@ -62,6 +63,7 @@ final class LeaderboardViewModel {
 
     func onSearchTextChanged() {
         searchTask?.cancel()
+        searchError = false
 
         let query = searchText.trimmingCharacters(in: .whitespaces)
         if query.count < 2 {
@@ -76,12 +78,22 @@ final class LeaderboardViewModel {
             try? await Task.sleep(nanoseconds: 400_000_000)
             guard !Task.isCancelled else { return }
 
-            let results = await service.searchPlayers(query: query)
-            guard !Task.isCancelled else { return }
-
-            searchResults = results
+            do {
+                let results = try await service.searchPlayers(query: query)
+                guard !Task.isCancelled else { return }
+                searchResults = results
+                searchError = false
+            } catch {
+                guard !Task.isCancelled else { return }
+                searchResults = []
+                searchError = true
+            }
             isSearching = false
         }
+    }
+
+    func retrySearch() {
+        onSearchTextChanged()
     }
 
     func clearSearch() {
@@ -89,5 +101,6 @@ final class LeaderboardViewModel {
         searchText = ""
         searchResults = []
         isSearching = false
+        searchError = false
     }
 }

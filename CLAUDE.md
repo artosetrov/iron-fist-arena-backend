@@ -445,6 +445,14 @@ These are the **actual** backend enums. Do not invent values.
 - **Applies to:** Shop offers, consumables, any route checking purchase limits, spending limits, or inventory capacity.
 - **Past incident:** Two concurrent gem purchases both passed `maxPurchases` check before transaction, both succeeded — user received double gems.
 
+### Atomic Increments (CRITICAL — Race Condition Prevention)
+- **All counter/progress increment operations MUST use atomic SQL**, not read-then-write pattern.
+- **Bad pattern:** `findFirst` → read `progress` → `update({ progress: progress + 1 })` — concurrent calls all read the same value.
+- **Good pattern:** `$executeRawUnsafe('UPDATE ... SET progress = LEAST(progress + $1, target) WHERE ...')` — single atomic statement.
+- **Applies to:** Daily quest progress, achievement counters, any numeric field incremented by game actions.
+- **Past incident:** 3 concurrent consumable uses all read `progress=0`, all wrote `progress=1` instead of `progress=3`. Fixed with raw SQL atomic UPDATE + LEAST() cap.
+- **Reference:** `backend/src/lib/game/daily-quests.ts` — `updateDailyQuestProgress()`.
+
 ### Database Query Performance (CRITICAL — N+1 Prevention)
 - **Never call DB queries or config lookups inside loops.** Each call in the loop multiplies queries.
 - **Pattern 1 — Config lookups:** Load all config values into a Map BEFORE the loop, then use synchronous lookups inside.
@@ -523,6 +531,8 @@ The project has a **git watcher script** at `scripts/git-watcher.sh` that enable
 **Why needed:** Git operations on mounted filesystem frequently fail with `Unable to create .git/index.lock: File exists` — the VM cannot delete lock files (`Operation not permitted`). The watcher runs natively on macOS where locks work normally.
 
 **IMPORTANT:** Always use the watcher for commits when available. Direct `git commit` from VM will likely fail due to lock files.
+
+**Herald agent auto-fallback:** The Herald deploy agent (`herald/SKILL.md`) automatically tries direct git first, then falls back to `.git-trigger` watcher if `index.lock` blocks the operation. No manual intervention needed — just confirm the watcher is running on the Mac.
 
 ## Merge Conflict Resolution (CRITICAL)
 
@@ -609,7 +619,7 @@ When replacing a struct, class, function, or view with a new version:
 
 ### PvP & Rating Data Models
 - `PvPRank` has NO `.displayName` computed property. Use `.rawValue` instead ("Bronze", "Silver", etc.).
-- `LeaderboardEntry` contains ONLY: `characterId`, `characterName`, `characterClass` (String, not enum), `value` (rating), `rank`. No avatar, no equipment, no stats.
+- `LeaderboardEntry` fields: `characterId`, `characterName`, `characterClass` (String, not enum), `avatar: String?`, `level: Int?`, `value` (rating), `rank`. Has `portraitAsset` computed property. `LeaderboardSearchResult` has same fields but uses `rating` instead of `value`.
 - `OpponentProfile` is the model for full public character profiles (via `GET /api/characters/:id/profile`). Contains: stats, equipment, avatar, HP with regen, stance, rating, record, win rate. Use this when displaying opponent details in PvP sheet.
 - Convert `characterClass` String to enum: `CharacterClass(rawValue: entry.characterClass) ?? .warrior`.
 - **ItemRarity.color** is now a computed property — use it for rarity-colored borders, badges, and UI elements in opponent profile grids.
@@ -622,6 +632,13 @@ When replacing a struct, class, function, or view with a new version:
 - When an emoji system is in place (e.g., Daily Login rewards, Battle Pass rewards), replace ALL emojis with game assets.
 - Pattern: add `assetIcon` computed property to the model, create a helper view (`rewardIcon()`) with asset-first fallback to emoji.
 - Applies to any screen with reward pills, badges, or status indicators.
+
+### Optimistic UI Updates (MANDATORY)
+- **All mutating actions (repair, heal, equip, use item) MUST update UI immediately**, before the API response arrives.
+- **Pattern:** Update local model/cache → show success toast → fire API call in background → on error, revert + show error toast.
+- **Why:** Users perceive actions as instant. Waiting for API round-trip (200-500ms) feels sluggish, especially for bulk actions like "Repair All".
+- **Reference:** `HeroDetailView.repairAllBrokenItems()` — sets `durability = maxDurability` on all items immediately, then fires parallel API calls.
+- **Past incident:** "Repair All" felt slow because it waited for each API call before updating UI. Fixed with optimistic update pattern.
 
 ### Currency Display (CRITICAL)
 - **Never use SF Symbols for currency** (e.g., `dollarsign.circle`, `diamond`). Use `CurrencyDisplay` component instead.

@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
         id: true,
         characterName: true,
         class: true,
+        avatar: true,
         pvpRating: true,
         level: true,
       },
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
       characterId: c.id,
       characterName: c.characterName,
       class: c.class,
+      avatar: c.avatar,
       rating: c.pvpRating,
       level: c.level,
     }))

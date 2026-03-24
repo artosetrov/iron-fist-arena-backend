@@ -41,6 +41,7 @@ struct LeaderboardSearchResult: Codable, Identifiable {
     let characterId: String
     let characterName: String
     let characterClass: String
+    let avatar: String?
     let rating: Int
     let level: Int
 
@@ -48,7 +49,7 @@ struct LeaderboardSearchResult: Codable, Identifiable {
         case characterId
         case characterName
         case characterClass = "class"
-        case rating, level
+        case avatar, rating, level
     }
 
     var classIcon: String {
@@ -67,7 +68,7 @@ struct LeaderboardSearchResult: Codable, Identifiable {
             characterId: characterId,
             characterName: characterName,
             characterClass: characterClass,
-            avatar: nil,
+            avatar: avatar,
             level: level,
             value: rating,
             rank: 0
