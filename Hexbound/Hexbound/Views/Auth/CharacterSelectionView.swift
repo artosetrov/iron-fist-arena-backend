@@ -10,35 +10,45 @@ struct CharacterSelectionView: View {
     @State private var enterPressed = false
 
     var body: some View {
-        ZStack {
-            // Background — radial glow like hub
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
-            RadialGradient(
-                colors: [
-                    DarkFantasyTheme.bgTertiary.opacity(0.6),
-                    DarkFantasyTheme.bgPrimary,
-                    DarkFantasyTheme.bgAbyss
-                ],
-                center: .init(x: 0.5, y: 0.15),
-                startRadius: 20,
-                endRadius: 500
-            )
-            .ignoresSafeArea()
+        @Bindable var state = appState
+        NavigationStack(path: $state.authPath) {
+            ZStack {
+                // Background — radial glow like hub
+                DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+                RadialGradient(
+                    colors: [
+                        DarkFantasyTheme.bgTertiary.opacity(0.6),
+                        DarkFantasyTheme.bgPrimary,
+                        DarkFantasyTheme.bgAbyss
+                    ],
+                    center: .init(x: 0.5, y: 0.15),
+                    startRadius: 20,
+                    endRadius: 500
+                )
+                .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                headerSection
-                DiamondDividerMotif()
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.vertical, LayoutConstants.spaceXS)
-
-                if appState.isGuest {
-                    guestBanner
+                VStack(spacing: 0) {
+                    headerSection
+                    DiamondDividerMotif()
                         .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM)
-                }
+                        .padding(.vertical, LayoutConstants.spaceXS)
 
-                contentArea
-                bottomCTA
+                    if appState.isGuest {
+                        guestBanner
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                            .padding(.bottom, LayoutConstants.spaceSM)
+                    }
+
+                    contentArea
+                    bottomCTA
+                }
+            }
+            .navigationDestination(for: AppRoute.self) { route in
+                switch route {
+                case .onboarding: OnboardingDetailView()
+                case .register: RegisterDetailView()
+                default: PlaceholderView()
+                }
             }
         }
         .task {
