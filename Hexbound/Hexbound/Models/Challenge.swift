@@ -10,13 +10,12 @@ struct ChallengeCharacterInfo: Codable, Identifiable {
     let pvpRating: Int
     let avatar: String?
 
+    // CodingKeys needed only for "class" → characterClass.
+    // Backend sends camelCase — raw values must match JSON keys.
     enum CodingKeys: String, CodingKey {
-        case id
-        case characterName = "character_name"
-        case characterClass = "class"  // "class" is a Swift keyword
-        case level
-        case pvpRating = "pvp_rating"
-        case avatar
+        case id, characterName
+        case characterClass = "class"
+        case level, pvpRating, avatar
     }
 
     var classEnum: CharacterClass {
@@ -37,15 +36,7 @@ struct IncomingChallenge: Codable, Identifiable {
     let goldWager: Int
     let createdAt: String  // ISO date string
     let expiresAt: String  // ISO date string
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case challenger
-        case message
-        case goldWager = "gold_wager"
-        case createdAt = "created_at"
-        case expiresAt = "expires_at"
-    }
+    // No CodingKeys — all keys are camelCase from backend, matching Swift property names.
 }
 
 // MARK: - Outgoing Challenge
@@ -58,16 +49,7 @@ struct OutgoingChallenge: Codable, Identifiable {
     let goldWager: Int
     let createdAt: String  // ISO date string
     let respondedAt: String?  // ISO date string, nil if not yet responded
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case defender
-        case status
-        case message
-        case goldWager = "gold_wager"
-        case createdAt = "created_at"
-        case respondedAt = "responded_at"
-    }
+    // No CodingKeys — all keys are camelCase from backend.
 }
 
 // MARK: - Completed Challenge
@@ -80,16 +62,7 @@ struct CompletedChallenge: Codable, Identifiable {
     let goldReward: Int
     let xpReward: Int
     let completedAt: String?  // ISO date string
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case challenger
-        case defender
-        case winnerId = "winner_id"
-        case goldReward = "gold_reward"
-        case xpReward = "xp_reward"
-        case completedAt = "completed_at"
-    }
+    // No CodingKeys — all keys are camelCase from backend.
 }
 
 // MARK: - Challenges List Response
@@ -127,15 +100,7 @@ struct SentChallengeInfo: Codable {
     let status: String
     let message: String?
     let expiresAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case defenderId = "defender_id"
-        case defenderName = "defender_name"
-        case status
-        case message
-        case expiresAt = "expires_at"
-    }
+    // No CodingKeys — all keys are camelCase from backend.
 }
 
 // MARK: - Duel Result Response
@@ -158,22 +123,7 @@ struct DuelResult: Codable {
     let xpReward: Int
     let challengerName: String
     let defenderName: String
-
-    enum CodingKeys: String, CodingKey {
-        case matchId = "match_id"
-        case challengeId = "challenge_id"
-        case won
-        case winnerId = "winner_id"
-        case loserId = "loser_id"
-        case turns
-        case ratingBefore = "rating_before"
-        case ratingAfter = "rating_after"
-        case ratingChange = "rating_change"
-        case goldReward = "gold_reward"
-        case xpReward = "xp_reward"
-        case challengerName = "challenger_name"
-        case defenderName = "defender_name"
-    }
+    // No CodingKeys — all keys are camelCase from backend.
 }
 
 // MARK: - Challenge Actions

@@ -25,16 +25,14 @@ struct FriendEntry: Codable, Identifiable {
     let avatar: String
     let lastActiveAt: Date?
 
+    // CodingKeys needed only for "class" → characterClass mapping.
+    // All other keys are camelCase from backend — match Swift property names directly.
+    // APIClient's .convertFromSnakeCase is overridden when CodingKeys exist,
+    // so raw values must match the actual JSON keys (camelCase).
     enum CodingKeys: String, CodingKey {
-        case id
-        case friendshipId = "friendship_id"
-        case characterName = "character_name"
+        case id, friendshipId, characterName
         case characterClass = "class"
-        case origin
-        case level
-        case pvpRating = "pvp_rating"
-        case avatar
-        case lastActiveAt = "last_active_at"
+        case origin, level, pvpRating, avatar, lastActiveAt
     }
 
     var onlineStatus: OnlineStatus {
@@ -90,16 +88,12 @@ struct FriendRequest: Codable, Identifiable {
         PvPRank.fromRating(pvpRating).rawValue
     }
 
+    // CodingKeys needed only for "class" → characterClass mapping.
+    // Backend sends camelCase — raw values must match JSON keys.
     enum CodingKeys: String, CodingKey {
-        case friendshipId = "friendship_id"
-        case id
-        case characterName = "character_name"
+        case friendshipId, id, characterName
         case characterClass = "class"
-        case origin
-        case level
-        case pvpRating = "pvp_rating"
-        case avatar
-        case requestedAt = "requested_at"
+        case origin, level, pvpRating, avatar, requestedAt
     }
 }
 
@@ -129,12 +123,6 @@ struct FriendsListResponse: Codable {
     let outgoingRequests: [FriendRequest]
     let count: Int
     let maxFriends: Int
-
-    enum CodingKeys: String, CodingKey {
-        case friends
-        case incomingRequests = "incoming_requests"
-        case outgoingRequests = "outgoing_requests"
-        case count
-        case maxFriends = "max_friends"
-    }
+    // No CodingKeys — all keys match camelCase from backend.
+    // APIClient's .convertFromSnakeCase passes camelCase through unchanged.
 }

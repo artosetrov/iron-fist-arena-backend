@@ -446,8 +446,17 @@ These are the **actual** backend enums. Do not invent values.
 
 **Past incident:** `SocialStatus` had explicit CodingKeys (`pending_requests`, `unread_messages`), but backend sent camelCase. Decode silently failed, `cache.socialStatus` was always nil, Guild Hall badge never showed. Fixed by removing CodingKeys.
 
-**Affected models (fixed):** `SocialStatus` (Social.swift)
-**Models that still use CodingKeys correctly:** `FriendEntry`, `FriendRequest`, `FriendsListResponse` — verify these work; if backend sends camelCase for these too, remove their CodingKeys.
+**Affected models (fixed):**
+- `SocialStatus` (Social.swift) — removed CodingKeys entirely
+- `FriendsListResponse` (Social.swift) — removed CodingKeys entirely (all keys camelCase)
+- `FriendEntry` (Social.swift) — fixed CodingKeys: kept only `characterClass = "class"`, rest are identity camelCase
+- `FriendRequest` (Social.swift) — same fix as FriendEntry
+- `IncomingChallenge`, `OutgoingChallenge`, `CompletedChallenge` (Challenge.swift) — removed CodingKeys (all keys camelCase)
+- `SentChallengeInfo`, `DuelResult` (Challenge.swift) — removed CodingKeys (all keys camelCase)
+- `ChallengeCharacterInfo` (Challenge.swift) — fixed CodingKeys: kept only `characterClass = "class"`
+
+**Models with CodingKeys that are correct (Encodable, server expects snake_case):** `SendChallengeRequest`
+**Models with identity CodingKeys (redundant but correct):** `Conversation`, `ConversationCharacterInfo`, `ConversationLastMessage`, `DirectMessageItem`, `SentMessageInfo` (Message.swift) — CodingKeys map to same camelCase values as JSON keys.
 
 ## Backend TypeScript Rules (CRITICAL)
 
