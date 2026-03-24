@@ -399,6 +399,7 @@ These are the **actual** backend enums. Do not invent values.
 - **ItemType**: `weapon`, `helmet`, `chest`, `gloves`, `legs`, `boots`, `accessory`, `amulet`, `belt`, `relic`, `necklace`, `ring`, `consumable`
 - **ItemRarity**: `common`, `uncommon`, `rare`, `epic`, `legendary`
 - **DamageType**: `physical`, `magical`, `true_damage`, `poison`
+- **QuestType**: `pvp_wins`, `dungeons_complete`, `gold_spent`, `item_upgrade`, `consumable_use`, `shell_game_play`, `gold_mine_collect` (NOT `pvp_win`, NOT `pvp_fight` — these don't exist)
 
 ## Property Access (CRITICAL)
 
