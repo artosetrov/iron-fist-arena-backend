@@ -22,6 +22,7 @@ Generate unique 24-character hex IDs for `{ID1}` and `{ID2}`. Keep entries alpha
 
 - Always use `DarkFantasyTheme` color/font tokens — never hardcode `Color(hex:)` or raw color values
 - Always use `ButtonStyles.swift` styles (`.primary`, `.secondary`, `.neutral`, etc.) — never inline button styling. **Never manually build button chrome** (goldGradient + surfaceLighting + RoundedRectangle background) when a button style already exists.
+- **Button chrome colors** use `DarkFantasyTheme.btn*` tokens: `btnDanger{Fill,Stroke,Accent}`, `btnOrange{Primary,Bright,Glow,Shine,Stroke,Dark,Mid,Base}`, `btnPurple{Dark,Bright,Stroke}`. Never hardcode hex values inside `ButtonStyles.swift`.
 - **Gold CTA styles** (`.primary`, `.compactPrimary`, `.fight`, `.premium`, `.danger`) MUST have full ornamental treatment: `SurfaceLightingOverlay` + `cornerBrackets` + `cornerDiamonds` + `innerBorder`. If adding a new gold CTA style, include all four.
 - Always use `LayoutConstants` for spacing/sizing — minimum font size is `LayoutConstants.textBadge` (11px)
 - The theme file is at `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift`
