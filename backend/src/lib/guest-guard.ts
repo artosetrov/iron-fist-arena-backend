@@ -1,9 +1,9 @@
+// DEPRECATED — This file is not imported anywhere. Safe to delete.
+// Kept for reference in case guest account feature is re-implemented.
+
 import { prisma } from '@/lib/prisma'
 
-/**
- * Checks whether the given user ID belongs to a guest (anonymous) account.
- * Returns true if the user is a guest, false otherwise.
- */
+/** @deprecated Not used — ownership checks are done inline in API routes */
 export async function isGuestUser(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -12,7 +12,6 @@ export async function isGuestUser(userId: string): Promise<boolean> {
 
   if (!user) return false
 
-  // A user is a guest if authProvider is 'anonymous' or email matches guest pattern
   return user.authProvider === 'anonymous' ||
     (user.email?.endsWith('@guest.ironfist.local') ?? false)
 }

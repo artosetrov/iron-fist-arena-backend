@@ -19,7 +19,9 @@ actor SupabaseAuthClient {
     // MARK: - Token Refresh
 
     func refreshToken(_ refreshToken: String) async throws -> (accessToken: String, refreshToken: String, expiresIn: Int) {
-        let url = URL(string: "\(authURL)/token?grant_type=refresh_token")!
+        guard let url = URL(string: "\(authURL)/token?grant_type=refresh_token") else {
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -48,7 +50,9 @@ actor SupabaseAuthClient {
     // MARK: - Token Validation
 
     func getUser(accessToken: String) async throws -> [String: Any] {
-        let url = URL(string: "\(authURL)/user")!
+        guard let url = URL(string: "\(authURL)/user") else {
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
@@ -69,7 +73,9 @@ actor SupabaseAuthClient {
     // MARK: - Resend Confirmation Email
 
     func resendConfirmation(email: String) async throws {
-        let url = URL(string: "\(authURL)/resend")!
+        guard let url = URL(string: "\(authURL)/resend") else {
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -89,7 +95,9 @@ actor SupabaseAuthClient {
     // MARK: - Anonymous Sign In
 
     func signInAnonymous() async throws -> (accessToken: String, refreshToken: String, user: [String: Any]) {
-        let url = URL(string: "\(authURL)/signup")!
+        guard let url = URL(string: "\(authURL)/signup") else {
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

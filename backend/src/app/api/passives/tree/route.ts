@@ -15,29 +15,34 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const cacheKey = 'passives:tree'
-  let tree = await cacheGet<CachedTree>(cacheKey)
+  try {
+    const cacheKey = 'passives:tree'
+    let tree = await cacheGet<CachedTree>(cacheKey)
 
-  if (!tree) {
-    const [nodes, connections] = await Promise.all([
-      prisma.passiveNode.findMany({
-        where: { isActive: true },
-        orderBy: [{ tier: 'asc' }, { name: 'asc' }],
-        select: {
-          id: true, nodeKey: true, name: true, description: true,
-          bonusType: true, bonusStat: true, bonusValue: true,
-          tier: true, positionX: true, positionY: true, cost: true,
-          icon: true, classRestriction: true, isStartNode: true,
-        },
-      }),
-      prisma.passiveConnection.findMany({
-        select: { id: true, fromId: true, toId: true },
-      }),
-    ])
+    if (!tree) {
+      const [nodes, connections] = await Promise.all([
+        prisma.passiveNode.findMany({
+          where: { isActive: true },
+          orderBy: [{ tier: 'asc' }, { name: 'asc' }],
+          select: {
+            id: true, nodeKey: true, name: true, description: true,
+            bonusType: true, bonusStat: true, bonusValue: true,
+            tier: true, positionX: true, positionY: true, cost: true,
+            icon: true, classRestriction: true, isStartNode: true,
+          },
+        }),
+        prisma.passiveConnection.findMany({
+          select: { id: true, fromId: true, toId: true },
+        }),
+      ])
 
-    tree = { nodes, connections }
-    await cacheSet(cacheKey, tree, CACHE_TTL)
+      tree = { nodes, connections }
+      await cacheSet(cacheKey, tree, CACHE_TTL)
+    }
+
+    return NextResponse.json(tree)
+  } catch (error) {
+    console.error('passives tree error:', error)
+    return NextResponse.json({ error: 'Failed to fetch passive tree' }, { status: 500 })
   }
-
-  return NextResponse.json(tree)
 }

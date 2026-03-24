@@ -143,9 +143,21 @@ export async function GET(req: NextRequest) {
       set_name: item.setName,
     }))
 
-    // Transform consumable items — use GameConfig price if available, else DB buyPrice
-    const consumableShopItems = await Promise.all(
-      consumableItems.map(async (item) => {
+    // Batch-load all consumable prices from GameConfig ONCE (fix N+1)
+    const consumablePriceMap = new Map<string, number>()
+    const priceKeys = Object.keys(DEFAULT_CONSUMABLE_PRICES)
+    await Promise.all(
+      priceKeys.map(async (key) => {
+        const price = await getGameConfig<number>(
+          `consumable.price.${key}`,
+          DEFAULT_CONSUMABLE_PRICES[key]
+        )
+        consumablePriceMap.set(key, price)
+      })
+    )
+
+    // Transform consumable items — use pre-loaded GameConfig prices
+    const consumableShopItems = consumableItems.map((item) => {
         const catalogId = item.catalogId
         const isGemPack = catalogId.startsWith('gem_pack')
 
@@ -155,13 +167,10 @@ export async function GET(req: NextRequest) {
           if (character.level < requiredLevel) return null
         }
 
-        // Try to read price from GameConfig (only for potions, not gem packs)
+        // Use pre-loaded price from GameConfig (only for potions, not gem packs)
         let goldPrice = item.buyPrice
-        if (!isGemPack && DEFAULT_CONSUMABLE_PRICES[catalogId] !== undefined) {
-          goldPrice = await getGameConfig<number>(
-            `consumable.price.${catalogId}`,
-            item.buyPrice
-          )
+        if (!isGemPack && consumablePriceMap.has(catalogId)) {
+          goldPrice = consumablePriceMap.get(catalogId)!
         }
 
         return {
@@ -185,7 +194,6 @@ export async function GET(req: NextRequest) {
           consumable_type: catalogId,
         }
       })
-    )
 
     // Filter out nulls (gem packs gated by level)
     const filteredConsumables = consumableShopItems.filter(

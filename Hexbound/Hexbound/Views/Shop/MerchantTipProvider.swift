@@ -48,7 +48,7 @@ final class MerchantTipProvider {
     private var currentTipIndex: Int = 0
 
     init() {
-        currentTip = Self.tipsByTab[0]![0]
+        currentTip = Self.tipsByTab[0]?.first ?? MerchantTip(segments: [.plain("Welcome, adventurer!")])
     }
 
     // MARK: - Tab Change
@@ -91,7 +91,8 @@ final class MerchantTipProvider {
     // MARK: - Private
 
     private func updateCurrentTip(animated: Bool) {
-        let tips = Self.tipsByTab[currentTabIndex] ?? Self.tipsByTab[0]!
+        let tips = Self.tipsByTab[currentTabIndex] ?? Self.tipsByTab[0] ?? []
+        guard !tips.isEmpty else { return }
         let index = currentTipIndex % tips.count
         if animated {
             withAnimation(.easeOut(duration: 0.15)) {

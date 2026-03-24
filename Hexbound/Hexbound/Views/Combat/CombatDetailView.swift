@@ -157,8 +157,10 @@ struct CombatDetailView: View {
         let lowered = name.lowercased()
         // Search cached server dungeons first, then fallback
         let dungeonSources: [DungeonInfo] = {
-            let cached = cache.cachedDungeonList()
-            return (cached != nil && !cached!.isEmpty) ? cached! : DungeonInfo.fallback
+            if let cached = cache.cachedDungeonList(), !cached.isEmpty {
+                return cached
+            }
+            return DungeonInfo.fallback
         }()
         for dungeon in dungeonSources {
             if let boss = dungeon.bosses.first(where: { $0.name.lowercased() == lowered }) {
@@ -173,7 +175,7 @@ struct CombatDetailView: View {
     private func setupCombatIfReady() {
         guard let data = appState.combatData, viewModel == nil else { return }
         let vm = CombatViewModel(appState: appState, combatData: data)
-        vm.onCombatEvent = { [self] event in handleCombatEvent(event) }
+        vm.onCombatEvent = { [weak self] event in self?.handleCombatEvent(event) }
         viewModel = vm
         Task { await vm.play() }
     }

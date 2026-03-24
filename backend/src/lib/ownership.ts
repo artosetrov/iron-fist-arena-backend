@@ -1,9 +1,9 @@
+// DEPRECATED — This file is not imported anywhere. Safe to delete.
+// Ownership checks are done inline in each API route.
+
 import { prisma } from './prisma'
 
-/**
- * Verify that a character belongs to the given user.
- * Uses select to fetch only the userId field — minimal data transfer.
- */
+/** @deprecated Not used — ownership checks are done inline in API routes */
 export async function verifyCharacterOwnership(
   characterId: string,
   userId: string

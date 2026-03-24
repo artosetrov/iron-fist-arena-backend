@@ -41,7 +41,7 @@ final class DailyQuestsViewModel {
         let now = Date()
         let calendar = Calendar(identifier: .gregorian)
         var utcCalendar = calendar
-        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+        utcCalendar.timeZone = TimeZone(identifier: "UTC") ?? .gmt
         guard let tomorrow = utcCalendar.date(byAdding: .day, value: 1, to: now),
               let midnight = utcCalendar.date(from: utcCalendar.dateComponents([.year, .month, .day], from: tomorrow))
         else { return "" }

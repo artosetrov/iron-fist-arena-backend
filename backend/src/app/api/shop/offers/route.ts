@@ -145,12 +145,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Level requirement not met' }, { status: 400 })
     }
 
-    // Purchase limit check
+    // Pre-flight purchase limit check (non-authoritative — real check inside transaction)
     if (offer.maxPurchases > 0 && offer.purchases.length >= offer.maxPurchases) {
       return NextResponse.json({ error: 'Purchase limit reached' }, { status: 400 })
     }
 
-    // Currency check
+    // Pre-flight currency check
     const userRecord = await prisma.user.findUnique({
       where: { id: user.id },
       select: { gems: true },
@@ -166,47 +166,72 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not enough gems' }, { status: 400 })
     }
 
-    // Build transaction operations
+    // Interactive transaction with row-level locking to prevent race conditions
     const contents = offer.contents as unknown as OfferContent[]
-    const ops: any[] = []
 
-    // 1. Deduct currency
-    if (offer.currency === 'gold') {
-      ops.push(
-        prisma.character.update({
+    const result = await prisma.$transaction(async (tx) => {
+      // Re-check purchase limit inside transaction with row lock
+      if (offer.maxPurchases > 0) {
+        // Lock character row to serialize concurrent purchase attempts
+        await tx.$queryRaw`SELECT id FROM characters WHERE id = ${character_id} FOR UPDATE`
+
+        const purchaseCount = await tx.shopOfferPurchase.count({
+          where: { offerId: offer_id, characterId: character_id },
+        })
+        if (purchaseCount >= offer.maxPurchases) {
+          throw new Error('PURCHASE_LIMIT_REACHED')
+        }
+      }
+
+      // Re-check currency inside transaction (authoritative)
+      const freshChar = await tx.character.findUnique({
+        where: { id: character_id },
+        select: { gold: true },
+      })
+      const freshUser = await tx.user.findUnique({
+        where: { id: user.id },
+        select: { gems: true },
+      })
+
+      if (offer.currency === 'gold' && (freshChar?.gold ?? 0) < offer.salePrice) {
+        throw new Error('INSUFFICIENT_GOLD')
+      }
+      if (offer.currency === 'gems' && (freshUser?.gems ?? 0) < offer.salePrice) {
+        throw new Error('INSUFFICIENT_GEMS')
+      }
+
+      // 1. Deduct currency
+      if (offer.currency === 'gold') {
+        await tx.character.update({
           where: { id: character_id },
           data: { gold: { decrement: offer.salePrice } },
         })
-      )
-    } else {
-      ops.push(
-        prisma.user.update({
+      } else {
+        await tx.user.update({
           where: { id: user.id },
           data: { gems: { decrement: offer.salePrice } },
         })
-      )
-    }
+      }
 
-    // 2. Grant contents
-    let goldGrant = 0
-    let gemsGrant = 0
-    let xpGrant = 0
+      // 2. Grant contents
+      let goldGrant = 0
+      let gemsGrant = 0
+      let xpGrant = 0
 
-    for (const item of contents) {
-      switch (item.type) {
-        case 'gold':
-          goldGrant += item.quantity
-          break
-        case 'gems':
-          gemsGrant += item.quantity
-          break
-        case 'xp':
-          xpGrant += item.quantity
-          break
-        case 'consumable':
-          if (item.id) {
-            ops.push(
-              prisma.consumableInventory.upsert({
+      for (const item of contents) {
+        switch (item.type) {
+          case 'gold':
+            goldGrant += item.quantity
+            break
+          case 'gems':
+            gemsGrant += item.quantity
+            break
+          case 'xp':
+            xpGrant += item.quantity
+            break
+          case 'consumable':
+            if (item.id) {
+              await tx.consumableInventory.upsert({
                 where: {
                   characterId_consumableType: {
                     characterId: character_id,
@@ -220,41 +245,33 @@ export async function POST(req: NextRequest) {
                   quantity: item.quantity,
                 },
               })
-            )
-          }
-          break
-        // item type would need item creation logic — skip for now, handled via mail
+            }
+            break
+          // item type would need item creation logic — skip for now, handled via mail
+        }
       }
-    }
 
-    if (goldGrant > 0) {
-      ops.push(
-        prisma.character.update({
+      if (goldGrant > 0) {
+        await tx.character.update({
           where: { id: character_id },
           data: { gold: { increment: goldGrant } },
         })
-      )
-    }
-    if (gemsGrant > 0) {
-      ops.push(
-        prisma.user.update({
+      }
+      if (gemsGrant > 0) {
+        await tx.user.update({
           where: { id: user.id },
           data: { gems: { increment: gemsGrant } },
         })
-      )
-    }
-    if (xpGrant > 0) {
-      ops.push(
-        prisma.character.update({
+      }
+      if (xpGrant > 0) {
+        await tx.character.update({
           where: { id: character_id },
           data: { currentXp: { increment: xpGrant } },
         })
-      )
-    }
+      }
 
-    // 3. Record purchase
-    ops.push(
-      prisma.shopOfferPurchase.create({
+      // 3. Record purchase
+      await tx.shopOfferPurchase.create({
         data: {
           offerId: offer_id,
           characterId: character_id,
@@ -262,29 +279,39 @@ export async function POST(req: NextRequest) {
           currency: offer.currency,
         },
       })
-    )
 
-    await prisma.$transaction(ops)
+      // Return updated balances from within transaction
+      const [updatedChar, updatedUser] = await Promise.all([
+        tx.character.findUnique({
+          where: { id: character_id },
+          select: { gold: true, currentXp: true },
+        }),
+        tx.user.findUnique({
+          where: { id: user.id },
+          select: { gems: true },
+        }),
+      ])
 
-    // Return updated balances
-    const [updatedChar, updatedUser] = await Promise.all([
-      prisma.character.findUnique({
-        where: { id: character_id },
-        select: { gold: true, currentXp: true },
-      }),
-      prisma.user.findUnique({
-        where: { id: user.id },
-        select: { gems: true },
-      }),
-    ])
+      return { gold: updatedChar?.gold ?? 0, gems: updatedUser?.gems ?? 0, xp: updatedChar?.currentXp ?? 0 }
+    }, { isolationLevel: 'Serializable', timeout: 10000 })
 
     return NextResponse.json({
       success: true,
-      gold: updatedChar?.gold ?? 0,
-      gems: updatedUser?.gems ?? 0,
-      xp: updatedChar?.currentXp ?? 0,
+      gold: result.gold,
+      gems: result.gems,
+      xp: result.xp,
     })
-  } catch (error) {
+  } catch (error: any) {
+    // Handle known transaction errors with proper HTTP codes
+    if (error?.message === 'PURCHASE_LIMIT_REACHED') {
+      return NextResponse.json({ error: 'Purchase limit reached' }, { status: 400 })
+    }
+    if (error?.message === 'INSUFFICIENT_GOLD') {
+      return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+    }
+    if (error?.message === 'INSUFFICIENT_GEMS') {
+      return NextResponse.json({ error: 'Not enough gems' }, { status: 400 })
+    }
     console.error('purchase offer error:', error)
     return NextResponse.json({ error: 'Failed to purchase offer' }, { status: 500 })
   }

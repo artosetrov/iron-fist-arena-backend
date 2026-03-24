@@ -196,7 +196,7 @@ struct NPCGuideWidget: View {
                     // Dynamic player character avatar
                     AvatarImageView(
                         skinKey: avatarSkinKey,
-                        characterClass: avatarClass!,
+                        characterClass: avatarClass ?? .warrior,
                         size: LayoutConstants.npcAvatarSize
                     )
                     .clipShape(Circle())
@@ -263,7 +263,7 @@ struct NPCMiniButton: View {
                 if usesPlayerAvatar {
                     AvatarImageView(
                         skinKey: avatarSkinKey,
-                        characterClass: avatarClass!,
+                        characterClass: avatarClass ?? .warrior,
                         size: LayoutConstants.merchantMiniSize
                     )
                 } else if let imageName = npcImageName, UIImage(named: imageName) != nil {

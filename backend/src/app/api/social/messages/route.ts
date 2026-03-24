@@ -123,11 +123,11 @@ export async function GET(req: NextRequest) {
 
     const conversations = Array.from(conversationMap.values())
 
-    // Fetch character details for each conversation
-    const conversationDetails = await Promise.all(
-      conversations.map(async (conv) => {
-        const otherChar = await prisma.character.findUnique({
-          where: { id: conv.otherCharacterId },
+    // Batch-load all character details in one query (fix N+1)
+    const otherCharIds = conversations.map((c) => c.otherCharacterId)
+    const otherChars = otherCharIds.length > 0
+      ? await prisma.character.findMany({
+          where: { id: { in: otherCharIds } },
           select: {
             id: true,
             characterName: true,
@@ -137,12 +137,13 @@ export async function GET(req: NextRequest) {
             avatar: true,
           },
         })
-        return {
-          ...conv,
-          otherCharacter: otherChar,
-        }
-      })
-    )
+      : []
+    const charMap = new Map(otherChars.map((c) => [c.id, c]))
+
+    const conversationDetails = conversations.map((conv) => ({
+      ...conv,
+      otherCharacter: charMap.get(conv.otherCharacterId) ?? null,
+    }))
 
     // Sort: unread first, then by most recent message
     conversationDetails.sort((a, b) => {

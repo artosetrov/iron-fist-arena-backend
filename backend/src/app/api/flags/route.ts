@@ -49,15 +49,20 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Simple admin check
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { role: true },
-  })
-  if (!dbUser || !['admin', 'developer'].includes(dbUser.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  try {
+    // Simple admin check
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    })
+    if (!dbUser || !['admin', 'developer'].includes(dbUser.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
-  invalidateFlagCache()
-  return NextResponse.json({ success: true, message: 'Flag cache invalidated' })
+    invalidateFlagCache()
+    return NextResponse.json({ success: true, message: 'Flag cache invalidated' })
+  } catch (error) {
+    console.error('flags invalidate error:', error)
+    return NextResponse.json({ error: 'Failed to invalidate flags' }, { status: 500 })
+  }
 }

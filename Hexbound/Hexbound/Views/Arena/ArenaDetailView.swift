@@ -72,9 +72,10 @@ struct ArenaDetailView: View {
                             }
 
                             // Low HP potion banner — shown when HP < 30%
-                            if LowHPPotionBanner.shouldShow(character: appState.currentCharacter) {
+                            if let currentChar = appState.currentCharacter,
+                               LowHPPotionBanner.shouldShow(character: currentChar) {
                                 LowHPPotionBanner(
-                                    character: appState.currentCharacter!,
+                                    character: currentChar,
                                     hasHealthPotion: hasHealthPotion,
                                     onDrinkPotion: {
                                         Task { await useHealthPotion() }

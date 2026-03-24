@@ -129,9 +129,12 @@ struct DungeonInfo: Identifiable {
         let bosses: [BossInfo] = serverBosses.enumerated().map { idx, b in
             let bossImageUrl = b["image_url"] as? String
             // Use server image_url as portrait if available, fallback to generic
-            let portrait = (bossImageUrl != nil && !bossImageUrl!.isEmpty)
-                ? bossImageUrl!
-                : "boss-generic-portrait"
+            let portrait: String = {
+                guard let url = bossImageUrl, !url.isEmpty else {
+                    return "boss-generic-portrait"
+                }
+                return url
+            }()
             return BossInfo(
                 id: idx + 1,
                 name: b["name"] as? String ?? "Unknown",

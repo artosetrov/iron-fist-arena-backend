@@ -36,8 +36,10 @@ final class DungeonRoomViewModel {
 
     /// Resolve dungeon list: cached server data → fallback hardcoded
     private var allDungeons: [DungeonInfo] {
-        let cached = cache.cachedDungeonList()
-        return (cached != nil && !cached!.isEmpty) ? cached! : DungeonInfo.fallback
+        guard let cached = cache.cachedDungeonList(), !cached.isEmpty else {
+            return DungeonInfo.fallback
+        }
+        return cached
     }
 
     // MARK: - Computed

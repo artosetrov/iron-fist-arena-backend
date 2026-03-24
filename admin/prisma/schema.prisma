@@ -313,6 +313,7 @@ model Item {
   equipment       EquipmentInventory[]
   dungeonDrops    DungeonDrop[]
 
+  @@index([itemType])
   @@index([itemType, itemLevel])
   @@index([rarity])
   @@map("items")

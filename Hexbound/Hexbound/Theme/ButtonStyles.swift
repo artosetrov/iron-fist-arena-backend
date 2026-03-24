@@ -310,7 +310,7 @@ struct SocialAuthButtonStyle: ButtonStyle {
             .frame(height: LayoutConstants.buttonHeightLG)
             .background(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .fill(Color.black)
+                    .fill(DarkFantasyTheme.bgAbyss)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)

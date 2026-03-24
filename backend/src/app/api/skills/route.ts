@@ -10,26 +10,31 @@ export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const classFilter = req.nextUrl.searchParams.get('class')
+  try {
+    const classFilter = req.nextUrl.searchParams.get('class')
 
-  // Try cache for full catalog
-  const cacheKey = 'skills:catalog'
-  let skills = await cacheGet<unknown[]>(cacheKey)
+    // Try cache for full catalog
+    const cacheKey = 'skills:catalog'
+    let skills = await cacheGet<unknown[]>(cacheKey)
 
-  if (!skills) {
-    skills = await prisma.skill.findMany({
-      where: { isActive: true },
-      orderBy: [{ classRestriction: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
-    })
-    await cacheSet(cacheKey, skills, CACHE_TTL)
+    if (!skills) {
+      skills = await prisma.skill.findMany({
+        where: { isActive: true },
+        orderBy: [{ classRestriction: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
+      })
+      await cacheSet(cacheKey, skills, CACHE_TTL)
+    }
+
+    // Apply client-side class filter
+    if (classFilter) {
+      skills = (skills as Array<Record<string, unknown>>).filter(
+        (s) => s.classRestriction === classFilter || s.classRestriction === null
+      )
+    }
+
+    return NextResponse.json({ skills })
+  } catch (error) {
+    console.error('skills catalog error:', error)
+    return NextResponse.json({ error: 'Failed to fetch skills' }, { status: 500 })
   }
-
-  // Apply client-side class filter
-  if (classFilter) {
-    skills = (skills as Array<Record<string, unknown>>).filter(
-      (s) => s.classRestriction === classFilter || s.classRestriction === null
-    )
-  }
-
-  return NextResponse.json({ skills })
 }

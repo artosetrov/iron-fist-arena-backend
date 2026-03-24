@@ -27,10 +27,10 @@ enum AppConstants {
     static var apiBaseURL: URL {
         switch Environment.current {
         case .production:
-            return URL(string: "https://api.hexboundapp.com")!
+            return URL(string: "https://api.hexboundapp.com")! // swiftlint:disable:this force_unwrapping — hardcoded valid URL
         case .staging:
             // TODO: Replace with actual staging URL when available
-            return URL(string: "https://api.hexboundapp.com")!
+            return URL(string: "https://api.hexboundapp.com")! // swiftlint:disable:this force_unwrapping — hardcoded valid URL
         }
     }
 

@@ -437,6 +437,77 @@ These are the **actual** backend enums. Do not invent values.
 - **`CombatResult` fields:** `{ winnerId, loserId, turns: Turn[], totalTurns: number, finalHp: Record<string, number> }`. Use `combatResult.finalHp[characterId]` for HP, `combatResult.totalTurns` for turn count, `combatResult.turns` for combat log. There is NO `.log`, `.duration`, `.player1FinalHp`, `.player2FinalHp`.
 - **Before using any function — check its signature.** Open the source file (`combat.ts`, `stamina.ts`, `live-config.ts`, `progression.ts`, `balance.ts`) and verify: is it async? How many args? What does it return? **Or copy from `pvp/fight/route.ts`** which is known to work. Guessing signatures causes repeated Vercel build failures.
 
+### Economy & Purchase Routes (CRITICAL — TOCTOU Prevention)
+- **All purchase/economy-critical routes MUST validate limits INSIDE a Prisma transaction, never before.**
+- **Pattern:** Use interactive `$transaction(async (tx) => { ... })` with `SELECT FOR UPDATE` row lock + `Serializable` isolation.
+- **Why:** Checking `maxPurchases` before the transaction creates a race condition. Two concurrent requests can both pass the check, then both execute inside the transaction. Row locks prevent this.
+- **Example (reference):** `backend/src/routes/shop/offers/route.ts` — validates purchase count re-checked INSIDE transaction after row lock.
+- **Applies to:** Shop offers, consumables, any route checking purchase limits, spending limits, or inventory capacity.
+- **Past incident:** Two concurrent gem purchases both passed `maxPurchases` check before transaction, both succeeded — user received double gems.
+
+### Database Query Performance (CRITICAL — N+1 Prevention)
+- **Never call DB queries or config lookups inside loops.** Each call in the loop multiplies queries.
+- **Pattern 1 — Config lookups:** Load all config values into a Map BEFORE the loop, then use synchronous lookups inside.
+  - Bad: `items.map(item => { const cost = getGameConfig('consumable_cost', item.type); ... })`
+  - Good: `const configMap = new Map(); ... ; items.map(item => { const cost = configMap.get(item.type); ... })`
+- **Pattern 2 — Related records:** Use `findMany({ where: { id: { in: ids } } })` + Map lookup instead of `Promise.all(map(id => findUnique(id)))`.
+  - Bad: `const chars = await Promise.all(ids.map(id => db.character.findUnique({ where: { id } })))`
+  - Good: `const chars = await db.character.findMany({ where: { id: { in: ids } } }); const map = new Map(chars.map(c => [c.id, c]));`
+- **Why:** DB round-trips are the bottleneck. Batching reduces 100 queries to 1-2.
+- **Past incidents:**
+  - `shop/items/route.ts`: 160ms overhead from calling `getGameConfig()` once per consumable in loop.
+  - `social/messages/route.ts`: Called `character.findUnique()` inside Promise.all per conversation.
+
+### API Route Error Handling (CRITICAL)
+- **Every API route handler MUST wrap its body in try/catch.**
+- **Why:** Unhandled errors return raw 500 with stack traces, exposing internal structure and revealing secrets.
+- **Pattern:** `async (req, res) => { try { ... } catch (error) { console.error('context:', error); return res.status(500).json({message: 'Internal error'}); } }`
+- **What to log:** Error message, stacktrace, relevant request context (NOT user secrets like email/tokens).
+- **What NOT to log:** User email, passwords, auth tokens, API keys, PII.
+- **Apply to:** ALL routes in `backend/src/routes/` — every Next.js API handler.
+- **Past incidents:** ~5 routes had no try/catch, returned stack traces with database structure to client.
+
+### Logging Security (CRITICAL — PII Protection)
+- **NEVER log PII:** email, password, auth tokens, session IDs, API keys, credit card numbers, social security numbers.
+- **Safe to log:** user ID (numeric), character name, IP address (masked), request method/path, error code, timestamp.
+- **Pattern:** `console.log('Login attempt for user ${userId}')` NOT `console.log('Login for ${email}')`
+- **Audit rule:** Grep logs for dangerous patterns: `console.log.*email`, `console.log.*password`, `console.log.*token`, `console.log.*key`, `console.log.*secret`.
+- **Past incidents:** `auth/login/route.ts` logged user email in console.log, visible in Vercel logs.
+
+### Force Unwrap Policy (CRITICAL — Swift)
+- **Zero force unwrap policy.** Replace ALL `!` with safe unwrapping or guard clauses.
+- **Safe patterns:**
+  - `if let` / `guard let` — for optionals that might be nil
+  - `?? defaultValue` — for TimeZone, URL, other standard types
+  - `guard else throw` — in throwing functions
+- **Only exception:** Hardcoded URL literals with `swiftlint disable` comment: `let url = URL(string: "https://example.com")! // swiftlint:disable:this force_unwrap`
+- **Why:** Force unwraps crash the app if the optional is nil. Safe unwrapping gives control flow and error handling.
+- **Examples caught:**
+  - `cached!` after `!= nil` check — use `if let cached` instead
+  - `URL(string:)!` for user input — use `guard let url = URL(string: input)`
+  - `TimeZone(identifier:)!` — use `?? .gmt` fallback
+- **Verifying:** `grep -rn "![\s\n]" Hexbound/Hexbound/Views/ --include="*.swift" | grep -v "swiftlint:disable"` — should find zero matches.
+
+### SwiftUI Callback Closures — Retain Cycles (CRITICAL)
+- **All callback closures (onEvent, onComplete, onTap, onDismiss, etc.) MUST use `[weak self]` capture.**
+- **Why:** `[self]` creates a retain cycle — the closure keeps the view alive, the view keeps the closure alive.
+- **Pattern:** `{ [weak self] in guard let self else { return } ... }`
+- **Apply to:** Every closure passed to `.onChange`, buttons, gesture handlers, custom callbacks, async callbacks.
+- **Past incidents:** `CombatDetailView` used `[self]` in callback closure → retain cycle, view never deallocated.
+
+### Dead Code & File Cleanup (MAINTENANCE)
+- **Periodic dead code sweeps are mandatory.** Mark deprecated files explicitly in CLAUDE.md or with `@available(*, deprecated)`.
+- **Common dead code found:**
+  - Swift: Empty files (0 bytes), files still in Xcode project but no callers. Still in pbxproj? Must remove both references and file.
+  - TypeScript: Unused imports, unused exports, never-imported functions, unreachable code branches.
+- **Cleanup checklist:** After ANY large refactor (replacing components, rewriting routes):
+  1. Grep for imports of the old name — grep entire codebase, not just one folder
+  2. Delete file + remove from project references (pbxproj for Swift, no special action for TS)
+  3. Verify build succeeds (missing pbxproj entry = Xcode compile error)
+- **Files cleaned up (2026-03-23):**
+  - Swift: `HubCharacterCard.swift` (0 bytes, deprecated), `ShopItemCardView.swift` (71 lines, use `ItemCardView` instead)
+  - TypeScript: `guest-guard.ts` (18 lines, never imported), `ownership.ts` (16 lines, never imported)
+
 ## Git Watcher (Auto-Commit from VM)
 
 The project has a **git watcher script** at `scripts/git-watcher.sh` that enables auto-commit from Claude VM sessions.

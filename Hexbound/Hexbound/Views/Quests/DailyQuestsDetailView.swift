@@ -82,7 +82,7 @@ struct DailyQuestsDetailView: View {
     private func timeUntilReset() -> String {
         let now = Date()
         var utc = Calendar(identifier: .gregorian)
-        utc.timeZone = TimeZone(identifier: "UTC")!
+        utc.timeZone = TimeZone(identifier: "UTC") ?? .gmt
         guard let tomorrow = utc.date(byAdding: .day, value: 1, to: now),
               let midnight = utc.date(from: utc.dateComponents([.year, .month, .day], from: tomorrow))
         else { return "" }
