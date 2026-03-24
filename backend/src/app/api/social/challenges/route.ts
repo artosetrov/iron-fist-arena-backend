@@ -436,24 +436,24 @@ async function handleAccept(character: any, body: any) {
   }
 
   // ELO calculation
-  const winnerK = getKFactor(winner.pvpCalibrationGames)
-  const loserK = getKFactor(loser.pvpCalibrationGames)
+  const winnerK = await getKFactor(winner.pvpCalibrationGames)
+  const loserK = await getKFactor(loser.pvpCalibrationGames)
   const expectedWin = 1 / (1 + Math.pow(10, (loser.pvpRating - winner.pvpRating) / 400))
   const expectedLose = 1 - expectedWin
   const newWinnerRating = Math.max(0, Math.round(winner.pvpRating + winnerK * (1 - expectedWin)))
   const newLoserRating = Math.max(0, Math.round(loser.pvpRating + loserK * (0 - expectedLose)))
 
   // Gold/XP rewards (with duel multiplier)
-  const winnerGoldBase = levelScaledReward(winner.level, GOLD_REWARDS.WIN_BASE)
-  const loserGoldBase = levelScaledReward(loser.level, GOLD_REWARDS.LOSE_BASE)
-  const winnerGold = Math.round(winnerGoldBase * chaGoldBonus(winner.cha) * CHALLENGE_GOLD_MULTIPLIER)
-  const loserGold = Math.round(loserGoldBase * chaGoldBonus(loser.cha))
-  const winnerXp = levelScaledReward(winner.level, XP_REWARDS.WIN_BASE)
-  const loserXp = levelScaledReward(loser.level, XP_REWARDS.LOSE_BASE)
+  const winnerGoldBase = levelScaledReward(GOLD_REWARDS.PVP_WIN_BASE, winner.level)
+  const loserGoldBase = levelScaledReward(GOLD_REWARDS.PVP_LOSS_BASE, loser.level)
+  const winnerGold = chaGoldBonus(Math.round(winnerGoldBase * CHALLENGE_GOLD_MULTIPLIER), winner.cha)
+  const loserGold = chaGoldBonus(loserGoldBase, loser.cha)
+  const winnerXp = levelScaledReward(XP_REWARDS.PVP_WIN_XP, winner.level)
+  const loserXp = levelScaledReward(XP_REWARDS.PVP_LOSS_XP, loser.level)
 
   // Persist HP
-  const winnerFinalHp = challengerWon ? combatResult.player1FinalHp : combatResult.player2FinalHp
-  const loserFinalHp = challengerWon ? combatResult.player2FinalHp : combatResult.player1FinalHp
+  const winnerFinalHp = Math.max(combatResult.finalHp[winnerId] ?? 0, 0)
+  const loserFinalHp = Math.max(combatResult.finalHp[loserId] ?? 0, 0)
 
   // Create PvpMatch + update characters + complete challenge — all in transaction
   const [pvpMatch] = await prisma.$transaction([
@@ -467,9 +467,9 @@ async function handleAccept(character: any, body: any) {
         player2RatingAfter: challengerWon ? newLoserRating : newWinnerRating,
         winnerId,
         loserId,
-        combatLog: combatResult.log as any,
-        matchDuration: combatResult.duration ?? 0,
-        turnsTaken: combatResult.turns ?? 0,
+        combatLog: JSON.parse(JSON.stringify(combatResult.turns)),
+        matchDuration: 0,
+        turnsTaken: combatResult.totalTurns,
         goldReward: winnerGold,
         xpReward: winnerXp,
         matchType: 'challenge',
