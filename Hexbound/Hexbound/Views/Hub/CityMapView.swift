@@ -157,11 +157,11 @@ struct CityMapView: View {
             guard ready > 0 else { return nil }
             return "READY"
 
-        // Guild Hall — pending friend requests
+        // Guild Hall — total social badge (friends + challenges + messages + revenges)
         case "guild-hall":
-            let pending = cache.socialStatus?.pendingRequests ?? 0
-            guard pending > 0 else { return nil }
-            return "\(pending)"
+            let total = cache.socialStatus?.totalBadge ?? 0
+            guard total > 0 else { return nil }
+            return "\(total)"
 
         default:
             return nil

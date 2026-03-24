@@ -243,6 +243,8 @@
 		VFX00001BLD00006 /* HealEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00006 /* HealEffect.swift */; };
 		VFX00001BLD00007 /* StatusVFXEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00007 /* StatusVFXEffects.swift */; };
 		d680a257344d7fdf12459044 /* WidgetPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = f19ff3059acb375eb47564d1 /* WidgetPill.swift */; };
+		d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5c4d89bb78c26dddad451fcc /* Challenge.swift */; };
+		69ed6fbf2f47f2843d8c3f50 /* ChallengeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44e83640753af3d064cd2dda /* ChallengeService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -485,6 +487,8 @@
 		b3dbf063205e999acde9526d /* NPCGuideWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCGuideWidget.swift; sourceTree = "<group>"; };
 		dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedHeroWidget.swift; sourceTree = "<group>"; };
 		f19ff3059acb375eb47564d1 /* WidgetPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPill.swift; sourceTree = "<group>"; };
+		5c4d89bb78c26dddad451fcc /* Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Challenge.swift; sourceTree = "<group>"; };
+		44e83640753af3d064cd2dda /* ChallengeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -745,6 +749,7 @@
 				18860E524F76C28304AB39AF /* AuthService.swift */,
 				39859708651A5AACC1204865 /* BattlePassService.swift */,
 				D9E867F52B861525354D0709 /* BattlePreloader.swift */,
+				44e83640753af3d064cd2dda /* ChallengeService.swift */,
 				F7A5811B35D2599327C7F9CE /* CharacterService.swift */,
 				3890414A062272EB010CBAE9 /* CombatEngine.swift */,
 				5CD1C05B7BC3FD0D9E2E844D /* CombatService.swift */,
@@ -909,6 +914,7 @@
 				0337A4B35D2288E5501C6665 /* Achievement.swift */,
 				BFF230EF79980A38C6D413DF /* AppearanceSkin.swift */,
 				889F29A69DC229FCE6DEF613 /* BattlePassData.swift */,
+				5c4d89bb78c26dddad451fcc /* Challenge.swift */,
 				E47BF69C872101A05B35E80C /* Character.swift */,
 				E9792A8A2127BC3038E37E96 /* CombatData.swift */,
 				69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */,
@@ -1203,6 +1209,8 @@
 				82C5D1FA1A587E598C410E8D /* BattlePassService.swift in Sources */,
 				96844CD8AFAA42E132100B2A /* BattlePassViewModel.swift in Sources */,
 				2640A473732509AAF202AEC2 /* BattlePreloader.swift in Sources */,
+				d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */,
+				69ed6fbf2f47f2843d8c3f50 /* ChallengeService.swift in Sources */,
 				FF8A6609F9A15BDE7717A743 /* ButtonStyles.swift in Sources */,
 				92770A80367263C6EF378362 /* CardStyles.swift in Sources */,
 				E5AB8CE71D5D326878C5CD99 /* Character.swift in Sources */,

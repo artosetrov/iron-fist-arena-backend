@@ -37,7 +37,7 @@ struct GuildHallDetailView: View {
                             switch vm.selectedTab {
                             case .allies: alliesTab(vm)
                             case .scrolls: comingSoonPlaceholder("Scrolls")
-                            case .duels: comingSoonPlaceholder("Duels")
+                            case .duels: duelsTab(vm)
                             }
 
                             Spacer().frame(height: LayoutConstants.spaceLG)
@@ -71,6 +71,21 @@ struct GuildHallDetailView: View {
             let viewModel = GuildHallViewModel(characterId: charId)
             vm = viewModel
             await viewModel.loadFriends()
+        }
+        .onChange(of: vm?.selectedTab) { _, newTab in
+            guard let vm, newTab == .duels, vm.duelsLoadState == .idle else { return }
+            Task { await vm.loadChallenges() }
+        }
+        .sheet(isPresented: Binding(
+            get: { vm?.showDuelResult ?? false },
+            set: { newValue in
+                vm?.showDuelResult = newValue
+                if !newValue { vm?.duelResult = nil }
+            }
+        )) {
+            if let result = vm?.duelResult {
+                duelResultSheet(result)
+            }
         }
     }
 
@@ -367,7 +382,22 @@ struct GuildHallDetailView: View {
             } else {
                 Menu {
                     Button {
-                        // TODO: Challenge — Phase 3
+                        Task {
+                            let success = await vm.sendChallenge(targetId: friend.id)
+                            if success {
+                                appState.showToast(
+                                    title: "Challenge Sent",
+                                    message: "\(friend.characterName) has 24h to respond",
+                                    type: .success
+                                )
+                            } else {
+                                appState.showToast(
+                                    title: "Challenge Failed",
+                                    message: "Could not send challenge",
+                                    type: .error
+                                )
+                            }
+                        }
                     } label: {
                         Label("Challenge", systemImage: "flame.fill")
                     }
@@ -531,6 +561,327 @@ struct GuildHallDetailView: View {
 
     // MARK: - Coming Soon Placeholder
 
+    // MARK: - Duels Tab
+
+    @ViewBuilder
+    private func duelsTab(_ vm: GuildHallViewModel) -> some View {
+        switch vm.duelsLoadState {
+        case .idle, .loading:
+            VStack(spacing: LayoutConstants.spaceMD) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                        .frame(height: 80)
+                        .shimmer()
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+        case .error:
+            VStack(spacing: LayoutConstants.spaceMD) {
+                ErrorStateView(
+                    message: "Failed to load duels",
+                    retryAction: { Task { await vm.loadChallenges() } }
+                )
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+        case .loaded:
+            if vm.incomingChallenges.isEmpty && vm.outgoingChallenges.isEmpty && vm.completedChallenges.isEmpty {
+                duelsEmptyState
+            } else {
+                duelsContent(vm)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func duelsContent(_ vm: GuildHallViewModel) -> some View {
+        // Incoming challenges
+        if !vm.incomingChallenges.isEmpty {
+            sectionLabel("INCOMING CHALLENGES", count: vm.incomingChallenges.count)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+            ForEach(vm.incomingChallenges) { challenge in
+                incomingChallengeCard(challenge, vm: vm)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
+
+        // Outgoing challenges
+        if !vm.outgoingChallenges.isEmpty {
+            sectionLabel("SENT CHALLENGES", count: vm.outgoingChallenges.count)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+            ForEach(vm.outgoingChallenges) { challenge in
+                outgoingChallengeCard(challenge)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
+
+        // Completed duels
+        if !vm.completedChallenges.isEmpty {
+            GoldDivider()
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.vertical, LayoutConstants.spaceSM)
+
+            sectionLabel("RECENT DUELS", count: vm.completedChallenges.count)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+            ForEach(vm.completedChallenges) { challenge in
+                completedChallengeCard(challenge)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
+    }
+
+    private func sectionLabel(_ title: String, count: Int) -> some View {
+        HStack {
+            Text(title)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(2)
+            Spacer()
+            Text("\(count)")
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                .foregroundStyle(DarkFantasyTheme.goldDim)
+        }
+    }
+
+    // MARK: - Challenge Cards
+
+    private func incomingChallengeCard(_ challenge: IncomingChallenge, vm: GuildHallViewModel) -> some View {
+        let isProcessing = vm.processingChallengeId == challenge.id
+
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            // Challenger avatar
+            characterAvatar(
+                name: challenge.challenger.characterName,
+                className: challenge.challenger.characterClass
+            )
+
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(challenge.challenger.characterName)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text("Lv.\(challenge.challenger.level)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                    let rank = PvPRank.fromRating(challenge.challenger.pvpRating)
+                    Image(systemName: rank.icon)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(rank.color)
+                    Text("\(challenge.challenger.pvpRating)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(rank.color)
+                }
+
+                if let msg = challenge.message {
+                    Text("\"\(msg)\"")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.goldDim)
+                        .italic()
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 4)
+
+            // Accept / Decline buttons
+            VStack(spacing: 4) {
+                Button {
+                    Task { await vm.acceptChallenge(challenge) }
+                } label: {
+                    if isProcessing {
+                        ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.7)
+                    } else {
+                        Image(systemName: "swords")
+                        Text("Fight")
+                    }
+                }
+                .buttonStyle(.compactPrimary)
+                .disabled(isProcessing)
+
+                Button {
+                    Task { await vm.declineChallenge(challenge) }
+                } label: {
+                    Text("Decline")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .disabled(isProcessing)
+            }
+        }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.danger.opacity(0.05),
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.08))
+        .cornerBrackets(color: DarkFantasyTheme.danger.opacity(0.3), length: 14, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+    }
+
+    private func outgoingChallengeCard(_ challenge: OutgoingChallenge) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            characterAvatar(
+                name: challenge.defender.characterName,
+                className: challenge.defender.characterClass
+            )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(challenge.defender.characterName)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text("Lv.\(challenge.defender.level)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                    Text(challenge.status.capitalized)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(statusColor(challenge.status))
+                }
+            }
+
+            Spacer()
+
+            // Status icon
+            Image(systemName: statusIcon(challenge.status))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(statusColor(challenge.status))
+        }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.1))
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
+    }
+
+    private func completedChallengeCard(_ challenge: CompletedChallenge) -> some View {
+        let myId = appState.currentCharacter?.id
+        let didWin = challenge.winnerId == myId
+        let opponentName = challenge.challenger.id == myId
+            ? challenge.defender.characterName
+            : challenge.challenger.characterName
+        let accentColor = didWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            // Win/Loss indicator
+            Image(systemName: didWin ? "trophy.fill" : "xmark.shield.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(accentColor)
+                .frame(width: 36)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(didWin ? "Victory vs \(opponentName)" : "Defeat vs \(opponentName)")
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
+
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    HStack(spacing: 2) {
+                        Image("icon-gold")
+                            .resizable()
+                            .frame(width: 12, height: 12)
+                        Text("+\(challenge.goldReward)")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                    }
+                    HStack(spacing: 2) {
+                        Text("+\(challenge.xpReward) XP")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.cyan)
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: accentColor.opacity(0.04),
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: accentColor.opacity(0.08))
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
+    }
+
+    private var duelsEmptyState: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Image(systemName: "swords")
+                .font(.system(size: 40))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+            Text("No Duels Yet")
+                .font(DarkFantasyTheme.section(size: 16))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+            Text("Challenge opponents from the Arena or Leaderboard.")
+                .font(DarkFantasyTheme.body(size: 14))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                appState.mainPath.append(AppRoute.arena)
+            } label: {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: "figure.fencing")
+                    Text("Go to Arena")
+                }
+            }
+            .buttonStyle(.secondary)
+            .frame(width: 200)
+        }
+        .padding(.vertical, LayoutConstants.space2XL)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    // MARK: - Challenge Status Helpers
+
+    private func statusColor(_ status: String) -> Color {
+        switch status {
+        case "pending": return DarkFantasyTheme.stamina
+        case "accepted", "completed": return DarkFantasyTheme.success
+        case "declined": return DarkFantasyTheme.danger
+        case "expired": return DarkFantasyTheme.textDisabled
+        default: return DarkFantasyTheme.textTertiary
+        }
+    }
+
+    private func statusIcon(_ status: String) -> String {
+        switch status {
+        case "pending": return "hourglass"
+        case "accepted", "completed": return "checkmark.circle.fill"
+        case "declined": return "xmark.circle.fill"
+        case "expired": return "clock.badge.xmark"
+        default: return "questionmark.circle"
+        }
+    }
+
     private func comingSoonPlaceholder(_ feature: String) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "scroll.fill")
@@ -549,6 +900,110 @@ struct GuildHallDetailView: View {
         .padding(.vertical, LayoutConstants.space2XL)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    // MARK: - Duel Result Sheet
+
+    private func duelResultSheet(_ result: DuelResult) -> some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Spacer().frame(height: LayoutConstants.spaceLG)
+
+            // Trophy / Skull icon
+            Image(systemName: result.won ? "trophy.fill" : "xmark.shield.fill")
+                .font(.system(size: 56, weight: .bold))
+                .foregroundStyle(result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
+                .shadow(color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.4), radius: 12)
+
+            Text(result.won ? "VICTORY" : "DEFEAT")
+                .font(DarkFantasyTheme.title(size: 28))
+                .foregroundStyle(result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
+                .tracking(4)
+
+            GoldDivider()
+
+            // Opponent info
+            Text("vs \(result.won ? result.defenderName : result.challengerName)")
+                .font(DarkFantasyTheme.section(size: 16))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+            // Rewards panel
+            VStack(spacing: LayoutConstants.spaceSM) {
+                // Rating change
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    Text("Rating")
+                        .font(DarkFantasyTheme.body(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Spacer()
+                    Text("\(result.ratingBefore) → \(result.ratingAfter)")
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Text("(\(result.ratingChange > 0 ? "+" : "")\(result.ratingChange))")
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(result.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
+                }
+
+                // Gold reward
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image("icon-gold")
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                    Text("Gold")
+                        .font(DarkFantasyTheme.body(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Spacer()
+                    Text("+\(result.goldReward)")
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                }
+
+                // XP reward
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(DarkFantasyTheme.cyan)
+                    Text("XP")
+                        .font(DarkFantasyTheme.body(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Spacer()
+                    Text("+\(result.xpReward)")
+                        .font(DarkFantasyTheme.section(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.cyan)
+                }
+            }
+            .padding(LayoutConstants.cardPadding)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.1))
+            .cornerBrackets(color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.3), length: 14, thickness: 1.5)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+            Spacer()
+
+            Button {
+                vm?.showDuelResult = false
+                vm?.duelResult = nil
+                // Reload challenges to reflect new state
+                Task { await vm?.loadChallenges() }
+            } label: {
+                Text("Continue")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.primary)
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.bottom, LayoutConstants.spaceLG)
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(DarkFantasyTheme.bgPrimary)
     }
 
     // MARK: - Helpers

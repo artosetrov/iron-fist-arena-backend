@@ -275,6 +275,8 @@ model Character {
   friendsReceived     Friendship[] @relation("friendship_friend")
   sentMessages        DirectMessage[] @relation("sent_messages")
   receivedMessages    DirectMessage[] @relation("received_messages")
+  challengesSent      Challenge[] @relation("challenge_challenger")
+  challengesReceived  Challenge[] @relation("challenge_defender")
 
   @@index([userId])
   @@index([pvpRating])
@@ -376,6 +378,7 @@ model PvpMatch {
   loser         Character? @relation("loser", fields: [loserId], references: [id])
 
   revengeQueues RevengeQueue[]
+  challenge     Challenge?
 
   @@index([player1Id])
   @@index([player2Id])
@@ -1194,6 +1197,14 @@ model ShopOfferPurchase {
 
 // ──── Social System ────
 
+enum ChallengeStatus {
+  pending
+  accepted
+  declined
+  expired
+  completed
+}
+
 enum FriendshipStatus {
   pending
   accepted
@@ -1235,4 +1246,29 @@ model DirectMessage {
   @@index([senderId, createdAt])
   @@index([expiresAt])
   @@map("direct_messages")
+}
+
+// --- Challenges (Async Duels) ---
+
+model Challenge {
+  id              String          @id @default(uuid())
+  challengerId    String          @map("challenger_id")
+  defenderId      String          @map("defender_id")
+  status          ChallengeStatus @default(pending)
+  matchId         String?         @unique @map("match_id")
+  message         String?         @db.VarChar(100)
+  goldWager       Int             @default(0) @map("gold_wager")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  expiresAt       DateTime        @map("expires_at")
+  respondedAt     DateTime?       @map("responded_at")
+  completedAt     DateTime?       @map("completed_at")
+
+  challenger      Character       @relation("challenge_challenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  defender        Character       @relation("challenge_defender", fields: [defenderId], references: [id], onDelete: Cascade)
+  match           PvpMatch?       @relation(fields: [matchId], references: [id])
+
+  @@index([defenderId, status])
+  @@index([challengerId, status])
+  @@index([expiresAt])
+  @@map("challenges")
 }

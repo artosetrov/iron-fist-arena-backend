@@ -6,7 +6,6 @@ import SwiftUI
 struct LeaderboardPlayerDetailSheet: View {
     let entry: LeaderboardEntry
     let playerCharacter: Character
-    let onChallenge: () -> Void
     let onMessage: () -> Void
     let onAddFriend: () -> Void
 
@@ -19,6 +18,9 @@ struct LeaderboardPlayerDetailSheet: View {
     @State private var errorMessage: String?
     @State private var friendshipState: FriendshipButtonState = .none
     @State private var isFriendActionLoading = false
+    @State private var isSendingChallenge = false
+    @State private var challengeSent = false
+    @State private var challengeError: String?
 
     var body: some View {
         ZStack {
@@ -273,15 +275,25 @@ struct LeaderboardPlayerDetailSheet: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             GoldDivider()
 
-            Button(action: onChallenge) {
+            Button {
+                Task { await sendChallenge() }
+            } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "flame.fill")
-                    Text("Challenge")
+                    if isSendingChallenge {
+                        ProgressView().tint(DarkFantasyTheme.textOnGold)
+                    } else if challengeSent {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Challenge Sent")
+                    } else {
+                        Image(systemName: "flame.fill")
+                        Text("Challenge")
+                    }
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
-            .accessibilityLabel("Challenge opponent to battle")
+            .disabled(isSendingChallenge || challengeSent)
+            .accessibilityLabel(challengeSent ? "Challenge already sent" : "Challenge opponent to battle")
 
             HStack(spacing: LayoutConstants.spaceSM) {
                 Button(action: onMessage) {
@@ -410,6 +422,38 @@ struct LeaderboardPlayerDetailSheet: View {
         if success {
             friendshipState = .friends
         }
+    }
+
+    // MARK: - Challenge Action
+
+    private func sendChallenge() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        isSendingChallenge = true
+        challengeError = nil
+
+        do {
+            _ = try await ChallengeService.shared.sendChallenge(
+                characterId: charId,
+                targetId: entry.characterId,
+                message: nil
+            )
+            challengeSent = true
+            SFXManager.shared.play(.uiSuccess)
+            appState.showToast(
+                title: "Challenge Sent",
+                message: "\(entry.characterName) has 24h to respond",
+                type: .success
+            )
+        } catch {
+            appState.showToast(
+                title: "Challenge Failed",
+                message: "Could not send challenge. Try again later.",
+                type: .error,
+                actionLabel: "Retry",
+                action: { Task { await sendChallenge() } }
+            )
+        }
+        isSendingChallenge = false
     }
 
     // MARK: - Helpers

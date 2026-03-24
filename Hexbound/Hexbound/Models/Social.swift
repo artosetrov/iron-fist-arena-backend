@@ -109,14 +109,10 @@ struct SocialStatus: Codable {
     let pendingRequests: Int
     let unreadMessages: Int
     let pendingRevenges: Int
+    let pendingChallenges: Int
     let totalBadge: Int
-
-    enum CodingKeys: String, CodingKey {
-        case pendingRequests = "pending_requests"
-        case unreadMessages = "unread_messages"
-        case pendingRevenges = "pending_revenges"
-        case totalBadge = "total_badge"
-    }
+    // No CodingKeys — APIClient's .convertFromSnakeCase handles camelCase passthrough.
+    // Backend sends camelCase (pendingRequests, etc.) which passes through unchanged.
 }
 
 // MARK: - Friendship Status Response

@@ -120,10 +120,6 @@ struct LeaderboardDetailView: View {
                 LeaderboardPlayerDetailSheet(
                     entry: player,
                     playerCharacter: character,
-                    onChallenge: {
-                        selectedPlayerForDetail = nil
-                        // TODO: Navigate to PvP challenge flow
-                    },
                     onMessage: {
                         selectedPlayerForDetail = nil
                         // TODO: Navigate to messaging

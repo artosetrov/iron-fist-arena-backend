@@ -22,11 +22,21 @@ class GuildHallViewModel {
     var friendCount: Int = 0
     var maxFriends: Int = 50
 
+    // Duels tab
+    var incomingChallenges: [IncomingChallenge] = []
+    var outgoingChallenges: [OutgoingChallenge] = []
+    var completedChallenges: [CompletedChallenge] = []
+    var duelsLoadState: LoadState = .idle
+    var duelResult: DuelResult?
+    var showDuelResult = false
+
     // Processing states
     var processingRequestId: String?
     var processingFriendId: String?
+    var processingChallengeId: String?
 
     private let socialService = SocialService.shared
+    private let challengeService = ChallengeService.shared
     private var characterId: String
 
     init(characterId: String) {
@@ -129,5 +139,67 @@ class GuildHallViewModel {
 
     var alliesBadgeCount: Int {
         incomingRequests.count
+    }
+
+    var duelsBadgeCount: Int {
+        incomingChallenges.count
+    }
+
+    // MARK: - Duels
+
+    func loadChallenges() async {
+        duelsLoadState = .loading
+        do {
+            let response = try await challengeService.getChallenges(characterId: characterId)
+            incomingChallenges = response.incoming
+            outgoingChallenges = response.outgoing
+            completedChallenges = response.completed
+            duelsLoadState = .loaded
+        } catch {
+            duelsLoadState = .error
+        }
+    }
+
+    func acceptChallenge(_ challenge: IncomingChallenge) async {
+        processingChallengeId = challenge.id
+        do {
+            let result = try await challengeService.acceptChallenge(
+                characterId: characterId,
+                challengeId: challenge.id
+            )
+            duelResult = result
+            showDuelResult = true
+            incomingChallenges.removeAll { $0.id == challenge.id }
+        } catch {
+            // Error handled by service
+        }
+        processingChallengeId = nil
+    }
+
+    func declineChallenge(_ challenge: IncomingChallenge) async {
+        processingChallengeId = challenge.id
+        do {
+            try await challengeService.declineChallenge(
+                characterId: characterId,
+                challengeId: challenge.id
+            )
+            incomingChallenges.removeAll { $0.id == challenge.id }
+        } catch {
+            // Error handled by service
+        }
+        processingChallengeId = nil
+    }
+
+    func sendChallenge(targetId: String, message: String? = nil) async -> Bool {
+        do {
+            _ = try await challengeService.sendChallenge(
+                characterId: characterId,
+                targetId: targetId,
+                message: message
+            )
+            return true
+        } catch {
+            return false
+        }
     }
 }

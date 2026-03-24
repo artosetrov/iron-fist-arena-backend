@@ -40,8 +40,7 @@ export async function GET(req: NextRequest) {
       where: { receiverId: characterId, isRead: false },
     })
 
-    // Count incoming challenges (PvP matches where I lost and haven't seen)
-    // Reuse revenge queue for this — challenges that resulted in losses create revenge entries
+    // Count unseen revenge entries
     const pendingRevenges = await prisma.revengeQueue.count({
       where: {
         victimId: characterId,
@@ -51,12 +50,22 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    const totalBadge = pendingRequests + unreadMessages + pendingRevenges
+    // Count pending duel challenges (incoming)
+    const pendingChallenges = await prisma.challenge.count({
+      where: {
+        defenderId: characterId,
+        status: 'pending',
+        expiresAt: { gt: new Date() },
+      },
+    })
+
+    const totalBadge = pendingRequests + unreadMessages + pendingRevenges + pendingChallenges
 
     return NextResponse.json({
       pendingRequests,
       unreadMessages,
       pendingRevenges,
+      pendingChallenges,
       totalBadge,
     })
   } catch (error) {
