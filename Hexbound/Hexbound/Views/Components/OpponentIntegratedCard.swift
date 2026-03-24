@@ -109,8 +109,9 @@ struct OpponentIntegratedCard: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 let rank = profile.pvpRank
                 HStack(spacing: 4) {
-                    Text(rank.icon)
-                        .font(.system(size: 13))
+                    Image(systemName: rank.icon)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(rank.color)
                     Text(rank.rawValue)
                         .font(DarkFantasyTheme.section(size: 13))
                         .foregroundStyle(rank.color)
@@ -124,8 +125,9 @@ struct OpponentIntegratedCard: View {
                 )
 
                 HStack(spacing: 4) {
-                    Text("⚔")
-                        .font(.system(size: 12))
+                    Image(systemName: "swords")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(DarkFantasyTheme.gold)
                     Text("\(profile.pvpRating)")
                         .font(DarkFantasyTheme.section(size: 13))
                         .foregroundStyle(DarkFantasyTheme.gold)

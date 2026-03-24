@@ -25,14 +25,17 @@ enum PvPRank: String, CaseIterable {
 
     var icon: String {
         switch self {
-        case .bronze: "🥉"
-        case .silver: "🥈"
-        case .gold: "🥇"
-        case .platinum: "💎"
-        case .diamond: "💠"
-        case .grandmaster: "👑"
+        case .bronze: "shield"
+        case .silver: "shield.fill"
+        case .gold: "shield.lefthalf.filled"
+        case .platinum: "star.shield"
+        case .diamond: "diamond"
+        case .grandmaster: "crown"
         }
     }
+
+    /// Whether `icon` is an SF Symbol (true) or emoji (false)
+    var iconIsSFSymbol: Bool { true }
 
     var minRating: Int {
         switch self {

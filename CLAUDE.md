@@ -418,7 +418,31 @@ After ANY `git merge` or `git pull --no-rebase`, **NEVER** blindly `git add -A &
 4. **Never trust `git checkout --theirs`/`--ours` during rebase** — "theirs" and "ours" are swapped compared to merge. Verify the file content after.
 5. **Seed scripts / Prisma files** — particularly prone to conflicts since both local and remote may have edited the same `.finally()` block.
 
-**Past incident:** Merge with ~25 conflicts was committed with `git add -A` without resolving. `seed-dungeon-drops.ts` had `<<<<<<< HEAD` at line 330, which broke the Vercel build. Required a second commit to fix.
+**Grep must scan ALL files, not just backend/admin:**
+```bash
+grep -rn "^<<<<<<<\|^=======\$\|^>>>>>>>" . --include="*.swift" --include="*.md" --include="*.ts" --include="*.tsx" --include="*.prisma" | grep -v node_modules | grep -v ".git/"
+```
+An orphaned `<<<<<<< HEAD` without a matching `=======`/`>>>>>>>` can survive partial conflict resolution. Always grep after resolving.
+
+**Past incidents:**
+- Merge with ~25 conflicts was committed with `git add -A` without resolving. `seed-dungeon-drops.ts` had `<<<<<<< HEAD` at line 330, broke Vercel build.
+- CLAUDE.md had orphaned `<<<<<<< HEAD` marker (without `=======`/`>>>>>>>`) after partial conflict resolution — persisted until next audit.
+
+## Prisma Migrate Resolve Gotcha (CRITICAL)
+
+`prisma migrate resolve --applied <name>` marks a migration as applied in `_prisma_migrations` table **WITHOUT executing the SQL**. It only updates the migration history — the actual DDL is NOT run.
+
+**When to use:** Only when the SQL was already applied manually (e.g., via Supabase SQL editor) and you need Prisma to acknowledge it.
+
+**When NOT to use:** When the migration SQL has not been run yet. In that case, either run `prisma migrate dev` (local) or `prisma migrate deploy` (production), or apply the SQL manually first via `execute_sql` / Supabase dashboard, THEN `resolve --applied`.
+
+**Past incident:** Social system migration was marked as applied via `resolve`, but tables `friendships`, `direct_messages` and column `last_active_at` never existed in the database. All API endpoints returned 500 because Prisma client expected these tables. Fixed by manually executing the migration SQL via Supabase MCP.
+
+**Verification after any migration:**
+```sql
+SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'characters' ORDER BY ordinal_position;
+```
+Always verify the expected tables/columns actually exist after migration.
 
 ## Color Token Shorthand in SwiftUI (CRITICAL)
 

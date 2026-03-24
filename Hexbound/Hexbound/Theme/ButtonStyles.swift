@@ -458,6 +458,9 @@ struct NeutralButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        let borderColor = isEnabled ? DarkFantasyTheme.borderMedium : DarkFantasyTheme.borderSubtle
+
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
             .foregroundStyle(isEnabled ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textDisabled)
@@ -467,9 +470,24 @@ struct NeutralButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .fill(isEnabled ? DarkFantasyTheme.bgTertiary : DarkFantasyTheme.bgDisabled)
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed && isEnabled { SFXManager.shared.play(.uiTap) }
+            // Outer ornamental border
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+            // Surface lighting
+            .surfaceLighting(cornerRadius: LayoutConstants.buttonRadius, topHighlight: 0.04, bottomShadow: 0.06)
+            // Inner bevel
+            .innerBorder(
+                cornerRadius: LayoutConstants.buttonRadius - 2,
+                inset: 2,
+                color: borderColor.opacity(0.1)
+            )
+            // Corner brackets (subtle)
+            .cornerBrackets(color: borderColor.opacity(0.3), length: 10, thickness: 1)
+            .brightness(pressed ? -0.06 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed && isEnabled { SFXManager.shared.play(.uiTap) }
             }
     }
 }
