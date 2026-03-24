@@ -523,13 +523,13 @@ async function handleAccept(character: any, body: any) {
 
   // Post-combat async side effects
   Promise.allSettled([
-    applyLevelUp(winnerId, winnerXp),
-    applyLevelUp(loserId, loserXp),
-    updateDailyQuestProgress(winnerId, 'pvp_win', 1),
-    updateDailyQuestProgress(character.id, 'pvp_fight', 1),
-    updateDailyQuestProgress(challenge.challengerId, 'pvp_fight', 1),
-    degradeEquipment(winnerId),
-    degradeEquipment(loserId),
+    applyLevelUp(prisma, winnerId),
+    applyLevelUp(prisma, loserId),
+    updateDailyQuestProgress(prisma, winnerId, 'pvp_win', 1),
+    updateDailyQuestProgress(prisma, character.id, 'pvp_fight', 1),
+    updateDailyQuestProgress(prisma, challenge.challengerId, 'pvp_fight', 1),
+    degradeEquipment(prisma, winnerId),
+    degradeEquipment(prisma, loserId),
     cacheDeletePrefix(`leaderboard:`),
   ]).catch((err: any) => console.error('duel post-combat side effects error:', err))
 
