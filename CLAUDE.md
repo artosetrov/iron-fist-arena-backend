@@ -220,18 +220,25 @@ All stat bars and stat-related UI use a **unified gold palette** — never per-s
 
 ## Guild Hall (Social Hub) — added 2026-03-23
 
-The Guild Hall building is the social hub with 3 tabs: **ALLIES** (friends), **SCROLLS** (messages), **DUELS** (challenges). Phase 1 (Allies) is implemented; Scrolls and Duels show Coming Soon placeholders.
+The Guild Hall building is the social hub with 3 tabs: **ALLIES** (friends), **SCROLLS** (messages), **DUELS** (challenges). Allies and Duels are implemented; Scrolls shows Coming Soon placeholder.
 
 - Route: `AppRoute.guildHall` → `GuildHallDetailView`
-- ViewModel: `GuildHallViewModel` — `@MainActor @Observable`, manages friends list, requests, online status
+- ViewModel: `GuildHallViewModel` — `@MainActor @Observable`, manages friends list, requests, online status, challenge lists
 - Models: `Social.swift` — `FriendEntry`, `FriendRequest`, `OnlineStatus`, `FriendshipButtonState`, `SocialStatus`, `FriendsListResponse`
+- Models: `Challenge.swift` — `IncomingChallenge`, `OutgoingChallenge`, `CompletedChallenge`, `ChallengesResponse`, `SendChallengeResponse`, `SentChallengeInfo`, `DuelResult`, `DuelResultResponse`
 - Service: `SocialService.swift` — singleton, all friend actions (request/accept/decline/remove/block/unblock), status queries
+- Service: `ChallengeService.swift` — singleton, challenge actions (send/accept/decline/cancel), challenge list fetching
 - Backend: `POST /api/social/friends` (actions), `GET /api/social/friends` (list), `GET /api/social/status` (badge counts), `POST /api/social/status` (friendship status)
-- DB: `Friendship` model (pending/accepted/blocked), `DirectMessage` model (Phase 2), `lastActiveAt` on Character
+- Backend: `POST /api/social/challenges` (send/accept/decline), `GET /api/social/challenges` (incoming/outgoing/completed)
+- DB: `Friendship` model (pending/accepted/blocked), `DirectMessage` model (Phase 2), `Challenge` model (pending/accepted/declined/expired/completed), `lastActiveAt` on Character
 - Online status: computed from `lastActiveAt` — online (<5min), away (<30min), offline (>30min)
-- Anti-abuse: 20 requests/day, 24h cooldown after decline, 7-day request expiry, max 50 friends
-- Badge: Guild Hall building shows pending friend request count via `cache.socialStatus`
-- **LeaderboardPlayerDetailSheet**: Add Friend button is now a 6-state machine (`FriendshipButtonState`) — fetches friendship status on load, handles send/accept actions inline
+- Anti-abuse (friends): 20 requests/day, 24h cooldown after decline, 7-day request expiry, max 50 friends
+- Anti-abuse (challenges): max 5 pending per player, max 10 challenges/day, 24h expiry, 1 stamina per send
+- Challenge flow: send → pending → accept (runs combat, ELO, 1.2x gold multiplier) / decline / expire
+- Badge: Guild Hall building shows `totalBadge` from `cache.socialStatus` (sum of pending requests + challenges + messages + revenges)
+- **LeaderboardPlayerDetailSheet**: Challenge button sends real challenge via `ChallengeService.sendChallenge()` — no more stub closure. Add Friend button is a 6-state machine (`FriendshipButtonState`).
+- **Duel result sheet**: shown in GuildHallDetailView after accepting an incoming challenge — displays victory/defeat, rating change, gold/XP rewards
+- **Friend context menu**: Challenge option in Allies tab sends challenge via `GuildHallViewModel.sendChallenge()`
 - **Thematic naming**: Friends→Allies, Messages→Scrolls, Challenges→Duels (in-game lore)
 
 ## Hub Building System
@@ -257,7 +264,7 @@ Buildings on the hub map show **gold capsule badges** when actions are available
   - `achievements` → `"N"` — unclaimed achievement rewards (`cache.achievements.filter(\.canClaim).count`)
   - `battlepass` → `"N"` — claimable tier rewards (free + premium if owned, level ≤ current)
   - `gold-mine` → `"READY"` — slots with status `"ready"` in `cache.goldMineSlots`
-  - `guild-hall` → `"N"` — pending friend requests (`cache.socialStatus?.pendingRequests`)
+  - `guild-hall` → `"N"` — total social badge count (`cache.socialStatus?.totalBadge` — includes pending friend requests + challenges + messages + revenges)
 - **When adding a new building badge**: add a case to `badgeFor()` in `CityMapView.swift`, use data from `appState` or `cache`
 - **Badge color is gold** — never green, never red. Consistent across all buildings.
 
@@ -399,6 +406,22 @@ These are the **actual** backend enums. Do not invent values.
 - Different models (`Item`, `ShopItem`, `LootPreview`, `EquippedItem`, etc.) have **different property sets**, even if conceptually similar. Always check the specific type definition.
 - If a needed property is **missing** — use the existing field directly (e.g. `imageKey` instead of `resolvedImageKey`) or **add** a computed property to the model.
 
+## CodingKeys vs convertFromSnakeCase (CRITICAL)
+
+`APIClient.shared` uses `.convertFromSnakeCase` key decoding strategy globally. When explicit `CodingKeys` are defined on a Codable struct, **the decoder ignores `.convertFromSnakeCase` and uses raw CodingKey values directly**.
+
+**Problem:** Backend sends camelCase JSON (`pendingRequests`, `goldWager`). If your struct has `CodingKeys` mapping to snake_case (`case pendingRequests = "pending_requests"`), the decoder looks for literal `pending_requests` in JSON but finds `pendingRequests` — **decode silently fails**.
+
+**Rules:**
+1. If the backend sends **camelCase** keys (which is the default for Next.js `NextResponse.json()`), **do NOT add explicit CodingKeys** — let `.convertFromSnakeCase` pass camelCase through unchanged and match Swift property names directly.
+2. Only use explicit CodingKeys when the backend sends **actual snake_case** keys (e.g., Prisma raw query results, or endpoints with manual snake_case formatting).
+3. When in doubt, check the backend endpoint's `NextResponse.json({...})` — if it uses JS object shorthand with camelCase variable names, omit CodingKeys.
+
+**Past incident:** `SocialStatus` had explicit CodingKeys (`pending_requests`, `unread_messages`), but backend sent camelCase. Decode silently failed, `cache.socialStatus` was always nil, Guild Hall badge never showed. Fixed by removing CodingKeys.
+
+**Affected models (fixed):** `SocialStatus` (Social.swift)
+**Models that still use CodingKeys correctly:** `FriendEntry`, `FriendRequest`, `FriendsListResponse` — verify these work; if backend sends camelCase for these too, remove their CodingKeys.
+
 ## Backend TypeScript Rules (CRITICAL)
 
 - **All `get*Config()` functions in `src/lib/game/live-config.ts` are async.** Always `await` them. Missing `await` produces `Promise<number>` instead of `number` — the build will fail.
@@ -521,7 +544,9 @@ When replacing a struct, class, function, or view with a new version:
 - Model: `OpponentProfile.swift` — public character data returned by `GET /api/characters/:id/profile`.
 - Profile card layout: portrait + level/rank badges → HP bar → PvP stats grid → equipment grid → base stats (8 cols in 2-col grid) → derived stats → action buttons.
 - Equipment grid: use `ItemCardView(.equipment(...))` — each slot automatically tints border with `ItemRarity.color`.
-- **Social features (Challenge, Message, Add Friend) are stub TODOs.** Closures exist but have no backend routes or implementation yet.
+- **Challenge button** sends a real challenge via `ChallengeService.shared.sendChallenge()` — shows loading spinner, then "Challenge Sent" state with toast. No closure needed — handled internally.
+- **Message button** is still a stub TODO (Phase 2).
+- **Add Friend button** is a 6-state machine (`FriendshipButtonState`) — fully functional.
 - When extending opponent profile, verify endpoint returns the needed fields (check `OpponentProfileResponse` wrapper in backend).
 - HP bar on opponent profile: shows current HP + max HP, no regen indicator in sheet view (regen is only in detailed stats).
 
