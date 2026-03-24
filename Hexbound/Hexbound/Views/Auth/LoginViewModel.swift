@@ -70,12 +70,10 @@ final class LoginViewModel {
                 let charResult = await authService?.loadCharactersPublic() ?? .noCharacter
 
                 isLoading = false
-                switch charResult {
-                case .hasCharacter:
-                    appState.currentScreen = .game
-                case .multipleCharacters:
-                    appState.currentScreen = .characterSelect
-                case .noCharacter:
+                // Fresh login always goes to character selection
+            // (auto-login on app restart handles the "skip to hub" path)
+            switch charResult {
+                case .hasCharacter, .multipleCharacters, .noCharacter:
                     appState.currentScreen = .characterSelect
                 case .noTokens:
                     break
@@ -120,12 +118,10 @@ final class LoginViewModel {
             let charResult = await authService?.loadCharactersPublic() ?? .noCharacter
 
             isLoading = false
+            // Fresh login always goes to character selection
+            // (auto-login on app restart handles the "skip to hub" path)
             switch charResult {
-            case .hasCharacter:
-                appState.currentScreen = .game
-            case .multipleCharacters:
-                appState.currentScreen = .characterSelect
-            case .noCharacter:
+            case .hasCharacter, .multipleCharacters, .noCharacter:
                 appState.currentScreen = .characterSelect
             case .noTokens:
                 break

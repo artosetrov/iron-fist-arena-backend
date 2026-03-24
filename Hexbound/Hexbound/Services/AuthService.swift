@@ -42,24 +42,10 @@ final class AuthService {
             setupUnauthorizedHandler()
 
             // Load characters and route appropriately
-            let charResult = await loadCharacters()
-            switch charResult {
-            case .hasCharacter:
-                // Single hero auto-selected — load game data and go to hub
-                if let cache = cache {
-                    let initService = GameInitService(appState: appState, cache: cache)
-                    await initService.loadGameData()
-                }
-                appState.currentScreen = .game
-            case .multipleCharacters:
-                // 2+ heroes — go to character selection
-                appState.currentScreen = .characterSelect
-            case .noCharacter:
-                // No character — go to character selection (will show empty state / create CTA)
-                appState.currentScreen = .characterSelect
-            case .noTokens:
-                break
-            }
+            // Fresh login always goes to character selection
+            // (auto-login on app restart handles the "skip to hub" path)
+            _ = await loadCharacters()
+            appState.currentScreen = .characterSelect
 
             return .success(())
         } catch let error as APIError {
