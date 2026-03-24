@@ -401,7 +401,7 @@ async function handleAccept(character: any, body: any) {
   }
 
   // Run combat — challenger is player1, defender is player2
-  const combatResult = runCombat(attackerData, defenderData)
+  const combatResult = await runCombat(attackerData, defenderData)
 
   // Determine winner/loser
   const challengerWon = combatResult.winnerId === challenge.challengerId
