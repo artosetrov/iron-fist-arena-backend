@@ -882,53 +882,66 @@ struct AnyButtonStyle: ButtonStyle {
 
 // MARK: - Spinning Rays Background
 
-/// Animated spinning rays (spokes) like a light wheel — orange radial beams rotating continuously.
+/// Animated spinning rays (spokes) like a light wheel — gold radial beams rotating continuously
+/// with pulsing brightness. Uses TimelineView for real per-frame animation (Canvas ignores
+/// SwiftUI animation interpolation, so withAnimation on rotation doesn't work).
 struct SpinningRaysView: View {
-    @State private var rotation: Double = 0
+    @State private var pulsePhase: Double = 0
     let spokeCount: Int = 14
     let color: Color = DarkFantasyTheme.goldBright
+    /// Full rotation period in seconds
+    let rotationDuration: Double = 20
+    /// Pulse cycle period in seconds
+    let pulseDuration: Double = 3
 
     var body: some View {
-        GeometryReader { geo in
-            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.4)
-            let radius = max(geo.size.width, geo.size.height) * 1.2
+        TimelineView(.animation) { timeline in
+            let elapsed = timeline.date.timeIntervalSinceReferenceDate
+            // Continuous rotation angle in radians
+            let rotationRad = (elapsed / rotationDuration).truncatingRemainder(dividingBy: 1.0) * .pi * 2
+            // Pulse factor: smoothly oscillates between 0.5 and 1.0
+            let pulse = 0.75 + 0.25 * sin(elapsed / pulseDuration * .pi * 2)
 
-            Canvas { context, size in
-                let angleStep = .pi * 2 / Double(spokeCount)
-                let halfWidth: Double = 0.06 // half-angle of each spoke in radians
+            GeometryReader { geo in
+                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.4)
+                let radius = max(geo.size.width, geo.size.height) * 1.2
 
-                for i in 0..<spokeCount {
-                    let angle = Double(i) * angleStep + rotation * .pi / 180
+                Canvas { context, _ in
+                    let angleStep = .pi * 2 / Double(spokeCount)
+                    let halfWidth: Double = 0.06 // half-angle of each spoke in radians
 
-                    var path = Path()
-                    path.move(to: center)
-                    path.addLine(to: CGPoint(
-                        x: center.x + radius * cos(angle - halfWidth),
-                        y: center.y + radius * sin(angle - halfWidth)
-                    ))
-                    path.addLine(to: CGPoint(
-                        x: center.x + radius * cos(angle + halfWidth),
-                        y: center.y + radius * sin(angle + halfWidth)
-                    ))
-                    path.closeSubpath()
+                    for i in 0..<spokeCount {
+                        let angle = Double(i) * angleStep + rotationRad
+                        // Alternate spokes pulse at slightly different phases for shimmer effect
+                        let spokePulse = i.isMultiple(of: 2)
+                            ? pulse
+                            : 0.75 + 0.25 * sin(elapsed / pulseDuration * .pi * 2 + .pi * 0.6)
 
-                    context.fill(path, with: .linearGradient(
-                        Gradient(colors: [
-                            color.opacity(0.35),
-                            color.opacity(0.08),
-                            color.opacity(0)
-                        ]),
-                        startPoint: center,
-                        endPoint: CGPoint(
-                            x: center.x + radius * cos(angle),
-                            y: center.y + radius * sin(angle)
-                        )
-                    ))
-                }
-            }
-            .onAppear {
-                withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
-                    rotation = 360
+                        var path = Path()
+                        path.move(to: center)
+                        path.addLine(to: CGPoint(
+                            x: center.x + radius * cos(angle - halfWidth),
+                            y: center.y + radius * sin(angle - halfWidth)
+                        ))
+                        path.addLine(to: CGPoint(
+                            x: center.x + radius * cos(angle + halfWidth),
+                            y: center.y + radius * sin(angle + halfWidth)
+                        ))
+                        path.closeSubpath()
+
+                        context.fill(path, with: .linearGradient(
+                            Gradient(colors: [
+                                color.opacity(0.40 * spokePulse),
+                                color.opacity(0.10 * spokePulse),
+                                color.opacity(0)
+                            ]),
+                            startPoint: center,
+                            endPoint: CGPoint(
+                                x: center.x + radius * cos(angle),
+                                y: center.y + radius * sin(angle)
+                            )
+                        ))
+                    }
                 }
             }
         }

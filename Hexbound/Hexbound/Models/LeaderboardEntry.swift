@@ -5,6 +5,8 @@ struct LeaderboardEntry: Codable, Identifiable {
     let characterId: String
     let characterName: String
     let characterClass: String
+    let avatar: String?
+    let level: Int?
     let value: Int
     var rank: Int
 
@@ -12,7 +14,7 @@ struct LeaderboardEntry: Codable, Identifiable {
         case characterId
         case characterName
         case characterClass = "class"  // Swift reserved word
-        case value, rank
+        case avatar, level, value, rank
     }
 
     var classIcon: String {
@@ -24,4 +26,55 @@ struct LeaderboardEntry: Codable, Identifiable {
         default: "👤"
         }
     }
+
+    /// Portrait asset key derived from avatar string
+    var portraitAsset: String? {
+        guard let avatar else { return nil }
+        return "portrait-\(avatar)"
+    }
+}
+
+// MARK: - Search Result
+
+struct LeaderboardSearchResult: Codable, Identifiable {
+    var id: String { characterId }
+    let characterId: String
+    let characterName: String
+    let characterClass: String
+    let rating: Int
+    let level: Int
+
+    enum CodingKeys: String, CodingKey {
+        case characterId
+        case characterName
+        case characterClass = "class"
+        case rating, level
+    }
+
+    var classIcon: String {
+        switch characterClass {
+        case "warrior": "⚔"
+        case "rogue": "🗡️"
+        case "mage": "🔮"
+        case "tank": "🛡️"
+        default: "👤"
+        }
+    }
+
+    /// Convert to LeaderboardEntry for profile sheet compatibility
+    func toLeaderboardEntry() -> LeaderboardEntry {
+        LeaderboardEntry(
+            characterId: characterId,
+            characterName: characterName,
+            characterClass: characterClass,
+            avatar: nil,
+            level: level,
+            value: rating,
+            rank: 0
+        )
+    }
+}
+
+struct LeaderboardSearchResponse: Codable {
+    let results: [LeaderboardSearchResult]
 }

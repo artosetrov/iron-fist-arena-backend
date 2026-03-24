@@ -221,7 +221,8 @@ struct UnifiedHeroWidget: View {
                     gold: character.gold,
                     gems: character.gems,
                     size: .compact,
-                    showGems: context == .hub || context == .hero
+                    showGems: context == .hub || context == .hero,
+                    animated: false
                 )
             }
         }

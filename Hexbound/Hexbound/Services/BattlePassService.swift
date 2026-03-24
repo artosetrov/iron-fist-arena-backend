@@ -64,8 +64,26 @@ final class BattlePassService {
             // Refresh character in background (don't block UI)
             Task { [weak self] in await self?.refreshCharacter() }
             return true
+        } catch let error as APIError {
+            let subtitle: String
+            switch error {
+            case .serverError(let msg):
+                if msg.contains("Not enough gems") {
+                    subtitle = "Not enough gems"
+                } else if msg.contains("already premium") {
+                    subtitle = "Already premium"
+                } else if msg.contains("No active season") {
+                    subtitle = "No active season available"
+                } else {
+                    subtitle = msg
+                }
+            default:
+                subtitle = error.localizedDescription
+            }
+            appState.showToast("Failed to buy premium", subtitle: subtitle, type: .error)
+            return false
         } catch {
-            appState.showToast("Failed to buy premium", subtitle: "Check your gem balance", type: .error)
+            appState.showToast("Failed to buy premium", subtitle: "Check connection and try again", type: .error)
             return false
         }
     }

@@ -95,15 +95,37 @@ struct HeroDetailView: View {
     // MARK: - Actions
 
     private func repairAllBrokenItems() async {
-        guard let items = inventoryVM?.items else { return }
-        let brokenItems = items.filter { ($0.durability ?? 1) <= 0 && ($0.isEquipped ?? false) }
+        guard let vm = inventoryVM else { return }
+        let brokenItems = vm.items.filter { ($0.durability ?? 1) <= 0 && ($0.isEquipped ?? false) }
+        guard !brokenItems.isEmpty else { return }
+
+        // Optimistic update: mark all broken items as repaired immediately
+        var totalCost = 0
+        vm.items = vm.items.map { existing in
+            guard brokenItems.contains(where: { $0.id == existing.id }) else { return existing }
+            var updated = existing
+            updated.durability = existing.maxDurability ?? 100
+            return updated
+        }
+        appState.cachedInventory = vm.items
+        appState.showToast("All gear repaired!", type: .reward)
+
+        // Fire repair calls in background — update gold from responses
         let service = ShopService(appState: appState)
         for item in brokenItems {
-            let _ = await service.repair(inventoryId: item.id)
+            if let result = await service.repair(inventoryId: item.id) {
+                totalCost += result.repairCost
+                // Update with actual server values
+                vm.items = vm.items.map { existing in
+                    guard existing.id == item.id else { return existing }
+                    var updated = existing
+                    updated.durability = result.newDurability
+                    updated.maxDurability = result.maxDurability
+                    return updated
+                }
+            }
         }
-        appState.invalidateCache("inventory")
-        await inventoryVM?.loadInventory()
-        appState.showToast("All gear repaired!", type: .reward)
+        appState.cachedInventory = vm.items
     }
 
     private func useHealthPotion() async {

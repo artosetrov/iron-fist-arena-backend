@@ -31,7 +31,11 @@ final class AuthService {
             // Save tokens
             KeychainManager.shared.saveAccessToken(accessToken)
             KeychainManager.shared.saveRefreshToken(refreshToken)
+            KeychainManager.shared.saveIsGuest(false)
             await APIClient.shared.setAuthToken(accessToken)
+
+            // Not a guest
+            appState.isGuest = false
 
             // Setup 401 handler
             setupUnauthorizedHandler()
@@ -108,10 +112,14 @@ final class AuthService {
 
             KeychainManager.shared.saveAccessToken(accessToken)
             KeychainManager.shared.saveRefreshToken(refreshToken)
+            KeychainManager.shared.saveIsGuest(true)
             await APIClient.shared.setAuthToken(accessToken)
 
             // Setup 401 handler
             setupUnauthorizedHandler()
+
+            // Mark as guest
+            appState.isGuest = true
 
             // Load character (guest may already have one)
             let hasCharacter = await loadCharacter()
@@ -142,6 +150,9 @@ final class AuthService {
             return .noTokens
         }
 
+        // Restore guest flag from Keychain
+        appState.isGuest = KeychainManager.shared.isGuest
+
         do {
             let result = try await SupabaseAuthClient.shared.refreshToken(refreshToken)
 
@@ -171,10 +182,12 @@ final class AuthService {
                 } catch {
                     // Token invalid
                     KeychainManager.shared.clearAll()
+                    appState.isGuest = false
                     return .noTokens
                 }
             }
             KeychainManager.shared.clearAll()
+            appState.isGuest = false
             return .noTokens
         }
     }

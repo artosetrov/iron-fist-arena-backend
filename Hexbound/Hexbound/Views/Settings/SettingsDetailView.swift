@@ -133,14 +133,15 @@ struct SettingsDetailView: View {
         settingsCard {
             sectionHeader("Account")
 
-            // Link Account
-            Button {
-                vm.linkAccount()
-            } label: {
-                Text(vm.linkAccountMessage ?? "Link Account")
+            // Link Account (guest → full account)
+            if appState.isGuest {
+                Button {
+                    vm.linkAccount()
+                } label: {
+                    Text("Link Account")
+                }
+                .buttonStyle(.neutral)
             }
-            .buttonStyle(.neutral)
-            .disabled(vm.linkAccountMessage != nil)
 
             // Logout — with confirmation
             Button {

@@ -34,4 +34,12 @@ final class LeaderboardService {
             return [:]
         }
     }
+
+    func searchPlayers(query: String) async throws -> [LeaderboardSearchResult] {
+        let response: LeaderboardSearchResponse = try await APIClient.shared.get(
+            APIEndpoints.leaderboardSearch,
+            params: ["q": query]
+        )
+        return response.results
+    }
 }

@@ -175,7 +175,7 @@ struct CombatDetailView: View {
     private func setupCombatIfReady() {
         guard let data = appState.combatData, viewModel == nil else { return }
         let vm = CombatViewModel(appState: appState, combatData: data)
-        vm.onCombatEvent = { [weak self] event in self?.handleCombatEvent(event) }
+        vm.onCombatEvent = { event in self.handleCombatEvent(event) }
         viewModel = vm
         Task { await vm.play() }
     }

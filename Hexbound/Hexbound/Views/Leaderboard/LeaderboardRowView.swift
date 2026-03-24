@@ -1,29 +1,41 @@
 import SwiftUI
 
 struct LeaderboardRowView: View {
+    @Environment(GameDataCache.self) private var cache
     let entry: LeaderboardEntry
     let isSelf: Bool
     let valueLabel: String
     let onTap: (() -> Void)?
 
+    private let avatarSize: CGFloat = 40
+
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            // Rank
-            Text("#\(entry.rank)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(rankColor)
-                .frame(width: 40, alignment: .leading)
+            // Rank badge
+            rankBadge
 
-            // Class icon
-            Text(entry.classIcon)
-                .font(.system(size: 18)) // emoji text — keep as is
-                .frame(width: 28)
+            // Portrait
+            portraitView
 
-            // Name
-            Text(entry.characterName)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                .foregroundStyle(isSelf ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
+            // Name + class
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.characterName)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .foregroundStyle(isSelf ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
+
+                HStack(spacing: 4) {
+                    Text(className)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                    if let lvl = entry.level {
+                        Text("Lv.\(lvl)")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    }
+                }
+            }
 
             Spacer()
 
@@ -31,20 +43,67 @@ struct LeaderboardRowView: View {
             Text(formattedValue)
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.goldBright)
-                .frame(width: 70, alignment: .trailing)
+                .frame(minWidth: 50, alignment: .trailing)
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
-        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS + 2)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(isSelf ? DarkFantasyTheme.gold.opacity(0.08) : DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: isSelf ? DarkFantasyTheme.gold.opacity(0.06) : DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(isSelf ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: isSelf ? 2 : 1)
-        )
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 1, inset: 1,
+                     color: isSelf ? DarkFantasyTheme.gold.opacity(0.2) : DarkFantasyTheme.borderSubtle.opacity(0.3))
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.2), radius: 2, y: 1)
         .onTapGesture {
             if !isSelf { onTap?() }
+        }
+    }
+
+    // MARK: - Rank Badge
+
+    private var rankBadge: some View {
+        ZStack {
+            if entry.rank <= 3 {
+                Circle()
+                    .fill(rankColor.opacity(0.15))
+                    .frame(width: 28, height: 28)
+            }
+            Text("\(entry.rank)")
+                .font(DarkFantasyTheme.section(size: entry.rank <= 3 ? LayoutConstants.textLabel : LayoutConstants.textBadge))
+                .foregroundStyle(rankColor)
+        }
+        .frame(width: 30)
+    }
+
+    // MARK: - Portrait
+
+    private var portraitView: some View {
+        let charClass = CharacterClass(rawValue: entry.characterClass) ?? .warrior
+        return AvatarImageView(
+            skinKey: entry.avatar,
+            characterClass: charClass,
+            size: avatarSize
+        )
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .stroke(isSelf ? DarkFantasyTheme.gold : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
+        )
+    }
+
+    // MARK: - Helpers
+
+    private var className: String {
+        switch entry.characterClass {
+        case "warrior": "Warrior"
+        case "rogue": "Rogue"
+        case "mage": "Mage"
+        case "tank": "Tank"
+        default: entry.characterClass.capitalized
         }
     }
 

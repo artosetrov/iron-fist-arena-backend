@@ -214,11 +214,13 @@ export async function POST(req: NextRequest) {
     const newFloorsCleared = state.floorsCleared + 1
 
     const bossIndex = currentFloor
-    const totalBosses = await getDungeonBossCountFromDB(dungeonId)
+    // Parallelize boss count + next floor generation to avoid sequential DB round-trips
+    const [totalBosses, nextFloorDataPregen] = await Promise.all([
+      getDungeonBossCountFromDB(dungeonId),
+      generateDungeonFloorFromDB(currentFloor + 1, run.difficulty, dungeonId),
+    ])
     const isDungeonComplete = bossIndex >= totalBosses
-
-    // Core DB writes — gold/xp + progress + run update/delete — in parallel
-    const nextFloorData = isDungeonComplete ? null : await generateDungeonFloorFromDB(currentFloor + 1, run.difficulty, dungeonId)
+    const nextFloorData = isDungeonComplete ? null : nextFloorDataPregen
 
     await prisma.$transaction(async (tx) => {
       const lockedRun = await lockDungeonRunForUpdate(tx, run.id)

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const cached = await cacheGet<object>(cacheKey)
     if (cached) return NextResponse.json(cached)
 
-    const baseSelect = { id: true, characterName: true, class: true, pvpRating: true, level: true }
+    const baseSelect = { id: true, characterName: true, class: true, pvpRating: true, level: true, avatar: true }
 
     const [byRating, byLevel, byGold] = await Promise.all([
       prisma.character.findMany({ select: baseSelect, orderBy: { pvpRating: 'desc' }, take: limit }),
@@ -22,10 +22,20 @@ export async function GET(req: NextRequest) {
       prisma.character.findMany({ select: { ...baseSelect, gold: true }, orderBy: { gold: 'desc' }, take: limit }),
     ])
 
+    const mapEntry = (c: typeof byRating[0] & { gold?: number }, i: number, valueKey: 'pvpRating' | 'level' | 'gold') => ({
+      characterId: c.id,
+      characterName: c.characterName,
+      class: c.class,
+      avatar: c.avatar,
+      level: c.level,
+      value: valueKey === 'gold' ? (c as any).gold : c[valueKey as keyof typeof c],
+      rank: i + 1,
+    })
+
     const result = {
-      rating: byRating.map((c, i) => ({ characterId: c.id, characterName: c.characterName, class: c.class, value: c.pvpRating, rank: i + 1 })),
-      level: byLevel.map((c, i) => ({ characterId: c.id, characterName: c.characterName, class: c.class, value: c.level, rank: i + 1 })),
-      gold: byGold.map((c, i) => ({ characterId: c.id, characterName: c.characterName, class: c.class, value: c.gold, rank: i + 1 })),
+      rating: byRating.map((c, i) => mapEntry(c, i, 'pvpRating')),
+      level: byLevel.map((c, i) => mapEntry(c, i, 'level')),
+      gold: byGold.map((c, i) => mapEntry(c, i, 'gold')),
     }
 
     await cacheSet(cacheKey, result, LEADERBOARD_CACHE_TTL)

@@ -185,6 +185,7 @@ final class AppState {
 
     func logout() {
         isAuthenticated = false
+        isGuest = false
         currentCharacter = nil
         currentUser = nil
         combatData = nil

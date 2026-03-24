@@ -9,6 +9,7 @@ enum APIEndpoints {
     static let authApple = "/api/auth/apple"
     static let authGoogle = "/api/auth/google"
     static let authUpgradeGuest = "/api/auth/upgrade-guest"
+    static let authUpgradeGuestOAuth = "/api/auth/upgrade-guest-oauth"
 
     // MARK: - Characters
     static let characters = "/api/characters"
@@ -103,6 +104,7 @@ enum APIEndpoints {
 
     // MARK: - Leaderboard
     static let leaderboard = "/api/leaderboard"
+    static let leaderboardSearch = "/api/leaderboard/search"
 
     // MARK: - Game Init
     static let gameInit = "/api/game/init"

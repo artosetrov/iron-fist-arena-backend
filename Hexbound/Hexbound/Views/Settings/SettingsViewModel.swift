@@ -43,11 +43,7 @@ final class SettingsViewModel {
     }
 
     func linkAccount() {
-        linkAccountMessage = L10n.comingSoon
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(1.5))
-            linkAccountMessage = nil
-        }
+        appState.mainPath.append(AppRoute.upgradeGuest)
     }
 
     func logout() {

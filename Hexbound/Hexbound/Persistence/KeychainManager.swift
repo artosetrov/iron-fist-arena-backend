@@ -25,9 +25,20 @@ final class KeychainManager: Sendable {
         load(for: AppConstants.keychainRefreshToken)
     }
 
+    // MARK: - Guest Flag
+
+    func saveIsGuest(_ isGuest: Bool) {
+        save(isGuest ? "1" : "0", for: AppConstants.keychainIsGuest)
+    }
+
+    var isGuest: Bool {
+        load(for: AppConstants.keychainIsGuest) == "1"
+    }
+
     func clearAll() {
         delete(for: AppConstants.keychainAccessToken)
         delete(for: AppConstants.keychainRefreshToken)
+        delete(for: AppConstants.keychainIsGuest)
     }
 
     // MARK: - Generic Keychain Operations

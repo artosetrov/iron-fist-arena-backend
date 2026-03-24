@@ -1,5 +1,34 @@
 import Foundation
 
+// MARK: - Request Bodies
+
+private struct SendChallengeBody: Encodable {
+    let characterId: String
+    let targetId: String
+    let action: String
+    let message: String?
+    let goldWager: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case characterId = "character_id"
+        case targetId = "target_id"
+        case action, message
+        case goldWager = "gold_wager"
+    }
+}
+
+private struct ChallengeActionBody: Encodable {
+    let characterId: String
+    let challengeId: String
+    let action: String
+
+    enum CodingKeys: String, CodingKey {
+        case characterId = "character_id"
+        case challengeId = "challenge_id"
+        case action
+    }
+}
+
 @MainActor
 final class ChallengeService {
     static let shared = ChallengeService()
@@ -41,13 +70,13 @@ final class ChallengeService {
         goldWager: Int? = nil
     ) async throws -> SentChallengeInfo {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "target_id": targetId,
-                "action": "send",
-                "message": message as Any,
-                "gold_wager": goldWager as Any
-            ]
+            let body = SendChallengeBody(
+                characterId: characterId,
+                targetId: targetId,
+                action: "send",
+                message: message,
+                goldWager: goldWager
+            )
             let response: SendChallengeResponse = try await APIClient.shared.post(
                 APIEndpoints.socialChallenges,
                 body: body
@@ -73,11 +102,11 @@ final class ChallengeService {
         challengeId: String
     ) async throws -> DuelResult {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "challenge_id": challengeId,
-                "action": "accept"
-            ]
+            let body = ChallengeActionBody(
+                characterId: characterId,
+                challengeId: challengeId,
+                action: "accept"
+            )
             let response: DuelResultResponse = try await APIClient.shared.post(
                 APIEndpoints.socialChallenges,
                 body: body

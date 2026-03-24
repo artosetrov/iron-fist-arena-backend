@@ -391,14 +391,14 @@ struct GuildHallDetailView: View {
                             let success = await vm.sendChallenge(targetId: friend.id)
                             if success {
                                 appState.showToast(
-                                    title: "Challenge Sent",
-                                    message: "\(friend.characterName) has 24h to respond",
-                                    type: .success
+                                    "Challenge Sent",
+                                    subtitle: "\(friend.characterName) has 24h to respond",
+                                    type: .info
                                 )
                             } else {
                                 appState.showToast(
-                                    title: "Challenge Failed",
-                                    message: "Could not send challenge",
+                                    "Challenge Failed",
+                                    subtitle: "Could not send challenge",
                                     type: .error
                                 )
                             }

@@ -438,16 +438,16 @@ struct LeaderboardPlayerDetailSheet: View {
                 message: nil
             )
             challengeSent = true
-            SFXManager.shared.play(.uiSuccess)
+            SFXManager.shared.play(.uiConfirm)
             appState.showToast(
-                title: "Challenge Sent",
-                message: "\(entry.characterName) has 24h to respond",
-                type: .success
+                "Challenge Sent",
+                subtitle: "\(entry.characterName) has 24h to respond",
+                type: .info
             )
         } catch {
             appState.showToast(
-                title: "Challenge Failed",
-                message: "Could not send challenge. Try again later.",
+                "Challenge Failed",
+                subtitle: "Could not send challenge. Try again later.",
                 type: .error,
                 actionLabel: "Retry",
                 action: { Task { await sendChallenge() } }

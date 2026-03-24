@@ -22,21 +22,21 @@ export async function updateDailyQuestProgress(
 ): Promise<void> {
   const today = new Date().toISOString().slice(0, 10)
 
-  const quest = await prisma.dailyQuest.findFirst({
-    where: {
-      characterId,
-      questType,
-      day: today,
-    },
-  })
-
-  if (!quest) return // no quest of this type today
-  if (quest.progress >= quest.target) return // already complete
-
-  const newProgress = Math.min(quest.progress + increment, quest.target)
-
-  await prisma.dailyQuest.update({
-    where: { id: quest.id },
-    data: { progress: newProgress },
-  })
+  // Atomic increment using raw SQL to prevent race conditions.
+  // Multiple concurrent calls (e.g. using 3 consumables quickly) would all read
+  // progress=0 with a findFirst+update pattern, resulting in progress=1 instead of 3.
+  // This raw UPDATE atomically increments and caps at target in a single statement.
+  await prisma.$executeRawUnsafe(
+    `UPDATE "daily_quests"
+     SET "progress" = LEAST("progress" + $1, "target")
+     WHERE "character_id" = $2
+       AND "quest_type" = $3::text::"QuestType"
+       AND "day" = $4
+       AND "progress" < "target"
+       AND "completed" = false`,
+    increment,
+    characterId,
+    questType,
+    today,
+  )
 }
