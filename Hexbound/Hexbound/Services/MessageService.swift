@@ -1,5 +1,51 @@
 import Foundation
 
+// MARK: - Empty Response (for endpoints with no meaningful return)
+
+private struct MessageEmptyResponse: Decodable {}
+
+// MARK: - Request Bodies
+
+private struct SendMessageBody: Encodable {
+    let characterId: String
+    let targetId: String
+    let content: String
+    let action = "send"
+
+    enum CodingKeys: String, CodingKey {
+        case characterId = "character_id"
+        case targetId = "target_id"
+        case content
+        case action
+    }
+}
+
+private struct SendQuickMessageBody: Encodable {
+    let characterId: String
+    let targetId: String
+    let quickId: String
+    let action = "send_quick"
+
+    enum CodingKeys: String, CodingKey {
+        case characterId = "character_id"
+        case targetId = "target_id"
+        case quickId = "quick_id"
+        case action
+    }
+}
+
+private struct MarkReadBody: Encodable {
+    let characterId: String
+    let senderId: String
+    let action = "mark_read"
+
+    enum CodingKeys: String, CodingKey {
+        case characterId = "character_id"
+        case senderId = "sender_id"
+        case action
+    }
+}
+
 @MainActor
 final class MessageService {
     static let shared = MessageService()
@@ -66,12 +112,7 @@ final class MessageService {
         content: String
     ) async throws -> SentMessageInfo {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "target_id": targetId,
-                "content": content,
-                "action": "send"
-            ]
+            let body = SendMessageBody(characterId: characterId, targetId: targetId, content: content)
             let response: SendMessageResponse = try await APIClient.shared.post(
                 APIEndpoints.socialMessages,
                 body: body
@@ -101,12 +142,7 @@ final class MessageService {
         quickId: String
     ) async throws -> SentMessageInfo {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "target_id": targetId,
-                "quick_id": quickId,
-                "action": "send_quick"
-            ]
+            let body = SendQuickMessageBody(characterId: characterId, targetId: targetId, quickId: quickId)
             let response: SendMessageResponse = try await APIClient.shared.post(
                 APIEndpoints.socialMessages,
                 body: body
@@ -128,12 +164,8 @@ final class MessageService {
     ///   - senderId: The sender's character ID (whose messages to mark as read)
     func markRead(characterId: String, senderId: String) async throws {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "sender_id": senderId,
-                "action": "mark_read"
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = MarkReadBody(characterId: characterId, senderId: senderId)
+            let _: MessageEmptyResponse = try await APIClient.shared.post(
                 APIEndpoints.socialMessages,
                 body: body
             )
