@@ -99,6 +99,12 @@ struct GuildHallDetailView: View {
                 Task { await vm.loadConversations() }
             }
         }
+        .onChange(of: vm?.sendMessageError) { _, error in
+            if let error {
+                appState.showToast(error, type: .error)
+                vm?.sendMessageError = nil
+            }
+        }
         .sheet(isPresented: Binding(
             get: { vm?.showDuelResult ?? false },
             set: { newValue in

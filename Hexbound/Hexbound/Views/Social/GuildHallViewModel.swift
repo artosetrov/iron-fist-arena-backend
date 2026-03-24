@@ -44,6 +44,7 @@ class GuildHallViewModel {
     var processingRequestId: String?
     var processingFriendId: String?
     var processingChallengeId: String?
+    var sendMessageError: String?
 
     private let socialService = SocialService.shared
     private let challengeService = ChallengeService.shared
@@ -198,6 +199,7 @@ class GuildHallViewModel {
         guard !content.isEmpty, content.count <= 200 else { return }
 
         isSendingMessage = true
+        sendMessageError = nil
         do {
             let sent = try await messageService.sendMessage(
                 characterId: characterId,
@@ -217,7 +219,7 @@ class GuildHallViewModel {
             activeThread.insert(newMsg, at: 0)
             composedMessage = ""
         } catch {
-            // Error will be shown by caller
+            sendMessageError = "Failed to send message"
         }
         isSendingMessage = false
     }
