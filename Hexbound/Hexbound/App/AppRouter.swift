@@ -30,6 +30,9 @@ enum AppRoute: Hashable, Codable {
     case dungeonSelect
     case dungeonRoom
 
+    // Social
+    case guildHall
+
     // Minigames
     case tavern
     case shellGame
@@ -129,6 +132,9 @@ struct MainRouterView: View {
         case .dungeonSelect: DungeonSelectDetailView()
         case .dungeonRoom: DungeonRoomDetailView()
         
+        // Social
+        case .guildHall: GuildHallDetailView()
+
         // Minigames
         case .tavern: TavernDetailView()
         case .shellGame: ShellGameDetailView()
@@ -139,7 +145,7 @@ struct MainRouterView: View {
         case .inbox: InboxDetailView()
 
         // Quests & Achievements
-        case .dailyLogin: DailyLoginDetailView()
+        case .dailyLogin: DailyLoginDetailView() // NOTE: now shown as sheet from HubView, this route is unused
         case .dailyQuests: DailyQuestsDetailView()
         case .achievements: AchievementsDetailView()
         

@@ -61,6 +61,9 @@ final class GameDataCache {
     private(set) var matchHistory: [MatchHistory] = []
     private var historyFetchedAt: Date?
 
+    private(set) var socialStatus: SocialStatus?
+    private var socialStatusFetchedAt: Date?
+
     // MARK: - Feature Flags (resolved server-side, keyed by flag key)
 
     private(set) var featureFlags: [String: Any] = [:]
@@ -435,6 +438,20 @@ final class GameDataCache {
         historyFetchedAt = Date()
     }
 
+    // Social Status TTL: 2 minutes (badge counts refresh frequently)
+    private let socialStatusTTL: TimeInterval = 120
+
+    func cachedSocialStatus() -> SocialStatus? {
+        guard let fetchedAt = socialStatusFetchedAt,
+              Date().timeIntervalSince(fetchedAt) < socialStatusTTL else { return nil }
+        return socialStatus
+    }
+
+    func cacheSocialStatus(_ data: SocialStatus) {
+        socialStatus = data
+        socialStatusFetchedAt = Date()
+    }
+
     // MARK: - Reset
 
     func invalidateAll() {
@@ -460,6 +477,8 @@ final class GameDataCache {
         revengeFetchedAt = nil
         matchHistory = []
         historyFetchedAt = nil
+        socialStatus = nil
+        socialStatusFetchedAt = nil
         featureFlags = [:]
         gameConfig = nil
         isInitLoaded = false

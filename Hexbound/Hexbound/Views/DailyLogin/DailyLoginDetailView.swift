@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DailyLoginDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
     @State private var vm: DailyLoginPopupViewModel?
     @State private var glowRotation: Double = 0
 
@@ -23,12 +24,16 @@ struct DailyLoginDetailView: View {
                 .offset(y: -60)
 
             if let vm {
+                Group {
                 if vm.isLoading {
                     ProgressView()
                         .tint(DarkFantasyTheme.gold)
                 } else if let data = vm.loginData {
                     ScrollView {
                         VStack(spacing: 0) {
+                            // ── Modal Header with close button ──
+                            modalHeader()
+
                             // ── Streak Header ──
                             VStack(spacing: LayoutConstants.spaceXS) {
                                 Text("Day \(data.streak) Streak")
@@ -45,7 +50,7 @@ struct DailyLoginDetailView: View {
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                             }
-                            .padding(.top, LayoutConstants.spaceMD)
+                            .padding(.top, LayoutConstants.spaceSM)
 
                             // ── Progress Bar ──
                             progressBar(data: data)
@@ -73,19 +78,13 @@ struct DailyLoginDetailView: View {
                         }
                     }
                 }
+                }
+                .transaction { $0.animation = nil }
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                HubLogoButton()
-            }
-            ToolbarItem(placement: .principal) {
-                Text("DAILY LOGIN")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-            }
-        }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(DarkFantasyTheme.bgPrimary)
         .task {
             if vm == nil {
                 let viewModel = DailyLoginPopupViewModel(appState: appState)
@@ -96,6 +95,33 @@ struct DailyLoginDetailView: View {
                 glowRotation = 360
             }
         }
+    }
+
+    // MARK: - Modal Header
+
+    @ViewBuilder
+    private func modalHeader() -> some View {
+        HStack {
+            Spacer()
+
+            Text("DAILY LOGIN")
+                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+
+            Spacer()
+        }
+        .overlay(alignment: .trailing) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 26))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceMD)
     }
 
     // MARK: - Progress Bar
@@ -344,7 +370,7 @@ struct DailyLoginDetailView: View {
     private func claimSection(vm: DailyLoginPopupViewModel) -> some View {
         if vm.hasClaimed {
             Button {
-                appState.mainPath.removeLast()
+                dismiss()
             } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "checkmark")

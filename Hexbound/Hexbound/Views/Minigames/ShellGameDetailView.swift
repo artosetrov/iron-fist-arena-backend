@@ -159,6 +159,7 @@ struct ShellGameDetailView: View {
                     .padding(.bottom, LayoutConstants.spaceSM)
                     .animation(.easeInOut(duration: 0.25), value: gamePhase)
                 }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)

@@ -16,11 +16,11 @@ struct AppearanceStepView: View {
                 raceBonusWidget
                     .padding(.top, LayoutConstants.spaceSM)
 
-                avatarArea
-                    .padding(.top, LayoutConstants.spaceMD)
-
                 thumbnailRow
                     .padding(.top, LayoutConstants.spaceSM)
+
+                avatarArea
+                    .padding(.top, LayoutConstants.spaceMD)
             } else {
                 emptyState
                     .padding(.top, LayoutConstants.spaceSM)

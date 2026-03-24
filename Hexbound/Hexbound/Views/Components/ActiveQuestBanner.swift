@@ -84,7 +84,6 @@ struct ActiveQuestBanner: View {
                         Text("Claim")
                     }
                 }
-                .frame(width: 56, height: 26)
                 .buttonStyle(.compactPrimary)
                 .disabled(claimingId == quest.id)
             } else {

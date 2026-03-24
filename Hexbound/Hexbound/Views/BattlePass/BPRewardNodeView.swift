@@ -67,7 +67,6 @@ struct BPRewardNodeView: View {
                         Text("Claim")
                     }
                 }
-                .frame(width: 70, height: 36)
                 .buttonStyle(.compactPrimary)
             case .claimed:
                 Text("Claimed")

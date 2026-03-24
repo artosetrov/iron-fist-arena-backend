@@ -54,7 +54,11 @@ final class InventoryService {
             if let cached = appState.cachedInventory {
                 return cached
             }
-            appState.showToast("Failed to load inventory", subtitle: "Check connection and try again", type: .error)
+            appState.showToast("Failed to load inventory", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
+                Task { @MainActor in
+                    _ = await self?.loadInventory()
+                }
+            }
             return []
         }
     }

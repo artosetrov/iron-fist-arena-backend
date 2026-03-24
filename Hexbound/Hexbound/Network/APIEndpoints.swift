@@ -118,6 +118,10 @@ enum APIEndpoints {
     static let iapRestore = "/api/iap/restore"
     static let iapProducts = "/api/iap/products"
 
+    // MARK: - Social
+    static let socialFriends = "/api/social/friends"
+    static let socialStatus = "/api/social/status"
+
     // MARK: - Admin
     static let adminHubLayout = "/api/admin/hub-layout"
     static let adminDungeonMapLayout = "/api/admin/dungeon-map-layout"

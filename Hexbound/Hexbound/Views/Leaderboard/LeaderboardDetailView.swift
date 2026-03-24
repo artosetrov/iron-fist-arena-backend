@@ -111,6 +111,7 @@ struct LeaderboardDetailView: View {
                         }
                     }
                 }
+                .transaction { $0.animation = nil }
             }
 
         }
@@ -138,11 +139,6 @@ struct LeaderboardDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
-            }
-            ToolbarItem(placement: .principal) {
-                Text("LEADERBOARD")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
         .task {

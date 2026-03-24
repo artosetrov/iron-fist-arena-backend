@@ -38,7 +38,11 @@ final class PvPService {
                     continue
                 }
                 let msg = (error as? APIError)?.errorDescription ?? "Failed to load opponents"
-                appState.showToast(msg, subtitle: msg == "Failed to load opponents" ? "Pull to refresh or try later" : "", type: .error)
+                appState.showToast(msg, subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
+                    Task { @MainActor in
+                        _ = await self?.getOpponents()
+                    }
+                }
                 return []
             }
         }

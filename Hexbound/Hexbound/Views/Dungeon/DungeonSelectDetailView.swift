@@ -21,6 +21,7 @@ struct DungeonSelectDetailView: View {
                 .ignoresSafeArea()
 
             if let vm {
+                Group {
                 if vm.isLoading && vm.dungeonProgress.isEmpty {
                     // Skeleton loading state
                     VStack(spacing: 0) {
@@ -45,6 +46,8 @@ struct DungeonSelectDetailView: View {
                 } else {
                     dungeonWorldContent(vm: vm)
                 }
+                }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -94,7 +97,30 @@ struct DungeonSelectDetailView: View {
                 .padding(.bottom, LayoutConstants.space2XL)
             }
 
+            // Return to Hub button
+            returnToHubButton
         }
+    }
+
+    // MARK: - Return to Hub
+
+    @ViewBuilder
+    private var returnToHubButton: some View {
+        Button {
+            HapticManager.selection()
+            if !appState.mainPath.isEmpty {
+                appState.mainPath.removeLast()
+            }
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 14, weight: .bold))
+                Text("RETURN TO HUB")
+            }
+        }
+        .buttonStyle(.primary)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.vertical, LayoutConstants.spaceMD)
     }
 
     // MARK: - Stamina Bar

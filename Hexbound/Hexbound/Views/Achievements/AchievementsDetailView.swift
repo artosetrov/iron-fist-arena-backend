@@ -11,7 +11,7 @@ struct AchievementsDetailView: View {
 
             if let vm {
                 VStack(spacing: 0) {
-                    // Count
+                    // Count + unclaimed indicator
                     HStack {
                         Text("\(vm.completedCount) / \(vm.totalCount)")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -28,18 +28,10 @@ struct AchievementsDetailView: View {
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceXS)
 
-                    // Tab switcher
-                    TabSwitcher(
-                        tabs: AchievementsViewModel.tabs,
-                        selectedIndex: Binding(
-                            get: { vm.selectedTab },
-                            set: { vm.selectedTab = $0 }
-                        )
-                    )
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
-                    .accessibilityLabel("Achievement tabs: \(AchievementsViewModel.tabs.joined(separator: ", "))")
-                    .accessibilityValue("Current tab: \(AchievementsViewModel.tabs[vm.selectedTab])")
+                    // Tab switcher with badge overlays (H4 fix)
+                    tabSwitcherWithBadges(vm: vm)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
 
                     // Content
                     if vm.isLoading && vm.achievements.isEmpty {
@@ -53,7 +45,6 @@ struct AchievementsDetailView: View {
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
                     } else if vm.errorMessage != nil {
-                        // TODO: Add error property to ViewModel
                         ErrorStateView.loadFailed { Task { await vm.loadAchievements() } }
                     } else if vm.filteredAchievements.isEmpty {
                         EmptyStateView.noAchievements
@@ -74,11 +65,13 @@ struct AchievementsDetailView: View {
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.vertical, LayoutConstants.spaceSM)
+                            .padding(.top, LayoutConstants.spaceSM)
+                            .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM) // M3 fix: safe area
                         }
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                        .transition(.opacity) // M2 fix: was .opacity.combined(with: .scale(0.98))
                     }
                 }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -95,6 +88,45 @@ struct AchievementsDetailView: View {
         .task {
             if vm == nil { vm = AchievementsViewModel(appState: appState, cache: cache) }
             await vm?.loadAchievements()
+        }
+    }
+
+    // MARK: - Tab Switcher with Badge Overlays (H4 fix)
+
+    @ViewBuilder
+    private func tabSwitcherWithBadges(vm: AchievementsViewModel) -> some View {
+        TabSwitcher(
+            tabs: AchievementsViewModel.tabs,
+            selectedIndex: Binding(
+                get: { vm.selectedTab },
+                set: { vm.selectedTab = $0 }
+            )
+        )
+        .accessibilityLabel("Achievement tabs: \(AchievementsViewModel.tabs.joined(separator: ", "))")
+        .accessibilityValue("Current tab: \(AchievementsViewModel.tabs[vm.selectedTab])")
+        .overlay {
+            // Badge overlays for unclaimed counts per tab
+            GeometryReader { geo in
+                let tabWidth = geo.size.width / CGFloat(AchievementsViewModel.tabs.count)
+                ForEach(AchievementsViewModel.tabs.indices, id: \.self) { index in
+                    let count = vm.unclaimedCountForTab(index)
+                    if count > 0 && index != vm.selectedTab {
+                        Text("\(count)")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                            .frame(width: 20, height: 20)
+                            .background(
+                                Circle()
+                                    .fill(DarkFantasyTheme.gold)
+                            )
+                            .position(
+                                x: tabWidth * CGFloat(index) + tabWidth - 14,
+                                y: 6
+                            )
+                            .allowsHitTesting(false)
+                    }
+                }
+            }
         }
     }
 }

@@ -109,15 +109,19 @@ final class InventoryViewModel {
         // Optimistic UI: update immediately
         let previousItems = items
         applyOptimisticEquip(item)
+        appState.cachedInventory = items
         showItemDetail = false
         appState.showToast("Equipped \(item.displayName)", type: .reward)
 
         if let updated = await service.equip(inventoryId: item.id) {
-            items = updated
+            // Only update if server response differs from optimistic state
+            // to avoid the flicker of item disappearing then reappearing
             appState.cachedInventory = updated
+            items = updated
         } else {
             // Rollback on failure
             items = previousItems
+            appState.cachedInventory = previousItems
             appState.showToast("Failed to equip", subtitle: "Check class or level requirements", type: .error)
         }
     }
@@ -126,14 +130,16 @@ final class InventoryViewModel {
         // Optimistic UI: update immediately
         let previousItems = items
         applyOptimisticUnequip(item)
+        appState.cachedInventory = items
         showItemDetail = false
         appState.showToast("Unequipped \(item.displayName)", type: .info)
 
         if let updated = await service.unequip(inventoryId: item.id) {
-            items = updated
             appState.cachedInventory = updated
+            items = updated
         } else {
             items = previousItems
+            appState.cachedInventory = previousItems
             appState.showToast("Failed to unequip", subtitle: "Inventory may be full", type: .error)
         }
     }
@@ -194,6 +200,7 @@ final class InventoryViewModel {
         appState.cachedInventory = items
         appState.invalidateCache("quests")
         if result.success {
+            SFXManager.shared.play(.uiUpgradeSuccess)
             appState.showToast("⬆ \(item.itemName) +\(result.newLevel)!", type: .reward)
         } else if result.protectionUsed {
             appState.showToast("Protected — level kept at +\(result.newLevel)", type: .info)

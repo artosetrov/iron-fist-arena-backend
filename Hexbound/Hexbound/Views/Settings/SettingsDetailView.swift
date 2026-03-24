@@ -20,16 +20,17 @@ struct SettingsDetailView: View {
                             .staggeredAppear(index: 1)
                         accountSection(vm: vm)
                             .staggeredAppear(index: 2)
-                        #if DEBUG
-                        devToolsSection
-                            .staggeredAppear(index: 3)
-                        #endif
+                        if appState.isAdmin {
+                            devToolsSection
+                                .staggeredAppear(index: 3)
+                        }
                         versionLabel
                             .staggeredAppear(index: 4)
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceMD)
                 }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -177,9 +178,8 @@ struct SettingsDetailView: View {
         }
     }
 
-    // MARK: - Dev Tools
+    // MARK: - Dev Tools (admin-only, gated by appState.isAdmin)
 
-    #if DEBUG
     private var devToolsSection: some View {
         settingsCard {
             sectionHeader("Developer Tools")
@@ -239,7 +239,6 @@ struct SettingsDetailView: View {
             .buttonStyle(.scalePress(0.97))
         }
     }
-    #endif
 
     // MARK: - Version
 

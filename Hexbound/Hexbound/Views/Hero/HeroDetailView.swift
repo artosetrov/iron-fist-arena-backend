@@ -152,8 +152,8 @@ struct HeroDetailView: View {
                                         .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5)
                                 )
                                 .shadow(
-                                    color: DarkFantasyTheme.goldBright.opacity(statsBadgePulse ? 0.8 : 0.2),
-                                    radius: statsBadgePulse ? 8 : 3
+                                    color: DarkFantasyTheme.goldBright.opacity(0.6),
+                                    radius: 6
                                 )
                                 .accessibilityLabel("\(statPoints) stat points available")
                         }
@@ -178,12 +178,7 @@ struct HeroDetailView: View {
                             )
                             .frame(height: 3)
                     }
-                    // Brighter shimmer on STATUS tab when stat points available
-                    .shimmer(
-                        color: DarkFantasyTheme.purple,
-                        duration: 1.8,
-                        isActive: tab == .stats && hasStatPoints && selectedTab != .stats
-                    )
+                    // Subtle tint instead of shimmer — no infinite GPU loop
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -194,22 +189,6 @@ struct HeroDetailView: View {
             EtchedGroove()
         }
         .animation(.none, value: selectedTab)
-        .onAppear {
-            if hasStatPoints {
-                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                    statsBadgePulse = true
-                }
-            }
-        }
-        .onChange(of: hasStatPoints) { _, newVal in
-            if newVal && !statsBadgePulse {
-                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                    statsBadgePulse = true
-                }
-            } else if !newVal {
-                statsBadgePulse = false
-            }
-        }
     }
 
     // MARK: - Tab Content Router
@@ -336,9 +315,8 @@ struct HeroDetailView: View {
                         // Section header with ornamental lines
                         statGroupHeader(group.rawValue)
 
-                        ForEach(Array(group.stats.enumerated()), id: \.element) { index, stat in
+                        ForEach(group.stats, id: \.self) { stat in
                             statCell(stat, vm: vm, char: char)
-                                .staggeredAppear(index: index)
                         }
                     }
                 }
@@ -346,6 +324,9 @@ struct HeroDetailView: View {
             .padding(.horizontal, LayoutConstants.screenPadding)
             // Extra bottom padding when sticky bar is visible
             .padding(.bottom, vm.hasChanges ? 80 : 0)
+
+            // Respec Stats — directly after stat list
+            respecStatsCard(vm: vm)
 
             GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
 
@@ -360,27 +341,17 @@ struct HeroDetailView: View {
                     columns: [GridItem(.flexible()), GridItem(.flexible())],
                     spacing: LayoutConstants.spaceSM
                 ) {
-                    derivedRow("Atk Power", value: "\(char.attackPower) \(char.damageTypeName)", color: DarkFantasyTheme.statSTR)
-                    derivedRow("Armor", value: "\(char.armor ?? 0)", color: DarkFantasyTheme.statEND)
-                    derivedRow("Magic Resist", value: "\(char.magicResist ?? 0)", color: DarkFantasyTheme.statWIS)
-                    derivedRow("Crit Chance", value: String(format: "%.1f%%", char.critChance), color: DarkFantasyTheme.statLUK)
-                    derivedRow("Dodge", value: String(format: "%.1f%%", char.dodgeChance), color: DarkFantasyTheme.statAGI)
+                    derivedRow("Atk Power", value: "\(char.attackPower) \(char.damageTypeName)", color: DarkFantasyTheme.statBarFill)
+                    derivedRow("Armor", value: "\(char.armor ?? 0)", color: DarkFantasyTheme.statBarFill)
+                    derivedRow("Magic Resist", value: "\(char.magicResist ?? 0)", color: DarkFantasyTheme.statBarFill)
+                    derivedRow("Crit Chance", value: String(format: "%.1f%%", char.critChance), color: DarkFantasyTheme.statBarFill)
+                    derivedRow("Dodge", value: String(format: "%.1f%%", char.dodgeChance), color: DarkFantasyTheme.statBarFill)
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 
             // Equipment bonuses
             equipmentBonusesCard(inventoryVM?.items.filter { $0.isEquipped == true } ?? [])
-
-            GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
-
-            // Respec Stats
-            respecStatsCard(vm: vm)
-
-            GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
-
-            // PvP
-            pvpSection(char)
 
         }
     }
@@ -963,19 +934,21 @@ struct HeroDetailView: View {
                 inventoryLoadingGrid()
             } else {
                 // Content state (shows empty slots when no items)
+                // Cache computed properties once to avoid O(n log n) per cell
+                let sorted = vm.sortedItems
+                let equipped = vm.equippedBySlot
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.inventoryGap), count: LayoutConstants.inventoryCols),
                     spacing: LayoutConstants.inventoryGap
                 ) {
                     ForEach(0..<max(vm.totalSlots, 28), id: \.self) { index in
-                        if index < vm.sortedItems.count {
+                        if index < sorted.count {
                             ItemCardView(
-                                item: vm.sortedItems[index],
-                                context: .inventory(equippedItem: vm.equippedBySlot[vm.sortedItems[index].equipSlot])
+                                item: sorted[index],
+                                context: .inventory(equippedItem: equipped[sorted[index].equipSlot])
                             ) {
-                                vm.selectItem(vm.sortedItems[index])
+                                vm.selectItem(sorted[index])
                             }
-                            .staggeredAppear(index: index)
                         } else {
                             // Empty slot — same structure as SkeletonInventoryItem
                             VStack {

@@ -164,7 +164,7 @@ struct ItemCardView: View {
 
     /// Shop-specific: whether item is affordable & meets level
     private var shopCanInteract: Bool {
-        if case .shop(_, _, let canAfford, let meetsLevel, _) = context {
+        if case .shop(_, _, let canAfford, let meetsLevel, _, _, _) = context {
             return canAfford && meetsLevel
         }
         return true
@@ -172,7 +172,7 @@ struct ItemCardView: View {
 
     /// Shop-specific: currently buying
     private var shopIsBuying: Bool {
-        if case .shop(_, _, _, _, let isBuying) = context {
+        if case .shop(_, _, _, _, let isBuying, _, _) = context {
             return isBuying
         }
         return false
@@ -190,21 +190,39 @@ struct ItemCardView: View {
 
     @ViewBuilder
     private var cellContent: some View {
+        cellBase
+            .modifier(CellOrnamentalsModifier(
+                isEmptySlot: isEmptySlot,
+                isEquipped: isEquipped,
+                isBroken: isBroken,
+                isHighRarity: isHighRarity,
+                hasDurability: hasDurability,
+                durabilityFraction: durabilityFraction,
+                shopCanInteract: shopCanInteract,
+                rarityColor: rarityColor,
+                rarity: rarity
+            ))
+    }
+
+    /// Inner ZStack layers + context overlays (split out for type-checker relief)
+    @ViewBuilder
+    private var cellBase: some View {
         ZStack {
             // MARK: - Layer 1: Gradient background
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(
-                    isEmptySlot
-                        ? AnyShapeStyle(DarkFantasyTheme.bgTertiary.opacity(0.4))
-                        : AnyShapeStyle(LinearGradient(
-                            colors: [
-                                rarityColor.opacity(0.10),
-                                DarkFantasyTheme.bgAbyss.opacity(0.95)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ))
-                )
+            if isEmptySlot {
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.4))
+            } else {
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .fill(LinearGradient(
+                        colors: [
+                            rarityColor.opacity(0.10),
+                            DarkFantasyTheme.bgAbyss.opacity(0.95)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ))
+            }
 
             // MARK: - Layer 2: Radial glow for epic/legendary
             if isHighRarity && !isEmptySlot {
@@ -274,62 +292,83 @@ struct ItemCardView: View {
         .overlay(alignment: .bottomTrailing) { bottomTrailingOverlay }
         .aspectRatio(1, contentMode: .fit)
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
-        // MARK: - Inner bevel border (ornamental gradient)
-        .if(!isEmptySlot) { view in
-            view.innerBorder(
+    }
+}
+
+// MARK: - Cell Ornamentals Modifier (split for type-checker relief)
+
+/// Borders, diamonds, shadows, durability ring — extracted to keep the main body under
+/// Swift's type-checker complexity ceiling.
+private struct CellOrnamentalsModifier: ViewModifier {
+    let isEmptySlot: Bool
+    let isEquipped: Bool
+    let isBroken: Bool
+    let isHighRarity: Bool
+    let hasDurability: Bool
+    let durabilityFraction: Double
+    let shopCanInteract: Bool
+    let rarityColor: Color
+    let rarity: ItemRarity
+
+    func body(content: Content) -> some View {
+        content
+            // MARK: - Inner bevel border (ornamental gradient)
+            .innerBorder(
                 cornerRadius: LayoutConstants.cardRadius - 2,
                 inset: 2,
-                color: rarityColor.opacity(0.15)
+                color: isEmptySlot ? Color.clear : rarityColor.opacity(0.15)
             )
-        }
-        // MARK: - Inner bevel stroke (subtle)
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: isEmptySlot ? 1 : 2)
-                .padding(isEmptySlot ? 0 : 1)
-        )
-        // MARK: - Outer rarity border
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(
-                    isEmptySlot
-                        ? DarkFantasyTheme.borderSubtle
-                        : (isBroken
-                            ? DarkFantasyTheme.danger
-                            : rarityColor.opacity(isEquipped ? 1.0 : 0.7)),
-                    lineWidth: isEmptySlot ? 1 : (isEquipped ? 3 : 2.5)
-                )
-        )
-        // MARK: - Corner diamonds (non-empty slots)
-        .if(!isEmptySlot) { view in
-            view.cornerDiamonds(color: rarityColor.opacity(0.5), size: 4)
-        }
-        // MARK: - Durability ring
-        .overlay {
-            if hasDurability && durabilityFraction < 1.0 {
-                DurabilityRingOverlay(
-                    fraction: durabilityFraction,
-                    cornerRadius: LayoutConstants.cardRadius
-                )
+            // MARK: - Inner bevel stroke (subtle)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: isEmptySlot ? 1 : 2)
+                    .padding(isEmptySlot ? 0 : 1)
+            )
+            // MARK: - Outer rarity border
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(
+                        isEmptySlot
+                            ? DarkFantasyTheme.borderSubtle
+                            : (isBroken
+                                ? DarkFantasyTheme.danger
+                                : rarityColor.opacity(isEquipped ? 1.0 : 0.7)),
+                        lineWidth: isEmptySlot ? 1 : (isEquipped ? 3 : 2.5)
+                    )
+            )
+            // MARK: - Corner diamonds (non-empty slots)
+            .cornerDiamonds(color: isEmptySlot ? Color.clear : rarityColor.opacity(0.5), size: isEmptySlot ? 0 : 4)
+            // MARK: - Durability ring
+            .overlay {
+                if hasDurability && durabilityFraction < 1.0 {
+                    DurabilityRingOverlay(
+                        fraction: durabilityFraction,
+                        cornerRadius: LayoutConstants.cardRadius
+                    )
+                }
             }
-        }
-        // MARK: - Enhanced glow shadows
-        .shadow(
-            color: isEmptySlot ? Color.clear : DarkFantasyTheme.rarityGlow(for: rarity),
-            radius: isHighRarity ? 14 : 6
-        )
-        .shadow(
-            color: isHighRarity && !isEmptySlot ? rarityColor.opacity(0.25) : Color.clear,
-            radius: 4
-        )
-        // MARK: - Shop affordability dimming
-        .opacity(shopCanInteract ? 1.0 : 0.5)
+            // MARK: - Enhanced glow shadows
+            .shadow(
+                color: isEmptySlot ? Color.clear : DarkFantasyTheme.rarityGlow(for: rarity),
+                radius: isHighRarity ? 14 : 6
+            )
+            .shadow(
+                color: isHighRarity && !isEmptySlot ? rarityColor.opacity(0.25) : Color.clear,
+                radius: 4
+            )
+            // MARK: - Shop affordability dimming
+            .opacity(shopCanInteract ? 1.0 : 0.5)
     }
+}
+
+// MARK: - ItemCardView private helpers (continued)
+
+private extension ItemCardView {
 
     // MARK: - Empty Slot Placeholder
 
     @ViewBuilder
-    private var emptySlotPlaceholder: some View {
+    var emptySlotPlaceholder: some View {
         if case .equipment(let slotAsset) = context, let assetName = slotAsset {
             Image(assetName)
                 .renderingMode(.template)
@@ -344,7 +383,7 @@ struct ItemCardView: View {
     // MARK: - Top-Leading Overlay
 
     @ViewBuilder
-    private var topLeadingOverlay: some View {
+    var topLeadingOverlay: some View {
         switch context {
         case .inventory:
             if let delta = comparisonDelta {
@@ -366,7 +405,7 @@ struct ItemCardView: View {
     // MARK: - Top-Trailing Overlay
 
     @ViewBuilder
-    private var topTrailingOverlay: some View {
+    var topTrailingOverlay: some View {
         if isEquipped {
             // Equipped badge — shown in any context
             Text("E")
@@ -391,7 +430,7 @@ struct ItemCardView: View {
     // MARK: - Bottom Overlay
 
     @ViewBuilder
-    private var bottomOverlay: some View {
+    var bottomOverlay: some View {
         if isEmptySlot {
             EmptyView()
         } else if case .shop(let price, let isGem, _, _, _, let originalPrice, let discountPct) = context {
@@ -420,7 +459,7 @@ struct ItemCardView: View {
     // MARK: - Bottom-Trailing Overlay
 
     @ViewBuilder
-    private var bottomTrailingOverlay: some View {
+    var bottomTrailingOverlay: some View {
         if let qty = quantity, qty > 1 {
             Text("x\(qty)")
                 .font(DarkFantasyTheme.body(size: 11).bold())
@@ -436,7 +475,7 @@ struct ItemCardView: View {
     // MARK: - Shop Price Bar
 
     @ViewBuilder
-    private func shopPriceBar(price: Int, isGem: Bool, originalPrice: Int? = nil, discountPct: Int? = nil) -> some View {
+    func shopPriceBar(price: Int, isGem: Bool, originalPrice: Int? = nil, discountPct: Int? = nil) -> some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 0) {
                 // Strikethrough original price (if discounted)

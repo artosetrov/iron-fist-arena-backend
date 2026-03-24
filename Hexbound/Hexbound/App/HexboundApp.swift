@@ -28,6 +28,7 @@ struct HexboundApp: App {
             .overlay(alignment: .top) { ToastOverlayView() .environment(appState) }
             .overlay { if appState.isLoading { LoadingOverlay() } }
             .overlay { if appState.showLevelUpModal { LevelUpModalView().environment(appState) } }
+            .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
             .animation(.easeInOut(duration: 0.3), value: appState.isAuthenticated)
             .animation(.easeInOut(duration: 0.3), value: isCheckingAuth)
             .task {

@@ -25,245 +25,11 @@ struct ShopDetailView: View {
                 .ignoresSafeArea()
 
             if let vm {
-                VStack(spacing: 0) {
-                    // Currency bar — redesigned: balance LEFT, GET MORE button RIGHT
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        CurrencyDisplay(gold: vm.gold, gems: vm.gems)
-
-                        Spacer()
-
-                        Button {
-                            appState.mainPath.append(AppRoute.currencyPurchase)
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 16, weight: .bold))
-                                Text("GET MORE")
-                            }
-                        }
-                        .buttonStyle(.getMore)
-                        .shimmer(color: DarkFantasyTheme.goldBright, duration: 3)
-                        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: true)
-                    }
-                    .tutorialAnchor(.shopGems)
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.top, LayoutConstants.spaceMD)
-                    .padding(.bottom, LayoutConstants.spaceSM)
-                    .background(DarkFantasyTheme.bgSecondary)
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .fill(DarkFantasyTheme.borderSubtle)
-                            .frame(height: 1)
-                    }
-
-                    // Active quest banner
-                    ActiveQuestBanner(questTypes: ["gold_spent"])
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.top, LayoutConstants.spaceSM)
-                        .padding(.bottom, LayoutConstants.spaceSM)
-
-                    // Screen title
-                    OrnamentalTitle("SHOP")
-                        .padding(.top, LayoutConstants.spaceXS)
-
-                    // Special Offers carousel
-                    if !vm.offers.isEmpty {
-                        ShopOfferBannerView(
-                            offers: vm.offers,
-                            canAfford: { vm.canAffordOffer($0) },
-                            buyingId: vm.buyingOfferId,
-                            onBuy: { offer in Task { await vm.buyOffer(offer) } }
-                        )
-                        .padding(.bottom, LayoutConstants.spaceSM)
-                    }
-
-                    // Tab switcher
-                    TabSwitcher(
-                        tabs: ShopViewModel.tabs,
-                        selectedIndex: Binding(
-                            get: { vm.selectedTab },
-                            set: { vm.selectedTab = $0 }
-                        )
-                    )
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
-                    .accessibilityLabel("Shop tabs: \(ShopViewModel.tabs.joined(separator: ", "))")
-                    .accessibilityValue("Current tab: \(ShopViewModel.tabs[vm.selectedTab])")
-                    .onChange(of: vm.selectedTab) { _, newTab in
-                        tipProvider.updateTab(newTab)
-                    }
-
-                    // Content
-                    if vm.errorMessage != nil {
-                        ErrorStateView.loadFailed { let _ = Task { await vm.loadItems() } }
-                    } else if vm.isLoading && vm.items.isEmpty {
-                        ScrollView {
-                            LazyVGrid(
-                                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.shopGap), count: LayoutConstants.shopCols),
-                                spacing: LayoutConstants.shopGap
-                            ) {
-                                ForEach(0..<8, id: \.self) { index in
-                                    SkeletonShopItemCard()
-                                        .staggeredAppear(index: index)
-                                }
-                            }
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.vertical, LayoutConstants.spaceSM)
-                        }
-                    } else if vm.filteredItems.isEmpty {
-                        // TODO: Add error property to ShopViewModel
-                        Spacer()
-                        EmptyStateView.shopEmpty
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            LazyVGrid(
-                                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.shopGap), count: LayoutConstants.shopCols),
-                                spacing: LayoutConstants.shopGap
-                            ) {
-                                if vm.selectedTab == 0 {
-                                    // All tab — sectioned by category
-                                    ForEach(vm.sectionedItems) { section in
-                                        Section {
-                                            ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
-                                                ItemCardView(
-                                                    shopItem: item,
-                                                    context: .shop(
-                                                        price: item.isGemPurchase ? item.gemPrice : item.goldPrice,
-                                                        isGem: item.isGemPurchase,
-                                                        canAfford: vm.canAfford(item),
-                                                        meetsLevel: vm.meetsLevel(item),
-                                                        isBuying: vm.buyingItemId == item.id
-                                                    )
-                                                ) { vm.selectItem(item) }
-                                                .staggeredAppear(index: index)
-                                            }
-                                        } header: {
-                                            HStack(spacing: LayoutConstants.spaceXS) {
-                                                Text(section.icon)
-                                                    .font(.system(size: 14)) // emoji — keep
-                                                Text(section.title.uppercased())
-                                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
-                                                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                                                Spacer()
-                                            }
-                                            .padding(.top, LayoutConstants.spaceSM)
-                                        }
-                                    }
-                                } else {
-                                    // Filtered tab — flat grid
-                                    ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
-                                        ItemCardView(
-                                            shopItem: item,
-                                            context: .shop(
-                                                price: item.isGemPurchase ? item.gemPrice : item.goldPrice,
-                                                isGem: item.isGemPurchase,
-                                                canAfford: vm.canAfford(item),
-                                                meetsLevel: vm.meetsLevel(item),
-                                                isBuying: vm.buyingItemId == item.id
-                                            )
-                                        ) { vm.selectItem(item) }
-                                        .staggeredAppear(index: index)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.vertical, LayoutConstants.spaceSM)
-                        }
-                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                        // Bottom padding so items don't hide behind merchant
-                        .contentMargins(.bottom, showMerchant ? 80 : 0, for: .scrollContent)
-                        .gesture(
-                            DragGesture(minimumDistance: 50, coordinateSpace: .local)
-                                .onEnded { value in
-                                    let horizontal = value.translation.width
-                                    let vertical = abs(value.translation.height)
-                                    guard abs(horizontal) > vertical * 1.5 else { return }
-                                    if horizontal < 0 && vm.selectedTab < ShopViewModel.tabs.count - 1 {
-                                        HapticManager.selection()
-                                        withAnimation(MotionConstants.tabIndicatorSlide) {
-                                            vm.selectedTab += 1
-                                        }
-                                    } else if horizontal > 0 && vm.selectedTab > 0 {
-                                        HapticManager.selection()
-                                        withAnimation(MotionConstants.tabIndicatorSlide) {
-                                            vm.selectedTab -= 1
-                                        }
-                                    }
-                                }
-                        )
-                    }
-                }
-
-                // Item detail modal (unified template)
-                if vm.showItemDetail, let shopItem = vm.selectedItem {
-                    ItemDetailSheet(
-                        item: shopItem.toItem(),
-                        comparedItem: vm.equippedItemForSlot(shopItem),
-                        playerGems: vm.gems,
-                        upgradeChances: [],
-                        onEquip: {},
-                        onUnequip: {},
-                        onSell: {},
-                        onUse: {},
-                        onUpgrade: { _ in },
-                        onRepair: {},
-                        onClose: { vm.closeDetail() },
-                        shopMode: .init(
-                            displayPrice: shopItem.displayPrice,
-                            isGemPurchase: shopItem.isGemPurchase,
-                            canAfford: vm.canAfford(shopItem),
-                            meetsLevel: vm.meetsLevel(shopItem),
-                            isBuying: vm.buyingItemId == shopItem.id,
-                            requiredLevel: shopItem.requiredLevel,
-                            onBuy: { vm.requestBuy(shopItem) }
-                        )
-                    )
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.2), value: vm.showItemDetail)
-                }
+                mainContent(vm)
+                    .transaction { $0.animation = nil }
             }
 
-            // NPC Guide Widget — equal padding like UnifiedHeroWidget
-            if showMerchant {
-                VStack {
-                    Spacer()
-                    NPCGuideWidget(
-                        npcTitle: "Merchant",
-                        onDismiss: {
-                            withAnimation(.easeOut(duration: 0.2)) {
-                                showMerchant = false
-                            }
-                        },
-                        npcImageName: "shopkeeper",
-                        attributedMessage: tipProvider.currentTip.attributedText,
-                        onTapCard: { tipProvider.nextTip() },
-                        messageId: AnyHashable(tipProvider.currentTip)
-                    )
-                    .padding(.horizontal, LayoutConstants.npcOuterPadding)
-                    .padding(.bottom, LayoutConstants.npcOuterPadding)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            // Collapsed merchant mini avatar
-            if showMerchantMini {
-                VStack {
-                    Spacer()
-                    HStack {
-                        NPCMiniButton(npcImageName: "shopkeeper", onTap: {
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                showMerchantMini = false
-                                showMerchant = true
-                            }
-                        })
-                        .padding(.leading, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceMD)
-                        Spacer()
-                    }
-                }
-                .transition(.scale.combined(with: .opacity))
-            }
+            merchantOverlay()
         }
         .confirmationDialog(
             "CONFIRM PURCHASE",
@@ -288,11 +54,6 @@ struct ShopDetailView: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
             }
-            ToolbarItem(placement: .principal) {
-                Text("SHOP")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-            }
         }
         .task {
             if vm == nil {
@@ -305,6 +66,295 @@ struct ShopDetailView: View {
                 vm = shopVM
             }
             await vm?.loadItems()
+        }
+    }
+
+    // MARK: - Main Content (VStack + Item Detail)
+
+    @ViewBuilder
+    private func mainContent(_ vm: ShopViewModel) -> some View {
+        VStack(spacing: 0) {
+            // Screen title
+            OrnamentalTitle("SHOP")
+                .padding(.top, LayoutConstants.spaceSM)
+
+            currencyBar(vm)
+
+            // Active quest banner
+            ActiveQuestBanner(questTypes: ["gold_spent"])
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.top, LayoutConstants.spaceSM)
+                .padding(.bottom, LayoutConstants.spaceSM)
+
+            // Special Offers carousel
+            if !vm.offers.isEmpty {
+                ShopOfferBannerView(
+                    offers: vm.offers,
+                    canAfford: { vm.canAffordOffer($0) },
+                    buyingId: vm.buyingOfferId,
+                    onBuy: { offer in Task { await vm.buyOffer(offer) } }
+                )
+                .padding(.bottom, LayoutConstants.spaceSM)
+            }
+
+            // Tab switcher
+            TabSwitcher(
+                tabs: ShopViewModel.tabs,
+                selectedIndex: Binding(
+                    get: { vm.selectedTab },
+                    set: { vm.selectedTab = $0 }
+                )
+            )
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
+            .accessibilityLabel("Shop tabs: \(ShopViewModel.tabs.joined(separator: ", "))")
+            .accessibilityValue("Current tab: \(ShopViewModel.tabs[vm.selectedTab])")
+            .onChange(of: vm.selectedTab) { _, newTab in
+                tipProvider.updateTab(newTab)
+            }
+
+            // Content area
+            shopContent(vm)
+        }
+
+        // Item detail modal (unified template)
+        itemDetailOverlay(vm)
+    }
+
+    // MARK: - Currency Bar
+
+    @ViewBuilder
+    private func currencyBar(_ vm: ShopViewModel) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            CurrencyDisplay(gold: vm.gold, gems: vm.gems)
+
+            Spacer()
+
+            Button {
+                appState.mainPath.append(AppRoute.currencyPurchase)
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .bold))
+                    Text("GET MORE")
+                }
+            }
+            .buttonStyle(.getMore)
+            .shimmer(color: DarkFantasyTheme.goldBright, duration: 3)
+            .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: true)
+        }
+        .tutorialAnchor(.shopGems)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceMD)
+        .padding(.bottom, LayoutConstants.spaceSM)
+        .background(DarkFantasyTheme.bgSecondary)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(DarkFantasyTheme.borderSubtle)
+                .frame(height: 1)
+        }
+    }
+
+    // MARK: - Shop Content (grid states)
+
+    @ViewBuilder
+    private func shopContent(_ vm: ShopViewModel) -> some View {
+        if vm.errorMessage != nil {
+            ErrorStateView.loadFailed { let _ = Task { await vm.loadItems() } }
+        } else if vm.isLoading && vm.items.isEmpty {
+            skeletonGrid()
+        } else if vm.filteredItems.isEmpty {
+            Spacer()
+            EmptyStateView.shopEmpty
+            Spacer()
+        } else {
+            itemGrid(vm)
+        }
+    }
+
+    // MARK: - Skeleton Grid
+
+    private func skeletonGrid() -> some View {
+        ScrollView {
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.shopGap), count: LayoutConstants.shopCols),
+                spacing: LayoutConstants.shopGap
+            ) {
+                ForEach(0..<8, id: \.self) { index in
+                    SkeletonShopItemCard()
+                        .staggeredAppear(index: index)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.vertical, LayoutConstants.spaceSM)
+        }
+    }
+
+    // MARK: - Item Grid
+
+    @ViewBuilder
+    private func itemGrid(_ vm: ShopViewModel) -> some View {
+        ScrollView {
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.shopGap), count: LayoutConstants.shopCols),
+                spacing: LayoutConstants.shopGap
+            ) {
+                if vm.selectedTab == 0 {
+                    sectionedItemsContent(vm)
+                } else {
+                    filteredItemsContent(vm)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.vertical, LayoutConstants.spaceSM)
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+        .contentMargins(.bottom, showMerchant ? 80 : 0, for: .scrollContent)
+        .gesture(
+            DragGesture(minimumDistance: 50, coordinateSpace: .local)
+                .onEnded { value in
+                    let horizontal = value.translation.width
+                    let vertical = abs(value.translation.height)
+                    guard abs(horizontal) > vertical * 1.5 else { return }
+                    if horizontal < 0 && vm.selectedTab < ShopViewModel.tabs.count - 1 {
+                        HapticManager.selection()
+                        withAnimation(MotionConstants.tabIndicatorSlide) {
+                            vm.selectedTab += 1
+                        }
+                    } else if horizontal > 0 && vm.selectedTab > 0 {
+                        HapticManager.selection()
+                        withAnimation(MotionConstants.tabIndicatorSlide) {
+                            vm.selectedTab -= 1
+                        }
+                    }
+                }
+        )
+    }
+
+    // MARK: - Sectioned Items (All tab)
+
+    @ViewBuilder
+    private func sectionedItemsContent(_ vm: ShopViewModel) -> some View {
+        ForEach(vm.sectionedItems) { section in
+            Section {
+                ForEach(Array(section.items.enumerated()), id: \.element.id) { index, item in
+                    shopItemCard(vm: vm, item: item, index: index)
+                }
+            } header: {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text(section.icon)
+                        .font(.system(size: 14)) // emoji — keep
+                    Text(section.title.uppercased())
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                    Spacer()
+                }
+                .padding(.top, LayoutConstants.spaceSM)
+            }
+        }
+    }
+
+    // MARK: - Filtered Items (category tabs)
+
+    @ViewBuilder
+    private func filteredItemsContent(_ vm: ShopViewModel) -> some View {
+        ForEach(Array(vm.filteredItems.enumerated()), id: \.element.id) { index, item in
+            shopItemCard(vm: vm, item: item, index: index)
+        }
+    }
+
+    // MARK: - Single Shop Item Card
+
+    private func shopItemCard(vm: ShopViewModel, item: ShopItem, index: Int) -> some View {
+        ItemCardView(
+            shopItem: item,
+            context: .shop(
+                price: item.isGemPurchase ? item.gemPrice : item.goldPrice,
+                isGem: item.isGemPurchase,
+                canAfford: vm.canAfford(item),
+                meetsLevel: vm.meetsLevel(item),
+                isBuying: vm.buyingItemId == item.id
+            )
+        ) { vm.selectItem(item) }
+        .staggeredAppear(index: index)
+    }
+
+    // MARK: - Item Detail Overlay
+
+    @ViewBuilder
+    private func itemDetailOverlay(_ vm: ShopViewModel) -> some View {
+        if vm.showItemDetail, let shopItem = vm.selectedItem {
+            ItemDetailSheet(
+                item: shopItem.toItem(),
+                comparedItem: vm.equippedItemForSlot(shopItem),
+                playerGems: vm.gems,
+                upgradeChances: [],
+                onEquip: {},
+                onUnequip: {},
+                onSell: {},
+                onUse: {},
+                onUpgrade: { _ in },
+                onRepair: {},
+                onClose: { vm.closeDetail() },
+                shopMode: .init(
+                    price: shopItem.isGemPurchase ? shopItem.gemPrice : shopItem.goldPrice,
+                    isGemPurchase: shopItem.isGemPurchase,
+                    canAfford: vm.canAfford(shopItem),
+                    meetsLevel: vm.meetsLevel(shopItem),
+                    isBuying: vm.buyingItemId == shopItem.id,
+                    requiredLevel: shopItem.requiredLevel,
+                    onBuy: { vm.requestBuy(shopItem) }
+                ),
+                playerLevel: vm.playerLevel
+            )
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.2), value: vm.showItemDetail)
+        }
+    }
+
+    // MARK: - Merchant Overlay
+
+    @ViewBuilder
+    private func merchantOverlay() -> some View {
+        // NPC Guide Widget — equal padding like UnifiedHeroWidget
+        if showMerchant {
+            VStack {
+                Spacer()
+                NPCGuideWidget(
+                    npcTitle: "Merchant",
+                    onDismiss: {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showMerchant = false
+                        }
+                    },
+                    npcImageName: "shopkeeper",
+                    attributedMessage: tipProvider.currentTip.attributedText,
+                    onTapCard: { tipProvider.nextTip() },
+                    messageId: AnyHashable(tipProvider.currentTip)
+                )
+                .padding(.horizontal, LayoutConstants.npcOuterPadding)
+                .padding(.bottom, LayoutConstants.npcOuterPadding)
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+
+        // Collapsed merchant mini avatar
+        if showMerchantMini {
+            VStack {
+                Spacer()
+                HStack {
+                    NPCMiniButton(npcImageName: "shopkeeper", onTap: {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            showMerchantMini = false
+                            showMerchant = true
+                        }
+                    })
+                    .padding(.leading, LayoutConstants.screenPadding)
+                    .padding(.bottom, LayoutConstants.spaceMD)
+                    Spacer()
+                }
+            }
+            .transition(.scale.combined(with: .opacity))
         }
     }
 }

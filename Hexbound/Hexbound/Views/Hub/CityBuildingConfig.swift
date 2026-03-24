@@ -6,7 +6,7 @@ struct CityBuilding: Identifiable {
     let id: String
     let imageName: String        // asset name in xcassets
     let label: String            // banner text
-    let route: AppRoute          // navigation target
+    let route: AppRoute?         // navigation target (nil = Coming Soon placeholder)
     var relativeX: CGFloat       // 0.0...1.0 position on terrain X
     var relativeY: CGFloat       // 0.0...1.0 position on terrain Y
     var relativeSize: CGFloat    // size relative to terrain height
@@ -106,6 +106,28 @@ let defaultCityBuildings: [CityBuilding] = [
         glowColor: Color.orange,
         fallbackIcon: "trophy.fill",
         labelYOffset: -0.04
+    ),
+    CityBuilding(
+        id: "guild-hall",
+        imageName: "building-guild-hall",
+        label: "GUILD HALL",
+        route: .guildHall,
+        relativeX: 0.12,
+        relativeY: 0.38,
+        relativeSize: 0.24,
+        glowColor: Color.orange,
+        fallbackIcon: "person.3.fill"
+    ),
+    CityBuilding(
+        id: "black-market",
+        imageName: "building-black-market",
+        label: "BLACK MARKET",
+        route: nil,
+        relativeX: 0.78,
+        relativeY: 0.75,
+        relativeSize: 0.24,
+        glowColor: Color.orange,
+        fallbackIcon: "bag.circle.fill"
     ),
 ]
 

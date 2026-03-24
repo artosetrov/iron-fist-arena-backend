@@ -181,28 +181,24 @@ struct NavGridButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.navButtonHeight)
             .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.3,
-                    cornerRadius: LayoutConstants.cardRadius
-                )
+                ZStack {
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.3,
+                        cornerRadius: LayoutConstants.cardRadius
+                    )
+                    SurfaceLightingOverlay(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.1)
+                }
             )
             .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
-            .overlay(alignment: .top) {
-                // Metallic highlight top edge
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
-                    .mask(
-                        Rectangle().frame(height: 1).frame(maxHeight: .infinity, alignment: .top)
-                    )
-            }
-            .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 4, y: 2)
+            .brightness(configuration.isPressed ? -0.06 : 0)
             .onChange(of: configuration.isPressed) { _, pressed in
                 if pressed { SFXManager.shared.play(.uiTap) }
             }
@@ -334,9 +330,12 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
             .foregroundStyle(isEnabled ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textDisabled)
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceSM)
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
@@ -351,6 +350,7 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
                                     endRadius: 60
                                 )
                             )
+                        SurfaceLightingOverlay(cornerRadius: LayoutConstants.buttonRadius)
                     }
                 }
             )
@@ -359,10 +359,13 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                     .stroke(isEnabled ? DarkFantasyTheme.borderOrnament : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
             )
-            .shadow(color: isEnabled ? DarkFantasyTheme.goldGlow.opacity(0.5) : .clear, radius: 6)
-            .brightness(configuration.isPressed ? -0.06 : 0)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
+            // Ornamental accents
+            .cornerBrackets(color: isEnabled ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderSubtle, length: 10, thickness: 1.2)
+            .cornerDiamonds(color: isEnabled ? DarkFantasyTheme.goldBright : DarkFantasyTheme.bgDisabled, size: 4)
+            .shadow(color: isEnabled ? DarkFantasyTheme.goldGlow.opacity(pressed ? 0.7 : 0.5) : .clear, radius: pressed ? 10 : 6)
+            .brightness(pressed ? -0.06 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
             }
     }
 }
@@ -404,6 +407,8 @@ struct CompactOutlineButtonStyle: ButtonStyle {
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
             .foregroundStyle(color)
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceSM)
             .background(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .fill(color.opacity(fillOpacity))
@@ -577,6 +582,61 @@ struct FightButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Compact Fight Button (Content-sized orange CTA — Refresh, secondary combat actions)
+// Like FightButtonStyle but adapts to content size instead of full-width
+
+struct CompactFightButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        configuration.label
+            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .textCase(.uppercase)
+            .tracking(1)
+            .foregroundStyle(isEnabled ? .white : DarkFantasyTheme.textDisabled)
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceSM)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(isEnabled ? AnyShapeStyle(
+                            LinearGradient(
+                                colors: [Color(hex: 0x8B1A00), Color(hex: 0xD35400), Color(hex: 0xC44200)],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        ) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
+                    if isEnabled {
+                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color(hex: 0xFF6600).opacity(0.2), Color.clear],
+                                    center: .init(x: 0.5, y: 0.35),
+                                    startRadius: 0,
+                                    endRadius: 60
+                                )
+                            )
+                        SurfaceLightingOverlay(cornerRadius: LayoutConstants.buttonRadius, topHighlight: 0.06, bottomShadow: 0.2)
+                    }
+                }
+            )
+            .innerBorder(
+                cornerRadius: LayoutConstants.buttonRadius - 2,
+                inset: 2,
+                color: isEnabled ? Color(hex: 0xFF6600).opacity(0.2) : Color.clear
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(isEnabled ? Color(hex: 0x4A1500) : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
+            )
+            .shadow(color: isEnabled ? Color(hex: 0xFF5000).opacity(pressed ? 0.4 : 0.2) : .clear, radius: 6)
+            .brightness(pressed ? -0.06 : 0)
+            .onChange(of: configuration.isPressed) { _, newPressed in
+                if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
+            }
+    }
+}
+
 // MARK: - Scale Press Style (Pure press feedback — no chrome)
 // Replaces: AppearanceButtonStyle, EditorAppearanceButtonStyle, CardTapStyle
 // Now uses opacity instead of scale for consistency
@@ -652,6 +712,10 @@ extension ButtonStyle where Self == CompactPrimaryButtonStyle {
 
 extension ButtonStyle where Self == DangerCompactButtonStyle {
     static var dangerCompact: DangerCompactButtonStyle { DangerCompactButtonStyle() }
+}
+
+extension ButtonStyle where Self == CompactFightButtonStyle {
+    static var compactFight: CompactFightButtonStyle { CompactFightButtonStyle() }
 }
 
 extension ButtonStyle where Self == CompactOutlineButtonStyle {

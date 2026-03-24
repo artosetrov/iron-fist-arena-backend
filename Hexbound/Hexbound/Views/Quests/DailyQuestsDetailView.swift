@@ -52,6 +52,7 @@ struct DailyQuestsDetailView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.98)))
                     }
                 }
+                .transaction { $0.animation = nil }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -204,110 +205,7 @@ struct DailyQuestsDetailView: View {
         let isClaiming = vm.claimingQuestId == quest.id
         let destination = destinationRoute(for: quest)
 
-        Button {
-            if let destination {
-                if destination == .shop {
-                    appState.shopInitialTab = 0
-                }
-                appState.mainPath.append(destination)
-            }
-        } label: {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                // Icon
-                Text(quest.icon)
-                    .font(.system(size: 28)) // emoji text — keep as is
-                    .frame(width: 44)
-
-                // Info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(quest.title)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
-
-                    Text(quest.description)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .lineLimit(2)
-
-                    // Progress bar
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                    .fill(DarkFantasyTheme.bgTertiary)
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                    .fill(quest.completed ? DarkFantasyTheme.success : DarkFantasyTheme.cyan)
-                                    .frame(width: geo.size.width * max(0, min(1, quest.progressFraction)))
-                            }
-                        }
-                        .frame(height: 6)
-
-                        Text("\(quest.progress)/\(quest.target)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .frame(width: 36, alignment: .trailing)
-                    }
-
-                    // Rewards
-                    Text("\(quest.rewardGold) Gold  \(quest.rewardXp) XP")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                }
-
-                Spacer(minLength: 4)
-
-                // Right side: Claim button or navigation chevron
-                VStack(spacing: 6) {
-                    if quest.rewardClaimed {
-                        Text("Done")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.success)
-                    } else if quest.canClaim {
-                        Button {
-                            HapticManager.success()
-                            SFXManager.shared.play(.uiQuestComplete)
-                            showQuestBurst = true
-                            burstQuestId = quest.id
-                            Task { await vm.claimQuest(quest) }
-                        } label: {
-                            if isClaiming {
-                                ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
-                            } else {
-                                Text("Claim")
-                            }
-                        }
-                        .frame(width: 60, height: 30)
-                        .buttonStyle(.compactPrimary)
-                        .disabled(isClaiming)
-                    }
-
-                    // Navigation chevron — shows destination is tappable
-                    if destination != nil && !quest.rewardClaimed {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold)) // SF Symbol icon — keep as is
-                            .foregroundStyle(DarkFantasyTheme.goldDim)
-                    }
-                }
-            }
-            .padding(LayoutConstants.spaceSM)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .fill(quest.rewardClaimed ? DarkFantasyTheme.bgPrimary : DarkFantasyTheme.bgSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(
-                        quest.rewardClaimed ? DarkFantasyTheme.success.opacity(0.2)
-                        : quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.4)
-                        : DarkFantasyTheme.borderSubtle,
-                        lineWidth: 1
-                    )
-            )
-            .opacity(quest.rewardClaimed ? 0.7 : 1.0)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(QuestCardButtonStyle())
-        .disabled(destination == nil && !quest.canClaim)
+        questCardContent(quest, vm: vm, isClaiming: isClaiming, destination: destination)
         .overlay {
             if showQuestBurst && burstQuestId == quest.id {
                 GeometryReader { geo in
@@ -317,6 +215,132 @@ struct DailyQuestsDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Quest Card Content
+
+    /// Separates navigation (outer button) from claim action to avoid button-in-button tap interception.
+    /// When quest.canClaim == true, the card body is NOT wrapped in a navigation button —
+    /// only the Claim button is interactive. Otherwise, the whole card is a navigation button.
+    @ViewBuilder
+    private func questCardContent(_ quest: Quest, vm: DailyQuestsViewModel, isClaiming: Bool, destination: AppRoute?) -> some View {
+        let cardBody = questCardBody(quest, vm: vm, isClaiming: isClaiming, destination: destination)
+
+        if quest.canClaim || quest.rewardClaimed {
+            // No outer navigation button — Claim button handles interaction,
+            // or quest is already done (no interaction needed)
+            cardBody
+        } else if let destination {
+            // Quest not yet complete — whole card navigates to relevant screen
+            Button {
+                if destination == .shop {
+                    appState.shopInitialTab = 0
+                }
+                appState.mainPath.append(destination)
+            } label: {
+                cardBody
+            }
+            .buttonStyle(QuestCardButtonStyle())
+        } else {
+            // No destination, not claimable — static card
+            cardBody
+        }
+    }
+
+    @ViewBuilder
+    private func questCardBody(_ quest: Quest, vm: DailyQuestsViewModel, isClaiming: Bool, destination: AppRoute?) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Icon
+            Text(quest.icon)
+                .font(.system(size: 28)) // emoji text — keep as is
+                .frame(width: 44)
+
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(quest.title)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
+
+                Text(quest.description)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .lineLimit(2)
+
+                // Progress bar
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                .fill(DarkFantasyTheme.bgTertiary)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                .fill(quest.completed ? DarkFantasyTheme.success : DarkFantasyTheme.cyan)
+                                .frame(width: geo.size.width * max(0, min(1, quest.progressFraction)))
+                        }
+                    }
+                    .frame(height: 6)
+
+                    Text("\(quest.progress)/\(quest.target)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .frame(width: 36, alignment: .trailing)
+                }
+
+                // Rewards
+                Text("\(quest.rewardGold) Gold  \(quest.rewardXp) XP")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+            }
+
+            Spacer(minLength: 4)
+
+            // Right side: Claim button or navigation chevron
+            VStack(spacing: 6) {
+                if quest.rewardClaimed {
+                    Text("Done")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.success)
+                } else if quest.canClaim {
+                    Button {
+                        HapticManager.success()
+                        SFXManager.shared.play(.uiQuestComplete)
+                        showQuestBurst = true
+                        burstQuestId = quest.id
+                        Task { await vm.claimQuest(quest) }
+                    } label: {
+                        if isClaiming {
+                            ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
+                        } else {
+                            Text("Claim")
+                        }
+                    }
+                    .buttonStyle(.compactPrimary)
+                    .disabled(isClaiming)
+                }
+
+                // Navigation chevron — shows destination is tappable
+                if destination != nil && !quest.rewardClaimed && !quest.canClaim {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold)) // SF Symbol icon — keep as is
+                        .foregroundStyle(DarkFantasyTheme.goldDim)
+                }
+            }
+        }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(quest.rewardClaimed ? DarkFantasyTheme.bgPrimary : DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(
+                    quest.rewardClaimed ? DarkFantasyTheme.success.opacity(0.2)
+                    : quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.4)
+                    : DarkFantasyTheme.borderSubtle,
+                    lineWidth: 1
+                )
+        )
+        .opacity(quest.rewardClaimed ? 0.7 : 1.0)
+        .contentShape(Rectangle())
     }
 }
 

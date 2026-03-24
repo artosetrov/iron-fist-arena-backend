@@ -8,6 +8,11 @@ final class AppState {
     var pendingConfirmationEmail: String?
     var currentUser: [String: Any]?
 
+    /// True if the logged-in user has admin role (used to show dev tools)
+    var isAdmin: Bool {
+        (currentUser?["role"] as? String) == "admin"
+    }
+
     // MARK: - Character
     var currentCharacter: Character?
 
@@ -46,6 +51,9 @@ final class AppState {
     var hasAutoShownDailyLogin = false  // prevents auto-popup on every hub visit
     var dailyLoginCanClaim = false       // drives the hub widget badge
     var unreadMailCount = 0               // drives the inbox badge on hub
+
+    // MARK: - Session Expired Modal
+    var showSessionExpiredModal = false
 
     // MARK: - Level Up Modal
     var showLevelUpModal = false
@@ -127,14 +135,52 @@ final class AppState {
     }
 
     func showToast(_ title: String, subtitle: String = "", type: ToastType = .info, actionLabel: String? = nil, action: (() -> Void)? = nil) {
-        let toast = ToastMessage(title: title, subtitle: subtitle, type: type, actionLabel: actionLabel, action: action)
-        self.toasts.append(toast)
+        // Deduplicate: if a toast with the same title already exists, reset its timer instead of adding a new one
+        if let existingIndex = toasts.firstIndex(where: { $0.title == title }) {
+            // Remove old toast and re-add with fresh timer (resets auto-dismiss)
+            toasts.remove(at: existingIndex)
+            let toast = ToastMessage(title: title, subtitle: subtitle, type: type, actionLabel: actionLabel, action: action)
+            toasts.append(toast)
+            scheduleToastDismissal(toast, duration: action != nil ? 5 : 3)
+            return
+        }
 
-        let duration: Double = action != nil ? 5 : 3  // longer for actionable toasts
+        let toast = ToastMessage(title: title, subtitle: subtitle, type: type, actionLabel: actionLabel, action: action)
+
+        // Limit: max 1 visible toast — new one replaces old one
+        if !toasts.isEmpty {
+            toasts.removeAll()
+        }
+        toasts.append(toast)
+        scheduleToastDismissal(toast, duration: action != nil ? 5 : 3)
+    }
+
+    func dismissToast(_ id: UUID) {
+        toasts.removeAll { $0.id == id }
+    }
+
+    private func scheduleToastDismissal(_ toast: ToastMessage, duration: Double) {
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(duration))
             self?.toasts.removeAll { $0.id == toast.id }
         }
+    }
+
+    /// Show session expired as a blocking modal instead of a dismissable toast.
+    /// Call this from the 401 handler instead of showing a toast.
+    func triggerSessionExpired() {
+        // Dismiss any existing toasts — session expired takes priority
+        toasts.removeAll()
+        withAnimation(MotionConstants.spring) {
+            showSessionExpiredModal = true
+        }
+    }
+
+    func dismissSessionExpiredAndLogout() {
+        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
+            showSessionExpiredModal = false
+        }
+        logout()
     }
 
     func logout() {
@@ -193,6 +239,19 @@ enum ToastType {
         case .reward: DarkFantasyTheme.toastReward
         case .info: DarkFantasyTheme.toastInfo
         case .error: DarkFantasyTheme.toastError
+        }
+    }
+
+    /// SF Symbol icon for each toast type — replaces the 8px colored dot for better a11y (color + icon + text)
+    var icon: String {
+        switch self {
+        case .achievement: "trophy.fill"
+        case .levelUp: "arrow.up.circle.fill"
+        case .rankUp: "crown.fill"
+        case .quest: "scroll.fill"
+        case .reward: "gift.fill"
+        case .info: "info.circle.fill"
+        case .error: "exclamationmark.triangle.fill"
         }
     }
 }

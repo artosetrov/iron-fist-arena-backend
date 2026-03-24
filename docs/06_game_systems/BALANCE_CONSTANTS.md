@@ -460,6 +460,29 @@ BP XP for Level N = 100 + N × 50
 
 ---
 
+## PvP Matchmaking Parameters
+
+Matchmaking uses a **3-phase cascade** — each phase widens the search if too few candidates are found.
+
+| Parameter | `/pvp/opponents` | `/pvp/find-match` |
+|-----------|-------------------|-------------------|
+| Max returned | 5 | 3 |
+| Level range | ±10 | ±10 |
+| Gear score tolerance | ±80% | ±80% |
+| Display (iOS) | 2 at a time (carousel) | N/A |
+
+**Phase 1:** Level ±10 AND gear score ±80% → `take: 15`
+**Phase 2 (fallback):** Level ±10 only (no gear filter) → merge without duplicates
+**Phase 3 (final fallback):** ANY character (no level/gear filter) → merge without duplicates
+
+Sorting: closest `levelDiff` first, then closest `gearDiff`. Top N returned.
+
+**Why wide range:** Early-stage player pool is small. The cascade ensures opponents are always shown, with closest matches ranked first. Tighten ranges as player base grows.
+
+**Note:** Matchmaking does NOT use `pvpRating` for filtering — rating is display-only. If rating-based matchmaking is added, see archive audit for smurf/manipulation concerns.
+
+---
+
 ## Reference Table: Stamina Costs Summary
 
 ```

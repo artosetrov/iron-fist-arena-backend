@@ -26,6 +26,13 @@ final class AchievementsViewModel {
     var completedCount: Int { achievements.filter(\.completed).count }
     var unclaimedCount: Int { achievements.filter(\.canClaim).count }
 
+    /// Unclaimed count for a specific tab index (H4 fix: per-tab badges).
+    func unclaimedCountForTab(_ tabIndex: Int) -> Int {
+        guard tabIndex >= 0, tabIndex < Self.tabCategories.count else { return 0 }
+        let category = Self.tabCategories[tabIndex]
+        return achievements.filter { $0.category == category && $0.canClaim }.count
+    }
+
     var filteredAchievements: [Achievement] {
         let category = Self.tabCategories[selectedTab]
         return achievements
@@ -43,6 +50,7 @@ final class AchievementsViewModel {
     func loadAchievements() async {
         if let cached = cache.cachedAchievements() {
             achievements = cached
+            autoSelectBestTab() // H4 fix: auto-select tab with most unclaimed
         } else {
             isLoading = true
         }
@@ -50,6 +58,7 @@ final class AchievementsViewModel {
         achievements = result
         cache.cacheAchievements(result)
         isLoading = false
+        autoSelectBestTab() // H4 fix: re-check after network load
     }
 
     // MARK: - Claim
@@ -63,6 +72,23 @@ final class AchievementsViewModel {
                 achievements[idx].rewardClaimed = true
             }
             appState.showToast("Reward Claimed! \(achievement.title)", type: .achievement)
+        } else {
+            // H6 fix: error feedback on failed claim (was silent failure)
+            appState.showToast("Claim failed. Try again.", type: .error)
+        }
+    }
+
+    // MARK: - Auto-Select Tab (H4 fix)
+
+    /// On first load, auto-select the tab with the most unclaimed achievements.
+    private func autoSelectBestTab() {
+        // Only auto-select if current tab has no unclaimed
+        guard unclaimedCountForTab(selectedTab) == 0 else { return }
+        let bestTab = Self.tabCategories.indices.max(by: {
+            unclaimedCountForTab($0) < unclaimedCountForTab($1)
+        })
+        if let bestTab, unclaimedCountForTab(bestTab) > 0 {
+            selectedTab = bestTab
         }
     }
 }

@@ -16,12 +16,8 @@ struct UnifiedHeroWidget: View {
     let context: WidgetContext
     var showCurrencies: Bool = true
     var onTap: (() -> Void)? = nil
-    var onUseHealthPotion: (() -> Void)? = nil
-    var onUseStaminaPotion: (() -> Void)? = nil
-    var onRefillStamina: (() -> Void)? = nil
 
     @Environment(AppState.self) private var appState
-    @State private var healFlash = false
     @State private var lowHPPulse = false
     @State private var statBadgePulse = false
 
@@ -39,26 +35,6 @@ struct UnifiedHeroWidget: View {
     }
 
     private var isCriticalHP: Bool { hpPercent < 0.25 }
-    private var isLowHP: Bool { hpPercent < 0.50 }
-    private var isLowStamina: Bool { staminaPercent < 0.30 }
-
-    private var healthPotionCount: Int {
-        guard let items = appState.cachedInventory else { return 0 }
-        return items.filter { $0.consumableType?.contains("health_potion") == true }
-            .reduce(0) { $0 + ($1.quantity ?? 0) }
-    }
-
-    private var staminaPotionCount: Int {
-        guard let items = appState.cachedInventory else { return 0 }
-        return items.filter { $0.consumableType?.contains("stamina_potion") == true }
-            .reduce(0) { $0 + ($1.quantity ?? 0) }
-    }
-
-    private var hasBrokenGear: Bool {
-        guard let items = appState.cachedInventory else { return false }
-        return items.contains { ($0.durability ?? 1) <= 0 && ($0.isEquipped ?? false) }
-    }
-
     private var statPointsAvailable: Int { character.statPoints ?? 0 }
 
     private func formatGold(_ n: Int) -> String {
@@ -82,9 +58,6 @@ struct UnifiedHeroWidget: View {
 
                 // Row 3: Stamina bar (full width, text inside)
                 staminaBarSection
-
-                // Row 4: Pills (conditional)
-                row4Content
             }
         }
         .frame(minHeight: LayoutConstants.widgetMinHeight)
@@ -98,23 +71,26 @@ struct UnifiedHeroWidget: View {
             RoundedRectangle(cornerRadius: LayoutConstants.widgetRadius)
                 .stroke(DarkFantasyTheme.bgCardBorder, lineWidth: 1)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.widgetRadius)
-                .fill(DarkFantasyTheme.healFlash.opacity(healFlash ? 0.25 : 0))
-                .allowsHitTesting(false)
-        )
         .contentShape(Rectangle())
         .onTapGesture {
             onTap?()
         }
         .animation(.easeInOut(duration: 0.3), value: hpPercent)
-        .task {
+        .onChange(of: isCriticalHP) { _, critical in
+            if critical {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    lowHPPulse = true
+                }
+            } else {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    lowHPPulse = false
+                }
+            }
+        }
+        .onAppear {
             if isCriticalHP {
-                while true {
-                    try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 seconds
-                    withAnimation(.easeInOut(duration: 0.8)) {
-                        lowHPPulse.toggle()
-                    }
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    lowHPPulse = true
                 }
             }
         }
@@ -296,109 +272,9 @@ struct UnifiedHeroWidget: View {
         }
         .frame(height: LayoutConstants.widgetBarHeight)
         .animation(.easeInOut(duration: MotionConstants.normal), value: staminaPercent)
-        .breathing(scale: 0.01, isActive: isLowStamina)
     }
 
-    // MARK: - Row 4: Pills (Context-dependent, shown below bars)
-
-    @ViewBuilder
-    private var row4Content: some View {
-        // Priority logic: first match wins
-        if isCriticalHP && healthPotionCount > 0 {
-            WidgetPill(
-                icon: "",
-                text: "Heal",
-                count: "×\(healthPotionCount)",
-                imageAsset: "pot_health_small",
-                style: .urgent,
-                isInteractive: true,
-                action: {
-                    onUseHealthPotion?()
-                    triggerHealFlash()
-                }
-            )
-            .frame(height: LayoutConstants.pillHeight)
-        } else if isCriticalHP && healthPotionCount == 0 {
-            WidgetPill(icon: "", text: "Critical HP", imageAsset: "icon-vitality", style: .warn)
-                .frame(height: LayoutConstants.pillHeight)
-        } else if isLowHP && healthPotionCount > 0 {
-            WidgetPill(
-                icon: "",
-                text: "Heal",
-                count: "×\(healthPotionCount)",
-                imageAsset: "pot_health_small",
-                style: .heal,
-                isInteractive: true,
-                action: {
-                    onUseHealthPotion?()
-                    triggerHealFlash()
-                }
-            )
-            .frame(height: LayoutConstants.pillHeight)
-        } else if isLowStamina && staminaPotionCount > 0 {
-            WidgetPill(
-                icon: "",
-                text: "Energy",
-                count: "×\(staminaPotionCount)",
-                imageAsset: "pot_stamina_small",
-                style: .energy,
-                isInteractive: true,
-                action: {
-                    onUseStaminaPotion?()
-                }
-            )
-            .frame(height: LayoutConstants.pillHeight)
-        } else if hasBrokenGear {
-            WidgetPill(icon: "", text: "Repair Gear", imageAsset: "icon-strength", style: .warn)
-                .frame(height: LayoutConstants.pillHeight)
-        } else if context == .arena {
-            arenaRow4Pills
-        }
-        // Default: no pills row (clean layout per prototype)
-    }
-
-    // MARK: - Arena Pills
-
-    private var arenaRow4Pills: some View {
-        HStack(spacing: LayoutConstants.pillSpacing) {
-            WidgetPill(
-                icon: "",
-                text: "\(character.pvpRating)",
-                imageAsset: "icon-pvp-rating",
-                style: .pvp
-            )
-            .frame(height: LayoutConstants.pillHeight)
-
-            if (character.pvpWinStreak ?? 0) > 0 {
-                WidgetPill(
-                    icon: "",
-                    text: "Streak: \(character.pvpWinStreak ?? 0)",
-                    imageAsset: "icon-wins",
-                    style: .streak
-                )
-                .frame(height: LayoutConstants.pillHeight)
-            }
-
-            if character.firstWinToday == true {
-                WidgetPill(
-                    icon: "",
-                    text: "First Win!",
-                    imageAsset: "reward-first-win",
-                    style: .bonus
-                )
-                .frame(height: LayoutConstants.pillHeight)
-            }
-        }
-    }
-
-    // MARK: - Helpers
-
-    private func triggerHealFlash() {
-        withAnimation(.easeIn(duration: 0.15)) { healFlash = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            withAnimation(.easeOut(duration: 0.3)) { healFlash = false }
-        }
-    }
+    // Pills removed — contextual actions now shown via NPC widget
 }
 
 // MARK: - Preview

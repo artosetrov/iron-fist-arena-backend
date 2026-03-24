@@ -30,86 +30,87 @@ struct ArenaDetailView: View {
 
             if let vm {
                 VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: LayoutConstants.sectionGap) {
-                        // Screen title
-                        OrnamentalTitle("ARENA", subtitle: "Prove your worth")
-                            .padding(.top, LayoutConstants.spaceXS)
+                    // Screen title — sticky above tabs
+                    OrnamentalTitle("ARENA", subtitle: "Prove your worth", accentColor: DarkFantasyTheme.danger)
+                        .padding(.top, LayoutConstants.spaceXS)
+                        .padding(.bottom, LayoutConstants.spaceXS)
 
-                        // Active quest banner
-                        ActiveQuestBanner(questTypes: ["pvp_wins"])
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-
-                        // Unified Hero Widget (replaces staminaBar + arenaHeader + HubCharacterCardWrapper)
-                        if let char = appState.currentCharacter {
-                            UnifiedHeroWidget(
-                                character: char,
-                                context: .arena,
-                                onTap: { appState.mainPath.append(AppRoute.hero) },
-                                onUseHealthPotion: {
-                                    Task { await useHealthPotion() }
-                                },
-                                onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
-                            )
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                        }
-
-                        // Low HP potion banner — shown when HP < 30%
-                        if LowHPPotionBanner.shouldShow(character: appState.currentCharacter) {
-                            LowHPPotionBanner(
-                                character: appState.currentCharacter!,
-                                hasHealthPotion: hasHealthPotion,
-                                onDrinkPotion: {
-                                    Task { await useHealthPotion() }
-                                },
-                                onGoToShop: {
-                                    appState.shopInitialTab = 3 // Potions tab
-                                    appState.mainPath.append(AppRoute.shop)
-                                }
-                            )
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
-
-                        // Current stance indicator
-                        if let stance = appState.currentCharacter?.combatStance {
-                            stancePreview(stance)
-                                .tutorialAnchor(.arenaStance)
-                        }
-
-                        // Tab Switcher
-                        TabSwitcher(
-                            tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
-                            selectedIndex: Binding(
-                                get: { vm.selectedTab },
-                                set: { newValue in
-                                    vm.selectedTab = newValue
-                                    Task { await vm.loadTabData() }
-                                }
-                            )
+                    // Tab Switcher — sticky
+                    TabSwitcher(
+                        tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
+                        selectedIndex: Binding(
+                            get: { vm.selectedTab },
+                            set: { newValue in
+                                vm.selectedTab = newValue
+                                Task { await vm.loadTabData() }
+                            }
                         )
-                        .accessibilityLabel("Arena tabs")
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.vertical, LayoutConstants.tabSwitcherPaddingV)
+                    )
+                    .accessibilityLabel("Arena tabs")
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.bottom, LayoutConstants.spaceSM)
 
-                        // Tab Content
-                        switch vm.selectedTab {
-                        case 0: opponentsTab(vm)
-                        case 1: revengeTab(vm)
-                        case 2: historyTab(vm)
-                        default: EmptyView()
+                    // Scrollable content
+                    ScrollView {
+                        VStack(spacing: LayoutConstants.sectionGap) {
+                            // Active quest banner
+                            ActiveQuestBanner(questTypes: ["pvp_wins"])
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+
+                            // Unified Hero Widget
+                            if let char = appState.currentCharacter {
+                                UnifiedHeroWidget(
+                                    character: char,
+                                    context: .arena,
+                                    onTap: { appState.mainPath.append(AppRoute.hero) }
+                                )
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+
+                                // PvP Stats Bar — rating, streak, first win
+                                arenaPvpStatsBar(char)
+                                    .padding(.horizontal, LayoutConstants.screenPadding)
+                            }
+
+                            // Low HP potion banner — shown when HP < 30%
+                            if LowHPPotionBanner.shouldShow(character: appState.currentCharacter) {
+                                LowHPPotionBanner(
+                                    character: appState.currentCharacter!,
+                                    hasHealthPotion: hasHealthPotion,
+                                    onDrinkPotion: {
+                                        Task { await useHealthPotion() }
+                                    },
+                                    onGoToShop: {
+                                        appState.shopInitialTab = 3 // Potions tab
+                                        appState.mainPath.append(AppRoute.shop)
+                                    }
+                                )
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+
+                            // Current stance indicator
+                            if let stance = appState.currentCharacter?.combatStance {
+                                stancePreview(stance)
+                                    .tutorialAnchor(.arenaStance)
+                            }
+
+                            // Tab Content
+                            switch vm.selectedTab {
+                            case 0: opponentsTab(vm)
+                            case 1: revengeTab(vm)
+                            case 2: historyTab(vm)
+                            default: EmptyView()
+                            }
+
+                            Spacer().frame(height: LayoutConstants.spaceLG)
                         }
-
-                        Spacer().frame(height: LayoutConstants.spaceLG)
                     }
-                }
 
-                // Refresh button pinned to bottom
-                if vm.selectedTab == 0 && !vm.opponents.isEmpty {
-                    refreshButton(vm)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM)
-                }
+                    // Refresh button pinned to bottom
+                    if vm.selectedTab == 0 && !vm.opponents.isEmpty {
+                        refreshButton(vm)
+                            .padding(.bottom, LayoutConstants.spaceSM)
+                    }
                 } // VStack
                 .sheet(isPresented: Binding(
                     get: { vm.showComparison },
@@ -128,6 +129,7 @@ struct ArenaDetailView: View {
                         )
                     }
                 }
+                .transaction { $0.animation = nil }
             }
 
             // NPC Guide Widget — player's own avatar as arena coach
@@ -182,11 +184,6 @@ struct ArenaDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
-            }
-            ToolbarItem(placement: .principal) {
-                Text("ARENA")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
         .confirmationDialog(
@@ -265,6 +262,82 @@ struct ArenaDetailView: View {
                 type: .reward
             )
         }
+    }
+
+    // MARK: - PvP Stats Bar
+
+    @ViewBuilder
+    private func arenaPvpStatsBar(_ char: Character) -> some View {
+        HStack(spacing: 0) {
+            // Rating
+            pvpStatItem(
+                imageAsset: "icon-pvp-rating",
+                value: "\(char.pvpRating)",
+                label: "Rating",
+                accentColor: DarkFantasyTheme.gold
+            )
+
+            // Divider
+            Rectangle()
+                .fill(DarkFantasyTheme.borderMedium.opacity(0.3))
+                .frame(width: 1, height: 28)
+
+            // Win Streak
+            pvpStatItem(
+                imageAsset: "icon-wins",
+                value: "\(char.pvpWinStreak ?? 0)",
+                label: "Streak",
+                accentColor: DarkFantasyTheme.danger
+            )
+
+            // First Win bonus
+            if char.firstWinToday == true {
+                Rectangle()
+                    .fill(DarkFantasyTheme.borderMedium.opacity(0.3))
+                    .frame(width: 1, height: 28)
+
+                pvpStatItem(
+                    imageAsset: "reward-first-win",
+                    value: "2×",
+                    label: "First Win",
+                    accentColor: DarkFantasyTheme.success
+                )
+            }
+        }
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+    }
+
+    @ViewBuilder
+    private func pvpStatItem(imageAsset: String, value: String, label: String, accentColor: Color) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(imageAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(accentColor)
+                Text(label)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Stance Preview
@@ -353,7 +426,7 @@ struct ArenaDetailView: View {
                 Text("New Opponents")
             }
         }
-        .buttonStyle(.secondary)
+        .buttonStyle(.compactPrimary)
         .disabled(vm.isRefreshing || opponentCardPhase == .animatingOut)
         .accessibilityLabel("Find new opponents")
     }

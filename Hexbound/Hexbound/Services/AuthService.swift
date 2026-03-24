@@ -212,7 +212,8 @@ final class AuthService {
         Task {
             await APIClient.shared.setOnUnauthorized { [weak appState] in
                 Task { @MainActor in
-                    appState?.logout()
+                    // Show blocking modal instead of silent logout — user sees what happened
+                    appState?.triggerSessionExpired()
                 }
             }
         }

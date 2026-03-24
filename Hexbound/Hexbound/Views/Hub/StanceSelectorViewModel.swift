@@ -69,4 +69,46 @@ final class StanceSelectorViewModel {
     static func zoneLabel(for zone: String) -> String {
         zone.uppercased()
     }
+
+    // MARK: - Stance Bonus Data
+
+    /// Attack zone intrinsic bonuses (from balance.ts STANCE_ZONES.ATTACK_ZONE)
+    static func attackBonuses(for zone: String) -> (offense: Int, crit: Int) {
+        switch zone {
+        case "head":  return (10, 5)
+        case "chest": return (5, 0)
+        case "legs":  return (0, -3)
+        default:      return (0, 0)
+        }
+    }
+
+    /// Defense zone intrinsic bonuses (from balance.ts STANCE_ZONES.DEFENSE_ZONE)
+    static func defenseBonuses(for zone: String) -> (defense: Int, dodge: Int) {
+        switch zone {
+        case "head":  return (0, 8)
+        case "chest": return (10, 0)
+        case "legs":  return (5, 3)
+        default:      return (0, 0)
+        }
+    }
+
+    /// Short flavor description for attack zone
+    static func attackDescription(for zone: String) -> String {
+        switch zone {
+        case "head":  return "High risk, high reward. Maximum damage and crit chance."
+        case "chest": return "Balanced offense. Moderate damage bonus."
+        case "legs":  return "Conservative. No bonus, reduced crit chance."
+        default:      return ""
+        }
+    }
+
+    /// Short flavor description for defense zone
+    static func defenseDescription(for zone: String) -> String {
+        switch zone {
+        case "head":  return "Evasive. High dodge chance, no armor bonus."
+        case "chest": return "Tanky. Maximum damage reduction."
+        case "legs":  return "Balanced defense. Moderate armor and dodge."
+        default:      return ""
+        }
+    }
 }

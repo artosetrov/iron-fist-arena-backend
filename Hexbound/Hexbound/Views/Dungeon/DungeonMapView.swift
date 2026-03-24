@@ -33,7 +33,6 @@ struct DungeonMapView: View {
                 let terrainWidth = viewHeight * imageAspect
                 let terrainSize = CGSize(width: terrainWidth, height: viewHeight)
 
-
                 ZStack {
                     // Main scrollable map — fills entire screen
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -69,11 +68,34 @@ struct DungeonMapView: View {
                         .background(ScrollBounceDisabler())
                     }
                     .defaultScrollAnchor(.leading)
-
-                    // Note: CASTLE button is now in HubView overlay (shared with ADVENTURES toggle)
                 }
             }
             .ignoresSafeArea()
+
+            // CASTLE button — when pushed on mainPath (no onBack), show a floating back button
+            if onBack == nil {
+                VStack {
+                    Spacer()
+                    Button {
+                        HapticManager.selection()
+                        if !appState.mainPath.isEmpty {
+                            appState.mainPath.removeLast()
+                        }
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceSM) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("CASTLE")
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .tracking(1)
+                        }
+                        .padding(.horizontal, LayoutConstants.buttonPaddingH)
+                        .padding(.vertical, LayoutConstants.spaceMD)
+                    }
+                    .buttonStyle(.compactPrimary)
+                    .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
+                }
+            }
         }
         .ignoresSafeArea()
         .navigationBarBackButtonHidden(true)

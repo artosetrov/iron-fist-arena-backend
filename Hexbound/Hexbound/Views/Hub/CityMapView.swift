@@ -64,7 +64,14 @@ struct CityMapView: View {
                                 building: building,
                                 terrainSize: terrainSize,
                                 onTap: { tapped in
-                                    appState.mainPath.append(tapped.route)
+                                    if let route = tapped.route {
+                                        appState.mainPath.append(route)
+                                    } else {
+                                        appState.showToast(
+                                            "\(tapped.label) — Coming Soon",
+                                            type: .info
+                                        )
+                                    }
                                 },
                                 badge: badgeFor(building)
                             )
@@ -120,11 +127,45 @@ struct CityMapView: View {
     }
 
     private func badgeFor(_ building: CityBuilding) -> String? {
-        guard building.id == "arena" else { return nil }
-        let used = appState.currentCharacter?.freePvpToday ?? 0
-        let remaining = AppConstants.freePvpPerDay - used
-        guard remaining > 0 else { return nil }
-        return "FREE \(remaining)"
+        switch building.id {
+
+        // Arena — free PvP fights remaining
+        case "arena":
+            let used = appState.currentCharacter?.freePvpToday ?? 0
+            let remaining = AppConstants.freePvpPerDay - used
+            guard remaining > 0 else { return nil }
+            return "FREE \(remaining)"
+
+        // Achievements — unclaimed rewards
+        case "achievements":
+            let claimable = cache.achievements.filter(\.canClaim).count
+            guard claimable > 0 else { return nil }
+            return "\(claimable)"
+
+        // Battle Pass — claimable tier rewards
+        case "battlepass":
+            guard let bp = cache.battlePassData else { return nil }
+            let claimable = (bp.freeRewards + bp.premiumRewards).filter {
+                !$0.claimed && $0.level <= bp.currentLevel && ($0.track == "free" || bp.hasPremium)
+            }.count
+            guard claimable > 0 else { return nil }
+            return "\(claimable)"
+
+        // Gold Mine — slots ready to collect
+        case "gold-mine":
+            let ready = cache.goldMineSlots.filter { ($0["status"] as? String) == "ready" }.count
+            guard ready > 0 else { return nil }
+            return "READY"
+
+        // Guild Hall — pending friend requests
+        case "guild-hall":
+            let pending = cache.socialStatus?.pendingRequests ?? 0
+            guard pending > 0 else { return nil }
+            return "\(pending)"
+
+        default:
+            return nil
+        }
     }
 }
 

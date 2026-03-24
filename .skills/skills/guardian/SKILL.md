@@ -64,6 +64,7 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - **Enemy avatars.** Must be mirrored with `.scaleEffect(x: -1, y: 1)` in combat/VS screens.
 - **Fight button.** No animation — only `opacity(isPressed ? 0.85 : 1)`.
 - **TabSwitcher padding.** Must have `.padding(.horizontal, screenPadding)` + `.padding(.vertical, tabSwitcherPaddingV)`.
+- **Deprecated `.foregroundColor()`.** Use `.foregroundStyle()` instead. `.foregroundColor()` is deprecated in iOS 17+. The scanner now flags all remaining instances. Incident: commit `38bd758` replaced 9 instances in InboxRowView; `InboxDetailView` still has 12 remaining.
 - **Color shorthand without prefix.** `.bgAbyss`, `.textPrimary` etc. ONLY work if registered in `Color`/`ShapeStyle` extensions at the bottom of `DarkFantasyTheme.swift`. Prefer full `DarkFantasyTheme.xxx` prefix. If a shorthand is used, verify it's in the extension.
 - **Progress bar clamp.** Any `.frame(width: geo.size.width * fraction)` MUST use `max(0, min(1, fraction))`. Without it, SwiftUI warns "Invalid frame dimension".
 - **Async in sync closure.** `ErrorStateView.loadFailed { await vm.xxx() }` is WRONG — the factory expects `() -> Void`. Must wrap: `{ Task { await vm.xxx() } }`. Flag any `await` inside a non-async closure parameter.

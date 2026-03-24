@@ -452,6 +452,9 @@ struct CombatResultDetailView: View {
             if removals > 0 {
                 appState.mainPath.removeLast(removals)
             }
+        } else if currentSource == "dungeon" || currentSource == "dungeon_rush" {
+            // Pop back to DungeonRoomDetailView (remove combatResult screen only)
+            if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
         } else {
             appState.mainPath = NavigationPath()
         }

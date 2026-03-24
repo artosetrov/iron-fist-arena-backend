@@ -20,7 +20,7 @@ struct CityBuildingLabel: View {
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, 1)
                     .background(
-                        Capsule().fill(DarkFantasyTheme.success)
+                        Capsule().fill(DarkFantasyTheme.gold)
                     )
             }
         }

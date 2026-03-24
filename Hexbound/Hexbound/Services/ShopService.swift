@@ -29,7 +29,11 @@ final class ShopService {
             let decoder = JSONDecoder()
             return try decoder.decode([ShopItem].self, from: jsonData)
         } catch {
-            appState.showToast("Failed to load shop", subtitle: "Pull to refresh or try again later", type: .error)
+            appState.showToast("Failed to load shop", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
+                Task { @MainActor in
+                    _ = await self?.getItems()
+                }
+            }
             return []
         }
     }

@@ -18,7 +18,11 @@ final class CharacterService {
             )
             appState.currentCharacter = response.character
         } catch {
-            appState.showToast("Failed to load character", subtitle: "Check connection and try again", type: .error)
+            appState.showToast("Failed to load character", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
+                Task { @MainActor in
+                    await self?.loadCharacter()
+                }
+            }
         }
     }
 

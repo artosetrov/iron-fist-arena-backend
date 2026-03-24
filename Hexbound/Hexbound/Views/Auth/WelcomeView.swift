@@ -56,7 +56,7 @@ struct WelcomeView: View {
                             .frame(height: 1)
                     }
 
-                    // Social auth row
+                    // Social auth row — consistent background on both buttons
                     HStack(spacing: LayoutConstants.spaceMD) {
                         // Apple
                         ZStack {
@@ -81,7 +81,7 @@ struct WelcomeView: View {
                         .frame(height: LayoutConstants.buttonHeightLG)
                         .background(
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .fill(DarkFantasyTheme.bgPrimary)
+                                .fill(DarkFantasyTheme.bgSecondary)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
@@ -90,9 +90,14 @@ struct WelcomeView: View {
                         .accessibilityLabel("Sign in with Apple")
 
                         // Google
-                        Button {
-                            Task { await vm.handleGoogleSignIn(appState: appState) }
-                        } label: {
+                        ZStack {
+                            Button {
+                                Task { await vm.handleGoogleSignIn(appState: appState) }
+                            } label: {
+                                Color.clear
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Text("G")
                                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -100,8 +105,19 @@ struct WelcomeView: View {
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            .allowsHitTesting(false)
                         }
-                        .buttonStyle(.socialAuth)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: LayoutConstants.buttonHeightLG)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                .fill(DarkFantasyTheme.bgSecondary)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
                         .accessibilityLabel("Sign in with Google")
                     }
 

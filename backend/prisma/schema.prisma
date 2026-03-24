@@ -269,12 +269,20 @@ model Character {
   mailRecipients      MailRecipient[]
   shopOfferPurchases  ShopOfferPurchase[]
 
+  // Social
+  lastActiveAt        DateTime? @map("last_active_at")
+  friendsSent         Friendship[] @relation("friendship_user")
+  friendsReceived     Friendship[] @relation("friendship_friend")
+  sentMessages        DirectMessage[] @relation("sent_messages")
+  receivedMessages    DirectMessage[] @relation("received_messages")
+
   @@index([userId])
   @@index([pvpRating])
   @@index([pvpRating, pvpCalibrationGames])
   @@index([level])
   @@index([level, gearScore])
   @@index([gold])
+  @@index([lastActiveAt])
   @@map("characters")
 }
 
@@ -1182,4 +1190,49 @@ model ShopOfferPurchase {
 
   @@index([offerId, characterId])
   @@map("shop_offer_purchases")
+}
+
+// ──── Social System ────
+
+enum FriendshipStatus {
+  pending
+  accepted
+  blocked
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  friendId    String           @map("friend_id")
+  status      FriendshipStatus @default(pending)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  user        Character        @relation("friendship_user", fields: [userId], references: [id], onDelete: Cascade)
+  friend      Character        @relation("friendship_friend", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId, status])
+  @@index([friendId, status])
+  @@map("friendships")
+}
+
+model DirectMessage {
+  id          String   @id @default(uuid())
+  senderId    String   @map("sender_id")
+  receiverId  String   @map("receiver_id")
+  content     String   @db.VarChar(200)
+  isQuick     Boolean  @default(false) @map("is_quick")
+  quickId     String?  @map("quick_id")
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+  expiresAt   DateTime @map("expires_at")
+
+  sender      Character @relation("sent_messages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    Character @relation("received_messages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, isRead])
+  @@index([senderId, createdAt])
+  @@index([expiresAt])
+  @@map("direct_messages")
 }

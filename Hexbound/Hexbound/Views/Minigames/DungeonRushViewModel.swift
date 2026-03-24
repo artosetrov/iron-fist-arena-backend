@@ -76,9 +76,14 @@ final class DungeonRushViewModel {
     var currentRoomIndex = 0
     var totalRooms = 12
 
-    // HP & Buffs
+    // HP & Buffs — real values for HPBarView
     var currentHpPercent = 100
+    var currentHp = 1000
+    var maxHp = 1000
     var buffs: [RushBuff] = []
+
+    // Abandon confirmation
+    var showAbandonConfirm = false
 
     // Enemy (for combat rooms)
     var enemyName = "???"
@@ -240,6 +245,7 @@ final class DungeonRushViewModel {
         if result["purchased"] as? Bool == true {
             // Update HP and buffs
             currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
+            updateHpFromPercent(result)
             parseBuffs(from: result["buffs"])
 
             // Update shop purchased state
@@ -295,6 +301,24 @@ final class DungeonRushViewModel {
         if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
     }
 
+    /// Reset state for "Try Again" after defeat.
+    func resetForRetry() {
+        isGameOver = false
+        isActive = false
+        lastFightWon = true
+        rushComplete = false
+        rooms = []
+        currentRoomIndex = 0
+        currentHpPercent = 100
+        currentHp = 1000
+        maxHp = 1000
+        buffs = []
+        accumulatedGold = 0
+        accumulatedXp = 0
+        accumulatedItems = 0
+        appState.pendingLoot = []
+    }
+
     // MARK: - Dismiss Event/Treasure overlays
 
     func dismissEventResult() {
@@ -328,6 +352,7 @@ final class DungeonRushViewModel {
         currentRoomIndex = result["currentRoomIndex"] as? Int ?? 0
         totalRooms = result["totalRooms"] as? Int ?? 12
         currentHpPercent = result["currentHpPercent"] as? Int ?? 100
+        updateHpFromPercent(result)
 
         // Parse buffs
         parseBuffs(from: result["buffs"])
@@ -367,6 +392,7 @@ final class DungeonRushViewModel {
         currentRoomIndex = result["currentRoomIndex"] as? Int ?? 0
         totalRooms = result["totalRooms"] as? Int ?? 12
         currentHpPercent = result["currentHpPercent"] as? Int ?? 100
+        updateHpFromPercent(result)
 
         // Parse buffs
         parseBuffs(from: result["buffs"])
@@ -407,6 +433,7 @@ final class DungeonRushViewModel {
 
             // Update HP
             currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
+            updateHpFromPercent(result)
 
             // Update buffs
             parseBuffs(from: result["buffs"])
@@ -440,6 +467,7 @@ final class DungeonRushViewModel {
 
         // Update HP and buffs
         currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
+        updateHpFromPercent(result)
         parseBuffs(from: result["buffs"])
 
         // Update rewards
@@ -514,6 +542,20 @@ final class DungeonRushViewModel {
             }
         } else {
             currentRoomIndex += 1
+        }
+    }
+
+    // MARK: - Private: Update HP from result
+
+    private func updateHpFromPercent(_ result: [String: Any]) {
+        // Prefer real HP values if backend provides them
+        if let hp = result["currentHp"] as? Int {
+            currentHp = hp
+        } else {
+            currentHp = maxHp * currentHpPercent / 100
+        }
+        if let mhp = result["maxHp"] as? Int {
+            maxHp = mhp
         }
     }
 
