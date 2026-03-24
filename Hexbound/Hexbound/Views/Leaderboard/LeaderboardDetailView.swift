@@ -122,7 +122,7 @@ struct LeaderboardDetailView: View {
                     playerCharacter: character,
                     onMessage: {
                         selectedPlayerForDetail = nil
-                        // TODO: Navigate to messaging
+                        appState.mainPath.append(AppRoute.guildHall)
                     },
                     onAddFriend: {
                         selectedPlayerForDetail = nil

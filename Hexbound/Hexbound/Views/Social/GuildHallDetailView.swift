@@ -36,7 +36,7 @@ struct GuildHallDetailView: View {
                         VStack(spacing: LayoutConstants.sectionGap) {
                             switch vm.selectedTab {
                             case .allies: alliesTab(vm)
-                            case .scrolls: comingSoonPlaceholder("Scrolls")
+                            case .scrolls: scrollsTab(vm)
                             case .duels: duelsTab(vm)
                             }
 
@@ -73,8 +73,13 @@ struct GuildHallDetailView: View {
             await viewModel.loadFriends()
         }
         .onChange(of: vm?.selectedTab) { _, newTab in
-            guard let vm, newTab == .duels, vm.duelsLoadState == .idle else { return }
-            Task { await vm.loadChallenges() }
+            guard let vm else { return }
+            if newTab == .duels, vm.duelsLoadState == .idle {
+                Task { await vm.loadChallenges() }
+            }
+            if newTab == .scrolls, vm.scrollsLoadState == .idle {
+                Task { await vm.loadConversations() }
+            }
         }
         .sheet(isPresented: Binding(
             get: { vm?.showDuelResult ?? false },
@@ -559,7 +564,304 @@ struct GuildHallDetailView: View {
         }
     }
 
-    // MARK: - Coming Soon Placeholder
+    // MARK: - Scrolls Tab (Messages)
+
+    @ViewBuilder
+    private func scrollsTab(_ vm: GuildHallViewModel) -> some View {
+        if vm.activeThreadCharacterId != nil {
+            threadView(vm)
+        } else {
+            conversationsList(vm)
+        }
+    }
+
+    @ViewBuilder
+    private func conversationsList(_ vm: GuildHallViewModel) -> some View {
+        switch vm.scrollsLoadState {
+        case .idle, .loading:
+            VStack(spacing: LayoutConstants.spaceMD) {
+                ForEach(0..<3, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                        .frame(height: 70)
+                        .shimmer()
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+        case .error:
+            VStack(spacing: LayoutConstants.spaceMD) {
+                ErrorStateView(
+                    message: "Failed to load scrolls",
+                    retryAction: { Task { await vm.loadConversations() } }
+                )
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+        case .loaded:
+            if vm.conversations.isEmpty {
+                scrollsEmptyState
+            } else {
+                ForEach(vm.conversations) { convo in
+                    conversationRow(convo, vm: vm)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                }
+            }
+        }
+    }
+
+    private func conversationRow(_ convo: Conversation, vm: GuildHallViewModel) -> some View {
+        let hasUnread = convo.unreadCount > 0
+
+        return Button {
+            Task {
+                await vm.openThread(
+                    characterId: convo.otherCharacter.id,
+                    characterName: convo.otherCharacter.characterName
+                )
+            }
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                // Avatar
+                characterAvatar(
+                    name: convo.otherCharacter.characterName,
+                    className: convo.otherCharacter.characterClass
+                )
+
+                // Info
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text(convo.otherCharacter.characterName)
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        if hasUnread {
+                            Text("\(convo.unreadCount)")
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                                .foregroundStyle(DarkFantasyTheme.textOnGold)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(DarkFantasyTheme.gold)
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    Text(convo.lastMessage.content)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(hasUnread ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+            .padding(LayoutConstants.spaceSM)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: hasUnread ? DarkFantasyTheme.gold.opacity(0.04) : DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: (hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium).opacity(hasUnread ? 0.1 : 0.15))
+            .cornerBrackets(color: (hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium).opacity(0.3), length: 10, thickness: 1)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var scrollsEmptyState: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Image(systemName: "scroll.fill")
+                .font(.system(size: 40))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+            Text("No Scrolls Yet")
+                .font(DarkFantasyTheme.section(size: 16))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+            Text("Send a message to an ally from their profile.")
+                .font(DarkFantasyTheme.body(size: 14))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, LayoutConstants.space2XL)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    // MARK: - Thread View
+
+    @ViewBuilder
+    private func threadView(_ vm: GuildHallViewModel) -> some View {
+        // Back button
+        HStack {
+            Button {
+                vm.closeThread()
+            } label: {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: "chevron.left")
+                    Text(vm.activeThreadCharacterName ?? "Back")
+                }
+                .font(DarkFantasyTheme.section(size: 14))
+                .foregroundStyle(DarkFantasyTheme.gold)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+
+        // Quick message pills
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                ForEach(QuickMessage.allCases, id: \.rawValue) { quick in
+                    Button {
+                        Task { await vm.sendQuickMessage(quick.rawValue) }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: quick.icon)
+                                .font(.system(size: 11))
+                            Text(quick.displayText)
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        }
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .padding(.horizontal, LayoutConstants.spaceSM)
+                        .padding(.vertical, 6)
+                        .background(DarkFantasyTheme.bgTertiary)
+                        .clipShape(Capsule())
+                    }
+                    .disabled(vm.isSendingMessage)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
+
+        // Messages
+        switch vm.threadLoadState {
+        case .idle, .loading:
+            VStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(0..<5, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                        .frame(height: 40)
+                        .shimmer()
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+        case .error:
+            ErrorStateView(
+                message: "Failed to load messages",
+                retryAction: {
+                    if let targetId = vm.activeThreadCharacterId,
+                       let name = vm.activeThreadCharacterName {
+                        Task { await vm.openThread(characterId: targetId, characterName: name) }
+                    }
+                }
+            )
+            .padding(.horizontal, LayoutConstants.screenPadding)
+
+        case .loaded:
+            if vm.activeThread.isEmpty {
+                Text("No messages yet. Send a quick scroll!")
+                    .font(DarkFantasyTheme.body(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .padding(.top, LayoutConstants.spaceLG)
+            } else {
+                ForEach(vm.activeThread) { msg in
+                    messageBubble(msg, vm: vm)
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                }
+            }
+        }
+
+        // Compose bar
+        composeBar(vm)
+            .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    private func messageBubble(_ msg: DirectMessageItem, vm: GuildHallViewModel) -> some View {
+        let isMine = msg.senderId == appState.currentCharacter?.id
+        let accentColor = isMine ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium
+
+        return HStack {
+            if isMine { Spacer(minLength: 60) }
+
+            VStack(alignment: isMine ? .trailing : .leading, spacing: 2) {
+                Text(msg.content)
+                    .font(DarkFantasyTheme.body(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                Text(formatMessageTime(msg.createdAt))
+                    .font(DarkFantasyTheme.body(size: 10))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .fill(isMine ? DarkFantasyTheme.bgTertiary : DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .stroke(accentColor.opacity(0.15), lineWidth: 1)
+            )
+
+            if !isMine { Spacer(minLength: 60) }
+        }
+    }
+
+    private func composeBar(_ vm: GuildHallViewModel) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            TextField("Write a scroll...", text: Binding(
+                get: { vm.composedMessage },
+                set: { vm.composedMessage = $0 }
+            ))
+            .font(DarkFantasyTheme.body(size: 14))
+            .foregroundStyle(DarkFantasyTheme.textPrimary)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
+                    .fill(DarkFantasyTheme.bgTertiary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+
+            Button {
+                Task { await vm.sendMessage() }
+            } label: {
+                if vm.isSendingMessage {
+                    ProgressView()
+                        .tint(DarkFantasyTheme.textOnGold)
+                        .frame(width: 36, height: 36)
+                } else {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(
+                            vm.composedMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? DarkFantasyTheme.textDisabled
+                            : DarkFantasyTheme.gold
+                        )
+                }
+            }
+            .disabled(vm.isSendingMessage || vm.composedMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
+
+    private func formatMessageTime(_ isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: isoString) ?? ISO8601DateFormatter().date(from: isoString) else { return "" }
+        let elapsed = Date().timeIntervalSince(date)
+        if elapsed < 60 { return "Just now" }
+        if elapsed < 3600 { return "\(Int(elapsed / 60))m ago" }
+        if elapsed < 86400 { return "\(Int(elapsed / 3600))h ago" }
+        return "\(Int(elapsed / 86400))d ago"
+    }
 
     // MARK: - Duels Tab
 

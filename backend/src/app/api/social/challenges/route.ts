@@ -310,12 +310,12 @@ async function handleSend(character: any, body: any) {
 
   // Check stamina (challenger pays on send)
   const STAMINA = await getStaminaConfig()
-  const currentStamina = calculateCurrentStamina(
+  const staminaResult = await calculateCurrentStamina(
     character.currentStamina,
     character.maxStamina,
-    character.lastStaminaUpdate,
-    STAMINA.REGEN_INTERVAL_MS
+    character.lastStaminaUpdate
   )
+  const currentStamina = staminaResult.current
   const staminaCost = STAMINA.PVP_COST
   if (currentStamina < staminaCost) {
     return NextResponse.json({ error: 'Not enough stamina' }, { status: 400 })

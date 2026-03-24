@@ -229,6 +229,8 @@
 		MAIL0001BLD00002 /* InboxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIL0001REF00002 /* InboxViewModel.swift */; };
 		MAIL0001BLD00003 /* InboxDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIL0001REF00003 /* InboxDetailView.swift */; };
 		MAIL0001BLD00004 /* InboxRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MAIL0001REF00004 /* InboxRowView.swift */; };
+		MSG001BLD00001 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSG001REF00001 /* Message.swift */; };
+		MSVC001BLD00001 /* MessageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSVC001REF00001 /* MessageService.swift */; };
 		OFFER001BLD00001 /* ShopOffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OFFER001REF00001 /* ShopOffer.swift */; };
 		OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OFFER001REF00002 /* ShopOfferBannerView.swift */; };
 		PP0001BUILD00001 /* PremiumPurchaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PP0001FREF00001 /* PremiumPurchaseView.swift */; };
@@ -471,6 +473,8 @@
 		MAIL0001REF00002 /* InboxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxViewModel.swift; sourceTree = "<group>"; };
 		MAIL0001REF00003 /* InboxDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxDetailView.swift; sourceTree = "<group>"; };
 		MAIL0001REF00004 /* InboxRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxRowView.swift; sourceTree = "<group>"; };
+		MSG001REF00001 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		MSVC001REF00001 /* MessageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageService.swift; sourceTree = "<group>"; };
 		OFFER001REF00001 /* ShopOffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopOffer.swift; sourceTree = "<group>"; };
 		OFFER001REF00002 /* ShopOfferBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopOfferBannerView.swift; sourceTree = "<group>"; };
 		PP0001FREF00001 /* PremiumPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumPurchaseView.swift; sourceTree = "<group>"; };
@@ -761,6 +765,7 @@
 				GSIG00001REF00001 /* GoogleSignInHelper.swift */,
 				2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */,
 				D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */,
+				MSVC001REF00001 /* MessageService.swift */,
 				PUSH001REF0000000000000B /* PushNotificationService.swift */,
 				24F22D92AB4A3E0BFA40954F /* PvPService.swift */,
 				AF9F8FF13ADC4FEDF34F3BFA /* QuestService.swift */,
@@ -923,6 +928,7 @@
 				E188C114F17088F505906852 /* LeaderboardEntry.swift */,
 				MAIL0001REF00001 /* MailMessage.swift */,
 				F4CAF60AABBE26D01F453568 /* MatchHistory.swift */,
+				MSG001REF00001 /* Message.swift */,
 				056220C532DB828C69C4C356 /* Opponent.swift */,
 				7F3A9E2B41C8D605E1A0B3C8 /* OpponentProfile.swift */,
 				4B8DD10D38C3C6619DCDD923 /* Quest.swift */,
@@ -1309,6 +1315,8 @@
 				EA6DA3C33DF151344CE8AFB4 /* LoginViewModel.swift in Sources */,
 				34A9736F58B7E41F8EC88EC6 /* LootDetailView.swift in Sources */,
 				A326E466BA779E44829BEA76 /* MatchHistory.swift in Sources */,
+				MSG001BLD00001 /* Message.swift in Sources */,
+				MSVC001BLD00001 /* MessageService.swift in Sources */,
 				311ACBEFCDC1EE7D10D6373E /* MockData.swift in Sources */,
 				9C5D1E6F7A8B9C0D1E2F3A4B /* MerchantTipProvider.swift in Sources */,
 				1E7F3A8B9C0D1E2F3A4B5C6D /* MerchantStripView.swift in Sources */,

@@ -22,6 +22,16 @@ class GuildHallViewModel {
     var friendCount: Int = 0
     var maxFriends: Int = 50
 
+    // Scrolls tab
+    var conversations: [Conversation] = []
+    var scrollsLoadState: LoadState = .idle
+    var activeThread: [DirectMessageItem] = []
+    var activeThreadCharacterId: String?
+    var activeThreadCharacterName: String?
+    var threadLoadState: LoadState = .idle
+    var isSendingMessage = false
+    var composedMessage = ""
+
     // Duels tab
     var incomingChallenges: [IncomingChallenge] = []
     var outgoingChallenges: [OutgoingChallenge] = []
@@ -37,6 +47,7 @@ class GuildHallViewModel {
 
     private let socialService = SocialService.shared
     private let challengeService = ChallengeService.shared
+    private let messageService = MessageService.shared
     private var characterId: String
 
     init(characterId: String) {
@@ -143,6 +154,104 @@ class GuildHallViewModel {
 
     var duelsBadgeCount: Int {
         incomingChallenges.count
+    }
+
+    var scrollsBadgeCount: Int {
+        conversations.reduce(0) { $0 + $1.unreadCount }
+    }
+
+    // MARK: - Scrolls (Messages)
+
+    func loadConversations() async {
+        scrollsLoadState = .loading
+        do {
+            let response = try await messageService.getConversations(characterId: characterId)
+            conversations = response
+            scrollsLoadState = .loaded
+        } catch {
+            scrollsLoadState = .error
+        }
+    }
+
+    func openThread(characterId targetId: String, characterName: String) async {
+        activeThreadCharacterId = targetId
+        activeThreadCharacterName = characterName
+        threadLoadState = .loading
+        composedMessage = ""
+        do {
+            let messages = try await messageService.getThread(
+                characterId: characterId,
+                withCharacterId: targetId
+            )
+            activeThread = messages
+            threadLoadState = .loaded
+            // Reload conversations to reflect read status
+            await loadConversations()
+        } catch {
+            threadLoadState = .error
+        }
+    }
+
+    func sendMessage() async {
+        guard let targetId = activeThreadCharacterId else { return }
+        let content = composedMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty, content.count <= 200 else { return }
+
+        isSendingMessage = true
+        do {
+            let sent = try await messageService.sendMessage(
+                characterId: characterId,
+                targetId: targetId,
+                content: content
+            )
+            // Add to thread (newest first)
+            let newMsg = DirectMessageItem(
+                id: sent.id,
+                senderId: characterId,
+                content: sent.content,
+                isQuick: false,
+                quickId: nil,
+                isRead: false,
+                createdAt: sent.createdAt
+            )
+            activeThread.insert(newMsg, at: 0)
+            composedMessage = ""
+        } catch {
+            // Error will be shown by caller
+        }
+        isSendingMessage = false
+    }
+
+    func sendQuickMessage(_ quickId: String) async {
+        guard let targetId = activeThreadCharacterId else { return }
+        isSendingMessage = true
+        do {
+            let sent = try await messageService.sendQuickMessage(
+                characterId: characterId,
+                targetId: targetId,
+                quickId: quickId
+            )
+            let newMsg = DirectMessageItem(
+                id: sent.id,
+                senderId: characterId,
+                content: sent.content,
+                isQuick: true,
+                quickId: quickId,
+                isRead: false,
+                createdAt: sent.createdAt
+            )
+            activeThread.insert(newMsg, at: 0)
+        } catch {
+            // Error handled by service
+        }
+        isSendingMessage = false
+    }
+
+    func closeThread() {
+        activeThreadCharacterId = nil
+        activeThreadCharacterName = nil
+        activeThread = []
+        threadLoadState = .idle
     }
 
     // MARK: - Duels
