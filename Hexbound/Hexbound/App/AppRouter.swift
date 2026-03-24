@@ -33,6 +33,7 @@ enum AppRoute: Hashable, Codable {
 
     // Social
     case guildHall
+    case guildHallMessage(characterId: String, characterName: String)
 
     // Minigames
     case tavern
@@ -135,6 +136,8 @@ struct MainRouterView: View {
         
         // Social
         case .guildHall: GuildHallDetailView()
+        case .guildHallMessage(let characterId, let characterName):
+            GuildHallDetailView(openMessageTo: characterId, messageName: characterName)
 
         // Minigames
         case .tavern: TavernDetailView()

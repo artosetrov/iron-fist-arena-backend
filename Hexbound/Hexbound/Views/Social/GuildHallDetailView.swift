@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct GuildHallDetailView: View {
+    /// Deep-link: if set, auto-opens SCROLLS tab with this character's thread
+    var openMessageTo: String?
+    var messageName: String?
+
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: GuildHallViewModel?
@@ -70,7 +74,15 @@ struct GuildHallDetailView: View {
             guard let charId = appState.currentCharacter?.id else { return }
             let viewModel = GuildHallViewModel(characterId: charId)
             vm = viewModel
-            await viewModel.loadFriends()
+
+            // Deep-link: open message thread directly
+            if let targetId = openMessageTo, let targetName = messageName {
+                viewModel.selectedTab = .scrolls
+                await viewModel.loadConversations()
+                await viewModel.openThread(characterId: targetId, characterName: targetName)
+            } else {
+                await viewModel.loadFriends()
+            }
         }
         .onChange(of: vm?.selectedTab) { _, newTab in
             guard let vm else { return }
