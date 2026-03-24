@@ -339,16 +339,28 @@ final class OnboardingViewModel {
                 let character = try decoder.decode(Character.self, from: jsonData)
 
                 appState.currentCharacter = character
+                appState.userCharacters.append(character)
                 if !allSkins.isEmpty {
                     cache.cacheSkins(allSkins)
                 }
-                appState.isAuthenticated = true
+                // If this is the user's first hero, go straight to game
+                // Otherwise, go back to character selection
+                if appState.userCharacters.count <= 1 {
+                    // First hero — load game data and enter
+                    let initService = GameInitService(appState: appState, cache: cache)
+                    await initService.loadGameData()
+                    appState.currentScreen = .game
+                } else {
+                    // Additional hero — go to selection screen
+                    appState.currentScreen = .characterSelect
+                }
                 appState.authPath = NavigationPath()
             } else {
                 if !allSkins.isEmpty {
                     cache.cacheSkins(allSkins)
                 }
-                appState.isAuthenticated = true
+                // Fallback — go to character selection
+                appState.currentScreen = .characterSelect
                 appState.authPath = NavigationPath()
             }
         } catch {

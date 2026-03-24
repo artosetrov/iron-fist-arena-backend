@@ -34,13 +34,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (error) {
-      console.error('forgot password error:', error.message)
+      console.error('forgot-password: supabase error:', error.message)
       // Return success regardless to prevent email enumeration
     }
 
     return NextResponse.json({ success: true, message: 'If that email exists, a reset link has been sent.' })
   } catch (error) {
-    console.error('forgot-password route error:', error)
+    console.error('forgot-password route error:', error instanceof Error ? error.message : 'unknown')
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 })
   }
 }

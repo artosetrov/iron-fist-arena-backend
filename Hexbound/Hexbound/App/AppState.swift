@@ -2,8 +2,27 @@ import SwiftUI
 
 @MainActor @Observable
 final class AppState {
+    // MARK: - App Screen (3-state navigation)
+    enum AppScreen: Equatable {
+        case auth             // not logged in → AuthRouterView
+        case characterSelect  // logged in, hero not chosen → CharacterSelectionView
+        case game             // logged in, hero chosen → MainRouterView
+    }
+
+    var currentScreen: AppScreen = .auth
+
     // MARK: - Auth
-    var isAuthenticated = false
+    var isAuthenticated: Bool {
+        get { currentScreen == .game }
+        set {
+            // Legacy setter — bridges old code that sets isAuthenticated = true
+            if newValue {
+                currentScreen = .game
+            } else {
+                currentScreen = .auth
+            }
+        }
+    }
     var isGuest = false
     var pendingConfirmationEmail: String?
     var currentUser: [String: Any]?
@@ -15,6 +34,7 @@ final class AppState {
 
     // MARK: - Character
     var currentCharacter: Character?
+    var userCharacters: [Character] = []
 
     // MARK: - Navigation
     var authPath = NavigationPath()
@@ -183,10 +203,19 @@ final class AppState {
         logout()
     }
 
+    /// Switch back to character selection screen (from Settings or after character creation)
+    func switchToCharacterSelect() {
+        currentCharacter = nil
+        mainPath = NavigationPath()
+        selectedTab = .hub
+        currentScreen = .characterSelect
+    }
+
     func logout() {
-        isAuthenticated = false
+        currentScreen = .auth
         isGuest = false
         currentCharacter = nil
+        userCharacters = []
         currentUser = nil
         combatData = nil
         combatResult = nil

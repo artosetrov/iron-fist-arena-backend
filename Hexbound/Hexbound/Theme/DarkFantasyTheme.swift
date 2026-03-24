@@ -370,6 +370,31 @@ enum DarkFantasyTheme {
         startPoint: .leading, endPoint: .trailing
     )
 
+    // MARK: - Button Chrome Colors
+    //
+    // Used by ButtonStyles.swift for danger, orange (fight/stamina),
+    // and purple (premium) button styles. Never hardcode Color(hex:) in ButtonStyles.
+
+    // Danger button chrome (dark crimson)
+    static let btnDangerFill = Color(hex: 0x8B1A22)         // Danger button base fill
+    static let btnDangerStroke = Color(hex: 0x5A0A10)       // Danger button outer stroke
+    static let btnDangerAccent = Color(hex: 0xFF6B6B)       // Danger button corner diamonds
+
+    // Orange button chrome (fight, stamina)
+    static let btnOrangePrimary = Color(hex: 0xFF6600)      // Orange buttons primary — same as glowFire
+    static let btnOrangeBright = Color(hex: 0xFF8833)        // Orange bright accent — same as glowEmber
+    static let btnOrangeGlow = Color(hex: 0xFF5000)          // Orange shadow glow
+    static let btnOrangeShine = Color(hex: 0xFF7832)         // Orange shimmer highlight
+    static let btnOrangeStroke = Color(hex: 0x4A1500)        // Orange button dark stroke
+    static let btnOrangeDark = Color(hex: 0x8B1A00)          // Orange gradient dark end
+    static let btnOrangeMid = Color(hex: 0xC44200)           // Orange gradient mid
+    static let btnOrangeBase = Color(hex: 0xD35400)          // Orange gradient base
+
+    // Purple button chrome (premium)
+    static let btnPurpleDark = Color(hex: 0x7B2D8E)         // Purple gradient dark end
+    static let btnPurpleBright = Color(hex: 0xC77DDF)        // Purple gradient bright end
+    static let btnPurpleStroke = Color(hex: 0x6C3483)        // Purple button stroke — same as bossBorderPurple
+
     // MARK: - Misc UI Colors
 
     static let upgradeBlue = Color(hex: 0x60A5FA)          // Max upgrade level highlight

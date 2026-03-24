@@ -5,6 +5,7 @@ enum AppRoute: Hashable, Codable {
     case login
     case register
     case onboarding
+    case characterSelection
 
     // Hub
     case hub
@@ -175,7 +176,7 @@ struct MainRouterView: View {
         case .tutorial: TutorialView()
 
         // Auth (should not reach here in MainRouter)
-        case .login, .register, .onboarding:
+        case .login, .register, .onboarding, .characterSelection:
             PlaceholderView()
         }
     }

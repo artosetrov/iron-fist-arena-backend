@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       message: 'Confirmation email sent. Please check your new email address to confirm the change.',
     })
   } catch (error) {
-    console.error('change email error:', error)
+    console.error('change email error:', error instanceof Error ? error.message : 'unknown')
     return NextResponse.json({ error: 'Failed to update email' }, { status: 500 })
   }
 }

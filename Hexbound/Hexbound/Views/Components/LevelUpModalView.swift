@@ -197,7 +197,7 @@ struct LevelUpModalView: View {
                     LinearGradient(
                         colors: [
                             DarkFantasyTheme.gold,
-                            Color(hex: 0xB8860B),
+                            DarkFantasyTheme.borderOrnament,
                             DarkFantasyTheme.goldDim
                         ],
                         startPoint: .top,

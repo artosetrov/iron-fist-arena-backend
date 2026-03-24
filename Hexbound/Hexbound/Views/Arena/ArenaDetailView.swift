@@ -10,8 +10,9 @@ struct ArenaDetailView: View {
     @State private var opponentCardsVisible = true
     @State private var opponentCardPhase: RefreshPhase = .idle
     @State private var cardShineActive = false
-    // NPC guide widget state
-    @State private var showArenaGuide = true
+    // NPC guide widget state — persisted so guide only shows on first visit
+    @AppStorage(AppConstants.udNPCArenaGuideDismissed) private var arenaGuideDismissed = false
+    @State private var showArenaGuide = false
     @State private var showArenaGuideMini = false
 
     var body: some View {
@@ -31,7 +32,7 @@ struct ArenaDetailView: View {
             if let vm {
                 VStack(spacing: 0) {
                     // Screen title — sticky above tabs
-                    OrnamentalTitle("ARENA", subtitle: "Prove your worth", accentColor: DarkFantasyTheme.danger)
+                    OrnamentalTitle("ARENA", accentColor: DarkFantasyTheme.danger)
                         .padding(.top, LayoutConstants.spaceXS)
                         .padding(.bottom, LayoutConstants.spaceXS)
 
@@ -113,6 +114,7 @@ struct ArenaDetailView: View {
                             .padding(.bottom, LayoutConstants.spaceSM)
                     }
                 } // VStack
+                .transaction { $0.animation = nil }
                 .sheet(isPresented: Binding(
                     get: { vm.showComparison },
                     set: { vm.showComparison = $0 }
@@ -130,7 +132,6 @@ struct ArenaDetailView: View {
                         )
                     }
                 }
-                .transaction { $0.animation = nil }
             }
 
             // NPC Guide Widget — player's own avatar as arena coach
@@ -143,6 +144,7 @@ struct ArenaDetailView: View {
                             withAnimation(.easeOut(duration: 0.2)) {
                                 showArenaGuide = false
                             }
+                            arenaGuideDismissed = true
                         },
                         avatarSkinKey: char.avatar,
                         avatarClass: char.characterClass,
@@ -216,6 +218,10 @@ struct ArenaDetailView: View {
             AudioManager.shared.playBGM("stray-city.mp3")
         }
         .task {
+            // Show arena guide NPC only on first visit (not yet dismissed)
+            if !arenaGuideDismissed {
+                showArenaGuide = true
+            }
             if vm == nil {
                 vm = ArenaViewModel(appState: appState, cache: cache)
             }

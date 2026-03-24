@@ -421,7 +421,7 @@ struct ItemDetailSheet: View {
         let sell = item.sellPrice ?? 0
         if buy > 0 || sell > 0 {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                sectionHeader(icon: "dollarsign.circle.fill", title: "ECONOMY")
+                sectionHeader(icon: "coins.circle.fill", title: "ECONOMY")
 
                 HStack(spacing: LayoutConstants.spaceLG) {
                     if buy > 0 {

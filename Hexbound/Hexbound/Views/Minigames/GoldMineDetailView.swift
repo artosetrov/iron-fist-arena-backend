@@ -65,8 +65,9 @@ struct GoldMineDetailView: View {
                 .tracking(1.5)
 
             HStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: "dollarsign.circle")
-                    .font(.system(size: 22))
+                Image("icon-gold")
+                    .resizable()
+                    .frame(width: 22, height: 22)
                     .accessibilityLabel("Gold per hour")
                     .accessibilityElement(children: .ignore)
                 Text("\(vm.activeSlotCount * 200)/HR")
@@ -435,8 +436,9 @@ private struct MineSlotCard: View {
             } label: {
                 HStack(spacing: LayoutConstants.space2XS) {
                     Text("BOOST")
-                    Image(systemName: "diamond")
-                        .font(.system(size: 10))
+                    Image("icon-gems")
+                        .resizable()
+                        .frame(width: 12, height: 12)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -449,8 +451,9 @@ private struct MineSlotCard: View {
             } label: {
                 HStack(spacing: LayoutConstants.space2XS) {
                     Text("COLLECT")
-                    Image(systemName: "dollarsign.circle")
-                        .font(.system(size: 10))
+                    Image("icon-gold")
+                        .resizable()
+                        .frame(width: 12, height: 12)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -521,8 +524,9 @@ private struct LockedMineCard: View {
                     Text("Unlock for")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    Image(systemName: "diamond")
-                        .font(.system(size: 10))
+                    Image("icon-gems")
+                        .resizable()
+                        .frame(width: 12, height: 12)
                     Text("50")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.cyan)

@@ -896,54 +896,59 @@ struct SpinningRaysView: View {
 
     var body: some View {
         TimelineView(.animation) { timeline in
-            let elapsed = timeline.date.timeIntervalSinceReferenceDate
-            // Continuous rotation angle in radians
-            let rotationRad = (elapsed / rotationDuration).truncatingRemainder(dividingBy: 1.0) * .pi * 2
-            // Pulse factor: smoothly oscillates between 0.5 and 1.0
-            let pulse = 0.75 + 0.25 * sin(elapsed / pulseDuration * .pi * 2)
+            let elapsed: Double = timeline.date.timeIntervalSinceReferenceDate
+            let rotationRad: Double = (elapsed / rotationDuration).truncatingRemainder(dividingBy: 1.0) * .pi * 2
+            let pulse: Double = 0.75 + 0.25 * sin(elapsed / pulseDuration * .pi * 2)
 
-            GeometryReader { geo in
-                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.4)
-                let radius = max(geo.size.width, geo.size.height) * 1.2
+            raysCanvas(elapsed: elapsed, rotationRad: rotationRad, pulse: pulse)
+        }
+    }
 
-                Canvas { context, _ in
-                    let angleStep = .pi * 2 / Double(spokeCount)
-                    let halfWidth: Double = 0.06 // half-angle of each spoke in radians
+    private func raysCanvas(elapsed: Double, rotationRad: Double, pulse: Double) -> some View {
+        GeometryReader { geo in
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height * 0.4)
+            let radius: Double = max(geo.size.width, geo.size.height) * 1.2
 
-                    for i in 0..<spokeCount {
-                        let angle = Double(i) * angleStep + rotationRad
-                        // Alternate spokes pulse at slightly different phases for shimmer effect
-                        let spokePulse = i.isMultiple(of: 2)
-                            ? pulse
-                            : 0.75 + 0.25 * sin(elapsed / pulseDuration * .pi * 2 + .pi * 0.6)
-
-                        var path = Path()
-                        path.move(to: center)
-                        path.addLine(to: CGPoint(
-                            x: center.x + radius * cos(angle - halfWidth),
-                            y: center.y + radius * sin(angle - halfWidth)
-                        ))
-                        path.addLine(to: CGPoint(
-                            x: center.x + radius * cos(angle + halfWidth),
-                            y: center.y + radius * sin(angle + halfWidth)
-                        ))
-                        path.closeSubpath()
-
-                        context.fill(path, with: .linearGradient(
-                            Gradient(colors: [
-                                color.opacity(0.40 * spokePulse),
-                                color.opacity(0.10 * spokePulse),
-                                color.opacity(0)
-                            ]),
-                            startPoint: center,
-                            endPoint: CGPoint(
-                                x: center.x + radius * cos(angle),
-                                y: center.y + radius * sin(angle)
-                            )
-                        ))
-                    }
-                }
+            Canvas { context, _ in
+                drawSpokes(context: &context, center: center, radius: radius, rotationRad: rotationRad, pulse: pulse, elapsed: elapsed)
             }
         }
+    }
+
+    private func drawSpokes(context: inout GraphicsContext, center: CGPoint, radius: Double, rotationRad: Double, pulse: Double, elapsed: Double) {
+        let angleStep: Double = .pi * 2 / Double(spokeCount)
+        let halfWidth: Double = 0.06
+
+        for i in 0..<spokeCount {
+            let angle: Double = Double(i) * angleStep + rotationRad
+            let spokePulse: Double = i.isMultiple(of: 2)
+                ? pulse
+                : 0.75 + 0.25 * sin(elapsed / pulseDuration * .pi * 2 + .pi * 0.6)
+
+            let path = spokePath(center: center, radius: radius, angle: angle, halfWidth: halfWidth)
+            let endPoint = CGPoint(
+                x: center.x + radius * cos(angle),
+                y: center.y + radius * sin(angle)
+            )
+            let gradient = Gradient(colors: [
+                color.opacity(0.40 * spokePulse),
+                color.opacity(0.10 * spokePulse),
+                color.opacity(0)
+            ])
+            context.fill(path, with: .linearGradient(gradient, startPoint: center, endPoint: endPoint))
+        }
+    }
+
+    private func spokePath(center: CGPoint, radius: Double, angle: Double, halfWidth: Double) -> Path {
+        var path = Path()
+        path.move(to: center)
+        let leftX: Double = center.x + radius * cos(angle - halfWidth)
+        let leftY: Double = center.y + radius * sin(angle - halfWidth)
+        path.addLine(to: CGPoint(x: leftX, y: leftY))
+        let rightX: Double = center.x + radius * cos(angle + halfWidth)
+        let rightY: Double = center.y + radius * sin(angle + halfWidth)
+        path.addLine(to: CGPoint(x: rightX, y: rightY))
+        path.closeSubpath()
+        return path
     }
 }

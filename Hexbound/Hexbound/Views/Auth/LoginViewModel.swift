@@ -67,14 +67,18 @@ final class LoginViewModel {
                 KeychainManager.shared.saveRefreshToken(refreshToken)
                 await APIClient.shared.setAuthToken(accessToken)
 
-                let hasCharacter = await authService?.loadCharacterPublic() ?? false
+                let charResult = await authService?.loadCharactersPublic() ?? .noCharacter
 
                 isLoading = false
-                if hasCharacter {
-                    appState.isAuthenticated = true
-                } else {
-                    // No character — stay on AuthRouterView, navigate to onboarding
-                    appState.authPath.append(AppRoute.onboarding)
+                switch charResult {
+                case .hasCharacter:
+                    appState.currentScreen = .game
+                case .multipleCharacters:
+                    appState.currentScreen = .characterSelect
+                case .noCharacter:
+                    appState.currentScreen = .characterSelect
+                case .noTokens:
+                    break
                 }
             } catch {
                 isLoading = false
@@ -113,13 +117,18 @@ final class LoginViewModel {
             KeychainManager.shared.saveRefreshToken(refreshToken)
             await APIClient.shared.setAuthToken(accessToken)
 
-            let hasCharacter = await authService?.loadCharacterPublic() ?? false
+            let charResult = await authService?.loadCharactersPublic() ?? .noCharacter
 
             isLoading = false
-            if hasCharacter {
-                appState.isAuthenticated = true
-            } else {
-                appState.authPath.append(AppRoute.onboarding)
+            switch charResult {
+            case .hasCharacter:
+                appState.currentScreen = .game
+            case .multipleCharacters:
+                appState.currentScreen = .characterSelect
+            case .noCharacter:
+                appState.currentScreen = .characterSelect
+            case .noTokens:
+                break
             }
         } catch {
             isLoading = false

@@ -62,6 +62,8 @@ enum AppConstants {
     static let udTutorialCompleted = "tutorial_completed_steps"
     static let udFTUECompleted = "ftue_completed_objectives"
     static let udFTUEDismissed = "ftue_dismissed"
+    static let udNPCMerchantDismissed = "npc_merchant_dismissed"
+    static let udNPCArenaGuideDismissed = "npc_arena_guide_dismissed"
 
     // MARK: - Game
     static let maxStamina = 120

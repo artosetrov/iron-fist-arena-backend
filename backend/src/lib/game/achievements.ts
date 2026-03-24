@@ -77,13 +77,6 @@ export async function updateAchievementProgress(
  * Bulk-check multiple achievement keys at once.
  * Useful after a PVP match where several counters might update.
  *
- * Loads all relevant achievements in one query, computes updates in memory,
- * then batch-writes all changes in a single transaction (eliminates N+1).
- */
-/**
- * Bulk-check multiple achievement keys at once.
- * Useful after a PVP match where several counters might update.
- *
  * Supports two modes per update:
  * - `absolute: false` (default) — progress += increment
  * - `absolute: true` — progress = increment (for streaks, ratings, levels)

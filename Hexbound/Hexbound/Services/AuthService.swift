@@ -2,8 +2,9 @@ import Foundation
 
 enum AutoLoginResult {
     case noTokens
-    case hasCharacter
-    case noCharacter
+    case hasCharacter        // exactly 1 hero, auto-selected
+    case multipleCharacters  // 2+ heroes, needs selection screen
+    case noCharacter         // 0 heroes
 }
 
 @MainActor
@@ -40,20 +41,24 @@ final class AuthService {
             // Setup 401 handler
             setupUnauthorizedHandler()
 
-            // Load character first
-            let hasCharacter = await loadCharacter()
-
-            if hasCharacter {
-                // Load game data (inventory, quests, daily login, config)
+            // Load characters and route appropriately
+            let charResult = await loadCharacters()
+            switch charResult {
+            case .hasCharacter:
+                // Single hero auto-selected — load game data and go to hub
                 if let cache = cache {
                     let initService = GameInitService(appState: appState, cache: cache)
                     await initService.loadGameData()
                 }
-                appState.isAuthenticated = true
-            } else {
-                // No character — stay on AuthRouterView, navigate to onboarding.
-                // OnboardingViewModel sets isAuthenticated after character creation.
-                appState.authPath.append(AppRoute.onboarding)
+                appState.currentScreen = .game
+            case .multipleCharacters:
+                // 2+ heroes — go to character selection
+                appState.currentScreen = .characterSelect
+            case .noCharacter:
+                // No character — go to character selection (will show empty state / create CTA)
+                appState.currentScreen = .characterSelect
+            case .noTokens:
+                break
             }
 
             return .success(())
@@ -121,17 +126,21 @@ final class AuthService {
             // Mark as guest
             appState.isGuest = true
 
-            // Load character (guest may already have one)
-            let hasCharacter = await loadCharacter()
-
-            if hasCharacter, let cache = cache {
-                let initService = GameInitService(appState: appState, cache: cache)
-                await initService.loadGameData()
-                appState.isAuthenticated = true
-            } else {
-                // No character — stay on AuthRouterView, navigate to onboarding.
-                // OnboardingViewModel sets isAuthenticated after character creation.
-                appState.authPath.append(AppRoute.onboarding)
+            // Load characters and route appropriately
+            let charResult = await loadCharacters()
+            switch charResult {
+            case .hasCharacter:
+                if let cache = cache {
+                    let initService = GameInitService(appState: appState, cache: cache)
+                    await initService.loadGameData()
+                }
+                appState.currentScreen = .game
+            case .multipleCharacters:
+                appState.currentScreen = .characterSelect
+            case .noCharacter:
+                appState.currentScreen = .characterSelect
+            case .noTokens:
+                break
             }
 
             return .success(())
@@ -164,9 +173,9 @@ final class AuthService {
             // Setup 401 handler
             setupUnauthorizedHandler()
 
-            // Load character
-            let hasCharacter = await loadCharacter()
-            return hasCharacter ? .hasCharacter : .noCharacter
+            // Load characters (multi-hero)
+            let characterResult = await loadCharacters()
+            return characterResult
         } catch {
             // Try validating existing access token
             if let accessToken = KeychainManager.shared.accessToken {
@@ -177,8 +186,8 @@ final class AuthService {
                     // Setup 401 handler on fallback path too
                     setupUnauthorizedHandler()
 
-                    let hasCharacter = await loadCharacter()
-                    return hasCharacter ? .hasCharacter : .noCharacter
+                    let characterResult = await loadCharacters()
+                    return characterResult
                 } catch {
                     // Token invalid
                     KeychainManager.shared.clearAll()
@@ -206,10 +215,18 @@ final class AuthService {
         }
     }
 
-    // MARK: - Load Character (public accessor for Apple Sign In)
+    // MARK: - Load Characters (public accessor for Apple/Google Sign In)
 
+    /// Returns the auto-login result for use by external callers (LoginViewModel).
+    func loadCharactersPublic() async -> AutoLoginResult {
+        setupUnauthorizedHandler()
+        return await loadCharacters()
+    }
+
+    /// Legacy accessor — returns true if single character was auto-selected.
     func loadCharacterPublic() async -> Bool {
-        return await loadCharacter()
+        let result = await loadCharacters()
+        return result == .hasCharacter
     }
 
     // MARK: - Logout
@@ -232,36 +249,62 @@ final class AuthService {
         }
     }
 
-    @discardableResult
-    private func loadCharacter() async -> Bool {
+    /// Load all characters for the user and determine navigation result.
+    /// If exactly 1 character, auto-selects it on appState.
+    /// If 2+, stores them on appState.userCharacters for selection screen.
+    private func loadCharacters() async -> AutoLoginResult {
         do {
             let result = try await APIClient.shared.getRaw(APIEndpoints.characters)
 
-            // API returns array or single character
-            var charData: [String: Any]?
-            if let characters = result["characters"] as? [[String: Any]], let first = characters.first {
-                charData = first
-            } else if let data = result["data"] as? [[String: Any]], let first = data.first {
-                charData = first
+            // Parse character array from API response
+            var charArray: [[String: Any]] = []
+            if let characters = result["characters"] as? [[String: Any]] {
+                charArray = characters
+            } else if let data = result["data"] as? [[String: Any]] {
+                charArray = data
             } else if result["id"] != nil {
-                charData = result
+                charArray = [result]
             }
 
-            if let charData = charData {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+            var decoded: [Character] = []
+            for charData in charArray {
                 let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let character = try decoder.decode(Character.self, from: jsonData)
-                appState.currentCharacter = character
-                return true
+                if let character = try? decoder.decode(Character.self, from: jsonData) {
+                    decoded.append(character)
+                }
             }
-            return false
+
+            // Sort by level descending
+            decoded.sort { $0.level > $1.level }
+            appState.userCharacters = decoded
+
+            switch decoded.count {
+            case 0:
+                return .noCharacter
+            case 1:
+                // Auto-select the single hero
+                appState.currentCharacter = decoded[0]
+                return .hasCharacter
+            default:
+                // 2+ heroes — need selection screen
+                return .multipleCharacters
+            }
         } catch {
             #if DEBUG
-            print("[AuthService] loadCharacter failed: \(error)")
+            print("[AuthService] loadCharacters failed: \(error)")
             #endif
-            return false
+            return .noCharacter
         }
+    }
+
+    /// Legacy single-character loader (used by loadCharacterPublic)
+    @discardableResult
+    private func loadCharacter() async -> Bool {
+        let result = await loadCharacters()
+        return result == .hasCharacter
     }
 }
 

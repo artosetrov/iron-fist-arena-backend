@@ -126,7 +126,7 @@ struct DangerButtonStyle: ButtonStyle {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                        .fill(Color(hex: 0x8B1A22))
+                        .fill(DarkFantasyTheme.btnDangerFill)
                     // Radial glow center
                     RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                         .fill(
@@ -143,10 +143,10 @@ struct DangerButtonStyle: ButtonStyle {
             .innerBorder(cornerRadius: LayoutConstants.buttonRadius - 3, inset: 3, color: DarkFantasyTheme.danger.opacity(0.2))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(Color(hex: 0x5A0A10), lineWidth: 2)
+                    .stroke(DarkFantasyTheme.btnDangerStroke, lineWidth: 2)
             )
             .cornerBrackets(color: DarkFantasyTheme.danger)
-            .cornerDiamonds(color: Color(hex: 0xFF6B6B))
+            .cornerDiamonds(color: DarkFantasyTheme.btnDangerAccent)
             .shadow(color: DarkFantasyTheme.dangerGlow, radius: pressed ? 16 : 8, y: pressed ? 2 : 4)
             .brightness(pressed ? -0.08 : 0)
             .onChange(of: configuration.isPressed) { _, newPressed in
@@ -542,7 +542,7 @@ struct FightButtonStyle: ButtonStyle {
                     RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                         .fill(isEnabled ? AnyShapeStyle(
                             LinearGradient(
-                                colors: [Color(hex: 0x8B1A00), Color(hex: 0xD35400), Color(hex: 0xC44200)],
+                                colors: [DarkFantasyTheme.btnOrangeDark, DarkFantasyTheme.btnOrangeBase, DarkFantasyTheme.btnOrangeMid],
                                 startPoint: .leading, endPoint: .trailing
                             )
                         ) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
@@ -551,7 +551,7 @@ struct FightButtonStyle: ButtonStyle {
                         RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
                             .fill(
                                 RadialGradient(
-                                    colors: [Color(hex: 0xFF6600).opacity(0.25), Color.clear],
+                                    colors: [DarkFantasyTheme.btnOrangePrimary.opacity(0.25), Color.clear],
                                     center: .init(x: 0.5, y: 0.4),
                                     startRadius: 0,
                                     endRadius: 100
@@ -565,12 +565,12 @@ struct FightButtonStyle: ButtonStyle {
             .innerBorder(
                 cornerRadius: LayoutConstants.buttonRadiusLG - 3,
                 inset: 3,
-                color: isEnabled ? Color(hex: 0xFF6600).opacity(0.25) : Color.clear
+                color: isEnabled ? DarkFantasyTheme.btnOrangePrimary.opacity(0.25) : Color.clear
             )
             // Outer dark iron frame
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
-                    .stroke(isEnabled ? Color(hex: 0x4A1500) : DarkFantasyTheme.borderSubtle, lineWidth: 2)
+                    .stroke(isEnabled ? DarkFantasyTheme.btnOrangeStroke : DarkFantasyTheme.borderSubtle, lineWidth: 2)
             )
             // Ember highlight line along top
             .overlay(alignment: .top) {
@@ -578,7 +578,7 @@ struct FightButtonStyle: ButtonStyle {
                     Rectangle()
                         .fill(
                             LinearGradient(
-                                colors: [.clear, Color(hex: 0xFF7832).opacity(0.5), .clear],
+                                colors: [.clear, DarkFantasyTheme.btnOrangeShine.opacity(0.5), .clear],
                                 startPoint: .leading, endPoint: .trailing
                             )
                         )
@@ -588,11 +588,11 @@ struct FightButtonStyle: ButtonStyle {
                 }
             }
             // Corner brackets + diamonds
-            .cornerBrackets(color: isEnabled ? Color(hex: 0xFF6600) : DarkFantasyTheme.borderSubtle)
-            .cornerDiamonds(color: isEnabled ? Color(hex: 0xFF8833) : DarkFantasyTheme.bgDisabled)
-            .sideDiamonds(color: isEnabled ? Color(hex: 0xFF8833) : Color.clear)
+            .cornerBrackets(color: isEnabled ? DarkFantasyTheme.btnOrangePrimary : DarkFantasyTheme.borderSubtle)
+            .cornerDiamonds(color: isEnabled ? DarkFantasyTheme.btnOrangeBright : DarkFantasyTheme.bgDisabled)
+            .sideDiamonds(color: isEnabled ? DarkFantasyTheme.btnOrangeBright : Color.clear)
             .shadow(color: isEnabled ? accentColor.opacity(pressed ? 0.55 : 0.35) : .clear, radius: pressed ? 20 : 15, y: pressed ? 3 : 6)
-            .shadow(color: isEnabled ? Color(hex: 0xFF5000).opacity(pressed ? 0.3 : 0.15) : .clear, radius: 8)
+            .shadow(color: isEnabled ? DarkFantasyTheme.btnOrangeGlow.opacity(pressed ? 0.3 : 0.15) : .clear, radius: 8)
             .brightness(pressed ? -0.08 : 0)
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
@@ -620,7 +620,7 @@ struct CompactFightButtonStyle: ButtonStyle {
                     RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                         .fill(isEnabled ? AnyShapeStyle(
                             LinearGradient(
-                                colors: [Color(hex: 0x8B1A00), Color(hex: 0xD35400), Color(hex: 0xC44200)],
+                                colors: [DarkFantasyTheme.btnOrangeDark, DarkFantasyTheme.btnOrangeBase, DarkFantasyTheme.btnOrangeMid],
                                 startPoint: .leading, endPoint: .trailing
                             )
                         ) : AnyShapeStyle(DarkFantasyTheme.bgDisabled))
@@ -628,7 +628,7 @@ struct CompactFightButtonStyle: ButtonStyle {
                         RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                             .fill(
                                 RadialGradient(
-                                    colors: [Color(hex: 0xFF6600).opacity(0.2), Color.clear],
+                                    colors: [DarkFantasyTheme.btnOrangePrimary.opacity(0.2), Color.clear],
                                     center: .init(x: 0.5, y: 0.35),
                                     startRadius: 0,
                                     endRadius: 60
@@ -641,13 +641,13 @@ struct CompactFightButtonStyle: ButtonStyle {
             .innerBorder(
                 cornerRadius: LayoutConstants.buttonRadius - 2,
                 inset: 2,
-                color: isEnabled ? Color(hex: 0xFF6600).opacity(0.2) : Color.clear
+                color: isEnabled ? DarkFantasyTheme.btnOrangePrimary.opacity(0.2) : Color.clear
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(isEnabled ? Color(hex: 0x4A1500) : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
+                    .stroke(isEnabled ? DarkFantasyTheme.btnOrangeStroke : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
             )
-            .shadow(color: isEnabled ? Color(hex: 0xFF5000).opacity(pressed ? 0.4 : 0.2) : .clear, radius: 6)
+            .shadow(color: isEnabled ? DarkFantasyTheme.btnOrangeGlow.opacity(pressed ? 0.4 : 0.2) : .clear, radius: 6)
             .brightness(pressed ? -0.06 : 0)
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
@@ -796,7 +796,7 @@ struct PremiumButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     private let gradient = LinearGradient(
-        colors: [Color(hex: 0x7B2D8E), DarkFantasyTheme.purple, Color(hex: 0xC77DDF)],
+        colors: [DarkFantasyTheme.btnPurpleDark, DarkFantasyTheme.purple, DarkFantasyTheme.btnPurpleBright],
         startPoint: .leading,
         endPoint: .trailing
     )
@@ -834,7 +834,7 @@ struct PremiumButtonStyle: ButtonStyle {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                    .stroke(isEnabled ? Color(hex: 0x6C3483) : DarkFantasyTheme.borderSubtle, lineWidth: 2)
+                    .stroke(isEnabled ? DarkFantasyTheme.btnPurpleStroke : DarkFantasyTheme.borderSubtle, lineWidth: 2)
             )
             .cornerBrackets(color: isEnabled ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.borderSubtle)
             .cornerDiamonds(color: isEnabled ? DarkFantasyTheme.premiumPink : DarkFantasyTheme.bgDisabled)

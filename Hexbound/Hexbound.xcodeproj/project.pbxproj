@@ -41,6 +41,7 @@
 		28CD06D3FB21ED92CBBDC3CA /* SkeletonViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */; };
 		294247D54BB833458FD8381D /* LayoutConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5B668A6A6E8C6D0D1CD8B4 /* LayoutConstants.swift */; };
 		2AF622924BD22E871CCC1E02 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9C1475B1BBD153D131D99EA /* SettingsManager.swift */; };
+		CSVW0001BLD000000000001 /* CharacterSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */; };
 		310339BA65F0A1A947B39D34 /* Achievement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0337A4B35D2288E5501C6665 /* Achievement.swift */; };
 		311ACBEFCDC1EE7D10D6373E /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1211BB33BA65054F0F0D892A /* MockData.swift */; };
 		7B9C1D3E5F7A9B1C3D5E7F8B /* Social.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */; };
@@ -246,6 +247,8 @@
 		VFX00001BLD00007 /* StatusVFXEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00007 /* StatusVFXEffects.swift */; };
 		d680a257344d7fdf12459044 /* WidgetPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = f19ff3059acb375eb47564d1 /* WidgetPill.swift */; };
 		d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5c4d89bb78c26dddad451fcc /* Challenge.swift */; };
+		55ED2F4293172AA050CFC300 /* CharacterSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */; };
+
 		69ed6fbf2f47f2843d8c3f50 /* ChallengeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44e83640753af3d064cd2dda /* ChallengeService.swift */; };
 /* End PBXBuildFile section */
 
@@ -493,6 +496,9 @@
 		f19ff3059acb375eb47564d1 /* WidgetPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPill.swift; sourceTree = "<group>"; };
 		5c4d89bb78c26dddad451fcc /* Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Challenge.swift; sourceTree = "<group>"; };
 		44e83640753af3d064cd2dda /* ChallengeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeService.swift; sourceTree = "<group>"; };
+		F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterSelectionView.swift; sourceTree = "<group>"; };
+		CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterSelectionViewModel.swift; sourceTree = "<group>"; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -546,6 +552,7 @@
 				696A08CACD1815EB0FDD60EF /* Services */,
 				AF5047044872946755622101 /* Theme */,
 				D4E5F6A70819BAC1D2E3F4A9 /* Tutorial */,
+				VMDL0001GRP00001 /* ViewModels */,
 				8CC96B4D6D1076D4BE1AE847 /* Views */,
 			);
 			path = Hexbound;
@@ -588,6 +595,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */,
+				F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */,
 				A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */,
 				B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */,
 				8295F58FEE8531E138102511 /* LoginView.swift */,
@@ -1084,6 +1092,14 @@
 			path = Effects;
 			sourceTree = "<group>";
 		};
+		VMDL0001GRP00001 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1216,6 +1232,9 @@
 				96844CD8AFAA42E132100B2A /* BattlePassViewModel.swift in Sources */,
 				2640A473732509AAF202AEC2 /* BattlePreloader.swift in Sources */,
 				d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */,
+				55ED2F4293172AA050CFC300 /* CharacterSelectionView.swift in Sources */,
+				CSVW0001BLD000000000001 /* CharacterSelectionViewModel.swift in Sources */,
+
 				69ed6fbf2f47f2843d8c3f50 /* ChallengeService.swift in Sources */,
 				FF8A6609F9A15BDE7717A743 /* ButtonStyles.swift in Sources */,
 				92770A80367263C6EF378362 /* CardStyles.swift in Sources */,

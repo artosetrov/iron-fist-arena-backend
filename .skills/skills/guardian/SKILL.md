@@ -58,6 +58,9 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - **HUD cards over map.** Must use `DarkFantasyTheme.bgSecondary` fill, not translucent `opacity(0.08)`.
 - **Card icons.** Never emoji in HUD cards/banners. Use asset images from Assets.xcassets.
 - **SFX.** Sound effects go through `SFXManager.shared.play(...)`, never direct `AVAudioPlayer`. **CRITICAL:** If `SFX` enum has a case (e.g., `SFX.uiBack`), the corresponding `.wav` file MUST exist in the bundle. If missing, `SFXManager` silently skips the sound. Check for gaps: if a case exists but no WAV, generate the audio file. This is a runtime silent failure, not a compile error.
+- **`[weak self]` in structs.** `[weak self]` is ONLY valid for classes. SwiftUI Views are structs — using `[weak self]` causes "'weak' may only be applied to class" error. In struct Views, capture `self` directly without capture list. Use `[weak self]` only in `@Observable` ViewModel classes.
+- **`showToast` signature.** `appState.showToast(_ title, subtitle:, type:, actionLabel:, action:)`. First arg is positional (NO `title:` label), second is `subtitle:` (NOT `message:`). `ToastType` has: `.achievement`, `.levelUp`, `.rankUp`, `.quest`, `.reward`, `.info`, `.error` — there is NO `.success`.
+- **`post()` vs `postRaw()`.** `APIClient.shared.post(_:body:)` requires `Encodable` body — do NOT pass `[String: Any]`. Use a concrete `Encodable` struct. `postRaw(_:body:)` accepts `[String: Any]`.
 - **Haptics.** Use `HapticManager` static methods, never raw `UIImpactFeedbackGenerator`.
 - **UnifiedHeroWidget.** Never create inline character displays. Use `UnifiedHeroWidget` with appropriate context.
 - **HeroIntegratedCard.** Hero page uses this, not UnifiedHeroWidget.

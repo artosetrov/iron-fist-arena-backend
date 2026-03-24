@@ -14,18 +14,20 @@ struct SettingsDetailView: View {
             if let vm {
                 ScrollView {
                     VStack(spacing: LayoutConstants.sectionGap) {
-                        audioSection(vm: vm)
+                        heroesSection(vm: vm)
                             .staggeredAppear(index: 0)
-                        notificationsSection(vm: vm)
+                        audioSection(vm: vm)
                             .staggeredAppear(index: 1)
-                        accountSection(vm: vm)
+                        notificationsSection(vm: vm)
                             .staggeredAppear(index: 2)
+                        accountSection(vm: vm)
+                            .staggeredAppear(index: 3)
                         if appState.isAdmin {
                             devToolsSection
-                                .staggeredAppear(index: 3)
+                                .staggeredAppear(index: 4)
                         }
                         versionLabel
-                            .staggeredAppear(index: 4)
+                            .staggeredAppear(index: 5)
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceMD)
@@ -123,6 +125,74 @@ struct SettingsDetailView: View {
                 get: { vm.pushNotifications },
                 set: { vm.pushNotifications = $0 }
             ))
+        }
+    }
+
+    // MARK: - Account
+
+    // MARK: - Heroes
+
+    @ViewBuilder
+    private func heroesSection(vm: SettingsViewModel) -> some View {
+        settingsCard {
+            sectionHeader("Heroes")
+
+            // Switch Hero
+            if appState.userCharacters.count > 1 {
+                Button {
+                    HapticManager.medium()
+                    SFXManager.shared.play(.uiTap)
+                    appState.switchToCharacterSelect()
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                        Text("Switch Hero")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        Spacer()
+                        if let name = appState.currentCharacter?.characterName {
+                            Text(name)
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        }
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    }
+                    .frame(height: LayoutConstants.buttonHeightMD)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.scalePress(0.97))
+                .accessibilityLabel("Switch to a different hero")
+            }
+
+            // Create New Hero
+            if appState.userCharacters.count < 5 {
+                Button {
+                    HapticManager.medium()
+                    SFXManager.shared.play(.uiTap)
+                    // Go to character selection which has the create button
+                    appState.switchToCharacterSelect()
+                } label: {
+                    HStack {
+                        Image(systemName: "plus.circle")
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                        Text("Create New Hero")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        Spacer()
+                        Text("\(appState.userCharacters.count)/5")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    }
+                    .frame(height: LayoutConstants.buttonHeightMD)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.scalePress(0.97))
+                .accessibilityLabel("Create a new hero, \(appState.userCharacters.count) of 5 slots used")
+            }
         }
     }
 

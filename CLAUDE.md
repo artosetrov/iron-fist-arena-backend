@@ -372,6 +372,7 @@ When you need project context, read the specific doc — don't guess or invent f
 | Git workflow, branches, subtree | `docs/10_operations/GIT_WORKFLOW.md` |
 | DB migrations, Prisma flow | `docs/10_operations/DATABASE_MIGRATIONS.md` |
 | iOS release, Fastlane, TestFlight | `docs/10_operations/RELEASE_IOS.md` |
+| Known error patterns, grep checks | `docs/09_rules_and_guidelines/ERROR_CATALOG.md` |
 | Full doc index | `docs/01_source_of_truth/DOCUMENTATION_INDEX.md` |
 
 ## Deleted / Renamed Files (DO NOT REFERENCE)
@@ -400,6 +401,30 @@ These are the **actual** backend enums. Do not invent values.
 - **ItemRarity**: `common`, `uncommon`, `rare`, `epic`, `legendary`
 - **DamageType**: `physical`, `magical`, `true_damage`, `poison`
 - **QuestType**: `pvp_wins`, `dungeons_complete`, `gold_spent`, `item_upgrade`, `consumable_use`, `shell_game_play`, `gold_mine_collect` (NOT `pvp_win`, NOT `pvp_fight` — these don't exist)
+
+## Achievement System (CRITICAL)
+
+**3 categories, 21 achievements, all tracked.** Do NOT add achievements without wiring tracking.
+
+- **Catalog**: `backend/src/lib/game/achievement-catalog.ts` — single source of truth for all achievement definitions
+- **Tracking engine**: `backend/src/lib/game/achievements.ts` — `updateMultipleAchievements()` with `absolute: true` support
+- **iOS**: `AchievementsViewModel.swift` → 3 tabs: `["PvP", "Progress", "Ranking"]` → `["pvp", "progression", "ranking"]`
+
+**Categories and where they're tracked:**
+- `pvp` (9 achievements) — tracked in `pvp/fight`, `pvp/resolve`, `pvp/revenge/[id]`
+- `progression` (5 achievements) — tracked in `applyLevelUp()` (progression.ts) + `prestige/route.ts`
+- `ranking` (4 achievements) — tracked in `pvp/fight`, `pvp/resolve` (after ELO update)
+
+**`absolute: true` mode:** For streaks, ratings, and levels — sets progress to the given value instead of incrementing. Use for any metric that can decrease or reset (e.g., win streak resets on loss, rating can drop).
+
+**When adding new achievements:**
+1. Add to `ACHIEVEMENT_CATALOG` in `achievement-catalog.ts`
+2. Add tracking call (`updateMultipleAchievements`) in the relevant route
+3. Add display metadata to `ACHIEVEMENT_DISPLAY` in `achievements/route.ts`
+4. Verify iOS `tabCategories` includes the category — if new category, add a tab
+5. **Do NOT add achievements without step 2** — they will sit at 0/N forever
+
+**Removed categories (2026-03-24):** `equipment`, `dungeon`, `economy`, `minigame`, `daily`, `prestige` (merged into `progression`), `revenge` (merged into `pvp`). Old rows in DB get `category: "unknown"` and don't appear in any tab.
 
 ## Property Access (CRITICAL)
 
@@ -497,11 +522,10 @@ These are the **actual** backend enums. Do not invent values.
 - **Verifying:** `grep -rn "![\s\n]" Hexbound/Hexbound/Views/ --include="*.swift" | grep -v "swiftlint:disable"` — should find zero matches.
 
 ### SwiftUI Callback Closures — Retain Cycles (CRITICAL)
-- **All callback closures (onEvent, onComplete, onTap, onDismiss, etc.) MUST use `[weak self]` capture.**
-- **Why:** `[self]` creates a retain cycle — the closure keeps the view alive, the view keeps the closure alive.
-- **Pattern:** `{ [weak self] in guard let self else { return } ... }`
-- **Apply to:** Every closure passed to `.onChange`, buttons, gesture handlers, custom callbacks, async callbacks.
-- **Past incidents:** `CombatDetailView` used `[self]` in callback closure → retain cycle, view never deallocated.
+- **`[weak self]` is ONLY valid in classes.** SwiftUI Views are `struct` — using `[weak self]` causes "'weak' may only be applied to class and class-bound protocol types" error.
+- **For closures in `@Observable` classes (ViewModels, Services):** Use `[weak self]` + `guard let self else { return }`.
+- **For closures in SwiftUI struct Views:** Do NOT use `[weak self]`. Structs are value types — capture `self` directly or call methods without capture list.
+- **Past incidents:** `CombatDetailView` (struct) had `[weak self]` in `onCombatEvent` closure → build error. Fixed by removing capture list entirely.
 
 ### Dead Code & File Cleanup (MAINTENANCE)
 - **Periodic dead code sweeps are mandatory.** Mark deprecated files explicitly in CLAUDE.md or with `@available(*, deprecated)`.
@@ -613,6 +637,56 @@ When replacing a struct, class, function, or view with a new version:
 - `.stroke()` has NO `dash:` parameter. Must use `StrokeStyle`: `.stroke(color, style: StrokeStyle(lineWidth: 1, dash: [4]))`.
 - This applies to all `Shape` stroke calls.
 
+### ButtonStyle Ternary Mismatch (CRITICAL)
+- **Never use a ternary to choose between different `ButtonStyle` concrete types.** Swift cannot resolve the return type when the two branches produce `PrimaryButtonStyle` vs `SecondaryButtonStyle` (or any two different styles).
+- **Bad:** `.buttonStyle(isPrimary ? .primary : .secondary)` — compiler error: "result values in '? :' expression have mismatching types"
+- **Good:** Use `if/else` with the full `Button` duplicated in each branch:
+  ```swift
+  if isPrimary {
+      Button { action() } label: { label }.buttonStyle(.primary)
+  } else {
+      Button { action() } label: { label }.buttonStyle(.secondary)
+  }
+  ```
+- **Past incident:** `ItemDetailSheet.swift` repair button — ternary caused `PrimitiveButtonStyle` mismatch. Fixed with if/else pattern.
+
+### SFX Enum Values (CRITICAL)
+- The `SFX` enum cases are prefixed with `ui`: `.uiTap`, `.uiConfirm`, `.uiTapHeavy`, `.uiSuccess`, `.uiError`, etc.
+- **There is NO `.tap`, `.confirm`, `.success`, `.error`** — these do not exist and cause "type has no member" errors.
+- Always verify available cases in the SFX enum definition before using.
+- **Past incident:** `CharacterSelectionView` and `SettingsDetailView` used `.tap`/`.confirm` — fixed to `.uiTap`/`.uiConfirm`.
+
+### Type-Checker Timeout in Complex Views (CRITICAL)
+- Swift's type checker has a per-expression time limit. Complex `body` properties with nested closures, generics, and inline calculations cause "unable to type-check this expression in reasonable time".
+- **Fix:** Break the `body` into 3-5 private sub-methods with **explicit return type annotations** (`: some View`, `: Path`, etc.).
+- **Pattern:**
+  ```swift
+  var body: some View {
+      TimelineView(.animation) { timeline in
+          let values = computeValues(timeline)
+          renderCanvas(values: values)
+      }
+  }
+  private func renderCanvas(values: Values) -> some View { ... }
+  ```
+- **Past incident:** `SpinningRaysView` in `BattleResultCardView.swift` — single body with Canvas + math. Fixed by extracting into 4 methods.
+
+### APIError Destructuring (CRITICAL)
+- `APIError.serverError` has **2 associated values**: `(statusCode: Int, message: String)`.
+- **Bad:** `case .serverError(let msg):` — compiler error: "pattern has 1 element but tuple has 2"
+- **Good:** `case .serverError(_, let msg):` or `case .serverError(let code, let msg):`
+- Always check the `APIError` enum definition before pattern matching.
+
+### APIClient Swift-Side Signatures (CRITICAL)
+- `APIClient.shared.getRaw(_:params:)` — first arg is positional (no `endpoint:` label), second is `params: [String: String]?` (NOT `queryItems:`)
+- `APIClient.shared.postRaw(_:body:)` — body is `[String: Any]`, returns `[String: Any]` (NOT `Data`). Parse fields from dictionary, NOT with `JSONDecoder`.
+- `APIClient.shared.get(_:params:)` — generic typed version, returns `T: Decodable`
+- `APIClient.shared.post(_:body:)` — generic typed version, body is `Encodable?`. **Do NOT pass `[String: Any]` to `post()`** — `Any` does not conform to `Encodable`. Use a concrete `Encodable` struct instead. Use `postRaw()` if you need `[String: Any]` body.
+- **Past incident:** `ChallengeService.sendChallenge()` passed `[String: Any]` body to typed `post()` → "Type 'Any' cannot conform to 'Encodable'". Fixed by creating `SendChallengeBody: Encodable` struct.
+- **There is NO `endpoint:` label on the first argument.** Writing `getRaw(endpoint: "/foo")` causes "extraneous argument label" error.
+- **There is NO `queryItems:` parameter.** Use `params:` instead.
+- **Past incident:** `SocialService.swift` used `getRaw(endpoint:, queryItems:)` — completely wrong signatures. Rewrote entire file.
+
 ### Character Model Properties
 - Character has `.avatar` (the appearance key), NOT `.skinKey`. The skin key is on `AppearanceSkin` model.
 - Before accessing model properties — **verify in the struct definition**, especially for appearance/equipment data.
@@ -663,6 +737,9 @@ When replacing a struct, class, function, or view with a new version:
 
 ## Toast & Notification System (CRITICAL)
 
+**`showToast` signature (VERIFY BEFORE USE):** `appState.showToast(_ title: String, subtitle: String = "", type: ToastType = .info, actionLabel: String? = nil, action: (() -> Void)? = nil)`. First argument is **positional** (no `title:` label). Second is `subtitle:` (NOT `message:`). **There is NO `ToastType.success`** — use `.info` or `.reward` instead. Available types: `.achievement`, `.levelUp`, `.rankUp`, `.quest`, `.reward`, `.info`, `.error`.
+- **Past incident:** `LeaderboardPlayerDetailSheet` and `GuildHallDetailView` used `showToast(title:, message:, type: .success)` — all three parameters wrong. Fixed to `showToast(_, subtitle:, type: .info)`.
+
 **Toast deduplication is mandatory.** `AppState.showToast()` deduplicates by title — if a toast with the same title is already visible, it resets the timer instead of stacking a second one.
 
 **Max 1 visible toast at a time.** New toasts replace old ones. Queue managed by `showToast()` — never show a wall of errors.
@@ -698,6 +775,20 @@ When replacing a struct, class, function, or view with a new version:
 3. Verify Xcode loads: `open Hexbound/Hexbound.xcodeproj` should not produce "Couldn't load project" error.
 
 **Common culprits:** Agents running scripts that create backups with `cp file.pbxproj file.pbxproj.backup` directly in the bundle, or shell loops that generate `file.tmp1`, `file.tmp2`, etc.
+
+## Error Prevention — Проверяла (Error Scanner)
+
+The project has an automated error scanner skill at `.claude/skills/error-scanner/SKILL.md` and a catalog of 25+ known error patterns at `docs/09_rules_and_guidelines/ERROR_CATALOG.md`.
+
+**When to run Проверяла:** Before any commit, after large refactors, or when Xcode shows multiple build errors. Invoke via skill trigger: "проверяла", "error scan", "check for known errors".
+
+**What it checks (4 phases):**
+1. **Swift grep checks** — SFX enum misuse, ButtonStyle ternary, force unwraps, Color(hex:) outside Theme, missing DarkFantasyTheme prefix, SF Symbol currency icons
+2. **pbxproj structural** — ghost file references, missing PBXSourcesBuildPhase entries, duplicate PBXBuildFile, junk files in .xcodeproj bundle
+3. **TypeScript/backend** — PII in logs, missing try/catch, missing `await` on async functions, N+1 query patterns
+4. **Prisma/cross-cutting** — schema sync between backend/ and admin/, merge conflict markers
+
+**Adding new patterns:** When a new recurring error is discovered, add it to `ERROR_CATALOG.md` with: ID, severity, platform, grep pattern, description, fix, example. Then update the scanner's grep list in `SKILL.md`.
 
 ## Self-Documenting Rules (META — MANDATORY)
 

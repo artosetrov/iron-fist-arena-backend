@@ -15,10 +15,15 @@ struct HexboundApp: App {
             ZStack {
                 if isCheckingAuth {
                     SplashView()
-                } else if appState.isAuthenticated {
-                    MainRouterView()
                 } else {
-                    AuthRouterView()
+                    switch appState.currentScreen {
+                    case .auth:
+                        AuthRouterView()
+                    case .characterSelect:
+                        CharacterSelectionView()
+                    case .game:
+                        MainRouterView()
+                    }
                 }
             }
             .environment(appState)
@@ -29,7 +34,7 @@ struct HexboundApp: App {
             .overlay { if appState.isLoading { LoadingOverlay() } }
             .overlay { if appState.showLevelUpModal { LevelUpModalView().environment(appState) } }
             .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
-            .animation(.easeInOut(duration: 0.3), value: appState.isAuthenticated)
+            .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)
             .animation(.easeInOut(duration: 0.3), value: isCheckingAuth)
             .task {
                 // Wire push service into AppDelegate for token forwarding
@@ -39,17 +44,18 @@ struct HexboundApp: App {
             .onOpenURL { url in
                 _ = GoogleSignInHelper.handle(url)
             }
-            .onChange(of: appState.isAuthenticated) { _, isAuth in
-                if isAuth {
-                    // Request push permission after login
+            .onChange(of: appState.currentScreen) { oldScreen, screen in
+                if screen == .game {
+                    // Entering game — request push, check tutorial
                     Task { await pushService.requestPermissionAndRegister() }
-                    // Check if FTUE tutorial should be shown
                     checkFTUE()
-                } else {
-                    // Unregister push token on logout
+                } else if screen == .auth {
+                    // Full logout — unregister push, clear cache
                     Task { await pushService.unregisterToken() }
                     cache.invalidateAll()
                 }
+                // .characterSelect — don't clear cache or unregister push
+                _ = oldScreen // suppress unused warning
             }
         }
     }
@@ -74,6 +80,7 @@ struct HexboundApp: App {
             group.addTask { @MainActor in
                 let authService = AuthService(appState: appState, cache: cache)
                 let loginResult = await authService.tryAutoLogin()
+                // If exactly one character, auto-select and load game data
                 if loginResult == .hasCharacter {
                     let initService = GameInitService(appState: appState, cache: cache)
                     await initService.loadGameData()
@@ -95,13 +102,17 @@ struct HexboundApp: App {
             isCheckingAuth = false
             switch result {
             case .hasCharacter:
-                appState.isAuthenticated = true
+                // Single hero — auto-selected, go straight to game
+                appState.currentScreen = .game
+            case .multipleCharacters:
+                // 2+ heroes — show character selection screen
+                appState.currentScreen = .characterSelect
             case .noCharacter:
-                // Authenticated but no character — show AuthRouterView with onboarding
-                appState.authPath.append(AppRoute.onboarding)
+                // Authenticated but no character — show character selection (empty state with create CTA)
+                appState.currentScreen = .characterSelect
             case .noTokens:
                 // Show login screen
-                break
+                appState.currentScreen = .auth
             }
         }
     }

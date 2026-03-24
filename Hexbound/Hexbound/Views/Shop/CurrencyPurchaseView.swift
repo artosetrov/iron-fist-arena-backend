@@ -39,7 +39,7 @@ struct CurrencyPackage: Identifiable {
 
     enum CurrencyType: String {
         case gold, gems
-        var icon: String { self == .gold ? "dollarsign.circle" : "diamond" }
+        var assetIcon: String { self == .gold ? "icon-gold" : "icon-gems" }
         var label: String { self == .gold ? "GOLD" : "GEMS" }
         var accentColor: Color { self == .gold ? DarkFantasyTheme.goldBright : DarkFantasyTheme.cyan }
     }
@@ -221,8 +221,9 @@ struct CurrencyPurchaseView: View {
     private var currencyHeader: some View {
         let isGold = selectedTab == 0
         VStack(spacing: LayoutConstants.spaceSM) {
-            Image(systemName: isGold ? "dollarsign.circle" : "diamond")
-                .font(.system(size: 48))
+            Image(isGold ? "icon-gold" : "icon-gems")
+                .resizable()
+                .frame(width: 48, height: 48)
                 .accessibilityLabel(isGold ? "Gold currency icon" : "Gems currency icon")
                 .accessibilityElement(children: .ignore)
 
@@ -409,8 +410,9 @@ struct CurrencyPackageCard: View {
         HStack(spacing: LayoutConstants.spaceMD) {
             // Currency icon — themed container
             VStack {
-                Text(package.currencyType.icon)
-                    .font(.system(size: package.isBestValue ? 36 : 32)) // emoji — keep
+                Image(package.currencyType.assetIcon)
+                    .resizable()
+                    .frame(width: package.isBestValue ? 36 : 32, height: package.isBestValue ? 36 : 32)
             }
             .frame(width: 56, height: 56)
             .background(
@@ -534,8 +536,9 @@ struct MonthlyGemCardOffer: View {
         VStack(spacing: LayoutConstants.spaceMD) {
             // Header
             HStack(spacing: LayoutConstants.spaceSM) {
-                Image(systemName: "diamond")
-                    .font(.system(size: 36))
+                Image("icon-gems")
+                    .resizable()
+                    .frame(width: 36, height: 36)
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("MONTHLY GEM CARD")
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))

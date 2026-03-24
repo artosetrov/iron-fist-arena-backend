@@ -212,9 +212,16 @@ private struct AttachmentIcon: View {
     
     var body: some View {
         HStack(spacing: LayoutConstants.space2XS) {
-            Image(systemName: iconName)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(iconColor)
+            if let assetName = assetIconName {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 14, height: 14)
+            } else {
+                Image(systemName: sfIconName)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(iconColor)
+            }
 
             Text("\(amount)")
                 .font(.system(size: 13, weight: .semibold))
@@ -225,13 +232,19 @@ private struct AttachmentIcon: View {
         .background(DarkFantasyTheme.bgTertiary)
         .cornerRadius(LayoutConstants.radiusXS)
     }
-    
-    private var iconName: String {
+
+    /// Game asset icon for currency types (preferred over SF Symbols per design rules)
+    private var assetIconName: String? {
         switch type {
-        case "gold":
-            return "dollarsign.circle.fill"
-        case "gems":
-            return "diamond.fill"
+        case "gold": return "icon-gold"
+        case "gems": return "icon-gems"
+        default: return nil
+        }
+    }
+
+    /// SF Symbol fallback for non-currency types
+    private var sfIconName: String {
+        switch type {
         case "xp":
             return "star.fill"
         case "item":

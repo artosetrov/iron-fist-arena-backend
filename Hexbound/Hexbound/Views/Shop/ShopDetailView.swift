@@ -5,8 +5,9 @@ struct ShopDetailView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var vm: ShopViewModel?
 
-    // Merchant strip state (UI-only, not in VM)
-    @State private var showMerchant = true
+    // Merchant strip state — persisted so NPC only shows on first visit
+    @AppStorage(AppConstants.udNPCMerchantDismissed) private var merchantDismissed = false
+    @State private var showMerchant = false
     @State private var showMerchantMini = false
     @State private var tipProvider = MerchantTipProvider()
 
@@ -56,6 +57,10 @@ struct ShopDetailView: View {
             }
         }
         .task {
+            // Show merchant NPC only on first visit (not yet dismissed)
+            if !merchantDismissed {
+                showMerchant = true
+            }
             if vm == nil {
                 let shopVM = ShopViewModel(appState: appState, cache: cache)
                 if appState.shopInitialTab > 0 {
@@ -326,6 +331,7 @@ struct ShopDetailView: View {
                         withAnimation(.easeOut(duration: 0.2)) {
                             showMerchant = false
                         }
+                        merchantDismissed = true
                     },
                     npcImageName: "shopkeeper",
                     attributedMessage: tipProvider.currentTip.attributedText,

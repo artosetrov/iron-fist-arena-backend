@@ -67,7 +67,7 @@ final class BattlePassService {
         } catch let error as APIError {
             let subtitle: String
             switch error {
-            case .serverError(let msg):
+            case .serverError(_, let msg):
                 if msg.contains("Not enough gems") {
                     subtitle = "Not enough gems"
                 } else if msg.contains("already premium") {
