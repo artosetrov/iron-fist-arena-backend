@@ -525,9 +525,7 @@ async function handleAccept(character: any, body: any) {
   Promise.allSettled([
     applyLevelUp(prisma, winnerId),
     applyLevelUp(prisma, loserId),
-    updateDailyQuestProgress(prisma, winnerId, 'pvp_win', 1),
-    updateDailyQuestProgress(prisma, character.id, 'pvp_fight', 1),
-    updateDailyQuestProgress(prisma, challenge.challengerId, 'pvp_fight', 1),
+    updateDailyQuestProgress(prisma, winnerId, 'pvp_wins'),
     degradeEquipment(prisma, winnerId),
     degradeEquipment(prisma, loserId),
     cacheDeletePrefix(`leaderboard:`),

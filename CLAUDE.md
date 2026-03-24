@@ -432,7 +432,9 @@ These are the **actual** backend enums. Do not invent values.
 - **`runCombat()` is async.** Always `await runCombat(attacker, defender)`. Missing `await` produces `Promise<CombatResult>` — TS shows "property 'winnerId' does not exist on type 'Promise<CombatResult>'". Same applies to `calculateCurrentStamina()`.
 - **`calculateCurrentStamina()` takes 3 args** — `(currentStamina, maxStamina, lastUpdate)`. It internally calls `getStaminaConfig()` for regen rate. Do NOT pass `REGEN_INTERVAL_MS` as 4th argument — "Expected 3 arguments, but got 4".
 - **`StaminaResult` interface** — `{ stamina: number; updated: boolean }`. Use `.stamina` to get the computed value, NOT `.current` (does not exist).
-- **Before using any function — check its signature.** Open the source file (`combat.ts`, `stamina.ts`, `live-config.ts`) and verify: is it async? How many args? What does it return? Guessing signatures causes repeated Vercel build failures.
+- **Most game lib functions take `prisma` as first arg.** `applyLevelUp(prisma, characterId)`, `updateDailyQuestProgress(prisma, charId, questType, increment)`, `degradeEquipment(prisma, charId)`, `getKFactor(calibrationGames)` (async). When writing new API routes, **copy the exact call patterns from `pvp/fight/route.ts`** — it's the reference implementation.
+- **`CombatResult` fields:** `{ winnerId, loserId, turns: Turn[], totalTurns: number, finalHp: Record<string, number> }`. Use `combatResult.finalHp[characterId]` for HP, `combatResult.totalTurns` for turn count, `combatResult.turns` for combat log. There is NO `.log`, `.duration`, `.player1FinalHp`, `.player2FinalHp`.
+- **Before using any function — check its signature.** Open the source file (`combat.ts`, `stamina.ts`, `live-config.ts`, `progression.ts`, `balance.ts`) and verify: is it async? How many args? What does it return? **Or copy from `pvp/fight/route.ts`** which is known to work. Guessing signatures causes repeated Vercel build failures.
 
 ## Git Watcher (Auto-Commit from VM)
 
