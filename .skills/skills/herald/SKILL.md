@@ -87,10 +87,24 @@ git add CLAUDE.md .github/ .skills/ 2>/dev/null
      - `feat(shop): add consumables from DB + redesigned merchant strip`
      - `chore(release): deploy — shop redesign, map scroll fix, admin updates`
 
-4. Commit:
+4. Commit — **prefer the git watcher** if available:
+
+**Option A — Git Watcher (preferred in VM sessions):**
+```bash
+# Create trigger file — watcher on Mac runs git add/commit/push automatically
+cat > .git-trigger << 'EOF'
+<generated message>
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+EOF
+```
+The watcher (`scripts/git-watcher.sh`) handles `git add -A`, commit, push to origin, and admin subtree push if admin/ changed.
+
+**Option B — Direct git (if no watcher running):**
 ```bash
 git commit -m "<generated message>"
 ```
+⚠️ Direct git from VM often fails due to `.git/index.lock` on mounted filesystem. If it fails, fall back to Option A or ask the user to commit manually.
 
 ### Phase 4: Deploy (push to all remotes)
 

@@ -429,6 +429,26 @@ These are the **actual** backend enums. Do not invent values.
 - **`prisma generate` must run before `tsc`/`next build`.** Without it, TS reports false errors for all Prisma models (`mailRecipient`, `shopOffer`, etc. "not found on PrismaClient"). On Vercel this runs automatically via build command. Locally: `cd backend && npx prisma generate` first.
 - **`ignoreBuildErrors` is REMOVED.** TypeScript errors now block the Vercel deploy. Do not reintroduce this flag. Fix TS errors properly.
 - **Prisma `Json` fields need double cast.** When casting Prisma `Json` type to a concrete interface (e.g. `OfferContent[]`), use `as unknown as OfferContent[]` — direct cast fails in strict mode. For `InputJsonValue` fields (creating/updating records): use `(value ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue` to handle null fallback.
+- **`runCombat()` is async.** Always `await runCombat(attacker, defender)`. Missing `await` produces `Promise<CombatResult>` — TS shows "property 'winnerId' does not exist on type 'Promise<CombatResult>'". Same applies to `calculateCurrentStamina()`.
+- **`calculateCurrentStamina()` takes 3 args** — `(currentStamina, maxStamina, lastUpdate)`. It internally calls `getStaminaConfig()` for regen rate. Do NOT pass `REGEN_INTERVAL_MS` as 4th argument — "Expected 3 arguments, but got 4".
+- **`StaminaResult` interface** — `{ stamina: number; updated: boolean }`. Use `.stamina` to get the computed value, NOT `.current` (does not exist).
+- **Before using any function — check its signature.** Open the source file (`combat.ts`, `stamina.ts`, `live-config.ts`) and verify: is it async? How many args? What does it return? Guessing signatures causes repeated Vercel build failures.
+
+## Git Watcher (Auto-Commit from VM)
+
+The project has a **git watcher script** at `scripts/git-watcher.sh` that enables auto-commit from Claude VM sessions.
+
+**How it works:**
+1. User runs `./scripts/git-watcher.sh` in a terminal tab on their Mac
+2. Claude creates `.git-trigger` file with commit message as content
+3. Watcher detects the file, runs `git add -A && git commit && git push origin main`
+4. If `admin/` changed, watcher also runs `git subtree push`
+
+**To trigger a commit from VM:** `echo "commit message" > .git-trigger`
+
+**Why needed:** Git operations on mounted filesystem frequently fail with `Unable to create .git/index.lock: File exists` — the VM cannot delete lock files (`Operation not permitted`). The watcher runs natively on macOS where locks work normally.
+
+**IMPORTANT:** Always use the watcher for commits when available. Direct `git commit` from VM will likely fail due to lock files.
 
 ## Merge Conflict Resolution (CRITICAL)
 

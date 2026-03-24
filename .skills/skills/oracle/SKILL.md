@@ -43,6 +43,9 @@ bash .skills/skills/oracle/scripts/check_async_await.sh <path-to-file-or-dir> <p
 ### 2. Async Correctness
 
 - **All `get*Config()` in `src/lib/game/live-config.ts` are async.** Missing `await` produces `Promise<number>` instead of `number`. This is the #1 backend bug pattern.
+- **`runCombat()` in `combat.ts` is async.** Always `await runCombat(attacker, defender)`. Without `await`, TS reports "property 'winnerId' does not exist on type 'Promise<CombatResult>'".
+- **`calculateCurrentStamina()` in `stamina.ts` is async, takes 3 args** — `(currentStamina, maxStamina, lastUpdate)`. Returns `Promise<StaminaResult>` where `StaminaResult = { stamina: number; updated: boolean }`. Do NOT pass REGEN_INTERVAL_MS as 4th arg. Use `.stamina` on the result, NOT `.current`.
+- **General rule: before calling ANY game lib function, open its source file and check the signature.** Verify: is it async? arg count? return type field names? Guessing causes repeated Vercel build failures.
 - **Prisma queries are async.** Every `prisma.xxx.findMany()`, `.create()`, etc. must be awaited.
 - **Error handling.** API routes should have try/catch. Unhandled promise rejections crash the server.
 - **⚠️ Promise.all() exception:** Async calls inside `Promise.all([...])`, `Promise.allSettled([...])`, or `Promise.race([...])` do NOT need individual `await`. Promise.all resolves them. The scanner now excludes these, but verify manually if in doubt.
