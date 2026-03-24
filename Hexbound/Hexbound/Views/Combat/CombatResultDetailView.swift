@@ -129,6 +129,26 @@ struct CombatResultDetailView: View {
             buttons.append(ResultButton(title: "FIGHT AGAIN", icon: "swords", style: .primary, action: {
                 goBack()
             }))
+            // Send message to opponent after PvP
+            if let enemy = combatData?.enemy {
+                buttons.append(ResultButton(title: "SEND MESSAGE", icon: "envelope.fill", style: .ghost, action: {
+                    let enemyId = enemy.id
+                    let enemyName = enemy.characterName
+                    appState.combatData = nil
+                    appState.combatResult = nil
+                    appState.invalidateCache("quests")
+                    // Navigate back to hub, then open message thread
+                    appState.mainPath = NavigationPath()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        appState.mainPath.append(
+                            AppRoute.guildHallMessage(
+                                characterId: enemyId,
+                                characterName: enemyName
+                            )
+                        )
+                    }
+                }))
+            }
         } else {
             buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .primary, action: {
                 goBack()
