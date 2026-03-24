@@ -540,8 +540,8 @@ async function handleAccept(character: any, body: any) {
       won: defenderWon,
       winnerId,
       loserId,
-      combatLog: combatResult.log,
-      turns: combatResult.turns,
+      combatLog: combatResult.turns,
+      totalTurns: combatResult.totalTurns,
       ratingBefore: defenderWon ? winner.pvpRating : loser.pvpRating,
       ratingAfter: defenderWon ? newWinnerRating : newLoserRating,
       ratingChange: defenderWon
