@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Selection Card Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+    min-height: 100vh;
+    color: #e8e0d0;
+  }
+
+  .container {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    max-width: 420px;
+  }
+
+  .card {
+    width: 190px;
+    height: 266px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background: #0d0d14;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .card:hover { transform: scale(1.02); }
+  .card.selected { box-shadow: 0 0 16px rgba(212, 165, 55, 0.4); }
+
+  /* Border glow */
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    border: 1.5px solid rgba(212, 165, 55, 0.3);
+    z-index: 10;
+    pointer-events: none;
+  }
+  .card.selected::before {
+    border-width: 2px;
+    border-color: rgba(212, 165, 55, 0.6);
+  }
+
+  /* Avatar area */
+  .avatar-area {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  .avatar-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Vignette */
+  .vignette {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 65%;
+    background: linear-gradient(to bottom, transparent 0%, rgba(10,10,15,0.4) 25%, rgba(10,10,15,0.8) 55%, rgba(10,10,15,0.95) 75%, #0a0a0f 100%);
+    z-index: 2;
+  }
+
+  /* Top badges */
+  .top-badges {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 5;
+  }
+
+  .level-badge {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(10,10,15,0.75);
+    border: 1.5px solid var(--class-color-50);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--class-color);
+  }
+
+  .check-badge {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700, #d4a537);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800;
+    color: #0a0a0f;
+    box-shadow: 0 0 8px rgba(212,165,55,0.4);
+  }
+
+  .low-hp-badge {
+    font-size: 9px;
+    font-weight: 700;
+    color: #ff4444;
+    background: rgba(255,68,68,0.12);
+    border: 0.5px solid rgba(255,68,68,0.25);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  /* Bottom info */
+  .bottom-info {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .hero-name {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 6px rgba(10,10,15,0.9);
+  }
+
+  .class-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--class-color);
+    background: var(--class-color-12);
+    border: 0.5px solid var(--class-color-25);
+    border-radius: 4px;
+    padding: 2px 8px;
+    align-self: flex-start;
+  }
+
+  /* Rating row — NEW design */
+  .rating-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .rating-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+  }
+
+  .rating-value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-shadow: 0 0 12px var(--glow-color-40);
+  }
+
+  .rating-new {
+    font-size: 18px;
+    font-weight: 700;
+    color: #d4a537;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(212,165,55,0.3);
+  }
+
+  /* Currency row — NEW */
+  .currency-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -1px;
+  }
+
+  .currency-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .currency-icon {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+  }
+  .currency-icon.gold {
+    background: radial-gradient(circle, #ffd700, #b8860b);
+    box-shadow: 0 0 4px rgba(255,215,0,0.4);
+  }
+  .currency-icon.gems {
+    background: radial-gradient(circle, #00e5ff, #0088aa);
+    box-shadow: 0 0 4px rgba(0,229,255,0.4);
+  }
+
+  .currency-value {
+    font-size: 11px;
+    font-weight: 600;
+    color: #a09880;
+  }
+
+  /* Glass stat pills */
+  .stat-pills {
+    display: flex;
+    gap: 4px;
+  }
+  .stat-pill {
+    flex: 1;
+    text-align: center;
+    padding: 4px 0;
+    background: rgba(10,10,15,0.65);
+    border-radius: 6px;
+    border: 0.5px solid rgba(255,255,255,0.06);
+  }
+  .stat-pill .val {
+    font-size: 13px;
+    font-weight: 700;
+    display: block;
+  }
+  .stat-pill .lbl {
+    font-size: 9px;
+    color: #706858;
+    display: block;
+  }
+  .stat-pill.atk .val { color: #ff4444; }
+  .stat-pill.def .val { color: #4499ff; }
+  .stat-pill.lvl .val { color: #d4a537; }
+
+  /* Rating icon SVG placeholder */
+  .rating-svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: #d4a537;
+    stroke-width: 1.5;
+    opacity: 0.6;
+  }
+
+  h3 {
+    color: #706858;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .label-row {
+    width: 100%;
+    text-align: center;
+    margin-top: 24px;
+    margin-bottom: 6px;
+    color: #d4a537;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+
+  <h3>Select a hero to enter the world</h3>
+
+  <div class="container">
+
+    <!-- Card 1: Veteran hero (high rating, selected) -->
+    <div class="card selected" style="--class-color: #ff4444; --class-color-50: rgba(255,68,68,0.5); --class-color-12: rgba(255,68,68,0.12); --class-color-25: rgba(255,68,68,0.25); --glow-color-40: rgba(212,165,55,0.4);">
+      <div class="avatar-area">
+        <div style="width:100%;height:100%;background: linear-gradient(135deg, #2a1515 0%, #1a0a0a 40%, #0d0d14 100%); display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:64px; filter: saturate(0.8);">👹</span>
+        </div>
+      </div>
+      <div class="vignette"></div>
+
+      <div class="top-badges">
+        <div class="level-badge">15</div>
+        <div class="check-badge">✓</div>
+      </div>
+
+      <div class="bottom-info">
+        <div class="hero-name">Degon</div>
+        <div class="class-tag">WARRIOR</div>
+
+        <div class="rating-row">
+          <svg class="rating-svg" viewBox="0 0 24 24">
+            <path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5Z" fill="rgba(212,165,55,0.2)" stroke="#d4a537" stroke-width="1.5"/>
+          </svg>
+          <div class="rating-value">1,693</div>
+        </div>
+
+        <div class="currency-row">
+          <div class="currency-item">
+            <div class="currency-icon gold"></div>
+            <span class="currency-value">2,450</span>
+          </div>
+          <div class="currency-item">
+            <div class="currency-icon gems"></div>
+            <span class="currency-value">85</span>
+          </div>
+        </div>
+
+        <div class="stat-pills">
+          <div class="stat-pill atk"><span class="val">32</span><span class="lbl">ATK</span></div>
+          <div class="stat-pill def"><span class="val">22</span><span class="lbl">DEF</span></div>
+          <div class="stat-pill lvl"><span class="val">Lv.15</span><span class="lbl">Level</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Mid-level hero -->
+    <div class="card" style="--class-color: #4499ff; --class-color-50: rgba(68,153,255,0.5); --class-color-12: rgba(68,153,255,0.12); --class-color-25: rgba(68,153,255,0.25); --glow-color-40: rgba(68,153,255,0.3);">
+      <div class="avatar-area">
+        <div style="width:100%;height:100%;background: linear-gradient(135deg, #15152a 0%, #0a0a1a 40%, #0d0d14 100%); display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:64px; filter: saturate(0.8);">🧌</span>
+        </div>
+      </div>
+      <div class="vignette"></div>
+
+      <div class="top-badges">
+        <div class="level-badge">2</div>
+        <span></span>
+      </div>
+
+      <div class="bottom-info">
+        <div class="hero-name">Thornstrike</div>
+        <div class="class-tag">TANK</div>
+
+        <div class="rating-row">
+          <svg class="rating-svg" viewBox="0 0 24 24">
+            <path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5Z" fill="rgba(212,165,55,0.2)" stroke="#d4a537" stroke-width="1.5"/>
+          </svg>
+          <div class="rating-value">999</div>
+        </div>
+
+        <div class="currency-row">
+          <div class="currency-item">
+            <div class="currency-icon gold"></div>
+            <span class="currency-value">800</span>
+          </div>
+          <div class="currency-item">
+            <div class="currency-icon gems"></div>
+            <span class="currency-value">12</span>
+          </div>
+        </div>
+
+        <div class="stat-pills">
+          <div class="stat-pill atk"><span class="val">13</span><span class="lbl">ATK</span></div>
+          <div class="stat-pill def"><span class="val">10</span><span class="lbl">DEF</span></div>
+          <div class="stat-pill lvl"><span class="val">Lv.2</span><span class="lbl">Level</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: NEW hero (0 fights) -->
+    <div class="card" style="--class-color: #bb44ff; --class-color-50: rgba(187,68,255,0.5); --class-color-12: rgba(187,68,255,0.12); --class-color-25: rgba(187,68,255,0.25); --glow-color-40: rgba(187,68,255,0.3);">
+      <div class="avatar-area">
+        <div style="width:100%;height:100%;background: linear-gradient(135deg, #1a1528 0%, #100a1a 40%, #0d0d14 100%); display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:64px; filter: saturate(0.8);">🧛</span>
+        </div>
+      </div>
+      <div class="vignette"></div>
+
+      <div class="top-badges">
+        <div class="level-badge">1</div>
+        <span></span>
+      </div>
+
+      <div class="bottom-info">
+        <div class="hero-name">Nightborn</div>
+        <div class="class-tag">ROGUE</div>
+
+        <div class="rating-row">
+          <svg class="rating-svg" viewBox="0 0 24 24">
+            <path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5Z" fill="rgba(212,165,55,0.2)" stroke="#d4a537" stroke-width="1.5"/>
+          </svg>
+          <div class="rating-new">NEW</div>
+        </div>
+
+        <div class="currency-row">
+          <div class="currency-item">
+            <div class="currency-icon gold"></div>
+            <span class="currency-value">500</span>
+          </div>
+          <div class="currency-item">
+            <div class="currency-icon gems"></div>
+            <span class="currency-value">0</span>
+          </div>
+        </div>
+
+        <div class="stat-pills">
+          <div class="stat-pill atk"><span class="val">10</span><span class="lbl">ATK</span></div>
+          <div class="stat-pill def"><span class="val">10</span><span class="lbl">DEF</span></div>
+          <div class="stat-pill lvl"><span class="val">Lv.1</span><span class="lbl">Level</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: LOW HP hero -->
+    <div class="card" style="--class-color: #4499ff; --class-color-50: rgba(68,153,255,0.5); --class-color-12: rgba(68,153,255,0.12); --class-color-25: rgba(68,153,255,0.25); --glow-color-40: rgba(68,153,255,0.3);">
+      <div class="avatar-area">
+        <div style="width:100%;height:100%;background: linear-gradient(135deg, #15152a 0%, #0a0a1a 40%, #0d0d14 100%); display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:64px; filter: saturate(0.8);">👺</span>
+        </div>
+      </div>
+      <div class="vignette"></div>
+
+      <div class="top-badges">
+        <div class="level-badge">1</div>
+        <div class="low-hp-badge">LOW HP</div>
+      </div>
+
+      <div class="bottom-info">
+        <div class="hero-name">Bloodstrike</div>
+        <div class="class-tag">TANK</div>
+
+        <div class="rating-row">
+          <svg class="rating-svg" viewBox="0 0 24 24">
+            <path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5Z" fill="rgba(212,165,55,0.2)" stroke="#d4a537" stroke-width="1.5"/>
+          </svg>
+          <div class="rating-value">976</div>
+        </div>
+
+        <div class="currency-row">
+          <div class="currency-item">
+            <div class="currency-icon gold"></div>
+            <span class="currency-value">1,200</span>
+          </div>
+          <div class="currency-item">
+            <div class="currency-icon gems"></div>
+            <span class="currency-value">5</span>
+          </div>
+        </div>
+
+        <div class="stat-pills">
+          <div class="stat-pill atk"><span class="val">10</span><span class="lbl">ATK</span></div>
+          <div class="stat-pill def"><span class="val">10</span><span class="lbl">DEF</span></div>
+          <div class="stat-pill lvl"><span class="val">Lv.1</span><span class="lbl">Level</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

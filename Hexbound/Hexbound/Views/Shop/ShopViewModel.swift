@@ -52,12 +52,20 @@ final class ShopViewModel {
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
     var gems: Int { appState.currentCharacter?.gems ?? 0 }
     var playerLevel: Int { appState.currentCharacter?.level ?? 1 }
+    var playerClass: String { appState.currentCharacter?.characterClass?.rawValue ?? "warrior" }
 
     var filteredItems: [ShopItem] {
         let types = Self.tabTypes[selectedTab]
-        let levelFiltered = items.filter { $0.requiredLevel <= playerLevel }
-        if types.isEmpty { return levelFiltered } // "All" tab
-        return levelFiltered.filter { types.contains($0.itemType) }
+        // Filter by level + class restriction (backend already filters, this is a safety net)
+        let filtered = items.filter { item in
+            if item.requiredLevel > playerLevel { return false }
+            if let restriction = item.classRestriction, !restriction.isEmpty {
+                return restriction == playerClass
+            }
+            return true
+        }
+        if types.isEmpty { return filtered } // "All" tab
+        return filtered.filter { types.contains($0.itemType) }
     }
 
     var sectionedItems: [ShopSection] {

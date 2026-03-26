@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Hero Widget Bar Concepts</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0D0D12;
+    color: #E8E0D0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h1 {
+    font-family: Georgia, serif;
+    color: #D4A537;
+    font-size: 20px;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #8B8B9E;
+    font-size: 13px;
+    margin-bottom: 32px;
+  }
+
+  .concept {
+    background: #1A1A2E;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(212,165,55,0.12);
+    position: relative;
+  }
+  .concept::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 40%, rgba(0,0,0,0.08) 100%);
+    pointer-events: none;
+  }
+  .concept-title {
+    font-family: Georgia, serif;
+    color: #D4A537;
+    font-size: 15px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .concept-desc {
+    color: #8B8B9E;
+    font-size: 12px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  /* Widget mock frame */
+  .widget {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: radial-gradient(ellipse at 40% 30%, #16213E 0%, #1A1A2E 70%);
+    border-radius: 12px;
+    border: 1px solid rgba(212,165,55,0.1);
+    position: relative;
+  }
+
+  .avatar-area {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    background: #16213E;
+    border: 2.5px solid #D4A537;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .avatar-area .level {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1E2240;
+    border: 1px solid #D4A537;
+    border-radius: 10px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #E8E0D0;
+    white-space: nowrap;
+  }
+
+  .right-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .char-name {
+    font-family: Georgia, serif;
+    font-size: 15px;
+    color: #E8E0D0;
+  }
+  .currencies {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .gold-val { color: #D4A537; }
+  .gem-val { color: #00D4FF; }
+
+  /* ========== CONCEPT A: Current (flat) ========== */
+  .bar-current {
+    height: 20px;
+    border-radius: 6px;
+    background: #16213E;
+    border: 0.5px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .bar-current .fill {
+    height: 100%;
+    border-radius: 6px;
+    position: relative;
+  }
+  .bar-current .fill.hp { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+  .bar-current .fill.sta { background: linear-gradient(90deg, #d35400, #e67e22); }
+  .bar-current .fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent);
+    border-radius: 6px 6px 0 0;
+  }
+  .bar-current .text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #E8E0D0;
+    text-shadow: 0 1px 2px rgba(8,8,12,0.6);
+  }
+
+  /* ========== CONCEPT B: Engraved Stone Trough ========== */
+  .bar-stone {
+    height: 22px;
+    border-radius: 4px;
+    background: #0e0e14;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      inset 0 2px 4px rgba(0,0,0,0.7),
+      inset 0 -1px 0 rgba(255,255,255,0.04),
+      0 1px 0 rgba(255,255,255,0.03);
+    border: 1px solid #2a2a3a;
+  }
+  .bar-stone::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 18px,
+      rgba(255,255,255,0.015) 18px,
+      rgba(255,255,255,0.015) 19px
+    );
+    z-index: 2;
+    pointer-events: none;
+  }
+  .bar-stone .fill {
+    height: 100%;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bar-stone .fill.hp {
+    background: linear-gradient(180deg, #3ddc84 0%, #1a8f4a 40%, #0d5c2f 100%);
+    box-shadow: 0 0 12px rgba(46,204,113,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .bar-stone .fill.sta {
+    background: linear-gradient(180deg, #f0a030 0%, #c06800 40%, #804000 100%);
+    box-shadow: 0 0 12px rgba(230,126,34,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  /* Liquid shimmer */
+  .bar-stone .fill::before {
+    content: '';
+    position: absolute;
+    top: 2px; left: -60%;
+    width: 40%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    border-radius: 2px;
+    animation: liquidShimmer 3s ease-in-out infinite;
+  }
+  @keyframes liquidShimmer {
+    0% { left: -40%; }
+    100% { left: 120%; }
+  }
+  /* Meniscus at fill edge */
+  .bar-stone .fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: -3px;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08));
+    border-radius: 0 3px 3px 0;
+  }
+  .bar-stone .text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #E8E0D0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    z-index: 3;
+    letter-spacing: 0.5px;
+  }
+  /* Stone cap ends */
+  .bar-stone .cap-left, .bar-stone .cap-right {
+    position: absolute;
+    top: -1px; bottom: -1px;
+    width: 6px;
+    z-index: 4;
+  }
+  .bar-stone .cap-left {
+    left: -1px;
+    background: linear-gradient(180deg, #3a3a4e, #22222e);
+    border-radius: 4px 0 0 4px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+  }
+  .bar-stone .cap-right {
+    right: -1px;
+    background: linear-gradient(180deg, #3a3a4e, #22222e);
+    border-radius: 0 4px 4px 0;
+    border-left: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* ========== CONCEPT C: Segmented Plates ========== */
+  .bar-segments {
+    height: 20px;
+    display: flex;
+    gap: 2px;
+    position: relative;
+  }
+  .bar-segments .segment {
+    flex: 1;
+    border-radius: 2px;
+    background: #12121c;
+    border: 1px solid #2a2a3a;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .bar-segments .segment.filled {
+    border-color: rgba(255,255,255,0.08);
+  }
+  .bar-segments .segment.filled.hp {
+    background: linear-gradient(180deg, #2ecc71 0%, #1a8040 60%, #0f5028 100%);
+    box-shadow: 0 0 4px rgba(46,204,113,0.2);
+  }
+  .bar-segments .segment.filled.sta {
+    background: linear-gradient(180deg, #e67e22 0%, #a05000 60%, #703000 100%);
+    box-shadow: 0 0 4px rgba(230,126,34,0.2);
+  }
+  .bar-segments .segment.filled::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.18), transparent);
+  }
+  .bar-segments .segment.partial {
+    overflow: hidden;
+  }
+  .bar-segments .segment.partial .partial-fill {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+  }
+  .bar-segments .segment.partial .partial-fill.hp {
+    background: linear-gradient(180deg, #2ecc71 0%, #1a8040 100%);
+  }
+  .bar-segments .segment.partial .partial-fill.sta {
+    background: linear-gradient(180deg, #e67e22 0%, #a05000 100%);
+  }
+  .bar-segments .text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #E8E0D0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    z-index: 2;
+  }
+  /* First and last segment rounded */
+  .bar-segments .segment:first-child { border-radius: 4px 2px 2px 4px; }
+  .bar-segments .segment:last-child { border-radius: 2px 4px 4px 2px; }
+
+  /* ========== CONCEPT D: Forged Frame ========== */
+  .bar-forged-wrap {
+    position: relative;
+    height: 24px;
+    padding: 3px 4px;
+    background: linear-gradient(180deg, #3a3040 0%, #28202e 50%, #1a1520 100%);
+    border-radius: 5px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.08),
+      inset 0 -1px 0 rgba(0,0,0,0.3),
+      0 2px 4px rgba(0,0,0,0.4);
+    border: 1px solid #4a4050;
+  }
+  .bar-forged-wrap::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 8px; right: 8px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,165,55,0.3), transparent);
+  }
+  .bar-forged-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 12px; right: 12px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,165,55,0.15), transparent);
+  }
+  .bar-forged {
+    height: 100%;
+    border-radius: 3px;
+    background: #0a0a10;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .bar-forged .fill {
+    height: 100%;
+    border-radius: 3px;
+    position: relative;
+  }
+  .bar-forged .fill.hp {
+    background: linear-gradient(180deg, #34d87a 0%, #22a050 50%, #167838 100%);
+    box-shadow: 0 0 8px rgba(46,204,113,0.25);
+  }
+  .bar-forged .fill.sta {
+    background: linear-gradient(180deg, #f0a030 0%, #c07000 50%, #905000 100%);
+    box-shadow: 0 0 8px rgba(230,126,34,0.25);
+  }
+  /* Hot metal edge */
+  .bar-forged .fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 3px;
+    background: rgba(255,255,255,0.3);
+    filter: blur(1px);
+  }
+  .bar-forged .fill::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15), transparent);
+    border-radius: 3px 3px 0 0;
+  }
+  .bar-forged .text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #E8E0D0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+    z-index: 2;
+  }
+  /* Rivet decorations */
+  .bar-forged-wrap .rivet {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #5a5060, #2a2030);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .bar-forged-wrap .rivet.left { left: -1px; }
+  .bar-forged-wrap .rivet.right { right: -1px; }
+
+  /* ========== CONCEPT E: Runic Groove ========== */
+  .bar-runic {
+    height: 18px;
+    border-radius: 3px;
+    background: #0c0c14;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #2a2838;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .bar-runic .fill {
+    height: 100%;
+    border-radius: 2px;
+    position: relative;
+  }
+  .bar-runic .fill.hp {
+    background: linear-gradient(180deg, #30d878 0%, #1a8848 100%);
+  }
+  .bar-runic .fill.sta {
+    background: linear-gradient(180deg, #e8a030 0%, #b06000 100%);
+  }
+  .bar-runic .fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent);
+  }
+  /* Rune notches */
+  .bar-runic .notches {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .bar-runic .notch {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 5px;
+    background: rgba(212,165,55,0.25);
+  }
+  .bar-runic .notch.long {
+    height: 100%;
+    background: rgba(212,165,55,0.1);
+  }
+  /* Diamond end caps */
+  .bar-runic .diamond-cap {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(135deg, #D4A537, #8B6914);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    z-index: 3;
+  }
+  .bar-runic .diamond-cap.left { left: -3px; }
+  .bar-runic .diamond-cap.right { right: -3px; }
+  .bar-runic .text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #E8E0D0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    z-index: 4;
+    letter-spacing: 0.3px;
+  }
+
+  /* HP slider demo */
+  .controls {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .controls label {
+    color: #8B8B9E;
+    font-size: 11px;
+    min-width: 24px;
+  }
+  .controls input[type="range"] {
+    flex: 1;
+    accent-color: #D4A537;
+    height: 4px;
+  }
+  .controls .val {
+    color: #D4A537;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .tag.current { background: #2a2a3a; color: #8B8B9E; }
+  .tag.fav { background: rgba(212,165,55,0.15); color: #D4A537; }
+</style>
+</head>
+<body>
+
+<h1>◆ Hero Widget — Bar Concepts ◆</h1>
+<p class="subtitle">Те же данные, другой визуал. Двигай слайдер HP чтобы увидеть low-HP состояние.</p>
+
+<!-- CONCEPT A: Current -->
+<div class="concept">
+  <div class="concept-title">A. Current (как сейчас) <span class="tag current">baseline</span></div>
+  <div class="concept-desc">Плоские rounded rect, минимальный highlight сверху. Чисто, но generic — похоже на любое мобильное приложение.</div>
+  <div class="widget">
+    <div class="avatar-area">🐻<div class="level">Lv. 2</div></div>
+    <div class="right-content">
+      <div class="name-row">
+        <span class="char-name">Thornstrike</span>
+        <span class="currencies"><span class="gold-val">⚜ 639</span> <span class="gem-val">◆ 268</span></span>
+      </div>
+      <div class="bar-current"><div class="fill hp" id="a-hp" style="width:100%"></div><div class="text" id="a-hp-text">184/184</div></div>
+      <div class="bar-current"><div class="fill sta" style="width:100%"></div><div class="text">120/120</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONCEPT B: Stone Trough -->
+<div class="concept">
+  <div class="concept-title">B. Stone Trough (каменный жёлоб)</div>
+  <div class="concept-desc">Бар выглядит как высеченный в камне жёлоб, заполненный светящейся жидкостью. Тяжёлые внутренние тени, каменные "заглушки" по краям, мерцающий блик на поверхности жидкости. Grimdark alchemist vibe.</div>
+  <div class="widget">
+    <div class="avatar-area">🐻<div class="level">Lv. 2</div></div>
+    <div class="right-content">
+      <div class="name-row">
+        <span class="char-name">Thornstrike</span>
+        <span class="currencies"><span class="gold-val">⚜ 639</span> <span class="gem-val">◆ 268</span></span>
+      </div>
+      <div class="bar-stone">
+        <div class="cap-left"></div><div class="cap-right"></div>
+        <div class="fill hp" id="b-hp" style="width:100%"></div>
+        <div class="text" id="b-hp-text">184/184</div>
+      </div>
+      <div class="bar-stone">
+        <div class="cap-left"></div><div class="cap-right"></div>
+        <div class="fill sta" style="width:100%"></div>
+        <div class="text">120/120</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONCEPT C: Segmented -->
+<div class="concept">
+  <div class="concept-title">C. Segmented Plates (пластины)</div>
+  <div class="concept-desc">Бар разбит на 10 сегментов — как звенья брони или клетки батареи. Каждый сегмент заполняется отдельно. Dark Souls / Elden Ring vibe. Чётко видно "сколько осталось" без чтения чисел.</div>
+  <div class="widget">
+    <div class="avatar-area">🐻<div class="level">Lv. 2</div></div>
+    <div class="right-content">
+      <div class="name-row">
+        <span class="char-name">Thornstrike</span>
+        <span class="currencies"><span class="gold-val">⚜ 639</span> <span class="gem-val">◆ 268</span></span>
+      </div>
+      <div class="bar-segments" id="c-hp-bar" style="position:relative"></div>
+      <div class="bar-segments" id="c-sta-bar" style="position:relative"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONCEPT D: Forged Frame -->
+<div class="concept">
+  <div class="concept-title">D. Forged Frame (кованая рамка) <span class="tag fav">рекомендую</span></div>
+  <div class="concept-desc">Бар обрамлён тяжёлой металлической рамкой с заклёпками по бокам. Золотые линии-акценты сверху и снизу рамки. Заливка с яркой раскалённой кромкой (leading edge). Вписывается в ornamental design system проекта.</div>
+  <div class="widget">
+    <div class="avatar-area">🐻<div class="level">Lv. 2</div></div>
+    <div class="right-content">
+      <div class="name-row">
+        <span class="char-name">Thornstrike</span>
+        <span class="currencies"><span class="gold-val">⚜ 639</span> <span class="gem-val">◆ 268</span></span>
+      </div>
+      <div class="bar-forged-wrap">
+        <div class="rivet left"></div><div class="rivet right"></div>
+        <div class="bar-forged"><div class="fill hp" id="d-hp" style="width:100%"></div><div class="text" id="d-hp-text">184/184</div></div>
+      </div>
+      <div class="bar-forged-wrap">
+        <div class="rivet left"></div><div class="rivet right"></div>
+        <div class="bar-forged"><div class="fill sta" style="width:100%"></div><div class="text">120/120</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONCEPT E: Runic Groove -->
+<div class="concept">
+  <div class="concept-title">E. Runic Groove (руническая канавка)</div>
+  <div class="concept-desc">Тонкий бар с засечками-нотчами через каждые 10% (золотые метки) и ромбовидными заглушками на концах. Ощущение измерительного инструмента из мира фэнтези — как зачарованный артефакт. Компактный, не перетягивает внимание.</div>
+  <div class="widget">
+    <div class="avatar-area">🐻<div class="level">Lv. 2</div></div>
+    <div class="right-content">
+      <div class="name-row">
+        <span class="char-name">Thornstrike</span>
+        <span class="currencies"><span class="gold-val">⚜ 639</span> <span class="gem-val">◆ 268</span></span>
+      </div>
+      <div class="bar-runic">
+        <div class="diamond-cap left"></div><div class="diamond-cap right"></div>
+        <div class="notches" id="e-hp-notches"></div>
+        <div class="fill hp" id="e-hp" style="width:100%"></div>
+        <div class="text" id="e-hp-text">184/184</div>
+      </div>
+      <div class="bar-runic">
+        <div class="diamond-cap left"></div><div class="diamond-cap right"></div>
+        <div class="notches" id="e-sta-notches"></div>
+        <div class="fill sta" style="width:100%"></div>
+        <div class="text">120/120</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HP Slider -->
+<div class="concept" style="border-color: rgba(212,165,55,0.25);">
+  <div class="concept-title" style="margin-bottom:10px;">⚡ Попробуй разный HP</div>
+  <div class="controls">
+    <label>HP</label>
+    <input type="range" id="hp-slider" min="0" max="184" value="184">
+    <span class="val" id="hp-val">184</span>
+  </div>
+</div>
+
+<script>
+// Generate notches for runic bars
+function makeNotches(containerId) {
+  const el = document.getElementById(containerId);
+  for (let i = 1; i <= 9; i++) {
+    const n = document.createElement('div');
+    n.className = 'notch' + (i === 5 ? ' long' : '');
+    n.style.left = (i * 10) + '%';
+    el.appendChild(n);
+  }
+}
+makeNotches('e-hp-notches');
+makeNotches('e-sta-notches');
+
+// Generate segments
+function makeSegments(containerId, type, filled, total) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  const numSegments = 10;
+  const fillRatio = filled / total;
+  const fullSegments = Math.floor(fillRatio * numSegments);
+  const partialAmount = (fillRatio * numSegments) - fullSegments;
+
+  for (let i = 0; i < numSegments; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'segment';
+    if (i < fullSegments) {
+      seg.className += ' filled ' + type;
+    } else if (i === fullSegments && partialAmount > 0.01) {
+      seg.className += ' partial';
+      const pf = document.createElement('div');
+      pf.className = 'partial-fill ' + type;
+      pf.style.width = (partialAmount * 100) + '%';
+      seg.appendChild(pf);
+    }
+    el.appendChild(seg);
+  }
+  // Add text overlay
+  const txt = document.createElement('div');
+  txt.className = 'text';
+  txt.textContent = filled + '/' + total;
+  txt.id = containerId + '-text';
+  el.appendChild(txt);
+}
+
+makeSegments('c-hp-bar', 'hp', 184, 184);
+makeSegments('c-sta-bar', 'sta', 120, 120);
+
+// HP slider
+const slider = document.getElementById('hp-slider');
+const maxHP = 184;
+
+slider.addEventListener('input', () => {
+  const hp = parseInt(slider.value);
+  const pct = (hp / maxHP * 100) + '%';
+  document.getElementById('hp-val').textContent = hp;
+
+  // Update all concepts
+  ['a-hp', 'b-hp', 'd-hp', 'e-hp'].forEach(id => {
+    document.getElementById(id).style.width = pct;
+  });
+  ['a-hp-text', 'b-hp-text', 'd-hp-text', 'e-hp-text'].forEach(id => {
+    document.getElementById(id).textContent = hp + '/184';
+  });
+
+  // Segments
+  makeSegments('c-hp-bar', 'hp', hp, maxHP);
+
+  // Color change for low HP
+  const ratio = hp / maxHP;
+  ['a-hp', 'b-hp', 'd-hp', 'e-hp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (ratio < 0.25) {
+      if (id === 'b-hp') {
+        el.style.background = 'linear-gradient(180deg, #ff4060 0%, #a01020 40%, #601010 100%)';
+        el.style.boxShadow = '0 0 16px rgba(230,57,70,0.5), inset 0 1px 0 rgba(255,255,255,0.15)';
+      } else if (id === 'd-hp') {
+        el.style.background = 'linear-gradient(180deg, #ff4060 0%, #a01020 50%, #701018 100%)';
+        el.style.boxShadow = '0 0 10px rgba(230,57,70,0.4)';
+      } else {
+        el.style.background = 'linear-gradient(90deg, #a01020, #e63946)';
+      }
+    } else if (ratio < 0.6) {
+      if (id === 'b-hp') {
+        el.style.background = 'linear-gradient(180deg, #f0c040 0%, #c08000 40%, #806000 100%)';
+        el.style.boxShadow = '0 0 12px rgba(240,192,64,0.3), inset 0 1px 0 rgba(255,255,255,0.15)';
+      } else if (id === 'd-hp') {
+        el.style.background = 'linear-gradient(180deg, #f0c040 0%, #c08000 50%, #907000 100%)';
+        el.style.boxShadow = '0 0 8px rgba(240,192,64,0.25)';
+      } else {
+        el.style.background = 'linear-gradient(90deg, #c08000, #f0c040)';
+      }
+    } else {
+      if (id === 'b-hp') {
+        el.style.background = 'linear-gradient(180deg, #3ddc84 0%, #1a8f4a 40%, #0d5c2f 100%)';
+        el.style.boxShadow = '0 0 12px rgba(46,204,113,0.3), inset 0 1px 0 rgba(255,255,255,0.15)';
+      } else if (id === 'd-hp') {
+        el.style.background = 'linear-gradient(180deg, #34d87a 0%, #22a050 50%, #167838 100%)';
+        el.style.boxShadow = '0 0 8px rgba(46,204,113,0.25)';
+      } else {
+        el.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+      }
+    }
+  });
+});
+</script>
+
+</body>
+</html>

@@ -29,6 +29,9 @@ struct CurrencyDisplay: View {
     /// Whether to use animated tick-up text. Defaults to true.
     var animated: Bool = true
 
+    /// Override text color for all currencies (e.g. textOnGold inside gold buttons).
+    var textColorOverride: Color? = nil
+
     enum CurrencyType {
         case both   // Gold + gems (default)
         case gold   // Only gold
@@ -98,7 +101,7 @@ struct CurrencyDisplay: View {
                 currencyItem(
                     icon: "icon-gold",
                     value: gold,
-                    color: size.goldColor,
+                    color: textColorOverride ?? size.goldColor,
                     label: "Gold"
                 )
             }
@@ -110,7 +113,7 @@ struct CurrencyDisplay: View {
                     currencyItem(
                         icon: "icon-gems",
                         value: gemsValue,
-                        color: size.gemsColor,
+                        color: textColorOverride ?? size.gemsColor,
                         label: "Gems"
                     )
                 }

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { id: true, userId: true, level: true },
+      select: { id: true, userId: true, level: true, class: true },
     })
 
     if (!character || character.userId !== user.id) {
@@ -47,12 +47,20 @@ export async function GET(req: NextRequest) {
     }
 
     // --- Load equipment items (non-consumable) ---
+    // Filter out items restricted to other classes
     const equipWhere: {
       itemType?: ItemType | { not: ItemType }
       rarity?: Rarity
       itemLevel?: { lte: number }
       equipment?: { none: { characterId: string } }
-    } = { itemType: { not: ItemType.consumable } }
+      OR?: Array<{ classRestriction: null } | { classRestriction: string }>
+    } = {
+      itemType: { not: ItemType.consumable },
+      OR: [
+        { classRestriction: null },          // universal items
+        { classRestriction: character.class }, // items for player's class
+      ],
+    }
 
     if (typeParam && typeParam !== 'consumable') {
       if (!Object.values(ItemType).includes(typeParam as ItemType)) {
@@ -95,6 +103,7 @@ export async function GET(req: NextRequest) {
         specialEffect: true,
         uniquePassive: true,
         setName: true,
+        classRestriction: true,
       },
       orderBy: [{ itemLevel: 'asc' }, { itemName: 'asc' }],
     })
@@ -141,6 +150,7 @@ export async function GET(req: NextRequest) {
       special_effect: item.specialEffect,
       unique_passive: item.uniquePassive,
       set_name: item.setName,
+      class_restriction: item.classRestriction?.toLowerCase() ?? null,
     }))
 
     // Batch-load all consumable prices from GameConfig ONCE (fix N+1)

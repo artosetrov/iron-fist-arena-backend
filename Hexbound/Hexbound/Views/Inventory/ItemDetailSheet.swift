@@ -677,7 +677,8 @@ struct ItemDetailSheet: View {
                             gems: shop.isGemPurchase ? shop.price : nil,
                             size: .mini,
                             currencyType: shop.isGemPurchase ? .gems : .gold,
-                            animated: false
+                            animated: false,
+                            textColorOverride: DarkFantasyTheme.textOnGold
                         )
                     }
                 }

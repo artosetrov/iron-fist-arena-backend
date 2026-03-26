@@ -1202,7 +1202,7 @@ struct GuildHallDetailView: View {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                         .fill(DarkFantasyTheme.bgSecondary)
-                        .frame(height: 80)
+                        .frame(height: 100)
                         .shimmer()
                 }
             }
@@ -1228,9 +1228,9 @@ struct GuildHallDetailView: View {
 
     @ViewBuilder
     private func duelsContent(_ vm: GuildHallViewModel) -> some View {
-        // Incoming challenges
+        // Incoming challenges (urgent — shown first)
         if !vm.incomingChallenges.isEmpty {
-            sectionLabel("INCOMING CHALLENGES", count: vm.incomingChallenges.count)
+            duelsSectionLabel("INCOMING CHALLENGES", count: vm.incomingChallenges.count)
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
             ForEach(vm.incomingChallenges) { challenge in
@@ -1241,11 +1241,23 @@ struct GuildHallDetailView: View {
 
         // Outgoing challenges
         if !vm.outgoingChallenges.isEmpty {
-            sectionLabel("SENT CHALLENGES", count: vm.outgoingChallenges.count)
+            duelsSectionLabel("SENT CHALLENGES", count: vm.outgoingChallenges.count)
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
+            // Daily limit counter
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Text("Pending:")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                Text("\(vm.pendingOutgoingCount) / 5")
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .foregroundStyle(vm.pendingOutgoingCount >= 5 ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.bottom, LayoutConstants.spaceXS)
+
             ForEach(vm.outgoingChallenges) { challenge in
-                outgoingChallengeCard(challenge)
+                outgoingChallengeCard(challenge, vm: vm)
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
         }
@@ -1256,7 +1268,7 @@ struct GuildHallDetailView: View {
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.vertical, LayoutConstants.spaceSM)
 
-            sectionLabel("RECENT DUELS", count: vm.completedChallenges.count)
+            duelsSectionLabel("RECENT DUELS", count: vm.completedChallenges.count)
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
             ForEach(vm.completedChallenges) { challenge in
@@ -1266,7 +1278,7 @@ struct GuildHallDetailView: View {
         }
     }
 
-    private func sectionLabel(_ title: String, count: Int) -> some View {
+    private func duelsSectionLabel(_ title: String, count: Int) -> some View {
         HStack {
             Text(title)
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
@@ -1279,60 +1291,81 @@ struct GuildHallDetailView: View {
         }
     }
 
-    // MARK: - Challenge Cards
+    // MARK: - Incoming Challenge Card (full-width buttons + expiry timer)
 
     private func incomingChallengeCard(_ challenge: IncomingChallenge, vm: GuildHallViewModel) -> some View {
         let isProcessing = vm.processingChallengeId == challenge.id
+        let expiryText = Self.duelTimeRemaining(from: challenge.expiresAt)
 
-        return HStack(spacing: LayoutConstants.spaceSM) {
-            // Challenger avatar
-            characterAvatar(
-                name: challenge.challenger.characterName,
-                className: challenge.challenger.characterClass
-            )
+        return VStack(spacing: LayoutConstants.spaceSM) {
+            // Top row: avatar + info + expiry badge
+            HStack(spacing: LayoutConstants.spaceSM) {
+                characterAvatar(
+                    name: challenge.challenger.characterName,
+                    className: challenge.challenger.characterClass,
+                    avatar: challenge.challenger.avatar
+                )
 
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(challenge.challenger.characterName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(challenge.challenger.characterName)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
 
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text("Lv.\(challenge.challenger.level)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text("Lv.\(challenge.challenger.level)")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
 
-                    let rank = PvPRank.fromRating(challenge.challenger.pvpRating)
-                    Image(systemName: rank.icon)
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(rank.color)
-                    Text("\(challenge.challenger.pvpRating)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(rank.color)
+                        let rank = PvPRank.fromRating(challenge.challenger.pvpRating)
+                        Image(systemName: rank.icon)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(rank.color)
+                        Text("\(challenge.challenger.pvpRating)")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(rank.color)
+                    }
+
+                    if let msg = challenge.message {
+                        Text("\"\(msg)\"")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.goldDim)
+                            .italic()
+                            .lineLimit(1)
+                    }
                 }
 
-                if let msg = challenge.message {
-                    Text("\"\(msg)\"")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.goldDim)
-                        .italic()
-                        .lineLimit(1)
+                Spacer(minLength: 4)
+
+                // Expiry timer badge
+                if !expiryText.isEmpty {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(DarkFantasyTheme.stamina)
+                            .frame(width: 6, height: 6)
+                        Text(expiryText)
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.stamina)
+                    }
                 }
             }
 
-            Spacer(minLength: 4)
-
-            // Accept / Decline buttons
-            VStack(spacing: 4) {
+            // Full-width action buttons
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Button {
                     Task { await vm.acceptChallenge(challenge) }
                 } label: {
-                    if isProcessing {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.7)
-                    } else {
-                        Image(systemName: "swords")
-                        Text("Fight")
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        if isProcessing {
+                            ProgressView()
+                                .tint(DarkFantasyTheme.textOnGold)
+                                .scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "swords")
+                            Text("FIGHT")
+                        }
                     }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 36)
                 }
                 .buttonStyle(.compactPrimary)
                 .disabled(isProcessing)
@@ -1340,11 +1373,23 @@ struct GuildHallDetailView: View {
                 Button {
                     Task { await vm.declineChallenge(challenge) }
                 } label: {
-                    Text("Decline")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("DECLINE")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .tracking(1)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: 36)
                 }
                 .disabled(isProcessing)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(DarkFantasyTheme.danger.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                .stroke(DarkFantasyTheme.danger.opacity(0.12), lineWidth: 1)
+                        )
+                )
             }
         }
         .padding(LayoutConstants.spaceSM)
@@ -1359,40 +1404,97 @@ struct GuildHallDetailView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.08))
         .cornerBrackets(color: DarkFantasyTheme.danger.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
-    private func outgoingChallengeCard(_ challenge: OutgoingChallenge) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            characterAvatar(
-                name: challenge.defender.characterName,
-                className: challenge.defender.characterClass
-            )
+    // MARK: - Outgoing Challenge Card (cancel button + status pill + expiry timer)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(challenge.defender.characterName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+    private func outgoingChallengeCard(_ challenge: OutgoingChallenge, vm: GuildHallViewModel) -> some View {
+        let isPending = challenge.status == "pending"
+        let isProcessing = vm.processingChallengeId == challenge.id
+        let isDimmed = challenge.status == "declined" || challenge.status == "expired"
 
-                HStack(spacing: LayoutConstants.spaceXS) {
+        return VStack(spacing: 0) {
+            // Main row: avatar + info + status pill
+            HStack(spacing: LayoutConstants.spaceSM) {
+                characterAvatar(
+                    name: challenge.defender.characterName,
+                    className: challenge.defender.characterClass,
+                    avatar: challenge.defender.avatar
+                )
+                .opacity(isDimmed ? 0.5 : 1.0)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(challenge.defender.characterName)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .foregroundStyle(isDimmed ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textPrimary)
+
                     Text("Lv.\(challenge.defender.level)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
-
-                    Text(challenge.status.capitalized)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(statusColor(challenge.status))
                 }
+
+                Spacer()
+
+                // Status pill
+                outgoingStatusPill(challenge.status)
             }
 
-            Spacer()
+            // Bottom row for pending: timer + cancel button
+            if isPending {
+                HStack {
+                    // Expiry timer (24h from creation)
+                    let expiryText = Self.duelTimeRemaining(from: challenge.createdAt, addingHours: 24)
+                    if !expiryText.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 11))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            Text("Expires in \(expiryText)")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        }
+                    }
 
-            // Status icon
-            Image(systemName: statusIcon(challenge.status))
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(statusColor(challenge.status))
+                    Spacer()
+
+                    // Cancel button
+                    Button {
+                        Task { await vm.cancelOutgoingChallenge(challenge) }
+                    } label: {
+                        HStack(spacing: 4) {
+                            if isProcessing {
+                                ProgressView()
+                                    .tint(DarkFantasyTheme.danger)
+                                    .scaleEffect(0.6)
+                            } else {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 10, weight: .semibold))
+                                Text("CANCEL")
+                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                                    .tracking(0.5)
+                            }
+                        }
+                        .foregroundStyle(DarkFantasyTheme.danger)
+                        .padding(.horizontal, LayoutConstants.spaceSM)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .fill(DarkFantasyTheme.danger.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                        .stroke(DarkFantasyTheme.danger.opacity(0.12), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .disabled(isProcessing)
+                }
+                .padding(.top, LayoutConstants.spaceSM)
+            }
         }
         .padding(LayoutConstants.spaceSM)
+        .opacity(isDimmed ? 0.7 : 1.0)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -1403,8 +1505,37 @@ struct GuildHallDetailView: View {
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.1))
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
     }
+
+    /// Status pill for outgoing challenges
+    private func outgoingStatusPill(_ status: String) -> some View {
+        let color = statusColor(status)
+        let icon = statusIcon(status)
+        let label = status.capitalized
+
+        return HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .semibold))
+            Text(label)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .tracking(0.5)
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(color.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(color.opacity(0.15), lineWidth: 1)
+                )
+        )
+    }
+
+    // MARK: - Completed Duel Card (timestamp + circle result icon)
 
     private func completedChallengeCard(_ challenge: CompletedChallenge) -> some View {
         let myId = appState.currentCharacter?.id
@@ -1412,14 +1543,22 @@ struct GuildHallDetailView: View {
         let opponentName = challenge.challenger.id == myId
             ? challenge.defender.characterName
             : challenge.challenger.characterName
-        let accentColor = didWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+        let accentColor = didWin ? DarkFantasyTheme.gold : DarkFantasyTheme.danger
 
         return HStack(spacing: LayoutConstants.spaceSM) {
-            // Win/Loss indicator
-            Image(systemName: didWin ? "trophy.fill" : "xmark.shield.fill")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(accentColor)
-                .frame(width: 36)
+            // Circle result icon
+            ZStack {
+                Circle()
+                    .fill(accentColor.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Circle()
+                            .stroke(accentColor.opacity(0.2), lineWidth: 1)
+                    )
+                Image(systemName: didWin ? "trophy.fill" : "xmark.shield.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(accentColor)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(didWin ? "Victory vs \(opponentName)" : "Defeat vs \(opponentName)")
@@ -1442,6 +1581,13 @@ struct GuildHallDetailView: View {
                             .foregroundStyle(DarkFantasyTheme.cyan)
                     }
                 }
+
+                // Timestamp
+                if let completedAt = challenge.completedAt {
+                    Text(Self.duelTimeAgo(from: completedAt))
+                        .font(DarkFantasyTheme.body(size: 10))
+                        .foregroundStyle(DarkFantasyTheme.textDisabled)
+                }
             }
 
             Spacer()
@@ -1457,6 +1603,7 @@ struct GuildHallDetailView: View {
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: accentColor.opacity(0.08))
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
     }
 
@@ -1511,6 +1658,46 @@ struct GuildHallDetailView: View {
         case "expired": return "clock.badge.xmark"
         default: return "questionmark.circle"
         }
+    }
+
+    // MARK: - Duels Time Helpers
+
+    /// Returns time remaining until expiry, e.g. "18h" or "45m"
+    private static func duelTimeRemaining(from isoString: String, addingHours: Int? = nil) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var targetDate: Date?
+        targetDate = formatter.date(from: isoString)
+        if targetDate == nil {
+            formatter.formatOptions = [.withInternetDateTime]
+            targetDate = formatter.date(from: isoString)
+        }
+        guard var date = targetDate else { return "" }
+        if let hours = addingHours {
+            date = date.addingTimeInterval(TimeInterval(hours * 3600))
+        }
+        let remaining = Int(date.timeIntervalSinceNow)
+        if remaining <= 0 { return "expired" }
+        if remaining < 3600 { return "\(remaining / 60)m" }
+        return "\(remaining / 3600)h"
+    }
+
+    /// Returns time ago string, e.g. "2h ago" or "1d ago"
+    private static func duelTimeAgo(from isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var parsedDate: Date?
+        parsedDate = formatter.date(from: isoString)
+        if parsedDate == nil {
+            formatter.formatOptions = [.withInternetDateTime]
+            parsedDate = formatter.date(from: isoString)
+        }
+        guard let date = parsedDate else { return "" }
+        let seconds = Int(-date.timeIntervalSinceNow)
+        if seconds < 60 { return "just now" }
+        if seconds < 3600 { return "\(seconds / 60)m ago" }
+        if seconds < 86400 { return "\(seconds / 3600)h ago" }
+        return "\(seconds / 86400)d ago"
     }
 
     private func comingSoonPlaceholder(_ feature: String) -> some View {
@@ -1614,6 +1801,7 @@ struct GuildHallDetailView: View {
             .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
             .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.1))
             .cornerBrackets(color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.3), length: 14, thickness: 1.5)
+            .compositingGroup()
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
             .padding(.horizontal, LayoutConstants.screenPadding)
 

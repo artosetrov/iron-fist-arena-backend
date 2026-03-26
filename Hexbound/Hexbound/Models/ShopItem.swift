@@ -18,6 +18,7 @@ struct ShopItem: Codable, Identifiable {
     var uniquePassive: String?
     var setName: String?
     var consumableType: String?
+    var classRestriction: String?
     var imageUrl: String?
     var imageKey: String?
 
@@ -38,6 +39,7 @@ struct ShopItem: Codable, Identifiable {
         case uniquePassive = "unique_passive"
         case setName = "set_name"
         case consumableType = "consumable_type"
+        case classRestriction = "class_restriction"
         case imageUrl = "image_url"
         case imageKey = "image_key"
     }
@@ -115,7 +117,7 @@ struct ShopItem: Codable, Identifiable {
             maxDurability: nil,
             description: description,
             catalogId: catalogId,
-            classRestriction: nil,
+            classRestriction: classRestriction,
             imageUrl: imageUrl,
             imageKey: imageKey,
             quantity: nil,
