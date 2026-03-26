@@ -369,7 +369,7 @@ struct LevelUpModalView: View {
 
     private func startCeremony() {
         // Sound + haptic
-        SFXManager.shared.play(.uiSuccess)
+        SFXManager.shared.play(.uiLevelUp)
         HapticManager.heavy()
 
         // Phase 1: Backdrop + rays
