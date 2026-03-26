@@ -62,7 +62,7 @@ struct NPCGuideWidget: View {
     // MARK: - State
     @State private var avatarBounce = false
     @State private var typewriterText: String = ""
-    @State private var typewriterTimer: Timer?
+    @State private var typewriterTask: Task<Void, Never>?
     @State private var typewriterDone = false
 
     /// Whether to use the player's dynamic avatar (AvatarImageView) instead of a static NPC image
@@ -129,8 +129,8 @@ struct NPCGuideWidget: View {
                     }
                 }
                 .onDisappear {
-                    typewriterTimer?.invalidate()
-                    typewriterTimer = nil
+                    typewriterTask?.cancel()
+                    typewriterTask = nil
                 }
 
                 // Optional CTA button (e.g. "Go to Shop")
@@ -244,19 +244,18 @@ struct NPCGuideWidget: View {
         guard !fullText.isEmpty else { return }
         typewriterText = ""
         typewriterDone = false
-        var charIndex = 0
         let chars = Array(fullText)
-        typewriterTimer = Timer.scheduledTimer(withTimeInterval: typewriterSpeed, repeats: true) { timer in
-            guard charIndex < chars.count else {
-                timer.invalidate()
-                typewriterTimer = nil
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    typewriterDone = true
-                }
-                return
+        let speed = typewriterSpeed
+        typewriterTask?.cancel()
+        typewriterTask = Task { @MainActor in
+            for char in chars {
+                try? await Task.sleep(for: .seconds(speed))
+                guard !Task.isCancelled else { return }
+                typewriterText.append(char)
             }
-            typewriterText.append(chars[charIndex])
-            charIndex += 1
+            withAnimation(.easeInOut(duration: 0.3)) {
+                typewriterDone = true
+            }
         }
     }
 
