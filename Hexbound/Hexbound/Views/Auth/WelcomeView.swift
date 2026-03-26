@@ -60,6 +60,7 @@ struct WelcomeView: View {
                     HStack(spacing: LayoutConstants.spaceMD) {
                         // Apple
                         ZStack {
+                            // Visual layer (not tappable)
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
                                     .font(.system(size: 18, weight: .medium))
@@ -69,14 +70,15 @@ struct WelcomeView: View {
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .allowsHitTesting(false)
 
+                            // Invisible but tappable Apple button on top
                             SignInWithAppleButton(.continue) { request in
                                 request.requestedScopes = [.email, .fullName]
                             } onCompletion: { result in
                                 Task { await vm.handleAppleSignIn(result: result, appState: appState) }
                             }
                             .signInWithAppleButtonStyle(.white)
-                            .blendMode(.overlay)
-                            .opacity(0.015)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .opacity(0.021)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)
@@ -88,6 +90,7 @@ struct WelcomeView: View {
                             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                         )
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                         .accessibilityLabel("Sign in with Apple")
 
                         // Google

@@ -79,6 +79,7 @@ struct LoginView: View {
                         HStack(spacing: LayoutConstants.spaceMD) {
                             // Apple — consistent bgSecondary background
                             ZStack {
+                                // Visual layer (not tappable)
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Image(systemName: "apple.logo")
                                         .font(.system(size: 22, weight: .medium))
@@ -88,14 +89,15 @@ struct LoginView: View {
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .allowsHitTesting(false)
 
+                                // Invisible but tappable Apple button on top
                                 SignInWithAppleButton(.signIn) { request in
                                     request.requestedScopes = [.email, .fullName]
                                 } onCompletion: { result in
                                     Task { await vm.handleAppleSignIn(result: result, appState: appState) }
                                 }
                                 .signInWithAppleButtonStyle(.black)
-                                .blendMode(.overlay)
-                                .opacity(0.015)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .opacity(0.021)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: LayoutConstants.buttonHeightLG)
