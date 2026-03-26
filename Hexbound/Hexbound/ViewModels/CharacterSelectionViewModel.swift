@@ -50,7 +50,7 @@ final class CharacterSelectionViewModel {
 
             // Auto-select: prefer just-created character, fall back to first
             if selectedCharacterId == nil {
-                if let justCreated = appState.currentCharacter?.id,
+                if let justCreated = appState?.currentCharacter?.id,
                    characters.contains(where: { $0.id == justCreated }) {
                     selectedCharacterId = justCreated
                 } else {
