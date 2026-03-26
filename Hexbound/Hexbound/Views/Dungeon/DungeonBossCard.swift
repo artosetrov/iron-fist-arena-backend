@@ -243,7 +243,7 @@ struct DungeonBossCard: View {
                 glassStatPill(
                     value: formatHP(boss.hp),
                     label: "HP",
-                    color: DarkFantasyTheme.hpGreen
+                    color: DarkFantasyTheme.danger
                 )
                 glassStatPill(
                     value: "\(boss.loot.count)",

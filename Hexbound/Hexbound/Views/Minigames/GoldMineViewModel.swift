@@ -64,7 +64,8 @@ final class GoldMineViewModel {
         let endsAt = ISO8601DateFormatter().string(from: Date().addingTimeInterval(4 * 3600))
 
         withAnimation(.easeInOut(duration: 0.3)) {
-            if slotIndex < slots.count, var slot = slots[slotIndex] as? [String: Any] {
+            if slotIndex < slots.count {
+                var slot = slots[slotIndex]
                 slot["status"] = "mining"
                 slot["started_at"] = now
                 slot["ends_at"] = endsAt
@@ -105,13 +106,14 @@ final class GoldMineViewModel {
         let savedGold = appState.currentCharacter?.gold
         // Estimate collected gold from slot data
         let estimatedGold: Int = {
-            guard let slot = slots[safe: slotIndex] as? [String: Any] else { return 0 }
+            guard let slot = slots[safe: slotIndex] else { return 0 }
             return slot["gold_accumulated"] as? Int ?? slot["gold_mined"] as? Int ?? 50
         }()
 
         withAnimation(.easeInOut(duration: 0.3)) {
             // Mark slot as mining (reset status)
-            if var slot = (slots[safe: slotIndex] as? [String: Any]) {
+            if slotIndex < slots.count {
+                var slot = slots[slotIndex]
                 slot["status"] = "mining"
                 slot["gold_accumulated"] = 0
                 slot["gold_mined"] = 0

@@ -874,7 +874,7 @@ struct GuildHallDetailView: View {
                 Button {
                     Task {
                         HapticManager.medium()
-                        await vm.sendChallenge(targetId: targetId)
+                        _ = await vm.sendChallenge(targetId: targetId)
                     }
                 } label: {
                     Image(systemName: "bolt.fill")
