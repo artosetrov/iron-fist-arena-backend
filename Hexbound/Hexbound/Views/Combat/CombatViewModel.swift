@@ -43,6 +43,7 @@ final class CombatViewModel {
 
     // VFX
     let vfxManager = CombatVFXManager()
+    let fxImageManager = CombatFXImageManager()
 
     // Callbacks — combat event types for screen shake + haptics
     enum CombatEventType { case hit, crit, block, dodge, miss }
@@ -137,21 +138,40 @@ final class CombatViewModel {
         }
         try? await Task.sleep(for: .seconds(0.15 * sm))
 
-        // 2. Hit effects + VFX + SFX
+        // Positions for FX image overlay
+        let defenderPos = CGPoint(x: defenderX, y: defenderY)
+        let attackerPos = CGPoint(x: attackerX, y: defenderY)
+
+        // 2. Hit effects + VFX + SFX + PNG FX
+        // Get PNG FX descriptor for this turn (always computed regardless of branch)
+        let fxDescriptor = CombatFXAssetMap.fxForTurn(turn, isPlayerAttacking: isPlayerAttacking)
+
         if turn.isDodge {
             // Dodge VFX on defender
             vfxManager.trigger(.dodge, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
             SFXManager.shared.play(.combatDodge)
+            // PNG: fullscreen DODGE text
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
             onCombatEvent?(.dodge)
         } else if turn.isMiss {
             // Miss VFX on defender
             vfxManager.trigger(.miss, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
             SFXManager.shared.play(.combatMiss)
+            // PNG: fullscreen MISS text
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
             onCombatEvent?(.miss)
         } else if turn.isBlocked {
             // Block VFX + mild flash
             vfxManager.trigger(.block, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
             SFXManager.shared.play(.combatBlock)
+            // PNG: shield on defender avatar
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
             withAnimation(.easeInOut(duration: 0.1)) {
                 if isPlayerAttacking { enemyFlash = true } else { playerFlash = true }
             }
@@ -168,6 +188,10 @@ final class CombatViewModel {
             let vfxType = VFXEffectType.from(turn)
             vfxManager.trigger(vfxType, at: CGPoint(x: defenderX, y: defenderY), speed: sm)
             SFXManager.shared.play(SFX.from(vfxType: vfxType))
+            // PNG: damage FX on defender (+ crit fullscreen text if crit)
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
 
             // Flash on defender + screen shake
             withAnimation(.easeInOut(duration: 0.1)) {
@@ -193,6 +217,9 @@ final class CombatViewModel {
         if let heal = turn.heal, heal > 0 {
             vfxManager.trigger(.heal, at: CGPoint(x: attackerX, y: defenderY), speed: sm)
             SFXManager.shared.play(.combatHeal)
+            // PNG: heal FX on attacker
+            let healFX = CombatFXAssetMap.healFX()
+            fxImageManager.trigger(healFX, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
         }
 
         withAnimation(.easeInOut(duration: 0.3 * sm)) {
@@ -217,6 +244,9 @@ final class CombatViewModel {
         if let status = turn.statusApplied, !status.isEmpty {
             vfxManager.trigger(.statusProc(status), at: CGPoint(x: defenderX, y: defenderY), speed: sm)
             SFXManager.shared.play(.combatPoison)
+            // PNG: status FX on defender
+            let statusFX = CombatFXAssetMap.statusFX(status)
+            fxImageManager.trigger(statusFX, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
             let effect = StatusEffect(name: status)
             withAnimation(.easeIn(duration: 0.2)) {
                 if isPlayerAttacking {
@@ -358,6 +388,7 @@ final class CombatViewModel {
         currentRound = (currentTurnIndex / 2) + 1
         damagePopups.removeAll()
         vfxManager.clearAll()
+        fxImageManager.clearAll()
         finishCombat()
     }
 

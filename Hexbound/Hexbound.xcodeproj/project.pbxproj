@@ -246,6 +246,8 @@
 		PUSH001BLD0000000000000A /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH001REF0000000000000B /* PushNotificationService.swift */; };
 		PUSH002BLD0000000000000C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH002REF0000000000000D /* AppDelegate.swift */; };
 		SK0001BUILD00001 /* StoreKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SK0001FREF00001 /* StoreKitService.swift */; };
+		78A8F4968E6F8D3680AD9FA0 /* CombatFXAssetMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78ED467E046B62579892C18A /* CombatFXAssetMap.swift */; };
+		89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */; };
 		VFX00001BLD00001 /* CombatVFXEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00001 /* CombatVFXEffect.swift */; };
 		VFX00001BLD00002 /* CombatVFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00002 /* CombatVFXManager.swift */; };
 		VFX00001BLD00003 /* CombatVFXOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = VFX00001REF00003 /* CombatVFXOverlay.swift */; };
@@ -499,6 +501,8 @@
 		PUSH001REF0000000000000B /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		PUSH002REF0000000000000D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		SK0001FREF00001 /* StoreKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitService.swift; sourceTree = "<group>"; };
+		6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatFXImageOverlay.swift; sourceTree = "<group>"; };
+		78ED467E046B62579892C18A /* CombatFXAssetMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatFXAssetMap.swift; sourceTree = "<group>"; };
 		VFX00001REF00001 /* CombatVFXEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXEffect.swift; sourceTree = "<group>"; };
 		VFX00001REF00002 /* CombatVFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXManager.swift; sourceTree = "<group>"; };
 		VFX00001REF00003 /* CombatVFXOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatVFXOverlay.swift; sourceTree = "<group>"; };
@@ -1089,6 +1093,8 @@
 		VFX00001GRP00001 /* VFX */ = {
 			isa = PBXGroup;
 			children = (
+				78ED467E046B62579892C18A /* CombatFXAssetMap.swift */,
+				6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */,
 				VFX00001REF00001 /* CombatVFXEffect.swift */,
 				VFX00001REF00002 /* CombatVFXManager.swift */,
 				VFX00001REF00003 /* CombatVFXOverlay.swift */,
@@ -1264,6 +1270,8 @@
 				F8997328EA780D28EA57EAD1 /* CharacterViewModel.swift in Sources */,
 				F7351EE68E034A74CB95BDA8 /* CombatData.swift in Sources */,
 				1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */,
+				78A8F4968E6F8D3680AD9FA0 /* CombatFXAssetMap.swift in Sources */,
+				89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */,
 				VFX00001BLD00001 /* CombatVFXEffect.swift in Sources */,
 				VFX00001BLD00002 /* CombatVFXManager.swift in Sources */,
 				VFX00001BLD00003 /* CombatVFXOverlay.swift in Sources */,

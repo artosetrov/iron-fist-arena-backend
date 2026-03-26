@@ -438,7 +438,7 @@
 | Нет «Recommended for your class» | #10 Help | MEDIUM | Class-specific badges/sorting |
 | Tabs вверху — трудно достать одной рукой | Mobile: Thumb | MEDIUM | Swipe navigation или bottom tabs |
 
-### D.13 — Character Screen (CharacterDetailView.swift)
+### D.13 — Hero Screen (HeroDetailView.swift)
 
 | Problem | Heuristic | Severity | Fix |
 |---------|-----------|----------|-----|

@@ -28,7 +28,7 @@
 | Hub | Primary | default, first-win bonus visible, daily-login badge active | `Hexbound/Hexbound/Views/Hub/HubView.swift` |
 | Hero / Inventory tab | Primary | equipped state, item detail open | `Hexbound/Hexbound/Views/Hero/HeroDetailView.swift` |
 | Hero / Status tab | Variant | no points, stat-points available, respec confirm | `Hexbound/Hexbound/Views/Hero/HeroDetailView.swift` |
-| Character detail | Primary | no changes, stat-points banner, dirty state with save/reset | `Hexbound/Hexbound/Views/Hub/CharacterDetailView.swift` |
+| Hero / Stat allocation | Variant | no changes, stat-points banner, dirty state with save/reset | `Hexbound/Hexbound/Views/Hero/HeroDetailView.swift` |
 | Stance selector | Primary | attack selected, defense selected, dirty save state | `Hexbound/Hexbound/Views/Hub/StanceSelectorDetailView.swift` |
 | Appearance editor | Primary | loading skins, normal editing, race-change warning, save disabled, save loading | `Hexbound/Hexbound/Views/Profile/AppearanceEditorDetailView.swift` |
 
@@ -47,8 +47,8 @@
 
 | Screen | Type | States for Figma | Source |
 | --- | --- | --- | --- |
-| Inventory | Primary | loading skeleton, filled grid, empty slots, item detail open, expand inventory CTA | `Hexbound/Hexbound/Views/Inventory/InventoryDetailView.swift` |
-| Equipment | Primary | equipped slots, empty slots, item detail open | `Hexbound/Hexbound/Views/Inventory/EquipmentDetailView.swift` |
+| Inventory (Hero INVENTORY tab) | Primary | loading skeleton, filled grid, empty slots, item detail open, expand inventory CTA | `Hexbound/Hexbound/Views/Hero/HeroDetailView.swift` |
+| Item Detail Sheet | Primary | item stats, equip/sell/repair actions, comparison | `Hexbound/Hexbound/Views/Inventory/ItemDetailSheet.swift` |
 | Shop / All | Primary | loading skeleton, sectioned content, item detail open | `Hexbound/Hexbound/Views/Shop/ShopDetailView.swift` |
 | Shop / Weapons | Variant | filtered grid, buying state | `Hexbound/Hexbound/Views/Shop/ShopDetailView.swift` |
 | Shop / Equipment | Variant | filtered grid, level locked, cannot afford | `Hexbound/Hexbound/Views/Shop/ShopDetailView.swift` |

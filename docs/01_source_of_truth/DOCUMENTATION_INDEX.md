@@ -1,6 +1,6 @@
 # Hexbound — Documentation Index (Master Reference)
 
-*Master index of all active project documentation. Last updated: 2026-03-21*
+*Master index of all active project documentation. Last updated: 2026-03-26*
 
 ---
 
@@ -308,36 +308,89 @@ Superseded, legacy, or reference-only documents.
 
 ---
 
+## NEW: Modular Documentation System (2026-03-26)
+
+The documentation has been reorganized into a modular system. Key new files:
+
+### Navigation Layer
+
+| Document | Location | Purpose |
+|----------|----------|---------|
+| **Project Index** | `docs/PROJECT_INDEX.md` | Main project navigator — start here |
+| **Source of Truth** | `docs/SOURCE_OF_TRUTH.md` | Which doc/file is authoritative for each domain |
+| **Agent Loading Guide** | `docs/AGENT_LOADING_GUIDE.md` | Which docs to load for each task type |
+| **Migration Plan** | `docs/MIGRATION_PLAN.md` | How the docs were reorganized, what's next |
+
+### Modular Rules (`docs/rules/`)
+
+| Rule File | Domain |
+|-----------|--------|
+| `rules-swift.md` | iOS / SwiftUI code |
+| `rules-backend.md` | Backend / TypeScript |
+| `rules-ui-design.md` | UI design system |
+| `rules-combat-pvp.md` | Combat, PvP, Arena |
+| `rules-economy.md` | Economy, Shop, IAP |
+| `rules-admin.md` | Admin panel |
+| `rules-db.md` | Database, Prisma |
+| `rules-deploy.md` | Git, Deploy, CI/CD |
+| `rules-audio.md` | Sound, Music, Haptics |
+| `rules-art.md` | Art assets, Image gen |
+
+All rules are mirrored to `.cursor/rules/*.mdc` for Cursor AI auto-loading.
+
+### Feature Docs (`docs/features/`)
+
+Per-feature documentation with overview, key files, API, UI states:
+- `features/arena/ARENA_OVERVIEW.md` — PvP Arena, matchmaking, ELO, ranked battles
+- `features/guild-hall/GUILD_HALL_OVERVIEW.md` — Social hub: Allies, Scrolls, Duels
+- `features/shop/SHOP_OVERVIEW.md` — Item shop, offers, TOCTOU prevention
+- `features/dungeons/DUNGEONS_OVERVIEW.md` — PvE dungeons, Dungeon Rush, difficulties
+- `features/battle-pass/BATTLE_PASS_OVERVIEW.md` — Seasonal Battle Pass, free+premium tiers
+- `features/daily-systems/DAILY_SYSTEMS_OVERVIEW.md` — Daily Login + Daily Quests
+- `features/achievements/ACHIEVEMENTS_OVERVIEW.md` — 3 categories, 21 achievements, tracking
+- `features/inventory/INVENTORY_OVERVIEW.md` — Items, equipment, slots, ItemCardView
+- `features/combat/COMBAT_OVERVIEW.md` — Turn-based combat engine, VFX, damage system
+- `features/gold-mine/GOLD_MINE_OVERVIEW.md` — Idle gold production, slots, boost
+- `features/minigames/MINIGAMES_OVERVIEW.md` — Shell Game, Fortune Wheel
+- `features/social/SOCIAL_OVERVIEW.md` — Social system (redirects to Guild Hall)
+
+### Templates (`docs/templates/`)
+
+| Template | Use for |
+|----------|---------|
+| `TEMPLATE_FEATURE.md` | New feature documentation |
+| `TEMPLATE_SCREEN.md` | New screen documentation |
+| `TEMPLATE_API_MODULE.md` | New API module documentation |
+| `TEMPLATE_RULE.md` | New rule file |
+
+### Skill: Doc Keeper
+
+`.claude/skills/doc-keeper/SKILL.md` — Audit, create, and navigate documentation. Trigger: "doc keeper", "doc audit", "обнови документацию".
+
+---
+
 ## Document Metadata
 
 | Attribute | Value |
 |-----------|-------|
-| **Total Active Docs** | 25 |
+| **Total Active Docs** | 45+ |
 | **Total Archive Docs** | [See `docs/11_archive/`] |
-| **Last Full Sync** | 2026-03-19 |
+| **Last Full Sync** | 2026-03-26 |
 | **Created By** | Engineering Team |
-| **Maintained By** | [TBD] |
+| **Maintained By** | Doc Keeper skill (`.claude/skills/doc-keeper/`) |
 
 ---
 
 ## How to Update This Index
 
-1. **Add a new doc**: Create it in the appropriate numbered category folder
-2. **Update this file**: Add row to the relevant category table with document name, location, purpose
-3. **Archive old docs**: Move to `docs/11_archive/` with timestamp in filename
-4. **Update "Last Updated"** at top of this file
-5. **Commit** with message: "docs: add/update [doc name]"
+1. **Add a new doc**: Create it in the appropriate folder (feature → `docs/features/`, rule → `docs/rules/`)
+2. **Use templates**: Copy from `docs/templates/` for consistent formatting
+3. **Update PROJECT_INDEX.md**: Add link if it's a new category/domain
+4. **Update this file**: Add row to the relevant category table
+5. **Mirror rules**: If adding a rule, copy to `.cursor/rules/` as `.mdc`
+6. **Run doc-keeper audit**: Periodically verify freshness and completeness
+7. **Commit** with message: "docs: add/update [doc name]"
 
 ---
 
-## For Questions or Clarifications
-
-If you can't find what you're looking for in this index, refer to:
-
-- **PROJECT_OVERVIEW.md** for system-level questions
-- **[Role-specific section above](#quick-reference-by-role)** for role-based guidance
-- **GitHub Issues** with label `documentation` for doc bugs/gaps
-
----
-
-*End of Index. Thank you for reading!*
+*End of Index.*

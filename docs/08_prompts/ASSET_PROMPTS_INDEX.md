@@ -73,4 +73,4 @@ When creating a new prompt collection:
 For questions about:
 - **Style standards:** See `docs/08_prompts/ART_STYLE_GUIDE.md`
 - **Development rules:** See `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md`
-- **Design system tokens:** See `Hexbound/Theme/DarkFantasyTheme.swift`
+- **Design system tokens:** See `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift`

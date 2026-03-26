@@ -34,7 +34,10 @@ struct CombatDetailView: View {
                 }
                 .offset(x: screenShake)
 
-                // VFX Particle Layer (between UI and popups)
+                // PNG FX Image Layer (between UI and particles)
+                CombatFXImageOverlay(fxManager: vm.fxImageManager)
+
+                // VFX Particle Layer (above PNG FX, below popups)
                 CombatVFXOverlay(
                     vfxManager: vm.vfxManager,
                     speedMultiplier: vm.speedMultiplier
