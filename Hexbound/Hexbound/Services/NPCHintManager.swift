@@ -83,70 +83,70 @@ struct NPCHint: Identifiable, Equatable {
     static let hub = NPCHint(
         id: "hub_welcome",
         npcName: "Tavern Keeper",
-        npcImage: "npc-tavern-keeper",
+        npcImage: "building-tavern",
         message: "Welcome, adventurer! Tap any building on the map to explore. Start with the Arena to earn gold and climb the ranks!"
     )
 
     static let arena = NPCHint(
         id: "arena_intro",
         npcName: "Arena Master",
-        npcImage: "npc-arena-master",
+        npcImage: "building-arena",
         message: "Choose your opponent wisely! You get free fights daily. Keep your HP above 10% or you won't be able to fight."
     )
 
     static let hero = NPCHint(
         id: "hero_stats",
         npcName: "Sage",
-        npcImage: "npc-sage",
+        npcImage: "building-tavern",
         message: "You have stat points to spend! Go to the STATUS tab and allocate them to make your hero stronger."
     )
 
     static let shop = NPCHint(
         id: "shop_intro",
         npcName: "Merchant",
-        npcImage: "npc-merchant",
+        npcImage: "shopkeeper",
         message: "Browse my wares! Health potions restore HP, stamina potions let you fight more. Upgrade your gear for better stats."
     )
 
     static let dungeon = NPCHint(
         id: "dungeon_intro",
         npcName: "Dungeon Guide",
-        npcImage: "npc-dungeon-guide",
+        npcImage: "building-dungeon",
         message: "Each dungeon has bosses of increasing difficulty. Defeat them for rare loot and XP! Choose your battles carefully."
     )
 
     static let goldMine = NPCHint(
         id: "gold_mine_intro",
         npcName: "Mine Foreman",
-        npcImage: "npc-mine-foreman",
+        npcImage: "building-gold-mine",
         message: "Start mining to earn gold passively! Each slot takes 4 hours. Come back when it's ready to collect your earnings."
     )
 
     static let battlePass = NPCHint(
         id: "battlepass_intro",
         npcName: "Herald",
-        npcImage: "npc-herald",
+        npcImage: "building-tavern",
         message: "Complete daily quests and battles to earn Battle Pass XP. Each tier unlocks rewards — premium tier has even more!"
     )
 
     static let achievements = NPCHint(
         id: "achievements_intro",
         npcName: "Chronicler",
-        npcImage: "npc-chronicler",
+        npcImage: "building-tavern",
         message: "Track your progress here! Claim rewards when you reach milestones. PvP, Progression, and Ranking achievements await."
     )
 
     static let usePotion = NPCHint(
         id: "use_potion",
         npcName: "Healer",
-        npcImage: "npc-healer",
+        npcImage: "building-shop",
         message: "Your health is low! Use a health potion from your inventory to restore HP before your next battle."
     )
 
     static let levelUp = NPCHint(
         id: "level_up_stats",
         npcName: "Sage",
-        npcImage: "npc-sage",
+        npcImage: "building-tavern",
         message: "You leveled up! Don't forget to allocate your new stat points in the STATUS tab on the Hero page."
     )
 

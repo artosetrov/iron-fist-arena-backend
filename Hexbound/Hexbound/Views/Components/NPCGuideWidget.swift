@@ -181,10 +181,10 @@ struct NPCGuideWidget: View {
                     continueAction()
                 } label: {
                     Text("Continue")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .padding(.horizontal, LayoutConstants.spaceMD)
-                        .padding(.vertical, LayoutConstants.spaceXS + 2)
+                        .padding(.horizontal, LayoutConstants.spaceLG)
+                        .padding(.vertical, LayoutConstants.spaceSM)
                         .background(
                             Capsule().fill(DarkFantasyTheme.gold)
                         )
