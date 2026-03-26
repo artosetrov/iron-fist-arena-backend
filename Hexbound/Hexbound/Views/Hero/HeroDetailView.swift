@@ -155,9 +155,9 @@ struct HeroDetailView: View {
         Task {
             let success = await service.useItem(inventoryId: potionId, consumableType: consumableType)
             if !success {
-                await MainActor.run { [weak self] in
-                    self?.appState.cachedInventory = previousItems
-                    self?.inventoryVM?.items = previousItems
+                await MainActor.run {
+                    appState.cachedInventory = previousItems
+                    inventoryVM?.items = previousItems
                 }
             }
         }
