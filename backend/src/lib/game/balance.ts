@@ -13,7 +13,7 @@ export const STAMINA = {
   DUNGEON_HARD: 25,
   BOSS: 40,
   TRAINING: 5,
-  FREE_PVP_PER_DAY: 3,
+  FREE_PVP_PER_DAY: 5,
 } as const;
 
 // --- HP Regen ---
@@ -30,8 +30,8 @@ export function xpForLevel(level: number): number {
 
 // --- Gold rewards ---
 export const GOLD_REWARDS = {
-  PVP_WIN_BASE: 150,
-  PVP_LOSS_BASE: 50,
+  PVP_WIN_BASE: 200,
+  PVP_LOSS_BASE: 70,
   TRAINING_WIN: 50,
   TRAINING_LOSS: 20,
   REVENGE_MULTIPLIER: 1.5,
@@ -39,8 +39,8 @@ export const GOLD_REWARDS = {
 
 // --- XP rewards ---
 export const XP_REWARDS = {
-  PVP_WIN_XP: 120,
-  PVP_LOSS_XP: 40,
+  PVP_WIN_XP: 150,
+  PVP_LOSS_XP: 50,
   TRAINING_WIN_XP: 60,
   TRAINING_LOSS_XP: 20,
 } as const;
@@ -79,7 +79,7 @@ export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
   { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },      // Day 4
   { type: 'gold', amount: 1000 },                                         // Day 5
   { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },      // Day 6
-  { type: 'gems', amount: 5 },                                            // Day 7
+  { type: 'gems', amount: 25 },                                           // Day 7
 ] as const;
 
 // --- In-App Purchase products ---
@@ -204,9 +204,23 @@ export const DROP_CHANCES: Record<string, number> = {
   boss: 0.75,
 } as const;
 
-/** CHA gold bonus: +1% per CHA point (was 0.5%) */
+/** CHA gold bonus: +1.5% per CHA point (was 1%) */
 export function chaGoldBonus(baseGold: number, cha: number): number {
-  return Math.floor(baseGold * (1 + cha * 0.01));
+  return Math.floor(baseGold * (1 + cha * 0.015));
+}
+
+// --- Loss Streak Gold Protection ---
+// After consecutive losses, next win gives bonus gold to reduce frustration
+// 3 losses: +30%, 5 losses: +50%, 7+ losses: +80%
+export const LOSS_STREAK_BONUSES: readonly number[] = [
+  0, 0, 0, 0.3, 0.3, 0.5, 0.5, 0.8, 0.8, 0.8, 0.8,
+] as const;
+
+/** Get the gold bonus multiplier for loss streak recovery (applied on next WIN). */
+export function lossStreakGoldMultiplier(lossStreak: number): number {
+  if (lossStreak < 0) return 0;
+  const idx = Math.min(lossStreak, LOSS_STREAK_BONUSES.length - 1);
+  return LOSS_STREAK_BONUSES[idx];
 }
 
 // --- Win Streak Gold Bonuses ---

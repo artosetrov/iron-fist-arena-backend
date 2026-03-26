@@ -33,6 +33,9 @@ struct ArenaOpponentCard: View {
         .onAppear {
             startAnimations()
         }
+        .onDisappear {
+            stopAnimations()
+        }
     }
 
     // MARK: - Card Content
@@ -288,6 +291,11 @@ struct ArenaOpponentCard: View {
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
             isAppeared = true
         }
+    }
+
+    private func stopAnimations() {
+        glowPhase = 0
+        shimmerOffset = -0.5
     }
 }
 

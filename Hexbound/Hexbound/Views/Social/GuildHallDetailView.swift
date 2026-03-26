@@ -8,6 +8,7 @@ struct GuildHallDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: GuildHallViewModel?
+    @FocusState private var isComposeFieldFocused: Bool
 
     var body: some View {
         ZStack {
@@ -19,6 +20,18 @@ struct GuildHallDetailView: View {
                 if vm.selectedTab == .scrolls, vm.activeThreadCharacterId != nil {
                     threadView(vm)
                         .transaction { $0.animation = nil }
+                } else if openMessageTo != nil, vm.activeThreadCharacterId == nil {
+                    // Deep-link mode: show loading while thread opens (don't flash Guild Hall UI)
+                    VStack {
+                        Spacer()
+                        ProgressView()
+                            .tint(DarkFantasyTheme.gold)
+                        Text("Opening conversation...")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            .padding(.top, LayoutConstants.spaceSM)
+                        Spacer()
+                    }
                 } else {
                     VStack(spacing: 0) {
                         // Screen title — sticky
@@ -87,7 +100,10 @@ struct GuildHallDetailView: View {
                 await viewModel.loadConversations()
                 await viewModel.openThread(characterId: targetId, characterName: targetName)
             } else {
-                await viewModel.loadFriends()
+                // Parallel prefetch all tabs for instant switching
+                async let friendsTask: () = viewModel.loadFriends()
+                async let challengesTask: () = viewModel.loadChallenges()
+                _ = await (friendsTask, challengesTask)
             }
         }
         .onChange(of: vm?.selectedTab) { _, newTab in
@@ -227,7 +243,7 @@ struct GuildHallDetailView: View {
 
         return HStack(spacing: LayoutConstants.spaceSM) {
             // Avatar placeholder
-            characterAvatar(name: request.characterName, className: request.characterClass)
+            characterAvatar(name: request.characterName, className: request.characterClass, avatar: request.avatar)
 
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
@@ -306,7 +322,7 @@ struct GuildHallDetailView: View {
 
             ForEach(vm.outgoingRequests) { request in
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    characterAvatar(name: request.characterName, className: request.characterClass)
+                    characterAvatar(name: request.characterName, className: request.characterClass, avatar: request.avatar)
 
                     VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                         Text(request.characterName)
@@ -349,7 +365,7 @@ struct GuildHallDetailView: View {
         return HStack(spacing: LayoutConstants.spaceSM) {
             // Avatar with online indicator
             ZStack(alignment: .bottomTrailing) {
-                characterAvatar(name: friend.characterName, className: friend.characterClass)
+                characterAvatar(name: friend.characterName, className: friend.characterClass, avatar: friend.avatar)
 
                 // Online status dot
                 Circle()
@@ -755,6 +771,7 @@ struct GuildHallDetailView: View {
                 if vm.activeThread.isEmpty {
                     Spacer()
                     threadEmptyState
+                    quickReplyChips(vm)
                     Spacer()
                 } else {
                     ScrollViewReader { proxy in
@@ -767,6 +784,9 @@ struct GuildHallDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.top, LayoutConstants.spaceSM)
                             .padding(.bottom, LayoutConstants.spaceXS)
+
+                            // Quick replies at bottom of messages
+                            quickReplyChips(vm)
                         }
                         .defaultScrollAnchor(.bottom)
                     }
@@ -776,12 +796,25 @@ struct GuildHallDetailView: View {
             // Quick replies + compose bar — sticky bottom
             threadBottomBar(vm)
         }
+        .onAppear {
+            // Auto-focus compose field with short delay for keyboard animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isComposeFieldFocused = true
+            }
+        }
     }
 
     private func threadHeader(_ vm: GuildHallViewModel) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Button {
-                vm.closeThread()
+                if openMessageTo != nil {
+                    // Deep-link mode: go back in navigation instead of showing Guild Hall
+                    if !appState.mainPath.isEmpty {
+                        appState.mainPath.removeLast()
+                    }
+                } else {
+                    vm.closeThread()
+                }
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 16, weight: .semibold))
@@ -789,11 +822,20 @@ struct GuildHallDetailView: View {
             }
             .frame(width: 32, height: 32)
 
-            // Character avatar
-            characterAvatar(
-                name: vm.activeThreadCharacterName ?? "?",
-                className: nil
-            )
+            // Character avatar — real portrait
+            if let avatar = vm.activeThreadCharacterAvatar {
+                AvatarImageView(
+                    skinKey: avatar,
+                    characterClass: CharacterClass(rawValue: vm.activeThreadCharacterClass ?? "warrior") ?? .warrior,
+                    size: 40
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+            } else {
+                characterAvatar(
+                    name: vm.activeThreadCharacterName ?? "?",
+                    className: nil
+                )
+            }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(vm.activeThreadCharacterName ?? "Unknown")
@@ -843,12 +885,15 @@ struct GuildHallDetailView: View {
                     .font(DarkFantasyTheme.body(size: 15))
                     .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
 
-                Text(formatMessageTime(msg.createdAt))
-                    .font(DarkFantasyTheme.body(size: 10))
-                    .foregroundStyle(isMine
-                        ? DarkFantasyTheme.textOnGold.opacity(0.6)
-                        : DarkFantasyTheme.textTertiary
-                    )
+                // Read status for sent messages (no timestamps)
+                if isMine {
+                    Image(systemName: msg.isRead ? "checkmark.circle.fill" : "checkmark.circle")
+                        .font(.system(size: 10))
+                        .foregroundStyle(msg.isRead
+                            ? DarkFantasyTheme.textOnGold.opacity(0.7)
+                            : DarkFantasyTheme.textOnGold.opacity(0.4)
+                        )
+                }
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -873,6 +918,36 @@ struct GuildHallDetailView: View {
         }
     }
 
+    private func quickReplyChips(_ vm: GuildHallViewModel) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                ForEach(QuickMessage.allCases, id: \.rawValue) { quick in
+                    Button {
+                        Task { await vm.sendQuickMessage(quick.rawValue) }
+                    } label: {
+                        Text(quick.displayText)
+                            .font(DarkFantasyTheme.body(size: 13))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.6))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(vm.isSendingMessage)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.vertical, LayoutConstants.spaceXS)
+        }
+    }
+
     private func threadBottomBar(_ vm: GuildHallViewModel) -> some View {
         VStack(spacing: 0) {
             // Divider
@@ -880,36 +955,13 @@ struct GuildHallDetailView: View {
                 .fill(DarkFantasyTheme.borderSubtle.opacity(0.3))
                 .frame(height: 0.5)
 
-            // Quick reply pills
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    ForEach(QuickMessage.allCases, id: \.rawValue) { quick in
-                        Button {
-                            Task { await vm.sendQuickMessage(quick.rawValue) }
-                        } label: {
-                            Text(quick.displayText)
-                                .font(DarkFantasyTheme.body(size: 13))
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(
-                                    Capsule()
-                                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                                )
-                        }
-                        .disabled(vm.isSendingMessage)
-                    }
-                }
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.vertical, LayoutConstants.spaceXS)
-            }
-
             // Compose input
             HStack(spacing: LayoutConstants.spaceXS) {
                 TextField("Write a scroll...", text: Binding(
                     get: { vm.composedMessage },
                     set: { vm.composedMessage = $0 }
                 ))
+                .focused($isComposeFieldFocused)
                 .font(DarkFantasyTheme.body(size: 15))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, 16)
@@ -1416,16 +1468,28 @@ struct GuildHallDetailView: View {
 
     // MARK: - Helpers
 
-    private func characterAvatar(name: String, className: String? = nil) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgTertiary)
-                .frame(width: 40, height: 40)
+    private func characterAvatar(name: String, className: String? = nil, avatar: String? = nil) -> some View {
+        Group {
+            if let avatar, !avatar.isEmpty {
+                AvatarImageView(
+                    skinKey: avatar,
+                    characterClass: CharacterClass(rawValue: className ?? "warrior") ?? .warrior,
+                    size: 40
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                        .frame(width: 40, height: 40)
 
-            Text(String(name.prefix(1)).uppercased())
-                .font(DarkFantasyTheme.section(size: 16))
-                .foregroundStyle(DarkFantasyTheme.gold)
+                    Text(String(name.prefix(1)).uppercased())
+                        .font(DarkFantasyTheme.section(size: 16))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                }
+            }
         }
+        .frame(width: 40, height: 40)
     }
 
     private func onlineStatusColor(_ status: OnlineStatus) -> Color {

@@ -83,17 +83,21 @@ struct LeaderboardPlayerDetailSheet: View {
                 // Integrated portrait + equipment card (same layout as hero page)
                 OpponentIntegratedCard(profile: profile)
 
+                // Action Buttons — right under equipment
+                actionButtons
+
                 // PvP Section
                 pvpSection(profile)
 
-                // Base Stats
+                GoldDivider()
+
+                // Base Stats (grouped like hero page)
                 baseStatsSection(profile)
+
+                GoldDivider()
 
                 // Derived Stats
                 derivedStatsSection(profile)
-
-                // Action Buttons
-                actionButtons
 
                 Spacer(minLength: LayoutConstants.spaceLG)
             }
@@ -109,7 +113,7 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private func pvpSection(_ profile: OpponentProfile) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            sectionHeader("PVP")
+            sectionHeader("PVP RECORD")
 
             HStack(spacing: 0) {
                 pvpStatCell(label: "Rating", value: "\(profile.pvpRating)", color: DarkFantasyTheme.gold)
@@ -124,15 +128,24 @@ struct LeaderboardPlayerDetailSheet: View {
                     color: profile.winRate >= 0.5 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
                 )
             }
+            .padding(LayoutConstants.spaceSM)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary.opacity(0.5),
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.2,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
         }
-        .padding(LayoutConstants.cardPadding)
-        .panelCard()
     }
 
     private func pvpStatCell(label: String, value: String, color: Color) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text(label)
-                .font(DarkFantasyTheme.body(size: 11))
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(value)
                 .font(DarkFantasyTheme.section(size: 15))
@@ -155,126 +168,161 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private func baseStatsSection(_ profile: OpponentProfile) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            sectionHeader("BASE STATS")
+            // Grouped stats — same layout as hero page STATUS tab
+            ForEach(StatGroup.allCases, id: \.self) { group in
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    statGroupHeader(group.rawValue)
 
-            let columns = [
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-            ]
-
-            LazyVGrid(columns: columns, spacing: LayoutConstants.spaceXS) {
-                baseStatRow(.strength, value: profile.strength ?? 0)
-                baseStatRow(.agility, value: profile.agility ?? 0)
-                baseStatRow(.vitality, value: profile.vitality ?? 0)
-                baseStatRow(.endurance, value: profile.endurance ?? 0)
-                baseStatRow(.intelligence, value: profile.intelligence ?? 0)
-                baseStatRow(.wisdom, value: profile.wisdom ?? 0)
-                baseStatRow(.luck, value: profile.luck ?? 0)
-                baseStatRow(.charisma, value: profile.charisma ?? 0)
+                    ForEach(group.stats, id: \.self) { stat in
+                        opponentStatCell(stat, value: profile.statValue(for: stat))
+                    }
+                }
             }
         }
-        .padding(LayoutConstants.cardPadding)
-        .panelCard()
     }
 
-    private func baseStatRow(_ stat: StatType, value: Int) -> some View {
+    /// Read-only stat cell matching HeroDetailView ornamental style (no +/- buttons, no tooltip)
+    @ViewBuilder
+    private func opponentStatCell(_ stat: StatType, value: Int) -> some View {
+        let color = DarkFantasyTheme.statColor(for: stat.rawValue)
+
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(stat.iconAsset)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 20, height: 20)
+                .frame(width: 22, height: 22)
 
             Text(stat.fullName)
-                .font(DarkFantasyTheme.body(size: 12))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .foregroundStyle(color)
                 .lineLimit(1)
 
-            Spacer()
+            Spacer(minLength: 4)
 
             Text("\(value)")
-                .font(DarkFantasyTheme.section(size: 14))
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .frame(minWidth: 36, alignment: .trailing)
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(LayoutConstants.spaceSM + 2)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 2,
+            inset: 2,
+            color: DarkFantasyTheme.borderMedium.opacity(0.15)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+    }
+
+    /// Stat group header with ornamental diamond lines — matches HeroDetailView
+    @ViewBuilder
+    private func statGroupHeader(_ label: String) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.clear, DarkFantasyTheme.goldDim.opacity(0.4)],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+                Rectangle()
+                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
+                    .frame(width: 4, height: 4)
+                    .rotationEffect(.degrees(45))
+            }
+
+            Text(label)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
+                .lineLimit(1)
+                .fixedSize()
+
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
+                    .frame(width: 4, height: 4)
+                    .rotationEffect(.degrees(45))
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [DarkFantasyTheme.goldDim.opacity(0.4), .clear],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 1)
+            }
+        }
+        .padding(.top, LayoutConstants.spaceXS)
     }
 
     // MARK: - Derived Stats
 
     private func derivedStatsSection(_ profile: OpponentProfile) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            sectionHeader("DERIVED STATS")
+            Text("DERIVED STATS")
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-            let columns = [
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-                GridItem(.flexible(), spacing: LayoutConstants.spaceXS),
-            ]
-
-            LazyVGrid(columns: columns, spacing: LayoutConstants.spaceXS) {
-                derivedStatCell(
-                    label: "Atk Power",
-                    value: "\(profile.attackPower) \(profile.damageTypeName)",
-                    color: damageTypeColor(profile.damageTypeName)
-                )
-                derivedStatCell(label: "Armor", value: "\(profile.armor ?? 0)", color: DarkFantasyTheme.textPrimary)
-                derivedStatCell(label: "Magic Resist", value: "\(profile.magicResist ?? 0)", color: DarkFantasyTheme.purple)
-                derivedStatCell(
-                    label: "Crit Chance",
-                    value: String(format: "%.1f%%", profile.critChance),
-                    color: DarkFantasyTheme.danger
-                )
-                derivedStatCell(
-                    label: "Dodge",
-                    value: String(format: "%.1f%%", profile.dodgeChance),
-                    color: DarkFantasyTheme.success
-                )
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: LayoutConstants.spaceSM
+            ) {
+                derivedRow("Atk Power", value: "\(profile.attackPower) \(profile.damageTypeName)", color: DarkFantasyTheme.statBarFill)
+                derivedRow("Armor", value: "\(profile.armor ?? 0)", color: DarkFantasyTheme.statBarFill)
+                derivedRow("Magic Resist", value: "\(profile.magicResist ?? 0)", color: DarkFantasyTheme.statBarFill)
+                derivedRow("Crit Chance", value: String(format: "%.1f%%", profile.critChance), color: DarkFantasyTheme.statBarFill)
+                derivedRow("Dodge", value: String(format: "%.1f%%", profile.dodgeChance), color: DarkFantasyTheme.statBarFill)
             }
         }
-        .padding(LayoutConstants.cardPadding)
-        .panelCard()
     }
 
-    private func derivedStatCell(label: String, value: String, color: Color) -> some View {
+    /// Derived stat row — matches HeroDetailView exactly
+    @ViewBuilder
+    private func derivedRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.body(size: 12))
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .lineLimit(1)
-
             Spacer()
-
             Text(value)
-                .font(DarkFantasyTheme.section(size: 13))
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                 .foregroundStyle(color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .monospacedDigit()
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary.opacity(0.5),
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.2,
+                cornerRadius: LayoutConstants.radiusSM
+            )
         )
-    }
-
-    private func damageTypeColor(_ type: String) -> Color {
-        switch type {
-        case "Magical": DarkFantasyTheme.purple
-        case "Poison": DarkFantasyTheme.success
-        default: DarkFantasyTheme.danger
-        }
+        .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
     }
 
     // MARK: - Action Buttons
 
     private var actionButtons: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            GoldDivider()
-
             Button {
                 Task { await sendChallenge() }
             } label: {
@@ -459,13 +507,11 @@ struct LeaderboardPlayerDetailSheet: View {
     // MARK: - Helpers
 
     private func sectionHeader(_ title: String) -> some View {
-        HStack {
-            Text(title)
-                .font(DarkFantasyTheme.body(size: 12))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(2)
-            Spacer()
-        }
+        Text(title)
+            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .foregroundStyle(DarkFantasyTheme.textSecondary)
+            .tracking(2)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func loadProfile() async {

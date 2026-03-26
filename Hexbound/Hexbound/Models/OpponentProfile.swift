@@ -125,6 +125,20 @@ struct OpponentProfile: Codable, Identifiable {
     func equippedItem(for slot: String) -> Item? {
         equipment?.first { $0.equippedSlot == slot }
     }
+
+    /// Get stat value by StatType (for grouped stat display)
+    func statValue(for stat: StatType) -> Int {
+        switch stat {
+        case .strength:     return strength ?? 0
+        case .agility:      return agility ?? 0
+        case .vitality:     return vitality ?? 0
+        case .endurance:    return endurance ?? 0
+        case .intelligence: return intelligence ?? 0
+        case .wisdom:       return wisdom ?? 0
+        case .luck:         return luck ?? 0
+        case .charisma:     return charisma ?? 0
+        }
+    }
 }
 
 /// Response wrapper for the profile endpoint

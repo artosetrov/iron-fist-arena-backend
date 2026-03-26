@@ -4,6 +4,7 @@ struct OnboardingDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm = OnboardingViewModel()
+    @State private var forgeGlow = false
 
     var body: some View {
         ZStack {
@@ -39,6 +40,11 @@ struct OnboardingDetailView: View {
                 // Navigation buttons — no animation on position
                 bottomButton
                     .animation(nil, value: vm.step)
+            }
+
+            // Hero creation overlay
+            if vm.isCreating {
+                heroCreationOverlay
             }
         }
         .navigationBarHidden(true)
@@ -166,6 +172,56 @@ struct OnboardingDetailView: View {
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.bottom, LayoutConstants.spaceLG)
+    }
+
+    // MARK: - Hero Creation Overlay
+
+    private var heroCreationOverlay: some View {
+        ZStack {
+            DarkFantasyTheme.bgAbyss.opacity(0.85)
+                .ignoresSafeArea()
+
+            VStack(spacing: LayoutConstants.spaceMD) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .font(.system(size: 48))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .opacity(forgeGlow ? 1.0 : 0.4)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(forgeGlow ? 0.6 : 0.1), radius: forgeGlow ? 16 : 4)
+
+                Text("Forging Your Hero...")
+                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+
+                Text("Sharpening swords, polishing armor...")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
+            .padding(LayoutConstants.spaceLG)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.gold.opacity(0.15),
+                    glowIntensity: 0.5,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
+            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
+            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+        }
+        .transition(.opacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                forgeGlow = true
+            }
+        }
+        .onDisappear {
+            forgeGlow = false
+        }
     }
 }
 

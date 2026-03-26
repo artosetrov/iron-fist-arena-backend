@@ -6,8 +6,8 @@ struct BattlePassData: Codable {
     let currentXp: Int
     let xpToNext: Int
     let hasPremium: Bool
-    let freeRewards: [BPReward]
-    let premiumRewards: [BPReward]
+    var freeRewards: [BPReward]
+    var premiumRewards: [BPReward]
 
     enum CodingKeys: String, CodingKey {
         case seasonName = "season_name"

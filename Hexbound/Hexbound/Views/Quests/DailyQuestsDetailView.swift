@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DailyQuestsDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var vm: DailyQuestsViewModel?
     @State private var showQuestBurst = false
     @State private var burstQuestId: String?
@@ -67,7 +68,7 @@ struct DailyQuestsDetailView: View {
             }
         }
         .onAppear {
-            if vm == nil { vm = DailyQuestsViewModel(appState: appState) }
+            if vm == nil { vm = DailyQuestsViewModel(appState: appState, cache: cache) }
             appearCount += 1
         }
         .task(id: appearCount) {

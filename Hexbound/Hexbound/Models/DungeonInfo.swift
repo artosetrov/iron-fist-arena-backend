@@ -12,6 +12,32 @@ struct BossInfo: Identifiable {
     let fullImage: String       // Asset name for full body (combat pose)
     let loot: [LootPreview]
 
+    /// Extended lore text for boss detail sheet.
+    /// Uses server description if long enough, otherwise generates client-side lore.
+    var extendedLore: String {
+        // If server already sends a meaty description (2+ sentences), use it
+        if description.count > 80 { return description }
+        // Client-side extended lore keyed by boss name (fallback for short server descriptions)
+        let tagline = description.isEmpty ? "A fearsome dungeon guardian." : description
+        return tagline + "\n\n" + Self.clientLore(for: name)
+    }
+
+    private static func clientLore(for name: String) -> String {
+        let loreLookup: [String: String] = [
+            "Tomb Rat King": "Once a common sewer rat, it gorged on cursed alchemical runoff until it grew to monstrous size. Now it commands legions of diseased vermin from its throne of bones, spreading plague through the tunnels. Adventurers who underestimate its swarm tactics rarely return.",
+            "Iron Sentinel": "Forged in the dying embers of a forgotten war, this construct still follows its last order: destroy all intruders. Its rusted joints creak with every swing, but each blow carries the weight of enchanted steel. Some say a trapped soul still screams inside its hollow chest.",
+            "Broodmother Arachne": "Deep in the silk-choked caverns, she tends her thousand eggs. Her venom dissolves armor and flesh alike, and her web traps have ensnared even seasoned knights. The clicking of her mandibles echoes through the dark — a sound that haunts survivors forever.",
+            "Bone Colossus": "Assembled from the remains of a hundred fallen warriors by a mad necromancer, this skeletal giant towers above the crypt halls. Each bone remembers its former life, and the colossus fights with the combined fury of all the souls bound within it.",
+            "Pyrox the Eternal": "Born from the heart of a volcanic eruption, Pyrox has burned for millennia. Its molten core radiates heat that melts stone, and its breath turns sand to glass. Only weapons quenched in dragon blood can pierce its obsidian hide.",
+            "The Fungal Sovereign": "What was once an elven druid became one with the mycelium network spanning miles underground. It speaks through spores and controls every mushroom, vine, and root in its domain. Those who breathe its pollen become extensions of its will.",
+            "Serpent Pharaoh": "An ancient king who traded his humanity for immortality through serpent magic. His cobra crown grants dominion over all reptiles, and his gaze can paralyze the bravest warriors. His tomb holds treasures from a civilization lost to time.",
+            "Gorefang the Butcher": "A demon summoned during a failed ritual, Gorefang broke free of its binding circle and slaughtered the cultists who called it forth. Now it guards its lair with savage glee, decorating the walls with the remains of challengers.",
+            "The Lich Sovereign": "Once the greatest archmage of the eastern kingdoms, she chose undeath over mortality. Her phylactery is hidden somewhere in the deepest vault, making her nearly impossible to destroy permanently. Her spells can shatter minds and rend reality itself.",
+            "Abyssal Overlord": "The final guardian of the darkest dungeon, the Overlord commands all the horrors that lurk in the deep. It was ancient when the world was young, and its power grows with every soul that perishes in its domain. Few have seen its true form and lived to describe it.",
+        ]
+        return loreLookup[name] ?? "Legends speak of this creature in hushed tones. Its power is matched only by the treasures it guards. Many have sought to defeat it — few have succeeded."
+    }
+
     var emoji: String {
         switch id {
         case 1: return "🗡️"

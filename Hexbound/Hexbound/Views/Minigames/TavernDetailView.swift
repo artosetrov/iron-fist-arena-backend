@@ -28,6 +28,15 @@ struct TavernDetailView: View {
                         }
 
                         TavernGameCard(
+                            icon: "hurricane",
+                            title: "FORTUNE WHEEL",
+                            subtitle: "Spin the wheel. Up to x5 your wager!",
+                            accentColor: DarkFantasyTheme.purple
+                        ) {
+                            appState.mainPath.append(AppRoute.fortuneWheel)
+                        }
+
+                        TavernGameCard(
                             icon: "person.slash",
                             title: "DUNGEON RUSH",
                             subtitle: "Endless waves. How far can you go?",

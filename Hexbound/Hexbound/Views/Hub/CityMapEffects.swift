@@ -47,6 +47,7 @@ struct LanternGlow: View {
     let color: Color
     let radius: CGFloat
     @State private var pulse: CGFloat = 0.6
+    @State private var isVisible = false
 
     var body: some View {
         Circle()
@@ -61,12 +62,18 @@ struct LanternGlow: View {
             .frame(width: radius * 2.5, height: radius * 2.5)
             .blendMode(.screen)
             .onAppear {
+                isVisible = true
                 withAnimation(
                     .easeInOut(duration: Double.random(in: 1.5...3.0))
                     .repeatForever(autoreverses: true)
                 ) {
                     pulse = CGFloat.random(in: 0.35...0.8)
                 }
+            }
+            .onDisappear {
+                isVisible = false
+                // Reset to static value to stop animation driver
+                pulse = 0.6
             }
     }
 }
@@ -91,6 +98,9 @@ struct FogLayer: View {
             withAnimation(.linear(duration: 20).repeatForever(autoreverses: true)) {
                 drift = 40
             }
+        }
+        .onDisappear {
+            drift = 0
         }
     }
 

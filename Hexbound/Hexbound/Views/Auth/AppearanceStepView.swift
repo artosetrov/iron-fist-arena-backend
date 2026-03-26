@@ -99,39 +99,48 @@ struct AppearanceStepView: View {
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
 
             if let origin = vm.selectedOrigin {
-                HStack(spacing: LayoutConstants.spaceMS) {
-                    Image(origin.iconAsset)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.touchMin, height: LayoutConstants.touchMin)
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    HStack(spacing: LayoutConstants.spaceMS) {
+                        Image(origin.iconAsset)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 36, height: 36)
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(origin.displayName)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(origin.displayName)
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .foregroundStyle(DarkFantasyTheme.goldBright)
 
-                        Text(origin.description)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            .lineLimit(2)
+                            Text(origin.description)
+                                .font(DarkFantasyTheme.body(size: 12))
+                                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer(minLength: 0)
                     }
 
-                    Spacer(minLength: 0)
-
-                    Text(origin.bonuses)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.textSuccess)
-                        .multilineTextAlignment(.trailing)
-                        .lineLimit(2)
+                    // Stat bonuses with icons (same style as NameStepView)
+                    if !vm.originBonuses.isEmpty {
+                        LazyVGrid(
+                            columns: [GridItem(.flexible()), GridItem(.flexible())],
+                            spacing: LayoutConstants.spaceXS
+                        ) {
+                            ForEach(vm.originBonuses, id: \.stat) { bonus in
+                                statBonusCell(name: bonus.stat, value: bonus.value)
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, LayoutConstants.bannerPadding)
+                .padding(.vertical, LayoutConstants.spaceXS)
             } else {
                 Text("Select a race to see avatars")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
-        .frame(height: 88)
+        .frame(minHeight: 88)
         .frame(maxWidth: .infinity)
         .animation(.easeInOut(duration: 0.2), value: vm.selectedOrigin)
     }
@@ -325,6 +334,44 @@ struct AppearanceStepView: View {
                 .buttonStyle(.scalePress(0.95))
             }
         }
+    }
+
+    // MARK: - Stat Bonus Cell (matches NameStepView style)
+
+    @ViewBuilder
+    private func statBonusCell(name: String, value: Int) -> some View {
+        let statType = StatType.allCases.first(where: { $0.fullName == name })
+        let color = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
+
+        HStack(spacing: LayoutConstants.spaceXS) {
+            if let statType {
+                Image(statType.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            }
+
+            Text(name)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+
+            Spacer(minLength: 2)
+
+            Text("\(value > 0 ? "+" : "")\(value)")
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel).bold())
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, LayoutConstants.spaceXS + 2)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .stroke(value > 0 ? DarkFantasyTheme.gold.opacity(0.25) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     // MARK: - Skin Image Helper

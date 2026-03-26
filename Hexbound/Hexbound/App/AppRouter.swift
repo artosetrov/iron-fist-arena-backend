@@ -38,6 +38,7 @@ enum AppRoute: Hashable, Codable {
     // Minigames
     case tavern
     case shellGame
+    case fortuneWheel
     case goldMine
     case dungeonRush
 
@@ -142,6 +143,7 @@ struct MainRouterView: View {
         // Minigames
         case .tavern: TavernDetailView()
         case .shellGame: ShellGameDetailView()
+        case .fortuneWheel: FortuneWheelDetailView()
         case .goldMine: GoldMineDetailView()
         case .dungeonRush: DungeonRushDetailView()
         

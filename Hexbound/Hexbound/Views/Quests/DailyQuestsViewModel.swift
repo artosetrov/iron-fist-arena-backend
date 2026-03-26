@@ -4,6 +4,7 @@ import SwiftUI
 final class DailyQuestsViewModel {
     private let appState: AppState
     private let service: QuestService
+    private let cache: GameDataCache
 
     var quests: [Quest] = []
     var isLoading = false
@@ -12,11 +13,15 @@ final class DailyQuestsViewModel {
     var bonusClaimedToday = false
     var errorMessage: String? = nil
 
-    init(appState: AppState) {
+    init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
+        self.cache = cache
         self.service = QuestService(appState: appState)
-        // Serve cached quests from /game/init instantly
-        if let cached = appState.cachedTypedQuests, !cached.isEmpty {
+        // Serve cached quests instantly (GameDataCache first, then appState fallback)
+        if let cached = cache.cachedDailyQuests() {
+            quests = cached.quests
+            bonusClaimedToday = cached.bonusClaimed
+        } else if let cached = appState.cachedTypedQuests, !cached.isEmpty {
             quests = cached
         }
     }
@@ -54,11 +59,18 @@ final class DailyQuestsViewModel {
     // MARK: - Load
 
     func loadQuests() async {
-        if quests.isEmpty { isLoading = true }
+        // Cache-first: show cached data instantly, only show spinner if empty
+        if let cached = cache.cachedDailyQuests() {
+            quests = cached.quests
+            bonusClaimedToday = cached.bonusClaimed
+        } else if quests.isEmpty {
+            isLoading = true
+        }
         errorMessage = nil
         let result = await service.loadQuests()
         quests = result.quests
         bonusClaimedToday = result.bonusClaimed
+        cache.cacheDailyQuests(result.quests, bonusClaimed: result.bonusClaimed)
         isLoading = false
     }
 
@@ -66,23 +78,48 @@ final class DailyQuestsViewModel {
 
     func claimQuest(_ quest: Quest) async {
         claimingQuestId = quest.id
-        let success = await service.claimQuest(questId: quest.id)
+
+        // ── Optimistic UI: mark claimed instantly ──
+        if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
+            quests[idx].rewardClaimed = true
+        }
         claimingQuestId = nil
-        if success {
-            if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
-                quests[idx].rewardClaimed = true
+        HapticManager.success()
+        appState.showToast("Quest Complete! \(quest.title)", type: .quest)
+
+        // ── Fire API in background ──
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.claimQuest(questId: quest.id)
+            if !success {
+                // Revert on failure
+                if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
+                    quests[idx].rewardClaimed = false
+                }
+                appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
             }
-            appState.showToast("Quest Complete! \(quest.title)", type: .quest)
         }
     }
 
     func claimBonus() async {
+        guard !bonusClaimedToday else { return }
+
+        // ── Optimistic UI: mark bonus claimed instantly ──
         isClaimingBonus = true
-        let success = await service.claimBonus()
+        bonusClaimedToday = true
         isClaimingBonus = false
-        if success {
-            bonusClaimedToday = true
-            appState.showToast("Bonus: +500 Gold, +10 Gems!", type: .reward)
+        HapticManager.success()
+        appState.showToast("Bonus: +500 Gold, +10 Gems!", type: .reward)
+
+        // ── Fire API in background ──
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.claimBonus()
+            if !success {
+                // Revert on failure
+                bonusClaimedToday = false
+                appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)
+            }
         }
     }
 }

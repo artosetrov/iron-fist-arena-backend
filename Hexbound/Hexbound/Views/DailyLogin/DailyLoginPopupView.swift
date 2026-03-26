@@ -16,7 +16,13 @@ struct DailyLoginPopupView: View {
                     dismissPopup()
                 }
 
-            if let vm = viewModel, !vm.isLoading, let data = vm.loginData {
+            if let vm = viewModel, vm.isLoading {
+                // ── Skeleton state while loading ──
+                dailyLoginSkeleton()
+                    .padding(.horizontal, LayoutConstants.spaceLG)
+                    .opacity(appear ? 1 : 0)
+                    .transition(.identity)
+            } else if let vm = viewModel, !vm.isLoading, let data = vm.loginData {
                 VStack(spacing: 0) {
                     // ── Header ──
                     headerSection(data: data)
@@ -71,11 +77,12 @@ struct DailyLoginPopupView: View {
         .onAppear {
             let vm = DailyLoginPopupViewModel(appState: appState)
             viewModel = vm
+            // Show skeleton immediately
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                appear = true
+            }
             Task {
                 await vm.loadData()
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    appear = true
-                }
             }
             // Continuous glow rotation
             withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
@@ -396,6 +403,72 @@ struct DailyLoginPopupView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
+    }
+
+    // MARK: - Skeleton
+
+    @ViewBuilder
+    private func dailyLoginSkeleton() -> some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            // Header skeleton
+            VStack(spacing: LayoutConstants.spaceXS) {
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.bgTertiary)
+                    .frame(width: 100, height: 12)
+                    .padding(.top, LayoutConstants.spaceLG)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgTertiary)
+                    .frame(width: 160, height: 24)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.bgTertiary)
+                    .frame(width: 200, height: 12)
+            }
+
+            // Progress bar skeleton
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                .fill(DarkFantasyTheme.bgTertiary)
+                .frame(height: 6)
+                .padding(.horizontal, LayoutConstants.spaceMD)
+
+            // Day grid skeleton — 2 rows of 3
+            VStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(0..<2, id: \.self) { _ in
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius + 4)
+                                .fill(DarkFantasyTheme.bgTertiary.opacity(0.4))
+                                .frame(height: 88)
+                        }
+                    }
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+                }
+                // Day 7 skeleton
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius + 4)
+                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.4))
+                    .frame(height: 80)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+            }
+
+            // Button skeleton
+            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                .fill(DarkFantasyTheme.bgTertiary)
+                .frame(height: 48)
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.bottom, LayoutConstants.spaceLG)
+        }
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.modalRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.borderMedium.opacity(0.1))
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 16, thickness: 2.0)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 6, y: 3)
     }
 
     private func dismissPopup() {

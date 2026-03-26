@@ -173,7 +173,7 @@ function baseDamage(c: CharacterStats): number {
     case 'rogue':
       return c.agi * 1.5 + c.level * 2;
     case 'mage':
-      return c.int * 1.2 + c.wis * 0.5 + c.level * 2;
+      return c.int * 1.4 + c.wis * 0.5 + c.level * 2;
     default:
       return c.str * 1.5 + c.level * 2;
   }

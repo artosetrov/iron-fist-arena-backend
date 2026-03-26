@@ -88,6 +88,29 @@ All UI elements use a pure SwiftUI ornamental system — **no PNG assets for UI 
 
 **Shadow pattern:** Use dual shadows for depth: type-colored glow shadow + dark `bgAbyss` shadow. Never use a single flat shadow.
 
+## GPU Performance Rules (CRITICAL)
+
+**`.compositingGroup()` is MANDATORY after ornamental stacks.** Every view that uses 2+ ornamental overlays (surfaceLighting, innerBorder, cornerBrackets, cornerDiamonds) must end the stack with `.compositingGroup()` to flatten layers into a single GPU texture. Without it, each overlay = separate render pass with alpha blending.
+
+- `CardStyles.swift` modifiers (`panelCard`, `rarityCard`, `infoPanel`, `modalOverlay`) already include `.compositingGroup()` — place it BEFORE `.shadow()` calls.
+- `ornamentalFrame()` and `premiumFrame()` in `OrnamentalStyles.swift` already include `.compositingGroup()`.
+- **When building custom ornamental stacks** (not using the above helpers), YOU must add `.compositingGroup()` at the end.
+
+**`.drawingGroup()` for heavy render views.** Use on views with many Path/Canvas draws (maps, wheels, particle systems). Applied to: `CityMapView` (full hub map), `FortuneWheelView` (12-sector pie chart).
+
+**`.repeatForever` animations MUST stop on `.onDisappear`.** NavigationStack keeps views in memory — animations started in `.onAppear` continue running off-screen.
+- **Pattern:** Add `.onDisappear { animatedProperty = initialValue }` to reset the animation driver.
+- **Affected:** LanternGlow, FogLayer, SkyObjectView, ArenaOpponentCard, UnifiedHeroWidget, HubView badges.
+- **Exception:** SkeletonViews shimmer and LoadingOverlay — these are transient and dismiss naturally.
+
+**Damage popups capped at 5 concurrent.** `CombatViewModel.spawnDamagePopup()` removes oldest popup before appending when count >= 5. Prevents unbounded popup accumulation during fast combat playback.
+
+**Cache-first loading pattern (stale-while-revalidate):**
+- Show cached data instantly from `GameDataCache` → show loading only if cache is empty → fetch fresh data in background → update UI on arrival.
+- `GameDataCache` has TTL-based caches: `cachedDailyQuests()` (60s), `cachedAchievements()` (120s), `cachedBattlePass()` (120s), `cachedShop()` (300s), `cachedOpponents()` (30s).
+- **Applied to:** ShopViewModel, AchievementsViewModel, BattlePassViewModel, DailyQuestsViewModel, ArenaViewModel, DungeonSelectVM.
+- **DailyQuestsViewModel** requires `cache: GameDataCache` in init (added 2026-03-24).
+
 ## Radius Scale (CRITICAL)
 
 All `cornerRadius` values MUST use `LayoutConstants` tokens. Never hardcode raw numbers.
@@ -221,7 +244,7 @@ All stat bars and stat-related UI use a **unified gold palette** — never per-s
 
 ## Guild Hall (Social Hub) — added 2026-03-23
 
-The Guild Hall building is the social hub with 3 tabs: **ALLIES** (friends), **SCROLLS** (messages), **DUELS** (challenges). Allies and Duels are implemented; Scrolls shows Coming Soon placeholder.
+The Guild Hall building is the social hub with 3 tabs: **ALLIES** (friends), **SCROLLS** (messages), **DUELS** (challenges). All three tabs are implemented.
 
 - Route: `AppRoute.guildHall` → `GuildHallDetailView`
 - ViewModel: `GuildHallViewModel` — `@MainActor @Observable`, manages friends list, requests, online status, challenge lists
@@ -231,7 +254,7 @@ The Guild Hall building is the social hub with 3 tabs: **ALLIES** (friends), **S
 - Service: `ChallengeService.swift` — singleton, challenge actions (send/accept/decline/cancel), challenge list fetching
 - Backend: `POST /api/social/friends` (actions), `GET /api/social/friends` (list), `GET /api/social/status` (badge counts), `POST /api/social/status` (friendship status)
 - Backend: `POST /api/social/challenges` (send/accept/decline), `GET /api/social/challenges` (incoming/outgoing/completed)
-- DB: `Friendship` model (pending/accepted/blocked), `DirectMessage` model (Phase 2), `Challenge` model (pending/accepted/declined/expired/completed), `lastActiveAt` on Character
+- DB: `Friendship` model (pending/accepted/blocked), `DirectMessage` model, `Challenge` model (pending/accepted/declined/expired/completed), `lastActiveAt` on Character
 - Online status: computed from `lastActiveAt` — online (<5min), away (<30min), offline (>30min)
 - Anti-abuse (friends): 20 requests/day, 24h cooldown after decline, 7-day request expiry, max 50 friends
 - Anti-abuse (challenges): max 5 pending per player, max 10 challenges/day, 24h expiry, 1 stamina per send
@@ -241,6 +264,13 @@ The Guild Hall building is the social hub with 3 tabs: **ALLIES** (friends), **S
 - **Duel result sheet**: shown in GuildHallDetailView after accepting an incoming challenge — displays victory/defeat, rating change, gold/XP rewards
 - **Friend context menu**: Challenge option in Allies tab sends challenge via `GuildHallViewModel.sendChallenge()`
 - **Thematic naming**: Friends→Allies, Messages→Scrolls, Challenges→Duels (in-game lore)
+- **Messaging system (Scrolls)**: ChatGPT-style UX with conversation list + threaded chat view
+- Service: `MessageService.swift` — singleton, uses `Encodable` structs for request bodies (NOT `[String: Any]`)
+- Models: `Message.swift` — `Conversation`, `ConversationCharacterInfo`, `ConversationLastMessage`, `DirectMessageItem`, `SentMessageInfo`
+- Backend: `GET /api/social/messages` (conversations), `GET /api/social/messages/:id` (thread), `POST /api/social/messages` (send)
+- Deep-link: `AppRoute.guildHallMessage(characterId:characterName:)` opens direct chat thread from any screen (leaderboard, battle result, profile)
+- **Any player can message any player** — not restricted to friends (changed 2026-03-24)
+- CombatResultDetailView has "Send Message" button for post-battle messaging
 
 ## Hub Building System
 
@@ -718,11 +748,19 @@ When replacing a struct, class, function, or view with a new version:
 - Applies to any screen with reward pills, badges, or status indicators.
 
 ### Optimistic UI Updates (MANDATORY)
-- **All mutating actions (repair, heal, equip, use item) MUST update UI immediately**, before the API response arrives.
-- **Pattern:** Update local model/cache → show success toast → fire API call in background → on error, revert + show error toast.
+- **All mutating actions (repair, heal, equip, use item, buy, claim) MUST update UI immediately**, before the API response arrives.
+- **Pattern:** Update local model/cache → show success toast + haptic → fire API in background `Task` → on error, revert + error toast.
 - **Why:** Users perceive actions as instant. Waiting for API round-trip (200-500ms) feels sluggish, especially for bulk actions like "Repair All".
-- **Reference:** `HeroDetailView.repairAllBrokenItems()` — sets `durability = maxDurability` on all items immediately, then fires parallel API calls.
+- **Screens with optimistic UI (2026-03-24):**
+  - `HeroDetailView.repairAllBrokenItems()` — repair all items
+  - `ShopViewModel.buy()` / `buyOffer()` — gold/gem deduction, item removal
+  - `AchievementsViewModel.claim()` — mark reward claimed, update cache
+  - `BattlePassViewModel.claimReward()` — mark tier claimed, silent background refresh
+  - `DailyQuestsViewModel.claimQuest()` / `claimBonus()` — mark quest/bonus claimed
+  - `DailyLoginPopupViewModel.claimReward()` — show claimed state instantly
+- **Revert pattern:** Save state before mutation → on API failure, restore saved state + error toast.
 - **Past incident:** "Repair All" felt slow because it waited for each API call before updating UI. Fixed with optimistic update pattern.
+- **Past incident:** Daily Login CLAIMED button took 3+ seconds (3 sequential API calls). Fixed with optimistic UI.
 
 ### Currency Display (CRITICAL)
 - **Never use SF Symbols for currency** (e.g., `dollarsign.circle`, `diamond`). Use `CurrencyDisplay` component instead.
@@ -740,7 +778,7 @@ When replacing a struct, class, function, or view with a new version:
 - Profile card layout: portrait + level/rank badges → HP bar → PvP stats grid → equipment grid → base stats (8 cols in 2-col grid) → derived stats → action buttons.
 - Equipment grid: use `ItemCardView(.equipment(...))` — each slot automatically tints border with `ItemRarity.color`.
 - **Challenge button** sends a real challenge via `ChallengeService.shared.sendChallenge()` — shows loading spinner, then "Challenge Sent" state with toast. No closure needed — handled internally.
-- **Message button** is still a stub TODO (Phase 2).
+- **Message button** opens direct chat thread via deep-link `AppRoute.guildHallMessage(characterId:characterName:)` — fully functional.
 - **Add Friend button** is a 6-state machine (`FriendshipButtonState`) — fully functional.
 - When extending opponent profile, verify endpoint returns the needed fields (check `OpponentProfileResponse` wrapper in backend).
 - HP bar on opponent profile: shows current HP + max HP, no regen indicator in sheet view (regen is only in detailed stats).

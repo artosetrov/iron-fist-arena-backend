@@ -6,9 +6,20 @@ import { getDailyLoginRewardsConfig } from './live-config';
 import { type DailyLoginRewardDef } from './balance';
 
 /**
+ * Minimum cooldown between daily login claims (20 hours).
+ * Using 20h instead of 24h gives players a 4-hour flexibility window
+ * so they can claim slightly earlier each day without losing their streak.
+ * This prevents the old calendar-day exploit (claim at 23:59 + 00:01 UTC).
+ */
+const CLAIM_COOLDOWN_MS = 20 * 60 * 60 * 1000; // 20 hours
+
+/**
  * Check whether the player is eligible to claim their daily login reward.
- * Returns true if 24+ hours have passed since the last claim, or if they
+ * Returns true if 20+ hours have passed since the last claim, or if they
  * have never claimed before.
+ *
+ * Uses a fixed time cooldown (not calendar days) to prevent the midnight
+ * UTC double-claim exploit.
  *
  * @param lastClaimDate  The date/time of the last claim, or null if never claimed
  * @returns              Whether the player can claim today
@@ -18,17 +29,19 @@ export function canClaimDailyLogin(lastClaimDate: Date | null): boolean {
     return true;
   }
 
-  // Compare calendar days in UTC — claim resets at midnight UTC
   const now = new Date();
-  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const lastUTC = Date.UTC(lastClaimDate.getUTCFullYear(), lastClaimDate.getUTCMonth(), lastClaimDate.getUTCDate());
+  const elapsed = now.getTime() - lastClaimDate.getTime();
 
-  return todayUTC > lastUTC;
+  return elapsed >= CLAIM_COOLDOWN_MS;
 }
 
 /**
  * Check whether the player's streak should be reset.
- * The streak resets if more than 48 hours have passed since the last claim.
+ * The streak resets if more than 48 hours have passed since the last claim,
+ * meaning the player missed at least one full day.
+ *
+ * Uses fixed time comparison (not calendar days) for consistency with
+ * the claim cooldown logic.
  *
  * @param lastClaimDate  The date/time of the last claim
  * @returns              Whether the streak should be reset to day 1
@@ -38,13 +51,11 @@ export function shouldResetStreak(lastClaimDate: Date | null): boolean {
     return true;
   }
 
-  // Streak resets if the player missed a full calendar day (2+ days gap)
   const now = new Date();
-  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const lastUTC = Date.UTC(lastClaimDate.getUTCFullYear(), lastClaimDate.getUTCMonth(), lastClaimDate.getUTCDate());
-  const daysDiff = (todayUTC - lastUTC) / (1000 * 60 * 60 * 24);
+  const elapsed = now.getTime() - lastClaimDate.getTime();
+  const STREAK_RESET_MS = 48 * 60 * 60 * 1000; // 48 hours
 
-  return daysDiff >= 2;
+  return elapsed >= STREAK_RESET_MS;
 }
 
 /**

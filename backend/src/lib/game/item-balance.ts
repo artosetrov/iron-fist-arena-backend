@@ -65,7 +65,7 @@ const DEFAULT_CLASS_DAMAGE_SCALING: Record<string, ClassDamageScaling> = {
   warrior: { stat: 'str', multiplier: 1.5, levelBonus: 2 },
   tank: { stat: 'str', multiplier: 1.3, levelBonus: 2 },
   rogue: { stat: 'agi', multiplier: 1.5, levelBonus: 2 },
-  mage: { stat: 'int', multiplier: 1.2, levelBonus: 2 },
+  mage: { stat: 'int', multiplier: 1.4, levelBonus: 2 },
 }
 
 const DEFAULT_ITEM_TYPE_WEIGHTS: Record<string, Record<string, number>> = {

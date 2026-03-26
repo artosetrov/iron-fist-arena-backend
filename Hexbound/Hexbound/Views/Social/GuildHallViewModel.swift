@@ -28,6 +28,8 @@ class GuildHallViewModel {
     var activeThread: [DirectMessageItem] = []
     var activeThreadCharacterId: String?
     var activeThreadCharacterName: String?
+    var activeThreadCharacterAvatar: String?
+    var activeThreadCharacterClass: String?
     var threadLoadState: LoadState = .idle
     var isSendingMessage = false
     var composedMessage = ""
@@ -174,9 +176,11 @@ class GuildHallViewModel {
         }
     }
 
-    func openThread(characterId targetId: String, characterName: String) async {
+    func openThread(characterId targetId: String, characterName: String, avatar: String? = nil, characterClass: String? = nil) async {
         activeThreadCharacterId = targetId
         activeThreadCharacterName = characterName
+        activeThreadCharacterAvatar = avatar ?? conversations.first(where: { $0.otherCharacter.id == targetId })?.otherCharacter.avatar
+        activeThreadCharacterClass = characterClass ?? conversations.first(where: { $0.otherCharacter.id == targetId })?.otherCharacter.characterClass
         threadLoadState = .loading
         composedMessage = ""
         do {
@@ -198,7 +202,22 @@ class GuildHallViewModel {
         let content = composedMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty, content.count <= 200 else { return }
 
-        isSendingMessage = true
+        // Optimistic: show message immediately
+        let tempId = "temp-\(UUID().uuidString)"
+        let optimisticMsg = DirectMessageItem(
+            id: tempId,
+            senderId: characterId,
+            content: content,
+            isQuick: false,
+            quickId: nil,
+            isRead: false,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        )
+        activeThread.insert(optimisticMsg, at: 0)
+        composedMessage = ""
+        HapticManager.light()
+
+        // Background: actual API call
         sendMessageError = nil
         do {
             let sent = try await messageService.sendMessage(
@@ -206,22 +225,23 @@ class GuildHallViewModel {
                 targetId: targetId,
                 content: content
             )
-            // Add to thread (newest first)
-            let newMsg = DirectMessageItem(
-                id: sent.id,
-                senderId: characterId,
-                content: sent.content,
-                isQuick: false,
-                quickId: nil,
-                isRead: false,
-                createdAt: sent.createdAt
-            )
-            activeThread.insert(newMsg, at: 0)
-            composedMessage = ""
+            // Replace temp message with real one
+            if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
+                activeThread[idx] = DirectMessageItem(
+                    id: sent.id,
+                    senderId: characterId,
+                    content: sent.content,
+                    isQuick: false,
+                    quickId: nil,
+                    isRead: false,
+                    createdAt: sent.createdAt
+                )
+            }
         } catch {
+            // Remove optimistic message on failure
+            activeThread.removeAll(where: { $0.id == tempId })
             sendMessageError = "Failed to send message"
         }
-        isSendingMessage = false
     }
 
     func sendQuickMessage(_ quickId: String) async {
@@ -252,6 +272,8 @@ class GuildHallViewModel {
     func closeThread() {
         activeThreadCharacterId = nil
         activeThreadCharacterName = nil
+        activeThreadCharacterAvatar = nil
+        activeThreadCharacterClass = nil
         activeThread = []
         threadLoadState = .idle
     }

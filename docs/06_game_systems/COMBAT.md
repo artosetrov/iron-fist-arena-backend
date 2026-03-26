@@ -47,7 +47,7 @@ Each class has unique base damage scaling:
 | Warrior | STR × 1.5 + Level × 2 | Primary damage dealer |
 | Tank | STR × 1.3 + VIT × 0.3 + Level × 2 | Balanced offense/defense |
 | Rogue | AGI × 1.5 + Level × 2 | Speed-focused damage |
-| Mage | INT × 1.2 + WIS × 0.5 + Level × 2 | Spell scaling |
+| Mage | INT × 1.4 + WIS × 0.5 + Level × 2 | Spell scaling |
 
 **Example (Level 20 Warrior with STR 50):**
 - Base Damage = 50 × 1.5 + 20 × 2 = 75 + 40 = 115
@@ -257,7 +257,7 @@ When no skills are available (all on cooldown), character uses auto-attack:
 | Warrior | Base damage formula | Physical | STR × 1.5 |
 | Tank | Base damage formula | Physical | STR × 1.3 + VIT × 0.3 |
 | Rogue | Base damage formula | Poison | AGI × 1.5 |
-| Mage | Base damage formula | Magical | INT × 1.2 + WIS × 0.5 |
+| Mage | Base damage formula | Magical | INT × 1.4 + WIS × 0.5 |
 
 ---
 
@@ -351,7 +351,7 @@ COMBAT FLOW:
 
 ```
 1. Base Damage Calculation
-   └─ Class formula: STR×1.5, AGI×1.5, INT×1.2+WIS×0.5, STR×1.3+VIT×0.3
+   └─ Class formula: STR×1.5, AGI×1.5, INT×1.4+WIS×0.5, STR×1.3+VIT×0.3
 
 2. Skill Damage (if skill available)
    └─ Base + stat scaling + rank multiplier

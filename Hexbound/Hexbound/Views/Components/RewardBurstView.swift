@@ -91,10 +91,10 @@ struct RewardBurstView: View {
                 endX: cos(angle) * radius,
                 endY: sin(angle) * radius,
                 size: size,
-                color: style.colors.randomElement()!,
+                color: style.colors.randomElement() ?? DarkFantasyTheme.gold,
                 opacity: Double.random(in: 0.6...1.0),
                 rotationEnd: Double.random(in: 90...360),
-                shape: style.shapes.randomElement()!
+                shape: style.shapes.randomElement() ?? .circle
             )
         }
     }

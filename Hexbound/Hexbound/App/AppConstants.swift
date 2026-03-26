@@ -67,6 +67,6 @@ enum AppConstants {
 
     // MARK: - Game
     static let maxStamina = 120
-    static let freePvpPerDay = 3
+    static let freePvpPerDay = 5
     static let pvpStaminaCost = 10
 }

@@ -466,6 +466,7 @@ extension View {
             .if(showSideDiamonds) { view in
                 view.sideDiamonds(color: diamondColor)
             }
+            .compositingGroup()
     }
 
     /// Premium ornamental frame: double border + brackets + diamonds + inner bevel + surface lighting.
@@ -482,6 +483,7 @@ extension View {
             .cornerBrackets(color: accentColor, length: 20, thickness: 2.0)
             .cornerDiamonds(color: accentColor, size: 7)
             .sideDiamonds(color: borderColor)
+            .compositingGroup()
     }
 }
 

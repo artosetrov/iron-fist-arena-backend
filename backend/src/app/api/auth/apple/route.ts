@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rate-limit'
 
 /**
  * POST /api/auth/apple
@@ -13,6 +14,16 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(req: NextRequest) {
   try {
+    // Rate limit: 5 requests per minute per IP
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const allowed = await rateLimit(`apple-auth:${ip}`, 5, 60_000)
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const body = await req.json()
     const { id_token } = body
 

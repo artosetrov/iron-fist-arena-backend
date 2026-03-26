@@ -177,7 +177,7 @@ struct ItemDetailSheet: View {
                     .lineLimit(2)
                     .accessibilityLabel("Item name")
 
-                HStack(spacing: LayoutConstants.spaceXS) {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                     badgePill(item.itemType.displayName, style: .secondary)
                     badgePill(item.rarity.displayName, style: .rarity)
                 }

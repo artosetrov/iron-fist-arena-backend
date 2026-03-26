@@ -141,7 +141,8 @@
 		A1B2C3D4E5F6789012340001 /* TutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340002 /* TutorialView.swift */; };
 		A1B2C3D4E5F6789012340003 /* TutorialStepCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340004 /* TutorialStepCard.swift */; };
 		A1B2C3D4E5F6789012340005 /* NPCSpeechBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340006 /* NPCSpeechBubble.swift */; };
-		A1B2C3D4E5F6A7B8C9D0E1F2 /* CoinFlyAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* CoinFlyAnimationView.swift */; };
+		F75D1FC0F949F61232E576D6 /* BossDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2880159F81C0DEC1DDB3CB6F /* BossDetailSheet.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F4 /* DungeonBossCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F5 /* DungeonBossCard.swift */; };
 		A2396EBFF08A151C4A4E3443 /* BattlePassData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 889F29A69DC229FCE6DEF613 /* BattlePassData.swift */; };
 		A2B3C4D5E6F7A8B9C0D1E2F3 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E6F7A8B9C0D1E2F4 /* HapticManager.swift */; };
 		A2E3F4A5B6C7D8E9F0A1B2C4 /* UpgradeGuestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F4A5B6C7D8E9F0A1B2C3D5 /* UpgradeGuestView.swift */; };
@@ -182,6 +183,7 @@
 		C1A00001CITY00000002 /* CityBuildingLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000006 /* CityBuildingLabel.swift */; };
 		C1A00001CITY00000003 /* CityBuildingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000007 /* CityBuildingView.swift */; };
 		C1A00001CITY00000004 /* CityMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001CITY00000008 /* CityMapView.swift */; };
+		0CF8DA10FA1533C25066A655 /* CoinFlyAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92CC544A0511730A1DEF817 /* CoinFlyAnimationView.swift */; };
 		C1A00001SKYC00000009 /* SkyObjectConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00001SKYC00000010 /* SkyObjectConfig.swift */; };
 		C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A00002EFCT00000002 /* CityMapEffects.swift */; };
 		C3D4E5F60718A9B0C1D2E3F4 /* HPBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F60718A9B0C1D2E3F5 /* HPBarView.swift */; };
@@ -211,6 +213,8 @@
 		EA6DA3C33DF151344CE8AFB4 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F525698FF57035C2C32D1B /* LoginViewModel.swift */; };
 		EF81A20CF9208442CCE499D0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C574D383C6E2BD792258C813 /* AppState.swift */; };
 		F0D9A0070A3AEE52A2FCEC9A /* APIEndpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36990CC42E8623DE866E325C /* APIEndpoints.swift */; };
+		3F2D8E7A9C0B1A2F3E4D5C6A /* FortuneWheelDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */; };
+		3F2D8E7A9C0B1A2F3E4D5C6B /* FortuneWheelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */; };
 		F162051F66C8DD0A2339E9D5 /* ItemCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E160EA5CEA60F2AB037A705 /* ItemCardView.swift */; };
 		F20220F2C416CD8228A76FBA /* ToastOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E890783BBDDCD6E2B9EC21D /* ToastOverlayView.swift */; };
 		F3A5B6C7D8E9F0A1B2C3D4E5 /* VictoryParticlesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A5B6C7D8E9F0A1B2C3D4E6 /* VictoryParticlesView.swift */; };
@@ -312,6 +316,8 @@
 		4E9D0FE34B2EB74605E5F239 /* DungeonService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonService.swift; sourceTree = "<group>"; };
 		551B27BC39D6BDD2AF95D6A5 /* ui_tap_heavy.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_tap_heavy.wav; sourceTree = "<group>"; };
 		553D0C40DE02EC82C7902148 /* AchievementsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsViewModel.swift; sourceTree = "<group>"; };
+		5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneWheelDetailView.swift; sourceTree = "<group>"; };
+		5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneWheelViewModel.swift; sourceTree = "<group>"; };
 		5B6DF2AB4A5F6FDC34209975 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		5CD1C05B7BC3FD0D9E2E844D /* CombatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatService.swift; sourceTree = "<group>"; };
 		5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomDetailView.swift; sourceTree = "<group>"; };
@@ -368,7 +374,8 @@
 		A1B2C3D4E5F6789012340002 /* TutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012340004 /* TutorialStepCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialStepCard.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012340006 /* NPCSpeechBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCSpeechBubble.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6A7B8C9D0E1F3 /* CoinFlyAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinFlyAnimationView.swift; sourceTree = "<group>"; };
+		2880159F81C0DEC1DDB3CB6F /* BossDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BossDetailSheet.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F5 /* DungeonBossCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonBossCard.swift; sourceTree = "<group>"; };
 		A2B3C4D5E6F7A8B9C0D1E2F4 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		A2F009488F46769899A91153 /* ShopDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopDetailView.swift; sourceTree = "<group>"; };
 		A3B3FD0A4C0013A14D91E308 /* ShopViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopViewModel.swift; sourceTree = "<group>"; };
@@ -410,6 +417,7 @@
 		C1A00001CITY00000006 /* CityBuildingLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingLabel.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000007 /* CityBuildingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityBuildingView.swift; sourceTree = "<group>"; };
 		C1A00001CITY00000008 /* CityMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapView.swift; sourceTree = "<group>"; };
+		F92CC544A0511730A1DEF817 /* CoinFlyAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinFlyAnimationView.swift; sourceTree = "<group>"; };
 		C1A00001SKYC00000010 /* SkyObjectConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyObjectConfig.swift; sourceTree = "<group>"; };
 		C1A00002EFCT00000002 /* CityMapEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityMapEffects.swift; sourceTree = "<group>"; };
 		C268D3E4D32E3822E9F6013B /* ArenaViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArenaViewModel.swift; sourceTree = "<group>"; };
@@ -697,7 +705,7 @@
 				B8C9D0E1F2A3B4C5D6E7F8A9 /* OpponentIntegratedCard.swift */,
 				B2C3D4E5F60718A9B0C1D2E4 /* OfflineBannerView.swift */,
 				6E890783BBDDCD6E2B9EC21D /* ToastOverlayView.swift */,
-				A1B2C3D4E5F6A7B8C9D0E1F3 /* CoinFlyAnimationView.swift */,
+				F92CC544A0511730A1DEF817 /* CoinFlyAnimationView.swift */,
 				A4B5C6D7E8F9A0B1C2D3E4F6 /* NumberTickUpView.swift */,
 				B899DC5918ADE4B9A07F875B /* OrnamentalTitle.swift */,
 				A5B6C7D8E9F0A1B2C3D4E5F7 /* RewardBurstView.swift */,
@@ -845,6 +853,8 @@
 			children = (
 				7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */,
 				A84C12D9BFA71769CEBB55D0 /* DungeonRushViewModel.swift */,
+				5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */,
+				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
 				9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */,
 				A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */,
 				8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */,
@@ -964,6 +974,8 @@
 		CD5CD62DE867B4EE316A4664 /* Dungeon */ = {
 			isa = PBXGroup;
 			children = (
+				2880159F81C0DEC1DDB3CB6F /* BossDetailSheet.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F5 /* DungeonBossCard.swift */,
 				A1B2C3D4E5F60001AABB0002 /* DungeonInfoSheet.swift */,
 				42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */,
 				42A1B2C3D4E5F60DM2BV001 /* DungeonMapBuildingView.swift */,
@@ -1231,6 +1243,8 @@
 				82C5D1FA1A587E598C410E8D /* BattlePassService.swift in Sources */,
 				96844CD8AFAA42E132100B2A /* BattlePassViewModel.swift in Sources */,
 				2640A473732509AAF202AEC2 /* BattlePreloader.swift in Sources */,
+				F75D1FC0F949F61232E576D6 /* BossDetailSheet.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F4 /* DungeonBossCard.swift in Sources */,
 				d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */,
 				55ED2F4293172AA050CFC300 /* CharacterSelectionView.swift in Sources */,
 				CSVW0001BLD000000000001 /* CharacterSelectionViewModel.swift in Sources */,
@@ -1277,6 +1291,8 @@
 				B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */,
 				F425A4E619F59E4D30700CDE /* DungeonRushDetailView.swift in Sources */,
 				1DF365585FEF43884C9CDEC0 /* DungeonRushViewModel.swift in Sources */,
+				3F2D8E7A9C0B1A2F3E4D5C6A /* FortuneWheelDetailView.swift in Sources */,
+				3F2D8E7A9C0B1A2F3E4D5C6B /* FortuneWheelViewModel.swift in Sources */,
 				42A1B2C3D4E5F60DM1CF002 /* DungeonMapBuildingConfig.swift in Sources */,
 				42A1B2C3D4E5F60DM2BV002 /* DungeonMapBuildingView.swift in Sources */,
 				42A1B2C3D4E5F60DM4ED002 /* DungeonMapEditorView.swift in Sources */,
@@ -1400,7 +1416,7 @@
 				D2E4F6A8B0C2D4E6F8A0B2C4 /* ActiveQuestBanner.swift in Sources */,
 				D2E4F6A8B0C2D4E6F8A0B2C5 /* EventBannerView.swift in Sources */,
 				DE51A0F3C7B94E2A8D6F1023 /* DesignSystemPreview.swift in Sources */,
-				A1B2C3D4E5F6A7B8C9D0E1F2 /* CoinFlyAnimationView.swift in Sources */,
+				0CF8DA10FA1533C25066A655 /* CoinFlyAnimationView.swift in Sources */,
 				A2B3C4D5E6F7A8B9C0D1E2F3 /* HapticManager.swift in Sources */,
 				A3B4C5D6E7F8A9B0C1D2E3F4 /* MotionConstants.swift in Sources */,
 				A7C9D1E3F5A7B9C1D3E5F7A9 /* OrnamentalStyles.swift in Sources */,

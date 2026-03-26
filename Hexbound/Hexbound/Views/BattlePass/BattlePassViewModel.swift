@@ -58,12 +58,45 @@ final class BattlePassViewModel {
 
     func claimReward(_ reward: BPReward) async {
         guard rewardState(reward) == .claimable else { return }
+
+        // ── Optimistic UI: mark claimed instantly ──
         claimingLevel = reward.level
-        let success = await service.claimReward(level: reward.level)
-        if success {
-            await loadBattlePass()
+        if var bp = data {
+            if reward.track == "premium" {
+                if let idx = bp.premiumRewards.firstIndex(where: { $0.level == reward.level }) {
+                    bp.premiumRewards[idx].claimed = true
+                }
+            } else {
+                if let idx = bp.freeRewards.firstIndex(where: { $0.level == reward.level }) {
+                    bp.freeRewards[idx].claimed = true
+                }
+            }
+            data = bp
+            cache.cacheBattlePass(bp)
         }
         claimingLevel = nil
+        HapticManager.success()
+        appState.showToast("Reward Claimed!", type: .reward)
+
+        // ── Fire API in background, refresh for server-true state ──
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.claimReward(level: reward.level)
+            if success {
+                // Silently refresh to get accurate server state
+                if let freshData = await service.loadBattlePass() {
+                    data = freshData
+                    cache.cacheBattlePass(freshData)
+                }
+            } else {
+                // Revert: re-load from server
+                if let freshData = await service.loadBattlePass() {
+                    data = freshData
+                    cache.cacheBattlePass(freshData)
+                }
+                appState.showToast("Claim failed", subtitle: "Try again", type: .error)
+            }
+        }
     }
 
     func buyPremium() async {

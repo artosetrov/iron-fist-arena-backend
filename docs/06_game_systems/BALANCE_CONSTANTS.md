@@ -27,10 +27,10 @@
 | Dungeon Hard | 25 | Challenging |
 | Boss Fight | 40 | High-difficulty encounter |
 | Training | 5 | Low-cost practice |
-| Free PvP | 3 per match | Max 3/day (no cost) |
+| Free PvP | 5 per match | Max 5/day (no cost) |
 | Extra PvP (Gem) | +5 stamina | Purchased with 50 gems |
 
-**Free PvP System:** Players get 3 free PvP matches per day (0 stamina), then must spend stamina or gems.
+**Free PvP System:** Players get 5 free PvP matches per day (0 stamina), then must spend stamina or gems.
 
 ### Stamina Potion Types
 
@@ -49,7 +49,7 @@
 
 | Activity | Win Reward | Loss Reward | Notes |
 |----------|-----------|-----------|-------|
-| **PvP** | 150 gold | 50 gold | Standard ranked |
+| **PvP** | 200 gold | 70 gold | Standard ranked (buffed from 150/50, 2026-03-25) |
 | **Training** | 50 gold | 20 gold | Practice mode |
 
 ### PvP Gold Multipliers
@@ -60,12 +60,12 @@ Rewards scale with **character level:**
 Leveled Reward = Base × (1 + (level - 1) × 0.02)
 ```
 
-| Level | Multiplier | Example (150 base) |
+| Level | Multiplier | Example (200 base) |
 |-------|-----------|-------------------|
-| 1 | 1.00× | 150 |
-| 10 | 1.18× | 177 |
-| 25 | 1.48× | 222 |
-| 50 | 1.98× | 297 |
+| 1 | 1.00× | 200 |
+| 10 | 1.18× | 236 |
+| 25 | 1.48× | 296 |
+| 50 | 1.98× | 396 |
 
 ### Special Multipliers
 
@@ -74,7 +74,8 @@ Leveled Reward = Base × (1 + (level - 1) × 0.02)
 | **First Win of Day** | 2.0× | First PvP win daily | No |
 | **Revenge Win** | 1.5× | Beat player who beat you | No |
 | **Win Streak** | Variable | See below | Yes |
-| **CHA Bonus** | +1% per CHA | Capped 50% | Yes |
+| **CHA Bonus** | +1.5% per CHA | Uncapped | Yes |
+| **Loss Streak Recovery** | Variable | See below | Yes |
 
 ### Win Streak Bonuses
 
@@ -95,18 +96,29 @@ Gold reward multiplier based on consecutive wins:
 - CHA bonus: 180 × 1.30 = 234 gold
 - **Total: 234 gold**
 
+### Loss Streak Recovery Bonuses
+
+When a losing streak is broken by a win, bonus gold is awarded:
+
+| Streak | Multiplier | Threshold |
+|--------|-----------|-----------|
+| 0–2 | 0% | No bonus |
+| 3–4 | +30% | Breaking 3+ loss streak |
+| 5–6 | +50% | Significant recovery |
+| 7+ | +80% | Major comeback bonus |
+
 ### CHA Gold Bonus
 
-Charisma adds +1% gold per point (capped 50%):
+Charisma adds +1.5% gold per point (uncapped):
 
 ```
-Gold Bonus = Base × (1 + min(cha × 0.01, 0.50))
+Gold Bonus = Base × (1 + cha × 0.015)
 ```
 
 **Calculation:**
-- CHA 25 → +25% gold (25 × 1%)
-- CHA 50 → +50% gold (50 × 1%, capped)
-- CHA 100 → +50% gold (capped at 50%)
+- CHA 25 → +37.5% gold (25 × 1.5%)
+- CHA 50 → +75% gold (50 × 1.5%)
+- CHA 100 → +150% gold (100 × 1.5%)
 
 ---
 
@@ -275,7 +287,7 @@ Premium currency sinks:
 ### Gem Income
 
 Players earn free gems from:
-- Daily login (Day 7) = 5 gems/week
+- Daily login (Day 7) = 25 gems/week
 - Achievements = 5–50 gems per achievement
 - Battle pass free track = 50+ gems per season
 
@@ -289,12 +301,12 @@ Players earn free gems from:
 |----------|-------|---------|
 | Duration per Slot | 4 hours | Timer per active mine |
 | Max Slots | 3 | Can mine simultaneously |
-| Reward Range | 100–250 gold | Per completed slot |
+| Reward Range | 60–150 gold | Per completed slot (nerfed from 100–250, 2026-03-25) |
 | Gem Drop Chance | 10% | Per collection |
 | Gem Drop Amount | 1–3 | If gems drop |
 
 **Example (3 slots, all mining):**
-- 4 hours later → collect 3 slots → ~525 gold + (30% chance) gems
+- 4 hours later → collect 3 slots → ~315 gold + (30% chance) gems
 
 ### Boost Mechanics
 
@@ -368,9 +380,9 @@ Players earn free gems from:
 | 4 | Stamina Potions (Small) | 2 | +100 stamina |
 | 5 | Gold | 1000 | |
 | 6 | Stamina Potion (Large) | 1 | +100 stamina |
-| 7 | Gems | 5 | Premium currency |
+| 7 | Gems | 25 | Premium currency |
 
-**Weekly Total:** 1700 gold + 250 stamina + 5 gems
+**Weekly Total:** 1700 gold + 250 stamina + 25 gems
 
 ### Streak System
 
@@ -516,7 +528,7 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 - Avg: 35 gold
 
 **Gold Mine (passive):**
-- ~200 gold per 4 hours = 50 gold/hour
+- ~105 gold per 4 hours = ~26 gold/hour (nerfed from ~200/4h)
 
 ---
 
@@ -528,7 +540,7 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 2. **Gold Grinding:** 50–300 gold per match (PvP/Training)
 3. **Loot Farming:** 5–75% drop chance per difficulty
 4. **Daily Rewards:** 1700 gold + 250 stamina/week
-5. **Gold Mine:** 100–250 gold per 4 hours
+5. **Gold Mine:** 60–150 gold per 4 hours (nerfed 2026-03-25)
 
 ### Pay-to-Accelerate Options
 

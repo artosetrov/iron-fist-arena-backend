@@ -8,6 +8,7 @@ struct CharacterSelectionView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var vm = CharacterSelectionViewModel()
     @State private var enterPressed = false
+    @State private var enterGlow = false
 
     var body: some View {
         @Bindable var state = appState
@@ -42,6 +43,11 @@ struct CharacterSelectionView: View {
                     contentArea
                     bottomCTA
                 }
+
+                // Enter Game overlay
+                if enterPressed {
+                    enterGameOverlay
+                }
             }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
@@ -52,7 +58,19 @@ struct CharacterSelectionView: View {
             }
         }
         .task {
+            // Load skins early so AvatarImageView can resolve portraits
+            if cache.skins.isEmpty {
+                if let response: AppearancesResponse = try? await APIClient.shared.get(APIEndpoints.appearances) {
+                    cache.cacheSkins(response.skins)
+                }
+            }
             await vm.loadCharacters()
+        }
+        .onChange(of: appState.authPath.count) { oldCount, newCount in
+            // Refresh character list when returning from onboarding (new hero created)
+            if newCount == 0 && oldCount > 0 {
+                Task { await vm.loadCharacters() }
+            }
         }
     }
 
@@ -365,6 +383,56 @@ struct CharacterSelectionView: View {
             Spacer()
         }
     }
+
+    // MARK: - Enter Game Overlay
+
+    private var enterGameOverlay: some View {
+        ZStack {
+            DarkFantasyTheme.bgAbyss.opacity(0.85)
+                .ignoresSafeArea()
+
+            VStack(spacing: LayoutConstants.spaceMD) {
+                Image(systemName: "door.left.hand.open")
+                    .font(.system(size: 48))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .opacity(enterGlow ? 1.0 : 0.4)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(enterGlow ? 0.6 : 0.1), radius: enterGlow ? 16 : 4)
+
+                Text("Entering the Realm...")
+                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+
+                Text("Preparing your adventure...")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
+            .padding(LayoutConstants.spaceLG)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.gold.opacity(0.15),
+                    glowIntensity: 0.5,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
+            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
+            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+        }
+        .transition(.opacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                enterGlow = true
+            }
+        }
+        .onDisappear {
+            enterGlow = false
+        }
+    }
 }
 
 // MARK: - Hero Selection Card (Arena-Style)
@@ -557,8 +625,8 @@ struct HeroSelectionCard: View {
 
             // Glass stat pills
             HStack(spacing: 4) {
-                glassStatPill(value: "\(character.strength)", label: "ATK", color: DarkFantasyTheme.danger)
-                glassStatPill(value: "\(character.vitality)", label: "DEF", color: DarkFantasyTheme.info)
+                glassStatPill(value: "\(character.strength ?? 0)", label: "ATK", color: DarkFantasyTheme.danger)
+                glassStatPill(value: "\(character.vitality ?? 0)", label: "DEF", color: DarkFantasyTheme.info)
                 glassStatPill(value: "Lv.\(character.level)", label: "Level", color: DarkFantasyTheme.gold)
             }
         }

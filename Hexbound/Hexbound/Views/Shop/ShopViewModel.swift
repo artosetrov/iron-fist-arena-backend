@@ -151,24 +151,43 @@ final class ShopViewModel {
             return
         }
 
-        buyingOfferId = offer.id
-        do {
-            let response: OfferPurchaseResponse = try await APIClient.shared.post(
-                APIEndpoints.shopOffers,
-                body: ["character_id": charId, "offer_id": offer.id]
-            )
-            if response.success {
-                HapticManager.success()
-                appState.currentCharacter?.gold = response.gold
-                appState.currentCharacter?.gems = response.gems
-                appState.showToast("Purchased \(offer.title)!", type: .reward)
-                // Refresh offers to update purchase counts
-                await loadOffers()
-            }
-        } catch {
-            appState.showToast("Purchase failed", type: .error)
+        // ── Optimistic UI: deduct currency instantly ──
+        let savedGold = appState.currentCharacter?.gold ?? 0
+        let savedGems = appState.currentCharacter?.gems ?? 0
+
+        if offer.isGemPurchase {
+            appState.currentCharacter?.gems = savedGems - offer.salePrice
+        } else {
+            appState.currentCharacter?.gold = savedGold - offer.salePrice
         }
+        HapticManager.success()
+        appState.showToast("Purchased \(offer.title)!", type: .reward)
         buyingOfferId = nil
+
+        // ── Fire API in background ──
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let response: OfferPurchaseResponse = try await APIClient.shared.post(
+                    APIEndpoints.shopOffers,
+                    body: ["character_id": charId, "offer_id": offer.id]
+                )
+                if response.success {
+                    appState.currentCharacter?.gold = response.gold
+                    appState.currentCharacter?.gems = response.gems
+                    await loadOffers()
+                } else {
+                    // Revert
+                    appState.currentCharacter?.gold = savedGold
+                    appState.currentCharacter?.gems = savedGems
+                    appState.showToast("Purchase failed", type: .error)
+                }
+            } catch {
+                appState.currentCharacter?.gold = savedGold
+                appState.currentCharacter?.gems = savedGems
+                appState.showToast("Purchase failed", type: .error)
+            }
+        }
     }
 
     // MARK: - Selection
@@ -242,42 +261,61 @@ final class ShopViewModel {
             return
         }
 
-        buyingItemId = item.id
+        // ── Optimistic UI: update instantly ──
+        let savedGold = appState.currentCharacter?.gold ?? 0
+        let savedGems = appState.currentCharacter?.gems ?? 0
+        let savedItems = items
 
-        let success: Bool
-        let ct = item.consumableType ?? item.catalogId ?? ""
-        if ct.hasPrefix("gem_pack_") {
-            // Gem packs use the buy-gems endpoint
-            let gemsAmount: Int
-            switch ct {
-            case "gem_pack_small": gemsAmount = 10
-            case "gem_pack_medium": gemsAmount = 50
-            case "gem_pack_large": gemsAmount = 100
-            default: gemsAmount = 10
-            }
-            success = await service.buyGems(gemsAmount: gemsAmount)
-        } else if item.isConsumable, !ct.isEmpty {
-            success = await service.buyConsumable(consumableType: ct)
+        // Deduct currency optimistically
+        if item.isGemPurchase {
+            appState.currentCharacter?.gems = savedGems - item.gemPrice
         } else {
-            let catalogId = item.catalogId ?? item.id
-            success = await service.buy(catalogId: catalogId)
+            appState.currentCharacter?.gold = savedGold - item.goldPrice
         }
 
-        buyingItemId = nil
-        if success {
-            // Haptic celebration
-            HapticManager.success()
+        // Remove from list immediately (equipment only)
+        if !item.isConsumable {
+            items.removeAll { $0.id == item.id }
+        }
 
-            // Consumables stay available — only equipment disappears
-            if !item.isConsumable {
-                items.removeAll { $0.id == item.id }
+        HapticManager.success()
+        showItemDetail = false
+        selectedItem = nil
+        lastPurchasedItemId = item.id
+        appState.showToast("Purchased \(item.itemName)!", type: .reward)
+        appState.invalidateCache("inventory")
+        appState.invalidateCache("quests")
+
+        // ── Fire API in background ──
+        buyingItemId = nil
+        let ct = item.consumableType ?? item.catalogId ?? ""
+        Task { [weak self] in
+            guard let self else { return }
+            let success: Bool
+            if ct.hasPrefix("gem_pack_") {
+                let gemsAmount: Int
+                switch ct {
+                case "gem_pack_small": gemsAmount = 10
+                case "gem_pack_medium": gemsAmount = 50
+                case "gem_pack_large": gemsAmount = 100
+                default: gemsAmount = 10
+                }
+                success = await service.buyGems(gemsAmount: gemsAmount)
+            } else if item.isConsumable, !ct.isEmpty {
+                success = await service.buyConsumable(consumableType: ct)
+            } else {
+                let catalogId = item.catalogId ?? item.id
+                success = await service.buy(catalogId: catalogId)
             }
-            showItemDetail = false
-            selectedItem = nil
-            lastPurchasedItemId = item.id
-            appState.showToast("Purchased \(item.itemName)!", type: .reward)
-            appState.invalidateCache("inventory")
-            appState.invalidateCache("quests")
+
+            if !success {
+                // Revert optimistic state
+                appState.currentCharacter?.gold = savedGold
+                appState.currentCharacter?.gems = savedGems
+                items = savedItems
+                lastPurchasedItemId = nil
+                appState.showToast("Purchase failed", subtitle: "Gold refunded", type: .error)
+            }
         }
     }
 }

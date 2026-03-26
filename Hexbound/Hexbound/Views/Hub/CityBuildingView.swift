@@ -7,6 +7,8 @@ struct CityBuildingView: View {
     let terrainSize: CGSize
     let onTap: (CityBuilding) -> Void
     var badge: String? = nil
+    /// When true, only render the sprite (no label). Used for z-order separation.
+    var spriteOnly: Bool = false
 
     @State private var isPressed = false
     @State private var showLabel = false
@@ -24,9 +26,11 @@ struct CityBuildingView: View {
         let posY = terrainSize.height * building.relativeY
 
         VStack(spacing: LayoutConstants.spaceXS) {
-            // Label above building (always visible)
-            CityBuildingLabel(text: building.label, visible: true, badge: badge)
-                .offset(y: building.labelYOffset * terrainSize.height)
+            if !spriteOnly {
+                // Label above building (always visible, lowered 10px closer to building)
+                CityBuildingLabel(text: building.label, visible: true, badge: badge)
+                    .offset(y: building.labelYOffset * terrainSize.height + 10)
+            }
 
             // Building sprite
             buildingImage

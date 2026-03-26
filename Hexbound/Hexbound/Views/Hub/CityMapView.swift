@@ -56,7 +56,7 @@ struct CityMapView: View {
                         // Layer 2: Lantern glow effects
                         LanternGlowLayer(terrainSize: terrainSize)
 
-                        // Layer 3: Buildings
+                        // Layer 3: Building sprites (images only, no labels)
                         let layoutOverrides = cache.hubLayout
                         let buildings = applyOverrides(layoutOverrides)
                         ForEach(buildings) { building in
@@ -73,9 +73,28 @@ struct CityMapView: View {
                                         )
                                     }
                                 },
-                                badge: badgeFor(building)
+                                badge: badgeFor(building),
+                                spriteOnly: true
                             )
                             .id(building.id)
+                        }
+
+                        // Layer 3.5: Building labels (rendered ABOVE all sprites to prevent overlap)
+                        ForEach(buildings) { building in
+                            let posX = terrainSize.width * building.relativeX
+                            let posY = terrainSize.height * building.relativeY
+                            let bHeight = terrainSize.height * building.relativeSize
+                            CityBuildingLabel(
+                                text: building.label,
+                                visible: true,
+                                badge: badgeFor(building)
+                            )
+                            .position(
+                                x: posX,
+                                y: posY - bHeight / 2 - LayoutConstants.spaceXS + building.labelYOffset * terrainSize.height + 10
+                            )
+                            .allowsHitTesting(false)
+                            .id("\(building.id)-label")
                         }
 
                         // Layer 4: Fog at bottom
@@ -93,6 +112,7 @@ struct CityMapView: View {
                         .frame(width: terrainWidth, height: viewHeight)
                     }
                     .frame(width: terrainWidth, height: viewHeight)
+                    .drawingGroup() // Flatten entire map to Metal texture — major GPU win
                     .background(ScrollBounceDisabler())
                     .background(
                         GeometryReader { innerGeo in
@@ -162,6 +182,19 @@ struct CityMapView: View {
             let total = cache.socialStatus?.totalBadge ?? 0
             guard total > 0 else { return nil }
             return "\(total)"
+
+        // Dungeon — total bosses remaining across all dungeons
+        case "dungeon":
+            guard let dungeons = cache.cachedDungeonList(), !dungeons.isEmpty else { return nil }
+            let progress = cache.dungeonProgress
+            var totalRemaining = 0
+            for dungeon in dungeons {
+                let defeated = progress[dungeon.id] ?? 0
+                let remaining = max(0, dungeon.totalBosses - defeated)
+                totalRemaining += remaining
+            }
+            guard totalRemaining > 0 else { return nil }
+            return "⚔ \(totalRemaining)"
 
         default:
             return nil
@@ -260,6 +293,11 @@ struct SkyObjectView: View {
                     drift = drift > 0 ? -object.driftRange : object.driftRange
                 }
             }
+        }
+        .onDisappear {
+            // Stop animation drivers when off-screen
+            shimmer = 0.7
+            drift = 0
         }
     }
 }

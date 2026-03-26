@@ -32,24 +32,32 @@ final class DailyLoginPopupViewModel {
         let currentDay = loginData?.currentDay ?? 0
         isClaiming = true
 
-        // Start claim animation
+        // Optimistic UI: show claimed state INSTANTLY
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             claimedDayBounce = currentDay
             showClaimParticles = true
-        }
-
-        let updatedData = await service.claimReward()
-        isClaiming = false
-        if let data = updatedData {
-            loginData = data
             hasClaimed = true
-            appState.dailyLoginCanClaim = false
         }
+        isClaiming = false
+        appState.dailyLoginCanClaim = false
 
-        // Reset bounce after delay
-        try? await Task.sleep(for: .seconds(1.5))
-        withAnimation {
-            showClaimParticles = false
+        // Fire API in background — don't block UI
+        Task {
+            let updatedData = await service.claimReward()
+            if let data = updatedData {
+                loginData = data
+            } else {
+                // Revert on failure
+                hasClaimed = false
+                appState.dailyLoginCanClaim = true
+                appState.showToast("Claim failed", subtitle: "Try again", type: .error)
+            }
+
+            // Reset particles after animation
+            try? await Task.sleep(for: .seconds(1.0))
+            withAnimation {
+                showClaimParticles = false
+            }
         }
     }
 

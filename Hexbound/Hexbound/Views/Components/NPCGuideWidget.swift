@@ -87,12 +87,13 @@ struct NPCGuideWidget: View {
 
     @ViewBuilder
     private var speechCard: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
+        ZStack(alignment: .topTrailing) {
             VStack(alignment: .leading, spacing: 4) {
                 // NPC title (gold)
                 Text(npcTitle.uppercased())
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .padding(.trailing, 32) // space for X button
 
                 // Message text
                 Group {
@@ -115,28 +116,41 @@ struct NPCGuideWidget: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Dismiss X button
+            // Dismiss X button — top-right corner
             Button {
                 onDismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle()
+                            .fill(DarkFantasyTheme.bgTertiary.opacity(0.6))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(DarkFantasyTheme.borderSubtle.opacity(0.4), lineWidth: 1)
+                    )
             }
-            .buttonStyle(.closeButton)
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, LayoutConstants.npcBarPaddingH)
         .padding(.vertical, LayoutConstants.npcBarPaddingV)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius)
-                .fill(DarkFantasyTheme.bgElevated.opacity(0.95))
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.npcBarRadius
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius)
-                .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 1)
-        )
+        .surfaceLighting(cornerRadius: LayoutConstants.npcBarRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.npcBarRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
         .contentShape(RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius))
         .onTapGesture {
             onTapCard?()

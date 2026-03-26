@@ -154,7 +154,11 @@ final class ArenaViewModel {
     }
 
     func loadAll() async {
-        await loadOpponents()
+        // Parallel load all tabs — no waterfall
+        async let opponentsTask: () = loadOpponents()
+        async let revengeTask: () = loadRevenge()
+        async let historyTask: () = loadHistory()
+        _ = await (opponentsTask, revengeTask, historyTask)
     }
 
     func loadTabData() async {

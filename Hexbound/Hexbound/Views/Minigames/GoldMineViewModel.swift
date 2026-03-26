@@ -79,14 +79,37 @@ final class GoldMineViewModel {
 
     func collect(slotIndex: Int) async {
         guard let charId = appState.currentCharacter?.id else { return }
-        actionSlotId = "\(slotIndex)"
 
+        // Optimistic: update UI immediately
+        let savedSlots = slots
+        let savedGold = appState.currentCharacter?.gold
+        // Estimate collected gold from slot data
+        let estimatedGold: Int = {
+            guard let slot = slots[safe: slotIndex] as? [String: Any] else { return 0 }
+            return slot["gold_accumulated"] as? Int ?? slot["gold_mined"] as? Int ?? 50
+        }()
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            // Mark slot as mining (reset status)
+            if var slot = (slots[safe: slotIndex] as? [String: Any]) {
+                slot["status"] = "mining"
+                slot["gold_accumulated"] = 0
+                slot["gold_mined"] = 0
+                slots[slotIndex] = slot
+            }
+            appState.currentCharacter?.gold = (savedGold ?? 0) + estimatedGold
+            actionSlotId = nil
+        }
+        HapticManager.success()
+        appState.showToast("Collected \(estimatedGold) gold!", type: .reward)
+
+        // Background: actual API call
         do {
             let data = try await APIClient.shared.postRaw(
                 APIEndpoints.goldMineCollect,
                 body: ["character_id": charId, "slot_index": slotIndex]
             )
-            let collected = data["gold_collected"] as? Int ?? 0
+            // Update with real server values
             withAnimation(.easeInOut(duration: 0.3)) {
                 if let updatedSlots = data["slots"] as? [[String: Any]] {
                     slots = updatedSlots
@@ -94,12 +117,14 @@ final class GoldMineViewModel {
                 if let newGold = data["gold"] as? Int {
                     appState.currentCharacter?.gold = newGold
                 }
-                actionSlotId = nil
             }
-            appState.showToast("Collected \(collected) gold!", type: .reward)
             appState.invalidateCache("quests")
         } catch {
-            withAnimation { actionSlotId = nil }
+            // Revert on failure
+            withAnimation {
+                slots = savedSlots
+                appState.currentCharacter?.gold = savedGold ?? 0
+            }
             appState.showToast("Failed to collect", subtitle: "Check connection and try again", type: .error)
         }
     }

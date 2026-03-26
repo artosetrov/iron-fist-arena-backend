@@ -38,14 +38,18 @@ struct OpponentIntegratedCard: View {
                 .padding(LayoutConstants.heroCardPadding)
         }
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.heroCardRadius)
-                .fill(DarkFantasyTheme.bgCardGradient)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.heroCardRadius
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.heroCardRadius)
-                .stroke(DarkFantasyTheme.bgCardBorder, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroCardRadius))
+        .surfaceLighting(cornerRadius: LayoutConstants.heroCardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.heroCardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
     // MARK: - Equipment Grid

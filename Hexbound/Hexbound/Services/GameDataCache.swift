@@ -61,6 +61,10 @@ final class GameDataCache {
     private(set) var matchHistory: [MatchHistory] = []
     private var historyFetchedAt: Date?
 
+    private(set) var dailyQuests: [Quest] = []
+    private(set) var dailyBonusClaimed: Bool = false
+    private var dailyQuestsFetchedAt: Date?
+
     private(set) var socialStatus: SocialStatus?
     private var socialStatusFetchedAt: Date?
 
@@ -260,6 +264,7 @@ final class GameDataCache {
     private let battlePassTTL: TimeInterval = 120
     private let dungeonTTL: TimeInterval = 60
     private let goldMineTTL: TimeInterval = 15
+    private let dailyQuestsTTL: TimeInterval = 60
     private let revengeTTL: TimeInterval = 30
     private let historyTTL: TimeInterval = 60
 
@@ -408,6 +413,25 @@ final class GameDataCache {
         goldMineFetchedAt = nil
     }
 
+    // MARK: - Daily Quests Cache
+
+    func cachedDailyQuests() -> (quests: [Quest], bonusClaimed: Bool)? {
+        guard let fetchedAt = dailyQuestsFetchedAt,
+              Date().timeIntervalSince(fetchedAt) < dailyQuestsTTL,
+              !dailyQuests.isEmpty else { return nil }
+        return (dailyQuests, dailyBonusClaimed)
+    }
+
+    func cacheDailyQuests(_ quests: [Quest], bonusClaimed: Bool) {
+        dailyQuests = quests
+        dailyBonusClaimed = bonusClaimed
+        dailyQuestsFetchedAt = Date()
+    }
+
+    func invalidateDailyQuests() {
+        dailyQuestsFetchedAt = nil
+    }
+
     // MARK: - Revenge Cache
 
     func cachedRevenge() -> [RevengeEntry]? {
@@ -473,6 +497,9 @@ final class GameDataCache {
         dungeonListFetchedAt = nil
         goldMineSlots = []
         goldMineFetchedAt = nil
+        dailyQuests = []
+        dailyBonusClaimed = false
+        dailyQuestsFetchedAt = nil
         revengeList = []
         revengeFetchedAt = nil
         matchHistory = []

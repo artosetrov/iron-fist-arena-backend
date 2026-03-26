@@ -77,7 +77,7 @@ struct CoinFlyAnimationView: View {
                     height: CGFloat.random(in: -8...8)
                 ),
                 size: CGFloat.random(in: style.sizeRange),
-                color: style.colors.randomElement()!
+                color: style.colors.randomElement() ?? DarkFantasyTheme.gold
             )
         }
     }

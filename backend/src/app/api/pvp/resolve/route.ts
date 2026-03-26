@@ -17,6 +17,7 @@ import {
 import {
   chaGoldBonus,
   streakGoldMultiplier,
+  lossStreakGoldMultiplier,
   levelScaledReward,
 } from '@/lib/game/balance'
 import { applyLevelUp } from '@/lib/game/progression'
@@ -186,6 +187,11 @@ export async function POST(req: NextRequest) {
       const streakBonus = streakGoldMultiplier(attacker.pvpWinStreak + 1)
       if (streakBonus > 0) {
         goldReward = Math.floor(goldReward * (1 + streakBonus))
+      }
+      // Loss streak recovery bonus — reward players who break a losing streak
+      const lossStreakBonus = lossStreakGoldMultiplier(attacker.pvpLossStreak)
+      if (lossStreakBonus > 0) {
+        goldReward = Math.floor(goldReward * (1 + lossStreakBonus))
       }
     }
 

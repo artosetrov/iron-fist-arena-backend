@@ -629,26 +629,61 @@ struct FirstWinBonusCard: View {
             HapticManager.medium()
             appState.mainPath.append(AppRoute.arena)
         } label: {
-            HStack(spacing: LayoutConstants.spaceMS) {
-                Image("reward-first-win")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 36, height: 36)
+            VStack(spacing: LayoutConstants.spaceSM) {
+                // Title row
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image("reward-first-win")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 28, height: 28)
 
-                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                     Text("FIRST WIN BONUS")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                        .foregroundStyle(DarkFantasyTheme.success)
-                    Text("Win a PvP match for ×2 Gold & ×2 XP")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: LayoutConstants.textLabel, weight: .semibold))
+                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
                 }
 
-                Spacer()
+                // Reward pills row
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    // Gold reward pill
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image("icon-gold")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
+                        Text("×2 Gold")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                    }
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceXS)
+                    .background(DarkFantasyTheme.gold.opacity(0.12))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1))
 
-                Image(systemName: "chevron.right")
-                    .font(.system(size: LayoutConstants.textBody, weight: .semibold))
-                    .foregroundStyle(DarkFantasyTheme.success.opacity(0.7))
+                    // XP reward pill
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image("icon-xp")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
+                        Text("×2 XP")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                    }
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceXS)
+                    .background(DarkFantasyTheme.gold.opacity(0.12))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1))
+
+                    Spacer()
+                }
             }
             .padding(LayoutConstants.bannerPadding)
             .background(
@@ -660,17 +695,17 @@ struct FirstWinBonusCard: View {
                 )
             )
             .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
-            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.success.opacity(0.12))
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.12))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.success.opacity(0.6), lineWidth: 1.5)
+                    .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1.5)
             )
-            .cornerBrackets(color: DarkFantasyTheme.success.opacity(0.6), length: 14, thickness: 1.5)
-            .cornerDiamonds(color: DarkFantasyTheme.success.opacity(0.5), size: 5)
-            .shadow(color: DarkFantasyTheme.success.opacity(0.15), radius: 8, y: 2)
+            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.6), length: 14, thickness: 1.5)
+            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.5), size: 5)
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.15), radius: 8, y: 2)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
-            .glowPulse(color: DarkFantasyTheme.success, intensity: 0.4)
-            .shimmer(color: DarkFantasyTheme.success.opacity(0.3), duration: 5)
+            .glowPulse(color: DarkFantasyTheme.gold, intensity: 0.4)
+            .shimmer(color: DarkFantasyTheme.gold.opacity(0.3), duration: 5)
         }
         .buttonStyle(.plain)
     }
@@ -852,6 +887,9 @@ struct FloatingActionIcon: View {
                     badgePulse = true
                 }
             }
+        }
+        .onDisappear {
+            badgePulse = false
         }
     }
 }

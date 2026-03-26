@@ -131,7 +131,7 @@ struct CombatResultDetailView: View {
             }))
             // Send message to opponent after PvP
             if let enemy = combatData?.enemy {
-                buttons.append(ResultButton(title: "SEND MESSAGE", icon: "envelope.fill", style: .ghost, action: {
+                buttons.append(ResultButton(title: "SEND MESSAGE", icon: "envelope.fill", style: .secondary, action: {
                     let enemyId = enemy.id
                     let enemyName = enemy.characterName
                     appState.combatData = nil

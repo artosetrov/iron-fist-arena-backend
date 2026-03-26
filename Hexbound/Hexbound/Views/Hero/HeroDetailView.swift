@@ -158,7 +158,7 @@ struct HeroDetailView: View {
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                             .foregroundStyle(selectedTab == tab ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary)
 
-                        // Stat points badge on STATUS tab (gold capsule, matches avatar badge)
+                        // Stat points badge on STATUS tab (gold capsule, pulsing glow)
                         if tab == .stats && statPoints > 0 {
                             Text("+\(statPoints)")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
@@ -174,9 +174,17 @@ struct HeroDetailView: View {
                                         .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5)
                                 )
                                 .shadow(
-                                    color: DarkFantasyTheme.goldBright.opacity(0.6),
-                                    radius: 6
+                                    color: DarkFantasyTheme.goldBright.opacity(statsBadgePulse ? 0.8 : 0.2),
+                                    radius: statsBadgePulse ? 10 : 4
                                 )
+                                .onAppear {
+                                    withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                                        statsBadgePulse = true
+                                    }
+                                }
+                                .onDisappear {
+                                    statsBadgePulse = false
+                                }
                                 .accessibilityLabel("\(statPoints) stat points available")
                         }
                     }
@@ -321,14 +329,7 @@ struct HeroDetailView: View {
             // Stat Points Banner (unified component)
             VStack(spacing: LayoutConstants.spaceSM) {
                 if vm.availablePoints > 0 {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        StatPointsBadge(points: vm.availablePoints, style: .banner)
-                        if vm.hasChanges {
-                            Text("(\(vm.pointsSpent) spent)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        }
-                    }
+                    StatPointsBadge(points: vm.availablePoints, style: .banner)
                 }
 
                 // Grouped Stats
@@ -428,14 +429,14 @@ struct HeroDetailView: View {
                 if delta > 0 {
                     Button { HapticManager.light(); vm.decrement(stat) } label: {
                         Image(systemName: "minus")
-                            .font(.system(size: 13, weight: .bold)) // SF Symbol
+                            .font(.system(size: 15, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.danger)
-                            .frame(width: 32, height: 32)
+                            .frame(width: 36, height: 36)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
-                    .buttonStyle(.scalePress)
-                    .frame(width: 44, height: 44)
+                    .buttonStyle(.plain)
+                    .frame(width: 48, height: 48)
                     .contentShape(Rectangle())
                     .accessibilityLabel("Decrease \(stat.fullName)")
                 }
@@ -444,22 +445,22 @@ struct HeroDetailView: View {
                 NumberTickUpText(
                     value: value,
                     color: delta > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textPrimary,
-                    font: DarkFantasyTheme.section(size: LayoutConstants.textCard)
+                    font: DarkFantasyTheme.section(size: LayoutConstants.textSection)
                 )
-                .frame(minWidth: 28, alignment: .trailing)
+                .frame(minWidth: 36, alignment: .trailing)
 
                 // Plus button
                 if hasPoints {
                     Button { HapticManager.selection(); vm.increment(stat) } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .bold)) // SF Symbol
+                            .font(.system(size: 15, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .frame(width: 32, height: 32)
+                            .frame(width: 36, height: 36)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
-                    .buttonStyle(.scalePress)
-                    .frame(width: 44, height: 44)
+                    .buttonStyle(.plain)
+                    .frame(width: 48, height: 48)
                     .contentShape(Rectangle())
                     .disabled(vm.availablePoints <= 0)
                     .accessibilityLabel("Increase \(stat.fullName)")
@@ -932,16 +933,12 @@ struct HeroDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Header + count
             HStack(spacing: LayoutConstants.spaceSM) {
-                Text("INVENTORY")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                Spacer()
                 CurrencyDisplay(
                     gold: vm.gold,
                     gems: appState.currentCharacter?.gems ?? 0,
                     animated: false
                 )
-                Text("·").foregroundStyle(DarkFantasyTheme.textTertiary)
+                Spacer()
                 Text("\(vm.items.count) items")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)

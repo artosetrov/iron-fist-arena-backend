@@ -29,92 +29,142 @@ struct ArenaDetailView: View {
             DarkFantasyTheme.bgBackdrop
                 .ignoresSafeArea()
 
+            Group {
             if let vm {
-                VStack(spacing: 0) {
-                    // Screen title — sticky above tabs
-                    OrnamentalTitle("ARENA", accentColor: DarkFantasyTheme.danger)
-                        .padding(.top, LayoutConstants.spaceXS)
-                        .padding(.bottom, LayoutConstants.spaceXS)
+                ZStack {
+                    VStack(spacing: 0) {
+                        // Screen title — sticky above tabs
+                        OrnamentalTitle("ARENA", accentColor: DarkFantasyTheme.danger)
+                            .padding(.top, LayoutConstants.spaceXS)
+                            .padding(.bottom, LayoutConstants.spaceXS)
 
-                    // Tab Switcher — sticky
-                    TabSwitcher(
-                        tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
-                        selectedIndex: Binding(
-                            get: { vm.selectedTab },
-                            set: { newValue in
-                                vm.selectedTab = newValue
-                                Task { await vm.loadTabData() }
-                            }
+                        // Tab Switcher — sticky
+                        TabSwitcher(
+                            tabs: ["OPPONENTS", "REVENGE", "HISTORY"],
+                            selectedIndex: Binding(
+                                get: { vm.selectedTab },
+                                set: { newValue in
+                                    vm.selectedTab = newValue
+                                    Task { await vm.loadTabData() }
+                                }
+                            )
                         )
-                    )
-                    .accessibilityLabel("Arena tabs")
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceSM)
+                        .accessibilityLabel("Arena tabs")
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceSM)
 
-                    // Scrollable content
-                    ScrollView {
-                        VStack(spacing: LayoutConstants.sectionGap) {
-                            // Active quest banner
-                            ActiveQuestBanner(questTypes: ["pvp_wins"])
-                                .padding(.horizontal, LayoutConstants.screenPadding)
-
-                            // Unified Hero Widget
-                            if let char = appState.currentCharacter {
-                                UnifiedHeroWidget(
-                                    character: char,
-                                    context: .arena,
-                                    onTap: { appState.mainPath.append(AppRoute.hero) }
-                                )
-                                .padding(.horizontal, LayoutConstants.screenPadding)
-
-                                // PvP Stats Bar — rating, streak, first win
-                                arenaPvpStatsBar(char)
+                        // Scrollable content
+                        ScrollView {
+                            VStack(spacing: LayoutConstants.sectionGap) {
+                                // Active quest banner
+                                ActiveQuestBanner(questTypes: ["pvp_wins"])
                                     .padding(.horizontal, LayoutConstants.screenPadding)
-                            }
 
-                            // Low HP potion banner — shown when HP < 30%
-                            if let currentChar = appState.currentCharacter,
-                               LowHPPotionBanner.shouldShow(character: currentChar) {
-                                LowHPPotionBanner(
-                                    character: currentChar,
-                                    hasHealthPotion: hasHealthPotion,
-                                    onDrinkPotion: {
-                                        Task { await useHealthPotion() }
-                                    },
-                                    onGoToShop: {
-                                        appState.shopInitialTab = 3 // Potions tab
-                                        appState.mainPath.append(AppRoute.shop)
+                                // Unified Hero Widget
+                                if let char = appState.currentCharacter {
+                                    UnifiedHeroWidget(
+                                        character: char,
+                                        context: .arena,
+                                        onTap: { appState.mainPath.append(AppRoute.hero) }
+                                    )
+                                    .padding(.horizontal, LayoutConstants.screenPadding)
+
+                                    // PvP Stats Bar — rating, streak, first win
+                                    arenaPvpStatsBar(char)
+                                        .padding(.horizontal, LayoutConstants.screenPadding)
+                                }
+
+                                // Low HP potion banner — shown when HP < 30%
+                                if let currentChar = appState.currentCharacter,
+                                   LowHPPotionBanner.shouldShow(character: currentChar) {
+                                    LowHPPotionBanner(
+                                        character: currentChar,
+                                        hasHealthPotion: hasHealthPotion,
+                                        onDrinkPotion: {
+                                            Task { await useHealthPotion() }
+                                        },
+                                        onGoToShop: {
+                                            appState.shopInitialTab = 3 // Potions tab
+                                            appState.mainPath.append(AppRoute.shop)
+                                        }
+                                    )
+                                    .padding(.horizontal, LayoutConstants.screenPadding)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                                }
+
+                                // Current stance indicator
+                                if let stance = appState.currentCharacter?.combatStance {
+                                    stancePreview(stance)
+                                        .tutorialAnchor(.arenaStance)
+                                }
+
+                                // Tab Content
+                                switch vm.selectedTab {
+                                case 0: opponentsTab(vm)
+                                case 1: revengeTab(vm)
+                                case 2: historyTab(vm)
+                                default: EmptyView()
+                                }
+
+                                Spacer().frame(height: LayoutConstants.spaceLG)
+                            }
+                        }
+
+                        // Refresh button pinned to bottom
+                        if vm.selectedTab == 0 && !vm.opponents.isEmpty {
+                            refreshButton(vm)
+                                .padding(.bottom, LayoutConstants.spaceSM)
+                        }
+                    } // VStack
+
+                    // NPC Guide Widget — player's own avatar as arena coach
+                    if showArenaGuide, let char = appState.currentCharacter {
+                        VStack {
+                            Spacer()
+                            NPCGuideWidget(
+                                npcTitle: "Arena Master",
+                                onDismiss: {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        showArenaGuide = false
+                                    }
+                                    arenaGuideDismissed = true
+                                },
+                                avatarSkinKey: char.avatar,
+                                avatarClass: char.characterClass,
+                                plainMessage: "Your stance affects attack and defense zones. Tap to change it before battle.",
+                                onTapCard: {
+                                    appState.mainPath.append(AppRoute.stanceSelector)
+                                }
+                            )
+                            .padding(.horizontal, LayoutConstants.npcOuterPadding)
+                            .padding(.bottom, LayoutConstants.npcOuterPadding)
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    // Collapsed NPC mini avatar
+                    if showArenaGuideMini, let char = appState.currentCharacter {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                NPCMiniButton(
+                                    avatarSkinKey: char.avatar,
+                                    avatarClass: char.characterClass,
+                                    onTap: {
+                                        withAnimation(.easeOut(duration: 0.3)) {
+                                            showArenaGuideMini = false
+                                            showArenaGuide = true
+                                        }
                                     }
                                 )
-                                .padding(.horizontal, LayoutConstants.screenPadding)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                                .padding(.leading, LayoutConstants.screenPadding)
+                                .padding(.bottom, LayoutConstants.spaceMD)
+                                Spacer()
                             }
-
-                            // Current stance indicator
-                            if let stance = appState.currentCharacter?.combatStance {
-                                stancePreview(stance)
-                                    .tutorialAnchor(.arenaStance)
-                            }
-
-                            // Tab Content
-                            switch vm.selectedTab {
-                            case 0: opponentsTab(vm)
-                            case 1: revengeTab(vm)
-                            case 2: historyTab(vm)
-                            default: EmptyView()
-                            }
-
-                            Spacer().frame(height: LayoutConstants.spaceLG)
                         }
+                        .transition(.scale.combined(with: .opacity))
                     }
-
-                    // Refresh button pinned to bottom
-                    if vm.selectedTab == 0 && !vm.opponents.isEmpty {
-                        refreshButton(vm)
-                            .padding(.bottom, LayoutConstants.spaceSM)
-                    }
-                } // VStack
-                .transaction { $0.animation = nil }
+                } // ZStack
                 .sheet(isPresented: Binding(
                     get: { vm.showComparison },
                     set: { vm.showComparison = $0 }
@@ -132,55 +182,26 @@ struct ArenaDetailView: View {
                         )
                     }
                 }
-            }
+            } else {
+                // Skeleton placeholder — shown only while vm is nil
+                VStack(spacing: 0) {
+                    OrnamentalTitle("ARENA", accentColor: DarkFantasyTheme.danger)
+                        .padding(.top, LayoutConstants.spaceXS)
+                        .padding(.bottom, LayoutConstants.spaceXS)
 
-            // NPC Guide Widget — player's own avatar as arena coach
-            if showArenaGuide, let char = appState.currentCharacter {
-                VStack {
-                    Spacer()
-                    NPCGuideWidget(
-                        npcTitle: "Arena Master",
-                        onDismiss: {
-                            withAnimation(.easeOut(duration: 0.2)) {
-                                showArenaGuide = false
+                    ScrollView {
+                        VStack(spacing: LayoutConstants.sectionGap) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                SkeletonOpponentCard()
                             }
-                            arenaGuideDismissed = true
-                        },
-                        avatarSkinKey: char.avatar,
-                        avatarClass: char.characterClass,
-                        plainMessage: "Your stance affects attack and defense zones. Tap to change it before battle.",
-                        onTapCard: {
-                            appState.mainPath.append(AppRoute.stanceSelector)
                         }
-                    )
-                    .padding(.horizontal, LayoutConstants.npcOuterPadding)
-                    .padding(.bottom, LayoutConstants.npcOuterPadding)
-                }
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-
-            // Collapsed NPC mini avatar
-            if showArenaGuideMini, let char = appState.currentCharacter {
-                VStack {
-                    Spacer()
-                    HStack {
-                        NPCMiniButton(
-                            avatarSkinKey: char.avatar,
-                            avatarClass: char.characterClass,
-                            onTap: {
-                                withAnimation(.easeOut(duration: 0.3)) {
-                                    showArenaGuideMini = false
-                                    showArenaGuide = true
-                                }
-                            }
-                        )
-                        .padding(.leading, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceMD)
-                        Spacer()
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.top, LayoutConstants.spaceMD)
                     }
                 }
-                .transition(.scale.combined(with: .opacity))
             }
+            } // Group
+            .transaction { $0.animation = nil }
         }
         .navigationBarBackButtonHidden(true)
         .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])

@@ -88,6 +88,18 @@ struct AppearanceEditorDetailView: View {
                     .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    HapticManager.light()
+                    SFXManager.shared.play(.uiTap)
+                    appState.mainPath = NavigationPath()
+                    appState.currentScreen = .characterSelect
+                } label: {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+            }
         }
         .onAppear {
             if vm == nil {

@@ -65,16 +65,28 @@ final class AchievementsViewModel {
 
     func claim(_ achievement: Achievement) async {
         claimingKey = achievement.key
-        let success = await service.claim(achievementKey: achievement.key)
+
+        // ── Optimistic UI: mark claimed instantly ──
+        if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
+            achievements[idx].rewardClaimed = true
+        }
+        cache.cacheAchievements(achievements)
         claimingKey = nil
-        if success {
-            if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
-                achievements[idx].rewardClaimed = true
+        HapticManager.success()
+        appState.showToast("Reward Claimed! \(achievement.title)", type: .achievement)
+
+        // ── Fire API in background ──
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.claim(achievementKey: achievement.key)
+            if !success {
+                // Revert on failure
+                if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
+                    achievements[idx].rewardClaimed = false
+                }
+                cache.cacheAchievements(achievements)
+                appState.showToast("Claim failed. Try again.", type: .error)
             }
-            appState.showToast("Reward Claimed! \(achievement.title)", type: .achievement)
-        } else {
-            // H6 fix: error feedback on failed claim (was silent failure)
-            appState.showToast("Claim failed. Try again.", type: .error)
         }
     }
 

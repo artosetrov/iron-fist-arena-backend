@@ -252,10 +252,17 @@ final class CombatViewModel {
             popup = DamagePopup(text: text, color: color, isCrit: turn.isCrit, onDefender: !isPlayerAttacking)
         }
 
+        // Cap concurrent popups to prevent GPU overload
+        if damagePopups.count >= 5 {
+            damagePopups.removeFirst()
+        }
         damagePopups.append(popup)
 
         // Heal popup
         if let heal = turn.heal, heal > 0 {
+            if damagePopups.count >= 5 {
+                damagePopups.removeFirst()
+            }
             let healPopup = DamagePopup(text: "+\(heal)", color: DarkFantasyTheme.success, isCrit: false, onDefender: isPlayerAttacking)
             damagePopups.append(healPopup)
         }

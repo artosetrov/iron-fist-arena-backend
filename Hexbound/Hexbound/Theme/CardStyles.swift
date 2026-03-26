@@ -36,6 +36,8 @@ struct PanelCardModifier: ViewModifier {
             .cornerBrackets(color: highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderMedium)
             .cornerDiamonds(color: highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.borderStrong)
             // Dual shadow: type-colored glow + dark depth
+            // Flatten ornamental overlays into single GPU texture
+            .compositingGroup()
             .shadow(
                 color: highlight ? DarkFantasyTheme.goldGlow : .black.opacity(0.3),
                 radius: highlight ? 12 : 6,
@@ -85,6 +87,8 @@ struct RarityCardModifier: ViewModifier {
             )
             .cornerBrackets(color: rarityColor, length: isHighRarity ? 20 : 18)
             .cornerDiamonds(color: rarityColor, size: isHighRarity ? 7 : 6)
+            // Flatten ornamental overlays into single GPU texture
+            .compositingGroup()
             // Dual shadow
             .shadow(
                 color: DarkFantasyTheme.rarityGlow(for: rarity),
@@ -125,6 +129,8 @@ struct InfoPanelModifier: ViewModifier {
             )
             .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 14)
             .cornerDiamonds(color: DarkFantasyTheme.borderStrong, size: 5)
+            // Flatten ornamental overlays into single GPU texture
+            .compositingGroup()
             .shadow(
                 color: DarkFantasyTheme.bgAbyss.opacity(0.4),
                 radius: 3,
@@ -165,6 +171,8 @@ struct ModalOverlayModifier: ViewModifier {
             .cornerBrackets(color: DarkFantasyTheme.goldBright, length: 22, thickness: 2.0)
             .cornerDiamonds(color: DarkFantasyTheme.goldBright, size: 7)
             .sideDiamonds(color: DarkFantasyTheme.borderOrnament)
+            // Flatten ornamental overlays into single GPU texture
+            .compositingGroup()
             // Dual shadow: ornament glow + deep abyss
             .shadow(color: DarkFantasyTheme.borderOrnament.opacity(0.18), radius: 24)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 32, y: 8)

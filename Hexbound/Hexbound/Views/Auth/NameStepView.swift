@@ -123,11 +123,12 @@ struct NameStepView: View {
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 if !vm.combinedBonuses.isEmpty {
-                    HStack(spacing: LayoutConstants.spaceMD) {
+                    LazyVGrid(
+                        columns: [GridItem(.flexible()), GridItem(.flexible())],
+                        spacing: LayoutConstants.spaceXS
+                    ) {
                         ForEach(vm.combinedBonuses, id: \.stat) { bonus in
-                            Text("\(bonus.value > 0 ? "+" : "")\(bonus.value) \(bonus.stat)")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                                .foregroundStyle(bonus.value > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textDanger)
+                            statBonusCell(name: bonus.stat, value: bonus.value)
                         }
                     }
                     .padding(.top, 2)
@@ -151,6 +152,7 @@ struct NameStepView: View {
                 .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
         )
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
@@ -227,6 +229,8 @@ struct NameStepView: View {
 
                 // Dice button — separate, clearly tappable
                 Button {
+                    HapticManager.light()
+                    SFXManager.shared.play(.uiTap)
                     vm.generateRandomName()
                     vm.checkNameAvailability()
                 } label: {
@@ -244,7 +248,7 @@ struct NameStepView: View {
                     RoundedRectangle(cornerRadius: LayoutConstants.inputRadius)
                         .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
                 )
-                .buttonStyle(.scalePress(0.85))
+                .buttonStyle(.plain)
             }
 
             // Status text + counter
@@ -270,6 +274,44 @@ struct NameStepView: View {
             }
             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
         }
+    }
+
+    // MARK: - Stat Bonus Cell
+
+    @ViewBuilder
+    private func statBonusCell(name: String, value: Int) -> some View {
+        let statType = StatType.allCases.first(where: { $0.fullName == name })
+        let color = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
+
+        HStack(spacing: LayoutConstants.spaceXS) {
+            if let statType {
+                Image(statType.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            }
+
+            Text(name)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+
+            Spacer(minLength: 2)
+
+            Text("\(value > 0 ? "+" : "")\(value)")
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel).bold())
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, LayoutConstants.spaceXS + 2)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .stroke(value > 0 ? DarkFantasyTheme.gold.opacity(0.25) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     // MARK: - Helpers

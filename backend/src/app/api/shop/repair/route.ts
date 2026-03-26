@@ -36,14 +36,21 @@ export async function POST(req: NextRequest) {
       // Get the inventory item
       const inventoryItem = await tx.equipmentInventory.findUnique({
         where: { id: inventory_id },
+        include: { item: { select: { rarity: true } } },
       })
 
       if (!inventoryItem) throw new Error('ITEM_NOT_FOUND')
       if (inventoryItem.characterId !== character_id) throw new Error('ITEM_FORBIDDEN')
       if (inventoryItem.durability >= inventoryItem.maxDurability) throw new Error('FULL_DURABILITY')
 
-      // Calculate repair cost: (maxDurability - durability) * 2 gold
-      const cost = (inventoryItem.maxDurability - inventoryItem.durability) * 2
+      // Calculate repair cost: base rate × rarity multiplier
+      // Base: (maxDurability - durability) × 5 gold
+      // Rarity multipliers: common 1.0, uncommon 1.2, rare 1.5, epic 2.0, legendary 3.0
+      const rarityMultipliers: Record<string, number> = {
+        common: 1.0, uncommon: 1.2, rare: 1.5, epic: 2.0, legendary: 3.0,
+      }
+      const rarityMult = rarityMultipliers[inventoryItem.item?.rarity ?? 'common'] ?? 1.0
+      const cost = Math.ceil((inventoryItem.maxDurability - inventoryItem.durability) * 5 * rarityMult)
 
       if (charRow.gold < cost) throw new Error('NOT_ENOUGH_GOLD')
 

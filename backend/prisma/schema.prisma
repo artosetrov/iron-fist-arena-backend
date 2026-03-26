@@ -330,6 +330,8 @@ model EquipmentInventory {
   equippedSlot  EquippedSlot? @map("equipped_slot")
   rolledStats   Json?        @map("rolled_stats")
   acquiredAt    DateTime     @default(now()) @map("acquired_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
 
   character     Character    @relation(fields: [characterId], references: [id], onDelete: Cascade)
   item          Item         @relation(fields: [itemId], references: [id])
@@ -346,6 +348,8 @@ model ConsumableInventory {
   consumableType  ConsumableType @map("consumable_type")
   quantity        Int            @default(0)
   acquiredAt      DateTime       @default(now()) @map("acquired_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at")
 
   character       Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
@@ -396,10 +400,13 @@ model DungeonProgress {
   dungeonId   String    @map("dungeon_id")
   bossIndex   Int       @default(0) @map("boss_index")
   completed   Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
 
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([characterId, dungeonId])
+  @@index([characterId])
   @@index([characterId, completed])
   @@map("dungeon_progress")
 }
@@ -417,6 +424,7 @@ model DungeonRun {
   character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId, difficulty])
+  @@index([characterId, createdAt(sort: Desc)])
   @@map("dungeon_runs")
 }
 

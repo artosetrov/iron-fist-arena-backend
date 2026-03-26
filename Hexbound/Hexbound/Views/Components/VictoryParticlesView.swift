@@ -75,11 +75,11 @@ struct VictoryParticlesView: View {
             endX: startX + drift,
             endY: startY + size.height * CGFloat.random(in: 0.6...1.2),
             size: CGFloat.random(in: 3...8),
-            color: colors.randomElement()!,
+            color: colors.randomElement() ?? DarkFantasyTheme.gold,
             opacity: Double.random(in: 0.6...1.0),
             rotationStart: Double.random(in: 0...180),
             rotationEnd: Double.random(in: 360...720),
-            shape: shapes.randomElement()!
+            shape: shapes.randomElement() ?? AnyView(Circle())
         )
     }
 
@@ -99,7 +99,7 @@ struct VictoryParticlesView: View {
             endX: startX + drift,
             endY: startY + size.height * CGFloat.random(in: 0.5...0.9),
             size: CGFloat.random(in: 2...5),
-            color: colors.randomElement()!,
+            color: colors.randomElement() ?? DarkFantasyTheme.gold,
             opacity: Double.random(in: 0.3...0.6),
             rotationStart: Double.random(in: 0...90),
             rotationEnd: Double.random(in: 180...360),

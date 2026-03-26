@@ -93,6 +93,18 @@ final class OnboardingViewModel {
         }
     }
 
+    // MARK: - Origin-Only Bonuses (for race selection widget)
+
+    var originBonuses: [(stat: String, value: Int)] {
+        guard let origin = selectedOrigin else { return [] }
+        let order = ["Strength", "Agility", "Vitality", "Endurance", "Intelligence", "Wisdom", "Luck", "Charisma"]
+        let bonuses = originBonusMap(origin)
+        return order.compactMap { stat in
+            guard let val = bonuses.first(where: { $0.0 == stat })?.1, val != 0 else { return nil }
+            return (stat: stat, value: val)
+        }
+    }
+
     // MARK: - Combined Bonuses
 
     var combinedBonuses: [(stat: String, value: Int)] {

@@ -75,6 +75,21 @@ grep -rn '\[self\] in' Hexbound/Hexbound/ --include="*.swift"
 
 # ERR-SW-019: currency SF Symbols
 grep -rn 'dollarsign\.circle\|systemName:.*"diamond"' Hexbound/Hexbound/ --include="*.swift"
+
+# ERR-SW-020: force unwrap (randomElement()! etc)
+grep -rn 'randomElement()!' Hexbound/Hexbound/ --include="*.swift"
+
+# ERR-SW-021: ToastType.success (doesn't exist)
+grep -rn 'ToastType\.success\|type: \.success' Hexbound/Hexbound/ --include="*.swift"
+
+# ERR-SW-022: showToast wrong labels (title:, message:)
+grep -rn 'showToast(title:\|showToast.*message:' Hexbound/Hexbound/ --include="*.swift"
+
+# ERR-SW-023: [weak self] in struct (SwiftUI views)
+grep -rn '\[weak self\]' Hexbound/Hexbound/Views/ --include="*.swift"
+
+# ERR-SW-024: missing .compositingGroup() after 2+ ornamental overlays
+# (manual check — look for .surfaceLighting + .innerBorder without .compositingGroup before .shadow)
 ```
 
 ### 1.2 — Multiline checks (use Grep tool with multiline: true)

@@ -64,13 +64,18 @@ struct UnifiedHeroWidget: View {
         .padding(.vertical, LayoutConstants.widgetPadding)
         .padding(.horizontal, LayoutConstants.widgetPaddingH)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.widgetRadius)
-                .fill(DarkFantasyTheme.bgCardGradient)
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.widgetRadius
+            )
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.widgetRadius)
-                .stroke(DarkFantasyTheme.bgCardBorder, lineWidth: 1)
-        )
+        .surfaceLighting(cornerRadius: LayoutConstants.widgetRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.widgetRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
         .contentShape(Rectangle())
         .onTapGesture {
             onTap?()
@@ -93,6 +98,11 @@ struct UnifiedHeroWidget: View {
                     lowHPPulse = true
                 }
             }
+        }
+        .onDisappear {
+            // Stop continuous animations when widget leaves screen
+            lowHPPulse = false
+            statBadgePulse = false
         }
 
     }

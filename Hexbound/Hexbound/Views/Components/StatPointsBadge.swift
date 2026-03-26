@@ -38,7 +38,7 @@ struct StatPointsBadge: View {
         }
     }
 
-    // MARK: - Banner Layout (full-width, green border)
+    // MARK: - Banner Layout (full-width, gold border)
 
     private var bannerLayout: some View {
         HStack {
@@ -48,14 +48,14 @@ struct StatPointsBadge: View {
                 Text("Stat Points: \(points)")
             }
             .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-            .foregroundStyle(DarkFantasyTheme.textSuccess)
+            .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.success.opacity(0.1))
+        .background(DarkFantasyTheme.gold.opacity(0.1))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                .stroke(DarkFantasyTheme.success.opacity(0.3), lineWidth: 1)
+                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
         )
         .accessibilityLabel("Stat Points available: \(points)")
     }

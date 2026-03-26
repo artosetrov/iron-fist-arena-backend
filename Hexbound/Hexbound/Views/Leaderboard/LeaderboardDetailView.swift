@@ -34,8 +34,6 @@ struct LeaderboardDetailView: View {
                         .accessibilityLabel("Leaderboard tabs: \(LeaderboardViewModel.tabs.joined(separator: ", "))")
                         .accessibilityValue("Current tab: \(LeaderboardViewModel.tabs[vm.selectedTab])")
 
-                        // Your rank
-                        yourRankBanner(vm: vm)
                     }
 
                     // Content
