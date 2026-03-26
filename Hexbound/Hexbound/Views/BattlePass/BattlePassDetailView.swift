@@ -43,11 +43,8 @@ struct BattlePassDetailView: View {
                 } else if let _ = vm.data {
                     ScrollView {
                         VStack(spacing: LayoutConstants.spaceMD) {
-                            // Season + Level
+                            // Season + Level + XP Bar
                             headerSection(vm: vm)
-
-                            // XP Progress
-                            xpProgressSection(vm: vm)
 
                             // Premium button
                             if !vm.hasPremium {
@@ -95,16 +92,18 @@ struct BattlePassDetailView: View {
         }
     }
 
-    // MARK: - Header
+    // MARK: - Header + XP (combined ornamental panel)
 
     @ViewBuilder
     private func headerSection(vm: BattlePassViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Season name
             Text(vm.seasonName)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .accessibilityLabel("Season: \(vm.seasonName)")
 
+            // Level + XP text
             HStack {
                 Text("Level \(vm.currentLevel)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
@@ -116,29 +115,41 @@ struct BattlePassDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .accessibilityLabel("Experience: \(vm.currentXp) of \(vm.xpToNext)")
             }
-        }
-    }
 
-    // MARK: - XP Bar
-
-    @ViewBuilder
-    private func xpProgressSection(vm: BattlePassViewModel) -> some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
-                RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                    .fill(DarkFantasyTheme.progressGradient)
-                    .frame(width: geo.size.width * vm.xpProgress)
-                    .animation(
-                        .easeOut(duration: MotionConstants.progressFillDuration(deltaPercent: vm.xpProgress * 100)),
-                        value: vm.xpProgress
-                    )
+            // XP Bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                    RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
+                        .fill(DarkFantasyTheme.progressGradient)
+                        .frame(width: geo.size.width * vm.xpProgress)
+                        .overlay(BarFillHighlight(cornerRadius: LayoutConstants.heroBarRadius))
+                        .animation(
+                            .easeOut(duration: MotionConstants.progressFillDuration(deltaPercent: vm.xpProgress * 100)),
+                            value: vm.xpProgress
+                        )
+                }
             }
+            .frame(height: 14)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius))
+            .accessibilityLabel("Experience progress")
+            .accessibilityValue("\(Int(vm.xpProgress * 100))% complete")
         }
-        .frame(height: 10)
-        .accessibilityLabel("Experience progress")
-        .accessibilityValue("\(Int(vm.xpProgress * 100))% complete")
+        .padding(LayoutConstants.spaceMD)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 
     // MARK: - Premium Button
@@ -146,21 +157,17 @@ struct BattlePassDetailView: View {
     @ViewBuilder
     private func premiumButton(vm: BattlePassViewModel) -> some View {
         Button {
-            Task { await vm.buyPremium() }
+            HapticManager.medium()
+            SFXManager.shared.play(.uiTap)
+            appState.mainPath.append(AppRoute.currencyPurchase)
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
-                if vm.isBuyingPremium {
-                    ProgressView()
-                        .tint(DarkFantasyTheme.textOnGold)
-                } else {
-                    Image(systemName: "star.fill")
-                }
+                Image(systemName: "star.fill")
                 Text("UPGRADE TO PREMIUM")
             }
         }
         .buttonStyle(.primary)
-        .disabled(vm.isBuyingPremium)
-        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: !vm.isBuyingPremium)
+        .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: true)
         .shimmer(color: DarkFantasyTheme.gold, duration: 3)
     }
 
@@ -218,6 +225,7 @@ struct BattlePassDetailView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
     }
 }

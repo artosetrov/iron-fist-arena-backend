@@ -96,6 +96,8 @@
 		60AA3C7D4E914FAF3DBA1D9B /* ItemImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDB9FFFE4B66FE8540FBEA77 /* ItemImageView.swift */; };
 		65188E2F930B0CCFEE6FED75 /* OrnamentalTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B899DC5918ADE4B9A07F875B /* OrnamentalTitle.swift */; };
 		67bedf2b79f62a87bf402c22 /* NPCGuideWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = b3dbf063205e999acde9526d /* NPCGuideWidget.swift */; };
+		D8A4769BCC75756BFE3517E8 /* NPCHintManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */; };
+		35AD12CF5A704250C1DAA4D2 /* NPCHintOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */; };
 		686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1B4BDE312B412B655B4901 /* InventoryViewModel.swift */; };
 		6D729815FE40BA9642FEB356 /* hit_poison.wav in Resources */ = {isa = PBXBuildFile; fileRef = 643E3100DB3326B4735D59CD /* hit_poison.wav */; };
 		75096D41FD966689964F0D95 /* DungeonService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9D0FE34B2EB74605E5F239 /* DungeonService.swift */; };
@@ -289,6 +291,7 @@
 		2B312FE20E15FB7A18E120B8 /* ItemDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailSheet.swift; sourceTree = "<group>"; };
 		2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantStripView.swift; sourceTree = "<group>"; };
 		2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryService.swift; sourceTree = "<group>"; };
+		B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintManager.swift; sourceTree = "<group>"; };
 		324BA7E625D6131DED6E99D5 /* CharacterGender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterGender.swift; sourceTree = "<group>"; };
 		3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonInfo.swift; sourceTree = "<group>"; };
 		36990CC42E8623DE866E325C /* APIEndpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoints.swift; sourceTree = "<group>"; };
@@ -500,6 +503,7 @@
 		VFX00001REF00006 /* HealEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealEffect.swift; sourceTree = "<group>"; };
 		VFX00001REF00007 /* StatusVFXEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusVFXEffects.swift; sourceTree = "<group>"; };
 		b3dbf063205e999acde9526d /* NPCGuideWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCGuideWidget.swift; sourceTree = "<group>"; };
+		408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintOverlay.swift; sourceTree = "<group>"; };
 		dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedHeroWidget.swift; sourceTree = "<group>"; };
 		f19ff3059acb375eb47564d1 /* WidgetPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPill.swift; sourceTree = "<group>"; };
 		5c4d89bb78c26dddad451fcc /* Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Challenge.swift; sourceTree = "<group>"; };
@@ -695,6 +699,7 @@
 				B2C3D4E5F6A7B8C9D0E1F2A6 /* StatPointsBadge.swift */,
 				B7F3F6DFB69AE93686CCB35A /* TabSwitcher.swift */,
 				b3dbf063205e999acde9526d /* NPCGuideWidget.swift */,
+				408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */,
 				dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */,
 				F3A5B6C7D8E9F0A1B2C3D4E6 /* VictoryParticlesView.swift */,
 				f19ff3059acb375eb47564d1 /* WidgetPill.swift */,
@@ -781,6 +786,7 @@
 				GSIG00001REF00001 /* GoogleSignInHelper.swift */,
 				2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */,
 				D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */,
+				B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */,
 				MSVC001REF00001 /* MessageService.swift */,
 				PUSH001REF0000000000000B /* PushNotificationService.swift */,
 				24F22D92AB4A3E0BFA40954F /* PvPService.swift */,
@@ -1409,6 +1415,8 @@
 				B68B5E43109FCCF9BCEB258D /* TavernDetailView.swift in Sources */,
 				F20220F2C416CD8228A76FBA /* ToastOverlayView.swift in Sources */,
 				67bedf2b79f62a87bf402c22 /* NPCGuideWidget.swift in Sources */,
+				D8A4769BCC75756BFE3517E8 /* NPCHintManager.swift in Sources */,
+				35AD12CF5A704250C1DAA4D2 /* NPCHintOverlay.swift in Sources */,
 				447d8a37dea56559ee287a2b /* UnifiedHeroWidget.swift in Sources */,
 				d680a257344d7fdf12459044 /* WidgetPill.swift in Sources */,
 				936bc7da30515e5a4d639a03 /* XPRingShape.swift in Sources */,

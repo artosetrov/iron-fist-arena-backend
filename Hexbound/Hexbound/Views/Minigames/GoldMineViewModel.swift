@@ -57,20 +57,40 @@ final class GoldMineViewModel {
 
     func startMining(slotIndex: Int) async {
         guard let charId = appState.currentCharacter?.id else { return }
-        actionSlotId = "\(slotIndex)"
 
+        // Optimistic UI — update slot to "mining" instantly
+        let savedSlots = slots
+        let now = ISO8601DateFormatter().string(from: Date())
+        let endsAt = ISO8601DateFormatter().string(from: Date().addingTimeInterval(4 * 3600))
+
+        withAnimation(.easeInOut(duration: 0.3)) {
+            if slotIndex < slots.count, var slot = slots[slotIndex] as? [String: Any] {
+                slot["status"] = "mining"
+                slot["started_at"] = now
+                slot["ends_at"] = endsAt
+                slots[slotIndex] = slot
+            }
+            actionSlotId = nil
+        }
+        HapticManager.medium()
+        appState.showToast("Mining started!", type: .info)
+
+        // Background API call — update with real server values
         do {
             let data = try await APIClient.shared.postRaw(
                 APIEndpoints.goldMineStart,
                 body: ["character_id": charId, "slot_index": slotIndex]
             )
             if let updatedSlots = data["slots"] as? [[String: Any]] {
-                slots = updatedSlots
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    slots = updatedSlots
+                }
             }
-            actionSlotId = nil
-            appState.showToast("Mining started!", type: .info)
         } catch {
-            actionSlotId = nil
+            // Revert on failure
+            withAnimation {
+                slots = savedSlots
+            }
             appState.showToast("Failed to start mining", subtitle: "Check connection and try again", type: .error)
         }
     }
@@ -185,7 +205,16 @@ final class GoldMineViewModel {
     // MARK: - Helpers
 
     func slotStatus(_ slot: [String: Any]) -> String {
-        slot["status"] as? String ?? "idle"
+        let raw = slot["status"] as? String ?? "idle"
+        // Client-side upgrade: if mining but time has elapsed, show as "ready"
+        if raw == "mining", let endStr = slot["ends_at"] as? String {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let endDate = formatter.date(from: endStr), endDate <= Date() {
+                return "ready"
+            }
+        }
+        return raw
     }
 
     func timeRemaining(_ slot: [String: Any]) -> String {

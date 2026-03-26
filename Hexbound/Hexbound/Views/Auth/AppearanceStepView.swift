@@ -120,15 +120,13 @@ struct AppearanceStepView: View {
                         Spacer(minLength: 0)
                     }
 
-                    // Stat bonuses with icons (same style as NameStepView)
+                    // Stat bonuses inline
                     if !vm.originBonuses.isEmpty {
-                        LazyVGrid(
-                            columns: [GridItem(.flexible()), GridItem(.flexible())],
-                            spacing: LayoutConstants.spaceXS
-                        ) {
+                        HStack(spacing: LayoutConstants.spaceSM) {
                             ForEach(vm.originBonuses, id: \.stat) { bonus in
                                 statBonusCell(name: bonus.stat, value: bonus.value)
                             }
+                            Spacer(minLength: 0)
                         }
                     }
                 }
@@ -140,8 +138,8 @@ struct AppearanceStepView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
-        .frame(minHeight: 88)
         .frame(maxWidth: .infinity)
+        .fixedSize(horizontal: false, vertical: true)
         .animation(.easeInOut(duration: 0.2), value: vm.selectedOrigin)
     }
 

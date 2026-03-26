@@ -96,17 +96,34 @@ struct LevelUpModalView: View {
                     .transition(.opacity)
                 }
 
-                // Reward cards
+                // Reward cards in ornamental panel
                 if showRewards {
-                    rewardCardsSection
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
+                    VStack(spacing: LayoutConstants.spaceMD) {
+                        rewardCardsSection
 
-                // Unlock pills
-                if showUnlocks && !unlocks.isEmpty {
-                    unlockSection
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                        .padding(.top, LayoutConstants.spaceMD)
+                        // Unlock pills
+                        if showUnlocks && !unlocks.isEmpty {
+                            unlockSection
+                        }
+                    }
+                    .padding(LayoutConstants.spaceMD)
+                    .background(
+                        RadialGlowBackground(
+                            baseColor: DarkFantasyTheme.bgSecondary,
+                            glowColor: DarkFantasyTheme.bgTertiary,
+                            glowIntensity: 0.4,
+                            cornerRadius: LayoutConstants.modalRadius
+                        )
+                    )
+                    .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+                    .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
+                    .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
+                    .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
+                    .compositingGroup()
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
 
                 Spacer()
@@ -255,7 +272,6 @@ struct LevelUpModalView: View {
                 targetValue: staminaRefill
             )
         }
-        .padding(.horizontal, LayoutConstants.screenPadding + LayoutConstants.spaceLG)
     }
 
     @ViewBuilder
@@ -295,20 +311,20 @@ struct LevelUpModalView: View {
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
                 glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.3,
+                glowIntensity: 0.4,
                 cornerRadius: LayoutConstants.cardRadius
             )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
         .innerBorder(
             cornerRadius: LayoutConstants.cardRadius - 2,
             inset: 2,
-            color: iconColor.opacity(0.08)
+            color: iconColor.opacity(0.1)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 4, y: 2)
+        .cornerBrackets(color: iconColor.opacity(0.3), length: 12, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: iconColor.opacity(0.15), radius: 8)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 4, y: 2)
     }
 
     // MARK: - Unlock Section
@@ -352,6 +368,10 @@ struct LevelUpModalView: View {
     // MARK: - Ceremony Sequence
 
     private func startCeremony() {
+        // Sound + haptic
+        SFXManager.shared.play(.uiSuccess)
+        HapticManager.heavy()
+
         // Phase 1: Backdrop + rays
         withAnimation(.easeOut(duration: 0.3)) {
             showBackdrop = true

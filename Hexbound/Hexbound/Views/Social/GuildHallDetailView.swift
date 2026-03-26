@@ -74,19 +74,10 @@ struct GuildHallDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar(vm?.activeThreadCharacterId != nil ? .hidden : .visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    if !appState.mainPath.isEmpty {
-                        appState.mainPath.removeLast()
-                    }
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                }
+                HubLogoButton()
             }
         }
         .task {
@@ -771,29 +762,31 @@ struct GuildHallDetailView: View {
                 if vm.activeThread.isEmpty {
                     Spacer()
                     threadEmptyState
-                    quickReplyChips(vm)
                     Spacer()
                 } else {
                     ScrollViewReader { proxy in
                         ScrollView {
-                            LazyVStack(spacing: LayoutConstants.spaceXS) {
+                            LazyVStack(spacing: LayoutConstants.spaceSM) {
+                                // Date divider
+                                dateDivider("Today")
+
                                 ForEach(vm.activeThread.reversed()) { msg in
                                     messageBubble(msg, vm: vm)
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.top, LayoutConstants.spaceSM)
-                            .padding(.bottom, LayoutConstants.spaceXS)
-
-                            // Quick replies at bottom of messages
-                            quickReplyChips(vm)
+                            .padding(.bottom, LayoutConstants.spaceSM)
                         }
                         .defaultScrollAnchor(.bottom)
                     }
                 }
             }
 
-            // Quick replies + compose bar — sticky bottom
+            // Quick replies — sticky above compose bar
+            quickReplyChips(vm)
+
+            // Compose bar — sticky bottom
             threadBottomBar(vm)
         }
         .onAppear {
@@ -801,14 +794,19 @@ struct GuildHallDetailView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 isComposeFieldFocused = true
             }
+            // Start polling for new incoming messages every 5 seconds
+            vm.startThreadPolling()
+        }
+        .onDisappear {
+            vm.stopThreadPolling()
         }
     }
 
     private func threadHeader(_ vm: GuildHallViewModel) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
+            // Back button — ornamental
             Button {
                 if openMessageTo != nil {
-                    // Deep-link mode: go back in navigation instead of showing Guild Hall
                     if !appState.mainPath.isEmpty {
                         appState.mainPath.removeLast()
                     }
@@ -816,43 +814,105 @@ struct GuildHallDetailView: View {
                     vm.closeThread()
                 }
             } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(DarkFantasyTheme.gold)
-            }
-            .frame(width: 32, height: 32)
-
-            // Character avatar — real portrait
-            if let avatar = vm.activeThreadCharacterAvatar {
-                AvatarImageView(
-                    skinKey: avatar,
-                    characterClass: CharacterClass(rawValue: vm.activeThreadCharacterClass ?? "warrior") ?? .warrior,
-                    size: 40
-                )
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
-            } else {
-                characterAvatar(
-                    name: vm.activeThreadCharacterName ?? "?",
-                    className: nil
-                )
+                Image("ui-arrow-left")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                            .fill(DarkFantasyTheme.bgTertiary)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                    )
             }
 
-            VStack(alignment: .leading, spacing: 1) {
+            // Character avatar — 44px with gold-dim border + online dot
+            ZStack(alignment: .bottomTrailing) {
+                if let avatar = vm.activeThreadCharacterAvatar {
+                    AvatarImageView(
+                        skinKey: avatar,
+                        characterClass: CharacterClass(rawValue: vm.activeThreadCharacterClass ?? "warrior") ?? .warrior,
+                        size: 44
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM + 2))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM + 2)
+                            .stroke(DarkFantasyTheme.goldDim, lineWidth: 2)
+                    )
+                } else {
+                    characterAvatar(
+                        name: vm.activeThreadCharacterName ?? "?",
+                        className: nil
+                    )
+                }
+
+                // Online indicator
+                Circle()
+                    .fill(DarkFantasyTheme.success)
+                    .frame(width: 12, height: 12)
+                    .overlay(
+                        Circle().stroke(DarkFantasyTheme.bgSecondary, lineWidth: 2)
+                    )
+                    .offset(x: 2, y: 2)
+            }
+
+            // Name + status
+            VStack(alignment: .leading, spacing: 2) {
                 Text(vm.activeThreadCharacterName ?? "Unknown")
-                    .font(DarkFantasyTheme.section(size: 15))
+                    .font(DarkFantasyTheme.section(size: 18))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             }
 
             Spacer()
+
+            // Challenge action button
+            if let targetId = vm.activeThreadCharacterId {
+                Button {
+                    Task {
+                        HapticManager.medium()
+                        await vm.sendChallenge(targetId: targetId)
+                    }
+                } label: {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .fill(DarkFantasyTheme.bgTertiary)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .stroke(DarkFantasyTheme.goldDim.opacity(0.5), lineWidth: 1)
+                        )
+                }
+            }
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.vertical, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.bgSecondary.opacity(0.9))
-        .overlay(alignment: .bottom) {
+        .background(
+            LinearGradient(
+                colors: [DarkFantasyTheme.bgTertiary.opacity(0.95), DarkFantasyTheme.bgSecondary.opacity(0.98)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .overlay(alignment: .top) {
+            // Surface lighting — top highlight
             Rectangle()
-                .fill(DarkFantasyTheme.borderSubtle.opacity(0.3))
-                .frame(height: 0.5)
+                .fill(LinearGradient(colors: [Color.white.opacity(0.04), .clear], startPoint: .top, endPoint: .bottom))
+                .frame(height: 24)
+                .allowsHitTesting(false)
+        }
+        .overlay(alignment: .bottom) {
+            // Gold divider line
+            Rectangle()
+                .fill(LinearGradient(colors: [.clear, DarkFantasyTheme.goldDim, .clear], startPoint: .leading, endPoint: .trailing))
+                .frame(height: 1)
         }
     }
 
@@ -880,23 +940,32 @@ struct GuildHallDetailView: View {
         return HStack(alignment: .bottom, spacing: LayoutConstants.spaceXS) {
             if isMine { Spacer(minLength: 48) }
 
-            VStack(alignment: isMine ? .trailing : .leading, spacing: 3) {
+            VStack(alignment: isMine ? .trailing : .leading, spacing: 4) {
                 Text(msg.content)
-                    .font(DarkFantasyTheme.body(size: 15))
+                    .font(DarkFantasyTheme.body(size: 16))
                     .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
 
-                // Read status for sent messages (no timestamps)
-                if isMine {
-                    Image(systemName: msg.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                        .font(.system(size: 10))
-                        .foregroundStyle(msg.isRead
-                            ? DarkFantasyTheme.textOnGold.opacity(0.7)
-                            : DarkFantasyTheme.textOnGold.opacity(0.4)
+                // Timestamp + read status
+                HStack(spacing: 4) {
+                    Text(formatMessageTime(msg.createdAt))
+                        .font(DarkFantasyTheme.body(size: 11))
+                        .foregroundStyle(isMine
+                            ? DarkFantasyTheme.textOnGold.opacity(0.5)
+                            : DarkFantasyTheme.textTertiary
                         )
+
+                    if isMine {
+                        Image(systemName: msg.isRead ? "checkmark.circle.fill" : "checkmark.circle")
+                            .font(.system(size: 11))
+                            .foregroundStyle(msg.isRead
+                                ? DarkFantasyTheme.textOnGold.opacity(0.7)
+                                : DarkFantasyTheme.textOnGold.opacity(0.4)
+                            )
+                    }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background {
                 if isMine {
                     ChatBubbleShape(isMine: true)
@@ -907,36 +976,97 @@ struct GuildHallDetailView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
+                        .overlay {
+                            // Surface lighting on gold bubble
+                            ChatBubbleShape(isMine: true)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.08), .clear],
+                                        startPoint: .top,
+                                        endPoint: .center
+                                    )
+                                )
+                        }
                 } else {
                     ChatBubbleShape(isMine: false)
                         .fill(DarkFantasyTheme.bgTertiary)
+                        .overlay {
+                            // Inner bevel on received bubble
+                            ChatBubbleShape(isMine: false)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.03), .clear, Color.black.opacity(0.05)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                        }
+                        .overlay {
+                            ChatBubbleShape(isMine: false)
+                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        }
                 }
             }
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.2), radius: 3, y: 1)
+            .shadow(color: isMine ? DarkFantasyTheme.gold.opacity(0.12) : Color.clear, radius: 6)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
 
             if !isMine { Spacer(minLength: 48) }
         }
     }
 
+    // MARK: - Date Divider
+
+    private func dateDivider(_ text: String) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, DarkFantasyTheme.borderSubtle],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+
+            Text(text.uppercased())
+                .font(DarkFantasyTheme.body(size: 11))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(1.5)
+
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [DarkFantasyTheme.borderSubtle, .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 1)
+        }
+        .padding(.vertical, LayoutConstants.spaceXS)
+    }
+
+    // MARK: - Quick Reply Chips
+
     private func quickReplyChips(_ vm: GuildHallViewModel) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(QuickMessage.allCases, id: \.rawValue) { quick in
                     Button {
                         Task { await vm.sendQuickMessage(quick.rawValue) }
                     } label: {
                         Text(quick.displayText)
-                            .font(DarkFantasyTheme.body(size: 13))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .font(DarkFantasyTheme.section(size: 13))
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
                             .background(
                                 Capsule()
-                                    .fill(DarkFantasyTheme.bgTertiary.opacity(0.6))
+                                    .fill(DarkFantasyTheme.bgTertiary)
                             )
                             .overlay(
                                 Capsule()
-                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                                    .stroke(DarkFantasyTheme.goldDim, lineWidth: 1)
                             )
                     }
                     .buttonStyle(.plain)
@@ -944,69 +1074,79 @@ struct GuildHallDetailView: View {
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.vertical, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.spaceSM)
+        }
+        .background(DarkFantasyTheme.bgSecondary)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(DarkFantasyTheme.borderSubtle.opacity(0.3))
+                .frame(height: 0.5)
         }
     }
 
     private func threadBottomBar(_ vm: GuildHallViewModel) -> some View {
-        VStack(spacing: 0) {
-            // Divider
-            Rectangle()
-                .fill(DarkFantasyTheme.borderSubtle.opacity(0.3))
-                .frame(height: 0.5)
+        let isEmpty = vm.composedMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-            // Compose input
-            HStack(spacing: LayoutConstants.spaceXS) {
-                TextField("Write a scroll...", text: Binding(
-                    get: { vm.composedMessage },
-                    set: { vm.composedMessage = $0 }
-                ))
-                .focused($isComposeFieldFocused)
-                .font(DarkFantasyTheme.body(size: 15))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(DarkFantasyTheme.bgTertiary)
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(DarkFantasyTheme.borderSubtle.opacity(0.5), lineWidth: 1)
-                )
+        return HStack(spacing: LayoutConstants.spaceSM) {
+            TextField("Write a scroll...", text: Binding(
+                get: { vm.composedMessage },
+                set: { vm.composedMessage = $0 }
+            ))
+            .focused($isComposeFieldFocused)
+            .font(DarkFantasyTheme.body(size: 16))
+            .foregroundStyle(DarkFantasyTheme.textPrimary)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(
+                Capsule()
+                    .fill(DarkFantasyTheme.bgTertiary)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(
+                        isComposeFieldFocused ? DarkFantasyTheme.goldDim.opacity(0.6) : DarkFantasyTheme.borderSubtle.opacity(0.5),
+                        lineWidth: 1
+                    )
+            )
 
-                Button {
-                    Task { await vm.sendMessage() }
-                } label: {
-                    ZStack {
-                        if vm.isSendingMessage {
-                            ProgressView()
-                                .tint(DarkFantasyTheme.textOnGold)
-                        } else {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(
-                                    vm.composedMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                        ? DarkFantasyTheme.textDisabled
-                                        : DarkFantasyTheme.textOnGold
-                                )
-                        }
+            Button {
+                Task { await vm.sendMessage() }
+            } label: {
+                ZStack {
+                    if vm.isSendingMessage {
+                        ProgressView()
+                            .tint(DarkFantasyTheme.textOnGold)
+                    } else {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(
+                                isEmpty ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textOnGold
+                            )
                     }
-                    .frame(width: 34, height: 34)
-                    .background(
+                }
+                .frame(width: 44, height: 44)
+                .background {
+                    if isEmpty {
+                        Circle()
+                            .fill(DarkFantasyTheme.bgTertiary)
+                    } else {
                         Circle()
                             .fill(
-                                vm.composedMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? DarkFantasyTheme.bgTertiary
-                                    : DarkFantasyTheme.gold
+                                LinearGradient(
+                                    colors: [DarkFantasyTheme.gold, DarkFantasyTheme.goldDim],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                    )
+                    }
                 }
-                .disabled(vm.isSendingMessage || vm.composedMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .shadow(color: isEmpty ? .clear : DarkFantasyTheme.gold.opacity(0.25), radius: 8)
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
+            .disabled(vm.isSendingMessage || isEmpty)
         }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.top, LayoutConstants.spaceSM)
+        .padding(.bottom, LayoutConstants.spaceLG)
         .background(DarkFantasyTheme.bgSecondary.opacity(0.95))
     }
 

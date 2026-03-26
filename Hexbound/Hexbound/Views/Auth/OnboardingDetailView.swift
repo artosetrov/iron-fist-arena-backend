@@ -146,8 +146,10 @@ struct OnboardingDetailView: View {
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .semibold))
+                        Image("ui-arrow-left")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
                         Text("BACK")
                     }
                 }

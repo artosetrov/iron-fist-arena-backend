@@ -50,6 +50,7 @@ struct ShopDetailView: View {
             Text("Spend \(item.displayPrice) on \(item.itemName)?")
         }
         .navigationBarBackButtonHidden(true)
+        .npcHint(.shop)
         .tutorialOverlay(steps: [.shopGems])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {

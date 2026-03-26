@@ -39,6 +39,7 @@ struct GoldMineDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .npcHint(.goldMine)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -189,6 +190,7 @@ private struct MineSlotCard: View {
     @State private var showCollectBurst = false
     @State private var showCoinFly = false
     @State private var previousStatus: String = ""
+    @State private var progressTick: Date = Date()
 
     private var slot: [String: Any] {
         index < vm.slots.count ? vm.slots[index] : [:]
@@ -268,6 +270,11 @@ private struct MineSlotCard: View {
         .onAppear {
             previousStatus = status
             startGlowIfNeeded()
+        }
+        .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { now in
+            if status == "mining" {
+                progressTick = now
+            }
         }
         .onChange(of: status) { oldVal, newVal in
             startGlowIfNeeded()
@@ -395,7 +402,9 @@ private struct MineSlotCard: View {
     // MARK: - Progress Bar
 
     private var mineProgressBar: some View {
-        GeometryReader { geo in
+        let _ = progressTick // Force re-evaluation on timer tick
+        let progress = vm.miningProgress(slot)
+        return GeometryReader { geo in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(DarkFantasyTheme.borderSubtle)
@@ -407,8 +416,9 @@ private struct MineSlotCard: View {
                             startPoint: .leading, endPoint: .trailing
                         )
                     )
-                    .frame(width: geo.size.width * max(0, min(1, vm.miningProgress(slot))))
-                    .animation(.linear(duration: 1), value: vm.miningProgress(slot))
+                    .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
+                    .frame(width: geo.size.width * max(0, min(1, progress)))
+                    .animation(.linear(duration: 1), value: progress)
             }
         }
         .frame(height: 5)

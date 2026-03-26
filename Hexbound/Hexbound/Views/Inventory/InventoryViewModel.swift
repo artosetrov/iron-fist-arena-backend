@@ -167,24 +167,38 @@ final class InventoryViewModel {
     func useItem(_ item: Item) async {
         showItemDetail = false
 
-        let success = await service.useItem(inventoryId: item.id, consumableType: item.consumableType)
-        if success {
-            // Server confirmed — update local state
-            if let qty = item.quantity, qty > 1 {
-                items = items.map { existing in
-                    guard existing.id == item.id else { return existing }
-                    var updated = existing
-                    updated.quantity = qty - 1
-                    return updated
+        // Optimistic UI — update inventory instantly
+        let previousItems = items
+        if let qty = item.quantity, qty > 1 {
+            items = items.map { existing in
+                guard existing.id == item.id else { return existing }
+                var updated = existing
+                updated.quantity = qty - 1
+                return updated
+            }
+        } else {
+            items.removeAll { $0.id == item.id }
+        }
+        appState.cachedInventory = items
+        HapticManager.success()
+        appState.showToast("Used \(item.displayName)", type: .reward)
+
+        // Fire API in background — revert on failure
+        let itemId = item.id
+        let consumableType = item.consumableType
+        Task { [weak self] in
+            let success = await self?.service.useItem(inventoryId: itemId, consumableType: consumableType) ?? false
+            if !success {
+                await MainActor.run {
+                    self?.items = previousItems
+                    self?.appState.cachedInventory = previousItems
                 }
             } else {
-                items.removeAll { $0.id == item.id }
+                await MainActor.run {
+                    self?.appState.invalidateCache("quests")
+                }
             }
-            appState.cachedInventory = items
-            appState.invalidateCache("quests")
-            appState.showToast("Used \(item.displayName)", type: .reward)
         }
-        // On failure: service already shows specific error toast (e.g. "Stamina is already full")
     }
 
     func upgrade(_ item: Item, useProtection: Bool) async {

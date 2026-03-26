@@ -138,6 +138,7 @@ struct FortuneWheelDetailView: View {
                         .font(DarkFantasyTheme.section(size: result.won ? 14 : 20))
                         .foregroundStyle(result.won ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
                         .scaleEffect(resultScale)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: resultScale)
                 } else {
                     Image(systemName: "diamond.fill")
                         .font(.system(size: 16))
@@ -305,19 +306,19 @@ struct FortuneWheelDetailView: View {
         showResultFlash = false
         resultScale = 0.5
 
-        withAnimation(.timingCurve(0.2, 0.8, 0.2, 1.0, duration: 4.0)) {
-            wheelRotation += finalAngle
-        }
+        // Direct state change — animation is handled by explicit
+        // .animation(.timingCurve(...), value: rotation) on FortuneWheelView.
+        // Using withAnimation() here would be overridden by
+        // .transaction { $0.animation = nil } on the parent view.
+        wheelRotation += finalAngle
 
         // Wait for animation to complete
         try? await Task.sleep(for: .seconds(4.2))
 
-        // Show result
+        // Show result — animation driven by explicit .animation(value:) on resultScale
         isAnimating = false
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-            showResultFlash = true
-            resultScale = 1.0
-        }
+        showResultFlash = true
+        resultScale = 1.0
 
         vm.onAnimationComplete()
     }
@@ -373,6 +374,7 @@ struct FortuneWheelView: View {
                     .frame(width: 56, height: 56)
             }
             .rotationEffect(.degrees(rotation))
+        .animation(.timingCurve(0.2, 0.8, 0.2, 1.0, duration: 4.0), value: rotation)
         }
         .aspectRatio(1, contentMode: .fit)
         .drawingGroup() // Flatten wheel sectors to Metal texture for smooth spin

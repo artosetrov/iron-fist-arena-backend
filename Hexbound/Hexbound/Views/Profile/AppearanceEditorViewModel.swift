@@ -165,18 +165,35 @@ final class AppearanceEditorViewModel {
         selectedSkinKey = valid.first?.skinKey
     }
 
-    // MARK: - Randomize (avatar only, within current race + gender)
+    // MARK: - Randomize (avatar — both genders within current race)
 
     func randomize() {
-        let skins = defaultSkins
-        guard skins.count > 1 else { return }
-        var newIndex: Int
-        repeat {
-            newIndex = Int.random(in: 0..<skins.count)
-        } while newIndex == avatarIndex
+        // Pick from all default skins of current race regardless of gender
+        let raceSkins = allSkins.filter { skin in
+            let matchesOrigin = selectedOrigin.map { skin.origin == $0.rawValue } ?? true
+            return matchesOrigin && skin.isDefault
+        }
+        guard !raceSkins.isEmpty else { return }
+
+        let currentKey = selectedSkinKey
+        var pick: AppearanceSkin
+        if raceSkins.count == 1 {
+            pick = raceSkins[0]
+        } else {
+            repeat {
+                pick = raceSkins.randomElement()!
+            } while pick.skinKey == currentKey
+        }
+
+        // Switch gender if the picked skin is different gender
+        if let newGender = CharacterGender(rawValue: pick.gender), newGender != selectedGender {
+            selectedGender = newGender
+        }
+        // Update avatar index within gender-filtered list
+        let genderSkins = defaultSkins
+        avatarIndex = genderSkins.firstIndex(where: { $0.skinKey == pick.skinKey }) ?? 0
         slideDirection = .none
-        avatarIndex = newIndex
-        selectedSkinKey = skins[newIndex].skinKey
+        selectedSkinKey = pick.skinKey
     }
 
     // MARK: - Fetch Skins from API

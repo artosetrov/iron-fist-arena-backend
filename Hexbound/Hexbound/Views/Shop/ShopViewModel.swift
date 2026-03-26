@@ -55,8 +55,9 @@ final class ShopViewModel {
 
     var filteredItems: [ShopItem] {
         let types = Self.tabTypes[selectedTab]
-        if types.isEmpty { return items } // "All" tab
-        return items.filter { types.contains($0.itemType) }
+        let levelFiltered = items.filter { $0.requiredLevel <= playerLevel }
+        if types.isEmpty { return levelFiltered } // "All" tab
+        return levelFiltered.filter { types.contains($0.itemType) }
     }
 
     var sectionedItems: [ShopSection] {

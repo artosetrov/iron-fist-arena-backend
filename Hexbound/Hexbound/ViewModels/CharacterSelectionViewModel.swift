@@ -17,7 +17,7 @@ final class CharacterSelectionViewModel {
 
     // MARK: - Load Characters
 
-    func loadCharacters() async {
+    func loadCharacters(appState: AppState? = nil) async {
         isLoading = true
         error = nil
 
@@ -48,9 +48,14 @@ final class CharacterSelectionViewModel {
             // Sort by level descending (highest level first)
             characters = decoded.sorted { $0.level > $1.level }
 
-            // Auto-select first if nothing selected
+            // Auto-select: prefer just-created character, fall back to first
             if selectedCharacterId == nil {
-                selectedCharacterId = characters.first?.id
+                if let justCreated = appState.currentCharacter?.id,
+                   characters.contains(where: { $0.id == justCreated }) {
+                    selectedCharacterId = justCreated
+                } else {
+                    selectedCharacterId = characters.first?.id
+                }
             }
 
             isLoading = false

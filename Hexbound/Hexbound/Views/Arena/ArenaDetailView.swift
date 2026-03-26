@@ -204,6 +204,7 @@ struct ArenaDetailView: View {
             .transaction { $0.animation = nil }
         }
         .navigationBarBackButtonHidden(true)
+        .npcHint(.arena)
         .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -246,6 +247,13 @@ struct ArenaDetailView: View {
             if vm == nil {
                 vm = ArenaViewModel(appState: appState, cache: cache)
             }
+
+            // Ensure inventory is cached so LowHP banner can check for potions
+            if appState.cachedInventory == nil {
+                let service = InventoryService(appState: appState)
+                _ = await service.loadInventory()
+            }
+
             await vm?.loadAll()
         }
     }
@@ -264,7 +272,7 @@ struct ArenaDetailView: View {
     private func useHealthPotion() async {
         // Find the first available health potion from cached inventory
         guard let items = appState.cachedInventory else {
-            appState.showToast("Open inventory first", type: .info)
+            appState.showToast("No potions found", subtitle: "Visit the shop", type: .info)
             return
         }
 
@@ -275,20 +283,42 @@ struct ArenaDetailView: View {
             return
         }
 
-        let hpBefore = appState.currentCharacter?.currentHp ?? 0
+        // Optimistic UI — update inventory cache immediately
+        let previousItems = items
+        if let qty = potion.quantity, qty > 1 {
+            appState.cachedInventory = items.map { existing in
+                guard existing.id == potion.id else { return existing }
+                var updated = existing
+                updated.quantity = qty - 1
+                return updated
+            }
+        } else {
+            appState.cachedInventory = items.filter { $0.id != potion.id }
+        }
+
+        HapticManager.success()
+        appState.showToast("Potion used!", type: .reward)
+
+        // Fire API in background
+        let potionId = potion.id
+        let consumableType = potion.consumableType
         let service = InventoryService(appState: appState)
         let success = await service.useItem(
-            inventoryId: potion.id,
-            consumableType: potion.consumableType
+            inventoryId: potionId,
+            consumableType: consumableType
         )
 
         if success {
             let hpAfter = appState.currentCharacter?.currentHp ?? 0
-            let healAmount = hpAfter - hpBefore
+            let maxHp = appState.currentCharacter?.maxHp ?? 1
             appState.showToast(
-                "+\(healAmount) HP restored!",
+                "HP restored to \(hpAfter)/\(maxHp)",
                 type: .reward
             )
+        } else {
+            // Revert on failure
+            appState.cachedInventory = previousItems
+            appState.showToast("Failed to use potion", type: .error)
         }
     }
 

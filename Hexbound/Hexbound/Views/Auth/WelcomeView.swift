@@ -60,14 +60,6 @@ struct WelcomeView: View {
                     HStack(spacing: LayoutConstants.spaceMD) {
                         // Apple
                         ZStack {
-                            SignInWithAppleButton(.continue) { request in
-                                request.requestedScopes = [.email, .fullName]
-                            } onCompletion: { result in
-                                Task { await vm.handleAppleSignIn(result: result, appState: appState) }
-                            }
-                            .signInWithAppleButtonStyle(.white)
-                            .opacity(0.01)
-
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
                                     .font(.system(size: 18, weight: .medium))
@@ -76,6 +68,15 @@ struct WelcomeView: View {
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .allowsHitTesting(false)
+
+                            SignInWithAppleButton(.continue) { request in
+                                request.requestedScopes = [.email, .fullName]
+                            } onCompletion: { result in
+                                Task { await vm.handleAppleSignIn(result: result, appState: appState) }
+                            }
+                            .signInWithAppleButtonStyle(.white)
+                            .blendMode(.overlay)
+                            .opacity(0.015)
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)

@@ -90,6 +90,8 @@ export async function POST(req: NextRequest) {
         level: true,
         cha: true,
         luk: true,
+        maxHp: true,
+        currentHp: true,
       },
     })
 
@@ -115,6 +117,20 @@ export async function POST(req: NextRequest) {
     if (!hasFreePvp && currentStamina < STAMINA.PVP_COST) {
       return NextResponse.json(
         { error: 'Not enough stamina', currentStamina, required: STAMINA.PVP_COST },
+        { status: 400 }
+      )
+    }
+
+    // Check minimum HP threshold (10% of maxHp) — block fights when near death
+    const minHpRequired = Math.ceil(attacker.maxHp * 0.1)
+    if (attacker.currentHp < minHpRequired) {
+      return NextResponse.json(
+        {
+          error: 'Not enough health to fight. Use a health potion first!',
+          currentHp: attacker.currentHp,
+          minHealthRequired: minHpRequired,
+          maxHp: attacker.maxHp,
+        },
         { status: 400 }
       )
     }

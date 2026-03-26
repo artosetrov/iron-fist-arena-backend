@@ -15,20 +15,29 @@ struct BPRewardNodeView: View {
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
-            // Icon frame
+            // Icon frame — ornamental node
             ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
-                    .frame(width: 64, height: 64)
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: state == .claimable ? DarkFantasyTheme.goldDim.opacity(0.3) : DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.5,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+                .frame(width: 64, height: 64)
 
                 rewardIcon(reward, size: 32)
             }
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 1, inset: 1, color: borderColor.opacity(state == .claimable ? 0.25 : 0.10))
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(borderColor, lineWidth: state == .claimable ? 2 : 1)
+                    .stroke(borderColor, lineWidth: state == .claimable ? 2.5 : 1)
             )
+            .compositingGroup()
             .opacity(state == .locked ? 0.5 : 1)
             .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: state == .claimable)
+            .shadow(color: state == .claimable ? DarkFantasyTheme.goldBright.opacity(0.15) : Color.clear, radius: 6)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
             .overlay {
                 if showClaimBurst {
                     RewardBurstView(style: burstStyleForReward, isActive: $showClaimBurst)

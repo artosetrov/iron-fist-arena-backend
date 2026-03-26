@@ -49,6 +49,24 @@ struct CharacterSelectionView: View {
                     enterGameOverlay
                 }
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        HapticManager.light()
+                        SFXManager.shared.play(.uiTap)
+                        appState.logout()
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("LOG OUT")
+                                .font(DarkFantasyTheme.section(size: 11))
+                                .tracking(0.5)
+                        }
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    }
+                }
+            }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .onboarding: OnboardingDetailView()
@@ -64,12 +82,13 @@ struct CharacterSelectionView: View {
                     cache.cacheSkins(response.skins)
                 }
             }
-            await vm.loadCharacters()
+            await vm.loadCharacters(appState: appState)
         }
         .onChange(of: appState.authPath.count) { oldCount, newCount in
             // Refresh character list when returning from onboarding (new hero created)
             if newCount == 0 && oldCount > 0 {
-                Task { await vm.loadCharacters() }
+                vm.selectedCharacterId = nil  // Reset so auto-select picks the new hero
+                Task { await vm.loadCharacters(appState: appState) }
             }
         }
     }
@@ -371,7 +390,7 @@ struct CharacterSelectionView: View {
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Button {
-                Task { await vm.loadCharacters() }
+                Task { await vm.loadCharacters(appState: appState) }
             } label: {
                 Text("RETRY")
                     .font(DarkFantasyTheme.section(size: 14))

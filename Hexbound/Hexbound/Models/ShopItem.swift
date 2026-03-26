@@ -72,7 +72,7 @@ struct ShopItem: Codable, Identifiable {
         if ct.contains("gem_pack") { return "diamond.fill" }
         if ct.contains("health") { return "heart.fill" }
         if ct.contains("stamina") { return "bolt.fill" }
-        return "flask.fill"
+        return "cross.vial.fill"
     }
 
     /// Icon tint color for consumable items

@@ -23,7 +23,6 @@ struct HeroDetailView: View {
     @State private var characterVM: CharacterViewModel?
     @State private var inventoryVM: InventoryViewModel?
     @State private var showRespecConfirm = false
-    @State private var showSaveConfirm = false
     @State private var statsBadgePulse = false
     @State private var tooltipStat: StatType?
 
@@ -129,13 +128,39 @@ struct HeroDetailView: View {
     }
 
     private func useHealthPotion() async {
-        guard let items = appState.cachedInventory else { return }
+        guard var items = appState.cachedInventory else { return }
         guard let potion = items.first(where: { $0.consumableType?.contains("health_potion") == true }) else { return }
-        let service = InventoryService(appState: appState)
-        let _ = await service.useItem(inventoryId: potion.id, consumableType: potion.consumableType)
-        appState.invalidateCache("inventory")
-        await inventoryVM?.loadInventory()
+
+        // Optimistic UI — update instantly
+        let previousItems = items
+        if let qty = potion.quantity, qty > 1 {
+            items = items.map { existing in
+                guard existing.id == potion.id else { return existing }
+                var updated = existing
+                updated.quantity = qty - 1
+                return updated
+            }
+        } else {
+            items.removeAll { $0.id == potion.id }
+        }
+        appState.cachedInventory = items
+        inventoryVM?.items = items
+        HapticManager.success()
         appState.showToast("Healed!", type: .reward)
+
+        // Fire API in background
+        let potionId = potion.id
+        let consumableType = potion.consumableType
+        let service = InventoryService(appState: appState)
+        Task {
+            let success = await service.useItem(inventoryId: potionId, consumableType: consumableType)
+            if !success {
+                await MainActor.run { [weak self] in
+                    self?.appState.cachedInventory = previousItems
+                    self?.inventoryVM?.items = previousItems
+                }
+            }
+        }
     }
 
     // MARK: - Tab Selector
@@ -553,7 +578,7 @@ struct HeroDetailView: View {
                         .frame(maxWidth: .infinity)
 
                     Button {
-                        showSaveConfirm = true
+                        Task { await vm.saveStats() }
                     } label: {
                         if vm.isSaving {
                             ProgressView().tint(DarkFantasyTheme.textOnGold)
@@ -577,23 +602,6 @@ struct HeroDetailView: View {
         .ignoresSafeArea(.container, edges: .bottom)
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .animation(.easeOut(duration: 0.25), value: vm.hasChanges)
-        .confirmationDialog(
-            "Confirm Allocation",
-            isPresented: $showSaveConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Save Stats") {
-                Task { await vm.saveStats() }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            let summary = vm.pendingChanges
-                .filter { $0.value > 0 }
-                .sorted(by: { $0.key.rawValue < $1.key.rawValue })
-                .map { "\($0.key.fullName) +\($0.value)" }
-                .joined(separator: ", ")
-            Text("\(summary)\n\nRespec costs 50 gems. Make sure this is the build you want.")
-        }
     }
 
     // MARK: - Stat Group Header
@@ -722,7 +730,14 @@ struct HeroDetailView: View {
                 }
             } else {
                 Button {
-                    showRespecConfirm = true
+                    if canAfford {
+                        showRespecConfirm = true
+                    } else {
+                        HapticManager.light()
+                        appState.showToast("Not enough gems", subtitle: "Respec costs \(gemCost) gems. Buy gems in the shop!", type: .error, actionLabel: "Shop") {
+                            appState.mainPath.append(AppRoute.currencyPurchase)
+                        }
+                    }
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "arrow.counterclockwise")
@@ -830,16 +845,29 @@ struct HeroDetailView: View {
             $0.consumableType?.contains("stamina_potion") == true && ($0.quantity ?? 0) > 0
         } ?? false
 
-        if lowHP && !hasHealthPotion {
-            lowResourceBanner(
-                icon: "pot_health_small",
-                sfFallback: "heart.fill",
-                title: "Health is low",
-                subtitle: "Restore HP with a health potion",
-                accentColor: DarkFantasyTheme.hpBlood,
-                ctaText: "Get Potions"
-            ) {
-                appState.mainPath.append(AppRoute.shop)
+        if lowHP {
+            if hasHealthPotion {
+                lowResourceBanner(
+                    icon: "pot_health_small",
+                    sfFallback: "heart.fill",
+                    title: "Health is low",
+                    subtitle: "You have a health potion — use it!",
+                    accentColor: DarkFantasyTheme.hpBlood,
+                    ctaText: "Heal"
+                ) {
+                    Task { await useHealthPotion() }
+                }
+            } else {
+                lowResourceBanner(
+                    icon: "pot_health_small",
+                    sfFallback: "heart.fill",
+                    title: "Health is low",
+                    subtitle: "Buy a health potion to restore HP",
+                    accentColor: DarkFantasyTheme.hpBlood,
+                    ctaText: "Get Potions"
+                ) {
+                    appState.mainPath.append(AppRoute.shop)
+                }
             }
         }
 

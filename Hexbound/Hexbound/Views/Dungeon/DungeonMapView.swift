@@ -83,8 +83,10 @@ struct DungeonMapView: View {
                         }
                     } label: {
                         HStack(spacing: LayoutConstants.spaceSM) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 14, weight: .bold))
+                            Image("ui-arrow-left")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 16, height: 16)
                             Text("CASTLE")
                                 .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                                 .tracking(1)

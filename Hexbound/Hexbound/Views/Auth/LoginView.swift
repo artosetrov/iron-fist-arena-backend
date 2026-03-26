@@ -79,15 +79,6 @@ struct LoginView: View {
                         HStack(spacing: LayoutConstants.spaceMD) {
                             // Apple — consistent bgSecondary background
                             ZStack {
-                                SignInWithAppleButton(.signIn) { request in
-                                    request.requestedScopes = [.email, .fullName]
-                                } onCompletion: { result in
-                                    Task { await vm.handleAppleSignIn(result: result, appState: appState) }
-                                }
-                                .signInWithAppleButtonStyle(.black)
-                                .blendMode(.destinationOver)
-                                .opacity(0.01)
-
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Image(systemName: "apple.logo")
                                         .font(.system(size: 22, weight: .medium))
@@ -96,6 +87,15 @@ struct LoginView: View {
                                 }
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .allowsHitTesting(false)
+
+                                SignInWithAppleButton(.signIn) { request in
+                                    request.requestedScopes = [.email, .fullName]
+                                } onCompletion: { result in
+                                    Task { await vm.handleAppleSignIn(result: result, appState: appState) }
+                                }
+                                .signInWithAppleButtonStyle(.black)
+                                .blendMode(.overlay)
+                                .opacity(0.015)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: LayoutConstants.buttonHeightLG)

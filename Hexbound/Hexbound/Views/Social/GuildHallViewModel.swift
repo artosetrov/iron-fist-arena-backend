@@ -48,6 +48,9 @@ class GuildHallViewModel {
     var processingChallengeId: String?
     var sendMessageError: String?
 
+    // Thread polling
+    private var isPollingActive = false
+
     private let socialService = SocialService.shared
     private let challengeService = ChallengeService.shared
     private let messageService = MessageService.shared
@@ -55,6 +58,34 @@ class GuildHallViewModel {
 
     init(characterId: String) {
         self.characterId = characterId
+    }
+
+    // MARK: - Thread Polling (auto-refresh incoming messages)
+
+    func startThreadPolling() {
+        guard !isPollingActive else { return }
+        isPollingActive = true
+        Task { [weak self] in
+            while let self, self.isPollingActive, self.activeThreadCharacterId != nil {
+                try? await Task.sleep(for: .seconds(5))
+                guard self.isPollingActive, let targetId = self.activeThreadCharacterId else { break }
+                // Silent refresh — don't reset loading state
+                if let messages = try? await self.messageService.getThread(
+                    characterId: self.characterId,
+                    withCharacterId: targetId
+                ) {
+                    // Only update if new messages arrived (avoid UI flicker)
+                    if messages.count != self.activeThread.count ||
+                       messages.first?.id != self.activeThread.first?.id {
+                        self.activeThread = messages
+                    }
+                }
+            }
+        }
+    }
+
+    func stopThreadPolling() {
+        isPollingActive = false
     }
 
     // MARK: - Load Data
@@ -270,6 +301,7 @@ class GuildHallViewModel {
     }
 
     func closeThread() {
+        stopThreadPolling()
         activeThreadCharacterId = nil
         activeThreadCharacterName = nil
         activeThreadCharacterAvatar = nil

@@ -92,22 +92,22 @@ struct Item: Codable, Identifiable {
     // MARK: - Consumable Icon Helpers
 
     /// SF Symbol name for consumable items based on consumableType
-    /// Note: Potions should use imageKey instead of SF Symbols (see pot_health_*, pot_stamina_* assets)
     var consumableIcon: String? {
         guard itemType == .consumable else { return nil }
-        let ct = consumableType ?? ""
-        // Only return SF Symbols for non-potion consumables
+        let ct = consumableType ?? catalogId ?? ""
         if ct.contains("gem_pack") { return "diamond.fill" }
-        // Potions use imageKey assets instead
-        return nil
+        if ct.contains("health") { return "heart.fill" }
+        if ct.contains("stamina") { return "bolt.fill" }
+        return "cross.vial.fill"
     }
 
     /// Tint color for consumable SF Symbol
     var consumableIconColor: Color? {
         guard itemType == .consumable else { return nil }
-        let ct = consumableType ?? ""
+        let ct = consumableType ?? catalogId ?? ""
         if ct.contains("gem_pack") { return DarkFantasyTheme.cyan }
-        // Potions use imageKey assets instead
-        return nil
+        if ct.contains("health") { return DarkFantasyTheme.danger }
+        if ct.contains("stamina") { return DarkFantasyTheme.success }
+        return DarkFantasyTheme.goldBright
     }
 }

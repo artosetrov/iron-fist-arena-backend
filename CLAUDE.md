@@ -661,7 +661,8 @@ When replacing a struct, class, function, or view with a new version:
 - **Why:** NavigationStack applies a push/pop transition. When `.task` creates the VM (nil → non-nil), the content appearance gets caught in that transition, causing a visible "stretch from left/right" layout animation.
 - **Single-view pattern:** `if let vm { VStack { ... }.transaction { $0.animation = nil } }`
 - **Multi-branch pattern:** `if let vm { Group { if ... else ... }.transaction { $0.animation = nil } }`
-- This does NOT disable explicit `withAnimation` calls inside the view — only the implicit transition animation.
+- **WARNING: `.transaction { $0.animation = nil }` DOES override `withAnimation()` calls inside the view.** The transaction modifier intercepts all transactions as they propagate down the view hierarchy, including those created by `withAnimation`. If your screen has custom animations (wheel spin, card flip, etc.), use explicit `.animation(_, value:)` modifiers on the specific animated views instead of `withAnimation()`. Explicit `.animation(_, value:)` takes precedence because it attaches directly to the view.
+- **Past incident:** FortuneWheelDetailView used `withAnimation(.timingCurve(...))` for wheel spin, but `.transaction { $0.animation = nil }` on the parent killed it. Wheel never spun. Fixed by adding `.animation(.timingCurve(...), value: rotation)` on the wheel view itself.
 - **Applied to (14 screens):** ArenaDetailView, ShopDetailView, SettingsDetailView, LeaderboardDetailView, DailyQuestsDetailView, AchievementsDetailView, ShellGameDetailView, GoldMineDetailView, DungeonRushDetailView, DailyLoginDetailView, AppearanceEditorDetailView, DungeonSelectDetailView, DungeonRoomDetailView, BattlePassDetailView.
 - **Any new screen** with optional VM MUST follow this pattern.
 

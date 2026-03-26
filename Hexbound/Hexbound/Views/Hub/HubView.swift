@@ -210,6 +210,10 @@ struct HubView: View {
             if cache.cachedDungeonProgress() == nil {
                 Task { await prefetchDungeons() }
             }
+            // Background-prefetch battle pass for badge + instant screen open
+            if cache.cachedBattlePass() == nil {
+                Task { await prefetchBattlePass() }
+            }
             // Background-prefetch social status for Guild Hall badge
             if cache.cachedSocialStatus() == nil {
                 Task { await prefetchSocialStatus() }
@@ -318,6 +322,12 @@ struct HubView: View {
         if !progress.isEmpty {
             await MainActor.run { cache.cacheDungeonProgress(progress) }
         }
+    }
+
+    private func prefetchBattlePass() async {
+        let bpService = BattlePassService(appState: appState)
+        guard let data = await bpService.loadBattlePass() else { return }
+        cache.cacheBattlePass(data)
     }
 
     private func prefetchSocialStatus() async {
@@ -865,15 +875,16 @@ struct FloatingActionIcon: View {
                     .shadow(color: accentColor.opacity(0.25), radius: 8, y: 2)
                     .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
 
-                // Notification badge
+                // Notification badge — gold pulsing dot
                 if badgeActive {
                     Circle()
-                        .fill(DarkFantasyTheme.danger)
+                        .fill(DarkFantasyTheme.goldBright)
                         .frame(width: 14, height: 14)
                         .overlay(
                             Circle()
                                 .stroke(DarkFantasyTheme.bgPrimary, lineWidth: 2)
                         )
+                        .shadow(color: DarkFantasyTheme.gold.opacity(badgePulse ? 0.8 : 0.2), radius: badgePulse ? 6 : 2)
                         .offset(x: 2, y: -2)
                         .accessibilityHidden(true)
                 }
