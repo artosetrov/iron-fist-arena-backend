@@ -58,9 +58,10 @@ struct WelcomeView: View {
 
                     // Social auth row — consistent background on both buttons
                     HStack(spacing: LayoutConstants.spaceMD) {
-                        // Apple
-                        ZStack {
-                            // Visual layer (not tappable)
+                        // Apple — programmatic sign in via regular Button
+                        Button {
+                            vm.triggerAppleSignIn(appState: appState)
+                        } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
                                     .font(.system(size: 18, weight: .medium))
@@ -68,29 +69,18 @@ struct WelcomeView: View {
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
-                            .allowsHitTesting(false)
-
-                            // Invisible but tappable Apple button on top
-                            SignInWithAppleButton(.continue) { request in
-                                request.requestedScopes = [.email, .fullName]
-                            } onCompletion: { result in
-                                Task { await vm.handleAppleSignIn(result: result, appState: appState) }
-                            }
-                            .signInWithAppleButtonStyle(.white)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .opacity(0.021)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LayoutConstants.buttonHeightLG)
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .fill(DarkFantasyTheme.bgSecondary)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightLG)
-                        .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .fill(DarkFantasyTheme.bgSecondary)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                         .accessibilityLabel("Sign in with Apple")
 
                         // Google

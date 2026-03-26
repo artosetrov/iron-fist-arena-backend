@@ -33,17 +33,10 @@ struct UpgradeGuestView: View {
 
                     // OAuth buttons — Apple & Google
                     VStack(spacing: LayoutConstants.spaceMD) {
-                        // Apple Sign In
-                        ZStack {
-                            SignInWithAppleButton(.signUp) { request in
-                                request.requestedScopes = [.email, .fullName]
-                            } onCompletion: { result in
-                                Task { await vm.handleAppleSignIn(result: result, appState: appState) }
-                            }
-                            .signInWithAppleButtonStyle(.black)
-                            .blendMode(.destinationOver)
-                            .opacity(0.01)
-
+                        // Apple Sign In — programmatic
+                        Button {
+                            vm.triggerAppleSignIn(appState: appState)
+                        } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
                                     .font(.system(size: 22, weight: .medium))
@@ -51,19 +44,18 @@ struct UpgradeGuestView: View {
                                     .font(DarkFantasyTheme.title(size: LayoutConstants.textBody))
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
-                            .allowsHitTesting(false)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LayoutConstants.buttonHeightLG)
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .fill(DarkFantasyTheme.bgSecondary)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: LayoutConstants.buttonHeightLG)
-                        .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .fill(DarkFantasyTheme.bgSecondary)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                         .disabled(vm.isLoading)
                         .accessibilityLabel("Continue with Apple")
 

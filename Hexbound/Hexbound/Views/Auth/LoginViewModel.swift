@@ -12,6 +12,7 @@ final class LoginViewModel {
     var forgotEmail = ""
 
     private var authService: AuthService?
+    private var appleSignInHelper: AppleSignInHelper?
 
     func setup(appState: AppState) {
         authService = AuthService(appState: appState)
@@ -180,6 +181,18 @@ final class LoginViewModel {
     }
     #endif
 
+    /// Programmatically trigger Apple Sign In from a regular SwiftUI Button
+    func triggerAppleSignIn(appState: AppState) {
+        let helper = AppleSignInHelper()
+        appleSignInHelper = helper // retain until callback
+        helper.signIn { [weak self] result in
+            Task { @MainActor in
+                await self?.handleAppleSignIn(result: result, appState: appState)
+                self?.appleSignInHelper = nil
+            }
+        }
+    }
+
     private func validate() -> Bool {
         if email.trimmingCharacters(in: .whitespaces).isEmpty {
             errorMessage = "Please enter your email"
@@ -190,5 +203,41 @@ final class LoginViewModel {
             return false
         }
         return true
+    }
+}
+
+// MARK: - Programmatic Apple Sign In
+
+final class AppleSignInHelper: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    private var completion: ((Result<ASAuthorization, Error>) -> Void)?
+
+    func signIn(completion: @escaping (Result<ASAuthorization, Error>) -> Void) {
+        self.completion = completion
+        let provider = ASAuthorizationAppleIDProvider()
+        let request = provider.createRequest()
+        request.requestedScopes = [.email, .fullName]
+
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        controller.performRequests()
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+        completion?(.success(authorization))
+        completion = nil
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        completion?(.failure(error))
+        completion = nil
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = scene.windows.first else {
+            return ASPresentationAnchor()
+        }
+        return window
     }
 }
