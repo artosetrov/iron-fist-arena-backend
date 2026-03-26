@@ -246,6 +246,7 @@ final class UpgradeGuestViewModel {
     var password = ""
     var isLoading = false
     var errorMessage: String?
+    private var appleSignInHelper: AppleSignInHelper?
 
     var isValid: Bool {
         !email.isEmpty && email.contains("@") && password.count >= 6 && !username.isEmpty
@@ -292,6 +293,17 @@ final class UpgradeGuestViewModel {
     }
 
     // MARK: - Apple Sign In
+
+    func triggerAppleSignIn(appState: AppState) {
+        let helper = AppleSignInHelper()
+        appleSignInHelper = helper
+        helper.signIn { [weak self] result in
+            Task { @MainActor in
+                await self?.handleAppleSignIn(result: result, appState: appState)
+                self?.appleSignInHelper = nil
+            }
+        }
+    }
 
     func handleAppleSignIn(result: Result<ASAuthorization, Error>, appState: AppState) async {
         switch result {
