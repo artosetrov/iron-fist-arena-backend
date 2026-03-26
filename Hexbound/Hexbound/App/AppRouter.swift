@@ -22,7 +22,7 @@ enum AppRoute: Hashable, Codable {
 
     // Shop
     case shop
-    case currencyPurchase
+    case currencyPurchase(initialTab: Int = 0)
     case premiumPurchase
 
     // Dungeon
@@ -127,7 +127,7 @@ struct MainRouterView: View {
         
         // Shop
         case .shop: ShopDetailView()
-        case .currencyPurchase: CurrencyPurchaseView()
+        case .currencyPurchase(let tab): CurrencyPurchaseView(initialTab: tab)
         case .premiumPurchase: PremiumPurchaseView()
         
         // Dungeon

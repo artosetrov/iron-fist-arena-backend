@@ -50,7 +50,7 @@ struct ShopDetailView: View {
             Text("Spend \(item.displayPrice) on \(item.itemName)?")
         }
         .navigationBarBackButtonHidden(true)
-        .npcHint(.shop)
+        .npcHint(.shop, isReady: vm != nil)
         .tutorialOverlay(steps: [.shopGems])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -137,7 +137,7 @@ struct ShopDetailView: View {
             Spacer()
 
             Button {
-                appState.mainPath.append(AppRoute.currencyPurchase)
+                appState.mainPath.append(AppRoute.currencyPurchase())
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")

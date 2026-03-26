@@ -23,8 +23,9 @@ class SocialService {
 
     // MARK: - Friend Actions
 
-    func sendFriendRequest(characterId: String, targetId: String) async -> Bool {
-        return await performAction(characterId: characterId, targetId: targetId, action: "request")
+    /// Returns nil on success, or error message string on failure.
+    func sendFriendRequest(characterId: String, targetId: String) async -> String? {
+        return await performActionWithError(characterId: characterId, targetId: targetId, action: "request")
     }
 
     func acceptFriendRequest(characterId: String, requesterId: String) async -> Bool {
@@ -64,6 +65,31 @@ class SocialService {
             print("[SocialService] \(action) error: \(error)")
             #endif
             return false
+        }
+    }
+
+    /// Like performAction but returns nil on success, or error message on failure.
+    private func performActionWithError(characterId: String, targetId: String, action: String) async -> String? {
+        do {
+            let body: [String: Any] = [
+                "character_id": characterId,
+                "target_id": targetId,
+                "action": action,
+            ]
+            _ = try await APIClient.shared.postRaw(
+                APIEndpoints.socialFriends,
+                body: body
+            )
+            return nil  // success
+        } catch let apiError as APIError {
+            switch apiError {
+            case .serverError(_, let message):
+                return message
+            default:
+                return "Network error"
+            }
+        } catch {
+            return "Network error"
         }
     }
 

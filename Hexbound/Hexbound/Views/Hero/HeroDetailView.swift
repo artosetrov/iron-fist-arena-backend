@@ -25,6 +25,7 @@ struct HeroDetailView: View {
     @State private var showRespecConfirm = false
     @State private var statsBadgePulse = false
     @State private var tooltipStat: StatType?
+    @State private var showInventoryHint = false
 
     var body: some View {
         ZStack {
@@ -88,6 +89,49 @@ struct HeroDetailView: View {
         .task(id: inventoryVM != nil) {
             guard let vm = inventoryVM else { return }
             await vm.loadInventory()
+            // Show inventory hint if player has no equipped items (first visit)
+            let charId = appState.currentCharacter?.id ?? ""
+            let equippedCount = vm.items.filter { $0.isEquipped == true }.count
+            if equippedCount == 0 && !charId.isEmpty {
+                let hintManager = NPCHintManager.shared
+                if !hintManager.hasSeen(NPCHint.inventory.id, for: charId) {
+                    try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s delay
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        showInventoryHint = true
+                    }
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if showInventoryHint {
+                NPCGuideWidget(
+                    npcTitle: NPCHint.inventory.npcName,
+                    onDismiss: {
+                        let charId = appState.currentCharacter?.id ?? ""
+                        let key = "npc_hint_seen_\(charId)_\(NPCHint.inventory.id)"
+                        UserDefaults.standard.set(true, forKey: key)
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            showInventoryHint = false
+                        }
+                    },
+                    npcImageName: NPCHint.inventory.npcImage,
+                    plainMessage: NPCHint.inventory.message,
+                    ctaLabel: "Go to Shop",
+                    onCTA: {
+                        let charId = appState.currentCharacter?.id ?? ""
+                        let key = "npc_hint_seen_\(charId)_\(NPCHint.inventory.id)"
+                        UserDefaults.standard.set(true, forKey: key)
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            showInventoryHint = false
+                        }
+                        appState.mainPath.append(AppRoute.shop)
+                    },
+                    typewriterEnabled: true
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.spaceSM)
+            }
         }
     }
 
@@ -735,7 +779,7 @@ struct HeroDetailView: View {
                     } else {
                         HapticManager.light()
                         appState.showToast("Not enough gems", subtitle: "Respec costs \(gemCost) gems. Buy gems in the shop!", type: .error, actionLabel: "Shop") {
-                            appState.mainPath.append(AppRoute.currencyPurchase)
+                            appState.mainPath.append(AppRoute.currencyPurchase())
                         }
                     }
                 } label: {

@@ -77,10 +77,40 @@ struct CombatResultDetailView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
+            // Optimistically update character XP/level/gold from combat result
+            // BEFORE taking XP snapshot — loadCharacter() is async and won't
+            // complete in time for the snapshot to read updated values.
+            if let res = result {
+                let xpReward = res.xpReward ?? 0
+                let goldReward = res.goldReward ?? 0
+                if xpReward > 0 {
+                    let oldXp = appState.currentCharacter?.experience ?? 0
+                    appState.currentCharacter?.experience = oldXp + xpReward
+                }
+                if goldReward > 0 {
+                    let oldGold = appState.currentCharacter?.gold ?? 0
+                    appState.currentCharacter?.gold = oldGold + goldReward
+                }
+                if res.leveledUp == true, let newLvl = res.newLevel {
+                    appState.currentCharacter?.level = newLvl
+                    // Remaining XP after level-up: server sets currentXp to overflow amount
+                    // Recalculate from the new level's XP curve
+                    let xpNeeded = xpNeededForLevel(newLvl - 1)
+                    let totalXp = (appState.currentCharacter?.experience ?? 0)
+                    if totalXp >= xpNeeded {
+                        appState.currentCharacter?.experience = totalXp - xpNeeded
+                    }
+                }
+                if let statPts = res.statPointsAwarded, statPts > 0 {
+                    let old = appState.currentCharacter?.statPoints ?? 0
+                    appState.currentCharacter?.statPoints = old + statPts
+                }
+            }
+
             captureXpSnapshot()
             // Play victory/defeat SFX
             SFXManager.shared.play(isWin ? .battleVictory : .battleDefeat)
-            // Reload character immediately to reflect new XP/level
+            // Reload character in background to get authoritative server values
             Task {
                 let charService = CharacterService(appState: appState)
                 await charService.loadCharacter()

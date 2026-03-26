@@ -4,8 +4,10 @@ import SwiftUI
 
 /// View modifier that shows a one-time NPC hint at the bottom of a screen.
 /// Usage: `.npcHint(.arena)` on any screen's root view.
+/// The hint waits for `isReady` to become true (content loaded) before showing.
 struct NPCHintOverlay: ViewModifier {
     let hint: NPCHint
+    var isReady: Bool
     @Environment(AppState.self) private var appState
 
     func body(content: Content) -> some View {
@@ -27,25 +29,39 @@ struct NPCHintOverlay: ViewModifier {
                         },
                         onContinue: {
                             hintManager.dismiss(for: charId)
-                        }
+                        },
+                        typewriterEnabled: true
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.bottom, LayoutConstants.spaceSM)
                 }
             }
+            .onChange(of: isReady) { _, ready in
+                if ready {
+                    // Show hint after content has loaded + small visual delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        hintManager.tryShow(hint, for: charId)
+                    }
+                }
+            }
             .onAppear {
-                // Small delay so the screen renders first
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    hintManager.tryShow(hint, for: charId)
+                // If already ready on appear (cached data), show with delay
+                if isReady {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        hintManager.tryShow(hint, for: charId)
+                    }
                 }
             }
     }
 }
 
 extension View {
-    /// Shows a one-time NPC guide hint when this screen first appears.
-    func npcHint(_ hint: NPCHint) -> some View {
-        modifier(NPCHintOverlay(hint: hint))
+    /// Shows a one-time NPC guide hint when this screen's content is ready.
+    /// - Parameters:
+    ///   - hint: The NPC hint to show
+    ///   - isReady: Whether the screen content has loaded (default: true for immediate show with delay)
+    func npcHint(_ hint: NPCHint, isReady: Bool = true) -> some View {
+        modifier(NPCHintOverlay(hint: hint, isReady: isReady))
     }
 }

@@ -449,13 +449,35 @@ struct LeaderboardPlayerDetailSheet: View {
     private func sendFriendRequest() async {
         guard let charId = appState.currentCharacter?.id else { return }
         isFriendActionLoading = true
-        let success = await SocialService.shared.sendFriendRequest(
+        let errorMsg = await SocialService.shared.sendFriendRequest(
             characterId: charId,
             targetId: entry.characterId
         )
         isFriendActionLoading = false
-        if success {
+        if errorMsg == nil {
             friendshipState = .requestSent
+            HapticManager.success()
+            appState.showToast("Ally request sent!", type: .info)
+        } else {
+            HapticManager.error()
+            let reason: String
+            switch errorMsg {
+            case "Already friends or request pending":
+                reason = "Request already pending"
+                friendshipState = .requestSent
+            case "Friend list full":
+                reason = "Your ally list is full (max 50)"
+                friendshipState = .maxReached
+            case "Cannot send request":
+                reason = "This player is unavailable"
+            case "Too many requests today":
+                reason = "Daily request limit reached (20/day)"
+            case "Cooldown active":
+                reason = "Wait 24h before sending again"
+            default:
+                reason = errorMsg ?? "Something went wrong"
+            }
+            appState.showToast("Can't send request", subtitle: reason, type: .error)
         }
     }
 

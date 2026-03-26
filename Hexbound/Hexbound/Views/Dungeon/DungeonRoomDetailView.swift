@@ -445,38 +445,96 @@ struct DungeonRoomDetailView: View {
     // MARK: - Potion Usage
 
     private func useHealthPotion() async {
-        guard let cachedInventory = appState.cachedInventory else { return }
-        guard let healthPotion = cachedInventory.first(where: { $0.consumableType?.contains("health_potion") == true }) else {
+        guard var items = appState.cachedInventory else { return }
+        guard let potion = items.first(where: { $0.consumableType?.contains("health_potion") == true }) else {
             appState.showToast("No health potions available", type: .error)
             return
         }
 
-        let service = InventoryService(appState: appState)
-        let success = await service.useItem(inventoryId: healthPotion.id, consumableType: healthPotion.consumableType)
+        // Optimistic UI — update cache + HP immediately
+        let previousItems = items
+        let previousHp = appState.currentCharacter?.currentHp ?? 0
+        let maxHp = appState.currentCharacter?.maxHp ?? 1
 
-        if success {
-            appState.invalidateCache("inventory")
-            appState.showToast("Health restored!", type: .reward)
+        if let qty = potion.quantity, qty > 1 {
+            items = items.map { existing in
+                guard existing.id == potion.id else { return existing }
+                var updated = existing
+                updated.quantity = qty - 1
+                return updated
+            }
         } else {
-            appState.showToast("Failed to use health potion", type: .error)
+            items.removeAll { $0.id == potion.id }
+        }
+        appState.cachedInventory = items
+
+        let estimatedHeal = max(Int(Double(maxHp) * 0.3), 50)
+        let newHp = min(previousHp + estimatedHeal, maxHp)
+        appState.currentCharacter?.currentHp = newHp
+
+        HapticManager.success()
+        appState.showToast("Healed! HP: \(newHp)/\(maxHp)", type: .reward)
+
+        // Fire API in background
+        let potionId = potion.id
+        let consumableType = potion.consumableType
+        let service = InventoryService(appState: appState)
+        Task {
+            let success = await service.useItem(inventoryId: potionId, consumableType: consumableType)
+            if !success {
+                await MainActor.run {
+                    appState.cachedInventory = previousItems
+                    appState.currentCharacter?.currentHp = previousHp
+                    appState.showToast("Failed to use potion", type: .error)
+                }
+            }
         }
     }
 
     private func useStaminaPotion() async {
-        guard let cachedInventory = appState.cachedInventory else { return }
-        guard let staminaPotion = cachedInventory.first(where: { $0.consumableType?.contains("stamina_potion") == true }) else {
+        guard var items = appState.cachedInventory else { return }
+        guard let potion = items.first(where: { $0.consumableType?.contains("stamina_potion") == true }) else {
             appState.showToast("No stamina potions available", type: .error)
             return
         }
 
-        let service = InventoryService(appState: appState)
-        let success = await service.useItem(inventoryId: staminaPotion.id, consumableType: staminaPotion.consumableType)
+        // Optimistic UI — update cache + stamina immediately
+        let previousItems = items
+        let previousStamina = appState.currentCharacter?.currentStamina ?? 0
 
-        if success {
-            appState.invalidateCache("inventory")
-            appState.showToast("Stamina restored!", type: .reward)
+        if let qty = potion.quantity, qty > 1 {
+            items = items.map { existing in
+                guard existing.id == potion.id else { return existing }
+                var updated = existing
+                updated.quantity = qty - 1
+                return updated
+            }
         } else {
-            appState.showToast("Failed to use stamina potion", type: .error)
+            items.removeAll { $0.id == potion.id }
+        }
+        appState.cachedInventory = items
+
+        let maxStamina = appState.currentCharacter?.maxStamina ?? 100
+        let estimatedRestore = max(Int(Double(maxStamina) * 0.3), 20)
+        let newStamina = min(previousStamina + estimatedRestore, maxStamina)
+        appState.currentCharacter?.currentStamina = newStamina
+
+        HapticManager.success()
+        appState.showToast("+\(newStamina - previousStamina) Stamina restored!", type: .reward)
+
+        // Fire API in background
+        let potionId = potion.id
+        let consumableType = potion.consumableType
+        let service = InventoryService(appState: appState)
+        Task {
+            let success = await service.useItem(inventoryId: potionId, consumableType: consumableType)
+            if !success {
+                await MainActor.run {
+                    appState.cachedInventory = previousItems
+                    appState.currentCharacter?.currentStamina = previousStamina
+                    appState.showToast("Failed to use potion", type: .error)
+                }
+            }
         }
     }
 }

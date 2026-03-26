@@ -43,14 +43,27 @@ struct NPCGuideWidget: View {
     /// "Continue" button (tutorial mode)
     var onContinue: (() -> Void)? = nil
 
+    // MARK: - Optional CTA Button
+    /// Custom CTA button text (e.g. "Go to Shop")
+    var ctaLabel: String? = nil
+    /// Custom CTA action
+    var onCTA: (() -> Void)? = nil
+
     // MARK: - Customization
     /// SF Symbol fallback when NPC image asset is missing
     var npcFallbackIcon: String = "person.crop.circle.fill"
     /// Unique ID for message transition animation
     var messageId: AnyHashable? = nil
+    /// Enable typewriter text animation (characters appear one by one)
+    var typewriterEnabled: Bool = false
+    /// Speed of typewriter animation (seconds per character)
+    var typewriterSpeed: Double = 0.03
 
     // MARK: - State
     @State private var avatarBounce = false
+    @State private var typewriterText: String = ""
+    @State private var typewriterTimer: Timer?
+    @State private var typewriterDone = false
 
     /// Whether to use the player's dynamic avatar (AvatarImageView) instead of a static NPC image
     private var usesPlayerAvatar: Bool {
@@ -95,9 +108,11 @@ struct NPCGuideWidget: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .padding(.trailing, 32) // space for X button
 
-                // Message text
+                // Message text (with optional typewriter animation)
                 Group {
-                    if let attributed = attributedMessage {
+                    if typewriterEnabled {
+                        Text(typewriterText)
+                    } else if let attributed = attributedMessage {
                         Text(attributed)
                     } else if let plain = plainMessage {
                         Text(plain)
@@ -108,6 +123,34 @@ struct NPCGuideWidget: View {
                 .lineLimit(3)
                 .id(messageId)
                 .transition(.opacity)
+                .onAppear {
+                    if typewriterEnabled {
+                        startTypewriter()
+                    }
+                }
+                .onDisappear {
+                    typewriterTimer?.invalidate()
+                    typewriterTimer = nil
+                }
+
+                // Optional CTA button (e.g. "Go to Shop")
+                if let label = ctaLabel, let action = onCTA, (!typewriterEnabled || typewriterDone) {
+                    Button {
+                        HapticManager.light()
+                        action()
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Text(label)
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .foregroundStyle(DarkFantasyTheme.textOnGold)
+                        }
+                        .padding(.horizontal, LayoutConstants.spaceLG)
+                        .padding(.vertical, LayoutConstants.spaceSM)
+                        .background(Capsule().fill(DarkFantasyTheme.gold))
+                    }
+                    .buttonStyle(.scalePress(0.9))
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                }
 
                 // Optional action row (tutorial mode)
                 if onSkipAll != nil || onContinue != nil {
@@ -161,19 +204,19 @@ struct NPCGuideWidget: View {
 
     @ViewBuilder
     private var actionRow: some View {
-        HStack {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            Spacer()
+
             if let skipAll = onSkipAll {
                 Button {
                     skipAll()
                 } label: {
-                    Text("Skip all tips")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    Text("Skip all")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
-                .buttonStyle(.ghost)
+                .buttonStyle(.plain)
             }
-
-            Spacer()
 
             if let continueAction = onContinue {
                 Button {
@@ -181,7 +224,7 @@ struct NPCGuideWidget: View {
                     continueAction()
                 } label: {
                     Text("Continue")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceLG)
                         .padding(.vertical, LayoutConstants.spaceSM)
@@ -191,6 +234,29 @@ struct NPCGuideWidget: View {
                 }
                 .buttonStyle(.scalePress(0.9))
             }
+        }
+    }
+
+    // MARK: - Typewriter Animation
+
+    private func startTypewriter() {
+        let fullText = plainMessage ?? ""
+        guard !fullText.isEmpty else { return }
+        typewriterText = ""
+        typewriterDone = false
+        var charIndex = 0
+        let chars = Array(fullText)
+        typewriterTimer = Timer.scheduledTimer(withTimeInterval: typewriterSpeed, repeats: true) { timer in
+            guard charIndex < chars.count else {
+                timer.invalidate()
+                typewriterTimer = nil
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    typewriterDone = true
+                }
+                return
+            }
+            typewriterText.append(chars[charIndex])
+            charIndex += 1
         }
     }
 

@@ -204,7 +204,7 @@ struct ArenaDetailView: View {
             .transaction { $0.animation = nil }
         }
         .navigationBarBackButtonHidden(true)
-        .npcHint(.arena)
+        .npcHint(.arena, isReady: vm != nil)
         .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -296,29 +296,34 @@ struct ArenaDetailView: View {
             appState.cachedInventory = items.filter { $0.id != potion.id }
         }
 
-        HapticManager.success()
-        appState.showToast("Potion used!", type: .reward)
+        // Optimistic HP update — estimate healing amount (30% of maxHP)
+        let maxHp = appState.currentCharacter?.maxHp ?? 1
+        let currentHp = appState.currentCharacter?.currentHp ?? 0
+        let estimatedHeal = max(Int(Double(maxHp) * 0.3), 50)
+        let newHp = min(currentHp + estimatedHeal, maxHp)
+        appState.currentCharacter?.currentHp = newHp
 
-        // Fire API in background
+        HapticManager.success()
+        appState.showToast("Healed! HP: \(newHp)/\(maxHp)", type: .reward)
+
+        // Fire API in background — server returns actual values
         let potionId = potion.id
         let consumableType = potion.consumableType
+        let previousHp = currentHp
         let service = InventoryService(appState: appState)
-        let success = await service.useItem(
-            inventoryId: potionId,
-            consumableType: consumableType
-        )
-
-        if success {
-            let hpAfter = appState.currentCharacter?.currentHp ?? 0
-            let maxHp = appState.currentCharacter?.maxHp ?? 1
-            appState.showToast(
-                "HP restored to \(hpAfter)/\(maxHp)",
-                type: .reward
+        Task {
+            let success = await service.useItem(
+                inventoryId: potionId,
+                consumableType: consumableType
             )
-        } else {
-            // Revert on failure
-            appState.cachedInventory = previousItems
-            appState.showToast("Failed to use potion", type: .error)
+            if !success {
+                // Revert on failure
+                await MainActor.run {
+                    appState.cachedInventory = previousItems
+                    appState.currentCharacter?.currentHp = previousHp
+                    appState.showToast("Failed to use potion", type: .error)
+                }
+            }
         }
     }
 

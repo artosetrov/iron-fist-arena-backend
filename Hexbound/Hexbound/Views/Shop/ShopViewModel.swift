@@ -146,7 +146,7 @@ final class ShopViewModel {
                 type: .error,
                 actionLabel: "GET MORE",
                 action: { [weak appState] in
-                    appState?.mainPath.append(AppRoute.currencyPurchase)
+                    appState?.mainPath.append(AppRoute.currencyPurchase())
                 }
             )
             return
@@ -256,7 +256,7 @@ final class ShopViewModel {
                 type: .error,
                 actionLabel: "GET MORE",
                 action: { [weak appState] in
-                    appState?.mainPath.append(AppRoute.currencyPurchase)
+                    appState?.mainPath.append(AppRoute.currencyPurchase())
                 }
             )
             return

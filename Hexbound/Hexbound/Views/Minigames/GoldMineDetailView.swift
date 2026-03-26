@@ -39,7 +39,7 @@ struct GoldMineDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .npcHint(.goldMine)
+        .npcHint(.goldMine, isReady: vm != nil)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()

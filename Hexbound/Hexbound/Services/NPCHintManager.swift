@@ -90,7 +90,7 @@ struct NPCHint: Identifiable, Equatable {
     static let arena = NPCHint(
         id: "arena_intro",
         npcName: "Arena Master",
-        npcImage: "building-arena",
+        npcImage: "shopkeeper",
         message: "Choose your opponent wisely! You get free fights daily. Keep your HP above 10% or you won't be able to fight."
     )
 
@@ -150,8 +150,15 @@ struct NPCHint: Identifiable, Equatable {
         message: "You leveled up! Don't forget to allocate your new stat points in the STATUS tab on the Hero page."
     )
 
+    static let inventory = NPCHint(
+        id: "inventory_empty",
+        npcName: "Sage",
+        npcImage: "building-tavern",
+        message: "You have no gear yet! Visit the Shop and buy some equipment — you'll need it to survive in the Arena."
+    )
+
     static let allHints: [NPCHint] = [
         .hub, .arena, .hero, .shop, .dungeon, .goldMine,
-        .battlePass, .achievements, .usePotion, .levelUp
+        .battlePass, .achievements, .usePotion, .levelUp, .inventory
     ]
 }

@@ -75,8 +75,9 @@ class GuildHallViewModel {
                     withCharacterId: targetId
                 ) {
                     // Only update if new messages arrived (avoid UI flicker)
+                    // Backend returns ASC order — last element is newest
                     if messages.count != self.activeThread.count ||
-                       messages.first?.id != self.activeThread.first?.id {
+                       messages.last?.id != self.activeThread.last?.id {
                         self.activeThread = messages
                     }
                 }
@@ -244,7 +245,7 @@ class GuildHallViewModel {
             isRead: false,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
-        activeThread.insert(optimisticMsg, at: 0)
+        activeThread.append(optimisticMsg)
         composedMessage = ""
         HapticManager.light()
 
@@ -277,27 +278,45 @@ class GuildHallViewModel {
 
     func sendQuickMessage(_ quickId: String) async {
         guard let targetId = activeThreadCharacterId else { return }
-        isSendingMessage = true
+
+        // Optimistic: show quick message immediately
+        let quick = QuickMessage(rawValue: quickId)
+        let tempId = "temp-quick-\(UUID().uuidString)"
+        let optimisticMsg = DirectMessageItem(
+            id: tempId,
+            senderId: characterId,
+            content: quick?.displayText ?? quickId,
+            isQuick: true,
+            quickId: quickId,
+            isRead: false,
+            createdAt: ISO8601DateFormatter().string(from: Date())
+        )
+        activeThread.append(optimisticMsg)
+        HapticManager.light()
+
+        // Background: actual API call
         do {
             let sent = try await messageService.sendQuickMessage(
                 characterId: characterId,
                 targetId: targetId,
                 quickId: quickId
             )
-            let newMsg = DirectMessageItem(
-                id: sent.id,
-                senderId: characterId,
-                content: sent.content,
-                isQuick: true,
-                quickId: quickId,
-                isRead: false,
-                createdAt: sent.createdAt
-            )
-            activeThread.insert(newMsg, at: 0)
+            // Replace temp with real message
+            if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
+                activeThread[idx] = DirectMessageItem(
+                    id: sent.id,
+                    senderId: characterId,
+                    content: sent.content,
+                    isQuick: true,
+                    quickId: quickId,
+                    isRead: false,
+                    createdAt: sent.createdAt
+                )
+            }
         } catch {
-            // Error handled by service
+            // Remove optimistic on failure
+            activeThread.removeAll(where: { $0.id == tempId })
         }
-        isSendingMessage = false
     }
 
     func closeThread() {
@@ -355,6 +374,20 @@ class GuildHallViewModel {
         processingChallengeId = nil
     }
 
+    func cancelOutgoingChallenge(_ challenge: OutgoingChallenge) async {
+        processingChallengeId = challenge.id
+        do {
+            try await challengeService.cancelChallenge(
+                characterId: characterId,
+                challengeId: challenge.id
+            )
+            outgoingChallenges.removeAll { $0.id == challenge.id }
+        } catch {
+            // Error handled by service
+        }
+        processingChallengeId = nil
+    }
+
     func sendChallenge(targetId: String, message: String? = nil) async -> Bool {
         do {
             _ = try await challengeService.sendChallenge(
@@ -366,5 +399,10 @@ class GuildHallViewModel {
         } catch {
             return false
         }
+    }
+
+    /// Count of pending outgoing challenges (for daily limit display)
+    var pendingOutgoingCount: Int {
+        outgoingChallenges.filter { $0.status == "pending" }.count
     }
 }

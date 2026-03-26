@@ -219,18 +219,8 @@ async function handleRequest(userId: string, friendId: string) {
     return NextResponse.json({ error: 'Too many requests today' }, { status: 429 })
   }
 
-  // Check cooldown (declined request)
-  const recentDeclined = await prisma.friendship.findFirst({
-    where: {
-      userId,
-      friendId,
-      status: 'pending',
-      updatedAt: { gte: new Date(Date.now() - REQUEST_COOLDOWN_HOURS * 60 * 60 * 1000) },
-    },
-  })
-  if (recentDeclined) {
-    return NextResponse.json({ error: 'Cooldown active' }, { status: 429 })
-  }
+  // Note: cooldown after decline is not enforced — decline deletes the record,
+  // so there's no state to check. Daily limit (20/day) provides sufficient anti-abuse.
 
   // Delete old declined entry if exists, then create new
   await prisma.friendship.deleteMany({

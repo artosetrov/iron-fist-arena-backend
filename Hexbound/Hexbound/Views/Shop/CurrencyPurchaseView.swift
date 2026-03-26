@@ -57,6 +57,7 @@ enum PurchaseState: Equatable {
 // MARK: - CurrencyPurchaseView
 
 struct CurrencyPurchaseView: View {
+    var initialTab: Int = 0
     @Environment(AppState.self) private var appState
     @State private var selectedTab: Int = 0
     @State private var purchaseState: PurchaseState = .idle
@@ -203,6 +204,11 @@ struct CurrencyPurchaseView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            if initialTab != 0 && initialTab < tabs.count {
+                selectedTab = initialTab
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()

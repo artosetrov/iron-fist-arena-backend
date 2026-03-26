@@ -8,6 +8,7 @@ struct GuildHallDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: GuildHallViewModel?
+    @State private var selectedPlayerForProfile: LeaderboardEntry?
     @FocusState private var isComposeFieldFocused: Bool
 
     var body: some View {
@@ -121,6 +122,21 @@ struct GuildHallDetailView: View {
         )) {
             if let result = vm?.duelResult {
                 duelResultSheet(result)
+            }
+        }
+        .sheet(item: $selectedPlayerForProfile) { player in
+            if let character = appState.currentCharacter {
+                LeaderboardPlayerDetailSheet(
+                    entry: player,
+                    playerCharacter: character,
+                    onMessage: {
+                        // Already in the chat thread — just dismiss sheet
+                        selectedPlayerForProfile = nil
+                    },
+                    onAddFriend: {
+                        selectedPlayerForProfile = nil
+                    }
+                )
             }
         }
     }
@@ -770,8 +786,10 @@ struct GuildHallDetailView: View {
                                 // Date divider
                                 dateDivider("Today")
 
-                                ForEach(vm.activeThread.reversed()) { msg in
+                                // Backend returns ASC order (oldest→newest) — no reverse needed
+                                ForEach(vm.activeThread) { msg in
                                     messageBubble(msg, vm: vm)
+                                        .id(msg.id)
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -779,6 +797,14 @@ struct GuildHallDetailView: View {
                             .padding(.bottom, LayoutConstants.spaceSM)
                         }
                         .defaultScrollAnchor(.bottom)
+                        .onChange(of: vm.activeThread.count) { _, _ in
+                            // Auto-scroll to newest message
+                            if let lastId = vm.activeThread.last?.id {
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    proxy.scrollTo(lastId, anchor: .bottom)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -829,66 +855,58 @@ struct GuildHallDetailView: View {
                     )
             }
 
-            // Character avatar — 44px with gold-dim border + online dot
-            ZStack(alignment: .bottomTrailing) {
-                if let avatar = vm.activeThreadCharacterAvatar {
-                    AvatarImageView(
-                        skinKey: avatar,
-                        characterClass: CharacterClass(rawValue: vm.activeThreadCharacterClass ?? "warrior") ?? .warrior,
-                        size: 44
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM + 2))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM + 2)
-                            .stroke(DarkFantasyTheme.goldDim, lineWidth: 2)
-                    )
-                } else {
-                    characterAvatar(
-                        name: vm.activeThreadCharacterName ?? "?",
-                        className: nil
-                    )
-                }
+            Spacer()
 
-                // Online indicator
-                Circle()
-                    .fill(DarkFantasyTheme.success)
-                    .frame(width: 12, height: 12)
-                    .overlay(
-                        Circle().stroke(DarkFantasyTheme.bgSecondary, lineWidth: 2)
-                    )
-                    .offset(x: 2, y: 2)
-            }
-
-            // Name + status
-            VStack(alignment: .leading, spacing: 2) {
-                Text(vm.activeThreadCharacterName ?? "Unknown")
-                    .font(DarkFantasyTheme.section(size: 18))
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .lineLimit(1)
-            }
+            // Character name — centered
+            Text(vm.activeThreadCharacterName ?? "Unknown")
+                .font(DarkFantasyTheme.section(size: 18))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
 
             Spacer()
 
-            // Challenge action button
-            if let targetId = vm.activeThreadCharacterId {
-                Button {
-                    Task {
-                        HapticManager.medium()
-                        _ = await vm.sendChallenge(targetId: targetId)
-                    }
-                } label: {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .fill(DarkFantasyTheme.bgTertiary)
+            // Character avatar — tappable, opens profile sheet
+            Button {
+                guard let charId = vm.activeThreadCharacterId,
+                      let charName = vm.activeThreadCharacterName else { return }
+                HapticManager.light()
+                selectedPlayerForProfile = LeaderboardEntry(
+                    characterId: charId,
+                    characterName: charName,
+                    characterClass: vm.activeThreadCharacterClass ?? "warrior",
+                    avatar: vm.activeThreadCharacterAvatar,
+                    level: nil,
+                    value: 0,
+                    rank: 0
+                )
+            } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    if let avatar = vm.activeThreadCharacterAvatar {
+                        AvatarImageView(
+                            skinKey: avatar,
+                            characterClass: CharacterClass(rawValue: vm.activeThreadCharacterClass ?? "warrior") ?? .warrior,
+                            size: 40
                         )
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM + 2))
                         .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .stroke(DarkFantasyTheme.goldDim.opacity(0.5), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM + 2)
+                                .stroke(DarkFantasyTheme.goldDim, lineWidth: 2)
                         )
+                    } else {
+                        characterAvatar(
+                            name: vm.activeThreadCharacterName ?? "?",
+                            className: nil
+                        )
+                    }
+
+                    // Online indicator
+                    Circle()
+                        .fill(DarkFantasyTheme.success)
+                        .frame(width: 10, height: 10)
+                        .overlay(
+                            Circle().stroke(DarkFantasyTheme.bgSecondary, lineWidth: 2)
+                        )
+                        .offset(x: 2, y: 2)
                 }
             }
         }
@@ -936,19 +954,32 @@ struct GuildHallDetailView: View {
 
     private func messageBubble(_ msg: DirectMessageItem, vm: GuildHallViewModel) -> some View {
         let isMine = msg.senderId == appState.currentCharacter?.id
+        let quickMsg = msg.isQuick ? QuickMessage(rawValue: msg.quickId ?? "") : nil
 
         return HStack(alignment: .bottom, spacing: LayoutConstants.spaceXS) {
             if isMine { Spacer(minLength: 48) }
 
             VStack(alignment: isMine ? .trailing : .leading, spacing: 4) {
-                Text(msg.content)
-                    .font(DarkFantasyTheme.body(size: 16))
-                    .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
+                // Quick message: icon + text
+                if let quick = quickMsg {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image(systemName: quick.icon)
+                            .font(.system(size: 16))
+                            .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.gold)
+                        Text(msg.content)
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
+                    }
+                } else {
+                    Text(msg.content)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
+                }
 
                 // Timestamp + read status
                 HStack(spacing: 4) {
                     Text(formatMessageTime(msg.createdAt))
-                        .font(DarkFantasyTheme.body(size: 11))
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                         .foregroundStyle(isMine
                             ? DarkFantasyTheme.textOnGold.opacity(0.5)
                             : DarkFantasyTheme.textTertiary
@@ -956,7 +987,7 @@ struct GuildHallDetailView: View {
 
                     if isMine {
                         Image(systemName: msg.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.system(size: 11))
+                            .font(.system(size: LayoutConstants.textBadge))
                             .foregroundStyle(msg.isRead
                                 ? DarkFantasyTheme.textOnGold.opacity(0.7)
                                 : DarkFantasyTheme.textOnGold.opacity(0.4)
@@ -1056,7 +1087,7 @@ struct GuildHallDetailView: View {
                         Task { await vm.sendQuickMessage(quick.rawValue) }
                     } label: {
                         Text(quick.displayText)
-                            .font(DarkFantasyTheme.section(size: 13))
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                             .foregroundStyle(DarkFantasyTheme.gold)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)

@@ -217,18 +217,6 @@ struct CharacterSelectionView: View {
 
     private var bottomCTA: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            // Selected hero name preview
-            if let selected = vm.selectedCharacter {
-                HStack(spacing: 4) {
-                    Text("Playing as")
-                        .font(DarkFantasyTheme.body(size: 12))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Text(selected.characterName)
-                        .font(DarkFantasyTheme.section(size: 13))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                }
-            }
-
             Button {
                 guard let charId = vm.selectedCharacterId else { return }
                 HapticManager.heavy()
@@ -242,11 +230,18 @@ struct CharacterSelectionView: View {
                     )
                 }
             } label: {
-                Text(enterPressed ? "ENTERING..." : "ENTER GAME")
-                    .font(DarkFantasyTheme.section(size: 16))
-                    .tracking(1.5)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                VStack(spacing: 2) {
+                    if let selected = vm.selectedCharacter, !enterPressed {
+                        Text("Playing as \(selected.characterName)")
+                            .font(DarkFantasyTheme.body(size: 11))
+                            .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
+                    }
+                    Text(enterPressed ? "ENTERING..." : "ENTER GAME")
+                        .font(DarkFantasyTheme.section(size: 16))
+                        .tracking(1.5)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
             }
             .buttonStyle(.primary)
             .disabled(vm.selectedCharacterId == nil || vm.isLoading)
@@ -411,10 +406,11 @@ struct CharacterSelectionView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceMD) {
-                Image(systemName: "door.left.hand.open")
-                    .font(.system(size: 48))
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                    .opacity(enterGlow ? 1.0 : 0.4)
+                Image("hexbound-logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 64, height: 64)
+                    .opacity(enterGlow ? 1.0 : 0.5)
                     .shadow(color: DarkFantasyTheme.gold.opacity(enterGlow ? 0.6 : 0.1), radius: enterGlow ? 16 : 4)
 
                 Text("Entering the Realm...")
@@ -611,8 +607,12 @@ struct HeroSelectionCard: View {
 
     // MARK: - Bottom Info
 
+    private var isNewHero: Bool {
+        character.pvpWins == 0 && character.pvpLosses == 0
+    }
+
     private var bottomInfoStack: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             // Name
             Text(character.characterName)
                 .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
@@ -635,12 +635,58 @@ struct HeroSelectionCard: View {
                         )
                 )
 
-            // Rating (dominant)
-            Text("\(character.pvpRating)")
-                .font(DarkFantasyTheme.section(size: 32))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .shadow(color: glowColor.opacity(0.4), radius: 12)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
+            // Rating row with icon
+            HStack(spacing: 5) {
+                if UIImage(named: "icon-pvp-rating") != nil {
+                    Image("icon-pvp-rating")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .opacity(0.7)
+                } else {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
+                }
+
+                if isNewHero {
+                    Text("NEW")
+                        .font(DarkFantasyTheme.section(size: 20))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .tracking(2)
+                        .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
+                } else {
+                    Text("\(character.pvpRating)")
+                        .font(DarkFantasyTheme.section(size: 28))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .shadow(color: glowColor.opacity(0.4), radius: 12)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
+                }
+            }
+
+            // Currency row
+            HStack(spacing: 8) {
+                HStack(spacing: 3) {
+                    if UIImage(named: "icon-gold") != nil {
+                        Image("icon-gold")
+                            .resizable()
+                            .frame(width: 14, height: 14)
+                    }
+                    Text("\(character.gold)")
+                        .font(DarkFantasyTheme.body(size: 11))
+                        .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                }
+
+                HStack(spacing: 3) {
+                    if UIImage(named: "icon-gems") != nil {
+                        Image("icon-gems")
+                            .resizable()
+                            .frame(width: 14, height: 14)
+                    }
+                    Text("\(character.gems ?? 0)")
+                        .font(DarkFantasyTheme.body(size: 11))
+                        .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                }
+            }
 
             // Glass stat pills
             HStack(spacing: 4) {

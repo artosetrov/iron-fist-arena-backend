@@ -159,7 +159,7 @@ struct BattlePassDetailView: View {
         Button {
             HapticManager.medium()
             SFXManager.shared.play(.uiTap)
-            appState.mainPath.append(AppRoute.currencyPurchase)
+            appState.mainPath.append(AppRoute.currencyPurchase(initialTab: 2))
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "star.fill")
