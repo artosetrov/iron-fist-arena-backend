@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 @MainActor @Observable
 class GuildHallViewModel {
@@ -245,7 +246,9 @@ class GuildHallViewModel {
             isRead: false,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
-        activeThread.append(optimisticMsg)
+        withAnimation(.easeOut(duration: 0.25)) {
+            activeThread.append(optimisticMsg)
+        }
         composedMessage = ""
         HapticManager.light()
 
@@ -257,21 +260,25 @@ class GuildHallViewModel {
                 targetId: targetId,
                 content: content
             )
-            // Replace temp message with real one
-            if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
-                activeThread[idx] = DirectMessageItem(
-                    id: sent.id,
-                    senderId: characterId,
-                    content: sent.content,
-                    isQuick: false,
-                    quickId: nil,
-                    isRead: false,
-                    createdAt: sent.createdAt
-                )
+            // Replace temp message with real one (animated status change)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
+                    activeThread[idx] = DirectMessageItem(
+                        id: sent.id,
+                        senderId: characterId,
+                        content: sent.content,
+                        isQuick: false,
+                        quickId: nil,
+                        isRead: false,
+                        createdAt: sent.createdAt
+                    )
+                }
             }
         } catch {
             // Remove optimistic message on failure
-            activeThread.removeAll(where: { $0.id == tempId })
+            withAnimation(.easeOut(duration: 0.2)) {
+                activeThread.removeAll(where: { $0.id == tempId })
+            }
             sendMessageError = "Failed to send message"
         }
     }
@@ -291,7 +298,9 @@ class GuildHallViewModel {
             isRead: false,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
-        activeThread.append(optimisticMsg)
+        withAnimation(.easeOut(duration: 0.25)) {
+            activeThread.append(optimisticMsg)
+        }
         HapticManager.light()
 
         // Background: actual API call
@@ -301,21 +310,25 @@ class GuildHallViewModel {
                 targetId: targetId,
                 quickId: quickId
             )
-            // Replace temp with real message
-            if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
-                activeThread[idx] = DirectMessageItem(
-                    id: sent.id,
-                    senderId: characterId,
-                    content: sent.content,
-                    isQuick: true,
-                    quickId: quickId,
-                    isRead: false,
-                    createdAt: sent.createdAt
-                )
+            // Replace temp with real message (animated status change)
+            withAnimation(.easeInOut(duration: 0.2)) {
+                if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
+                    activeThread[idx] = DirectMessageItem(
+                        id: sent.id,
+                        senderId: characterId,
+                        content: sent.content,
+                        isQuick: true,
+                        quickId: quickId,
+                        isRead: false,
+                        createdAt: sent.createdAt
+                    )
+                }
             }
         } catch {
             // Remove optimistic on failure
-            activeThread.removeAll(where: { $0.id == tempId })
+            withAnimation(.easeOut(duration: 0.2)) {
+                activeThread.removeAll(where: { $0.id == tempId })
+            }
         }
     }
 

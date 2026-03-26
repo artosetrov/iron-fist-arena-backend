@@ -790,6 +790,10 @@ struct GuildHallDetailView: View {
                                 ForEach(vm.activeThread) { msg in
                                     messageBubble(msg, vm: vm)
                                         .id(msg.id)
+                                        .transition(.asymmetric(
+                                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                                            removal: .opacity
+                                        ))
                                 }
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -976,22 +980,14 @@ struct GuildHallDetailView: View {
                         .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
                 }
 
-                // Timestamp + read status
+                // Timestamp + delivery status
                 HStack(spacing: 4) {
-                    Text(formatMessageTime(msg.createdAt))
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                        .foregroundStyle(isMine
-                            ? DarkFantasyTheme.textOnGold.opacity(0.5)
-                            : DarkFantasyTheme.textTertiary
-                        )
-
                     if isMine {
-                        Image(systemName: msg.isRead ? "checkmark.circle.fill" : "checkmark.circle")
-                            .font(.system(size: LayoutConstants.textBadge))
-                            .foregroundStyle(msg.isRead
-                                ? DarkFantasyTheme.textOnGold.opacity(0.7)
-                                : DarkFantasyTheme.textOnGold.opacity(0.4)
-                            )
+                        messageStatusView(msg)
+                    } else {
+                        Text(formatMessageTime(msg.createdAt))
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
             }
@@ -1144,16 +1140,11 @@ struct GuildHallDetailView: View {
                 Task { await vm.sendMessage() }
             } label: {
                 ZStack {
-                    if vm.isSendingMessage {
-                        ProgressView()
-                            .tint(DarkFantasyTheme.textOnGold)
-                    } else {
-                        Image(systemName: "arrow.up")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(
-                                isEmpty ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textOnGold
-                            )
-                    }
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(
+                            isEmpty ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textOnGold
+                        )
                 }
                 .frame(width: 44, height: 44)
                 .background {
@@ -1169,16 +1160,70 @@ struct GuildHallDetailView: View {
                                     endPoint: .bottomTrailing
                                 )
                             )
+                            .overlay {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.08), .clear],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        )
+                                    )
+                            }
                     }
                 }
-                .shadow(color: isEmpty ? .clear : DarkFantasyTheme.gold.opacity(0.25), radius: 8)
+                .shadow(color: isEmpty ? .clear : DarkFantasyTheme.gold.opacity(0.3), radius: 8)
+                .shadow(color: isEmpty ? .clear : DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 4, y: 2)
             }
-            .disabled(vm.isSendingMessage || isEmpty)
+            .buttonStyle(SendButtonPressStyle())
+            .disabled(isEmpty)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)
         .padding(.bottom, LayoutConstants.spaceLG)
         .background(DarkFantasyTheme.bgSecondary.opacity(0.95))
+    }
+
+    /// Status indicator for sent messages: Sending… → Sent → Read
+    @ViewBuilder
+    private func messageStatusView(_ msg: DirectMessageItem) -> some View {
+        let isSending = msg.id.hasPrefix("temp-")
+        let statusColor = DarkFantasyTheme.textOnGold.opacity(isSending ? 0.4 : (msg.isRead ? 0.7 : 0.5))
+
+        HStack(spacing: 3) {
+            if isSending {
+                // Sending… — animated clock icon
+                Image(systemName: "clock")
+                    .font(.system(size: 9))
+                    .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.5))
+                    .symbolEffect(.pulse.byLayer)
+                Text("Sending…")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.4))
+            } else {
+                Text(formatMessageTime(msg.createdAt))
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(statusColor)
+
+                if msg.isRead {
+                    // Read — double checkmark
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
+                        .offset(x: -4)
+                } else {
+                    // Sent — single checkmark
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.4))
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: isSending)
+        .animation(.easeInOut(duration: 0.3), value: msg.isRead)
     }
 
     private func formatMessageTime(_ isoString: String) -> String {
@@ -1912,5 +1957,16 @@ struct ChatBubbleShape: Shape {
         }
 
         return path
+    }
+}
+
+// MARK: - Send Button Press Style
+
+/// Brightness-based press feedback for the send button (per design rules — brightness(-0.06), not scale)
+private struct SendButtonPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }

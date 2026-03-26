@@ -52,20 +52,23 @@ final class ShopViewModel {
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
     var gems: Int { appState.currentCharacter?.gems ?? 0 }
     var playerLevel: Int { appState.currentCharacter?.level ?? 1 }
-    var playerClass: String { appState.currentCharacter?.characterClass?.rawValue ?? "warrior" }
+    var playerClass: String { appState.currentCharacter?.characterClass.rawValue ?? "warrior" }
 
     var filteredItems: [ShopItem] {
         let types = Self.tabTypes[selectedTab]
-        // Filter by level + class restriction (backend already filters, this is a safety net)
-        let filtered = items.filter { item in
+        if types.isEmpty { return equippableItems } // "All" tab
+        return equippableItems.filter { types.contains($0.itemType) }
+    }
+
+    /// Items filtered by level and class restriction (base for all display)
+    private var equippableItems: [ShopItem] {
+        items.filter { item in
             if item.requiredLevel > playerLevel { return false }
             if let restriction = item.classRestriction, !restriction.isEmpty {
                 return restriction == playerClass
             }
             return true
         }
-        if types.isEmpty { return filtered } // "All" tab
-        return filtered.filter { types.contains($0.itemType) }
     }
 
     var sectionedItems: [ShopSection] {
@@ -73,10 +76,10 @@ final class ShopViewModel {
         let equipmentTypes = Self.tabTypes[2]
         let potionTypes = Self.tabTypes[3]
 
-        let weapons = items.filter { weaponTypes.contains($0.itemType) }
-        let equipment = items.filter { equipmentTypes.contains($0.itemType) }
-        let gemPacks = items.filter { ($0.consumableType ?? $0.catalogId ?? "").hasPrefix("gem_pack_") }
-        let potions = items.filter {
+        let weapons = equippableItems.filter { weaponTypes.contains($0.itemType) }
+        let equipment = equippableItems.filter { equipmentTypes.contains($0.itemType) }
+        let gemPacks = equippableItems.filter { ($0.consumableType ?? $0.catalogId ?? "").hasPrefix("gem_pack_") }
+        let potions = equippableItems.filter {
             potionTypes.contains($0.itemType) && !($0.consumableType ?? $0.catalogId ?? "").hasPrefix("gem_pack_")
         }
 

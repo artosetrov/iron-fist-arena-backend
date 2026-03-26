@@ -5,7 +5,12 @@ struct DungeonInfoSheet: View {
     let dungeon: DungeonInfo
     var defeatedCount: Int = 0
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
     @State private var selectedBoss: BossInfo?
+
+    private var currentStamina: Int {
+        appState.currentCharacter?.currentStamina ?? 0
+    }
 
     private var themeColor: Color { dungeon.themeColor }
 
@@ -58,7 +63,7 @@ struct DungeonInfoSheet: View {
                 boss: boss,
                 state: bossState(for: boss),
                 bossIndex: (dungeon.bosses.firstIndex(where: { $0.id == boss.id }) ?? 0),
-                stamina: 0,
+                stamina: currentStamina,
                 energyCost: dungeon.energyCost,
                 isFighting: false,
                 onFight: {},
