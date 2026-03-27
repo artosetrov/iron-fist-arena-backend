@@ -61,8 +61,8 @@ export async function GET(req: NextRequest) {
       : character.pvpRating
     const ratingChange = (character.pvpRating ?? 1000) - (ratingBefore ?? 1000)
 
-    // Recent items gained (from inventory log — fallback to loot count)
-    const recentItems = await prisma.item.count({
+    // Recent items gained (equipment inventory entries created in session window)
+    const recentItems = await prisma.equipmentInventory.count({
       where: {
         characterId,
         createdAt: { gte: sessionStart },
@@ -70,14 +70,13 @@ export async function GET(req: NextRequest) {
     })
 
     // Daily quests progress
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
+    const todayStr = new Date().toISOString().split('T')[0] // "YYYY-MM-DD"
     const dailyQuests = await prisma.dailyQuest.findMany({
       where: {
         characterId,
-        assignedDate: { gte: today },
+        day: todayStr,
       },
-      select: { questType: true, progress: true, target: true, completed: true, claimed: true },
+      select: { questType: true, progress: true, target: true, completed: true },
     })
 
     const questsCompleted = dailyQuests.filter(q => q.completed).length
@@ -99,7 +98,6 @@ export async function GET(req: NextRequest) {
           progress: q.progress,
           target: q.target,
           completed: q.completed,
-          claimed: q.claimed,
         })),
       },
       character: {
