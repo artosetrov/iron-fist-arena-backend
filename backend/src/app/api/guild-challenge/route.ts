@@ -117,11 +117,16 @@ export async function POST(req: NextRequest) {
         challengeId,
       )
 
-      // Award gold + gems to the player
+      // Award gold to character, gems to user
       await tx.character.update({
         where: { id: character.id },
         data: {
           gold: { increment: ch.gold_reward },
+        },
+      })
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
           gems: { increment: ch.gem_reward },
         },
       })

@@ -103,6 +103,13 @@ export async function checkAndAwardMilestones(
   characterId: string,
   currentLevel: number,
 ): Promise<{ level: number; reward: MilestoneReward }[]> {
+  // Get character's userId for gem awards
+  const char = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { userId: true },
+  })
+  if (!char) return []
+
   // Get claimed milestones for this character
   const claimed = await prisma.milestoneClaim.findMany({
     where: { characterId },
@@ -138,14 +145,21 @@ export async function checkAndAwardMilestones(
       awarded.push({ level: milestone.level, reward: milestone.reward })
     }
 
-    // Bulk award currencies
+    // Bulk award gold to character, gems to user
     await tx.character.update({
       where: { id: characterId },
       data: {
         gold: { increment: totalGold },
-        gems: { increment: totalGems },
       },
     })
+    if (totalGems > 0) {
+      await tx.user.update({
+        where: { id: char.userId },
+        data: {
+          gems: { increment: totalGems },
+        },
+      })
+    }
   })
 
   return awarded
