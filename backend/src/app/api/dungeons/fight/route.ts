@@ -13,6 +13,7 @@ import { getBattlePassConfig } from '@/lib/game/live-config'
 import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { rateLimit } from '@/lib/rate-limit'
+import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 
 interface DungeonFightState {
   enemies: Enemy[]
@@ -277,6 +278,13 @@ export async function POST(req: NextRequest) {
       rollAndPersistLoot(prisma, character_id, character.level, 'boss', character.luk),
       degradeEquipment(prisma, character_id),
     ])
+
+    // Guild challenge increments (fire-and-forget)
+    incrementGuildChallenge(prisma, 'dungeons_cleared', 1).catch(() => {})
+    incrementGuildChallenge(prisma, 'gold_earned', goldReward).catch(() => {})
+    if (state.isBoss) {
+      incrementGuildChallenge(prisma, 'bosses_killed', 1).catch(() => {})
+    }
 
     const loot: LootResponseItem[] = []
     if (lootItem) loot.push(lootItem)

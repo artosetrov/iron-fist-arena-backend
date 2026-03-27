@@ -25,6 +25,8 @@ import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
+import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultiplier } from '@/lib/game/events'
+import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -210,6 +212,11 @@ export async function POST(req: NextRequest) {
       xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
     }
 
+    // Apply live event multipliers (Double Gold Weekend, Boss Rush, etc.)
+    const eventMultipliers = await getActiveEventMultipliers()
+    goldReward = applyEventGoldMultiplier(goldReward, eventMultipliers)
+    xpReward = applyEventXpMultiplier(xpReward, eventMultipliers)
+
     const newStamina = currentStamina - staminaCost
     const now = new Date()
 
@@ -364,6 +371,12 @@ export async function POST(req: NextRequest) {
       })(),
     ])
 
+    // 8. Increment guild challenge (fire-and-forget)
+    if (attackerWon) {
+      incrementGuildChallenge(prisma, 'pvp_wins', 1).catch(() => {})
+    }
+    incrementGuildChallenge(prisma, 'gold_earned', goldReward).catch(() => {})
+
     const loot: LootResponseItem[] = []
     if (lootItem) loot.push(lootItem)
 
@@ -426,6 +439,7 @@ export async function POST(req: NextRequest) {
         enemy: defenderFinalHp,
       },
       rewards: { gold: goldReward, xp: xpReward },
+      activeEvents: eventMultipliers.activeEvents,
       loot,
       source: 'pvp',
       matchId: pvpMatch.id,

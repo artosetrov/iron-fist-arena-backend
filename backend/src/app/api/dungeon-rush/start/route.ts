@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
           rooms: state.rooms,
           currentRoomIndex: state.currentRoomIndex,
           buffs: state.buffs ?? [],
+          artifacts: (state.artifacts ?? []).map((a: { id: string; name: string; description: string; icon: string }) => ({ id: a.id, name: a.name, description: a.description, icon: a.icon })),
+          pendingArtifactChoices: state.pendingArtifactChoices
+            ? state.pendingArtifactChoices.map((a: { id: string; name: string; description: string; icon: string }) => ({ id: a.id, name: a.name, description: a.description, icon: a.icon }))
+            : null,
           currentHpPercent: state.currentHpPercent ?? 100,
           totalRooms: TOTAL_RUSH_ROOMS,
           rewards: {

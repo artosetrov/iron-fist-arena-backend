@@ -3,7 +3,7 @@
 // baseDamage now reads class scaling from GameConfig via item-balance engine.
 // =============================================================================
 
-import { COMBAT, STANCE_ZONES, type BodyZone } from './balance';
+import { COMBAT, STANCE_ZONES, BATTLE_FATIGUE, type BodyZone } from './balance';
 import { getCombatConfig } from './live-config';
 import { getClassDamageFormula } from './item-balance';
 import {
@@ -57,7 +57,12 @@ export interface Turn {
   healAmount?: number;
   targetZone?: string;
   defendZone?: string;
+  stanceSwitch?: boolean; // True if stance was auto-rotated this turn
 }
+
+// Mid-battle stance rotation: every N turns, attack/defense zones shift
+const STANCE_ROTATION_INTERVAL = 3;
+const ZONE_CYCLE: BodyZone[] = ['head', 'chest', 'legs'];
 
 export interface CombatResult {
   winnerId: string;
@@ -160,7 +165,7 @@ function baseDamage(c: CharacterStats): number {
     const statValue = (c as unknown as Record<string, number>)[config.stat] ?? c.str;
     let dmg = statValue * config.multiplier + c.level * config.levelBonus;
     // Secondary stat scaling for classes with dual-stat formulas
-    if (c.class === 'mage') dmg += c.wis * 0.5;
+    if (c.class === 'mage') dmg += c.wis * 0.25;
     if (c.class === 'tank') dmg += c.vit * 0.3;
     return dmg;
   }
@@ -173,7 +178,7 @@ function baseDamage(c: CharacterStats): number {
     case 'rogue':
       return c.agi * 1.5 + c.level * 2;
     case 'mage':
-      return c.int * 1.4 + c.wis * 0.5 + c.level * 2;
+      return c.int * 1.4 + c.wis * 0.25 + c.level * 2;
     default:
       return c.str * 1.5 + c.level * 2;
   }
@@ -388,6 +393,12 @@ function resolveAttack(
     dmg *= 1 - Math.min(passivesDef.damageReduction, 50) / 100;
   }
 
+  // Battle fatigue: after turn 10, +10% damage per additional turn (anti-stall)
+  if (turnNumber > BATTLE_FATIGUE.FATIGUE_START_TURN) {
+    const fatigueTurns = turnNumber - BATTLE_FATIGUE.FATIGUE_START_TURN;
+    dmg *= 1 + (fatigueTurns * BATTLE_FATIGUE.FATIGUE_PERCENT_PER_TURN) / 100;
+  }
+
   dmg = Math.max(Math.floor(dmg), config.MIN_DAMAGE);
   const newDefenderHp = Math.max(defenderHp - dmg, 0);
 
@@ -498,6 +509,22 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
   }
 
   for (let t = 1; t <= config.MAX_TURNS; t++) {
+    // --- Mid-battle stance rotation (every 3 turns) ---
+    let stanceSwitched = false;
+    if (t > 1 && (t - 1) % STANCE_ROTATION_INTERVAL === 0) {
+      // Rotate zones: head→chest→legs→head
+      const rotateZone = (z: BodyZone): BodyZone => {
+        const idx = ZONE_CYCLE.indexOf(z);
+        return ZONE_CYCLE[(idx + 1) % ZONE_CYCLE.length];
+      };
+      zoneFirst = { attack: rotateZone(zoneFirst.attack), defense: rotateZone(zoneFirst.defense) };
+      zoneSecond = { attack: rotateZone(zoneSecond.attack), defense: rotateZone(zoneSecond.defense) };
+      // Recompute stance modifiers with new zones
+      stanceFirst = computeStanceModifiers(zoneFirst, zoneSecond);
+      stanceSecond = computeStanceModifiers(zoneSecond, zoneFirst);
+      stanceSwitched = true;
+    }
+
     // --- First character attacks second ---
     {
       const result = resolveAttack(

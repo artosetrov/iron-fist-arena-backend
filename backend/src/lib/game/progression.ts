@@ -49,8 +49,21 @@ export async function applyLevelUp(
       { key: 'reach_level_25', increment: result.newLevel, absolute: true },
       { key: 'reach_level_50', increment: result.newLevel, absolute: true },
     ]);
+
+    // Check milestone rewards (fire-and-forget)
+    const { checkAndAwardMilestones } = await import('./milestones');
+    const awarded = await checkAndAwardMilestones(prisma, characterId, result.newLevel);
+    if (awarded.length > 0) {
+      result.milestonesAwarded = awarded.map(m => ({
+        level: m.level,
+        gold: m.reward.gold,
+        gems: m.reward.gems,
+        title: m.reward.title ?? null,
+        description: m.reward.description,
+      }));
+    }
   } catch (e) {
-    console.error('Achievement tracking error (level-up):', e);
+    console.error('Achievement/milestone tracking error (level-up):', e);
   }
 
   return result;
@@ -64,6 +77,7 @@ export interface LevelUpResult {
   remainingXp: number;
   statPointsAwarded: number;
   passivePointsAwarded: number;
+  milestonesAwarded?: { level: number; gold: number; gems: number; title: string | null; description: string }[];
 }
 
 export interface PrestigeResult {

@@ -47,7 +47,7 @@ Each class has unique base damage scaling:
 | Warrior | STR × 1.5 + Level × 2 | Primary damage dealer |
 | Tank | STR × 1.3 + VIT × 0.3 + Level × 2 | Balanced offense/defense |
 | Rogue | AGI × 1.5 + Level × 2 | Speed-focused damage |
-| Mage | INT × 1.4 + WIS × 0.5 + Level × 2 | Spell scaling |
+| Mage | INT × 1.4 + WIS × 0.25 + Level × 2 | Spell scaling (WIS nerfed from 0.5) |
 
 **Example (Level 20 Warrior with STR 50):**
 - Base Damage = 50 × 1.5 + 20 × 2 = 75 + 40 = 115
@@ -257,7 +257,21 @@ When no skills are available (all on cooldown), character uses auto-attack:
 | Warrior | Base damage formula | Physical | STR × 1.5 |
 | Tank | Base damage formula | Physical | STR × 1.3 + VIT × 0.3 |
 | Rogue | Base damage formula | Poison | AGI × 1.5 |
-| Mage | Base damage formula | Magical | INT × 1.4 + WIS × 0.5 |
+| Mage | Base damage formula | Magical | INT × 1.4 + WIS × 0.25 |
+
+---
+
+## Battle Fatigue (Anti-Stall)
+
+After turn 10, both fighters deal escalating bonus damage to prevent stalemates:
+
+```
+Fatigue Start: Turn 11
+Bonus Per Turn: +10% damage
+Turn 11: +10%, Turn 12: +20%, Turn 13: +30%, Turn 14: +40%, Turn 15: +50%
+```
+
+Applied as final multiplier in the damage pipeline (after all other modifiers). This ensures tank-vs-tank and high-lifesteal matchups resolve before timeout.
 
 ---
 
@@ -409,9 +423,9 @@ COMBAT FLOW:
 - **Final: 100 damage**
 
 **Mage Auto-Attack (Magical):**
-- Base: 60 × 1.2 + 40 × 0.5 + 20 × 2 = 72 + 20 + 40 = 132 dmg
-- Variance: 132 × 0.97 = 128 dmg
-- Warrior Magic Resist 10: 128 × 100 / 110 = 116.4 → 116 dmg
+- Base: 60 × 1.4 + 40 × 0.25 + 20 × 2 = 84 + 10 + 40 = 134 dmg
+- Variance: 134 × 0.97 = 130 dmg
+- Warrior Magic Resist 10: 130 × 100 / 110 = 118.2 → 118 dmg
 - Crit Check: min(20 × 0.7 + 35 × 0.15, 50) = 19.25% → 19% (no crit)
 - **Final: 116 damage**
 

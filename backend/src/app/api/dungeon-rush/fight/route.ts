@@ -13,12 +13,21 @@ import {
   generateRushEnemy,
   getRoomRewards,
   applyRushBuffs,
+  applyArtifactStatBoosts,
+  applyArtifactGoldMult,
+  applyArtifactXpMult,
+  getHealOnKillPercent,
+  generateArtifactChoices,
   effectiveHp,
   hpPercentAfterCombat,
+  adjustHpPercent,
   isCombatRoom,
   TOTAL_RUSH_ROOMS,
+  RUSH_ARTIFACTS,
   type RushState,
+  type RushArtifact,
 } from '@/lib/game/dungeon-rush'
+import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -110,8 +119,13 @@ export async function POST(req: NextRequest) {
     // Generate the enemy for this room
     const enemy = generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
 
-    // Apply rush buffs to combat-ready character
+    // Apply rush buffs + artifact stat boosts to combat-ready character
     let playerStats = applyRushBuffs(playerStatsRaw, state.buffs)
+    const ownedArtifacts: RushArtifact[] = (state.artifacts ?? []).map(a => {
+      const full = RUSH_ARTIFACTS.find(r => r.id === a.id)
+      return full ?? a as RushArtifact
+    })
+    playerStats = applyArtifactStatBoosts(playerStats, ownedArtifacts)
 
     // Apply HP persistence: use current HP% instead of full HP
     const playerEffectiveMaxHp = playerStats.maxHp
@@ -183,10 +197,10 @@ export async function POST(req: NextRequest) {
       source: 'dungeon_rush',
     }
 
-    // Get rewards for this room type
+    // Get rewards for this room type, applying artifact multipliers
     const roomRewards = getRoomRewards(currentRoom.index, currentRoom.type)
-    const goldReward = chaGoldBonus(roomRewards.gold, character.cha)
-    const xpReward = roomRewards.xp
+    const goldReward = applyArtifactGoldMult(chaGoldBonus(roomRewards.gold, character.cha), ownedArtifacts)
+    const xpReward = applyArtifactXpMult(roomRewards.xp, ownedArtifacts)
 
     if (!playerWon) {
       await prisma.$transaction(async (tx) => {
@@ -253,7 +267,23 @@ export async function POST(req: NextRequest) {
         remainingHp = Math.max(0, remainingHp - turn.damage)
       }
     }
-    const newHpPercent = hpPercentAfterCombat(remainingHp, playerEffectiveMaxHp)
+    let newHpPercent = hpPercentAfterCombat(remainingHp, playerEffectiveMaxHp)
+
+    // Apply heal-on-kill artifact
+    const healOnKill = getHealOnKillPercent(ownedArtifacts)
+    if (healOnKill > 0) {
+      newHpPercent = adjustHpPercent(newHpPercent, healOnKill)
+    }
+
+    // Generate artifact choices after miniboss kills
+    let artifactChoices: RushArtifact[] | null = null
+    if (currentRoom.type === 'miniboss') {
+      const ownedIds = (state.artifacts ?? []).map(a => a.id)
+      const choices = generateArtifactChoices(currentRoom.seed, ownedIds)
+      if (choices.length > 0) {
+        artifactChoices = choices
+      }
+    }
 
     const updatedRushState = await prisma.$transaction(async (tx) => {
       const lockedRun = await lockDungeonRunForUpdate(tx, run.id)
@@ -322,6 +352,10 @@ export async function POST(req: NextRequest) {
         floorsCleared,
         totalGoldEarned: totalGold,
         totalXpEarned: totalXp,
+        artifacts: lockedState.artifacts ?? [],
+        pendingArtifactChoices: artifactChoices
+          ? artifactChoices.map(a => ({ id: a.id, name: a.name, description: a.description, icon: a.icon, effect: a.effect }))
+          : null,
       }
 
       await tx.dungeonRun.update({
@@ -352,6 +386,13 @@ export async function POST(req: NextRequest) {
           : undefined,
       }
     })
+
+    // Guild challenge increments (fire-and-forget)
+    incrementGuildChallenge(prisma, 'dungeons_cleared', 1).catch(() => {})
+    incrementGuildChallenge(prisma, 'gold_earned', goldReward).catch(() => {})
+    if (currentRoom.type === 'miniboss') {
+      incrementGuildChallenge(prisma, 'bosses_killed', 1).catch(() => {})
+    }
 
     // Check for level-up after XP award
     const levelUpResult = await applyLevelUp(prisma, character_id)
@@ -426,6 +467,10 @@ export async function POST(req: NextRequest) {
       nextRoom: updatedRushState.nextRoom!,
       nextEnemy: updatedRushState.nextEnemy,
       buffs: state.buffs,
+      artifacts: state.artifacts ?? [],
+      artifactChoices: artifactChoices
+        ? artifactChoices.map(a => ({ id: a.id, name: a.name, description: a.description, icon: a.icon }))
+        : null,
     })
   } catch (error) {
     if (error instanceof Error) {

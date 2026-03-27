@@ -107,18 +107,23 @@ When a losing streak is broken by a win, bonus gold is awarded:
 | 5–6 | +50% | Significant recovery |
 | 7+ | +80% | Major comeback bonus |
 
-### CHA Gold Bonus
+### CHA Gold Bonus (Diminishing Returns)
 
-Charisma adds +1.5% gold per point (uncapped):
+Charisma gold bonus uses tiered diminishing returns with a hard cap:
 
 ```
-Gold Bonus = Base × (1 + cha × 0.015)
+CHA 0-30:  +1.5% per point (max +45%)
+CHA 31-60: +0.5% per point (max +60% cumulative)
+CHA 61+:   +0.2% per point (hard cap +75%)
 ```
 
 **Calculation:**
 - CHA 25 → +37.5% gold (25 × 1.5%)
-- CHA 50 → +75% gold (50 × 1.5%)
-- CHA 100 → +150% gold (100 × 1.5%)
+- CHA 30 → +45% gold (cap for tier 1)
+- CHA 50 → +55% gold (45% + 20 × 0.5%)
+- CHA 60 → +60% gold (45% + 30 × 0.5%)
+- CHA 100 → +68% gold (45% + 15% + 40 × 0.2%)
+- Hard cap: +75% regardless of CHA value
 
 ---
 
@@ -552,5 +557,71 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 
 **Fair Play Guarantee:** No pay-to-win stat advantages; only acceleration/cosmetics.
 
-</content>
-</invoke>
+---
+
+## Guild Weekly Challenges
+
+Server-wide cooperative goals. All players contribute to a shared target.
+
+| Challenge | Goal Type | Target | Gold Reward | Gem Reward |
+|-----------|-----------|--------|-------------|------------|
+| Warpath | pvp_wins | 500 | 2000 | 50 |
+| Gold Rush | gold_earned | 100000 | 3000 | 30 |
+| Dungeon Crawl | dungeons_cleared | 200 | 2500 | 40 |
+| Arms Race | items_upgraded | 300 | 2000 | 60 |
+| Boss Hunters | bosses_killed | 150 | 3000 | 50 |
+
+Duration: 7 days per challenge. Progress incremented atomically via SQL LEAST() cap.
+
+---
+
+## Dungeon Rush Artifacts
+
+Roguelike artifacts offered as 3 choices after miniboss kills. Max 2 per run (2 minibosses).
+
+| Artifact | Effect | Details |
+|----------|--------|---------|
+| Bloodstone Amulet | Lifesteal | 8% damage dealt healed |
+| Goldweave Cloak | Gold mult | 1.5x all gold rewards |
+| Scholar's Tome | XP mult | 1.4x all XP rewards |
+| Iron Heart | Damage reduction | 12% less damage (cap 30%) |
+| Razorfang Pendant | Crit damage | +30% critical hit damage |
+| Thornmail Sigil | Thorns | 15% damage reflected |
+| Soul Siphon | Heal on kill | 15% HP after each kill |
+| Giant's Belt | Stat boost | +200 Max HP |
+| Shadow Blade | Stat boost | +25 STR |
+| Wind Walker Boots | Stat boost | +25 AGI |
+
+---
+
+## Item Sets
+
+5 equipment sets with 2/3/5-piece bonuses. Set pieces drop from boss-exclusive loot table.
+
+| Set | Theme | 2pc | 3pc | 5pc |
+|-----|-------|-----|-----|-----|
+| Shadow Assassin | AGI/Crit | +15 AGI, +5 Crit | +10 STR, +3 Dodge | +25 AGI, +12 Crit, +15 STR |
+| Iron Bastion | Armor/VIT | +20 Armor, +10 VIT | +150 MaxHP, +8 END | +40 Armor, +300 MaxHP, +20 VIT |
+| Arcane Scholar | INT/WIS | +15 INT, +10 WIS | +15 MRes, +10 INT | +30 INT, +20 WIS, +25 MRes |
+| Berserker's Wrath | STR/Crit | +20 STR, +5 AGI | +8 Crit, +10 STR | +35 STR, +15 Crit, +200 MaxHP |
+| Fortune Seeker | LUK/CHA | +15 LUK, +5 CHA | +20 LUK, +10% gold | +40 LUK, +15 CHA, +5% drops |
+
+---
+
+## Level Milestone Rewards
+
+One-time rewards per character, targeting midgame dead zones.
+
+| Level | Gold | Gems | Title |
+|-------|------|------|-------|
+| 10 | 1000 | 20 | Adventurer |
+| 15 | 1500 | 25 | Veteran |
+| 20 | 2500 | 40 | Champion |
+| 25 | 3000 | 50 | Warlord |
+| 30 | 4000 | 60 | Overlord |
+| 35 | 5000 | 75 | Grandmaster |
+| 40 | 7500 | 100 | Mythic |
+| 50 | 10000 | 150 | Ascended |
+
+Auto-awarded on level-up via `checkAndAwardMilestones()` in progression.ts.
+DB model: `MilestoneClaim` (character_id + milestone_level, unique constraint).

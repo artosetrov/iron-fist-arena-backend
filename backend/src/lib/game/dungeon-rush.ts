@@ -88,6 +88,8 @@ export interface RushState {
   rooms: RushRoom[]
   currentRoomIndex: number
   buffs: { id: string; name: string; stat: string; value: number; icon: string }[]
+  artifacts: { id: string; name: string; description: string; icon: string; effect: ArtifactEffect }[]
+  pendingArtifactChoices: { id: string; name: string; description: string; icon: string; effect: ArtifactEffect }[] | null
   currentHpPercent: number
   shopPurchased: number[]
   floorsCleared: number
@@ -111,6 +113,8 @@ export function createInitialRushState(): RushState {
     rooms: generateRushRooms(),
     currentRoomIndex: 0,
     buffs: [],
+    artifacts: [],
+    pendingArtifactChoices: null,
     currentHpPercent: 100,
     shopPurchased: [],
     floorsCleared: 0,
@@ -404,6 +408,190 @@ export function generateShopItems(seed: number): ShopItem[] {
   })
 
   return items
+}
+
+// --- Artifact System (Roguelike Relics) ---
+
+export interface RushArtifact {
+  id: string
+  name: string
+  description: string
+  icon: string
+  effect: ArtifactEffect
+}
+
+export type ArtifactEffect =
+  | { type: 'stat_boost'; stat: string; value: number }
+  | { type: 'lifesteal'; percent: number }
+  | { type: 'gold_mult'; multiplier: number }
+  | { type: 'xp_mult'; multiplier: number }
+  | { type: 'damage_reduction'; percent: number }
+  | { type: 'crit_damage'; percent: number }
+  | { type: 'thorns'; percent: number }
+  | { type: 'heal_on_kill'; hpPercent: number }
+
+export const RUSH_ARTIFACTS: RushArtifact[] = [
+  {
+    id: 'artifact_bloodstone',
+    name: 'Bloodstone Amulet',
+    description: 'Heal 8% of damage dealt.',
+    icon: 'artifact-bloodstone',
+    effect: { type: 'lifesteal', percent: 8 },
+  },
+  {
+    id: 'artifact_goldweave',
+    name: 'Goldweave Cloak',
+    description: 'All gold rewards increased by 50%.',
+    icon: 'artifact-goldweave',
+    effect: { type: 'gold_mult', multiplier: 1.5 },
+  },
+  {
+    id: 'artifact_scholars',
+    name: "Scholar's Tome",
+    description: 'All XP rewards increased by 40%.',
+    icon: 'artifact-scholars',
+    effect: { type: 'xp_mult', multiplier: 1.4 },
+  },
+  {
+    id: 'artifact_iron_heart',
+    name: 'Iron Heart',
+    description: 'Take 12% less damage from all sources.',
+    icon: 'artifact-iron-heart',
+    effect: { type: 'damage_reduction', percent: 12 },
+  },
+  {
+    id: 'artifact_razorfang',
+    name: 'Razorfang Pendant',
+    description: 'Critical hits deal 30% more damage.',
+    icon: 'artifact-razorfang',
+    effect: { type: 'crit_damage', percent: 30 },
+  },
+  {
+    id: 'artifact_thorn_mail',
+    name: 'Thornmail Sigil',
+    description: 'Reflect 15% of received damage back.',
+    icon: 'artifact-thorn-mail',
+    effect: { type: 'thorns', percent: 15 },
+  },
+  {
+    id: 'artifact_soul_siphon',
+    name: 'Soul Siphon',
+    description: 'Heal 15% HP after each kill.',
+    icon: 'artifact-soul-siphon',
+    effect: { type: 'heal_on_kill', hpPercent: 15 },
+  },
+  {
+    id: 'artifact_giants_belt',
+    name: "Giant's Belt",
+    description: '+200 Max HP.',
+    icon: 'artifact-giants-belt',
+    effect: { type: 'stat_boost', stat: 'maxHp', value: 200 },
+  },
+  {
+    id: 'artifact_shadow_blade',
+    name: 'Shadow Blade',
+    description: '+25 STR.',
+    icon: 'artifact-shadow-blade',
+    effect: { type: 'stat_boost', stat: 'str', value: 25 },
+  },
+  {
+    id: 'artifact_wind_walker',
+    name: 'Wind Walker Boots',
+    description: '+25 AGI.',
+    icon: 'artifact-wind-walker',
+    effect: { type: 'stat_boost', stat: 'agi', value: 25 },
+  },
+]
+
+/**
+ * Generate 3 artifact choices after a miniboss kill.
+ * Excludes artifacts the player already has.
+ */
+export function generateArtifactChoices(
+  seed: number,
+  ownedArtifactIds: string[],
+): RushArtifact[] {
+  const available = RUSH_ARTIFACTS.filter(a => !ownedArtifactIds.includes(a.id))
+  if (available.length === 0) return []
+
+  // Seeded shuffle for deterministic choices
+  const shuffled = [...available]
+  let s = seed
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff
+    const j = s % (i + 1)
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+
+  return shuffled.slice(0, Math.min(3, shuffled.length))
+}
+
+/**
+ * Apply artifact stat_boost effects to CharacterStats (additive).
+ * Other effects (lifesteal, thorns, etc.) are applied during combat resolution.
+ */
+export function applyArtifactStatBoosts(
+  stats: CharacterStats,
+  artifacts: RushArtifact[],
+): CharacterStats {
+  const modified = { ...stats }
+  for (const artifact of artifacts) {
+    if (artifact.effect.type === 'stat_boost') {
+      const { stat, value } = artifact.effect
+      switch (stat) {
+        case 'str': modified.str += value; break
+        case 'agi': modified.agi += value; break
+        case 'armor': modified.armor += value; break
+        case 'maxHp': modified.maxHp += value; break
+        case 'luk': modified.luk += value; break
+      }
+    }
+  }
+  return modified
+}
+
+/**
+ * Calculate artifact-modified gold reward.
+ */
+export function applyArtifactGoldMult(gold: number, artifacts: RushArtifact[]): number {
+  let mult = 1.0
+  for (const a of artifacts) {
+    if (a.effect.type === 'gold_mult') mult *= a.effect.multiplier
+  }
+  return Math.floor(gold * mult)
+}
+
+/**
+ * Calculate artifact-modified XP reward.
+ */
+export function applyArtifactXpMult(xp: number, artifacts: RushArtifact[]): number {
+  let mult = 1.0
+  for (const a of artifacts) {
+    if (a.effect.type === 'xp_mult') mult *= a.effect.multiplier
+  }
+  return Math.floor(xp * mult)
+}
+
+/**
+ * Get heal-on-kill HP percent from artifacts.
+ */
+export function getHealOnKillPercent(artifacts: RushArtifact[]): number {
+  let total = 0
+  for (const a of artifacts) {
+    if (a.effect.type === 'heal_on_kill') total += a.effect.hpPercent
+  }
+  return total
+}
+
+/**
+ * Get damage reduction percent from artifacts.
+ */
+export function getDamageReduction(artifacts: RushArtifact[]): number {
+  let total = 0
+  for (const a of artifacts) {
+    if (a.effect.type === 'damage_reduction') total += a.effect.percent
+  }
+  return Math.min(total, 30) // Cap at 30%
 }
 
 // --- HP Management ---

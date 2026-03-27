@@ -4,6 +4,15 @@
 
 // --- Types ---
 
+export interface BossAbility {
+  name: string;
+  type: 'damage_aoe' | 'heal_self' | 'buff_self' | 'debuff_player' | 'summon' | 'enrage';
+  trigger: 'hp_threshold' | 'every_n_turns' | 'on_start';
+  triggerValue: number; // HP% threshold or turn interval
+  power: number;        // Effect magnitude (damage%, heal%, etc.)
+  description: string;
+}
+
 export interface Enemy {
   id: string;
   name: string;
@@ -14,11 +23,34 @@ export interface Enemy {
   armor: number;
   magicResist: number;
   isBoss: boolean;
+  abilities?: BossAbility[];
+  damageType?: 'physical' | 'magical' | 'poison';
+}
+
+export type RoomType = 'combat' | 'treasure' | 'trap' | 'shrine' | 'merchant' | 'rest';
+
+export interface DungeonRoom {
+  type: RoomType;
+  floor: number;
+  // For combat rooms
+  enemies?: Enemy[];
+  isBoss?: boolean;
+  // For treasure rooms
+  goldReward?: number;
+  itemChance?: number;
+  // For trap rooms
+  damagePercent?: number; // % of max HP
+  // For shrine rooms
+  buffType?: 'attack' | 'defense' | 'speed' | 'heal';
+  buffAmount?: number;
+  // For rest rooms
+  healPercent?: number;
 }
 
 export interface DungeonFloor {
   enemies: Enemy[];
   isBoss: boolean;
+  room?: DungeonRoom; // Variety room data (null = standard combat)
 }
 
 // --- Configuration ---
@@ -70,6 +102,67 @@ const DUNGEON_BOSSES: Record<string, Array<{ name: string; level: number; hp: nu
   ],
 };
 
+// --- Boss Abilities per dungeon (bosses 5 and 10 get special mechanics) ---
+const BOSS_ABILITIES: Record<string, Record<number, BossAbility[]>> = {
+  training_camp: {
+    4: [{ name: 'Bone Shield', type: 'buff_self', trigger: 'hp_threshold', triggerValue: 50, power: 30, description: 'Raises armor by 30% below 50% HP' }],
+    9: [
+      { name: 'Arena Challenge', type: 'enrage', trigger: 'hp_threshold', triggerValue: 30, power: 50, description: 'Attack +50% below 30% HP' },
+      { name: 'Warden\'s Slam', type: 'damage_aoe', trigger: 'every_n_turns', triggerValue: 3, power: 25, description: 'Deals 25% of max HP as damage every 3 turns' },
+    ],
+  },
+  desecrated_catacombs: {
+    4: [{ name: 'Soul Drain', type: 'heal_self', trigger: 'every_n_turns', triggerValue: 4, power: 15, description: 'Heals 15% HP every 4 turns' }],
+    5: [{ name: 'Corpse Explosion', type: 'damage_aoe', trigger: 'hp_threshold', triggerValue: 40, power: 30, description: 'Explodes for 30% max HP damage at 40% HP' }],
+    9: [
+      { name: 'Undead Army', type: 'summon', trigger: 'hp_threshold', triggerValue: 60, power: 2, description: 'Summons 2 skeleton minions at 60% HP' },
+      { name: 'Death Pact', type: 'enrage', trigger: 'hp_threshold', triggerValue: 20, power: 75, description: 'Attack +75% below 20% HP (final stand)' },
+    ],
+  },
+  volcanic_forge: {
+    4: [{ name: 'Lava Pool', type: 'debuff_player', trigger: 'on_start', triggerValue: 0, power: 10, description: 'Player takes 10% fire damage each turn' }],
+    6: [{ name: 'Forge Armor', type: 'buff_self', trigger: 'hp_threshold', triggerValue: 50, power: 50, description: 'Armor +50% below 50% HP' }],
+    9: [
+      { name: 'Volcanic Eruption', type: 'damage_aoe', trigger: 'every_n_turns', triggerValue: 2, power: 20, description: '20% max HP fire damage every 2 turns' },
+      { name: 'Molten Core', type: 'heal_self', trigger: 'hp_threshold', triggerValue: 25, power: 20, description: 'Heals 20% HP at 25% HP (once)' },
+      { name: 'Eternal Flame', type: 'enrage', trigger: 'hp_threshold', triggerValue: 15, power: 100, description: 'Attack doubles below 15% HP' },
+    ],
+  },
+};
+
+// --- Variety Room Generation ---
+// Non-combat rooms appear on specific floors to break monotony
+const VARIETY_ROOM_SCHEDULE: Record<number, RoomType[]> = {
+  2: ['treasure', 'shrine'],      // Floor 3 (0-indexed 2): treasure or shrine
+  4: ['rest', 'merchant'],         // Floor 5: rest stop or merchant
+  6: ['trap', 'shrine', 'treasure'], // Floor 7: variety
+  8: ['rest', 'merchant'],         // Floor 9: last stop before final boss
+};
+
+function generateVarietyRoom(floor: number, dungeonId: string): DungeonRoom | null {
+  const options = VARIETY_ROOM_SCHEDULE[floor];
+  if (!options) return null;
+
+  const type = options[Math.floor(Math.random() * options.length)];
+  const baseLevel = floor + 1;
+
+  switch (type) {
+    case 'treasure':
+      return { type, floor, goldReward: 100 + baseLevel * 50, itemChance: 0.4 + floor * 0.05 };
+    case 'shrine':
+      const buffs: Array<'attack' | 'defense' | 'speed' | 'heal'> = ['attack', 'defense', 'speed', 'heal'];
+      return { type, floor, buffType: buffs[Math.floor(Math.random() * buffs.length)], buffAmount: 10 + floor * 2 };
+    case 'trap':
+      return { type, floor, damagePercent: 10 + floor * 2 };
+    case 'rest':
+      return { type, floor, healPercent: 25 + floor * 3 };
+    case 'merchant':
+      return { type, floor, goldReward: 0 }; // Client handles merchant UI
+    default:
+      return null;
+  }
+}
+
 // Fallback boss names for unknown dungeon IDs
 const FALLBACK_BOSS_NAMES = [
   'Goblin Chieftain',
@@ -103,6 +196,7 @@ function generateBossForDungeon(
 
   if (bosses && bossIndex < bosses.length) {
     const boss = bosses[bossIndex];
+    const abilities = BOSS_ABILITIES[dungeonId]?.[bossIndex] ?? [];
     return {
       id: generateId(),
       name: boss.name,
@@ -113,6 +207,7 @@ function generateBossForDungeon(
       armor: Math.round((6 + boss.level * 2) * difficultyMult),
       magicResist: Math.round((5 + boss.level * 1.5) * difficultyMult),
       isBoss: true,
+      abilities: abilities.length > 0 ? abilities : undefined,
     };
   }
 
@@ -153,6 +248,16 @@ export function generateDungeonFloor(
 ): DungeonFloor {
   const diffMult = DIFFICULTY_MULTIPLIERS[difficulty] ?? 1.0;
   const bossIndex = Math.max(0, floor - 1);
+
+  // Check for variety room (non-combat floors)
+  const varietyRoom = generateVarietyRoom(bossIndex, dungeonId);
+  if (varietyRoom) {
+    return {
+      enemies: [],
+      isBoss: false,
+      room: varietyRoom,
+    };
+  }
 
   return {
     enemies: [generateBossForDungeon(dungeonId, bossIndex, diffMult)],

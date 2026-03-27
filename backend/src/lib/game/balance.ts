@@ -106,6 +106,8 @@ export const IAP_PRODUCTS: Record<string, IapProduct> = {
   gold_20000:  { gems: 0, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99 },
   // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry)
   monthly_gem_card: { gems: 50, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
+  // Starter Bundle — one-time purchase for new players (best value, creates habit)
+  starter_bundle: { gems: 200, gold: 3000, premium: false, monthlyGemCard: false, price: 2.99 },
   // Premium — one-time forever unlock
   premium_forever: { gems: 0, gold: 0, premium: true, monthlyGemCard: false, price: 9.99 },
 } as const;
@@ -162,6 +164,13 @@ export const COMBAT = {
   CHA_INTIMIDATION_CAP: 15,
 } as const;
 
+// --- Battle Fatigue (anti-stall mechanic) ---
+// After FATIGUE_START_TURN, both fighters deal +FATIGUE_PERCENT_PER_TURN% more damage per turn
+export const BATTLE_FATIGUE = {
+  FATIGUE_START_TURN: 10,
+  FATIGUE_PERCENT_PER_TURN: 10, // +10% per turn after start
+} as const;
+
 // --- Stance Zones ---
 export type BodyZone = 'head' | 'chest' | 'legs';
 
@@ -204,9 +213,24 @@ export const DROP_CHANCES: Record<string, number> = {
   boss: 0.75,
 } as const;
 
-/** CHA gold bonus: +1.5% per CHA point (was 1%) */
+/**
+ * CHA gold bonus with diminishing returns:
+ * - CHA 0-30:  +1.5% per point (max +45%)
+ * - CHA 31-60: +0.5% per point (max +60% cumulative)
+ * - CHA 61+:   +0.2% per point (hard cap +75%)
+ */
 export function chaGoldBonus(baseGold: number, cha: number): number {
-  return Math.floor(baseGold * (1 + cha * 0.015));
+  let bonus = 0;
+  if (cha <= 30) {
+    bonus = cha * 0.015;
+  } else if (cha <= 60) {
+    bonus = 30 * 0.015 + (cha - 30) * 0.005;
+  } else {
+    bonus = 30 * 0.015 + 30 * 0.005 + (cha - 60) * 0.002;
+  }
+  // Hard cap at 75%
+  bonus = Math.min(bonus, 0.75);
+  return Math.floor(baseGold * (1 + bonus));
 }
 
 // --- Loss Streak Gold Protection ---
@@ -243,6 +267,25 @@ export function levelScaledReward(baseReward: number, level: number): number {
   return Math.floor(baseReward * (1 + (level - 1) * 0.02));
 }
 
+// --- Equipment Repair Costs (gold sink, scales with item level and rarity) ---
+export const REPAIR_COSTS = {
+  BASE_COST: 50,                // Base gold per repair
+  PER_LEVEL: 10,                // +10 gold per item level
+  RARITY_MULTIPLIERS: {         // Multiplier by rarity
+    common: 1.0,
+    uncommon: 1.5,
+    rare: 2.0,
+    epic: 3.0,
+    legendary: 5.0,
+  },
+} as const;
+
+/** Calculate repair cost for a single item. */
+export function repairCost(itemLevel: number, rarity: string): number {
+  const mult = (REPAIR_COSTS.RARITY_MULTIPLIERS as Record<string, number>)[rarity] ?? 1.0;
+  return Math.floor((REPAIR_COSTS.BASE_COST + itemLevel * REPAIR_COSTS.PER_LEVEL) * mult);
+}
+
 // --- Active Skills ---
 export const SKILLS = {
   MAX_EQUIPPED_SLOTS: 4,
@@ -256,6 +299,7 @@ export const PASSIVES = {
   POINTS_PER_LEVEL: 1,
   MAX_PASSIVE_POINTS: 50,
   RESPEC_GEM_COST: 50,
+  RESPEC_GOLD_COST: 5000, // Alternative gold cost for respec (gold sink)
 } as const;
 
 // --- Gem costs ---

@@ -9,16 +9,21 @@
 /* Begin PBXBuildFile section */
 		0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */; };
 		007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */; };
+		1F27464EED177725EDC9108F /* RankUpCeremonyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689574F6AED50BD6EB0CD419 /* RankUpCeremonyView.swift */; };
 		0179E69325E53F8E8FA6107B /* LeaderboardPlayerDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */; };
 		078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */; };
 		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */; };
 		0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */; };
 		0BE3C5E0FAB536974BC44084 /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8825D55175E1FECF38EF971F /* AudioManager.swift */; };
+		0C2A7F9E1B5D3C8A9E7F4B2D /* AssetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2799E960A250F50D77C492 /* AssetManager.swift */; };
 		0C3250491FD7F972EAEF4C3A /* combat_death.wav in Resources */ = {isa = PBXBuildFile; fileRef = 25AF7FC3D763E133432195B8 /* combat_death.wav */; };
 		0CF8DA10FA1533C25066A655 /* CoinFlyAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92CC544A0511730A1DEF817 /* CoinFlyAnimationView.swift */; };
+		558F8F3C3614A51F648F9622 /* CachedAssetImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EF70965657F120803C752C /* CachedAssetImage.swift */; };
 		0EC076CD23D49AF8714BF567 /* BPRewardNodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E939633E61C30A96B8DEA639 /* BPRewardNodeView.swift */; };
 		0EC076CD23D49AF8714BF568 /* SeasonSummaryModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E939633E61C30A96B8DEA640 /* SeasonSummaryModalView.swift */; };
+		554ADF9C431484FE80147946 /* SessionSummaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */; };
+		D8911F262CCE44C45338CEF1 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200396381DBAD59E7A4E025A /* SessionSummaryView.swift */; };
 		10321B57C050901C03935EAA /* CurrencyDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E92AABAC8A1B5D421A01F1 /* CurrencyDisplay.swift */; };
 		16A08B71E27755812F6FD690 /* CharacterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A5811B35D2599327C7F9CE /* CharacterService.swift */; };
 		1704A1D3A63363F209977154 /* ui_transition.wav in Resources */ = {isa = PBXBuildFile; fileRef = F92586043C4AA4BD1A4F294F /* ui_transition.wav */; };
@@ -330,6 +335,7 @@
 		5E723480C1D3F6A742172D95 /* hit_physical.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_physical.wav; sourceTree = "<group>"; };
 		5E9F432E444EE871124DC12E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5c4d89bb78c26dddad451fcc /* Challenge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Challenge.swift; sourceTree = "<group>"; };
+		D3EF70965657F120803C752C /* CachedAssetImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAssetImage.swift; sourceTree = "<group>"; };
 		60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginPopupViewModel.swift; sourceTree = "<group>"; };
 		617D20AE2BD67288A78E6428 /* combat_poison.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_poison.wav; sourceTree = "<group>"; };
 		62932E87440D28C2DE136AC0 /* CombatResultDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatResultDetailView.swift; sourceTree = "<group>"; };
@@ -355,6 +361,7 @@
 		851C837AEE3485F0447C5271 /* DailyQuestsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuestsViewModel.swift; sourceTree = "<group>"; };
 		877EA698C6CB6187721D94A8 /* Applogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Applogo.png; sourceTree = "<group>"; };
 		8825D55175E1FECF38EF971F /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
+		DC2799E960A250F50D77C492 /* AssetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetManager.swift; sourceTree = "<group>"; };
 		8870F2B4BB738AA326CE4191 /* combat_heal.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_heal.wav; sourceTree = "<group>"; };
 		889F29A69DC229FCE6DEF613 /* BattlePassData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassData.swift; sourceTree = "<group>"; };
 		88B8909F01E03E455694F1AA /* EquipmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentViewModel.swift; sourceTree = "<group>"; };
@@ -365,6 +372,7 @@
 		8E88E6579AE4331AE8DC2F07 /* LevelUpModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelUpModalView.swift; sourceTree = "<group>"; };
 		903A21125F97518656FFCDB6 /* DailyQuestsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuestsDetailView.swift; sourceTree = "<group>"; };
 		910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArenaDetailView.swift; sourceTree = "<group>"; };
+		689574F6AED50BD6EB0CD419 /* RankUpCeremonyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankUpCeremonyView.swift; sourceTree = "<group>"; };
 		9587A537C61AE1E63A2CD011 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		97F7A52D6B95D6E098D95620 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		9B1E3F5A7B8C9D0E1F2A3B4D /* GuildHallViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallViewModel.swift; sourceTree = "<group>"; };
@@ -469,6 +477,8 @@
 		E7B9B469AFD9966B84710379 /* DailyLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginService.swift; sourceTree = "<group>"; };
 		E939633E61C30A96B8DEA639 /* BPRewardNodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPRewardNodeView.swift; sourceTree = "<group>"; };
 		E939633E61C30A96B8DEA640 /* SeasonSummaryModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonSummaryModalView.swift; sourceTree = "<group>"; };
+		C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryViewModel.swift; sourceTree = "<group>"; };
+		200396381DBAD59E7A4E025A /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		E9792A8A2127BC3038E37E96 /* CombatData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatData.swift; sourceTree = "<group>"; };
 		E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarkFantasyTheme.swift; sourceTree = "<group>"; };
 		ED9C9599BC7FEA09D41E975A /* StanceSelectorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StanceSelectorViewModel.swift; sourceTree = "<group>"; };
@@ -673,6 +683,7 @@
 				E3F5A7B9C1D3E5F7A9B1C3D6 /* EventBannerView.swift */,
 				4599C5B23903A3CEB334E06E /* AvatarImageView.swift */,
 				0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */,
+				D3EF70965657F120803C752C /* CachedAssetImage.swift */,
 				74E92AABAC8A1B5D421A01F1 /* CurrencyDisplay.swift */,
 				D5A6B7C8D9E0F1A2B3C4D5E7 /* GuestGateView.swift */,
 				E7B8C9D0E1F2A3B4C5D6E7F9 /* GuestNudgeBanner.swift */,
@@ -763,6 +774,7 @@
 		696A08CACD1815EB0FDD60EF /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				DC2799E960A250F50D77C492 /* AssetManager.swift */,
 				DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */,
 				18860E524F76C28304AB39AF /* AuthService.swift */,
 				39859708651A5AACC1204865 /* BattlePassService.swift */,
@@ -831,6 +843,7 @@
 				9A0CA0562496617C205431C0 /* Minigames */,
 				E73CC472E5883C5F103737F2 /* Profile */,
 				E8030559A6FBA18D5FCCA33A /* Quests */,
+				77A1F551D664A30E420847C2 /* SessionSummary */,
 				41F975D6AA6ACFD4D949A051 /* Settings */,
 				BD3A5B7C8D9E0F1A2B3C4D5E /* Social */,
 				129E41F2C8626921FA851877 /* Shop */,
@@ -1056,6 +1069,7 @@
 				AA1BC0E1F7A24D8E9C3D5A06 /* ArenaOpponentCard.swift */,
 				C268D3E4D32E3822E9F6013B /* ArenaViewModel.swift */,
 				A5495C24F8D2EDB96BF629CD /* OpponentCardView.swift */,
+				689574F6AED50BD6EB0CD419 /* RankUpCeremonyView.swift */,
 			);
 			path = Arena;
 			sourceTree = "<group>";
@@ -1118,8 +1132,17 @@
 			isa = PBXGroup;
 			children = (
 				CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */,
+				C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		77A1F551D664A30E420847C2 /* SessionSummary */ = {
+			isa = PBXGroup;
+			children = (
+				200396381DBAD59E7A4E025A /* SessionSummaryView.swift */,
+			);
+			path = SessionSummary;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1241,13 +1264,17 @@
 				AA1BC0E1F7A24D8E9C3D5A01 /* ArenaCarouselView.swift in Sources */,
 				AA1BC0E1F7A24D8E9C3D5A03 /* ArenaComparisonSheet.swift in Sources */,
 				007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */,
+				1F27464EED177725EDC9108F /* RankUpCeremonyView.swift in Sources */,
 				AA1BC0E1F7A24D8E9C3D5A05 /* ArenaOpponentCard.swift in Sources */,
 				23092D3C445756F441D90B22 /* ArenaViewModel.swift in Sources */,
 				0BE3C5E0FAB536974BC44084 /* AudioManager.swift in Sources */,
+				0C2A7F9E1B5D3C8A9E7F4B2D /* AssetManager.swift in Sources */,
 				48B45024E1F5F9192D4A497D /* AuthService.swift in Sources */,
 				95A33C717E6DFC5BB43324C7 /* AvatarImageView.swift in Sources */,
 				0EC076CD23D49AF8714BF567 /* BPRewardNodeView.swift in Sources */,
 				0EC076CD23D49AF8714BF568 /* SeasonSummaryModalView.swift in Sources */,
+				554ADF9C431484FE80147946 /* SessionSummaryViewModel.swift in Sources */,
+				D8911F262CCE44C45338CEF1 /* SessionSummaryView.swift in Sources */,
 				A2396EBFF08A151C4A4E3443 /* BattlePassData.swift in Sources */,
 				9B915A3F27C2BAD0EE009839 /* BattlePassDetailView.swift in Sources */,
 				82C5D1FA1A587E598C410E8D /* BattlePassService.swift in Sources */,
@@ -1255,6 +1282,7 @@
 				2640A473732509AAF202AEC2 /* BattlePreloader.swift in Sources */,
 				F75D1FC0F949F61232E576D6 /* BossDetailSheet.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* DungeonBossCard.swift in Sources */,
+				558F8F3C3614A51F648F9622 /* CachedAssetImage.swift in Sources */,
 				d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */,
 				55ED2F4293172AA050CFC300 /* CharacterSelectionView.swift in Sources */,
 				CSVW0001BLD000000000001 /* CharacterSelectionViewModel.swift in Sources */,

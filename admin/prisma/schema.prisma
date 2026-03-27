@@ -97,11 +97,46 @@ enum CosmeticType {
   skin
 }
 
+model GuildChallenge {
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  goalType      String    @map("goal_type")   // "pvp_wins", "gold_earned", "dungeons_cleared"
+  goalTarget    Int       @map("goal_target")  // e.g., 500 total PvP wins
+  currentProgress Int     @default(0) @map("current_progress")
+  goldReward    Int       @map("gold_reward")
+  gemReward     Int       @default(0) @map("gem_reward")
+  startAt       DateTime  @map("start_at")
+  endAt         DateTime  @map("end_at")
+  completed     Boolean   @default(false)
+  claimed       Boolean   @default(false)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([startAt, endAt])
+  @@map("guild_challenges")
+}
+
+model MilestoneClaim {
+  id             String   @id @default(uuid())
+  characterId    String   @map("character_id")
+  milestoneLevel Int      @map("milestone_level")
+  claimedAt      DateTime @default(now()) @map("claimed_at")
+
+  character      Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, milestoneLevel])
+  @@index([characterId])
+  @@map("milestone_claims")
+}
+
 enum EventType {
   boss_rush
   gold_rush
+  double_xp
+  drop_rate_boost
   class_spotlight
   tournament
+  weekend_warrior
 }
 
 enum DungeonDifficulty {
@@ -277,6 +312,7 @@ model Character {
   receivedMessages    DirectMessage[] @relation("received_messages")
   challengesSent      Challenge[] @relation("challenge_challenger")
   challengesReceived  Challenge[] @relation("challenge_defender")
+  milestoneClaims     MilestoneClaim[]
 
   @@index([userId])
   @@index([pvpRating])

@@ -18,9 +18,13 @@ final class SFXManager {
 
     // MARK: - Public API
 
-    /// Play a sound effect by SFX enum case.
+    /// Play a sound effect by SFX enum case (with paired haptic feedback).
     func play(_ sfx: SFX) {
         play(filename: sfx.filename)
+        // Fire paired haptic if haptics enabled
+        if settings.hapticsEnabled {
+            sfx.haptic?()
+        }
     }
 
     /// Play a sound effect by filename (looks in bundle).
@@ -156,6 +160,82 @@ enum SFX: String, CaseIterable {
     case potionUse = "potion_use"
 
     var filename: String { rawValue + ".wav" }
+
+    // MARK: - Haptic Mapping
+
+    /// Returns the haptic feedback to fire alongside this SFX.
+    /// `nil` = no haptic (scroll sounds, passive sounds).
+    var haptic: (() -> Void)? {
+        switch self {
+        // UI — lightweight taps
+        case .uiTap, .uiToggle, .uiSlide:
+            return { HapticManager.light() }
+        case .uiTapHeavy, .uiConfirm:
+            return { HapticManager.medium() }
+        case .uiOpen, .uiClose, .uiTransition, .uiBack:
+            return { HapticManager.selection() }
+        case .uiCancel:
+            return { HapticManager.light() }
+        case .uiError:
+            return { HapticManager.error() }
+
+        // UI — special moments
+        case .uiPurchase, .uiEquip, .uiUnequip:
+            return { HapticManager.medium() }
+        case .uiSell:
+            return { HapticManager.light() }
+        case .uiUpgradeSuccess:
+            return { HapticManager.success() }
+        case .uiUpgradeFail:
+            return { HapticManager.warning() }
+        case .uiLevelUp:
+            return { HapticManager.success() }
+        case .uiQuestComplete:
+            return { HapticManager.stamp() }
+        case .uiRewardClaim:
+            return { HapticManager.medium() }
+
+        // Battle result
+        case .battleVictory:
+            return { HapticManager.victory() }
+        case .battleDefeat:
+            return { HapticManager.defeat() }
+        case .battleDraw:
+            return { HapticManager.warning() }
+        case .battleStart:
+            return { HapticManager.heavy() }
+
+        // Combat — hits
+        case .hitPhysical:
+            return { HapticManager.medium() }
+        case .hitMagical:
+            return { HapticManager.light() }
+        case .hitCritical:
+            return { HapticManager.heavy() }
+        case .hitPoison:
+            return { HapticManager.light() }
+
+        // Combat — actions
+        case .combatBlock:
+            return { HapticManager.medium() }
+        case .combatMiss, .combatDodge:
+            return nil // No haptic for misses (feels wrong)
+        case .combatPoison:
+            return { HapticManager.light() }
+        case .combatHeal:
+            return { HapticManager.success() }
+        case .combatDeath:
+            return { HapticManager.shake() }
+
+        // Misc
+        case .coinDrop:
+            return { HapticManager.light() }
+        case .itemDrop:
+            return { HapticManager.medium() }
+        case .potionUse:
+            return { HapticManager.light() }
+        }
+    }
 
     // MARK: - Combat Mapping
 

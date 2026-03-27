@@ -12,10 +12,12 @@ import {
   isCombatRoom,
   TOTAL_RUSH_ROOMS,
   RUSH_BUFFS,
+  RUSH_ARTIFACTS,
   type RushState,
 } from '@/lib/game/dungeon-rush'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { getBattlePassConfig } from '@/lib/game/live-config'
+import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
   try {
     const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
-    const { character_id, run_id, action } = body
+    const { character_id, run_id, action, artifact_id } = body
 
     if (!character_id || !run_id) {
       return NextResponse.json(
@@ -79,6 +81,39 @@ export async function POST(req: NextRequest) {
         { error: 'Legacy rush run cleaned up. Please start a new rush.' },
         { status: 400 },
       )
+    }
+
+    // Handle artifact selection (after miniboss kill)
+    if (action === 'pick_artifact' && artifact_id) {
+      const pending = state.pendingArtifactChoices
+      if (!pending || pending.length === 0) {
+        return NextResponse.json({ error: 'No artifact choices pending' }, { status: 400 })
+      }
+
+      const chosen = pending.find(a => a.id === artifact_id)
+      if (!chosen) {
+        return NextResponse.json({ error: 'Invalid artifact choice' }, { status: 400 })
+      }
+
+      // Persist the selected artifact
+      const updatedArtifacts = [...(state.artifacts ?? []), chosen]
+      const newState: RushState = {
+        ...state,
+        artifacts: updatedArtifacts,
+        pendingArtifactChoices: null,
+      }
+
+      await prisma.dungeonRun.update({
+        where: { id: run.id },
+        data: { state: JSON.parse(JSON.stringify(newState)) },
+      })
+
+      return NextResponse.json({
+        type: 'artifact_selected',
+        artifact: { id: chosen.id, name: chosen.name, description: chosen.description, icon: chosen.icon },
+        artifacts: updatedArtifacts.map(a => ({ id: a.id, name: a.name, description: a.description, icon: a.icon })),
+        currentRoomIndex: state.currentRoomIndex,
+      })
     }
 
     const currentRoom = state.rooms[state.currentRoomIndex]
@@ -312,11 +347,17 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    // Guild challenge: gold earned from non-combat rooms
+    if (resolvedRoom.rewards.gold > 0) {
+      incrementGuildChallenge(prisma, 'gold_earned', resolvedRoom.rewards.gold).catch(() => {})
+    }
+
     return NextResponse.json({
       ...resolvedRoom.roomResult,
       rushComplete: resolvedRoom.rushComplete,
       currentHpPercent: resolvedRoom.currentHpPercent,
       buffs: resolvedRoom.buffs,
+      artifacts: state.artifacts ?? [],
       rewards: resolvedRoom.rewards,
       ...(resolvedRoom.nextRoom ? { nextRoom: resolvedRoom.nextRoom } : {}),
       ...(resolvedRoom.nextEnemy ? { nextEnemy: resolvedRoom.nextEnemy } : {}),

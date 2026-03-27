@@ -24,6 +24,10 @@ final class SettingsManager {
         didSet { UserDefaults.standard.set(pushNotifications, forKey: AppConstants.udPushNotifications) }
     }
 
+    var hapticsEnabled: Bool {
+        didSet { UserDefaults.standard.set(hapticsEnabled, forKey: "hapticsEnabled") }
+    }
+
     private init() {
         // Load from UserDefaults with defaults of 20% for audio
         self.rememberMe = UserDefaults.standard.bool(forKey: AppConstants.udRememberMe)
@@ -31,5 +35,6 @@ final class SettingsManager {
         self.sfxVolume = UserDefaults.standard.object(forKey: AppConstants.udSFXVolume) as? Float ?? 0.2
         self.isMuted = UserDefaults.standard.bool(forKey: AppConstants.udIsMuted)
         self.pushNotifications = UserDefaults.standard.object(forKey: AppConstants.udPushNotifications) as? Bool ?? true
+        self.hapticsEnabled = UserDefaults.standard.object(forKey: "hapticsEnabled") as? Bool ?? true
     }
 }

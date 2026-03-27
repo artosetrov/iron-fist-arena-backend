@@ -6,6 +6,7 @@ import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
+import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
 import {
   getUpgradeCost,
   getUpgradeSuccessChance,
@@ -129,6 +130,9 @@ export async function POST(req: NextRequest) {
     // Non-critical post-transaction work
     await updateDailyQuestProgress(prisma, character_id, 'item_upgrade')
     await updateDailyQuestProgress(prisma, character_id, 'gold_spent', upgradeCost)
+    if (success) {
+      incrementGuildChallenge(prisma, 'items_upgraded', 1).catch(() => {})
+    }
 
     if (success && result.updatedItem.isEquipped) {
       await recalculateDerivedStats(character_id)
