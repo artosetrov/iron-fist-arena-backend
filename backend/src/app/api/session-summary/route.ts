@@ -29,35 +29,35 @@ export async function GET(req: NextRequest) {
     // Session window: last 30 minutes
     const sessionStart = new Date(Date.now() - 30 * 60 * 1000)
 
-    // Recent PvP matches
+    // Recent PvP matches (schema uses player1Id/player2Id, not attackerId/defenderId)
     const recentMatches = await prisma.pvpMatch.findMany({
       where: {
         OR: [
-          { attackerId: characterId },
-          { defenderId: characterId },
+          { player1Id: characterId },
+          { player2Id: characterId },
         ],
-        createdAt: { gte: sessionStart },
+        playedAt: { gte: sessionStart },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { playedAt: 'desc' },
       take: 20,
     })
 
     const wins = recentMatches.filter(m => m.winnerId === characterId).length
     const losses = recentMatches.length - wins
     const goldEarned = recentMatches.reduce((sum, m) => {
-      if (m.attackerId === characterId) return sum + (m.goldReward ?? 0)
+      if (m.player1Id === characterId) return sum + (m.goldReward ?? 0)
       return sum
     }, 0)
     const xpEarned = recentMatches.reduce((sum, m) => {
-      if (m.attackerId === characterId) return sum + (m.xpReward ?? 0)
+      if (m.player1Id === characterId) return sum + (m.xpReward ?? 0)
       return sum
     }, 0)
 
     // Rating change
     const ratingBefore = recentMatches.length > 0
-      ? (recentMatches[recentMatches.length - 1].attackerId === characterId
-          ? recentMatches[recentMatches.length - 1].attackerRatingBefore
-          : recentMatches[recentMatches.length - 1].defenderRatingBefore) ?? character.pvpRating
+      ? (recentMatches[recentMatches.length - 1].player1Id === characterId
+          ? recentMatches[recentMatches.length - 1].player1RatingBefore
+          : recentMatches[recentMatches.length - 1].player2RatingBefore) ?? character.pvpRating
       : character.pvpRating
     const ratingChange = (character.pvpRating ?? 1000) - (ratingBefore ?? 1000)
 
