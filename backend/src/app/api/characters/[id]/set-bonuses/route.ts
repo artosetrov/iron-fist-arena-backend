@@ -9,13 +9,13 @@ import { calculateSetBonuses, ITEM_SETS } from '@/lib/game/item-sets'
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const user = await getAuthUser(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const characterId = params.id
+    const { id: characterId } = await params
 
     // Verify ownership
     const character = await prisma.character.findFirst({
