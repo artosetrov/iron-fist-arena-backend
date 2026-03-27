@@ -1,0 +1,39 @@
+# Rules: Art / Assets / Image Generation
+
+> **Домен:** Art style, AI image prompts, asset pipeline
+> **Когда читать:** Создание ассетов, AI generation, иконки, спрайты
+> **НЕ покрывает:** UI code, Backend, Balance
+
+---
+
+## Source of Truth
+
+- Art style guide: `docs/08_prompts/ART_STYLE_GUIDE.md`
+- Asset prompts index: `docs/08_prompts/ASSET_PROMPTS_INDEX.md`
+- Specific prompt files: `docs/08_prompts/*.md`
+
+## Art Style
+
+- **Стиль:** Pen and ink illustration, bold black ink outlines
+- **Палитра:** Muted earth tones + 1-2 saturated accent colors
+- **Жанр:** Grimdark dark fantasy
+- **Референс:** D&D Monster Manual / Pathfinder rulebook (НЕ digital painting, НЕ anime)
+- **Фон:** Isolated on white/transparent background
+
+## Prompt Structure
+
+1. Начинай с `Pen and ink illustration of...`
+2. Заканчивай: `isolated on white background, comic book lineart style, crisp sharp black outlines, fantasy RPG rulebook illustration, not a painting, not concept art, no blur, no glow, no fog, no text`
+
+## Asset Naming
+
+- `building-{id}.imageset` для зданий
+- Все imageset в `Assets.xcassets/` с `Contents.json` + PNG
+
+## Emoji → Assets
+
+Все emoji в reward/status screens заменяются на game assets. Pattern: `assetIcon` computed property + `rewardIcon()` helper view.
+
+## Exception
+
+`icon-gold-mine` — casual/cartoon стиль. НЕ использовать как референс art style.

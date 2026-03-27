@@ -1,0 +1,88 @@
+# Rules: iOS / Swift / SwiftUI
+
+> **Домен:** Весь Swift-код в `Hexbound/`
+> **Когда читать:** Любая работа с iOS клиентом
+> **НЕ покрывает:** Backend, Admin, Deploy, Game Design
+
+---
+
+## Xcode Project File (CRITICAL)
+
+Каждый новый `.swift` файл ОБЯЗАН быть добавлен в `Hexbound/Hexbound.xcodeproj/project.pbxproj` — 4 секции:
+1. **PBXBuildFile** — `{ID1} /* File.swift in Sources */`
+2. **PBXFileReference** — `{ID2} /* File.swift */`
+3. **PBXGroup** — добавить в children нужной группы
+4. **PBXSourcesBuildPhase** — добавить `{ID1}`
+
+Генерируй уникальные 24-char hex ID через `openssl rand -hex 12`. Никогда не используй последовательные ID.
+
+## Swift Concurrency
+
+- Любой тип, обращающийся к `@MainActor`-isolated свойствам, ДОЛЖЕН сам быть `@MainActor`
+- `L10n` enum — `@MainActor`. Все новые key enums — аналогично
+- ViewModels: `@MainActor @Observable class`
+- Навигация: `NavigationStack` + `AppRouter`
+
+## Optional ViewModel Pattern (CRITICAL)
+
+Все экраны с `@State private var vm: SomeViewModel?` + `if let vm { ... }` ОБЯЗАНЫ иметь `.transaction { $0.animation = nil }` на корневом контенте.
+
+**WARNING:** `.transaction { $0.animation = nil }` убивает `withAnimation()`. Используй `.animation(_, value:)` для конкретных анимаций.
+
+## Force Unwrap = Zero Tolerance
+
+Заменяй ВСЕ `!` на `if let`, `guard let`, `?? default`. Единственное исключение — hardcoded URL literals с комментарием `swiftlint:disable`.
+
+## CodingKeys vs convertFromSnakeCase
+
+`APIClient` использует `.convertFromSnakeCase`. Если backend шлёт camelCase (по умолчанию Next.js), НЕ добавляй explicit CodingKeys — они сломают decode.
+
+Добавляй CodingKeys только если:
+- Backend шлёт snake_case (raw Prisma queries)
+- Есть конфликт с зарезервированным словом (`class` → `characterClass = "class"`)
+
+## APIClient Signatures
+
+- `getRaw(_:params:)` — первый аргумент позиционный (НЕТ `endpoint:` label)
+- `postRaw(_:body:)` — body `[String: Any]`, возвращает `[String: Any]`
+- `post(_:body:)` — generic typed, body `Encodable?`. НЕ передавай `[String: Any]` — создай struct
+- Нет параметра `queryItems:` — используй `params:`
+
+## SFX Enum
+
+Все кейсы с префиксом `ui`: `.uiTap`, `.uiConfirm`, `.uiSuccess`, `.uiError`. НЕТ `.tap`, `.confirm`.
+
+## Collection Types
+
+- `stride(from:to:by:)` → обернуть в `Array()` для ForEach
+- `.stroke(dash:)` не существует → используй `StrokeStyle(lineWidth:, dash:)`
+- ButtonStyle ternary — НЕЛЬЗЯ. Используй `if/else` с полным `Button` в каждой ветке
+
+## APIError Destructuring
+
+`APIError.serverError` имеет 2 associated values: `(statusCode: Int, message: String)`. Всегда `case .serverError(_, let msg):`.
+
+## Retain Cycles
+
+- `[weak self]` ТОЛЬКО в классах. SwiftUI Views — struct, `[weak self]` = ошибка компиляции
+- В `@Observable` классах (ViewModels): используй `[weak self]` + `guard let self`
+
+## Type-Checker Timeout
+
+Сложные `body` → разбивай на 3-5 private sub-methods с explicit return type (`: some View`).
+
+## Property Access
+
+Перед обращением к свойству модели — ПРОВЕРЬ что оно существует. Разные модели (`Item`, `ShopItem`, `LootPreview`) имеют РАЗНЫЕ свойства.
+
+## Color Token Shorthand
+
+Всегда полный префикс: `DarkFantasyTheme.textPrimary`, НЕ `.textPrimary`.
+
+## Dead Code
+
+После рефакторинга: grep ВСЕ импорты старого имени → удалить файл + pbxproj entries.
+
+## File Hygiene
+
+Никогда не оставляй `.bak`, `.backup`, `.tmp` внутри `.xcodeproj/` bundle — Xcode упадёт.

@@ -1,0 +1,102 @@
+---
+description: "UI design system rules — DarkFantasyTheme tokens, ornamentals, radius scale, GPU performance"
+globs: ["Hexbound/**/Views/**/*.swift", "Hexbound/**/Theme/**/*.swift"]
+---
+
+# Rules: UI Design System
+
+> **Домен:** Визуальный дизайн, токены, компоненты, стили
+> **Когда читать:** Любая работа с UI/UX в iOS
+> **НЕ покрывает:** Backend логику, Game design, Deploy
+
+---
+
+## Design System Files
+
+| Файл | Содержимое |
+|------|-----------|
+| `Hexbound/Hexbound/Theme/DarkFantasyTheme.swift` | Цвета, шрифты — SOURCE OF TRUTH |
+| `Hexbound/Hexbound/Theme/ButtonStyles.swift` | Стили кнопок (.primary, .secondary, etc.) |
+| `Hexbound/Hexbound/Theme/LayoutConstants.swift` | Spacing, sizing, radius |
+| `Hexbound/Hexbound/Theme/OrnamentalStyles.swift` | Ornamental overlays, decorative elements |
+| `Hexbound/Hexbound/Theme/CardStyles.swift` | Card/panel modifier styles |
+
+## НИКОГДА не угадывай токены
+
+Перед использованием `DarkFantasyTheme.xxx` — ОТКРОЙ файл и ПРОВЕРЬ. Нет `.accent`, `.primary` (как цвет), `.background`, `.text`. Есть `.gold`, `.bgPrimary`, `.textPrimary`.
+
+## Ornamental System (100% complete)
+
+Все UI элементы используют чистый SwiftUI — **нет PNG для UI chrome**.
+
+**Стандартный паттерн панели:**
+1. `RadialGlowBackground(baseColor: .bgSecondary, glowColor: .bgTertiary, glowIntensity: 0.4, cornerRadius: LayoutConstants.cardRadius)`
+2. `.surfaceLighting(cornerRadius:, topHighlight: 0.08, bottomShadow: 0.12)`
+3. `.innerBorder(cornerRadius: - 2, inset: 2, color: .borderMedium.opacity(0.15))`
+4. `.cornerBrackets(color: accent.opacity(0.3), length: 14, thickness: 1.5)`
+5. `.shadow(color: .bgAbyss.opacity(0.4), radius: 6, y: 3)`
+
+**Модальный паттерн:** усиленная версия — `topHighlight: 0.10`, `bottomShadow: 0.16`, двойная тень.
+
+**`.compositingGroup()` ОБЯЗАТЕЛЕН** после 2+ ornamental overlays.
+
+## Radius Scale
+
+Все cornerRadius через `LayoutConstants` токены. НИКОГДА raw numbers.
+- `radiusXS(3)` → progress bars
+- `radiusSM(6)` → badges, stat bars
+- `radiusMD(8)` → buttons, panels
+- `radiusLG(12)` → cards
+- `radiusXL(16)` → modals
+- `radius2XL(22)` → capsule inputs
+
+## GPU Performance
+
+- `.compositingGroup()` после 2+ ornamental overlays
+- `.drawingGroup()` для heavy render views (maps, wheels)
+- `.repeatForever` animations → stop on `.onDisappear`
+- Damage popups capped at 5
+
+## Stat Colors — Unified Gold
+
+Все stat bars = золотая палитра. НЕ rainbow per-stat colors.
+- `.statBoosted` (bright gold), `.statBase` (dim gold), `.statBarFill` (standard gold)
+
+## Ключевые компоненты (используй, не дублируй)
+
+- `UnifiedHeroWidget` — character summary (НЕ создавай inline displays)
+- `HeroIntegratedCard` — hero page (НЕ UnifiedHeroWidget на hero page)
+- `StanceDisplayView` — combat stance (НЕ inline stance displays)
+- `ItemCardView` — item cells (единственный source of truth)
+- `CurrencyDisplay` — gold/gems (НИКОГДА SF Symbols для валюты)
+- `TabSwitcher`, `GoldDivider`, `ActiveQuestBanner`, `HubLogoButton`
+
+## Product Principles
+
+- **3-second rule** — экран понятен за 3 секунды
+- **One goal per screen** — один primary CTA
+- **No dead ends** — каждое состояние имеет next action
+- **Min touch target:** 48×48pt, primary buttons 56pt+
+- **Min font:** 11px (LayoutConstants.textBadge)
+
+## Press State
+
+`.brightness(-0.06)` вместо `.opacity(0.85)`. Нет scale-анимаций (opacity only).
+
+## Color.white / Color.black
+
+Допустимы ТОЛЬКО в ornamental overlays при очень низкой opacity (0.06-0.08).
+
+## Shadows
+
+Всегда dual shadows: type-colored glow + dark bgAbyss. Никогда single flat shadow.
+
+## Optimistic UI (MANDATORY)
+
+Все mutating actions → обновляй UI мгновенно, API в background. При ошибке — revert.
+
+## Toast System
+
+- `showToast(_ title:, subtitle:, type:)` — первый arg позиционный
+- Нет `.success` — используй `.info` или `.reward`
+- Error toasts с Retry button

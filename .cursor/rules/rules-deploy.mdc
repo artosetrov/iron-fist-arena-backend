@@ -1,0 +1,56 @@
+---
+description: "Deploy and git workflow rules — two remotes, admin subtree push, merge conflict resolution"
+globs: ["scripts/**", ".github/**"]
+---
+
+# Rules: Git / Deploy / CI/CD
+
+> **Домен:** Git workflow, Vercel deploy, iOS release, scripts
+> **Когда читать:** Деплой, коммит, release
+> **НЕ покрывает:** Game logic, UI design, Balance
+
+---
+
+## Source of Truth
+
+- Deploy guide: `docs/10_operations/DEPLOY.md`
+- Git workflow: `docs/10_operations/GIT_WORKFLOW.md`
+- iOS release: `docs/10_operations/RELEASE_IOS.md`
+
+## Two Remotes (CRITICAL)
+
+| Remote | Что деплоит |
+|--------|-----------|
+| `origin` | Full monorepo → backend auto-deploys to Vercel |
+| `admin-deploy` | Admin subtree → admin auto-deploys to Vercel |
+
+После `git push origin main`, если `admin/` изменился:
+```bash
+git subtree push --prefix=admin admin-deploy main
+```
+
+## Git Watcher (Auto-Commit from VM)
+
+Если прямой `git commit` блокируется `index.lock`:
+```bash
+echo "commit message" > .git-trigger
+```
+Watcher на Mac подхватит и сделает commit + push.
+
+## Merge Conflict Resolution (CRITICAL)
+
+После ANY merge — ОБЯЗАТЕЛЬНО grep:
+```bash
+grep -rn "^<<<<<<<\|^=======\$\|^>>>>>>>" . --include="*.swift" --include="*.ts" --include="*.prisma" --include="*.md" | grep -v node_modules | grep -v ".git/"
+```
+НИКОГДА не `git add -A && git commit` без проверки.
+
+## Build Verification
+
+- Backend: `npx next build` в `backend/`
+- Admin: `npx next build` в `admin/`
+- `prisma generate` перед `tsc`/`next build`
+
+## iOS Release
+
+TestFlight → App Store. Подробности: `docs/10_operations/RELEASE_IOS.md`

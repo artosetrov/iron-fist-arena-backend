@@ -1,0 +1,74 @@
+---
+description: "Combat and PvP system rules — server-authoritative combat, matchmaking, stance, arena"
+globs: ["Hexbound/**/Combat/**/*.swift", "backend/**/combat*.ts", "backend/**/pvp/**/*.ts"]
+---
+
+# Rules: Combat / PvP / Arena
+
+> **Домен:** Боевая система, PvP, арена, ELO, стойки, реванш
+> **Когда читать:** Работа с combat, arena, PvP rewards, matchmaking
+> **НЕ покрывает:** Shop, Daily systems, Admin panel UI
+
+---
+
+## Source of Truth
+
+- Combat logic: `backend/src/lib/game/combat.ts`
+- Balance formulas: `backend/src/lib/game/balance.ts`
+- Live config: `backend/src/lib/game/live-config.ts`
+- Detailed doc: `docs/06_game_systems/COMBAT.md`
+- Constants: `docs/06_game_systems/BALANCE_CONSTANTS.md`
+
+## Server-Authoritative Rule (CRITICAL)
+
+Клиент НЕ СЧИТАЕТ: результаты боя, награды, рейтинг, экономические значения. Отображай то, что прислал сервер.
+
+## Combat Flow
+
+1. Client запрашивает бой → Server находит оппонента (matchmaking)
+2. Server выполняет `runCombat()` (async!) → generates seeded RNG log
+3. Server обновляет ELO, выдаёт rewards, degradation
+4. Client получает результат + combat log для replay
+
+## Matchmaking (updated 2026-03-23)
+
+- ±10 уровней, ±80% gear score
+- 3-phase cascade fallback (tight → medium → wide)
+- Starting rating: 1000, calibration phase
+
+## Stance System
+
+- Attack zone (head/chest/legs) + Defense zone (head/chest/legs)
+- Zone matching: +15% DEF при match, +5% OFF при miss
+- UI: `StanceDisplayView` (отдельный компонент)
+- Selector: `StanceSelectorDetailView`
+- Bonus data: `StanceSelectorViewModel.attackBonuses(for:)`, `defenseBonuses(for:)`
+
+## Arena Screen Layout
+
+- Sticky title + tabs (OPPONENTS / REVENGE / HISTORY) pinned above ScrollView
+- Content: ActiveQuestBanner → UnifiedHeroWidget → PvP Stats → LowHP → Stance → Tab content
+- Refresh button pinned to bottom (opponents tab only)
+
+## PvP Data Models
+
+- `PvPRank` — НЕТ `.displayName`, используй `.rawValue`
+- `LeaderboardEntry` — `.characterClass` это String, не enum. Конвертируй: `CharacterClass(rawValue:) ?? .warrior`
+- `OpponentProfile` — full public profile для PvP sheet
+- `ItemRarity.color` — computed property для rarity-colored borders
+
+## Revenge System
+
+- 72-hour expiration
+- Tracked in `pvp/revenge/[id]` route
+- Badge in arena tab
+
+## Achievement Tracking
+
+- 9 PvP achievements tracked in `pvp/fight`, `pvp/resolve`, `pvp/revenge/[id]`
+- 4 ranking achievements tracked after ELO update
+- `absolute: true` for streaks and ratings
+
+## Damage Type Enum
+
+`physical`, `magical`, `true_damage`, `poison` — не придумывай других.

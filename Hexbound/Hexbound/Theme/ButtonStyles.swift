@@ -1,15 +1,28 @@
 import SwiftUI
 
+// MARK: - Environment Helper for ButtonStyles
+
+/// Reads `@Environment(\.isEnabled)` inside a proper View context,
+/// then passes the value to the `ButtonStyle.makeBody` content.
+/// Fixes: "Accessing Environment<Bool>'s value outside of being installed on a View"
+private struct EnabledReader<Content: View>: View {
+    @Environment(\.isEnabled) private var envEnabled
+    let manualEnabled: Bool
+    @ViewBuilder let content: (_ effectiveEnabled: Bool) -> Content
+
+    var body: some View {
+        content(manualEnabled && envEnabled)
+    }
+}
+
 // MARK: - Primary Button (Gold CTA — AAA Design Doc)
 // Height: 56px, Gold gradient bg, dark text, ornamental border
 
 struct PrimaryButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var envEnabled
     var isEnabled: Bool = true
 
-    private var effectiveEnabled: Bool { isEnabled && envEnabled }
-
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: isEnabled) { effectiveEnabled in
         let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
@@ -59,6 +72,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed { SFXManager.shared.play(.uiTapHeavy) }
             }
+        }
     }
 }
 
@@ -327,9 +341,8 @@ struct SocialAuthButtonStyle: ButtonStyle {
 // Like Primary but adapts to content size instead of full-width
 
 struct CompactPrimaryButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -367,15 +380,15 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
             }
+        }
     }
 }
 
 // MARK: - Danger Compact Button (Inline danger action — REVENGE, delete)
 
 struct DangerCompactButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: true) { isEnabled in
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
             .foregroundStyle(isEnabled ? .white : DarkFantasyTheme.textDisabled)
@@ -393,6 +406,7 @@ struct DangerCompactButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, pressed in
                 if pressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
             }
+        }
     }
 }
 
@@ -455,9 +469,8 @@ struct DangerOutlineButtonStyle: ButtonStyle {
 // Height: 48px, bgTertiary fill, primary text
 
 struct NeutralButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         let borderColor = isEnabled ? DarkFantasyTheme.borderMedium : DarkFantasyTheme.borderSubtle
 
@@ -489,6 +502,7 @@ struct NeutralButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTap) }
             }
+        }
     }
 }
 
@@ -525,10 +539,10 @@ struct ColorToggleButtonStyle: ButtonStyle {
 // Used in: Arena opponent sheet, Dungeon boss card
 
 struct FightButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
     var accentColor: Color = DarkFantasyTheme.arenaRankGold
 
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
@@ -597,6 +611,7 @@ struct FightButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
             }
+        }
     }
 }
 
@@ -604,9 +619,8 @@ struct FightButtonStyle: ButtonStyle {
 // Like FightButtonStyle but adapts to content size instead of full-width
 
 struct CompactFightButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -652,6 +666,7 @@ struct CompactFightButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
             }
+        }
     }
 }
 
@@ -793,8 +808,6 @@ extension ButtonStyle where Self == GetMoreButtonStyle {
 // Used in: CurrencyPurchaseView Special tab — Premium Forever CTA
 
 struct PremiumButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
     private let gradient = LinearGradient(
         colors: [DarkFantasyTheme.btnPurpleDark, DarkFantasyTheme.purple, DarkFantasyTheme.btnPurpleBright],
         startPoint: .leading,
@@ -802,6 +815,7 @@ struct PremiumButtonStyle: ButtonStyle {
     )
 
     func makeBody(configuration: Configuration) -> some View {
+        EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
             .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
@@ -845,6 +859,7 @@ struct PremiumButtonStyle: ButtonStyle {
             .onChange(of: configuration.isPressed) { _, newPressed in
                 if newPressed && isEnabled { SFXManager.shared.play(.uiTapHeavy) }
             }
+        }
     }
 }
 

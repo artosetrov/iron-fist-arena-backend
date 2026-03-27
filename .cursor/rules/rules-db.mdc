@@ -1,0 +1,65 @@
+---
+description: "Database and Prisma rules — schema sync, migrations, Json fields, merge conflicts"
+globs: ["**/prisma/**", "backend/**/schema.prisma", "admin/**/schema.prisma"]
+---
+
+# Rules: Database / Prisma
+
+> **Домен:** PostgreSQL, Prisma ORM, миграции, схема
+> **Когда читать:** Изменение БД, новые модели, миграции
+> **НЕ покрывает:** API routes, iOS, Admin UI
+
+---
+
+## Source of Truth
+
+- Schema: `backend/prisma/schema.prisma` (ЕДИНСТВЕННЫЙ source of truth)
+- Schema docs: `docs/04_database/SCHEMA_REFERENCE.md`
+- Migration guide: `docs/10_operations/DATABASE_MIGRATIONS.md`
+
+## Prisma Schema Sync (CRITICAL)
+
+`backend/prisma/schema.prisma` и `admin/prisma/schema.prisma` ДОЛЖНЫ быть идентичны.
+
+После ANY change:
+1. `cd backend && npm run db:migrate:dev -- --name your_change`
+2. `cp backend/prisma/schema.prisma admin/prisma/schema.prisma`
+3. Commit оба файла
+
+## Prisma Migrate Resolve Gotcha (CRITICAL)
+
+`prisma migrate resolve --applied <name>` — НЕ выполняет SQL. Только помечает миграцию как applied.
+
+**Используй ТОЛЬКО когда SQL уже был применён вручную.**
+
+Верификация после миграции:
+```sql
+SELECT column_name FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'characters'
+ORDER BY ordinal_position;
+```
+
+## Json Fields — Double Cast
+
+```typescript
+// Read
+const data = record.jsonField as unknown as MyType[];
+// Write
+const input = (value ?? Prisma.JsonNull) as unknown as Prisma.InputJsonValue;
+```
+
+## 40+ Models
+
+Полный список: см. `docs/04_database/SCHEMA_REFERENCE.md`. Основные:
+- `User`, `Character`, `Item`, `Equipment`
+- `PvpMatch`, `DungeonRun`, `CombatLog`
+- `Quest`, `Achievement`, `BattlePass`
+- `ShopOffer`, `Transaction`, `Friendship`, `Challenge`
+
+## Merge Conflicts (CRITICAL)
+
+После `git merge`:
+```bash
+grep -rn "^<<<<<<<\|^=======\$\|^>>>>>>>" . --include="*.prisma" | grep -v node_modules
+```
+Seed scripts и Prisma files — часто конфликтуют.

@@ -1,0 +1,43 @@
+---
+description: "Audio and haptics rules — SFX enum with ui prefix, haptic feedback levels"
+globs: ["Hexbound/**/SFX*.swift", "Hexbound/**/Audio*.swift", "Hexbound/**/Haptic*.swift"]
+---
+
+# Rules: Audio / Sound / Music / Haptics
+
+> **Домен:** SFX, музыка, haptic feedback, аудио-ассеты
+> **Когда читать:** Работа со звуком, добавление SFX, музыкальный дизайн
+> **НЕ покрывает:** Visual UI, Backend logic, Balance
+
+---
+
+## Source of Truth
+
+- Audio design: `docs/02_product_and_features/AUDIO_DESIGN.md`
+
+## SFX Enum (CRITICAL)
+
+Все кейсы с префиксом `ui`:
+- `.uiTap`, `.uiTapHeavy`, `.uiConfirm`, `.uiSuccess`, `.uiError`
+
+**НЕТ `.tap`, `.confirm`, `.success`, `.error`** — вызовут ошибку компиляции.
+
+Перед использованием — проверь доступные кейсы в SFX enum definition.
+
+## Haptic Feedback
+
+- Light tap: navigation, selection
+- Medium: confirm, purchase
+- Heavy: combat hit, critical, level up
+- Error: failed action
+
+## Music Vision
+
+- Dark fantasy ambient
+- Combat: higher intensity
+- Hub: calm, atmospheric
+- Dungeon: tension building
+
+## Asset Sourcing
+
+See `AUDIO_DESIGN.md` for full strategy.
