@@ -1,8 +1,16 @@
 import SwiftUI
 
-/// Onboarding Step 3: Name input with character preview and build summary.
+/// Onboarding Step 3: Name input with hero preview card.
 struct NameStepView: View {
     @Bindable var vm: OnboardingViewModel
+    @State private var glowPhase: CGFloat = 0
+
+    private var classColor: Color {
+        if let cls = vm.selectedClass {
+            return DarkFantasyTheme.classColor(for: cls)
+        }
+        return DarkFantasyTheme.gold
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -13,8 +21,15 @@ struct NameStepView: View {
                     .tracking(1)
                     .padding(.top, LayoutConstants.spaceLG)
 
-                // Unified card: avatar + info + stats
-                unifiedCharacterCard
+                // Hero preview card (arena-style)
+                heroPreviewCard
+                    .frame(maxWidth: 220)
+                    .frame(maxWidth: .infinity)
+
+                // Stat bonuses below the card
+                if !vm.combinedBonuses.isEmpty {
+                    statBonusGrid
+                }
 
                 // Name input with separate dice button
                 nameInputSection
@@ -22,138 +37,241 @@ struct NameStepView: View {
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.bottom, LayoutConstants.spaceLG)
         }
+        .onAppear {
+            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                glowPhase = 360
+            }
+        }
+        .onDisappear {
+            glowPhase = 0
+        }
     }
 
-    // MARK: - Unified Character Card (avatar + summary merged)
+    // MARK: - Hero Preview Card (Arena-Style)
 
-    private var unifiedCharacterCard: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // Avatar with level badge
+    private var heroPreviewCard: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let height = width * 1.4
+
             ZStack {
-                if let cls = vm.selectedClass {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    DarkFantasyTheme.classColor(for: cls).opacity(0.2),
-                                    DarkFantasyTheme.bgSecondary.opacity(0.3),
-                                    Color.clear
-                                ],
-                                center: .center,
-                                startRadius: 20,
-                                endRadius: 120
-                            )
-                        )
-                        .frame(width: 200, height: 200)
-                }
+                // 1. Full-bleed avatar
+                avatarImage(width: width, height: height)
 
-                ZStack(alignment: .bottomTrailing) {
-                    Group {
-                        if let skin = vm.selectedSkin, UIImage(named: skin.resolvedImageKey) != nil {
-                            Image(skin.resolvedImageKey)
-                                .resizable()
-                                .scaledToFill()
-                        } else if let skin = vm.selectedSkin, let url = skin.resolvedImageURL {
-                            AsyncImage(url: url) { image in
-                                image.resizable().scaledToFill()
-                            } placeholder: {
-                                ProgressView().tint(DarkFantasyTheme.textTertiary)
-                            }
-                        } else {
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 56)) // SF Symbol icon — keep as is
-                                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(DarkFantasyTheme.bgTertiary)
-                        }
-                    }
-                    .frame(width: 180, height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
-                            .stroke(DarkFantasyTheme.gold, lineWidth: 3)
-                    )
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.2), radius: 20, y: 8)
+                // 2. Vignette
+                vignetteOverlay(width: width, height: height)
 
-                    Text("1")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel).bold())
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .frame(width: 30, height: 30)
-                        .background(Circle().fill(DarkFantasyTheme.gold))
-                        .offset(x: 4, y: 4)
+                // 3. Content overlay
+                VStack {
+                    topBadges
+                    Spacer()
+                    bottomInfoStack
                 }
+                .padding(LayoutConstants.spaceSM + 2)
+                .frame(width: width, height: height)
             }
+            .frame(width: width, height: height)
+            .background(DarkFantasyTheme.bgAbyss)
+            .overlay(animatedBorderGlow)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
+            .shadow(color: classColor.opacity(0.3), radius: LayoutConstants.arenaGlowRadius, y: 3)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
+        }
+        .aspectRatio(1.0 / 1.4, contentMode: .fit)
+    }
 
-            // Origin + Class row
-            HStack(spacing: LayoutConstants.spaceSM) {
-                if let origin = vm.selectedOrigin {
+    // MARK: - Avatar Image
+
+    @ViewBuilder
+    private func avatarImage(width: CGFloat, height: CGFloat) -> some View {
+        Group {
+            if let skin = vm.selectedSkin, UIImage(named: skin.resolvedImageKey) != nil {
+                Image(skin.resolvedImageKey)
+                    .resizable()
+                    .scaledToFill()
+            } else if let skin = vm.selectedSkin, let url = skin.resolvedImageURL {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    ProgressView().tint(DarkFantasyTheme.textTertiary)
+                }
+            } else {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 56))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(DarkFantasyTheme.bgTertiary)
+            }
+        }
+        .frame(width: width, height: height)
+        .clipped()
+    }
+
+    // MARK: - Vignette
+
+    private func vignetteOverlay(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RadialGradient(
+                gradient: Gradient(colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.5)]),
+                center: .init(x: 0.5, y: 0.35),
+                startRadius: width * 0.25,
+                endRadius: width * 0.85
+            )
+
+            LinearGradient(
+                colors: [
+                    .clear, .clear,
+                    DarkFantasyTheme.bgAbyss.opacity(0.4),
+                    DarkFantasyTheme.bgAbyss.opacity(0.8),
+                    DarkFantasyTheme.bgAbyss.opacity(0.95),
+                    DarkFantasyTheme.bgAbyss
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: height * 0.65)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+    }
+
+    // MARK: - Top Badges
+
+    private var topBadges: some View {
+        HStack {
+            // Level circle
+            Text("1")
+                .font(DarkFantasyTheme.section(size: 12))
+                .foregroundStyle(classColor)
+                .frame(width: 28, height: 28)
+                .background(
+                    Circle()
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
+                        .overlay(Circle().stroke(classColor.opacity(0.5), lineWidth: 1.5))
+                )
+
+            Spacer()
+
+            // Class pill
+            if let cls = vm.selectedClass {
+                Text(cls.displayName.uppercased())
+                    .font(DarkFantasyTheme.body(size: 10).bold())
+                    .foregroundStyle(classColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(classColor.opacity(0.12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(classColor.opacity(0.25), lineWidth: 0.5)
+                            )
+                    )
+            }
+        }
+    }
+
+    // MARK: - Bottom Info
+
+    private var bottomInfoStack: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            // Build summary
+            Text(vm.heroSummary)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
+
+            // Origin pill
+            if let origin = vm.selectedOrigin {
+                HStack(spacing: 4) {
                     Image(origin.iconAsset)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text(origin.displayName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .frame(width: 14, height: 14)
+                    Text(origin.displayName.uppercased())
+                        .font(DarkFantasyTheme.body(size: 10).bold())
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
-                if let cls = vm.selectedClass {
-                    Image(cls.iconAsset)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                    Text(cls.sfName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(DarkFantasyTheme.classColor(for: cls))
-                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(DarkFantasyTheme.borderSubtle.opacity(0.3), lineWidth: 0.5)
+                        )
+                )
             }
 
-            // Gender
-            Text(vm.selectedGender.displayName)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(1)
-
-            // Divider
-            GoldDivider()
-                .padding(.horizontal, LayoutConstants.spaceLG)
-
-            // Build summary: hero summary + stat bonuses (name shown only in input field)
-            VStack(spacing: LayoutConstants.spaceSM) {
-                Text(vm.heroSummary)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-                if !vm.combinedBonuses.isEmpty {
-                    LazyVGrid(
-                        columns: [GridItem(.flexible()), GridItem(.flexible())],
-                        spacing: LayoutConstants.spaceXS
-                    ) {
-                        ForEach(vm.combinedBonuses, id: \.stat) { bonus in
-                            statBonusCell(name: bonus.stat, value: bonus.value)
-                        }
-                    }
-                    .padding(.top, 2)
+            // "NEW" rating badge
+            HStack(spacing: 5) {
+                if UIImage(named: "icon-pvp-rating") != nil {
+                    Image("icon-pvp-rating")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .opacity(0.7)
+                } else {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 }
+
+                Text("NEW")
+                    .font(DarkFantasyTheme.section(size: 20))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .tracking(2)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
             }
         }
-        .padding(LayoutConstants.cardPadding)
-        .frame(maxWidth: .infinity)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Animated Border Glow
+
+    private var animatedBorderGlow: some View {
+        RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
+            .stroke(
+                AngularGradient(
+                    colors: [
+                        classColor.opacity(0.6),
+                        classColor.opacity(0.1),
+                        classColor.opacity(0.4),
+                        classColor.opacity(0.05),
+                        classColor.opacity(0.6)
+                    ],
+                    center: .center,
+                    startAngle: .degrees(glowPhase),
+                    endAngle: .degrees(glowPhase + 360)
+                ),
+                lineWidth: 2
             )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
-        )
-        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
-        .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .overlay(
+                CornerBracketOverlay(
+                    color: classColor.opacity(0.6),
+                    length: 14,
+                    thickness: 1.5
+                )
+            )
+            .overlay(
+                CornerDiamondOverlay(
+                    color: classColor.opacity(0.5),
+                    size: 5
+                )
+            )
+    }
+
+    // MARK: - Stat Bonus Grid
+
+    private var statBonusGrid: some View {
+        LazyVGrid(
+            columns: [GridItem(.flexible()), GridItem(.flexible())],
+            spacing: LayoutConstants.spaceXS
+        ) {
+            ForEach(vm.combinedBonuses, id: \.stat) { bonus in
+                statBonusCell(name: bonus.stat, value: bonus.value)
+            }
+        }
     }
 
     // MARK: - Name Input Section (input + dice button)
