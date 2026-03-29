@@ -7,3 +7,12 @@
 .next/
 node_modules/
 *.docx
+
+# Dev artifacts & prototypes
+User/WIP/
+User/sprites/
+combat-fx-prototype/
+.claude/agent-bus/
+
+# Landing page (moved to separate repo)
+hexbound-landing/
