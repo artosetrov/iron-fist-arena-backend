@@ -85,6 +85,7 @@ struct EmptyStateView: View {
             )
             .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 14, thickness: 1.5)
             .cornerDiamonds(color: DarkFantasyTheme.goldDim, size: 4)
+            .compositingGroup()
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
             .padding(.horizontal, LayoutConstants.screenPadding)
 

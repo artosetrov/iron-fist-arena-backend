@@ -127,22 +127,21 @@ export async function POST(req: NextRequest) {
     if (attacker.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (!defender) return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
 
-    // Stamina check — revenge fights are FREE (no stamina cost)
-    const staminaResult = await calculateCurrentStamina(
-      attacker.currentStamina,
-      attacker.maxStamina,
-      attacker.lastStaminaUpdate ?? new Date()
-    )
-    const currentStamina = staminaResult.stamina
-    const freePvpUsed = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
-    const hasFreePvp = isRevenge ? true : freePvpUsed < STAMINA.FREE_PVP_PER_DAY
-    const staminaCost = isRevenge ? 0 : (hasFreePvp ? 0 : STAMINA.PVP_COST)
-
-    if (!isRevenge && !hasFreePvp && currentStamina < STAMINA.PVP_COST) {
-      return NextResponse.json(
-        { error: 'Not enough stamina', currentStamina, required: STAMINA.PVP_COST },
-        { status: 400 }
+    // Stamina pre-check (fast early-exit) — authoritative check happens inside transaction with row lock
+    if (!isRevenge) {
+      const staminaResultPre = await calculateCurrentStamina(
+        attacker.currentStamina,
+        attacker.maxStamina,
+        attacker.lastStaminaUpdate ?? new Date()
       )
+      const freePvpUsedPre = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
+      const hasFreePvpPre = freePvpUsedPre < STAMINA.FREE_PVP_PER_DAY
+      if (!hasFreePvpPre && staminaResultPre.stamina < STAMINA.PVP_COST) {
+        return NextResponse.json(
+          { error: 'Not enough stamina', currentStamina: staminaResultPre.stamina, required: STAMINA.PVP_COST },
+          { status: 400 }
+        )
+      }
     }
 
     // Server re-runs combat with the SAME seed for verification
@@ -201,16 +200,13 @@ export async function POST(req: NextRequest) {
       xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
     }
 
-    const newStamina = currentStamina - staminaCost
     const now = new Date()
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
 
-    // Build attacker update — persist post-combat HP
+    // Build base attacker update (stamina fields added inside transaction after row lock)
     const attackerFinalHp = Math.max(combatResult.finalHp[attacker.id] ?? 0, 0)
     const defenderFinalHp = Math.max(combatResult.finalHp[defender.id] ?? 0, 0)
-    const attackerUpdate: Record<string, unknown> = {
-      currentStamina: newStamina,
-      lastStaminaUpdate: now,
+    const baseAttackerUpdate: Record<string, unknown> = {
       currentHp: attackerFinalHp,
       lastHpUpdate: now,
       pvpRating: attackerNewRating,
@@ -220,27 +216,25 @@ export async function POST(req: NextRequest) {
       lastPlayed: now,
     }
 
-    if (hasFreePvp && !isRevenge) {
-      attackerUpdate.freePvpToday = freePvpUsed + 1
-      attackerUpdate.freePvpDate = now
-    }
-
     if (attackerWon) {
-      attackerUpdate.pvpWins = { increment: 1 }
-      attackerUpdate.pvpWinStreak = { increment: 1 }
-      attackerUpdate.pvpLossStreak = 0
+      baseAttackerUpdate.pvpWins = { increment: 1 }
+      baseAttackerUpdate.pvpWinStreak = { increment: 1 }
+      baseAttackerUpdate.pvpLossStreak = 0
       if (attacker.highestPvpRank === null || attackerNewRating > attacker.highestPvpRank) {
-        attackerUpdate.highestPvpRank = attackerNewRating
+        baseAttackerUpdate.highestPvpRank = attackerNewRating
       }
       if (firstWin) {
-        attackerUpdate.firstWinToday = true
-        attackerUpdate.firstWinDate = now
+        baseAttackerUpdate.firstWinToday = true
+        baseAttackerUpdate.firstWinDate = now
       }
     } else {
-      attackerUpdate.pvpLosses = { increment: 1 }
-      attackerUpdate.pvpLossStreak = { increment: 1 }
-      attackerUpdate.pvpWinStreak = 0
+      baseAttackerUpdate.pvpLosses = { increment: 1 }
+      baseAttackerUpdate.pvpLossStreak = { increment: 1 }
+      baseAttackerUpdate.pvpWinStreak = 0
     }
+
+    // newStamina is set inside the transaction after the row lock
+    let newStamina: number
 
     // Build defender update
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
@@ -269,7 +263,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Execute all DB writes in a transaction and atomically consume the battle ticket.
+    // Also locks the character row to prevent TOCTOU on stamina.
     const { updatedAttacker, pvpMatch } = await prisma.$transaction(async (tx) => {
+      // Lock battle ticket first (existing anti-double-resolve logic)
       const [ticketRow] = await tx.$queryRawUnsafe<Array<{
         id: string
         character_id: string
@@ -296,6 +292,50 @@ export async function POST(req: NextRequest) {
         (ticketRow.revenge_id ?? null) !== (revenge_id ?? null)
       ) {
         throw new Error('BATTLE_TICKET_MISMATCH')
+      }
+
+      // Lock the character row and re-validate stamina atomically (prevents TOCTOU)
+      const [lockedRow] = await tx.$queryRawUnsafe<Array<{
+        id: string
+        current_stamina: number
+        max_stamina: number
+        last_stamina_update: Date
+        free_pvp_today: number
+        free_pvp_date: Date | null
+      }>>(
+        `SELECT id, current_stamina, max_stamina, last_stamina_update, free_pvp_today, free_pvp_date
+         FROM characters WHERE id = $1 FOR UPDATE`,
+        attacker.id
+      )
+
+      if (!lockedRow) throw new Error('ATTACKER_NOT_FOUND')
+
+      // Re-calculate stamina from authoritative locked values
+      const lockedStaminaResult = await calculateCurrentStamina(
+        lockedRow.current_stamina,
+        lockedRow.max_stamina,
+        lockedRow.last_stamina_update ?? new Date()
+      )
+      const lockedCurrentStamina = lockedStaminaResult.stamina
+      const lockedFreePvpUsed = isNewUtcDay(lockedRow.free_pvp_date) ? 0 : lockedRow.free_pvp_today
+      const lockedHasFreePvp = isRevenge ? true : lockedFreePvpUsed < STAMINA.FREE_PVP_PER_DAY
+      const lockedStaminaCost = isRevenge ? 0 : (lockedHasFreePvp ? 0 : STAMINA.PVP_COST)
+
+      if (!isRevenge && !lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {
+        throw new Error('NOT_ENOUGH_STAMINA')
+      }
+
+      newStamina = lockedCurrentStamina - lockedStaminaCost
+
+      // Merge stamina fields into the attacker update
+      const attackerUpdate: Record<string, unknown> = {
+        ...baseAttackerUpdate,
+        currentStamina: newStamina,
+        lastStaminaUpdate: now,
+      }
+      if (lockedHasFreePvp && !isRevenge) {
+        attackerUpdate.freePvpToday = lockedFreePvpUsed + 1
+        attackerUpdate.freePvpDate = now
       }
 
       const updatedAttacker = await tx.character.update({
@@ -460,6 +500,9 @@ export async function POST(req: NextRequest) {
       }
       if (error.message === 'BATTLE_TICKET_MISMATCH') {
         return NextResponse.json({ error: 'Battle preparation does not match this resolve request.' }, { status: 400 })
+      }
+      if (error.message === 'NOT_ENOUGH_STAMINA') {
+        return NextResponse.json({ error: 'Not enough stamina', required: 0 }, { status: 400 })
       }
     }
     console.error('pvp resolve error:', error)

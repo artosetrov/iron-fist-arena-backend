@@ -80,6 +80,7 @@ struct StanceDisplayView: View {
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
         .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.25), length: 10, thickness: 1.0)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .overlay(alignment: .trailing) {
             // Interactive chevron indicator

@@ -298,10 +298,10 @@ final class UpgradeGuestViewModel {
     func triggerAppleSignIn(appState: AppState) {
         let helper = AppleSignInHelper()
         appleSignInHelper = helper
-        helper.signIn { [weak self] result in
+        helper.signIn { result in
             Task { @MainActor in
-                await self?.handleAppleSignIn(result: result, appState: appState)
-                self?.appleSignInHelper = nil
+                await self.handleAppleSignIn(result: result, appState: appState)
+                self.appleSignInHelper = nil
             }
         }
     }

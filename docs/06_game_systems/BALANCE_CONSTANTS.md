@@ -90,11 +90,11 @@ Gold reward multiplier based on consecutive wins:
 | 6–7 | +50% | Sustained streak |
 | 8+ | +100% | Doubling rewards |
 
-**Example (150 base gold, 3-win streak, CHA 30):**
-- Level scaling: 150 × 1.0 = 150
-- Streak bonus: 150 × 1.20 = 180
-- CHA bonus: 180 × 1.30 = 234 gold
-- **Total: 234 gold**
+**Example (200 base gold, 3-win streak, CHA 30):**
+- Level scaling: 200 × 1.0 = 200
+- Streak bonus: 200 × 1.20 = 240
+- CHA bonus: 240 × 1.30 = 312 gold
+- **Total: 312 gold**
 
 ### Loss Streak Recovery Bonuses
 
@@ -133,7 +133,7 @@ CHA 61+:   +0.2% per point (hard cap +75%)
 
 | Activity | Win XP | Loss XP | Notes |
 |----------|---------|---------|-------|
-| **PvP** | 120 XP | 40 XP | Ranked combat |
+| **PvP** | 150 XP | 50 XP | Ranked combat |
 | **Training** | 60 XP | 20 XP | Practice mode |
 
 **First Win Bonus:** 2× XP multiplier (same as gold)
@@ -155,7 +155,7 @@ XP = 100N + 20N²
 | 25 | 14000 | 3200 | 10.7 hrs |
 | 50 | 55000 | 8800 | 29.3 hrs |
 
-**Avg XP/hour (PvP):** ~120 XP/win × 5 wins/hour = 600 XP/hour (varies by skill)
+**Avg XP/hour (PvP):** ~150 XP/win × 5 wins/hour = 750 XP/hour (varies by skill)
 
 ---
 
@@ -504,7 +504,7 @@ Sorting: closest `levelDiff` first, then closest `gearDiff`. Top N returned.
 
 ```
 Training: 5 stamina
-Free PvP: 3 stamina (×3 per day)
+Free PvP: 0 stamina (×5 per day)
 PvP: 10 stamina
 Dungeon Easy: 15 stamina
 Dungeon Normal: 20 stamina
@@ -518,14 +518,14 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 ## Reference Table: Gold Earning Rates
 
 **PvP (Level 1, no bonuses):**
-- Win: 150 gold
-- Loss: 50 gold
-- Avg per match: 100 gold
+- Win: 200 gold
+- Loss: 70 gold
+- Avg per match: 135 gold
 
 **PvP (Level 50, no bonuses):**
-- Win: 150 × 1.98 = 297 gold
-- Loss: 50 × 1.98 = 99 gold
-- Avg per match: 198 gold
+- Win: 200 × 1.98 = 396 gold
+- Loss: 70 × 1.98 = 139 gold
+- Avg per match: 268 gold
 
 **Training (Level 1):**
 - Win: 50 gold

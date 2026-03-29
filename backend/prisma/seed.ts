@@ -172,6 +172,7 @@ async function main() {
     classRestriction?: string
     setName?: string
     dropChance?: number // >0 = droppable in combat, 0 = shop-only
+    imageKey?: string
   }
 
   // dropChance: 0 = shop-only (won't drop in combat), >0 = droppable weight
@@ -410,6 +411,7 @@ async function main() {
         classRestriction: item.classRestriction ?? null,
         setName: item.setName ?? null,
         dropChance: item.dropChance ?? 0,
+        imageKey: item.imageKey ?? null,
       },
     })
     itemsCreated++

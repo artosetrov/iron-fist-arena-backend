@@ -55,6 +55,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Daily limit: max 20 shell games per day
+    const today = new Date().toISOString().split('T')[0]
+    const todayGames = await prisma.minigameSession.count({
+      where: {
+        characterId: character_id,
+        gameType: 'shell_game',
+        createdAt: { gte: new Date(today) },
+      },
+    })
+    if (todayGames >= 20) {
+      return NextResponse.json(
+        { message: 'Daily shell game limit reached (20/day)' },
+        { status: 429 }
+      )
+    }
+
     // Generate secret shell (0, 1, or 2)
     const correctShell = Math.floor(Math.random() * 3)
 

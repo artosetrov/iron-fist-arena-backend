@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       TWO_HANDED_CATALOG_IDS.has(inventoryItem.item.catalogId)
 
     // Unequip any item currently in that slot, then equip the new one
-    const updates: Parameters<typeof prisma.$transaction>[0] = [
+    const updates: any[] = [
       // Unequip current item in target slot
       prisma.equipmentInventory.updateMany({
         where: {

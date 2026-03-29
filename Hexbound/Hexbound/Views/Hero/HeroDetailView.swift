@@ -499,7 +499,7 @@ struct HeroDetailView: View {
                         Image(systemName: "minus")
                             .font(.system(size: 15, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.danger)
-                            .frame(width: 36, height: 36)
+                            .frame(width: 44, height: 44)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
@@ -523,7 +523,7 @@ struct HeroDetailView: View {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .frame(width: 36, height: 36)
+                            .frame(width: 44, height: 44)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
@@ -648,6 +648,7 @@ struct HeroDetailView: View {
                 .stroke(delta > 0 ? color.opacity(0.5) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
         .cornerBrackets(color: delta > 0 ? color.opacity(0.4) : DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
     }
 
@@ -868,6 +869,7 @@ struct HeroDetailView: View {
                             .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                     )
                     .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 12, thickness: 1.5)
+                    .compositingGroup()
                     .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
                 }
                 .buttonStyle(.scalePress(0.95))
@@ -907,6 +909,7 @@ struct HeroDetailView: View {
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
             )
             .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.4), length: 12, thickness: 1.5)
+            .compositingGroup()
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
@@ -1042,6 +1045,7 @@ struct HeroDetailView: View {
                     .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
             )
             .cornerBrackets(color: accentColor.opacity(0.4), length: 12, thickness: 1.5)
+            .compositingGroup()
             .shadow(color: accentColor.opacity(0.1), radius: 4, y: 1)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         }

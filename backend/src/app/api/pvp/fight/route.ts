@@ -126,22 +126,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Opponent not found' }, { status: 404 })
     }
 
-    // Calculate current stamina with regen
-    const staminaResult = await calculateCurrentStamina(
+    // Calculate current stamina with regen (optimistic pre-check — full validation happens inside transaction)
+    const staminaResultPre = await calculateCurrentStamina(
       attacker.currentStamina,
       attacker.maxStamina,
       attacker.lastStaminaUpdate ?? new Date()
     )
-    const currentStamina = staminaResult.stamina
+    const freePvpUsedPre = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
+    const hasFreePvpPre = freePvpUsedPre < STAMINA.FREE_PVP_PER_DAY
 
-    // Check free PvP or stamina (reset counter if new UTC day)
-    const freePvpUsed = isNewUtcDay(attacker.freePvpDate) ? 0 : attacker.freePvpToday
-    const hasFreePvp = freePvpUsed < STAMINA.FREE_PVP_PER_DAY
-    const staminaCost = hasFreePvp ? 0 : STAMINA.PVP_COST
-
-    if (!hasFreePvp && currentStamina < STAMINA.PVP_COST) {
+    if (!hasFreePvpPre && staminaResultPre.stamina < STAMINA.PVP_COST) {
       return NextResponse.json(
-        { error: 'Not enough stamina', currentStamina, required: STAMINA.PVP_COST },
+        { error: 'Not enough stamina', currentStamina: staminaResultPre.stamina, required: STAMINA.PVP_COST },
         { status: 400 }
       )
     }
@@ -233,16 +229,14 @@ export async function POST(req: NextRequest) {
     goldReward = applyEventGoldMultiplier(goldReward, eventMultipliers)
     xpReward = applyEventXpMultiplier(xpReward, eventMultipliers)
 
-    const newStamina = currentStamina - staminaCost
     const now = new Date()
 
-    // Build attacker update — persist post-combat HP
+    // Build attacker and defender updates (stamina fields filled inside transaction)
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
     const attackerFinalHp = Math.max(combatResult.finalHp[attacker.id] ?? 0, 0)
     const defenderFinalHp = Math.max(combatResult.finalHp[defender.id] ?? 0, 0)
-    const attackerUpdate: Record<string, unknown> = {
-      currentStamina: newStamina,
-      lastStaminaUpdate: now,
+
+    const baseAttackerUpdate: Record<string, unknown> = {
       currentHp: attackerFinalHp,
       lastHpUpdate: now,
       pvpRating: attackerNewRating,
@@ -252,26 +246,21 @@ export async function POST(req: NextRequest) {
       lastPlayed: now,
     }
 
-    if (hasFreePvp) {
-      attackerUpdate.freePvpToday = freePvpUsed + 1
-      attackerUpdate.freePvpDate = now
-    }
-
     if (attackerWon) {
-      attackerUpdate.pvpWins = { increment: 1 }
-      attackerUpdate.pvpWinStreak = { increment: 1 }
-      attackerUpdate.pvpLossStreak = 0
+      baseAttackerUpdate.pvpWins = { increment: 1 }
+      baseAttackerUpdate.pvpWinStreak = { increment: 1 }
+      baseAttackerUpdate.pvpLossStreak = 0
       if (attacker.highestPvpRank === null || attackerNewRating > attacker.highestPvpRank) {
-        attackerUpdate.highestPvpRank = attackerNewRating
+        baseAttackerUpdate.highestPvpRank = attackerNewRating
       }
       if (firstWin) {
-        attackerUpdate.firstWinToday = true
-        attackerUpdate.firstWinDate = now
+        baseAttackerUpdate.firstWinToday = true
+        baseAttackerUpdate.firstWinDate = now
       }
     } else {
-      attackerUpdate.pvpLosses = { increment: 1 }
-      attackerUpdate.pvpLossStreak = { increment: 1 }
-      attackerUpdate.pvpWinStreak = 0
+      baseAttackerUpdate.pvpLosses = { increment: 1 }
+      baseAttackerUpdate.pvpLossStreak = { increment: 1 }
+      baseAttackerUpdate.pvpWinStreak = 0
     }
 
     // Build defender update
@@ -300,11 +289,58 @@ export async function POST(req: NextRequest) {
       defenderUpdate.pvpWinStreak = 0
     }
 
-    // Execute all DB writes in a transaction
-    const [updatedAttacker, , pvpMatch] = await prisma.$transaction([
-      prisma.character.update({ where: { id: attacker.id }, data: attackerUpdate }),
-      prisma.character.update({ where: { id: defender.id }, data: defenderUpdate }),
-      prisma.pvpMatch.create({
+    // Execute all DB writes in a transaction with a FOR UPDATE row lock on the
+    // attacker to atomically validate + deduct stamina (prevents TOCTOU race).
+    let newStamina: number
+    const { updatedAttacker, pvpMatch } = await prisma.$transaction(async (tx) => {
+      // Lock the attacker row so concurrent requests cannot race on stamina
+      const [lockedRow] = await tx.$queryRawUnsafe<Array<{
+        id: string
+        current_stamina: number
+        max_stamina: number
+        last_stamina_update: Date
+        free_pvp_today: number
+        free_pvp_date: Date | null
+      }>>(
+        `SELECT id, current_stamina, max_stamina, last_stamina_update, free_pvp_today, free_pvp_date
+         FROM characters WHERE id = $1 FOR UPDATE`,
+        attacker.id
+      )
+
+      if (!lockedRow) throw new Error('ATTACKER_NOT_FOUND')
+
+      // Re-calculate stamina with regen from the authoritative locked values
+      const lockedStaminaResult = await calculateCurrentStamina(
+        lockedRow.current_stamina,
+        lockedRow.max_stamina,
+        lockedRow.last_stamina_update ?? new Date()
+      )
+      const lockedCurrentStamina = lockedStaminaResult.stamina
+      const lockedFreePvpUsed = isNewUtcDay(lockedRow.free_pvp_date) ? 0 : lockedRow.free_pvp_today
+      const lockedHasFreePvp = lockedFreePvpUsed < STAMINA.FREE_PVP_PER_DAY
+      const lockedStaminaCost = lockedHasFreePvp ? 0 : STAMINA.PVP_COST
+
+      if (!lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {
+        throw new Error('NOT_ENOUGH_STAMINA')
+      }
+
+      newStamina = lockedCurrentStamina - lockedStaminaCost
+
+      // Merge stamina fields into the attacker update
+      const attackerUpdate: Record<string, unknown> = {
+        ...baseAttackerUpdate,
+        currentStamina: newStamina,
+        lastStaminaUpdate: now,
+      }
+      if (lockedHasFreePvp) {
+        attackerUpdate.freePvpToday = lockedFreePvpUsed + 1
+        attackerUpdate.freePvpDate = now
+      }
+
+      const updatedAttacker = await tx.character.update({ where: { id: attacker.id }, data: attackerUpdate })
+      await tx.character.update({ where: { id: defender.id }, data: defenderUpdate })
+
+      const pvpMatch = await tx.pvpMatch.create({
         data: {
           player1Id: attacker.id,
           player2Id: defender.id,
@@ -321,8 +357,10 @@ export async function POST(req: NextRequest) {
           matchType: 'ranked',
           isRevenge: false,
         },
-      }),
-    ])
+      })
+
+      return { updatedAttacker, pvpMatch }
+    })
 
     // Invalidate leaderboard cache since ratings changed
     await cacheDeletePrefix('leaderboard:')
@@ -466,6 +504,14 @@ export async function POST(req: NextRequest) {
       durability_changes: durabilityResult.degraded,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'NOT_ENOUGH_STAMINA') {
+        return NextResponse.json(
+          { error: 'Not enough stamina', required: 0 },
+          { status: 400 }
+        )
+      }
+    }
     console.error('pvp fight error:', error)
     return NextResponse.json(
       { error: 'Failed to process PvP fight' },

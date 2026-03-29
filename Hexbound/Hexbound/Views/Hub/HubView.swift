@@ -567,7 +567,7 @@ struct DailyQuestsCard: View {
             Image("hud-quests")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY QUESTS")
@@ -618,6 +618,7 @@ struct DailyQuestsCard: View {
                 .stroke(appState.cachedBonusClaimedToday ? DarkFantasyTheme.success.opacity(0.4) : DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
         )
         .cornerBrackets(color: appState.cachedBonusClaimedToday ? DarkFantasyTheme.success.opacity(0.5) : DarkFantasyTheme.gold.opacity(0.5), length: 12, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }
@@ -672,6 +673,7 @@ struct BattlePassCard: View {
                 .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
         )
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 12, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }
@@ -760,6 +762,7 @@ struct FirstWinBonusCard: View {
             )
             .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.6), length: 14, thickness: 1.5)
             .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.5), size: 5)
+            .compositingGroup()
             .shadow(color: DarkFantasyTheme.gold.opacity(0.15), radius: 8, y: 2)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
             .glowPulse(color: DarkFantasyTheme.gold, intensity: 0.4)
@@ -779,7 +782,7 @@ struct DailyLoginCard: View {
             Image("hud-gift")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY LOGIN")
@@ -823,6 +826,7 @@ struct DailyLoginCard: View {
                 )
         )
         .cornerBrackets(color: canClaim ? DarkFantasyTheme.goldBright.opacity(0.6) : DarkFantasyTheme.success.opacity(0.4), length: 12, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }

@@ -66,6 +66,7 @@ struct TabSwitcher: View {
         )
         .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 10, thickness: 1)
         .cornerDiamonds(color: DarkFantasyTheme.borderStrong, size: 4)
+        .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .gesture(
             DragGesture(minimumDistance: 30, coordinateSpace: .local)

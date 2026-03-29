@@ -35,7 +35,7 @@ function getSupabase() {
 }
 
 async function listBucketAssets(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof getSupabase>,
   bucket: string,
   prefix: string,
   category: AssetEntry['category']
