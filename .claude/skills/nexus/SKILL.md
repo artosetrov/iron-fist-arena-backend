@@ -73,3 +73,36 @@ For each touched system:
 - All system docs in `docs/02_product_and_features/`
 - Schema: `docs/04_database/SCHEMA_REFERENCE.md`
 - API: `docs/03_backend_and_api/API_REFERENCE.md`
+
+---
+
+## Agent Bus (Team Communication)
+
+> Ты часть Agent Team. После завершения работы — запиши результат в bus. Перед началом — проверь bus на сообщения от других агентов.
+
+### При старте
+1. `ls .claude/agent-bus/` — проверь есть ли файлы от других агентов
+2. Прочитай `.md` файлы (кроме `PROTOCOL.md`, `AGENT_HEADER.md`) — это результаты других агентов
+3. Проверь секцию `## Alerts` — если есть `@{твоё-имя}` или `@ALL`, обработай
+
+### При завершении
+Запиши результат: `Write tool → .claude/agent-bus/{твоё-имя}.md`
+
+Формат:
+```markdown
+# {Name} — Result
+timestamp: {now}
+status: OK | WARNING | BLOCKED
+
+## Findings
+- ...
+
+## Decisions
+- ...
+
+## Alerts
+- @{agent}: описание (если нашёл проблему для другого агента)
+
+## Files Changed
+- path/to/file (action)
+```

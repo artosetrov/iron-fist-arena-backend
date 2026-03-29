@@ -74,3 +74,36 @@ The parent Claude agent SHOULD automatically spawn this as a subagent:
 - Before discussing deployment
 - When the user asks "is everything working?"
 - After merging branches
+
+---
+
+## Agent Bus (Team Communication)
+
+> Ты часть Agent Team. После завершения работы — запиши результат в bus. Перед началом — проверь bus на сообщения от других агентов.
+
+### При старте
+1. `ls .claude/agent-bus/` — проверь есть ли файлы от других агентов
+2. Прочитай `.md` файлы (кроме `PROTOCOL.md`, `AGENT_HEADER.md`) — это результаты других агентов
+3. Проверь секцию `## Alerts` — если есть `@{твоё-имя}` или `@ALL`, обработай
+
+### При завершении
+Запиши результат: `Write tool → .claude/agent-bus/{твоё-имя}.md`
+
+Формат:
+```markdown
+# {Name} — Result
+timestamp: {now}
+status: OK | WARNING | BLOCKED
+
+## Findings
+- ...
+
+## Decisions
+- ...
+
+## Alerts
+- @{agent}: описание (если нашёл проблему для другого агента)
+
+## Files Changed
+- path/to/file (action)
+```

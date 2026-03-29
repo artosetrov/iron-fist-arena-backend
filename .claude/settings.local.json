@@ -274,7 +274,19 @@
       "Bash(sed -n '513,528p' \"/Users/artosetrov/Documents/Cursor AI/PVP RPG/backend/prisma/schema.prisma\")",
       "Bash(sed -n '545,563p' \"/Users/artosetrov/Documents/Cursor AI/PVP RPG/backend/prisma/schema.prisma\")",
       "Bash(sed -n '840,852p' \"/Users/artosetrov/Documents/Cursor AI/PVP RPG/backend/prisma/schema.prisma\")",
-      "Bash(grep -rn:*)"
+      "Bash(grep -rn:*)",
+      "Bash(md5:*)",
+      "Bash(xcrun swiftc:*)",
+      "Bash(xcodebuild -scheme Hexbound -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(sips:*)",
+      "Bash(grep -E \"\\\\.\\(swift|swiftui\\)$\")",
+      "Bash(find /Users/artosetrov/Documents/Cursor AI/PVP RPG -type f \\\\\\(-path */backend/* -o -path */server/* \\\\\\) -name *challenge* -o -path */backend/src/app/api/social/*)",
+      "Bash(find '/Users/artosetrov/Documents/Cursor AI/PVP RPG' -type f -name *QuestCard* -o -name *Quest*Card*)",
+      "Bash(grep -r SkeletonQuestCard '/Users/artosetrov/Documents/Cursor AI/PVP RPG' --include=*.swift)",
+      "Bash(find '/Users/artosetrov/Documents/Cursor AI/PVP RPG' -type f -name *.swift -exec grep -l \"^struct Quest\\\\|^class Quest\" {})",
+      "Bash(2)",
+      "Bash(grep -i \"\\\\.swift$\")",
+      "Bash(grep -E \"\\\\.\\(swift|swift\\)$\")"
     ]
   }
 }

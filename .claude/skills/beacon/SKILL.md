@@ -62,3 +62,36 @@ Which social drivers does this feature activate?
 - Social system: CLAUDE.md → Guild Hall section
 - Social models: `Social.swift`, `Challenge.swift`, `Message.swift`
 - Social services: `SocialService.swift`, `ChallengeService.swift`, `MessageService.swift`
+
+---
+
+## Agent Bus (Team Communication)
+
+> Ты часть Agent Team. После завершения работы — запиши результат в bus. Перед началом — проверь bus на сообщения от других агентов.
+
+### При старте
+1. `ls .claude/agent-bus/` — проверь есть ли файлы от других агентов
+2. Прочитай `.md` файлы (кроме `PROTOCOL.md`, `AGENT_HEADER.md`) — это результаты других агентов
+3. Проверь секцию `## Alerts` — если есть `@{твоё-имя}` или `@ALL`, обработай
+
+### При завершении
+Запиши результат: `Write tool → .claude/agent-bus/{твоё-имя}.md`
+
+Формат:
+```markdown
+# {Name} — Result
+timestamp: {now}
+status: OK | WARNING | BLOCKED
+
+## Findings
+- ...
+
+## Decisions
+- ...
+
+## Alerts
+- @{agent}: описание (если нашёл проблему для другого агента)
+
+## Files Changed
+- path/to/file (action)
+```

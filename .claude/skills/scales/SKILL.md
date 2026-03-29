@@ -81,3 +81,36 @@ For any stat/damage/defense change:
 - Balance: `docs/06_game_systems/BALANCE_CONSTANTS.md`
 - Combat: `docs/06_game_systems/COMBAT.md`
 - Live code: `backend/src/lib/game/balance.ts`, `backend/src/lib/game/combat.ts`
+
+---
+
+## Agent Bus (Team Communication)
+
+> Ты часть Agent Team. После завершения работы — запиши результат в bus. Перед началом — проверь bus на сообщения от других агентов.
+
+### При старте
+1. `ls .claude/agent-bus/` — проверь есть ли файлы от других агентов
+2. Прочитай `.md` файлы (кроме `PROTOCOL.md`, `AGENT_HEADER.md`) — это результаты других агентов
+3. Проверь секцию `## Alerts` — если есть `@{твоё-имя}` или `@ALL`, обработай
+
+### При завершении
+Запиши результат: `Write tool → .claude/agent-bus/{твоё-имя}.md`
+
+Формат:
+```markdown
+# {Name} — Result
+timestamp: {now}
+status: OK | WARNING | BLOCKED
+
+## Findings
+- ...
+
+## Decisions
+- ...
+
+## Alerts
+- @{agent}: описание (если нашёл проблему для другого агента)
+
+## Files Changed
+- path/to/file (action)
+```
