@@ -331,20 +331,25 @@ struct ItemDetailSheet: View {
 
                 // Repair button — inline, hugs content width
                 if isDamaged && shopMode == nil && !viewMode {
-                    Button {
-                        HapticManager.medium()
-                        onRepair()
-                    } label: {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "wrench.and.screwdriver.fill")
-                                .font(.system(size: 13))
-                            Text("REPAIR")
-                            Text("·")
-                            CurrencyDisplay(gold: repairCost, size: .compact, currencyType: .gold, animated: false)
+                    if isBroken {
+                        Button {
+                            HapticManager.medium()
+                            onRepair()
+                        } label: {
+                            repairButtonLabel
                         }
+                        .buttonStyle(.primary)
+                        .fixedSize()
+                    } else {
+                        Button {
+                            HapticManager.medium()
+                            onRepair()
+                        } label: {
+                            repairButtonLabel
+                        }
+                        .buttonStyle(.secondary)
+                        .fixedSize()
                     }
-                    .buttonStyle(isBroken ? .primary : .secondary)
-                    .fixedSize()
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -352,6 +357,16 @@ struct ItemDetailSheet: View {
             .padding(.vertical, LayoutConstants.spaceMD)
 
             sectionDivider
+        }
+    }
+
+    private var repairButtonLabel: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(.system(size: 13))
+            Text("REPAIR")
+            Text("·")
+            CurrencyDisplay(gold: repairCost, size: .compact, currencyType: .gold, animated: false)
         }
     }
 
