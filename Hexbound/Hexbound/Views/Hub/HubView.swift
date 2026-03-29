@@ -832,11 +832,11 @@ struct BattleInviteBanner: View {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "swords")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(DarkFantasyTheme.orange)
+                    .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Text("BATTLE CHALLENGE")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.orange)
+                    .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Spacer()
 
@@ -953,14 +953,14 @@ struct BattleInviteBanner: View {
             )
         )
         .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.orange.opacity(0.12))
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.btnOrangePrimary.opacity(0.12))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.orange.opacity(0.5), lineWidth: 1.5)
+                .stroke(DarkFantasyTheme.btnOrangePrimary.opacity(0.5), lineWidth: 1.5)
         )
-        .cornerBrackets(color: DarkFantasyTheme.orange.opacity(0.5), length: 14, thickness: 1.5)
+        .cornerBrackets(color: DarkFantasyTheme.btnOrangePrimary.opacity(0.5), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.orange.opacity(0.12), radius: 8, y: 2)
+        .shadow(color: DarkFantasyTheme.btnOrangePrimary.opacity(0.12), radius: 8, y: 2)
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
     }
 
