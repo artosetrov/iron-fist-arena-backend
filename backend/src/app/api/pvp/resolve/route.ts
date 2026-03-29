@@ -233,9 +233,6 @@ export async function POST(req: NextRequest) {
       baseAttackerUpdate.pvpWinStreak = 0
     }
 
-    // newStamina is set inside the transaction after the row lock
-    let newStamina: number
-
     // Build defender update
     const defenderNewRating = attackerWon ? newLoserRating : newWinnerRating
     const defenderGoldReward = attackerWon ? GOLD_REWARDS.PVP_LOSS_BASE : GOLD_REWARDS.PVP_WIN_BASE
@@ -264,7 +261,7 @@ export async function POST(req: NextRequest) {
 
     // Execute all DB writes in a transaction and atomically consume the battle ticket.
     // Also locks the character row to prevent TOCTOU on stamina.
-    const { updatedAttacker, pvpMatch } = await prisma.$transaction(async (tx) => {
+    const { updatedAttacker, pvpMatch, newStamina } = await prisma.$transaction(async (tx) => {
       // Lock battle ticket first (existing anti-double-resolve logic)
       const [ticketRow] = await tx.$queryRawUnsafe<Array<{
         id: string
@@ -325,7 +322,7 @@ export async function POST(req: NextRequest) {
         throw new Error('NOT_ENOUGH_STAMINA')
       }
 
-      newStamina = lockedCurrentStamina - lockedStaminaCost
+      const newStamina = lockedCurrentStamina - lockedStaminaCost
 
       // Merge stamina fields into the attacker update
       const attackerUpdate: Record<string, unknown> = {
@@ -379,7 +376,7 @@ export async function POST(req: NextRequest) {
         data: { consumedAt: now },
       })
 
-      return { updatedAttacker, pvpMatch }
+      return { updatedAttacker, pvpMatch, newStamina }
     })
 
     // Invalidate leaderboard cache since ratings changed

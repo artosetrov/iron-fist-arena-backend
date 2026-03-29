@@ -23,12 +23,12 @@ struct RankUpCeremonyView: View {
             DarkFantasyTheme.bgAbyss.opacity(0.92)
                 .ignoresSafeArea()
 
-            VStack(spacing: LayoutConstants.spacingXL) {
+            VStack(spacing: LayoutConstants.spaceXL) {
                 Spacer()
 
                 // Title
                 Text("RANK UP")
-                    .font(DarkFantasyTheme.largeTitleFont)
+                    .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(4)
                     .opacity(showOldRank ? 1 : 0)
@@ -52,7 +52,7 @@ struct RankUpCeremonyView: View {
                         .shadow(color: DarkFantasyTheme.goldBright.opacity(glowOpacity), radius: 20)
 
                     Text("Rating: \(newRating)")
-                        .font(DarkFantasyTheme.bodyFont)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
 
@@ -61,7 +61,7 @@ struct RankUpCeremonyView: View {
                     GoldDivider()
                         .padding(.horizontal, 40)
 
-                    HStack(spacing: LayoutConstants.spacingXL) {
+                    HStack(spacing: LayoutConstants.spaceXL) {
                         if goldReward > 0 {
                             rewardPill(icon: "icon-gold", amount: goldReward)
                         }
@@ -82,10 +82,10 @@ struct RankUpCeremonyView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.primary)
-                    .padding(.horizontal, LayoutConstants.spacingXL)
+                    .padding(.horizontal, LayoutConstants.spaceXL)
                 }
 
-                Spacer().frame(height: LayoutConstants.spacingXL)
+                Spacer().frame(height: LayoutConstants.spaceXL)
             }
         }
         .onAppear {
@@ -107,13 +107,13 @@ struct RankUpCeremonyView: View {
                 )
 
             Text(rank.uppercased())
-                .font(isOld ? DarkFantasyTheme.titleFont : DarkFantasyTheme.largeTitleFont)
+                .font(isOld ? DarkFantasyTheme.title : DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(
                     isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
                 )
                 .tracking(2)
         }
-        .padding(LayoutConstants.spacingLG)
+        .padding(LayoutConstants.spaceLG)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -136,7 +136,7 @@ struct RankUpCeremonyView: View {
                 .scaledToFit()
                 .frame(width: 20, height: 20)
             Text("+\(amount)")
-                .font(DarkFantasyTheme.bodyBoldFont)
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .padding(.horizontal, 16)

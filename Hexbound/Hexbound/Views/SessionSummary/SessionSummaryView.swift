@@ -27,7 +27,7 @@ struct SessionSummaryView: View {
     private func content(vm: SessionSummaryViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceLG) {
             // Title
-            OrnamentalTitle(text: L10n.t(.sessionSummaryTitle, fallback: "Session Complete"))
+            OrnamentalTitle("Session Complete")
                 .padding(.top, LayoutConstants.spaceMD)
 
             if vm.isLoading {
@@ -59,7 +59,7 @@ struct SessionSummaryView: View {
                 Button {
                     onDismiss()
                 } label: {
-                    Text(L10n.t(.continueButton, fallback: "Continue"))
+                    Text("Continue")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.primary)
@@ -74,7 +74,7 @@ struct SessionSummaryView: View {
                 Button {
                     onDismiss()
                 } label: {
-                    Text(L10n.t(.continueButton, fallback: "Continue"))
+                    Text("Continue")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.primary)

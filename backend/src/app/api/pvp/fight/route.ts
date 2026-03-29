@@ -291,8 +291,7 @@ export async function POST(req: NextRequest) {
 
     // Execute all DB writes in a transaction with a FOR UPDATE row lock on the
     // attacker to atomically validate + deduct stamina (prevents TOCTOU race).
-    let newStamina: number
-    const { updatedAttacker, pvpMatch } = await prisma.$transaction(async (tx) => {
+    const { updatedAttacker, pvpMatch, newStamina } = await prisma.$transaction(async (tx) => {
       // Lock the attacker row so concurrent requests cannot race on stamina
       const [lockedRow] = await tx.$queryRawUnsafe<Array<{
         id: string
@@ -324,12 +323,12 @@ export async function POST(req: NextRequest) {
         throw new Error('NOT_ENOUGH_STAMINA')
       }
 
-      newStamina = lockedCurrentStamina - lockedStaminaCost
+      const staminaAfterCost = lockedCurrentStamina - lockedStaminaCost
 
       // Merge stamina fields into the attacker update
       const attackerUpdate: Record<string, unknown> = {
         ...baseAttackerUpdate,
-        currentStamina: newStamina,
+        currentStamina: staminaAfterCost,
         lastStaminaUpdate: now,
       }
       if (lockedHasFreePvp) {
@@ -359,7 +358,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      return { updatedAttacker, pvpMatch }
+      return { updatedAttacker, pvpMatch, newStamina: staminaAfterCost }
     })
 
     // Invalidate leaderboard cache since ratings changed
