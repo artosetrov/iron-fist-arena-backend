@@ -28,7 +28,7 @@ struct InboxRowView: View {
                 if inv.isAccepted { return DarkFantasyTheme.success }
                 if inv.isDeclined || inv.isExpired { return DarkFantasyTheme.textTertiary }
             }
-            return DarkFantasyTheme.orange
+            return DarkFantasyTheme.btnOrangePrimary
         default: return DarkFantasyTheme.goldDim
         }
     }
@@ -562,7 +562,7 @@ struct InboxRowView: View {
         case "accepted": return DarkFantasyTheme.success
         case "declined": return DarkFantasyTheme.danger
         case "expired": return DarkFantasyTheme.textTertiary
-        default: return DarkFantasyTheme.orange
+        default: return DarkFantasyTheme.btnOrangePrimary
         }
     }
 

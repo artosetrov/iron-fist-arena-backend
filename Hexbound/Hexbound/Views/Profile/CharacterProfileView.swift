@@ -543,7 +543,6 @@ struct CharacterProfileView: View {
 
         // Fire API in background
         let targetId = characterId
-        let targetName = characterName
         Task {
             let errorMsg = await SocialService.shared.sendFriendRequest(
                 characterId: charId,
@@ -631,7 +630,6 @@ struct CharacterProfileView: View {
 
         // Fire API in background
         let targetId = characterId
-        let targetName = characterName
         Task {
             do {
                 _ = try await ChallengeService.shared.sendChallenge(
