@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CharacterClass, CharacterOrigin, CharacterGender } from '@prisma/client'
+import { calculateCurrentHp } from '@/lib/game/hp-regen'
+import { calculateCurrentStamina } from '@/lib/game/stamina'
 
 // Avatar validation is done against the appearance_skins DB table at runtime
 
@@ -30,7 +32,39 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ characters })
+    // Apply HP + stamina regen so the list shows accurate values
+    // (prevents stale "0 HP" display on character selection after a loss)
+    const now = new Date()
+    const enriched = await Promise.all(
+      characters.map(async (char) => {
+        const [hpResult, staminaResult] = await Promise.all([
+          calculateCurrentHp(char.currentHp, char.maxHp, char.lastHpUpdate ?? now),
+          calculateCurrentStamina(char.currentStamina, char.maxStamina, char.lastStaminaUpdate ?? now),
+        ])
+
+        // Persist regen updates to DB if changed
+        const updates: Record<string, unknown> = {}
+        if (hpResult.updated) {
+          updates.currentHp = hpResult.hp
+          updates.lastHpUpdate = now
+        }
+        if (staminaResult.updated) {
+          updates.currentStamina = staminaResult.stamina
+          updates.lastStaminaUpdate = now
+        }
+        if (Object.keys(updates).length > 0) {
+          await prisma.character.update({ where: { id: char.id }, data: updates })
+        }
+
+        return {
+          ...char,
+          currentHp: hpResult.hp,
+          currentStamina: staminaResult.stamina,
+        }
+      })
+    )
+
+    return NextResponse.json({ characters: enriched })
   } catch (error) {
     console.error('list characters error:', error)
     return NextResponse.json(

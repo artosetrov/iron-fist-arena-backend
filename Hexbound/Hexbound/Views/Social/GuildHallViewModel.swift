@@ -438,8 +438,12 @@ class GuildHallViewModel {
         }
     }
 
-    func acceptChallenge(_ challenge: IncomingChallenge) async {
+    /// Accepts an incoming challenge and shows duel result.
+    /// Returns error message on failure (nil on success) so the View can show a toast.
+    func acceptChallenge(_ challenge: IncomingChallenge) async -> String? {
+        guard processingChallengeId == nil else { return nil } // prevent double-tap
         processingChallengeId = challenge.id
+        defer { processingChallengeId = nil }
         do {
             let result = try await challengeService.acceptChallenge(
                 characterId: characterId,
@@ -448,10 +452,20 @@ class GuildHallViewModel {
             duelResult = result
             showDuelResult = true
             incomingChallenges.removeAll { $0.id == challenge.id }
+            HapticManager.heavy()
+            return nil
+        } catch let apiError as APIError {
+            HapticManager.error()
+            switch apiError {
+            case .serverError(_, let msg):
+                return msg
+            default:
+                return apiError.localizedDescription
+            }
         } catch {
-            // Error handled by service
+            HapticManager.error()
+            return "Failed to start duel"
         }
-        processingChallengeId = nil
     }
 
     func declineChallenge(_ challenge: IncomingChallenge) -> ActionResult {

@@ -463,6 +463,7 @@ export async function POST(req: NextRequest) {
       post_combat_hp: {
         player: attackerFinalHp,
         enemy: defenderFinalHp,
+        max: attacker.maxHp,
       },
       result: {
         is_win: attackerWon,

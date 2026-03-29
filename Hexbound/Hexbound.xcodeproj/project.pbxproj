@@ -92,6 +92,7 @@
 		5A45820C703B6866A4474D67 /* CharacterClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4207BE33FB8C08DAEF7E2385 /* CharacterClass.swift */; };
 		133BCF6F5AF0C4039402EE8C /* CharacterProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2DC92408DE4EFDCC992B0A /* CharacterProfileView.swift */; };
 		5AC235A0F3A53A8C85479DED /* AppearanceEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 005802A02B8BAC38F0E792AC /* AppearanceEditorDetailView.swift */; };
+		5A1F2E3C4D5A6B7C8E9F0A1B /* DungeonDefeatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8D9E0F1A2B3C4D5E6F7A8B /* DungeonDefeatView.swift */; };
 		5ADC7B9218A59B43FA02BDD6 /* DungeonVictoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA2027B3B20C90225EFF37A /* DungeonVictoryView.swift */; };
 		5AEE25CDB3EB663E6C1B6E25 /* combat_heal.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8870F2B4BB738AA326CE4191 /* combat_heal.wav */; };
 		5BC928C81D0340FC41D672B6 /* combat_poison.wav in Resources */ = {isa = PBXBuildFile; fileRef = 617D20AE2BD67288A78E6428 /* combat_poison.wav */; };
@@ -466,6 +467,7 @@
 		DAA9B7D064DB7EE3C2CC30C0 /* SkeletonViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonViews.swift; sourceTree = "<group>"; };
 		DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementService.swift; sourceTree = "<group>"; };
 		DCB2332630298DD6B6B56CA4 /* LeaderboardRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardRowView.swift; sourceTree = "<group>"; };
+		7C8D9E0F1A2B3C4D5E6F7A8B /* DungeonDefeatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonDefeatView.swift; sourceTree = "<group>"; };
 		DDA2027B3B20C90225EFF37A /* DungeonVictoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonVictoryView.swift; sourceTree = "<group>"; };
 		DDB9FFFE4B66FE8540FBEA77 /* ItemImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemImageView.swift; sourceTree = "<group>"; };
 		DE51A0F3C7B94E2A8D6F1024 /* DesignSystemPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystemPreview.swift; sourceTree = "<group>"; };
@@ -1011,6 +1013,7 @@
 				1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */,
 				3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */,
 				A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */,
+				7C8D9E0F1A2B3C4D5E6F7A8B /* DungeonDefeatView.swift */,
 				DDA2027B3B20C90225EFF37A /* DungeonVictoryView.swift */,
 				A1B2C3D4E5F60001AABB0004 /* LootPreviewSheet.swift */,
 			);
@@ -1347,6 +1350,7 @@
 				9C34F625C37E95BB45CA66C9 /* DungeonSelectDetailView.swift in Sources */,
 				43BF9C17F3A15E1B1CA230F4 /* DungeonSelectViewModel.swift in Sources */,
 				75096D41FD966689964F0D95 /* DungeonService.swift in Sources */,
+				5A1F2E3C4D5A6B7C8E9F0A1B /* DungeonDefeatView.swift in Sources */,
 				5ADC7B9218A59B43FA02BDD6 /* DungeonVictoryView.swift in Sources */,
 				CD45A54A5C05B8D0728AD6DE /* EquipmentViewModel.swift in Sources */,
 				1DBFF877794C9BA0839B0D1F /* GameDataCache.swift in Sources */,

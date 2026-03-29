@@ -61,6 +61,12 @@ struct DungeonRoomDetailView: View {
                         DungeonVictoryView(vm: vm)
                             .transition(.opacity)
                     }
+
+                    // Defeat overlay
+                    if vm.showDefeat {
+                        DungeonDefeatView(vm: vm)
+                            .transition(.opacity)
+                    }
                 }
                 }
                 .transaction { $0.animation = nil }

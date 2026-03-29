@@ -214,8 +214,8 @@ final class BattlePreloader {
                 staminaMax: staminaDict["max"] as? Int ?? 120,
                 matchId: response["matchId"] as? String,
                 durabilityDegraded: durabilityArray,
-                hpCurrent: hpDict["player"] as? Int ?? 0,
-                hpMax: 0
+                hpCurrent: hpDict["player"] as? Int,
+                hpMax: hpDict["max"] as? Int
             )
         } catch {
             // Resolve failure is non-fatal — server will reconcile
@@ -261,6 +261,6 @@ struct ResolveResult {
     let staminaMax: Int
     let matchId: String?
     let durabilityDegraded: [[String: Any]]
-    let hpCurrent: Int
-    let hpMax: Int
+    let hpCurrent: Int?
+    let hpMax: Int?
 }

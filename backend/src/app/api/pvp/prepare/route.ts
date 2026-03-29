@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
 
     // Check minimum HP threshold (10% of maxHp) — block fights when near death
     const minHpRequired = Math.ceil(attacker.maxHp * 0.1)
+    console.log(`[HP-SYNC] pvp/prepare: dbHp=${attacker.currentHp}, regenHp=${currentHp}, maxHp=${attacker.maxHp}, minRequired=${minHpRequired}, regenUpdated=${hpResult.updated}`)
     if (currentHp < minHpRequired) {
       console.warn('pvp prepare: HP check failed', { characterId: character_id, currentHp, minHpRequired, maxHp: attacker.maxHp })
       return NextResponse.json(

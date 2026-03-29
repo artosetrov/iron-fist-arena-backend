@@ -25,6 +25,12 @@ final class DungeonRoomViewModel {
     /// HP fraction after battle (0.0–1.0) for star rating. nil if unknown.
     var hpFractionAfterBattle: Double?
 
+    // Defeat overlay
+    var showDefeat = false
+    var defeatTotalGold = 0
+    var defeatTotalXP = 0
+    var defeatFloorsCleared = 0
+
     // XP bar: snapshot taken just before fight to detect level-up
     var preFightLevel: Int = 0
     var preFightXPProgress: Double = 0
@@ -182,8 +188,15 @@ final class DungeonRoomViewModel {
         preFightLevel = appState.currentCharacter?.level ?? 0
         preFightXPProgress = appState.currentCharacter?.xpPercentage ?? 0
 
+        #if DEBUG
+        print("[DUNGEON-COMBAT] fight(): hp=\(appState.currentCharacter?.currentHp ?? -1)/\(appState.currentCharacter?.maxHp ?? -1), stamina=\(stamina), bossIdx=\(selectedBossIndex)")
+        #endif
+
         // Start a run if we don't have one
         if runId.isEmpty {
+            #if DEBUG
+            print("[DUNGEON-COMBAT] fight(): no runId, starting new run for dungeon=\(dungeon?.id ?? "nil")")
+            #endif
             let startResult = await service.start(dungeonId: dungeon?.id ?? "", difficulty: "normal")
             if let result = startResult {
                 // The start response returns run_id at top level
@@ -200,9 +213,25 @@ final class DungeonRoomViewModel {
             return
         }
 
+        #if DEBUG
+        print("[DUNGEON-COMBAT] fight(): calling service.fight(runId: \(runId))")
+        #endif
+
         let result = await service.fight(runId: runId)
         isFighting = false
-        guard let result else { return }
+        guard let result else {
+            #if DEBUG
+            print("[DUNGEON-COMBAT] fight(): service.fight returned nil")
+            #endif
+            return
+        }
+
+        #if DEBUG
+        let hasPlayer = result["player"] != nil
+        let hasCombatLog = result["combat_log"] != nil
+        let victory = result["victory"] as? Bool
+        print("[DUNGEON-COMBAT] fight(): response keys=\(Array(result.keys)), hasPlayer=\(hasPlayer), hasCombatLog=\(hasCombatLog), victory=\(String(describing: victory))")
+        #endif
 
         // Store loot
         let lootItems = result["loot"] as? [[String: Any]] ?? []
@@ -210,11 +239,17 @@ final class DungeonRoomViewModel {
 
         // Try to navigate to combat animation
         if let combatData = parseCombatData(from: result) {
+            #if DEBUG
+            print("[DUNGEON-COMBAT] fight(): parseCombatData OK — navigating to combat screen")
+            #endif
             appState.combatData = combatData
             // Store pending result to apply after combat animation
             pendingFightResult = result
             appState.mainPath.append(AppRoute.combat)
         } else {
+            #if DEBUG
+            print("[DUNGEON-COMBAT] fight(): parseCombatData FAILED — applying result directly (no combat animation)")
+            #endif
             // No animation — apply directly
             applyFightResult(result)
         }
@@ -296,7 +331,17 @@ final class DungeonRoomViewModel {
         } else {
             // Defeat — run is deleted server-side
             runId = ""
-            appState.showToast("Defeated!", subtitle: "Regroup and try again", type: .error)
+
+            // Extract total progress earned during the run
+            let rewards = result["rewards"] as? [String: Any]
+            defeatTotalGold = rewards?["gold"] as? Int ?? 0
+            defeatTotalXP = rewards?["xp"] as? Int ?? 0
+            defeatFloorsCleared = rewards?["floorsCleared"] as? Int
+                ?? rewards?["floors_cleared"] as? Int ?? 0
+
+            showDefeat = true
+            HapticManager.error()
+
             // Refresh character data (HP, stamina may have changed)
             Task { [characterService] in
                 await characterService.loadCharacter()
@@ -305,13 +350,21 @@ final class DungeonRoomViewModel {
     }
 
     private func parseCombatData(from response: [String: Any]) -> CombatData? {
-        guard response["player"] != nil, response["combat_log"] != nil else { return nil }
+        guard response["player"] != nil, response["combat_log"] != nil else {
+            #if DEBUG
+            print("[DUNGEON-COMBAT] parseCombatData: missing 'player' or 'combat_log' keys")
+            #endif
+            return nil
+        }
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: response)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(CombatData.self, from: jsonData)
         } catch {
+            #if DEBUG
+            print("[DUNGEON-COMBAT] parseCombatData decode FAILED: \(error)")
+            #endif
             return nil
         }
     }
@@ -334,6 +387,11 @@ final class DungeonRoomViewModel {
     func proceedToNextBoss() {
         showVictory = false
         selectedBossIndex = currentBossIndex
+    }
+
+    func dismissDefeat() {
+        showDefeat = false
+        goBack()
     }
 
     // MARK: - Navigation

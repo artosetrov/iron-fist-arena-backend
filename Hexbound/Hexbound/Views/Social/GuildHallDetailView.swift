@@ -608,12 +608,9 @@ struct GuildHallDetailView: View {
     private func conversationsList(_ vm: GuildHallViewModel) -> some View {
         // Cache-first: show cached conversations immediately, skeleton only when empty
         if vm.conversations.isEmpty && (vm.scrollsLoadState == .idle || vm.scrollsLoadState == .loading) {
-            VStack(spacing: LayoutConstants.spaceMD) {
-                ForEach(0..<3, id: \.self) { _ in
-                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                        .fill(DarkFantasyTheme.bgSecondary)
-                        .frame(height: 70)
-                        .shimmer()
+            VStack(spacing: LayoutConstants.sectionGap) {
+                ForEach(0..<6, id: \.self) { _ in
+                    SkeletonConversationCard()
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -625,7 +622,7 @@ struct GuildHallDetailView: View {
                 )
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-        } else if vm.conversations.isEmpty {
+        } else if vm.conversations.isEmpty && vm.scrollsLoadState == .loaded {
             scrollsEmptyState
         } else {
             ForEach(vm.conversations) { convo in
@@ -1364,7 +1361,22 @@ struct GuildHallDetailView: View {
             // Full-width action buttons
             HStack(spacing: LayoutConstants.spaceSM) {
                 Button {
-                    Task { await vm.acceptChallenge(challenge) }
+                    Task {
+                        if let error = await vm.acceptChallenge(challenge) {
+                            appState.showToast(
+                                "Duel failed",
+                                subtitle: error,
+                                type: .error,
+                                actionLabel: "Retry"
+                            ) {
+                                Task { [weak vm] in
+                                    if let error = await vm?.acceptChallenge(challenge) {
+                                        appState.showToast("Duel failed", subtitle: error, type: .error)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         if isProcessing {

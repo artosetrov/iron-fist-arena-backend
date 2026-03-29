@@ -506,10 +506,14 @@ These are the **actual** backend enums. Do not invent values.
 
 **Rules:**
 1. If the backend sends **camelCase** keys (which is the default for Next.js `NextResponse.json()`), **do NOT add explicit CodingKeys** — let `.convertFromSnakeCase` pass camelCase through unchanged and match Swift property names directly.
-2. Only use explicit CodingKeys when the backend sends **actual snake_case** keys (e.g., Prisma raw query results, or endpoints with manual snake_case formatting).
-3. When in doubt, check the backend endpoint's `NextResponse.json({...})` — if it uses JS object shorthand with camelCase variable names, omit CodingKeys.
+2. If the backend sends **snake_case** keys (manual formatting like dungeon fight payloads), CodingKeys raw values must be **camelCase** (matching what `.convertFromSnakeCase` produces), NOT the original snake_case. The `.convertFromSnakeCase` strategy converts JSON keys BEFORE matching CodingKeys.
+3. Only exception for explicit snake_case mapping: when using a decoder WITHOUT `.convertFromSnakeCase`.
+4. When in doubt, check the backend endpoint's `NextResponse.json({...})` — if it uses JS object shorthand with camelCase variable names, omit CodingKeys.
+5. **Only use explicit CodingKey mapping for Swift keywords** (e.g., `case characterClass = "class"`) — let `.convertFromSnakeCase` handle all snake_case → camelCase conversion.
 
-**Past incident:** `SocialStatus` had explicit CodingKeys (`pending_requests`, `unread_messages`), but backend sent camelCase. Decode silently failed, `cache.socialStatus` was always nil, Guild Hall badge never showed. Fixed by removing CodingKeys.
+**Past incidents:**
+- `SocialStatus` had explicit CodingKeys (`pending_requests`, `unread_messages`), but backend sent camelCase. Decode silently failed, `cache.socialStatus` was always nil, Guild Hall badge never showed. Fixed by removing CodingKeys.
+- `CombatFighter` had explicit CodingKeys mapping to snake_case (`"character_name"`, `"max_hp"`, `"current_hp"`), but `parseCombatData()` used `.convertFromSnakeCase`. The strategy converted JSON `character_name` → `characterName`, then tried to match CodingKey raw value `"character_name"` → no match. **ALL dungeon combat decoding silently failed** — fights resolved server-side without showing combat UI. Player saw "Defeated! Regroup and try again" with HP gone. Fixed by changing CodingKeys to camelCase raw values, keeping only `characterClass = "class"`.
 
 **Affected models (fixed):**
 - `SocialStatus` (Social.swift) — removed CodingKeys entirely
@@ -519,6 +523,7 @@ These are the **actual** backend enums. Do not invent values.
 - `IncomingChallenge`, `OutgoingChallenge`, `CompletedChallenge` (Challenge.swift) — removed CodingKeys (all keys camelCase)
 - `SentChallengeInfo`, `DuelResult` (Challenge.swift) — removed CodingKeys (all keys camelCase)
 - `ChallengeCharacterInfo` (Challenge.swift) — fixed CodingKeys: kept only `characterClass = "class"`
+- `CombatFighter` (CombatData.swift) — fixed CodingKeys: camelCase raw values, kept only `characterClass = "class"`
 
 **Models with CodingKeys that are correct (Encodable, server expects snake_case):** `SendChallengeRequest`
 **Models with identity CodingKeys (redundant but correct):** `Conversation`, `ConversationCharacterInfo`, `ConversationLastMessage`, `DirectMessageItem`, `SentMessageInfo` (Message.swift) — CodingKeys map to same camelCase values as JSON keys.

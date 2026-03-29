@@ -94,6 +94,68 @@ struct DailyQuestsDetailView: View {
         return "\(h)h \(m)m"
     }
 
+    // MARK: - Progress Formatting
+
+    /// Compact progress text that never wraps. Uses K suffix for 1000+ values.
+    private func progressText(progress: Int, target: Int) -> String {
+        "\(compactNumber(progress))/\(compactNumber(target))"
+    }
+
+    private func compactNumber(_ n: Int) -> String {
+        if n >= 10_000 {
+            let k = Double(n) / 1000.0
+            return k.truncatingRemainder(dividingBy: 1) == 0
+                ? "\(Int(k))K"
+                : String(format: "%.1fK", k)
+        }
+        return "\(n)"
+    }
+
+    /// Reward label with asset icons — consistent across all quest cards.
+    private func rewardLabel(gold: Int, xp: Int, gems: Int?) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            if gold > 0 {
+                HStack(spacing: 2) {
+                    Image("icon-gold")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                    Text("\(gold)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+            }
+            if xp > 0 {
+                HStack(spacing: 2) {
+                    Image("icon-xp")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                    Text("\(xp)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.cyan)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+            }
+            if let gems, gems > 0 {
+                HStack(spacing: 2) {
+                    Image("icon-gems")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                    Text("\(gems)")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.purple)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+
     // MARK: - Bonus Panel
 
     @ViewBuilder
@@ -123,7 +185,8 @@ struct DailyQuestsDetailView: View {
                 Text("\(vm.completedCount)/\(vm.quests.count)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .frame(width: 30)
+                    .monospacedDigit()
+                    .fixedSize(horizontal: true, vertical: false)
                     .accessibilityElement(children: .ignore)
             }
 
@@ -262,14 +325,15 @@ struct DailyQuestsDetailView: View {
                 Text(quest.title)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                     .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
 
                 Text(quest.description)
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineLimit(2)
 
-                // Progress bar
-                HStack(spacing: LayoutConstants.spaceSM) {
+                // Progress bar + counter
+                HStack(spacing: LayoutConstants.spaceXS) {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
@@ -281,16 +345,16 @@ struct DailyQuestsDetailView: View {
                     }
                     .frame(height: 6)
 
-                    Text("\(quest.progress)/\(quest.target)")
+                    Text(progressText(progress: quest.progress, target: quest.target))
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .frame(width: 36, alignment: .trailing)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                 }
 
                 // Rewards
-                Text("\(quest.rewardGold) Gold  \(quest.rewardXp) XP")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                rewardLabel(gold: quest.rewardGold, xp: quest.rewardXp, gems: quest.rewardGems)
             }
 
             Spacer(minLength: 4)

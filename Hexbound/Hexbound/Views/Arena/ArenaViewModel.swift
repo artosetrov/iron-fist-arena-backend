@@ -67,7 +67,13 @@ final class ArenaViewModel {
 
     var canFight: Bool {
         // Match backend threshold: 10% of maxHp (was 30% — caused "Not enough health" mismatch)
-        let hpOK = (character?.hpPercentage ?? 1.0) >= 0.10
+        let hpPct = character?.hpPercentage ?? 1.0
+        let hpOK = hpPct >= 0.10
+        #if DEBUG
+        if let c = character {
+            print("[HP-SYNC] canFight: hp=\(c.currentHp)/\(c.maxHp) (\(Int(hpPct * 100))%), hpOK=\(hpOK), stamina=\(currentStamina)")
+        }
+        #endif
         return hpOK && (hasFreePvp || currentStamina >= AppConstants.pvpStaminaCost)
     }
 
@@ -267,13 +273,21 @@ final class ArenaViewModel {
         guard let result else { return }
         guard var char = appState.currentCharacter else { return }
 
+        #if DEBUG
+        print("[HP-SYNC] applyResolve: before=\(char.currentHp)/\(char.maxHp), server hpCurrent=\(String(describing: result.hpCurrent))")
+        #endif
+
         // Stamina
         char.currentStamina = result.staminaCurrent
         char.maxStamina = result.staminaMax
 
-        // HP — update from server post-combat value
-        if result.hpCurrent > 0 {
-            char.currentHp = result.hpCurrent
+        // HP — always sync from server post-combat value (including 0 after death)
+        // Previously skipped when hpCurrent == 0, causing stale "full HP" display after losses
+        if let hp = result.hpCurrent {
+            char.currentHp = hp
+            #if DEBUG
+            print("[HP-SYNC] applyResolve: updated HP to \(hp)/\(char.maxHp)")
+            #endif
         }
 
         // Gold & XP

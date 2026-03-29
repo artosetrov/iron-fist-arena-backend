@@ -555,6 +555,7 @@ async function handleAccept(character: any, body: any) {
       goldReward: defenderWon ? winnerGold : loserGold,
       xpReward: defenderWon ? winnerXp : loserXp,
       challengerName: challenge.challenger.characterName,
+      defenderName: character.characterName,
     },
   })
 }

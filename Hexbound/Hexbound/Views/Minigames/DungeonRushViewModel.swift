@@ -574,13 +574,21 @@ final class DungeonRushViewModel {
     // MARK: - Private: Parse Combat Data
 
     private func parseCombatData(from response: [String: Any]) -> CombatData? {
-        guard response["player"] != nil, response["combat_log"] != nil else { return nil }
+        guard response["player"] != nil, response["combat_log"] != nil else {
+            #if DEBUG
+            print("[DUNGEON-RUSH] parseCombatData: missing 'player' or 'combat_log' keys")
+            #endif
+            return nil
+        }
         do {
             let jsonData = try JSONSerialization.data(withJSONObject: response)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             return try decoder.decode(CombatData.self, from: jsonData)
         } catch {
+            #if DEBUG
+            print("[DUNGEON-RUSH] parseCombatData decode FAILED: \(error)")
+            #endif
             return nil
         }
     }

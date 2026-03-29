@@ -40,13 +40,18 @@ struct CombatFighter: Codable, Identifiable {
     let currentHp: Int?
     let avatar: String?
 
+    // CodingKeys use camelCase raw values to work with .convertFromSnakeCase decoder.
+    // The strategy converts JSON snake_case keys (character_name → characterName, max_hp → maxHp)
+    // BEFORE matching against CodingKey raw values. Explicit snake_case mappings here would
+    // cause double-conversion failure (character_name → characterName ≠ "character_name").
+    // Only "class" needs an explicit mapping because it's a Swift reserved keyword.
     enum CodingKeys: String, CodingKey {
         case id
-        case characterName = "character_name"
+        case characterName
         case characterClass = "class"
         case origin, level
-        case maxHp = "max_hp"
-        case currentHp = "current_hp"
+        case maxHp
+        case currentHp
         case avatar
     }
 }

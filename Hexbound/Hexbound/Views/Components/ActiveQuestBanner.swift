@@ -85,6 +85,8 @@ struct ActiveQuestBanner: View {
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                     .foregroundStyle(DarkFantasyTheme.cyan)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
 
                 // Mini progress bar
                 GeometryReader { geo in

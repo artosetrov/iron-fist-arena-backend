@@ -266,6 +266,43 @@ struct SkeletonMineSlot: View {
     }
 }
 
+// MARK: - Skeleton Conversation Card
+
+struct SkeletonConversationCard: View {
+    var body: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Avatar circle placeholder (matches 40pt AvatarImageView)
+            SkeletonRect(width: 40, height: 40, cornerRadius: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    // Sender name
+                    SkeletonRect(width: 110, height: 14)
+                    Spacer()
+                    // Timestamp placeholder
+                    SkeletonRect(width: 36, height: 10)
+                }
+                // Message preview line
+                SkeletonRect(height: 12)
+            }
+        }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+    }
+}
+
 // MARK: - Skeleton Revenge Card
 
 struct SkeletonRevengeCard: View {

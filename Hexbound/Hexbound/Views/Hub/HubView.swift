@@ -44,6 +44,10 @@ struct HubView: View {
                     FirstWinBonusCard()
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
+
+                // Quest Reward Widget — shows when completed quests have unclaimed rewards
+                QuestRewardWidget()
+                    .padding(.horizontal, LayoutConstants.screenPadding)
             }
             .background(DarkFantasyTheme.bgPrimary)
             .zIndex(10) // Keep HUD above map transitions
@@ -104,9 +108,10 @@ struct HubView: View {
                     FloatingActionIcon(
                         customIcon: "hud-quests",
                         badgeActive: {
-                            let completed = appState.cachedTypedQuests?.filter(\.completed).count ?? 0
-                            let total = appState.cachedTypedQuests?.count ?? 0
-                            return total > 0 && completed < total
+                            guard let quests = appState.cachedTypedQuests, !quests.isEmpty else { return false }
+                            let hasClaimable = quests.contains(where: \.canClaim)
+                            let hasIncomplete = quests.contains(where: { !$0.completed })
+                            return hasClaimable || hasIncomplete
                         }(),
                         accentColor: DarkFantasyTheme.gold,
                         size: 50
@@ -141,10 +146,10 @@ struct HubView: View {
                     }
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(showDungeonMap ? "icon-lobby" : "icon-dungeons")
+                        Image(showDungeonMap ? "ui-arrow-up" : "ui-arrow-down")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 26, height: 26)
+                            .frame(width: 22, height: 22)
                         Text(showDungeonMap ? "CASTLE" : "ADVENTURES")
                             .font(DarkFantasyTheme.section)
                     }
@@ -227,8 +232,11 @@ struct HubView: View {
     private func fetchUnreadMailCount() async {
         guard let charId = appState.currentCharacter?.id else { return }
         let vm = InboxViewModel()
-        await vm.fetchUnreadCount(characterId: charId)
-        appState.unreadMailCount = vm.unreadCount
+        // Fetch both mail + player message unread counts in parallel
+        async let mailTask: () = vm.fetchUnreadCount(characterId: charId)
+        async let scrollsTask: () = vm.fetchScrollsUnreadCount(characterId: charId)
+        _ = await (mailTask, scrollsTask)
+        appState.unreadMailCount = vm.totalUnreadCount
     }
 
     private func checkDailyLogin() async {
@@ -769,6 +777,225 @@ struct FirstWinBonusCard: View {
             .shimmer(color: DarkFantasyTheme.gold.opacity(0.3), duration: 5)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Quest Reward Widget
+
+/// Shows on Hub when there are completed-but-unclaimed daily quests.
+/// Single quest: shows title + reward + Claim button.
+/// Multiple quests: shows summary "X rewards ready" + Go to Quests button.
+/// Hidden when no claimable quests exist.
+struct QuestRewardWidget: View {
+    @Environment(AppState.self) private var appState
+
+    @State private var claimingId: String?
+
+    private var claimableQuests: [Quest] {
+        appState.cachedTypedQuests?.filter(\.canClaim) ?? []
+    }
+
+    var body: some View {
+        if !claimableQuests.isEmpty {
+            questContent()
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .animation(.easeOut(duration: 0.3), value: claimableQuests.count)
+        }
+    }
+
+    // MARK: - Content
+
+    @ViewBuilder
+    private func questContent() -> some View {
+        if claimableQuests.count == 1, let quest = claimableQuests.first {
+            singleQuestCard(quest)
+        } else {
+            multiQuestCard()
+        }
+    }
+
+    // MARK: - Single Quest
+
+    private func singleQuestCard(_ quest: Quest) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Quest icon
+            Text(quest.icon)
+                .font(.system(size: 24))
+
+            // Info
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                Text(quest.title)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
+
+                // Reward pills
+                rewardRow(gold: quest.rewardGold, xp: quest.rewardXp, gems: quest.rewardGems)
+            }
+
+            Spacer(minLength: 4)
+
+            // Claim button
+            Button {
+                claimQuest(quest)
+            } label: {
+                if claimingId == quest.id {
+                    ProgressView()
+                        .tint(DarkFantasyTheme.textOnGold)
+                        .frame(width: 60)
+                } else {
+                    Text("Claim")
+                        .frame(minWidth: 60)
+                }
+            }
+            .buttonStyle(.compactPrimary)
+            .disabled(claimingId != nil)
+        }
+        .modifier(QuestRewardCardStyle(accentColor: DarkFantasyTheme.cyan))
+    }
+
+    // MARK: - Multiple Quests
+
+    private func multiQuestCard() -> some View {
+        Button {
+            SFXManager.shared.play(.uiTap)
+            HapticManager.medium()
+            appState.mainPath.append(AppRoute.dailyQuests)
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                // Quest icon
+                Image("hud-quests")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
+
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text("\(claimableQuests.count) REWARDS READY")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+
+                    Text("Tap to claim your quest rewards")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+
+                Spacer(minLength: 4)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: LayoutConstants.textLabel, weight: .semibold))
+                    .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
+            }
+        }
+        .buttonStyle(.plain)
+        .modifier(QuestRewardCardStyle(accentColor: DarkFantasyTheme.gold))
+    }
+
+    // MARK: - Reward Pills
+
+    private func rewardRow(gold: Int, xp: Int, gems: Int?) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            if gold > 0 {
+                HStack(spacing: LayoutConstants.space2XS) {
+                    Image("icon-gold")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                    Text("+\(gold)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                }
+            }
+            if xp > 0 {
+                HStack(spacing: LayoutConstants.space2XS) {
+                    Image("icon-xp")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                    Text("+\(xp)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.cyan)
+                }
+            }
+            if let gems, gems > 0 {
+                HStack(spacing: LayoutConstants.space2XS) {
+                    Image("icon-gems")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                    Text("+\(gems)")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .foregroundStyle(DarkFantasyTheme.purple)
+                }
+            }
+        }
+    }
+
+    // MARK: - Claim Logic
+
+    private func claimQuest(_ quest: Quest) {
+        claimingId = quest.id
+
+        // Optimistic: mark claimed instantly
+        if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == quest.id }) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                appState.cachedTypedQuests?[idx].rewardClaimed = true
+            }
+        }
+
+        HapticManager.success()
+        SFXManager.shared.play(.uiRewardClaim)
+        appState.showToast("Quest Complete! \(quest.title)", type: .quest)
+        claimingId = nil
+
+        // Fire API in background
+        let questId = quest.id
+        Task {
+            let service = QuestService(appState: appState)
+            let success = await service.claimQuest(questId: questId)
+            if !success {
+                // Revert on failure
+                if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        appState.cachedTypedQuests?[idx].rewardClaimed = false
+                    }
+                }
+                appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error,
+                                   actionLabel: "Retry", action: {
+                    if let q = appState.cachedTypedQuests?.first(where: { $0.id == questId && $0.canClaim }) {
+                        claimQuest(q)
+                    }
+                })
+            }
+        }
+    }
+}
+
+// MARK: - Quest Reward Card Style
+
+private struct QuestRewardCardStyle: ViewModifier {
+    let accentColor: Color
+
+    func body(content: Content) -> some View {
+        content
+            .padding(LayoutConstants.bannerPadding)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: accentColor.opacity(0.08))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
+            )
+            .cornerBrackets(color: accentColor.opacity(0.4), length: 12, thickness: 1.5)
+            .compositingGroup()
+            .shadow(color: accentColor.opacity(0.12), radius: 6, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 1)
     }
 }
 

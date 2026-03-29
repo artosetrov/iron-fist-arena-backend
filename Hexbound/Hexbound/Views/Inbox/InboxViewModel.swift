@@ -4,16 +4,36 @@ import Observation
 @MainActor
 @Observable
 final class InboxViewModel {
+    enum Tab: String, CaseIterable {
+        case mail = "MAIL"
+        case scrolls = "SCROLLS"
+    }
+
+    var selectedTab: Tab = .mail
+
+    // Mail tab
     var messages: [MailMessage] = []
-    var unreadCount: Int = 0
+    var mailUnreadCount: Int = 0
     var isLoading: Bool = false
     var error: String?
     var currentPage: Int = 1
     var totalMessages: Int = 0
 
-    private let apiClient = APIClient.shared
+    // Scrolls tab (player conversations)
+    var conversations: [Conversation] = []
+    var scrollsUnreadCount: Int = 0
+    var isLoadingScrolls: Bool = false
+    var scrollsError: String?
 
-    // MARK: - Fetch
+    /// Combined unread count for badge
+    var totalUnreadCount: Int {
+        mailUnreadCount + scrollsUnreadCount
+    }
+
+    private let apiClient = APIClient.shared
+    private let messageService = MessageService.shared
+
+    // MARK: - Fetch Mail
 
     func fetchInbox(characterId: String, page: Int = 1) async {
         isLoading = true
@@ -30,7 +50,7 @@ final class InboxViewModel {
             messages = response.messages
             totalMessages = response.total
             currentPage = response.page
-            unreadCount = response.unreadCount
+            mailUnreadCount = response.unreadCount
         } catch {
             self.error = error.localizedDescription
         }
@@ -43,7 +63,36 @@ final class InboxViewModel {
                 "/api/mail/unread-count",
                 params: ["character_id": characterId]
             )
-            unreadCount = response.unreadCount
+            mailUnreadCount = response.unreadCount
+        } catch {
+            // silent — badge update only
+        }
+    }
+
+    // MARK: - Fetch Conversations (Scrolls)
+
+    func loadConversations(characterId: String) async {
+        if conversations.isEmpty {
+            isLoadingScrolls = true
+        }
+        scrollsError = nil
+        do {
+            let response = try await messageService.getConversations(characterId: characterId)
+            conversations = response
+            scrollsUnreadCount = response.reduce(0) { $0 + $1.unreadCount }
+            isLoadingScrolls = false
+        } catch {
+            if conversations.isEmpty {
+                scrollsError = error.localizedDescription
+            }
+            isLoadingScrolls = false
+        }
+    }
+
+    func fetchScrollsUnreadCount(characterId: String) async {
+        do {
+            let response = try await messageService.getConversations(characterId: characterId)
+            scrollsUnreadCount = response.reduce(0) { $0 + $1.unreadCount }
         } catch {
             // silent — badge update only
         }
@@ -56,7 +105,7 @@ final class InboxViewModel {
         if let idx = messages.firstIndex(where: { $0.id == messageId }) {
             messages[idx] = messages[idx].withRead()
         }
-        unreadCount = max(0, unreadCount - 1)
+        mailUnreadCount = max(0, mailUnreadCount - 1)
 
         // Fire API in background
         Task { [weak self] in
