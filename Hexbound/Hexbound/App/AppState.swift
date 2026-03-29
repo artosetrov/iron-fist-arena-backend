@@ -6,6 +6,7 @@ final class AppState {
     enum AppScreen: Equatable {
         case auth             // not logged in → AuthRouterView
         case characterSelect  // logged in, hero not chosen → CharacterSelectionView
+        case loreIntro(heroName: String) // first hero just created → LoreIntroView
         case game             // logged in, hero chosen → MainRouterView
     }
 
@@ -71,6 +72,35 @@ final class AppState {
     var hasAutoShownDailyLogin = false  // prevents auto-popup on every hub visit
     var dailyLoginCanClaim = false       // drives the hub widget badge
     var unreadMailCount = 0               // drives the inbox badge on hub
+
+    // MARK: - Celebration Banner (Layer 3 — milestone events)
+    var celebrationBanner: CelebrationBanner?
+    private var celebrationDismissTask: Task<Void, Never>?
+
+    func showCelebration(_ type: CelebrationType, title: String, subtitle: String = "") {
+        // Cancel pending dismiss
+        celebrationDismissTask?.cancel()
+
+        HapticManager.medium()
+        withAnimation(MotionConstants.spring) {
+            celebrationBanner = CelebrationBanner(type: type, title: title, subtitle: subtitle)
+        }
+
+        // Auto-dismiss after duration
+        let duration = type.displayDuration
+        celebrationDismissTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled else { return }
+            self?.dismissCelebration()
+        }
+    }
+
+    func dismissCelebration() {
+        celebrationDismissTask?.cancel()
+        withAnimation(.easeOut(duration: MotionConstants.overlayFade)) {
+            celebrationBanner = nil
+        }
+    }
 
     // MARK: - Session Expired Modal
     var showSessionExpiredModal = false
@@ -255,6 +285,55 @@ struct ToastMessage: Identifiable {
     let type: ToastType
     var actionLabel: String? = nil
     var action: (() -> Void)? = nil
+}
+
+// MARK: - Celebration Banner
+
+struct CelebrationBanner: Identifiable {
+    let id = UUID()
+    let type: CelebrationType
+    let title: String
+    let subtitle: String
+}
+
+enum CelebrationType {
+    case achievement
+    case levelUp
+    case rankUp
+    case questComplete
+    case rareDrop
+    case dungeonClear
+
+    var color: Color {
+        switch self {
+        case .achievement: DarkFantasyTheme.toastAchievement
+        case .levelUp: DarkFantasyTheme.toastLevelUp
+        case .rankUp: DarkFantasyTheme.toastRankUp
+        case .questComplete: DarkFantasyTheme.toastQuest
+        case .rareDrop: DarkFantasyTheme.toastReward
+        case .dungeonClear: DarkFantasyTheme.toastQuest
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .achievement: "trophy.fill"
+        case .levelUp: "arrow.up.circle.fill"
+        case .rankUp: "crown.fill"
+        case .questComplete: "scroll.fill"
+        case .rareDrop: "sparkles"
+        case .dungeonClear: "flag.checkered"
+        }
+    }
+
+    /// How long the banner stays visible (seconds)
+    var displayDuration: Double {
+        switch self {
+        case .levelUp, .rankUp: 4.0
+        case .achievement, .dungeonClear: 3.5
+        case .questComplete, .rareDrop: 3.0
+        }
+    }
 }
 
 enum ToastType {

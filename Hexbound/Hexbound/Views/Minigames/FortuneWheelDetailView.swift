@@ -25,6 +25,7 @@ struct FortuneWheelDetailView: View {
         }
         .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()

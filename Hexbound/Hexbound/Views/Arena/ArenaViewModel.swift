@@ -66,7 +66,9 @@ final class ArenaViewModel {
     }
 
     var canFight: Bool {
-        hasFreePvp || currentStamina >= AppConstants.pvpStaminaCost
+        // Match backend threshold: 10% of maxHp (was 30% — caused "Not enough health" mismatch)
+        let hpOK = (character?.hpPercentage ?? 1.0) >= 0.10
+        return hpOK && (hasFreePvp || currentStamina >= AppConstants.pvpStaminaCost)
     }
 
     var staminaCost: Int {
@@ -176,24 +178,22 @@ final class ArenaViewModel {
         fightingOpponentId = opponentId
         showComparison = false
 
-        // 1. Navigate to combat screen INSTANTLY (shows preparation animation)
+        // 1. Prepare battle FIRST (get seed + stats from server)
+        //    If a background preload is already in-flight, this awaits it.
+        //    BattlePreloader shows specific error toasts (e.g. "Not enough stamina").
+        guard let prepareData = await battlePreloader.prepare(opponentId: opponentId) else {
+            fightingOpponentId = nil
+            // BattlePreloader already showed specific error toast — no duplicate needed
+            return
+        }
+
+        // 2. Navigate to combat screen only after successful prepare
         appState.combatData = nil
         appState.combatResult = nil
         appState.resolveResult = nil
         appState.pendingLoot = []
         fightingOpponentId = nil
         appState.mainPath.append(AppRoute.combat)
-
-        // 2. Prepare battle (get seed + stats from server)
-        //    If a background preload is already in-flight, this awaits it.
-        guard let prepareData = await battlePreloader.prepare(opponentId: opponentId) else {
-            // Prepare failed — pop combat screen
-            if !appState.mainPath.isEmpty {
-                appState.mainPath.removeLast()
-            }
-            appState.showToast("Failed to start battle", subtitle: "Check stamina and connection", type: .error)
-            return
-        }
         await battlePreloader.invalidatePreparedBattle(opponentId: opponentId)
 
         // 3. Run client-side combat simulation (instant, deterministic)
@@ -220,22 +220,21 @@ final class ArenaViewModel {
     func revenge(revengeId: String) async {
         fightingOpponentId = revengeId
 
-        // 1. Navigate to combat screen INSTANTLY (shows preparation animation)
+        // 1. Prepare battle FIRST (server validates revenge entry + returns seed + stats)
+        //    BattlePreloader shows specific error toasts.
+        guard let prepareData = await battlePreloader.prepare(revengeId: revengeId) else {
+            fightingOpponentId = nil
+            // BattlePreloader already showed specific error toast — no duplicate needed
+            return
+        }
+
+        // 2. Navigate to combat screen only after successful prepare
         appState.combatData = nil
         appState.combatResult = nil
         appState.resolveResult = nil
         appState.pendingLoot = []
         fightingOpponentId = nil
         appState.mainPath.append(AppRoute.combat)
-
-        // 2. Prepare battle (server validates revenge entry + returns seed + stats)
-        guard let prepareData = await battlePreloader.prepare(revengeId: revengeId) else {
-            if !appState.mainPath.isEmpty {
-                appState.mainPath.removeLast()
-            }
-            appState.showToast("Failed to start battle", subtitle: "Check stamina and connection", type: .error)
-            return
-        }
         await battlePreloader.invalidatePreparedBattle(revengeId: revengeId)
 
         // 3. Run client-side combat simulation (instant, deterministic)
@@ -271,6 +270,11 @@ final class ArenaViewModel {
         // Stamina
         char.currentStamina = result.staminaCurrent
         char.maxStamina = result.staminaMax
+
+        // HP — update from server post-combat value
+        if result.hpCurrent > 0 {
+            char.currentHp = result.hpCurrent
+        }
 
         // Gold & XP
         char.gold += result.goldReward

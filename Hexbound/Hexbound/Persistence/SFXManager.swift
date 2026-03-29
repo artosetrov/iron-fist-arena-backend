@@ -109,6 +109,7 @@ final class SFXManager {
 /// All available sound effects in the game.
 /// Audio files go in the bundle as `<rawValue>.wav`.
 /// If a file is missing, SFXManager silently skips it (no crash).
+@MainActor
 enum SFX: String, CaseIterable {
     // UI — general
     case uiTap = "ui_tap"

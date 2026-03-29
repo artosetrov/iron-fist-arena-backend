@@ -22,7 +22,7 @@ struct DungeonRoomDetailView: View {
     @State private var selectedLootItem: LootPreview? = nil
     @State private var showLootDetail = false
     @State private var showDungeonInfo = false
-    @State private var showFightConfirmation = false
+    // confirmation dialog removed — fight triggers directly
     @State private var selectedBossForDetail: BossInfo? = nil
 
     // Spec colors — from theme tokens
@@ -70,8 +70,41 @@ struct DungeonRoomDetailView: View {
             if showBossFightSlam {
                 bossFightSlamOverlay
             }
+
+            // Loading overlay when fight is starting
+            if let vm, vm.isFighting {
+                ZStack {
+                    Color.black.opacity(0.55)
+                        .ignoresSafeArea()
+                    VStack(spacing: LayoutConstants.spaceMD) {
+                        ProgressView()
+                            .tint(DarkFantasyTheme.gold)
+                            .scaleEffect(1.4)
+                        Text("Preparing for battle...")
+                            .font(DarkFantasyTheme.uiLabel)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    }
+                    .padding(LayoutConstants.spaceLG)
+                    .background(
+                        RadialGlowBackground(
+                            baseColor: DarkFantasyTheme.bgSecondary,
+                            glowColor: DarkFantasyTheme.gold.opacity(0.15),
+                            glowIntensity: 0.5,
+                            cornerRadius: LayoutConstants.modalRadius
+                        )
+                    )
+                    .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
+                    .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
+                    .compositingGroup()
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+                }
+                .transition(.opacity)
+            }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .animation(.easeInOut(duration: 0.2), value: vm?.isFighting)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -114,7 +147,7 @@ struct DungeonRoomDetailView: View {
                 DungeonInfoSheet(dungeon: dungeon, defeatedCount: vm?.defeatedCount ?? 0)
             }
         }
-        .sheet(item: $selectedBossForDetail) { boss in
+        .navigationDestination(item: $selectedBossForDetail) { boss in
             if let vm {
                 let bossIdx = (vm.dungeon?.bosses ?? []).firstIndex(where: { $0.id == boss.id }) ?? 0
                 BossDetailSheet(
@@ -128,7 +161,7 @@ struct DungeonRoomDetailView: View {
                         selectedBossForDetail = nil
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             vm.selectBoss(at: bossIdx)
-                            showFightConfirmation = true
+                            triggerBossFightSlam()
                         }
                     },
                     onLootTap: { loot in
@@ -136,7 +169,8 @@ struct DungeonRoomDetailView: View {
                         withAnimation(.easeOut(duration: 0.2)) {
                             showLootDetail = true
                         }
-                    }
+                    },
+                    isNavigationMode: true
                 )
             }
         }
@@ -151,22 +185,7 @@ struct DungeonRoomDetailView: View {
                 .zIndex(100)
             }
         }
-        .confirmationDialog(
-            "FIGHT BOSS",
-            isPresented: $showFightConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Fight (\(vm?.dungeon?.energyCost ?? 10) Energy)") {
-                triggerBossFightSlam()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            if let boss = vm?.currentBoss {
-                Text("Challenge \(boss.name)? This will cost energy.")
-            } else {
-                Text("Are you ready to fight? This will cost energy.")
-            }
-        }
+        // confirmation dialog removed — fight triggers directly from boss detail sheet
     }
 
     // MARK: - Hero Widget (same as Hub)
@@ -473,7 +492,7 @@ struct DungeonRoomDetailView: View {
         appState.currentCharacter?.currentHp = newHp
 
         HapticManager.success()
-        appState.showToast("Healed! HP: \(newHp)/\(maxHp)", type: .reward)
+        // No success toast — haptic provides feedback
 
         // Fire API in background
         let potionId = potion.id
@@ -520,7 +539,7 @@ struct DungeonRoomDetailView: View {
         appState.currentCharacter?.currentStamina = newStamina
 
         HapticManager.success()
-        appState.showToast("+\(newStamina - previousStamina) Stamina restored!", type: .reward)
+        // No success toast — haptic provides feedback
 
         // Fire API in background
         let potionId = potion.id

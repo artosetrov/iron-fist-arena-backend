@@ -263,7 +263,11 @@
       "Bash(npx vercel logs)",
       "Bash(npx vercel logs --prod)",
       "Bash(xcodebuild -scheme Hexbound -destination 'platform=iOS Simulator,name=iPhone 16 Pro' -quiet build)",
-      "Bash(xcodebuild -scheme Hexbound -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet build)"
+      "Bash(xcodebuild -scheme Hexbound -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -quiet build)",
+      "Bash(GIT_EDITOR=true git rebase --continue)",
+      "Bash(GIT_SEQUENCE_EDITOR=true GIT_EDITOR=true git rebase --continue)",
+      "Bash(EDITOR=true git rebase --continue)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

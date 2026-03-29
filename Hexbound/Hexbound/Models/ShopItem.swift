@@ -21,6 +21,7 @@ struct ShopItem: Codable, Identifiable {
     var classRestriction: String?
     var imageUrl: String?
     var imageKey: String?
+    var isTwoHanded: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -42,6 +43,7 @@ struct ShopItem: Codable, Identifiable {
         case classRestriction = "class_restriction"
         case imageUrl = "image_url"
         case imageKey = "image_key"
+        case isTwoHanded = "is_two_handed"
     }
 
     var isConsumable: Bool {
@@ -66,6 +68,42 @@ struct ShopItem: Codable, Identifiable {
     var typeIcon: String {
         typeEnum?.icon ?? "📦"
     }
+
+    /// Resolves imageKey for consumables — remaps legacy "pot_" keys and fills missing keys.
+    var resolvedImageKey: String? {
+        if !isConsumable {
+            return imageKey
+        }
+
+        // Remap legacy "pot_*" keys
+        if let key = imageKey, !key.isEmpty {
+            let remapped = Self.legacyKeyRemap[key]
+            if remapped != nil { return remapped }
+            return key
+        }
+
+        // Derive from consumableType
+        let ct = consumableType ?? catalogId ?? ""
+        if ct.contains("stamina") && ct.contains("large") { return "stamina_potion_large" }
+        if ct.contains("stamina") && ct.contains("medium") { return "stamina_potion_medium" }
+        if ct.contains("stamina") { return "stamina_potion_small" }
+        if ct.contains("health") && ct.contains("large") { return "health_potion_large" }
+        if ct.contains("health") && ct.contains("medium") { return "health_potion_medium" }
+        if ct.contains("health") { return "health_potion_small" }
+        if ct.contains("gem_pack") && ct.contains("large") { return "gem_pack_large" }
+        if ct.contains("gem_pack") && ct.contains("medium") { return "gem_pack_medium" }
+        if ct.contains("gem_pack") { return "gem_pack_small" }
+        return nil
+    }
+
+    private static let legacyKeyRemap: [String: String] = [
+        "pot_stamina_small": "stamina_potion_small",
+        "pot_stamina_medium": "stamina_potion_medium",
+        "pot_stamina_large": "stamina_potion_large",
+        "pot_health_small": "health_potion_small",
+        "pot_health_medium": "health_potion_medium",
+        "pot_health_large": "health_potion_large",
+    ]
 
     /// SF Symbol icon for consumable items
     var consumableIcon: String? {
@@ -121,7 +159,8 @@ struct ShopItem: Codable, Identifiable {
             imageUrl: imageUrl,
             imageKey: imageKey,
             quantity: nil,
-            consumableType: consumableType
+            consumableType: consumableType,
+            isTwoHanded: isTwoHanded
         )
     }
 }

@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Full boss detail modal — opened when tapping a DungeonBossCard.
-/// Shows lore, HP, level, possible loot, and fight button.
+/// Full boss detail screen — opened when tapping a DungeonBossCard.
+/// Used as a NavigationStack push (isNavigationMode = true, default)
+/// or as a sheet for legacy/fallback.
 struct BossDetailSheet: View {
     let boss: BossInfo
     let state: BossState
@@ -11,6 +12,8 @@ struct BossDetailSheet: View {
     let isFighting: Bool
     let onFight: () -> Void
     let onLootTap: (LootPreview) -> Void
+    /// When true: full-screen nav push with toolbar back button (no sheet modifiers).
+    var isNavigationMode: Bool = true
 
     @Environment(\.dismiss) private var dismiss
 
@@ -24,7 +27,7 @@ struct BossDetailSheet: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            DarkFantasyTheme.bgDungeonGradient.ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: LayoutConstants.spaceMD) {
@@ -50,6 +53,7 @@ struct BossDetailSheet: View {
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.bottom, state == .current ? 100 : LayoutConstants.spaceLG)
+                .padding(.top, isNavigationMode ? 0 : LayoutConstants.spaceLG)
             }
 
             // Sticky fight button at bottom (only for current boss)
@@ -60,11 +64,80 @@ struct BossDetailSheet: View {
                 }
                 .ignoresSafeArea(.container, edges: .bottom)
             }
+
+            // Fullscreen loading overlay when fight is in progress
+            if isFighting {
+                ZStack {
+                    DarkFantasyTheme.bgAbyss.opacity(0.75)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: LayoutConstants.spaceMD) {
+                        // Pulsing boss icon
+                        Image(systemName: "bolt.shield.fill")
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                            .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
+
+                        Text("PREPARING FOR BATTLE...")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .tracking(2)
+
+                        // Diamond loading dots (3 animated)
+                        HStack(spacing: LayoutConstants.spaceSM) {
+                            ForEach(0..<3, id: \.self) { i in
+                                DiamondLoadingDot(delay: Double(i) * 0.25)
+                            }
+                        }
+                    }
+                    .padding(LayoutConstants.spaceLG)
+                    .background(
+                        RadialGlowBackground(
+                            baseColor: DarkFantasyTheme.bgSecondary,
+                            glowColor: DarkFantasyTheme.gold.opacity(0.08),
+                            glowIntensity: 0.4,
+                            cornerRadius: LayoutConstants.modalRadius
+                        )
+                    )
+                    .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+                    .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
+                    .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
+                    .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
+                    .compositingGroup()
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
+                }
+                .transition(.opacity)
+            }
         }
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-        .presentationBackground(DarkFantasyTheme.bgPrimary)
-        .presentationCornerRadius(20)
+        // Sheet mode only: close X button + sheet presentation modifiers
+        .overlay(alignment: .topTrailing) {
+            if !isNavigationMode {
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.closeButton)
+                .padding(.top, LayoutConstants.spaceMD)
+                .padding(.trailing, LayoutConstants.screenPadding)
+            }
+        }
+        .modifier(BossDetailPresentationModifier(isNavigationMode: isNavigationMode))
+        .navigationBarBackButtonHidden(isNavigationMode)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            if isNavigationMode {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    HubLogoButton()
+                }
+                ToolbarItem(placement: .principal) {
+                    Text(boss.name.uppercased())
+                        .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                        .foregroundStyle(stateColor)
+                        .tracking(2)
+                        .lineLimit(1)
+                }
+            }
+        }
     }
 
     // MARK: - Boss Portrait Header
@@ -407,5 +480,48 @@ struct BossDetailSheet: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
+    }
+}
+
+// MARK: - Presentation modifier (sheet mode only)
+
+/// Animated diamond dot for loading indicator — matches LoadingOverlay style.
+private struct DiamondLoadingDot: View {
+    let delay: Double
+    @State private var isAnimating = false
+
+    var body: some View {
+        Rectangle()
+            .fill(DarkFantasyTheme.gold)
+            .frame(width: 8, height: 8)
+            .rotationEffect(.degrees(45))
+            .opacity(isAnimating ? 1.0 : 0.3)
+            .onAppear {
+                withAnimation(
+                    .easeInOut(duration: 0.6)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay)
+                ) {
+                    isAnimating = true
+                }
+            }
+            .onDisappear {
+                isAnimating = false
+            }
+    }
+}
+
+private struct BossDetailPresentationModifier: ViewModifier {
+    let isNavigationMode: Bool
+    func body(content: Content) -> some View {
+        if isNavigationMode {
+            content
+        } else {
+            content
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(DarkFantasyTheme.bgPrimary)
+                .presentationCornerRadius(20)
+        }
     }
 }

@@ -35,6 +35,8 @@ final class OnboardingViewModel {
     }
     var nameAvailability: NameAvailability = .idle
     private var nameCheckTask: Task<Void, Never>?
+    /// Local cache: lowercased name → availability result (avoids redundant API calls)
+    private var nameCache: [String: NameAvailability] = [:]
 
     static let totalSteps = 3
 
@@ -87,6 +89,12 @@ final class OnboardingViewModel {
             if selectedSkinKey == nil, selectedOrigin != nil {
                 let valid = availableSkins
                 selectedSkinKey = valid.first?.skinKey
+            }
+            // Prefetch all skin images into cache so scrolling is instant
+            for skin in response.skins {
+                Task {
+                    _ = await AssetManager.shared.fetchIfNeeded(key: skin.resolvedImageKey, url: skin.imageUrl)
+                }
             }
         } catch {
             isLoadingSkins = false
@@ -209,9 +217,11 @@ final class OnboardingViewModel {
         selectedSkinKey = skins[index].skinKey
     }
 
-    // MARK: - Name Availability Check (debounced)
+    // MARK: - Name Availability Check (debounced + cached)
 
-    func checkNameAvailability() {
+    /// Check name availability.
+    /// - Parameter immediate: Skip debounce delay (use after dice roll — name is already complete).
+    func checkNameAvailability(immediate: Bool = false) {
         nameCheckTask?.cancel()
 
         let name = characterName.trimmingCharacters(in: .whitespaces)
@@ -220,11 +230,20 @@ final class OnboardingViewModel {
             return
         }
 
+        // Return cached result instantly — no API round-trip needed
+        if let cached = nameCache[name.lowercased()] {
+            nameAvailability = cached
+            return
+        }
+
         nameAvailability = .checking
 
         nameCheckTask = Task {
-            try? await Task.sleep(for: .milliseconds(400))
-            guard !Task.isCancelled else { return }
+            // Debounce: wait while user is still typing; skip for immediate calls (dice button)
+            if !immediate {
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+            }
 
             do {
                 let result = try await APIClient.shared.getRaw(
@@ -233,10 +252,12 @@ final class OnboardingViewModel {
                 guard !Task.isCancelled else { return }
 
                 let available = result["available"] as? Bool ?? false
-                nameAvailability = available ? .available : .taken
+                let resolved: NameAvailability = available ? .available : .taken
+                nameCache[name.lowercased()] = resolved
+                nameAvailability = resolved
             } catch {
                 guard !Task.isCancelled else { return }
-                // On error, allow proceed (server will validate on create)
+                // On network error, allow proceed (server will validate on create)
                 nameAvailability = .available
             }
         }
@@ -372,13 +393,11 @@ final class OnboardingViewModel {
                 if !allSkins.isEmpty {
                     cache.cacheSkins(allSkins)
                 }
-                // If this is the user's first hero, go straight to game
+                // If this is the user's first hero, show lore intro before entering
                 // Otherwise, go back to character selection
                 if appState.userCharacters.count <= 1 {
-                    // First hero — load game data and enter
-                    let initService = GameInitService(appState: appState, cache: cache)
-                    await initService.loadGameData()
-                    appState.currentScreen = .game
+                    // First hero — show lore intro (it loads game data and transitions to .game)
+                    appState.currentScreen = .loreIntro(heroName: character.characterName)
                 } else {
                     // Additional hero — go to selection screen
                     appState.currentScreen = .characterSelect

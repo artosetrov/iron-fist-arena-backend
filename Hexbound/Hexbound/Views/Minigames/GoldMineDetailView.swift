@@ -39,6 +39,7 @@ struct GoldMineDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .npcHint(.goldMine, isReady: vm != nil)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -304,7 +305,6 @@ private struct MineSlotCard: View {
                 .resizable()
                 .scaledToFill()
                 .opacity(status == "idle" ? 0.6 : 1.0)
-                .breathing(scale: 0.006, isActive: status == "mining")
 
             // Status-specific overlays
             switch status {

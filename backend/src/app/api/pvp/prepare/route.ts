@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import {
   getStaminaConfig,
   getCombatConfig,
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
     const { character_id, opponent_id, revenge_id } = body
 
     if (!character_id || (!opponent_id && !revenge_id)) {
+      console.warn('pvp prepare: missing params', { character_id: !!character_id, opponent_id: !!opponent_id, revenge_id: !!revenge_id })
       return NextResponse.json(
         { error: 'character_id and opponent_id (or revenge_id) are required' },
         { status: 400 }
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (character_id === resolvedOpponentId) {
+      console.warn('pvp prepare: self-fight attempted', { characterId: character_id })
       return NextResponse.json(
         { error: 'Cannot fight yourself' },
         { status: 400 }
@@ -92,6 +95,7 @@ export async function POST(req: NextRequest) {
         luk: true,
         maxHp: true,
         currentHp: true,
+        lastHpUpdate: true,
       },
     })
 
@@ -102,19 +106,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Stamina check — revenge always costs stamina (no free PvP)
-    const staminaResult = await calculateCurrentStamina(
-      attacker.currentStamina,
-      attacker.maxStamina,
-      attacker.lastStaminaUpdate ?? new Date()
-    )
+    // Calculate current stamina and HP with regen
+    const [staminaResult, hpResult] = await Promise.all([
+      calculateCurrentStamina(
+        attacker.currentStamina,
+        attacker.maxStamina,
+        attacker.lastStaminaUpdate ?? new Date()
+      ),
+      calculateCurrentHp(
+        attacker.currentHp,
+        attacker.maxHp,
+        attacker.lastHpUpdate ?? new Date()
+      ),
+    ])
     const currentStamina = staminaResult.stamina
+    const currentHp = hpResult.hp
+
+    // Persist regen updates to DB if changed
+    const regenUpdates: Record<string, unknown> = {}
+    if (staminaResult.updated) {
+      regenUpdates.currentStamina = currentStamina
+      regenUpdates.lastStaminaUpdate = new Date()
+    }
+    if (hpResult.updated) {
+      regenUpdates.currentHp = currentHp
+      regenUpdates.lastHpUpdate = new Date()
+    }
+    if (Object.keys(regenUpdates).length > 0) {
+      await prisma.character.update({
+        where: { id: character_id },
+        data: regenUpdates,
+      })
+    }
 
     const isNewDay = !attacker.freePvpDate || isNewUtcDay(attacker.freePvpDate)
     const freePvpUsed = isNewDay ? 0 : attacker.freePvpToday
     const hasFreePvp = isRevenge ? false : freePvpUsed < STAMINA.FREE_PVP_PER_DAY
 
     if (!hasFreePvp && currentStamina < STAMINA.PVP_COST) {
+      console.warn('pvp prepare: stamina check failed', { characterId: character_id, currentStamina, required: STAMINA.PVP_COST, hasFreePvp, freePvpUsed })
       return NextResponse.json(
         { error: 'Not enough stamina', currentStamina, required: STAMINA.PVP_COST },
         { status: 400 }
@@ -123,11 +153,12 @@ export async function POST(req: NextRequest) {
 
     // Check minimum HP threshold (10% of maxHp) — block fights when near death
     const minHpRequired = Math.ceil(attacker.maxHp * 0.1)
-    if (attacker.currentHp < minHpRequired) {
+    if (currentHp < minHpRequired) {
+      console.warn('pvp prepare: HP check failed', { characterId: character_id, currentHp, minHpRequired, maxHp: attacker.maxHp })
       return NextResponse.json(
         {
           error: 'Not enough health to fight. Use a health potion first!',
-          currentHp: attacker.currentHp,
+          currentHp,
           minHealthRequired: minHpRequired,
           maxHp: attacker.maxHp,
         },

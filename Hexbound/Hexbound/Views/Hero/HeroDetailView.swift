@@ -62,8 +62,7 @@ struct HeroDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbarBackground(DarkFantasyTheme.bgPrimary, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -535,6 +534,60 @@ struct HeroDetailView: View {
                     .accessibilityLabel("Increase \(stat.fullName)")
                 }
             }
+
+            // ── Row 1.5: Two-zone progress bar ──
+            // Left half = base zone (0–10, dim gold)
+            // Right half = bonus zone (10+, bright gold)
+            // Separator always visible at midpoint as base/bonus boundary
+            GeometryReader { geo in
+                let total = geo.size.width
+                let half = total * 0.5
+                let baseMax: CGFloat = 10
+                let baseVal = min(CGFloat(value), baseMax)
+                let bonusVal = max(CGFloat(0), CGFloat(value) - baseMax)
+                let baseFill = (baseVal / baseMax) * half
+                let bonusFill = min(bonusVal, baseMax) / baseMax * half
+
+                ZStack(alignment: .leading) {
+                    // Track background
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(DarkFantasyTheme.bgTertiary)
+
+                    // Fill zones — clipped to track shape as a unit
+                    ZStack(alignment: .leading) {
+                        // Base zone (0–10): dim gold
+                        if baseFill > 0 {
+                            LinearGradient(
+                                colors: [DarkFantasyTheme.statBarFill.opacity(0.55), DarkFantasyTheme.statBarFill],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                            .frame(width: baseFill)
+                        }
+                        // Bonus zone (10+): bright gold, anchored at the midpoint
+                        if bonusFill > 0 {
+                            HStack(spacing: 0) {
+                                Color.clear.frame(width: half)
+                                LinearGradient(
+                                    colors: [DarkFantasyTheme.statBoosted.opacity(0.65), DarkFantasyTheme.statBoosted],
+                                    startPoint: .leading, endPoint: .trailing
+                                )
+                                .frame(width: bonusFill)
+                            }
+                        }
+                    }
+                    .frame(width: total, alignment: .leading)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
+                    .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
+                    .animation(.easeOut(duration: MotionConstants.tickUpShort), value: value)
+
+                    // Zone separator — brighter when bonus is active
+                    Rectangle()
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(value >= Int(baseMax) ? 0.9 : 0.35))
+                        .frame(width: 1.5)
+                        .offset(x: half - 0.75)
+                }
+            }
+            .frame(height: 8)
 
             // ── Row 2: Derived stat + benefit pills (moved here from Row 1) ──
             HStack(spacing: LayoutConstants.spaceSM) {

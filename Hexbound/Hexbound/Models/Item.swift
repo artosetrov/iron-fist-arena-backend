@@ -26,6 +26,7 @@ struct Item: Codable, Identifiable {
     var imageKey: String?
     var quantity: Int?
     var consumableType: String?
+    var isTwoHanded: Bool?
 
     // No CodingKeys needed — Prisma sends camelCase which matches
     // Swift property names directly (itemName, itemType, etc.)
@@ -87,6 +88,47 @@ struct Item: Codable, Identifiable {
 
     static let rarityOrder: [ItemRarity: Int] = [
         .common: 1, .uncommon: 2, .rare: 3, .epic: 4, .legendary: 5
+    ]
+
+    // MARK: - Consumable Image Resolution
+
+    /// Resolves imageKey for consumables — remaps legacy "pot_" keys and fills missing keys.
+    /// Asset names match Supabase Storage (synced by sync-assets.sh).
+    var resolvedImageKey: String? {
+        // Non-consumables: return imageKey as-is
+        if itemType != .consumable {
+            return imageKey
+        }
+
+        // Remap legacy "pot_*" keys to Supabase asset names
+        if let key = imageKey, !key.isEmpty {
+            let remapped = Self.legacyKeyRemap[key]
+            if remapped != nil { return remapped }
+            return key
+        }
+
+        // No imageKey from backend — derive from consumableType
+        let ct = consumableType ?? catalogId ?? ""
+        if ct.contains("stamina") && ct.contains("large") { return "stamina_potion_large" }
+        if ct.contains("stamina") && ct.contains("medium") { return "stamina_potion_medium" }
+        if ct.contains("stamina") { return "stamina_potion_small" }
+        if ct.contains("health") && ct.contains("large") { return "health_potion_large" }
+        if ct.contains("health") && ct.contains("medium") { return "health_potion_medium" }
+        if ct.contains("health") { return "health_potion_small" }
+        if ct.contains("gem_pack") && ct.contains("large") { return "gem_pack_large" }
+        if ct.contains("gem_pack") && ct.contains("medium") { return "gem_pack_medium" }
+        if ct.contains("gem_pack") { return "gem_pack_small" }
+        return nil
+    }
+
+    /// Legacy imageKey → current Supabase asset name remap
+    private static let legacyKeyRemap: [String: String] = [
+        "pot_stamina_small": "stamina_potion_small",
+        "pot_stamina_medium": "stamina_potion_medium",
+        "pot_stamina_large": "stamina_potion_large",
+        "pot_health_small": "health_potion_small",
+        "pot_health_medium": "health_potion_medium",
+        "pot_health_large": "health_potion_large",
     ]
 
     // MARK: - Consumable Icon Helpers

@@ -18,9 +18,16 @@ struct LeaderboardPlayerDetailSheet: View {
     @State private var errorMessage: String?
     @State private var friendshipState: FriendshipButtonState = .none
     @State private var isFriendActionLoading = false
-    @State private var isSendingChallenge = false
     @State private var challengeSent = false
-    @State private var challengeError: String?
+
+    // Item detail inspection
+    @State private var selectedOpponentItem: Item?
+    @State private var selectedComparedItem: Item?
+
+    /// Player's own equipped items (from cache) for comparison in item detail sheet.
+    private var playerEquippedItems: [Item] {
+        (appState.cachedInventory ?? []).filter { $0.isEquipped ?? false }
+    }
 
     var body: some View {
         ZStack {
@@ -34,12 +41,42 @@ struct LeaderboardPlayerDetailSheet: View {
                 profileContent(profile)
             }
         }
+        .overlay(alignment: .topTrailing) {
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+            }
+            .buttonStyle(.closeButton)
+            .padding(.top, LayoutConstants.spaceMD)
+            .padding(.trailing, LayoutConstants.screenPadding)
+        }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationBackground(DarkFantasyTheme.bgPrimary)
         .presentationCornerRadius(20)
         .task {
             await loadProfile()
+        }
+        .sheet(item: $selectedOpponentItem) { opponentItem in
+            ZStack {
+                DarkFantasyTheme.bgModal.ignoresSafeArea()
+                ItemDetailSheet(
+                    item: opponentItem,
+                    comparedItem: selectedComparedItem,
+                    playerGems: 0,
+                    upgradeChances: [],
+                    onEquip: {},
+                    onUnequip: {},
+                    onSell: {},
+                    onUse: {},
+                    onUpgrade: { _ in },
+                    onRepair: {},
+                    onClose: { selectedOpponentItem = nil },
+                    viewMode: true
+                )
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(DarkFantasyTheme.bgModal)
         }
     }
 
@@ -81,7 +118,14 @@ struct LeaderboardPlayerDetailSheet: View {
         ScrollView {
             VStack(spacing: LayoutConstants.spaceMD) {
                 // Integrated portrait + equipment card (same layout as hero page)
-                OpponentIntegratedCard(profile: profile)
+                OpponentIntegratedCard(
+                    profile: profile,
+                    playerEquipment: playerEquippedItems,
+                    onItemTapped: { opponentItem, playerItem in
+                        selectedComparedItem = playerItem
+                        selectedOpponentItem = opponentItem
+                    }
+                )
 
                 // Action Buttons — right under equipment
                 actionButtons
@@ -174,17 +218,38 @@ struct LeaderboardPlayerDetailSheet: View {
                     statGroupHeader(group.rawValue)
 
                     ForEach(group.stats, id: \.self) { stat in
-                        opponentStatCell(stat, value: profile.statValue(for: stat))
+                        opponentStatCell(
+                            stat,
+                            value: profile.statValue(for: stat),
+                            playerValue: playerStatValue(for: stat)
+                        )
                     }
                 }
             }
         }
     }
 
-    /// Read-only stat cell matching HeroDetailView ornamental style (no +/- buttons, no tooltip)
+    /// Returns the current player's value for the given stat type
+    private func playerStatValue(for stat: StatType) -> Int {
+        switch stat {
+        case .strength:     return playerCharacter.strength ?? 0
+        case .agility:      return playerCharacter.agility ?? 0
+        case .vitality:     return playerCharacter.vitality ?? 0
+        case .endurance:    return playerCharacter.endurance ?? 0
+        case .intelligence: return playerCharacter.intelligence ?? 0
+        case .wisdom:       return playerCharacter.wisdom ?? 0
+        case .luck:         return playerCharacter.luck ?? 0
+        case .charisma:     return playerCharacter.charisma ?? 0
+        }
+    }
+
+    /// Read-only stat cell with comparison delta vs the current player.
+    /// ▲ red  = opponent higher (danger for player)
+    /// ▼ green = opponent lower (player has the edge)
     @ViewBuilder
-    private func opponentStatCell(_ stat: StatType, value: Int) -> some View {
+    private func opponentStatCell(_ stat: StatType, value: Int, playerValue: Int) -> some View {
         let color = DarkFantasyTheme.statColor(for: stat.rawValue)
+        let delta = value - playerValue
 
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(stat.iconAsset)
@@ -198,6 +263,27 @@ struct LeaderboardPlayerDetailSheet: View {
                 .lineLimit(1)
 
             Spacer(minLength: 4)
+
+            // Comparison delta badge
+            if delta != 0 {
+                let deltaColor = delta > 0 ? DarkFantasyTheme.danger : DarkFantasyTheme.success
+                let arrow = delta > 0 ? "▲" : "▼"
+                let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
+
+                Text(label)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                    .foregroundStyle(deltaColor)
+                    .padding(.horizontal, LayoutConstants.spaceSM)
+                    .padding(.vertical, LayoutConstants.spaceXS)
+                    .background(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .fill(deltaColor.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                    .stroke(deltaColor.opacity(0.4), lineWidth: 1)
+                            )
+                    )
+            }
 
             Text("\(value)")
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
@@ -327,9 +413,7 @@ struct LeaderboardPlayerDetailSheet: View {
                 Task { await sendChallenge() }
             } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    if isSendingChallenge {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
-                    } else if challengeSent {
+                    if challengeSent {
                         Image(systemName: "checkmark.circle.fill")
                         Text("Challenge Sent")
                     } else {
@@ -340,7 +424,7 @@ struct LeaderboardPlayerDetailSheet: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
-            .disabled(isSendingChallenge || challengeSent)
+            .disabled(challengeSent)
             .accessibilityLabel(challengeSent ? "Challenge already sent" : "Challenge opponent to battle")
 
             HStack(spacing: LayoutConstants.spaceSM) {
@@ -367,17 +451,12 @@ struct LeaderboardPlayerDetailSheet: View {
                 Task { await sendFriendRequest() }
             } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    if isFriendActionLoading {
-                        ProgressView().tint(DarkFantasyTheme.textPrimary)
-                    } else {
-                        Image(systemName: "person.badge.plus")
-                    }
+                    Image(systemName: "person.badge.plus")
                     Text("Add Ally")
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.secondary)
-            .disabled(isFriendActionLoading)
             .accessibilityLabel("Send ally request")
 
         case .requestSent:
@@ -448,36 +527,40 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private func sendFriendRequest() async {
         guard let charId = appState.currentCharacter?.id else { return }
-        isFriendActionLoading = true
-        let errorMsg = await SocialService.shared.sendFriendRequest(
-            characterId: charId,
-            targetId: entry.characterId
-        )
-        isFriendActionLoading = false
-        if errorMsg == nil {
-            friendshipState = .requestSent
-            HapticManager.success()
-            appState.showToast("Ally request sent!", type: .info)
-        } else {
+
+        // Optimistic: show pending state instantly
+        let previousState = friendshipState
+        friendshipState = .requestSent
+        HapticManager.success()
+
+        // Fire API in background — revert on failure
+        Task {
+            let errorMsg = await SocialService.shared.sendFriendRequest(
+                characterId: charId,
+                targetId: entry.characterId
+            )
+            guard let error = errorMsg else { return }
+
             HapticManager.error()
-            let reason: String
-            switch errorMsg {
+            switch error {
             case "Already friends or request pending":
-                reason = "Request already pending"
-                friendshipState = .requestSent
+                friendshipState = .requestSent // stay — already pending
             case "Friend list full":
-                reason = "Your ally list is full (max 50)"
                 friendshipState = .maxReached
+                appState.showToast("Can't send request", subtitle: "Your ally list is full (max 50)", type: .error)
             case "Cannot send request":
-                reason = "This player is unavailable"
+                friendshipState = previousState
+                appState.showToast("Can't send request", subtitle: "This player is unavailable", type: .error)
             case "Too many requests today":
-                reason = "Daily request limit reached (20/day)"
+                friendshipState = previousState
+                appState.showToast("Can't send request", subtitle: "Daily request limit reached (20/day)", type: .error)
             case "Cooldown active":
-                reason = "Wait 24h before sending again"
+                friendshipState = previousState
+                appState.showToast("Can't send request", subtitle: "Wait 24h before sending again", type: .error)
             default:
-                reason = errorMsg ?? "Something went wrong"
+                friendshipState = previousState
+                appState.showToast("Can't send request", subtitle: error, type: .error)
             }
-            appState.showToast("Can't send request", subtitle: reason, type: .error)
         }
     }
 
@@ -498,32 +581,31 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private func sendChallenge() async {
         guard let charId = appState.currentCharacter?.id else { return }
-        isSendingChallenge = true
-        challengeError = nil
 
-        do {
-            _ = try await ChallengeService.shared.sendChallenge(
-                characterId: charId,
-                targetId: entry.characterId,
-                message: nil
-            )
-            challengeSent = true
-            SFXManager.shared.play(.uiConfirm)
-            appState.showToast(
-                "Challenge Sent",
-                subtitle: "\(entry.characterName) has 24h to respond",
-                type: .info
-            )
-        } catch {
-            appState.showToast(
-                "Challenge Failed",
-                subtitle: "Could not send challenge. Try again later.",
-                type: .error,
-                actionLabel: "Retry",
-                action: { Task { await sendChallenge() } }
-            )
+        // Optimistic: show sent state instantly
+        challengeSent = true
+        SFXManager.shared.play(.uiConfirm)
+        HapticManager.light()
+
+        // Fire API in background — revert on failure
+        Task {
+            do {
+                _ = try await ChallengeService.shared.sendChallenge(
+                    characterId: charId,
+                    targetId: entry.characterId,
+                    message: nil
+                )
+            } catch {
+                challengeSent = false
+                appState.showToast(
+                    "Challenge Failed",
+                    subtitle: "Could not send challenge. Try again later.",
+                    type: .error,
+                    actionLabel: "Retry",
+                    action: { Task { await sendChallenge() } }
+                )
+            }
         }
-        isSendingChallenge = false
     }
 
     // MARK: - Helpers

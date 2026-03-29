@@ -9,6 +9,7 @@ struct CharacterSelectionView: View {
     @State private var vm = CharacterSelectionViewModel()
     @State private var enterPressed = false
     @State private var enterGlow = false
+    @State private var heroToDelete: Character?
 
     var body: some View {
         @Bindable var state = appState
@@ -51,20 +52,31 @@ struct CharacterSelectionView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        HapticManager.light()
-                        SFXManager.shared.play(.uiTap)
-                        appState.logout()
-                    } label: {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("LOG OUT")
-                                .font(DarkFantasyTheme.section(size: 11))
-                                .tracking(0.5)
+                    Menu {
+                        Section {
+                            Button(role: .destructive) {
+                                HapticManager.light()
+                                SFXManager.shared.play(.uiTap)
+                                appState.logout()
+                            } label: {
+                                Label("Log Out", systemImage: "rectangle.portrait.and.arrow.right")
+                            }
                         }
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                    .fill(DarkFantasyTheme.bgTertiary)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                                    )
+                            )
                     }
+                    .menuStyle(.automatic)
                 }
             }
             .navigationDestination(for: AppRoute.self) { route in
@@ -76,13 +88,21 @@ struct CharacterSelectionView: View {
             }
         }
         .task {
-            // Load skins early so AvatarImageView can resolve portraits
-            if cache.skins.isEmpty {
-                if let response: AppearancesResponse = try? await APIClient.shared.get(APIEndpoints.appearances) {
-                    cache.cacheSkins(response.skins)
+            // Load skins and characters in parallel (no @MainActor on skins task — runs on background thread)
+            async let skinsTask: Void = {
+                if await cache.skins.isEmpty {
+                    if let response: AppearancesResponse = try? await APIClient.shared.get(APIEndpoints.appearances) {
+                        await cache.cacheSkins(response.skins)
+                    }
                 }
+            }()
+            async let charsTask: Void = vm.loadCharacters(appState: appState)
+            _ = await (skinsTask, charsTask)
+
+            // Guest with no heroes → skip empty state, go straight to hero creation
+            if appState.isGuest && vm.characters.isEmpty && appState.authPath.isEmpty {
+                appState.authPath.append(AppRoute.onboarding)
             }
-            await vm.loadCharacters(appState: appState)
         }
         .onChange(of: appState.authPath.count) { oldCount, newCount in
             // Refresh character list when returning from onboarding (new hero created)
@@ -136,16 +156,44 @@ struct CharacterSelectionView: View {
                 spacing: LayoutConstants.arenaCardGap
             ) {
                 ForEach(Array(vm.characters.enumerated()), id: \.element.id) { index, character in
-                    HeroSelectionCard(
-                        character: character,
-                        isSelected: character.id == vm.selectedCharacterId,
-                        onSelect: {
-                            HapticManager.light()
-                            SFXManager.shared.play(.uiTap)
-                            vm.selectedCharacterId = character.id
+                    let isSelected = character.id == vm.selectedCharacterId
+                    ZStack(alignment: .topTrailing) {
+                        HeroSelectionCard(
+                            character: character,
+                            isSelected: isSelected,
+                            onSelect: {
+                                HapticManager.light()
+                                SFXManager.shared.play(.uiTap)
+                                vm.selectedCharacterId = character.id
+                            }
+                        )
+                        .staggeredAppear(index: index)
+
+                        // Edit/delete button — appears on active card, outside Button to avoid gesture conflict
+                        if isSelected {
+                            Button {
+                                HapticManager.light()
+                                SFXManager.shared.play(.uiTap)
+                                heroToDelete = character
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(DarkFantasyTheme.gold)
+                                    .frame(width: 28, height: 28)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                                    .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1)
+                                            )
+                                    )
+                            }
+                            .padding(LayoutConstants.spaceSM)
+                            .transition(.opacity.combined(with: .scale(scale: 0.7, anchor: .topTrailing)))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
                         }
-                    )
-                    .staggeredAppear(index: index)
+                    }
                 }
 
                 // Create hero placeholder card
@@ -156,6 +204,31 @@ struct CharacterSelectionView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceSM)
+        }
+        .alert(
+            "Delete Hero?",
+            isPresented: Binding(
+                get: { heroToDelete != nil },
+                set: { if !$0 { heroToDelete = nil } }
+            )
+        ) {
+            Button("Delete Forever", role: .destructive) {
+                guard let hero = heroToDelete else { return }
+                heroToDelete = nil
+                Task {
+                    let success = await vm.deleteCharacter(id: hero.id)
+                    if !success {
+                        appState.showToast("Failed to delete hero", type: .error)
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                heroToDelete = nil
+            }
+        } message: {
+            if let hero = heroToDelete {
+                Text("\"\(hero.characterName)\" will be permanently deleted. This cannot be undone.")
+            }
         }
     }
 
@@ -504,7 +577,14 @@ struct HeroSelectionCard: View {
                 // 2. Vignette
                 vignetteOverlay(width: width, height: height)
 
-                // 3. Content overlay
+                // 3. Gold tint overlay when selected (subtle warmth)
+                if isSelected {
+                    RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
+                        .fill(DarkFantasyTheme.gold.opacity(0.05))
+                        .allowsHitTesting(false)
+                }
+
+                // 4. Content overlay
                 VStack {
                     topBadges
                     Spacer()
@@ -512,13 +592,42 @@ struct HeroSelectionCard: View {
                 }
                 .padding(LayoutConstants.arenaCardPadding - 4)
                 .frame(width: width, height: height)
+
+                // 5. "ACTIVE HERO" ribbon at top when selected
+                if isSelected {
+                    VStack {
+                        Text("◆  ACTIVE  ◆")
+                            .font(DarkFantasyTheme.body(size: 9).bold())
+                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                            .tracking(2)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 4)
+                            .background(
+                                LinearGradient(
+                                    colors: [
+                                        DarkFantasyTheme.gold.opacity(0.75),
+                                        DarkFantasyTheme.goldBright.opacity(0.85),
+                                        DarkFantasyTheme.gold.opacity(0.75)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 8)
+                        Spacer()
+                    }
+                    .frame(width: width, height: height)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
+                    .allowsHitTesting(false)
+                }
             }
             .frame(width: width, height: height)
             .background(DarkFantasyTheme.bgAbyss)
             .overlay(animatedBorderGlow)
             .overlay(shimmerOverlay)
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
-            .shadow(color: glowColor.opacity(isSelected ? 0.3 : 0.15), radius: LayoutConstants.arenaGlowRadius, y: 3)
+            // Strong gold glow when selected, subtle when not
+            .shadow(color: glowColor.opacity(isSelected ? 0.55 : 0.15), radius: isSelected ? 22 : LayoutConstants.arenaGlowRadius, y: 3)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
         }
         .aspectRatio(1.0 / 1.4, contentMode: .fit)
@@ -568,25 +677,8 @@ struct HeroSelectionCard: View {
 
             Spacer()
 
-            // Selected checkmark
-            if isSelected {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(DarkFantasyTheme.bgAbyss)
-                    .frame(width: 24, height: 24)
-                    .background(
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    )
-                    .overlay(Circle().stroke(DarkFantasyTheme.bgAbyss.opacity(0.5), lineWidth: 1.5))
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 6)
-            } else if hpPercent < 0.5 {
+            // Low HP badge (selection state shown by ACTIVE ribbon + edit button overlay)
+            if hpPercent < 0.5 && !isSelected {
                 // Low HP badge (like difficulty badge)
                 Text("LOW HP")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
@@ -725,35 +817,69 @@ struct HeroSelectionCard: View {
     // MARK: - Animated Border
 
     private var animatedBorderGlow: some View {
-        RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
-            .stroke(
-                AngularGradient(
-                    colors: [
-                        glowColor.opacity(isSelected ? 0.6 : 0.3),
-                        glowColor.opacity(0.1),
-                        glowColor.opacity(isSelected ? 0.4 : 0.2),
-                        glowColor.opacity(0.05),
-                        glowColor.opacity(isSelected ? 0.6 : 0.3)
-                    ],
-                    center: .center,
-                    startAngle: .degrees(glowPhase),
-                    endAngle: .degrees(glowPhase + 360)
-                ),
-                lineWidth: isSelected ? 2 : 1.5
-            )
-            .overlay(
-                CornerBracketOverlay(
-                    color: glowColor.opacity(isSelected ? 0.6 : 0.35),
-                    length: 14,
-                    thickness: 1.5
-                )
-            )
-            .overlay(
-                CornerDiamondOverlay(
-                    color: glowColor.opacity(isSelected ? 0.5 : 0.3),
-                    size: 5
-                )
-            )
+        Group {
+            if isSelected {
+                // Solid bright gold border — clearly communicates selection state
+                RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                DarkFantasyTheme.goldBright,
+                                DarkFantasyTheme.gold,
+                                DarkFantasyTheme.goldBright,
+                                DarkFantasyTheme.gold
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2.5
+                    )
+                    .overlay(
+                        CornerBracketOverlay(
+                            color: DarkFantasyTheme.gold.opacity(0.9),
+                            length: 16,
+                            thickness: 2.0
+                        )
+                    )
+                    .overlay(
+                        CornerDiamondOverlay(
+                            color: DarkFantasyTheme.goldBright.opacity(0.8),
+                            size: 7
+                        )
+                    )
+            } else {
+                // Animated class-colored gradient border for unselected
+                RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
+                    .stroke(
+                        AngularGradient(
+                            colors: [
+                                glowColor.opacity(0.3),
+                                glowColor.opacity(0.1),
+                                glowColor.opacity(0.2),
+                                glowColor.opacity(0.05),
+                                glowColor.opacity(0.3)
+                            ],
+                            center: .center,
+                            startAngle: .degrees(glowPhase),
+                            endAngle: .degrees(glowPhase + 360)
+                        ),
+                        lineWidth: 1.5
+                    )
+                    .overlay(
+                        CornerBracketOverlay(
+                            color: classColor.opacity(0.35),
+                            length: 14,
+                            thickness: 1.5
+                        )
+                    )
+                    .overlay(
+                        CornerDiamondOverlay(
+                            color: classColor.opacity(0.3),
+                            size: 5
+                        )
+                    )
+            }
+        }
     }
 
     // MARK: - Shimmer (selected only)

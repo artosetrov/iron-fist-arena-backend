@@ -140,19 +140,25 @@ export function createSeededRng(seed: number): SeededRng {
 
 // --- Internal helpers ---
 
-// Cached class damage config (loaded once per combat call)
+// Module-level TTL cache for class damage config (avoids DB hit on every combat)
 let _cachedClassDamage: Record<string, { stat: string; multiplier: number; levelBonus: number }> | null = null;
+let _classDamageCacheTime = 0;
+const CLASS_DAMAGE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Pre-load class damage config so we don't hit DB per turn.
- * Called once at the start of runCombat.
+ * Module-level TTL cache — re-fetches only after 5 min, not every combat.
+ * Parallel Promise.all instead of sequential for loop.
  */
 async function loadClassDamageConfig(): Promise<void> {
-  const classes = ['warrior', 'tank', 'rogue', 'mage'];
-  _cachedClassDamage = {};
-  for (const cls of classes) {
-    _cachedClassDamage[cls] = await getClassDamageFormula(cls);
+  const now = Date.now();
+  if (_cachedClassDamage && (now - _classDamageCacheTime) < CLASS_DAMAGE_CACHE_TTL_MS) {
+    return; // Cache is fresh — skip DB entirely
   }
+  const classes = ['warrior', 'tank', 'rogue', 'mage'] as const;
+  const formulas = await Promise.all(classes.map((cls) => getClassDamageFormula(cls)));
+  _cachedClassDamage = Object.fromEntries(classes.map((cls, i) => [cls, formulas[i]]));
+  _classDamageCacheTime = now;
 }
 
 /**

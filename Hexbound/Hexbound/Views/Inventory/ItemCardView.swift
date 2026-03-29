@@ -48,6 +48,7 @@ struct ItemCardView: View {
     var isEquipped: Bool = false
     var isBroken: Bool = false
     var itemType: ItemType? = nil
+    var isTwoHanded: Bool = false
 
     // MARK: - Context & action
 
@@ -59,7 +60,7 @@ struct ItemCardView: View {
     /// Initialize from an `Item` model (inventory, equipment, loot)
     init(item: Item, context: ItemCardContext, onTap: @escaping () -> Void) {
         self.rarity = item.rarity
-        self.imageKey = item.imageKey
+        self.imageKey = item.resolvedImageKey
         self.imageUrl = item.imageUrl
         self.fallbackIcon = item.itemType.icon
         self.systemIcon = item.consumableIcon
@@ -72,6 +73,7 @@ struct ItemCardView: View {
         self.isEquipped = item.isEquipped == true
         self.isBroken = (item.durability ?? 1) <= 0
         self.itemType = item.itemType
+        self.isTwoHanded = item.isTwoHanded == true
         self.context = context
         self.onTap = onTap
     }
@@ -79,11 +81,12 @@ struct ItemCardView: View {
     /// Initialize from a `ShopItem` model
     init(shopItem: ShopItem, context: ItemCardContext, onTap: @escaping () -> Void) {
         self.rarity = shopItem.rarity
-        self.imageKey = shopItem.imageKey
+        self.imageKey = shopItem.resolvedImageKey
         self.imageUrl = shopItem.imageUrl
         self.fallbackIcon = shopItem.typeIcon
         self.systemIcon = shopItem.consumableIcon
         self.systemIconColor = shopItem.consumableIconColor
+        self.isTwoHanded = shopItem.isTwoHanded == true
         self.context = context
         self.onTap = onTap
     }
@@ -91,7 +94,8 @@ struct ItemCardView: View {
     /// Initialize from a `LootPreview` model
     init(loot: LootPreview, context: ItemCardContext = .preview, onTap: @escaping () -> Void) {
         self.rarity = loot.rarity
-        self.imageKey = loot.imageKey
+        // resolvedImageKey: uses specific imageKey if present, falls back to type-based asset
+        self.imageKey = loot.resolvedImageKey
         self.imageUrl = loot.imageUrl
         self.fallbackIcon = loot.icon
         self.context = context
@@ -254,6 +258,7 @@ struct ItemCardView: View {
                     systemIconColor: systemIconColor,
                     fallbackIcon: fallbackIcon
                 )
+                .autoLoad()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
             }
@@ -396,10 +401,34 @@ private extension ItemCardView {
                             .fill(DarkFantasyTheme.bgSecondary.opacity(0.9))
                     )
                     .padding(3)
+            } else if isTwoHanded {
+                twoHandedBadge
             }
         default:
-            EmptyView()
+            if isTwoHanded {
+                twoHandedBadge
+            } else {
+                EmptyView()
+            }
         }
+    }
+
+    /// Compact "2H" badge for two-handed weapons on the card grid
+    private var twoHandedBadge: some View {
+        Text("2H")
+            .font(.system(size: 9, weight: .heavy))
+            .foregroundStyle(DarkFantasyTheme.stamina)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
+            .background(
+                Capsule()
+                    .fill(DarkFantasyTheme.bgSecondary.opacity(0.9))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(DarkFantasyTheme.stamina.opacity(0.4), lineWidth: 1)
+            )
+            .padding(3)
     }
 
     // MARK: - Top-Trailing Overlay

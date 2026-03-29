@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stat Bar Prototype — Hexbound</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0f;
+    color: #e8d5a3;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    color: #D4A537;
+    text-align: center;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #7a6a4a;
+    font-size: 12px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  /* --- Layout --- */
+  .columns {
+    display: flex;
+    gap: 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .column {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .column-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #7a6a4a;
+    text-align: center;
+    margin-bottom: 12px;
+    padding: 6px 0;
+    border-top: 1px solid #2a2018;
+    border-bottom: 1px solid #2a2018;
+  }
+  .column-label.broken { color: #c0392b; }
+  .column-label.v1 { color: #D4A537; }
+  .column-label.v2 { color: #FFD700; }
+  .column-label.v3 { color: #9b59b6; }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0;
+  }
+  .badge-red { background: rgba(192,57,43,0.2); color: #c0392b; border: 1px solid rgba(192,57,43,0.4); }
+  .badge-gold { background: rgba(212,165,55,0.15); color: #D4A537; border: 1px solid rgba(212,165,55,0.3); }
+  .badge-best { background: rgba(155,89,182,0.15); color: #9b59b6; border: 1px solid rgba(155,89,182,0.3); }
+
+  /* --- Stat Section --- */
+  .stat-section {
+    margin-bottom: 8px;
+  }
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #5a4a2a;
+  }
+  .section-divider::before, .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #3a2a10);
+  }
+  .section-divider::after {
+    background: linear-gradient(to left, transparent, #3a2a10);
+  }
+
+  /* --- Stat Row --- */
+  .stat-row {
+    background: linear-gradient(135deg, #16120a, #1a160e);
+    border: 1px solid #2a2010;
+    border-radius: 8px;
+    padding: 10px 12px 8px;
+    margin-bottom: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-row::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(212,165,55,0.15), transparent);
+  }
+
+  .stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .stat-name-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stat-icon { font-size: 14px; }
+  .stat-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: #D4A537;
+    font-weight: 500;
+  }
+  .class-badge {
+    font-size: 9px;
+    font-family: 'Inter', sans-serif;
+    color: #7a6a4a;
+    background: rgba(212,165,55,0.08);
+    border: 1px solid rgba(212,165,55,0.2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .stat-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: #f5f0e0;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: right;
+  }
+  .stat-value.boosted { color: #FFD700; }
+
+  /* --- Bars --- */
+  .bar-track {
+    height: 8px;
+    background: #1e1a10;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    position: relative;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.22), transparent);
+  }
+  .bar-dim { background: linear-gradient(to right, rgba(212,165,55,0.5), #8B6914); }
+  .bar-gold { background: linear-gradient(to right, rgba(212,165,55,0.7), #D4A537); }
+  .bar-bright { background: linear-gradient(to right, rgba(255,215,0,0.7), #FFD700); }
+
+  /* Zone bar (V3) */
+  .bar-track-zoned {
+    height: 8px;
+    background: #1e1a10;
+    border-radius: 4px;
+    position: relative;
+    overflow: visible;
+    margin-bottom: 4px;
+  }
+  .zone-base {
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+    background: linear-gradient(to right, rgba(212,165,55,0.5), #8B6914);
+    overflow: hidden;
+  }
+  .zone-base::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    border-radius: 4px 0 0 0;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.2), transparent);
+  }
+  .zone-bonus {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(to right, #cc8800, #FFD700);
+    overflow: hidden;
+  }
+  .zone-bonus::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+  }
+  .zone-separator {
+    position: absolute;
+    top: -2px;
+    width: 2px;
+    height: calc(100% + 4px);
+    background: #0a0a0f;
+    z-index: 2;
+  }
+  .zone-separator-diamond {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    background: #FFD700;
+    z-index: 3;
+  }
+
+  /* Tick mark (V2 & V3) */
+  .tick {
+    position: absolute;
+    top: -2px;
+    width: 1px;
+    height: calc(100% + 4px);
+    background: rgba(255,215,0,0.5);
+    z-index: 2;
+  }
+
+  .stat-derived {
+    font-size: 11px;
+    color: #5a4a2a;
+    margin-top: 2px;
+  }
+  .stat-derived span { color: #7a6a4a; }
+
+  /* --- Overflow indicator (V2) --- */
+  .overflow-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #FFD700;
+    border-radius: 50%;
+    margin-left: 4px;
+    vertical-align: middle;
+    box-shadow: 0 0 6px #FFD700;
+  }
+
+  /* --- Legend --- */
+  .legend {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(26,22,14,0.6);
+    border: 1px solid #2a2010;
+    border-radius: 8px;
+    font-size: 11px;
+    color: #5a4a2a;
+    line-height: 1.8;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .swatch {
+    width: 24px;
+    height: 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .legend-item span { color: #7a6a4a; }
+
+  /* --- Notes --- */
+  .notes {
+    max-width: 1100px;
+    margin: 32px auto 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .note-card {
+    background: #16120a;
+    border: 1px solid #2a2010;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .note-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .note-title.red { color: #c0392b; }
+  .note-title.gold { color: #D4A537; }
+  .note-title.bright { color: #FFD700; }
+  .note-title.purple { color: #9b59b6; }
+  .note-body {
+    font-size: 12px;
+    color: #7a6a4a;
+    line-height: 1.7;
+  }
+  .pro { color: #2ecc71 !important; }
+  .con { color: #e74c3c !important; }
+
+  /* --- Comparison note --- */
+  .compare-note {
+    max-width: 1100px;
+    margin: 20px auto 0;
+    background: rgba(212,165,55,0.06);
+    border: 1px solid rgba(212,165,55,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: #7a6a4a;
+    line-height: 1.8;
+    text-align: center;
+  }
+  .compare-note strong { color: #D4A537; font-family: 'Oswald', sans-serif; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<h1>STAT BAR — ПРОТОТИП</h1>
+<div class="subtitle">
+  Текущая проблема: <code style="color:#c0392b">maxVal = 10</code> hardcoded →
+  значения 11, 12, 15 все показываются как 100%<br>
+  Ниже три варианта решения
+</div>
+
+<div class="columns">
+
+  <!-- =============== BROKEN (current) =============== -->
+  <div class="column">
+    <div class="column-label broken">❌ СЕЙЧАС (сломано) <span class="badge badge-red">maxVal=10</span></div>
+
+    <div class="section-divider">OFFENSIVE</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🍀</span>
+          <span class="stat-name">Luck</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:100%"></div>
+      </div>
+      <div class="stat-derived"><span>Crit 5.0%</span></div>
+    </div>
+
+    <div class="section-divider">DEFENSIVE</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">❤️</span>
+          <span class="stat-name">Vitality</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:100%"></div>
+      </div>
+      <div class="stat-derived"><span>HP 175</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🛡️</span>
+          <span class="stat-name">Endurance</span>
+          <span class="class-badge">WARRIOR</span>
+        </div>
+        <!-- 15/10 = clamped to 100% — BUG -->
+        <span class="stat-value">15</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:100%"></div><!-- SAME as 10! -->
+      </div>
+      <div class="stat-derived"><span>Armor 35</span></div>
+    </div>
+
+    <div class="section-divider">MAGIC & UTILITY</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🔮</span>
+          <span class="stat-name">Intelligence</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:100%"></div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">📖</span>
+          <span class="stat-name">Wisdom</span>
+        </div>
+        <span class="stat-value">11</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:100%"></div><!-- SAME as 10! -->
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-name">Charisma</span>
+        </div>
+        <span class="stat-value">12</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:100%"></div><!-- SAME as 10! -->
+      </div>
+      <div class="stat-derived"><span>Gold +12%</span></div>
+    </div>
+
+    <div class="legend">
+      <div style="color:#c0392b;margin-bottom:4px;font-weight:600">Проблема:</div>
+      Endurance=15, Wisdom=11, Charisma=12 —<br>
+      все показывают 100% как будто они равны 10.<br>
+      Полоска не несёт никакой информации.
+    </div>
+  </div>
+
+  <!-- =============== V1: Dynamic Max =============== -->
+  <div class="column">
+    <div class="column-label v1">✅ V1 — Динамический макс <span class="badge badge-gold">max(stats)</span></div>
+
+    <div class="section-divider">OFFENSIVE</div>
+    <!-- max stat = 15 (Endurance). Scale: val/15 -->
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🍀</span>
+          <span class="stat-name">Luck</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track">
+        <!-- 10/15 = 66.7% -->
+        <div class="bar-fill bar-gold" style="width:66.7%"></div>
+      </div>
+      <div class="stat-derived"><span>Crit 5.0%</span></div>
+    </div>
+
+    <div class="section-divider">DEFENSIVE</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">❤️</span>
+          <span class="stat-name">Vitality</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:66.7%"></div>
+      </div>
+      <div class="stat-derived"><span>HP 175</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🛡️</span>
+          <span class="stat-name">Endurance</span>
+          <span class="class-badge">WARRIOR</span>
+        </div>
+        <span class="stat-value boosted">15</span>
+      </div>
+      <div class="bar-track">
+        <!-- 15/15 = 100% — visually correct -->
+        <div class="bar-fill bar-bright" style="width:100%"></div>
+      </div>
+      <div class="stat-derived"><span>Armor 35</span></div>
+    </div>
+
+    <div class="section-divider">MAGIC & UTILITY</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🔮</span>
+          <span class="stat-name">Intelligence</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-gold" style="width:66.7%"></div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">📖</span>
+          <span class="stat-name">Wisdom</span>
+        </div>
+        <span class="stat-value boosted">11</span>
+      </div>
+      <div class="bar-track">
+        <!-- 11/15 = 73.3% -->
+        <div class="bar-fill bar-bright" style="width:73.3%"></div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-name">Charisma</span>
+        </div>
+        <span class="stat-value boosted">12</span>
+      </div>
+      <div class="bar-track">
+        <!-- 12/15 = 80% -->
+        <div class="bar-fill bar-bright" style="width:80%"></div>
+      </div>
+      <div class="stat-derived"><span>Gold +12%</span></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="swatch bar-gold"></div>
+        <span>Базовый стат (≤ среднего)</span>
+      </div>
+      <div class="legend-item">
+        <div class="swatch bar-bright"></div>
+        <span>Выше базы — <span style="color:#FFD700">яркое золото</span></span>
+      </div>
+      <div style="color:#7a6a4a;margin-top:6px;font-size:11px">
+        maxVal = max(все статы персонажа)<br>
+        Код: <code style="color:#D4A537">let maxVal = stats.values.max() ?? 10</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== V2: Fixed max with tick =============== -->
+  <div class="column">
+    <div class="column-label v2">✅ V2 — Фиксированный макс + тик <span class="badge badge-gold">max=20</span></div>
+
+    <div class="section-divider">OFFENSIVE</div>
+    <!-- max = 20 fixed. Tick at 10 = 50% -->
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🍀</span>
+          <span class="stat-name">Luck</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track" style="overflow:visible">
+        <div class="bar-fill bar-gold" style="width:50%;border-radius:4px"></div>
+        <div class="tick" style="left:50%"></div><!-- base=10 marker -->
+      </div>
+      <div class="stat-derived"><span>Crit 5.0%</span></div>
+    </div>
+
+    <div class="section-divider">DEFENSIVE</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">❤️</span>
+          <span class="stat-name">Vitality</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track" style="overflow:visible">
+        <div class="bar-fill bar-gold" style="width:50%;border-radius:4px"></div>
+        <div class="tick" style="left:50%"></div>
+      </div>
+      <div class="stat-derived"><span>HP 175</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🛡️</span>
+          <span class="stat-name">Endurance</span>
+          <span class="class-badge">WARRIOR</span>
+        </div>
+        <span class="stat-value boosted">15</span>
+      </div>
+      <div class="bar-track" style="overflow:visible">
+        <!-- 15/20 = 75% -->
+        <div class="bar-fill bar-bright" style="width:75%;border-radius:4px"></div>
+        <div class="tick" style="left:50%"></div>
+      </div>
+      <div class="stat-derived"><span>Armor 35</span></div>
+    </div>
+
+    <div class="section-divider">MAGIC & UTILITY</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🔮</span>
+          <span class="stat-name">Intelligence</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track" style="overflow:visible">
+        <div class="bar-fill bar-gold" style="width:50%;border-radius:4px"></div>
+        <div class="tick" style="left:50%"></div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">📖</span>
+          <span class="stat-name">Wisdom</span>
+        </div>
+        <span class="stat-value boosted">11</span>
+      </div>
+      <div class="bar-track" style="overflow:visible">
+        <!-- 11/20 = 55% -->
+        <div class="bar-fill bar-bright" style="width:55%;border-radius:4px"></div>
+        <div class="tick" style="left:50%"></div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-name">Charisma</span>
+        </div>
+        <span class="stat-value boosted">12</span>
+      </div>
+      <div class="bar-track" style="overflow:visible">
+        <!-- 12/20 = 60% -->
+        <div class="bar-fill bar-bright" style="width:60%;border-radius:4px"></div>
+        <div class="tick" style="left:50%"></div>
+      </div>
+      <div class="stat-derived"><span>Gold +12%</span></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="swatch" style="background:rgba(255,215,0,0.5);width:1px;height:12px;border-radius:0;margin:0 4px"></div>
+        <span>Тик-метка = стартовый уровень (10)</span>
+      </div>
+      <div style="color:#7a6a4a;margin-top:6px;font-size:11px">
+        maxVal = 20 (фиксировано для всех уровней)<br>
+        Тик показывает где начало — куда ты добавил очки.<br>
+        Код: <code style="color:#D4A537">let maxVal: CGFloat = 20</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== V3: Two-Zone Bar =============== -->
+  <div class="column">
+    <div class="column-label v3">⭐ V3 — Двухзонная полоска <span class="badge badge-best">РЕКОМЕНДУЮ</span></div>
+
+    <div class="section-divider">OFFENSIVE</div>
+    <!-- base zone: 0-10, bonus zone: 10+ -->
+    <!-- total track = base 10 (50%) + bonus up to 10 more -->
+    <!-- Zone widths: base = val/10 * 50%, bonus = (val-10)/10 * 50% -->
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🍀</span>
+          <span class="stat-name">Luck</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <!-- val=10: base zone = 50%, bonus = 0% -->
+      <div class="bar-track-zoned" style="height:8px;background:#1e1a10;border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px">
+        <div class="zone-base" style="width:50%;border-radius:4px"></div>
+        <!-- separator at 50% -->
+      </div>
+      <div class="stat-derived"><span>Crit 5.0%</span></div>
+    </div>
+
+    <div class="section-divider">DEFENSIVE</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">❤️</span>
+          <span class="stat-name">Vitality</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track-zoned" style="height:8px;background:#1e1a10;border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px">
+        <div class="zone-base" style="width:50%;border-radius:4px"></div>
+      </div>
+      <div class="stat-derived"><span>HP 175</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🛡️</span>
+          <span class="stat-name">Endurance</span>
+          <span class="class-badge">WARRIOR</span>
+        </div>
+        <span class="stat-value boosted">15</span>
+      </div>
+      <!-- val=15: base=50%, bonus=(15-10)/10*50%=25% → total=75% -->
+      <!-- но зоны визуально РАЗНЫЕ: base dim gold, bonus bright -->
+      <div class="bar-track-zoned" style="height:8px;background:#1e1a10;border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px">
+        <!-- base zone: 50% -->
+        <div style="position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(to right,rgba(212,165,55,0.5),#8B6914);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.2),transparent);border-radius:4px 0 0 0;"></div>
+        </div>
+        <!-- separator -->
+        <div style="position:absolute;top:0;left:50%;width:1.5px;height:100%;background:#0a0a0f;z-index:2;"></div>
+        <!-- bonus zone: starts at 50%, width=25% -->
+        <div style="position:absolute;top:0;left:50%;width:25%;height:100%;background:linear-gradient(to right,#cc8800,#FFD700);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.3),transparent);"></div>
+        </div>
+      </div>
+      <div class="stat-derived"><span>Armor 35</span></div>
+    </div>
+
+    <div class="section-divider">MAGIC & UTILITY</div>
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">🔮</span>
+          <span class="stat-name">Intelligence</span>
+        </div>
+        <span class="stat-value">10</span>
+      </div>
+      <div class="bar-track-zoned" style="height:8px;background:#1e1a10;border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px">
+        <div class="zone-base" style="width:50%;border-radius:4px"></div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">📖</span>
+          <span class="stat-name">Wisdom</span>
+        </div>
+        <span class="stat-value boosted">11</span>
+      </div>
+      <!-- val=11: base=50%, bonus=(11-10)/10*50%=5% → total=55% -->
+      <div class="bar-track-zoned" style="height:8px;background:#1e1a10;border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px">
+        <div style="position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(to right,rgba(212,165,55,0.5),#8B6914);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.2),transparent);"></div>
+        </div>
+        <div style="position:absolute;top:0;left:50%;width:1.5px;height:100%;background:#0a0a0f;z-index:2;"></div>
+        <div style="position:absolute;top:0;left:50%;width:5%;height:100%;background:linear-gradient(to right,#cc8800,#FFD700);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.3),transparent);"></div>
+        </div>
+      </div>
+      <div class="stat-derived"><span>M.Resist 27</span></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-header">
+        <div class="stat-name-group">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-name">Charisma</span>
+        </div>
+        <span class="stat-value boosted">12</span>
+      </div>
+      <!-- val=12: base=50%, bonus=(12-10)/10*50%=10% → total=60% -->
+      <div class="bar-track-zoned" style="height:8px;background:#1e1a10;border-radius:4px;overflow:hidden;position:relative;margin-bottom:4px">
+        <div style="position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(to right,rgba(212,165,55,0.5),#8B6914);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.2),transparent);"></div>
+        </div>
+        <div style="position:absolute;top:0;left:50%;width:1.5px;height:100%;background:#0a0a0f;z-index:2;"></div>
+        <div style="position:absolute;top:0;left:50%;width:10%;height:100%;background:linear-gradient(to right,#cc8800,#FFD700);overflow:hidden;">
+          <div style="position:absolute;top:0;left:0;right:0;height:50%;background:linear-gradient(to bottom,rgba(255,255,255,0.3),transparent);"></div>
+        </div>
+      </div>
+      <div class="stat-derived"><span>Gold +12%</span></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="swatch" style="background:linear-gradient(to right,rgba(212,165,55,0.5),#8B6914)"></div>
+        <span>Базовая зона (0–10): тусклое золото</span>
+      </div>
+      <div class="legend-item">
+        <div class="swatch" style="background:linear-gradient(to right,#cc8800,#FFD700)"></div>
+        <span>Бонусная зона (10+): яркое золото</span>
+      </div>
+      <div style="color:#7a6a4a;margin-top:6px;font-size:11px">
+        Разделитель показывает "стартовую точку".<br>
+        Сразу видно: сколько добавлено сверх базы.<br>
+        Endurance=15 → 50% база + 25% бонус = WARRIOR!<br>
+        Wisdom=11 → 50% + крошечная яркая полоска.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notes -->
+<div class="notes">
+  <div class="note-card">
+    <div class="note-title red">❌ ТЕКУЩИЙ (maxVal=10)</div>
+    <div class="note-body">
+      <span class="con">−</span> Все статы ≥10 выглядят одинаково (100%)<br>
+      <span class="con">−</span> Полоска не несёт никакой информации<br>
+      <span class="con">−</span> Warrior Endurance=15 неотличим от Luck=10<br>
+      <span class="con">−</span> Рост статов по уровням полностью невидим
+    </div>
+  </div>
+  <div class="note-card">
+    <div class="note-title gold">V1 — Динамический макс</div>
+    <div class="note-body">
+      <span class="pro">+</span> Просто реализовать (1 строка кода)<br>
+      <span class="pro">+</span> Всегда есть разница между статами<br>
+      <span class="con">−</span> Нельзя сравнивать персонажей между собой<br>
+      <span class="con">−</span> Если все статы = 10, снова все 100%<br>
+      <span class="con">−</span> "Лучший стат" всегда выглядит как 100% — вводит в заблуждение
+    </div>
+  </div>
+  <div class="note-card">
+    <div class="note-title bright">V2 — Фиксированный макс + тик</div>
+    <div class="note-body">
+      <span class="pro">+</span> Сравнимо между персонажами<br>
+      <span class="pro">+</span> Тик показывает "стартовую точку"<br>
+      <span class="con">−</span> Нужно выбрать правильный maxVal (20? 25?)<br>
+      <span class="con">−</span> Если maxVal устареет при патче — полоски снова сломаются<br>
+      <span class="con">−</span> Тик маленький — игрок может не заметить
+    </div>
+  </div>
+  <div class="note-card">
+    <div class="note-title purple">⭐ V3 — Двухзонная (рекомендую)</div>
+    <div class="note-body">
+      <span class="pro">+</span> Визуально разделяет BASE и BONUS очень чётко<br>
+      <span class="pro">+</span> Разделитель = "я вложил очки выше базы"<br>
+      <span class="pro">+</span> Маленькая бонус-полоска у Wisdom=11 говорит "почти база"<br>
+      <span class="pro">+</span> Большая у Endurance=15 говорит "класс инвестировал сюда"<br>
+      <span class="pro">+</span> Не нужен maxVal для всей игры — maxBase=10 это константа<br>
+      <span class="con">−</span> Чуть сложнее в коде (2 прямоугольника вместо 1)
+    </div>
+  </div>
+</div>
+
+<div class="compare-note">
+  <strong>ИТОГ:</strong> Все три варианта лучше текущего. V1 — быстрый фикс за 1 строку.
+  V3 — самый информативный, лучше всего передаёт прогрессию персонажа.<br>
+  Скажи какой нравится — реализую в SwiftUI.
+</div>
+
+</body>
+</html>

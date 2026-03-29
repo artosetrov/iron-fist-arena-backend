@@ -78,6 +78,7 @@ final class InventoryService {
             )
             // FTUE: mark gear up complete on first equip
             TutorialManager.shared.completeFTUEObjective(.gearUp)
+            HapticManager.light()
             return parseInventoryResponse(response)
         } catch let error as APIError {
             if case .clientError(_, let message) = error {
@@ -105,6 +106,7 @@ final class InventoryService {
                 APIEndpoints.inventoryUnequip,
                 body: body
             )
+            HapticManager.light()
             return parseInventoryResponse(response)
         } catch {
             appState.showToast("Unequip failed", subtitle: "Check connection and try again", type: .error)
@@ -132,6 +134,7 @@ final class InventoryService {
             if let gold {
                 appState.currentCharacter?.gold = gold
                 appState.cachedInventory = nil // invalidate so next load fetches fresh data
+                HapticManager.light()
             }
             return SellResult(gold: gold ?? 0, soldFor: soldFor)
         } catch {
@@ -190,6 +193,7 @@ final class InventoryService {
             }
             // Invalidate inventory cache (consumable quantity changed)
             appState.cachedInventory = nil
+            HapticManager.light()
             return true
         } catch let error as APIError {
             switch error {
@@ -223,6 +227,7 @@ final class InventoryService {
                     char.gold = gold
                     appState.currentCharacter = char
                 }
+                HapticManager.light()
                 return slots
             }
             return nil
@@ -290,7 +295,7 @@ final class InventoryService {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         do {
             let items = try decoder.decode([Item].self, from: jsonData)
-            appState.cachedInventory = items
+            // Note: cachedInventory is updated by the caller (InventoryViewModel) — don't double-set here
             return items
         } catch {
             #if DEBUG

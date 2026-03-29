@@ -112,7 +112,9 @@ enum MockData {
         staminaCurrent: 80,
         staminaMax: 120,
         matchId: "mock-match-001",
-        durabilityDegraded: []
+        durabilityDegraded: [],
+        hpCurrent: 850,
+        hpMax: 1000
     )
 
     // MARK: - Helpers

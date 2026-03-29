@@ -114,10 +114,14 @@ final class InventoryViewModel {
         appState.showToast("Equipped \(item.displayName)", type: .reward)
 
         if let updated = await service.equip(inventoryId: item.id) {
-            // Only update if server response differs from optimistic state
-            // to avoid the flicker of item disappearing then reappearing
-            appState.cachedInventory = updated
-            items = updated
+            // Only apply server response if equipped set differs from optimistic prediction.
+            // This prevents a second redundant re-render when optimistic was already correct.
+            let optimisticEquipped = Set(items.filter { $0.isEquipped == true }.map(\.id))
+            let serverEquipped = Set(updated.filter { $0.isEquipped == true }.map(\.id))
+            if optimisticEquipped != serverEquipped {
+                items = updated
+                appState.cachedInventory = updated
+            }
         } else {
             // Rollback on failure
             items = previousItems
@@ -135,8 +139,13 @@ final class InventoryViewModel {
         appState.showToast("Unequipped \(item.displayName)", type: .info)
 
         if let updated = await service.unequip(inventoryId: item.id) {
-            appState.cachedInventory = updated
-            items = updated
+            // Only apply server response if equipped set differs from optimistic prediction.
+            let optimisticEquipped = Set(items.filter { $0.isEquipped == true }.map(\.id))
+            let serverEquipped = Set(updated.filter { $0.isEquipped == true }.map(\.id))
+            if optimisticEquipped != serverEquipped {
+                items = updated
+                appState.cachedInventory = updated
+            }
         } else {
             items = previousItems
             appState.cachedInventory = previousItems

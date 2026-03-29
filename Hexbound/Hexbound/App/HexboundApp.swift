@@ -21,6 +21,8 @@ struct HexboundApp: App {
                         AuthRouterView()
                     case .characterSelect:
                         CharacterSelectionView()
+                    case .loreIntro(let heroName):
+                        LoreIntroView(heroName: heroName)
                     case .game:
                         MainRouterView()
                     }
@@ -30,7 +32,8 @@ struct HexboundApp: App {
             .environment(cache)
             .environment(pushService)
             .overlay(alignment: .top) { OfflineBannerView() }
-            .overlay(alignment: .top) { ToastOverlayView() .environment(appState) }
+            .overlay(alignment: .top) { CelebrationBannerOverlay().environment(appState) }
+            .overlay(alignment: .bottom) { ToastOverlayView().environment(appState) }
             .overlay { if appState.isLoading { LoadingOverlay() } }
             .overlay { if appState.showLevelUpModal { LevelUpModalView().environment(appState) } }
             .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
@@ -40,6 +43,10 @@ struct HexboundApp: App {
                 // Wire push service into AppDelegate for token forwarding
                 appDelegate.pushService = pushService
                 await checkAutoLogin()
+
+                // Background asset sync — downloads new/updated assets from Supabase
+                // Non-blocking: app works fine with bundle + existing cache while this runs
+                Task { await AssetManager.shared.syncWithServer() }
             }
             .onOpenURL { url in
                 _ = GoogleSignInHelper.handle(url)

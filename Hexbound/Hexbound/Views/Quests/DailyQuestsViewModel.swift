@@ -85,7 +85,7 @@ final class DailyQuestsViewModel {
         }
         claimingQuestId = nil
         HapticManager.success()
-        appState.showToast("Quest Complete! \(quest.title)", type: .quest)
+        appState.showCelebration(.questComplete, title: "Quest Complete!", subtitle: quest.title)
 
         // ── Fire API in background ──
         Task { [weak self] in
@@ -109,7 +109,6 @@ final class DailyQuestsViewModel {
         bonusClaimedToday = true
         isClaimingBonus = false
         HapticManager.success()
-        appState.showToast("Bonus: +500 Gold, +10 Gems!", type: .reward)
 
         // ── Fire API in background ──
         Task { [weak self] in

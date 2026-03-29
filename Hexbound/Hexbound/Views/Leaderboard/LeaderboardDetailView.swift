@@ -4,7 +4,6 @@ struct LeaderboardDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: LeaderboardViewModel?
-    @State private var selectedPlayerForDetail: LeaderboardEntry?
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
@@ -60,28 +59,8 @@ struct LeaderboardDetailView: View {
             }
 
         }
-        .sheet(item: $selectedPlayerForDetail) { player in
-            if let character = appState.currentCharacter {
-                LeaderboardPlayerDetailSheet(
-                    entry: player,
-                    playerCharacter: character,
-                    onMessage: {
-                        selectedPlayerForDetail = nil
-                        appState.mainPath.append(
-                            AppRoute.guildHallMessage(
-                                characterId: player.characterId,
-                                characterName: player.characterName
-                            )
-                        )
-                    },
-                    onAddFriend: {
-                        selectedPlayerForDetail = nil
-                        // TODO: Send friend request
-                    }
-                )
-            }
-        }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -203,7 +182,10 @@ struct LeaderboardDetailView: View {
                             isSelf: isMe,
                             valueLabel: tabKey,
                             onTap: {
-                                selectedPlayerForDetail = entry
+                                appState.mainPath.append(AppRoute.characterProfile(
+                                    characterId: entry.characterId,
+                                    characterName: entry.characterName
+                                ))
                             }
                         )
                         .id(entry.characterId)
@@ -309,7 +291,10 @@ struct LeaderboardDetailView: View {
         let charClass = CharacterClass(rawValue: result.characterClass) ?? .warrior
         Button {
             guard !isMe else { return }
-            selectedPlayerForDetail = result.toLeaderboardEntry()
+            appState.mainPath.append(AppRoute.characterProfile(
+                characterId: result.characterId,
+                characterName: result.characterName
+            ))
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 // Portrait (Fix #1/#2 — avatar instead of emoji)

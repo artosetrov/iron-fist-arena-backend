@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
-import { applyPrestigeBonus } from './progression'
+import { getPrestigeConfig } from './live-config'
 import { calculateDerivedStatsFromConfig, getUpgradeStatBonus } from './item-balance'
 
 type TransactionClient = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
@@ -110,17 +110,20 @@ export async function recalculateDerivedStats(characterId: string, tx?: Transact
     cha: character.cha + eqBonus.cha,
   }
 
-  // Apply prestige bonus: +5% per prestige level to each stat
+  // Apply prestige bonus: +5% per prestige level to each stat.
+  // Fetch config ONCE, then apply to all 8 stats synchronously (was: 8 sequential DB calls).
   const prestige = character.prestigeLevel ?? 0
+  const prestigeConfig = await getPrestigeConfig()
+  const prestigeMultiplier = 1 + prestige * prestigeConfig.STAT_BONUS_PER_PRESTIGE
   const totalStats: StatBlock = {
-    str: await applyPrestigeBonus(rawTotalStats.str, prestige),
-    agi: await applyPrestigeBonus(rawTotalStats.agi, prestige),
-    vit: await applyPrestigeBonus(rawTotalStats.vit, prestige),
-    end: await applyPrestigeBonus(rawTotalStats.end, prestige),
-    int: await applyPrestigeBonus(rawTotalStats.int, prestige),
-    wis: await applyPrestigeBonus(rawTotalStats.wis, prestige),
-    luk: await applyPrestigeBonus(rawTotalStats.luk, prestige),
-    cha: await applyPrestigeBonus(rawTotalStats.cha, prestige),
+    str: Math.floor(rawTotalStats.str * prestigeMultiplier),
+    agi: Math.floor(rawTotalStats.agi * prestigeMultiplier),
+    vit: Math.floor(rawTotalStats.vit * prestigeMultiplier),
+    end: Math.floor(rawTotalStats.end * prestigeMultiplier),
+    int: Math.floor(rawTotalStats.int * prestigeMultiplier),
+    wis: Math.floor(rawTotalStats.wis * prestigeMultiplier),
+    luk: Math.floor(rawTotalStats.luk * prestigeMultiplier),
+    cha: Math.floor(rawTotalStats.cha * prestigeMultiplier),
   }
 
   // Use config-driven derived stat calculation

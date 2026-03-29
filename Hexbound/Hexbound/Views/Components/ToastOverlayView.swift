@@ -10,11 +10,11 @@ struct ToastOverlayView: View {
                 ToastView(toast: toast, onDismiss: {
                     appState.dismissToast(toast.id)
                 })
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.top, LayoutConstants.spaceSM)
+        .padding(.bottom, LayoutConstants.spaceSM)
         .animation(.easeOut(duration: 0.3), value: appState.toasts.count)
     }
 }
@@ -27,7 +27,7 @@ struct ToastView: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            // Type icon in tinted container (replaces 8px dot — a11y: color + icon + text)
+            // Type icon in tinted container (a11y: color + icon + text)
             ZStack {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .fill(toast.type.color.opacity(0.15))
@@ -103,30 +103,30 @@ struct ToastView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(toast.type.color.opacity(0.5), lineWidth: 1)
         )
-        // Swipe handle hint
-        .overlay(alignment: .top) {
+        // Swipe handle hint (at bottom since toast is at bottom of screen)
+        .overlay(alignment: .bottom) {
             Capsule()
                 .fill(DarkFantasyTheme.textTertiary.opacity(0.3))
                 .frame(width: 24, height: 3)
-                .padding(.top, 4)
+                .padding(.bottom, 4)
         }
         .shadow(color: toast.type.color.opacity(0.15), radius: 6, y: 0)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 8, y: 4)
-        // Swipe up to dismiss
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 8, y: -4)
+        // Swipe down to dismiss (changed from swipe up — toast is now at bottom)
         .offset(y: dragOffset)
         .gesture(
             DragGesture()
                 .onChanged { value in
-                    // Only allow upward drag
-                    if value.translation.height < 0 {
+                    // Only allow downward drag (positive Y)
+                    if value.translation.height > 0 {
                         dragOffset = value.translation.height
                     }
                 }
                 .onEnded { value in
-                    if value.translation.height < -30 {
-                        // Dismiss
+                    if value.translation.height > 30 {
+                        // Dismiss downward
                         withAnimation(.easeOut(duration: 0.2)) {
-                            dragOffset = -100
+                            dragOffset = 100
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                             onDismiss()
@@ -142,6 +142,6 @@ struct ToastView: View {
         .accessibilityLabel("\(toast.title): \(toast.subtitle)")
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.updatesFrequently)
-        .accessibilityHint("Swipe up to dismiss")
+        .accessibilityHint("Swipe down to dismiss")
     }
 }

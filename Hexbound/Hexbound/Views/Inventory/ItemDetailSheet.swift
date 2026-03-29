@@ -17,6 +17,8 @@ struct ItemDetailSheet: View {
     var shopMode: ShopContext? = nil
     /// Player's current level — used to show "You: Level X" in shop mode
     var playerLevel: Int = 1
+    /// View-only mode — hides economy, upgrade, and action buttons (used for opponent item inspection)
+    var viewMode: Bool = false
 
     struct ShopContext {
         let price: Int
@@ -106,13 +108,13 @@ struct ItemDetailSheet: View {
                         // SECTION 4 — Effects
                         effectsSection
 
-                        // SECTION 5 — Economy (hide in shop mode)
-                        if shopMode == nil {
+                        // SECTION 5 — Economy (hide in shop mode and view mode)
+                        if shopMode == nil && !viewMode {
                             economySection
                         }
 
-                        // SECTION 6 — Upgrade (hide in shop mode)
-                        if shopMode == nil {
+                        // SECTION 6 — Upgrade (hide in shop mode and view mode)
+                        if shopMode == nil && !viewMode {
                             upgradeInfoSection
                         }
 
@@ -159,7 +161,7 @@ struct ItemDetailSheet: View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
             // Item icon — no background, larger
             ItemImageView(
-                imageKey: item.imageKey,
+                imageKey: item.resolvedImageKey,
                 imageUrl: item.imageUrl,
                 systemIcon: item.consumableIcon,
                 systemIconColor: item.consumableIconColor,
@@ -178,10 +180,15 @@ struct ItemDetailSheet: View {
                     .accessibilityLabel("Item name")
 
                 VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                    badgePill(item.itemType.displayName, style: .secondary)
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        badgePill(item.itemType.displayName, style: .secondary)
+                        if item.isTwoHanded == true {
+                            badgePill("Two-Handed", style: .twoHanded)
+                        }
+                    }
                     badgePill(item.rarity.displayName, style: .rarity)
                 }
-                .accessibilityLabel("\(item.itemType.displayName) \(item.rarity.displayName) rarity")
+                .accessibilityLabel("\(item.itemType.displayName)\(item.isTwoHanded == true ? " two-handed" : "") \(item.rarity.displayName) rarity")
                 .accessibilityElement(children: .combine)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
@@ -381,9 +388,21 @@ struct ItemDetailSheet: View {
     private var effectsSection: some View {
         let hasSpecial = item.specialEffect.map { !$0.isEmpty } ?? false
         let hasPassive = item.uniquePassive.map { !$0.isEmpty } ?? false
+        let isTwoHanded = item.isTwoHanded == true
 
-        if hasSpecial || hasPassive {
+        if hasSpecial || hasPassive || isTwoHanded {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+                if isTwoHanded {
+                    HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+                        Image(systemName: "arrow.left.arrow.right")
+                            .font(.system(size: 12))
+                            .foregroundStyle(DarkFantasyTheme.stamina)
+                        Text("Two-Handed — occupies weapon + off-hand slot")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.stamina)
+                    }
+                    .accessibilityLabel("Two-handed weapon: occupies both weapon and off-hand slots")
+                }
                 if let special = item.specialEffect, !special.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "sparkles")
@@ -545,7 +564,10 @@ struct ItemDetailSheet: View {
     @ViewBuilder
     private var actionButtons: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            if let shop = shopMode {
+            if viewMode {
+                Button("CLOSE") { onClose() }
+                    .buttonStyle(.secondary)
+            } else if let shop = shopMode {
                 shopBuySection(shop)
             } else if showUpgradeConfirm {
                 upgradeConfirmPanel
@@ -815,20 +837,49 @@ struct ItemDetailSheet: View {
     }
 
     private func badgePill(_ text: String, style: BadgeStyle) -> some View {
-        Text(text)
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-            .foregroundStyle(style == .rarity ? rarityColor : DarkFantasyTheme.textSecondary)
-            .padding(.horizontal, LayoutConstants.spaceXS)
-            .padding(.vertical, LayoutConstants.space2XS)
-            .background(
-                Capsule()
-                    .fill(style == .rarity ? rarityColor.opacity(0.15) : DarkFantasyTheme.bgTertiary)
-            )
-            .overlay(
-                Capsule()
-                    .stroke(style == .rarity ? rarityColor.opacity(0.4) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
+        let textColor: Color = {
+            switch style {
+            case .rarity: return rarityColor
+            case .twoHanded: return DarkFantasyTheme.stamina
+            case .secondary: return DarkFantasyTheme.textSecondary
+            }
+        }()
+        let fillColor: Color = {
+            switch style {
+            case .rarity: return rarityColor.opacity(0.15)
+            case .twoHanded: return DarkFantasyTheme.stamina.opacity(0.12)
+            case .secondary: return DarkFantasyTheme.bgTertiary
+            }
+        }()
+        let strokeColor: Color = {
+            switch style {
+            case .rarity: return rarityColor.opacity(0.4)
+            case .twoHanded: return DarkFantasyTheme.stamina.opacity(0.35)
+            case .secondary: return DarkFantasyTheme.borderSubtle
+            }
+        }()
+
+        return HStack(spacing: LayoutConstants.space2XS) {
+            if style == .twoHanded {
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.system(size: 9))
+                    .foregroundStyle(textColor)
+            }
+            Text(text)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .foregroundStyle(textColor)
+        }
+        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(.vertical, LayoutConstants.space2XS)
+        .background(
+            Capsule()
+                .fill(fillColor)
+        )
+        .overlay(
+            Capsule()
+                .stroke(strokeColor, lineWidth: 1)
+        )
     }
 
-    private enum BadgeStyle { case secondary, rarity }
+    private enum BadgeStyle { case secondary, rarity, twoHanded }
 }

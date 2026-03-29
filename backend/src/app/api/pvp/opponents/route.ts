@@ -65,23 +65,23 @@ export async function GET(req: NextRequest) {
       gearScore: true,
     } as const
 
-    // Phase 1: Rating + Level + Gear score (tightest match)
-    const rawOpponents = await prisma.character.findMany({
-      where: {
-        id: { not: characterId },
-        level: { gte: minLevel, lte: maxLevel },
-        gearScore: { gte: minGear, lte: maxGear },
-        pvpRating: { gte: minRating, lte: maxRating },
-      },
-      select: selectFields,
-      orderBy: { level: 'asc' },
-      take: 15,
-    })
-
-    // Phase 2: Level + Gear score only (drop rating filter)
-    let candidates = rawOpponents
-    if (candidates.length < MAX_OPPONENTS) {
-      const fallback = await prisma.character.findMany({
+    // Run all 4 matchmaking phases in parallel (was: sequential, each waiting on the previous).
+    // Phase 1 (tightest): rating + level + gear. Phase 4 (broadest): any character.
+    const [phase1, phase2, phase3, phase4] = await Promise.all([
+      // Phase 1: Rating + Level + Gear score (tightest match)
+      prisma.character.findMany({
+        where: {
+          id: { not: characterId },
+          level: { gte: minLevel, lte: maxLevel },
+          gearScore: { gte: minGear, lte: maxGear },
+          pvpRating: { gte: minRating, lte: maxRating },
+        },
+        select: selectFields,
+        orderBy: { level: 'asc' },
+        take: 15,
+      }),
+      // Phase 2: Level + Gear score only (drop rating filter)
+      prisma.character.findMany({
         where: {
           id: { not: characterId },
           level: { gte: minLevel, lte: maxLevel },
@@ -90,16 +90,9 @@ export async function GET(req: NextRequest) {
         select: selectFields,
         orderBy: { level: 'asc' },
         take: 15,
-      })
-      const seenIds = new Set(candidates.map((c) => c.id))
-      for (const fb of fallback) {
-        if (!seenIds.has(fb.id)) candidates.push(fb)
-      }
-    }
-
-    // Phase 3: Level only (drop gear filter)
-    if (candidates.length < MAX_OPPONENTS) {
-      const fallback = await prisma.character.findMany({
+      }),
+      // Phase 3: Level only (drop gear filter)
+      prisma.character.findMany({
         where: {
           id: { not: characterId },
           level: { gte: minLevel, lte: maxLevel },
@@ -107,27 +100,28 @@ export async function GET(req: NextRequest) {
         select: selectFields,
         orderBy: { level: 'asc' },
         take: 15,
-      })
-      const seenIds = new Set(candidates.map((c) => c.id))
-      for (const fb of fallback) {
-        if (!seenIds.has(fb.id)) candidates.push(fb)
-      }
-    }
-
-    // Phase 4: Any characters (last resort for small player pools)
-    if (candidates.length < MAX_OPPONENTS) {
-      const anyFallback = await prisma.character.findMany({
-        where: {
-          id: { not: characterId },
-        },
+      }),
+      // Phase 4: Any characters (last resort for small player pools)
+      prisma.character.findMany({
+        where: { id: { not: characterId } },
         select: selectFields,
         orderBy: { level: 'asc' },
         take: 15,
-      })
-      const seenIds = new Set(candidates.map((c) => c.id))
-      for (const fb of anyFallback) {
-        if (!seenIds.has(fb.id)) candidates.push(fb)
+      }),
+    ])
+
+    // Merge phases in priority order, deduplicating by id
+    const seen = new Set<string>()
+    const candidates: typeof phase1 = []
+    for (const batch of [phase1, phase2, phase3, phase4]) {
+      for (const c of batch) {
+        if (!seen.has(c.id)) {
+          seen.add(c.id)
+          candidates.push(c)
+        }
+        if (candidates.length >= MAX_OPPONENTS * 3) break // enough to sort from
       }
+      if (candidates.length >= MAX_OPPONENTS * 3) break
     }
 
     // Sort by combined rating + level + gear score closeness, take top 5

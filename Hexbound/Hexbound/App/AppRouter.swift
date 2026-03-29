@@ -34,6 +34,7 @@ enum AppRoute: Hashable, Codable {
     // Social
     case guildHall
     case guildHallMessage(characterId: String, characterName: String)
+    case characterProfile(characterId: String, characterName: String)
 
     // Minigames
     case tavern
@@ -139,6 +140,8 @@ struct MainRouterView: View {
         case .guildHall: GuildHallDetailView()
         case .guildHallMessage(let characterId, let characterName):
             GuildHallDetailView(openMessageTo: characterId, messageName: characterName)
+        case .characterProfile(let characterId, let characterName):
+            CharacterProfileView(characterId: characterId, characterName: characterName)
 
         // Minigames
         case .tavern: TavernDetailView()
@@ -235,21 +238,15 @@ struct PlaceholderView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    // Безопасное удаление из стека навигации
+                HubLogoButton {
                     if !appState.mainPath.isEmpty {
                         appState.mainPath.removeLast()
                     } else if !appState.authPath.isEmpty {
                         appState.authPath.removeLast()
                     }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }
         }

@@ -76,7 +76,6 @@ final class BattlePassViewModel {
         }
         claimingLevel = nil
         HapticManager.success()
-        appState.showToast("Reward Claimed!", type: .reward)
 
         // ── Fire API in background, refresh for server-true state ──
         Task { [weak self] in

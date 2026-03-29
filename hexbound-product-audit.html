@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Full Product Audit</title>
+<style>
+  :root {
+    --bg: #0d0d12;
+    --bg2: #14141c;
+    --bg3: #1a1a28;
+    --gold: #d4a537;
+    --gold-dim: #8b6914;
+    --gold-bright: #ffd700;
+    --text: #e8e0d0;
+    --text-dim: #9a9080;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --success: #2ecc71;
+    --info: #5b9bd5;
+    --purple: #a855f7;
+    --border: #2a2a3a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 0;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--bg2), var(--bg3));
+    border-bottom: 2px solid var(--gold-dim);
+    padding: 40px 32px 32px;
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 28px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .header .subtitle {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    transition: all .2s;
+  }
+  .nav a:hover {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+    background: rgba(212, 165, 55, 0.08);
+  }
+  .content { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+  .section {
+    margin-bottom: 48px;
+  }
+  .section h2 {
+    color: var(--gold);
+    font-size: 22px;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--gold-dim);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  .section h3 {
+    color: var(--gold-bright);
+    font-size: 16px;
+    margin: 20px 0 10px;
+  }
+  p { margin-bottom: 12px; }
+
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .verdict-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .verdict-card .label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .verdict-card .grade { font-size: 28px; font-weight: bold; }
+  .verdict-card .note { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .grade-a { color: var(--success); }
+  .grade-b { color: var(--info); }
+  .grade-c { color: var(--warning); }
+  .grade-d { color: var(--danger); }
+
+  .finding {
+    background: var(--bg2);
+    border-left: 3px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .finding.critical { border-left-color: var(--danger); }
+  .finding.high { border-left-color: var(--warning); }
+  .finding.medium { border-left-color: var(--info); }
+  .finding.low { border-left-color: var(--success); }
+  .finding .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+  }
+  .finding.critical .tag { background: rgba(231,76,60,0.2); color: var(--danger); }
+  .finding.high .tag { background: rgba(243,156,18,0.2); color: var(--warning); }
+  .finding.medium .tag { background: rgba(91,155,213,0.2); color: var(--info); }
+  .finding.low .tag { background: rgba(46,204,113,0.2); color: var(--success); }
+  .finding .title { font-weight: 600; margin-bottom: 6px; font-size: 15px; }
+  .finding .desc { font-size: 13px; color: var(--text-dim); }
+  .finding .fix { font-size: 13px; margin-top: 8px; color: var(--gold); }
+  .finding .fix::before { content: "→ "; }
+
+  .strengths {
+    background: rgba(46, 204, 113, 0.06);
+    border: 1px solid rgba(46, 204, 113, 0.2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+  }
+  .strengths h4 { color: var(--success); margin-bottom: 8px; font-size: 14px; }
+  .strengths li { margin: 4px 0; font-size: 13px; color: var(--text); list-style: none; }
+  .strengths li::before { content: "✓ "; color: var(--success); font-weight: bold; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  th, td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  th {
+    background: var(--bg3);
+    color: var(--gold);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .priority-matrix {
+    margin: 20px 0;
+  }
+  .priority-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin: 4px 0;
+    background: var(--bg2);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .priority-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .priority-num.crit { background: var(--danger); color: white; }
+  .priority-num.high { background: var(--warning); color: var(--bg); }
+  .priority-num.med { background: var(--info); color: white; }
+  .priority-impact { flex: 1; }
+  .priority-effort { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+
+  .math { font-family: 'Courier New', monospace; background: var(--bg3); padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+
+  .summary-box {
+    background: linear-gradient(135deg, rgba(212,165,55,0.08), rgba(212,165,55,0.02));
+    border: 1px solid var(--gold-dim);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+  .summary-box h4 { color: var(--gold); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Hexbound — Full Product Audit</h1>
+  <div class="subtitle">v2.0 · 27 марта 2026 · Core Loop · Economy · Balance · Progression · PvP/PvE · UX</div>
+</div>
+
+<div class="nav">
+  <a href="#overview">Обзор</a>
+  <a href="#coreloop">Core Loop</a>
+  <a href="#economy">Экономика</a>
+  <a href="#monetization">Монетизация</a>
+  <a href="#balance">Баланс</a>
+  <a href="#combat">Бой</a>
+  <a href="#progression">Прогрессия</a>
+  <a href="#pvp">PvP</a>
+  <a href="#pve">PvE</a>
+  <a href="#retention">Retention</a>
+  <a href="#ux">UX</a>
+  <a href="#risks">Риски</a>
+  <a href="#roadmap">Roadmap</a>
+</div>
+
+<div class="content">
+
+<!-- ===== OVERVIEW ===== -->
+<div class="section" id="overview">
+  <h2>Общая оценка продукта</h2>
+
+  <p>Hexbound — мобильная PvP RPG с dark fantasy эстетикой, turn-based боями, server-authoritative архитектурой и fair-play монетизацией. Продукт находится в late alpha / early beta стадии: все основные системы реализованы, но ряд критичных проблем требует решения перед soft launch.</p>
+
+  <div class="verdict-grid">
+    <div class="verdict-card">
+      <div class="label">Core Loop</div>
+      <div class="grade grade-b">B+</div>
+      <div class="note">Петля работает, но session end слабый</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">Экономика</div>
+      <div class="grade grade-b">B</div>
+      <div class="note">Fair play, но sinks недостаточно</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">Монетизация</div>
+      <div class="grade grade-b">B−</div>
+      <div class="note">Этична, но конверсия под вопросом</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">Баланс</div>
+      <div class="grade grade-c">C+</div>
+      <div class="note">Tank/Mage доминируют, CHA broken</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">Боевая система</div>
+      <div class="grade grade-b">B</div>
+      <div class="note">Solid core, мало agency</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">Прогрессия</div>
+      <div class="grade grade-b">B+</div>
+      <div class="note">Prestige хорош, midgame провал</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">PvP</div>
+      <div class="grade grade-b">B</div>
+      <div class="note">ELO solid, matchmaking wide</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">PvE</div>
+      <div class="grade grade-c">C+</div>
+      <div class="note">Dungeons однообразны</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">Retention</div>
+      <div class="grade grade-b">B−</div>
+      <div class="note">D1 hooks есть, D7/D30 слабые</div>
+    </div>
+    <div class="verdict-card">
+      <div class="label">UX</div>
+      <div class="grade grade-a">A−</div>
+      <div class="note">Premium UI, ornamental system top</div>
+    </div>
+  </div>
+
+  <div class="summary-box">
+    <h4>Общий вердикт: B (7.2/10)</h4>
+    <p>Сильный фундамент с правильной архитектурой (server-authoritative, fair play, deterministic combat). Главные проблемы: экономический дисбаланс CHA-стата, однообразие PvE контента, и слабые D30 retention hooks. Все проблемы решаемы без перестройки архитектуры.</p>
+  </div>
+</div>
+
+<!-- ===== CORE LOOP ===== -->
+<div class="section" id="coreloop">
+  <h2>1. Core Loop</h2>
+
+  <p>Основная петля: <strong>Бой → Награды → Прогрессия → Апгрейд → Бой</strong>. Классическая RPG loop с PvP как центральной активностью.</p>
+
+  <div class="strengths">
+    <h4>Что работает</h4>
+    <ul>
+      <li>PvP как core — высокая реиграбельность, каждый бой уникален</li>
+      <li>Multiple reward streams (gold, XP, items, rating) — каждый бой ощущается rewarding</li>
+      <li>Stamina gate предотвращает burnout и whale dominance</li>
+      <li>First Win of Day (2×) — сильный daily hook</li>
+      <li>Revenge mechanic добавляет narrative tension и personal stakes</li>
+    </ul>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Слабый "session end" moment</div>
+    <div class="desc">Когда stamina заканчивается, игрок просто получает "Not enough stamina" и... всё. Нет ощущения завершения сессии, нет preview что его ждёт завтра, нет cliffhanger.</div>
+    <div class="fix">Добавить Session Summary screen: показать прогресс за сессию (wins/losses, gold earned, items found), preview ближайших целей ("3 wins до achievement", "200 XP до level up"), и countdown до полной stamina.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Training mode маловостребован</div>
+    <div class="desc">Training даёт 50g win / 20g loss при cost 5 stamina. PvP даёт 200g win при cost 10 stamina. Efficiency: Training = 10g/stamina, PvP = 20g/stamina. Рационально тренироваться нет смысла.</div>
+    <div class="fix">Дать Training уникальную роль: skill XP (отдельная прогрессия), test builds без risk, или combo practice mode. Не конкурировать по gold efficiency.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Gold Mine не связан с core loop</div>
+    <div class="desc">Gold Mine — passive income 60-150g / 4hr. Не требует decision-making, нет выбора (какую руду копать, какой risk взять). Это просто таймер.</div>
+    <div class="fix">Добавить choice: разные типы mines с разным risk/reward (safe mine 80g guaranteed, risky mine 0-300g, gem mine 5% gem chance). Или привязать к геймплею: чем больше PvP wins, тем выше mining yield.</div>
+  </div>
+</div>
+
+<!-- ===== ECONOMY ===== -->
+<div class="section" id="economy">
+  <h2>2. Экономика</h2>
+
+  <p>Двухвалютная система: Gold (soft) + Gems (hard). Нет gem→gold конверсии — это хорошо.</p>
+
+  <h3>Income / Expense баланс (Level 25 player, daily)</h3>
+
+  <table>
+    <tr><th>Источник</th><th>Gold/день</th><th>Gems/день</th><th>Условие</th></tr>
+    <tr><td>PvP (5 free + ~7 paid)</td><td>~2400</td><td>0</td><td>60% win rate</td></tr>
+    <tr><td>Daily Quests (3)</td><td>~200</td><td>~3</td><td>Completion</td></tr>
+    <tr><td>Daily Login</td><td>~243 avg</td><td>~3.6 avg</td><td>7-day amortized</td></tr>
+    <tr><td>Gold Mine (3 slots)</td><td>~315</td><td>~0.6</td><td>3 sessions/day</td></tr>
+    <tr><td><strong>Total Income</strong></td><td><strong>~3,158</strong></td><td><strong>~7.2</strong></td><td></td></tr>
+  </table>
+
+  <table>
+    <tr><th>Расход</th><th>Gold/день</th><th>Gems/день</th><th>Условие</th></tr>
+    <tr><td>Repairs (~12 battles)</td><td>~600</td><td>0</td><td>Durability loss</td></tr>
+    <tr><td>Shell Game (2 plays avg)</td><td>~100 net loss</td><td>0</td><td>50% RTP</td></tr>
+    <tr><td>Upgrades (amortized)</td><td>~500</td><td>0</td><td>Ongoing progression</td></tr>
+    <tr><td>Shop (amortized)</td><td>~800</td><td>0</td><td>Occasional purchases</td></tr>
+    <tr><td><strong>Total Expense</strong></td><td><strong>~2,000</strong></td><td><strong>0</strong></td><td></td></tr>
+  </table>
+
+  <div class="finding critical">
+    <span class="tag">Critical</span>
+    <div class="title">Gold accumulation — sink deficit ~1100g/day</div>
+    <div class="desc">При текущих числах player на L25 накапливает ~1100g/день сверх расходов. За месяц это ~33,000g — достаточно чтобы купить всё в магазине. Gold теряет ценность, снижается мотивация к монетизации, а к endgame у игрока горы бесполезного gold.</div>
+    <div class="fix">Нужны дополнительные gold sinks: реролл статов экипировки (500-2000g), enchanting system (ещё один слой улучшения), cosmetic gold purchases (3000-10000g за premium skins), guild donations. Целевой sink rate: 0.7-0.85.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Gem economy слишком щедрая для F2P</div>
+    <div class="desc">F2P player зарабатывает ~7.2 gems/day ≈ 50 gems/week ≈ 216 gems/month. Battle Pass Premium стоит 500 gems. Это значит F2P игрок покупает Battle Pass каждые 2.3 месяца — при сезоне 8 недель это очень близко к "бесплатному premium".</div>
+    <div class="fix">Или снизить gem income (Daily Login Day 7: 25→15 gems), или добавить больше gem sinks (cosmetic shop rotation, limited-time offers for gems). Цель: F2P покупает BP Premium раз в 3-4 сезона, не каждый.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">CHA-stat создаёт экспоненциальный gold advantage</div>
+    <div class="desc">CHA даёт +1.5%/point к gold income. При CHA 100 (достижимо с prestige) это +150% gold. Игрок с high CHA зарабатывает в 2.5× больше gold, что ускоряет gear progression, что делает его ещё сильнее в PvP. Positive feedback loop без ceiling.</div>
+    <div class="fix">Cap CHA gold bonus на +50% (≈CHA 33). Или сделать diminishing returns: first 30 CHA = 1.5%/pt, 30-60 = 0.75%/pt, 60+ = 0.3%/pt. Общий cap ~60-75%.</div>
+  </div>
+</div>
+
+<!-- ===== MONETIZATION ===== -->
+<div class="section" id="monetization">
+  <h2>3. Монетизация</h2>
+
+  <div class="strengths">
+    <h4>Что работает</h4>
+    <ul>
+      <li>Fair play guarantee — нет pay-to-win, gems = acceleration/cosmetics only</li>
+      <li>Monthly Gem Card — 341% value, отличный retention + revenue tool</li>
+      <li>Gem pack tiering — правильная ценовая лестница от $0.99 до $49.99</li>
+      <li>No gacha — price transparency, infinite shop stock</li>
+    </ul>
+  </div>
+
+  <div class="finding critical">
+    <span class="tag">Critical</span>
+    <div class="title">Нет "first purchase" trigger</div>
+    <div class="desc">Нет стартового предложения для новых игроков. В индустрии первая покупка — ключевой conversion moment. "Starter Bundle" ($0.99 за 200 gems + rare item + 1000 gold) конвертирует 5-15% DAU, а без него — 1-3%.</div>
+    <div class="fix">Добавить one-time Starter Bundle: $0.99, value 5-10× обычной цены. Показать через 2-3 дня после регистрации, с таймером (48h). Также "First Win Bundle" — появляется после первой PvP победы.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Premium Forever ($9.99) не имеет чёткого value proposition</div>
+    <div class="desc">Описание: "One-time unlock, permanent cosmetic/account benefit, future use". Игрок не понимает за что платит. "Could unlock exclusive shop filters, faster animations" — это не product, это promise.</div>
+    <div class="fix">Определить конкретный value: exclusive avatar frame, permanent +10% XP bonus, exclusive skin line access, ad-free (если ads планируются), gold storage bonus. Конкретика продаёт.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Gold packs конкурируют с Free play loop</div>
+    <div class="desc">Gold pack $0.99 = 500 gold. Один PvP win на L25 = ~300g. Два боя дают больше, чем доллар. Gold packs кажутся bad value для любого игрока старше D1.</div>
+    <div class="fix">Repositioning: gold packs → "Instant Gear Bundle" (gold + guaranteed rare item + upgrade materials). Или убрать gold packs совсем и оставить только gem packs + monthly card.</div>
+  </div>
+</div>
+
+<!-- ===== BALANCE ===== -->
+<div class="section" id="balance">
+  <h2>4. Баланс классов и статов</h2>
+
+  <h3>Damage output per class (Level 25, base stats)</h3>
+
+  <table>
+    <tr><th>Class</th><th>Formula</th><th>Base Damage</th><th>Effective DPS</th><th>Survivability</th></tr>
+    <tr><td>Warrior</td><td>STR×1.5 + Level×2</td><td>~125</td><td>High</td><td>Medium</td></tr>
+    <tr><td>Rogue</td><td>AGI×1.5 + Level×2</td><td>~120</td><td>High (crit)</td><td>Low (dodge-based)</td></tr>
+    <tr><td>Mage</td><td>INT×1.4 + WIS×0.5 + Level×2</td><td>~135</td><td>Highest</td><td>Lowest</td></tr>
+    <tr><td>Tank</td><td>STR×1.3 + VIT×0.3 + Level×2</td><td>~110</td><td>Low</td><td>Highest (−15% dmg)</td></tr>
+  </table>
+
+  <div class="finding critical">
+    <span class="tag">Critical</span>
+    <div class="title">Mage damage scaling broken</div>
+    <div class="desc">Mage scales с двух статов (INT×1.4 + WIS×0.5 = effective 1.9 scaling), тогда как Warrior scales с одного (STR×1.5). При равном stat investment Mage наносит ~27% больше damage. Плюс magical damage проходит через magic resist, которого у большинства меньше чем armor.</div>
+    <div class="fix">Снизить WIS scaling в damage: INT×1.4 + WIS×0.25 (вместо 0.5). Или дать WIS другую роль (mana regen, cooldown reduction) вместо direct damage scaling.</div>
+  </div>
+
+  <div class="finding critical">
+    <span class="tag">Critical</span>
+    <div class="title">Tank vs Tank = бесконечный бой → timeout</div>
+    <div class="desc">Tank получает −15% damage taken. При двух Tanks с high VIT: base damage ~110, armor reduction ~33%, tank passive −15% = effective ~62 damage. При HP ~800+, это 13+ turns to kill. Почти гарантированный timeout на turn 15, winner by HP% — feels terrible.</div>
+    <div class="fix">Добавить escalation mechanic: после turn 10, damage increases +10% per turn ("battle fatigue"). Или poison/bleed DOT that ignores armor. Или "enrage" timer: after turn 12, both players take +50% damage.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">CHA Intimidation — бесполезно для offense, broken для economy</div>
+    <div class="desc">CHA в бою: max 15% damage reduction на opponent. Звучит nice, но CHA points не дают СВОЙ damage/HP/dodge — они только уменьшают чужой damage на 0.15%/point. Зато CHA даёт +1.5%/point gold. Результат: CHA — это gold farming stat, не combat stat.</div>
+    <div class="fix">Усилить combat роль CHA: добавить chance to "charm" (skip enemy turn, 1% per CHA, cap 15%). Или CHA → team morale buff (для будущего guild content). Одновременно cap gold bonus.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">LUK overloaded — crit + dodge + item drops</div>
+    <div class="desc">LUK влияет на crit chance (0.7×), dodge (0.1×), и item drop rate (+0.3%/pt). Это делает LUK "universally good" stat без tradeoff. Нет причины НЕ качать LUK.</div>
+    <div class="fix">Разделить: LUK → crit/drops only, dodge → чисто AGI-based. Или сделать diminishing returns на LUK после определённого порога.</div>
+  </div>
+</div>
+
+<!-- ===== COMBAT ===== -->
+<div class="section" id="combat">
+  <h2>5. Боевая система</h2>
+
+  <div class="strengths">
+    <h4>Что работает</h4>
+    <ul>
+      <li>Server-authoritative + seeded PRNG — zero cheat potential</li>
+      <li>Stance system добавляет prediction/counter-play layer</li>
+      <li>Damage pipeline с 12 steps — глубокая, с множеством knobs для tuning</li>
+      <li>15-turn timeout prevent infinite games</li>
+      <li>Skill cooldown system обеспечивает rotation variety</li>
+    </ul>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Мало player agency в бою</div>
+    <div class="desc">В текущей системе player выбирает stance (attack/defense zone) до боя, после чего бой проходит автоматически. Единственное решение — pre-battle stance. Нет mid-battle decisions (skill selection, target priority, potion use).</div>
+    <div class="fix">Поэтапно: Phase 1 — mid-battle stance switching (каждые 3 turns). Phase 2 — skill priority queue (player ranks skills 1-4 по приоритету). Phase 3 — conditional triggers ("use heal when HP &lt; 30%"). Каждый phase добавляет agency без breaking auto-battle.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Stance zone matching feels random</div>
+    <div class="desc">Attack zone ≠ defense zone = +5% offense для атакующего. Match = +15% defense. Это paper-scissors, но без feedback: player не знает какую zone выбрал opponent. Feels like coin flip, не тактика.</div>
+    <div class="fix">Показать opponent's preferred stance (from last 3 battles) как hint. Или добавить "tell" animations в intro phase. Или class-based stance tendencies (Warriors чаще head attack, Tanks чаще chest defense) — создаёт metagame.</div>
+  </div>
+
+  <div class="finding low">
+    <span class="tag">Low</span>
+    <div class="title">Auto-attack fallback unexciting</div>
+    <div class="desc">Когда все skills на cooldown, character uses auto-attack (base formula). Visually и mechanically не отличается от skill use. Ощущается как "waiting for cooldowns".</div>
+    <div class="fix">Make auto-attacks visually distinct (faster animation, lighter hit effect). Или дать passive auto-attack bonuses (Warrior: cleave 50% damage to second target, Rogue: apply poison stack).</div>
+  </div>
+</div>
+
+<!-- ===== PROGRESSION ===== -->
+<div class="section" id="progression">
+  <h2>6. Прогрессия</h2>
+
+  <h3>Время до ключевых milestone'ов</h3>
+
+  <table>
+    <tr><th>Milestone</th><th>Часы</th><th>Дни (casual)</th><th>Ощущение</th></tr>
+    <tr><td>Level 10</td><td>~5h</td><td>2-3d</td><td style="color:var(--success)">Fast, exciting</td></tr>
+    <tr><td>Level 25</td><td>~25h</td><td>10-14d</td><td style="color:var(--warning)">Midgame slowdown</td></tr>
+    <tr><td>Level 50</td><td>~90h</td><td>30-45d</td><td style="color:var(--danger)">Grind wall</td></tr>
+    <tr><td>Prestige 1</td><td>~90h+</td><td>45d+</td><td style="color:var(--info)">Endgame milestone</td></tr>
+    <tr><td>Prestige 5</td><td>~450h+</td><td>150d+</td><td style="color:var(--text-dim)">Whale/veteran territory</td></tr>
+  </table>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Midgame dead zone (L20-L40)</div>
+    <div class="desc">XP formula <span class="math">100N + 20N²</span> создаёт quadratic curve. L25→L26 = 1,820 XP (≈15 PvP wins). L40→L41 = 5,640 XP (≈47 wins). При 12 battles/day в stamina budget, L40→L41 = ~4 дня одного уровня. Ничего нового не открывается между L20-L40.</div>
+    <div class="fix">Milestone rewards каждые 5 levels (L20: unlock Dungeon Hard, L25: unlock Shell Game high bets, L30: unlock Revenge mode, L35: unlock premium cosmetic slot, L40: unlock Mythic difficulty). Плюс soften curve: <span class="math">80N + 15N²</span> между L20-40.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Prestige stat retention unclear</div>
+    <div class="desc">Prestige: level → L1, stats reset, equipment kept, passives kept. Но stat multiplier 1.05× per prestige. Player при Prestige 1 на L1 has 0 stat points × 1.05 = 0. Они слабее на L1 чем при первом прохождении (нет stat points). Единственное преимущество — gear.</div>
+    <div class="fix">Добавить "prestige baseline stats": Prestige N даёт N×5 free stat points allocated to previous build. Или keep 20% of stat points through prestige. Player should feel STRONGER at restart, не weaker.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Passive tree respec стоит 50 gems — дорого для experimentation</div>
+    <div class="desc">50 gems = ~7 days of F2P gem income. Это отбивает желание экспериментировать с builds. Новые игроки боятся wrong choices, ветераны locked into meta.</div>
+    <div class="fix">Первый respec бесплатный. Subsequent: 25 gems (снижение). Или "trial mode" — test build for 3 battles, then revert automatically. Experimentation should be cheap.</div>
+  </div>
+</div>
+
+<!-- ===== PVP ===== -->
+<div class="section" id="pvp">
+  <h2>7. PvP система</h2>
+
+  <div class="strengths">
+    <h4>Что работает</h4>
+    <ul>
+      <li>ELO rating — industry standard, K-factor calibration (48→32)</li>
+      <li>Revenge mechanic с 1.5× gold — personal stakes без rating inflation</li>
+      <li>Free PvP (5/day) обеспечивает F2P accessibility</li>
+      <li>Win/loss streak bonuses — anti-frustration + reward consistency</li>
+      <li>Leaderboard с seasonal resets — prevents stagnation</li>
+    </ul>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Matchmaking НЕ использует rating</div>
+    <div class="desc">Matchmaking фильтрует по Level (±10) и Gear Score (±80%). Rating вообще не учитывается. Результат: L25 player с rating 1800 может получить opponent L25 с rating 1200. Это не "fair match", это stomp.</div>
+    <div class="fix">Добавить rating как primary matchmaking factor: Phase 1: ±200 rating AND ±10 level. Phase 2: ±400 rating AND ±10 level. Phase 3: fallback to current system. Rating-first, level-second.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">5 free PvP — awkward number</div>
+    <div class="desc">5 free fights at 3 stamina each = 15 stamina. Player has 120 max. After free fights, paid PvP costs 10 stamina. Это inconsistency: free fights стоят 3 stamina, paid — 10. Player ожидает одинаковый cost.</div>
+    <div class="fix">Унифицировать: все PvP = 8 stamina, first 3 per day = free (0 cost). Или: 5 free daily + all subsequent = 5 stamina (cheaper, encourages more play).</div>
+  </div>
+
+  <div class="finding low">
+    <span class="tag">Low</span>
+    <div class="title">No rank-up ceremony</div>
+    <div class="desc">Переход Bronze→Silver (1200 ELO) — просто число меняется. Нет celebration modal, нет unique reward, нет screenshot moment.</div>
+    <div class="fix">Rank-up modal: animated badge reveal + exclusive frame for rank + one-time gem reward (10-50 gems по ранку). Shareable screenshot template для social media.</div>
+  </div>
+</div>
+
+<!-- ===== PVE ===== -->
+<div class="section" id="pve">
+  <h2>8. PvE (Dungeons)</h2>
+
+  <div class="finding critical">
+    <span class="tag">Critical</span>
+    <div class="title">Dungeons — repetitive content</div>
+    <div class="desc">10 floors × 4 difficulties = по сути один и тот же dungeon 4 раза с числами ×1.0, ×1.25, ×1.5, ×2.5. Нет unique mechanics per difficulty, нет environmental variety, нет puzzle rooms, нет narrative. После первого прохождения нет мотивации кроме loot farming.</div>
+    <div class="fix">Каждый difficulty tier = unique boss mechanic (Hard boss summons adds, Heroic boss has enrage timer, Mythic boss has phase transitions). Добавить variety rooms: trap room (dodge minigame), treasure room (gold risk/reward choice), rest room (heal partial HP). 3-5 dungeon themes (crypt, forest, volcano, frozen, abyssal) с different enemy types.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Dungeon Rush — хорошая идея, слабая execution</div>
+    <div class="desc">Endless mode с exponential scaling + shop between floors. Но shop имеет fixed 4-6 random items — нет strategic shopping, нет build-around decisions, нет "this run I go all-in on crit".</div>
+    <div class="fix">Roguelike elements: offer 3 mutually exclusive buffs per floor clear ("pick one: +30% crit, lifesteal 5%, +50 armor"). Build variety per run. Add "artifacts" (passive perks that stack) — creates replay value через different build paths.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Boss drops не exciting</div>
+    <div class="desc">Floor 5 boss = guaranteed common/uncommon. Floor 10 = guaranteed rare/epic. Нет boss-exclusive items, нет set pieces, нет "I need THIS boss for MY build" motivation.</div>
+    <div class="fix">Boss-exclusive drops: unique items that only drop from specific bosses. Set items (2pc, 4pc bonuses) that require farming different bosses. Creates targeted farming goals.</div>
+  </div>
+</div>
+
+<!-- ===== RETENTION ===== -->
+<div class="section" id="retention">
+  <h2>9. Retention</h2>
+
+  <h3>Retention hooks по timeline</h3>
+
+  <table>
+    <tr><th>Timeframe</th><th>Hook</th><th>Strength</th><th>Gap</th></tr>
+    <tr><td>D1</td><td>Character creation, first PvP win, Daily Login</td><td style="color:var(--success)">Strong</td><td>No onboarding quest chain</td></tr>
+    <tr><td>D3</td><td>Daily login Day 3 (equipment box), Dungeon unlock</td><td style="color:var(--info)">OK</td><td>No social hook yet</td></tr>
+    <tr><td>D7</td><td>Daily login Day 7 (25 gems), first achievement wave</td><td style="color:var(--info)">OK</td><td>No week-in-review</td></tr>
+    <tr><td>D14</td><td>Battle Pass progression, Arena rank-up</td><td style="color:var(--warning)">Weak</td><td>No guild, no events</td></tr>
+    <tr><td>D30</td><td>Approaching mid-levels, prestige preview</td><td style="color:var(--danger)">Very weak</td><td>Midgame dead zone</td></tr>
+    <tr><td>D60+</td><td>Prestige, endgame builds</td><td style="color:var(--warning)">Weak</td><td>No social endgame</td></tr>
+  </table>
+
+  <div class="finding critical">
+    <span class="tag">Critical</span>
+    <div class="title">Нет onboarding quest chain (FTUE)</div>
+    <div class="desc">Новый игрок: создаёт персонажа → попадает в Hub → ... что делать? Нет guided tour, нет "complete 5 tutorial quests for a rare weapon". Daily Quests начинают циклиться сразу — нет progression от tutorial к endgame.</div>
+    <div class="fix">7-day onboarding quest chain: Day 1 — Win first PvP (reward: rare weapon). Day 2 — Complete Dungeon Floor 1 (reward: armor set). Day 3 — Upgrade any item to +3 (reward: 100 gems). Day 4 — Win 3 PvP battles (reward: cosmetic frame). Day 5 — Reach Level 10 (reward: skill unlock). Day 6 — Complete all Daily Quests (reward: epic item box). Day 7 — Beat Dungeon Floor 5 boss (reward: title + 200 gems). Each quest teaches a system.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Guild Hall social but no cooperative content</div>
+    <div class="desc">Guild Hall имеет Allies, Scrolls, Duels — это social features. Но нет COOPERATIVE gameplay: нет guild raids, нет team battles, нет shared goals. Social без shared objectives doesn't retain.</div>
+    <div class="fix">Phase 1: Guild weekly challenge (collective kill count → shared reward). Phase 2: 2v2 co-op dungeon (tag-team turns). Phase 3: Guild wars (guild rating + territorial control). Social features need gameplay glue.</div>
+  </div>
+
+  <div class="finding high">
+    <span class="tag">High</span>
+    <div class="title">Нет live events</div>
+    <div class="desc">Документация описывает event structure (boss events, PvP tournaments, economy events), но ни один не реализован. Без events, game чувствуется static — одно и то же каждый день.</div>
+    <div class="fix">MVP event: "Double Gold Weekend" — серверный флаг, zero new content. Next: "Boss Event" — temporary floor 11-15 в existing dungeon с unique boss. Потом: "PvP Tournament" — bracket из 16 players, gem prizes. Start with config-driven events that require minimal code.</div>
+  </div>
+</div>
+
+<!-- ===== UX ===== -->
+<div class="section" id="ux">
+  <h2>10. UX & Game Feel</h2>
+
+  <div class="strengths">
+    <h4>Что работает (A− tier)</h4>
+    <ul>
+      <li>Ornamental design system — 100% pure SwiftUI, premium dark fantasy aesthetic</li>
+      <li>Consistent token usage — DarkFantasyTheme, LayoutConstants, ButtonStyles</li>
+      <li>Cache-first loading (stale-while-revalidate) — instant UI, no loading spinners</li>
+      <li>Toast system с 7 types, deduplication, swipe dismiss</li>
+      <li>38+ screens с full state coverage (loading, empty, error, success)</li>
+      <li>UnifiedHeroWidget — one component, 4 contexts, zero duplication</li>
+      <li>Optimistic UI на всех мутациях (repair, buy, claim)</li>
+      <li>Combat VFX system с particle effects, damage popups (capped at 5)</li>
+    </ul>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">No haptic feedback system</div>
+    <div class="desc">SFX enum существует (uiTap, uiConfirm, etc.), но нет haptic feedback layer. Кнопки, combat hits, loot drops — всё без physical feedback. На mobile haptics = 30% perceived quality boost.</div>
+    <div class="fix">UIImpactFeedbackGenerator: .light для taps, .medium для confirms, .heavy для combat hits. UINotificationFeedbackGenerator: .success для loot/level up, .error для failed actions. Map to existing SFX enum triggers.</div>
+  </div>
+
+  <div class="finding medium">
+    <span class="tag">Medium</span>
+    <div class="title">Hub map — no wayfinding for new players</div>
+    <div class="desc">10 buildings на city map, но новый игрок не знает куда идти. Нет visual hierarchy (все buildings одинакового размера), нет "next action" indicator, нет pulsing highlight на recommended building.</div>
+    <div class="fix">Add contextual glow to recommended building: "You have 5 free PvP fights" → Arena glows. "Daily quests available" → Tavern glows. "Items need repair" → Shop glows. One building at a time, strongest recommendation wins.</div>
+  </div>
+
+  <div class="finding low">
+    <span class="tag">Low</span>
+    <div class="title">Combat screen — no battle timer visibility</div>
+    <div class="desc">Combat has 15-turn limit, но player не видит "Turn 8/15" prominently. Turn count есть в log, но не as top-level indicator. Creates anxiety: "Am I running out of turns?"</div>
+    <div class="fix">Top-center turn indicator: "Turn 8/15" с progress bar. Визуально urgent после turn 12 (red glow, camera shake).</div>
+  </div>
+</div>
+
+<!-- ===== RISKS ===== -->
+<div class="section" id="risks">
+  <h2>11. Ключевые риски</h2>
+
+  <div class="finding critical">
+    <span class="tag">Risk #1</span>
+    <div class="title">Gold inflation → economic collapse</div>
+    <div class="desc">При текущем sink deficit (~1100g/day), через 2-3 месяца gold станет meaningless. Игроки купят всё и перестанут видеть ценность в gold rewards. Cascading effect: PvP rewards не мотивируют → session count падает → retention collapse.</div>
+    <div class="fix">Priority 1 fix. Добавить 2-3 новых gold sinks перед soft launch. Repair cost увеличить, добавить item enchanting, cosmetic gold shop.</div>
+  </div>
+
+  <div class="finding critical">
+    <span class="tag">Risk #2</span>
+    <div class="title">Content drought → D14 churn cliff</div>
+    <div class="desc">После освоения всех систем (~D10-14), новый контент не появляется. Нет events, нет seasonal rotations, нет co-op. Игрок видит "это всё?" и уходит.</div>
+    <div class="fix">Implement config-driven events before launch. Минимум: Double Gold Weekend, Boss Challenge, PvP Tournament. Один event каждые 2 недели.</div>
+  </div>
+
+  <div class="finding critical">
+    <span class="tag">Risk #3</span>
+    <div class="title">Class balance → meta toxicity</div>
+    <div class="desc">Mage с dual stat scaling и Tank с −15% passive создают dominant strategies. Если meta кристаллизуется в "play Mage or lose", это отпугивает разнообразие и new player experimentation.</div>
+    <div class="fix">Balance pass before soft launch: nerf Mage WIS scaling, add Tank vs Tank anti-stall, buff Rogue survivability (maybe +5% innate lifesteal). Aim: every class 24-26% play rate.</div>
+  </div>
+</div>
+
+<!-- ===== ROADMAP ===== -->
+<div class="section" id="roadmap">
+  <h2>12. Приоритизированный Roadmap</h2>
+
+  <p>Ранжирование по Impact × Urgency. Все items сгруппированы по горизонтам.</p>
+
+  <h3>Horizon 1 — Before Soft Launch (критично)</h3>
+
+  <div class="priority-matrix">
+    <div class="priority-row">
+      <div class="priority-num crit">1</div>
+      <div class="priority-impact"><strong>Fix gold sink deficit</strong> — добавить enchanting, cosmetic gold shop, увеличить repair costs</div>
+      <div class="priority-effort">~1 week backend + iOS</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num crit">2</div>
+      <div class="priority-impact"><strong>Balance pass</strong> — nerf Mage WIS scaling, add battle fatigue (anti-stall), cap CHA gold bonus</div>
+      <div class="priority-effort">~3 days balance.ts</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num crit">3</div>
+      <div class="priority-impact"><strong>Onboarding quest chain</strong> — 7-day guided tutorial с escalating rewards</div>
+      <div class="priority-effort">~1 week full stack</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num crit">4</div>
+      <div class="priority-impact"><strong>Starter Bundle IAP</strong> — $0.99 first-purchase trigger с 5-10× value</div>
+      <div class="priority-effort">~2 days IAP + iOS</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num high">5</div>
+      <div class="priority-impact"><strong>Rating-based matchmaking</strong> — add rating to Phase 1 filter</div>
+      <div class="priority-effort">~2 days backend</div>
+    </div>
+  </div>
+
+  <h3>Horizon 2 — First Month Post-Launch</h3>
+
+  <div class="priority-matrix">
+    <div class="priority-row">
+      <div class="priority-num high">6</div>
+      <div class="priority-impact"><strong>Config-driven events</strong> — Double Gold Weekend, Boss Challenge rotation</div>
+      <div class="priority-effort">~1 week backend + admin</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num high">7</div>
+      <div class="priority-impact"><strong>Session Summary screen</strong> — end-of-session review с goals preview</div>
+      <div class="priority-effort">~3 days iOS</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num high">8</div>
+      <div class="priority-impact"><strong>Dungeon variety</strong> — 3 themed dungeons + variety rooms + boss mechanics</div>
+      <div class="priority-effort">~2 weeks full stack</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num med">9</div>
+      <div class="priority-impact"><strong>Haptic feedback</strong> — map SFX enum to UIImpactFeedback</div>
+      <div class="priority-effort">~1 day iOS</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num med">10</div>
+      <div class="priority-impact"><strong>Rank-up ceremonies</strong> — modal + reward + shareable screenshot</div>
+      <div class="priority-effort">~2 days iOS</div>
+    </div>
+  </div>
+
+  <h3>Horizon 3 — Month 2-3</h3>
+
+  <div class="priority-matrix">
+    <div class="priority-row">
+      <div class="priority-num med">11</div>
+      <div class="priority-impact"><strong>Mid-battle agency</strong> — stance switching every 3 turns, skill priority queue</div>
+      <div class="priority-effort">~2 weeks combat rework</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num med">12</div>
+      <div class="priority-impact"><strong>Cooperative content</strong> — guild weekly challenge, 2v2 co-op dungeon</div>
+      <div class="priority-effort">~3 weeks full stack</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num med">13</div>
+      <div class="priority-impact"><strong>Dungeon Rush roguelike</strong> — build-choice buffs, artifacts, run variety</div>
+      <div class="priority-effort">~2 weeks</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num med">14</div>
+      <div class="priority-impact"><strong>Set items & boss-exclusive drops</strong> — targeted farming goals</div>
+      <div class="priority-effort">~1 week items + loot</div>
+    </div>
+    <div class="priority-row">
+      <div class="priority-num med">15</div>
+      <div class="priority-impact"><strong>Midgame milestone rewards</strong> — unlock content at L20, L25, L30, L35, L40</div>
+      <div class="priority-effort">~3 days backend + iOS</div>
+    </div>
+  </div>
+
+  <div class="summary-box">
+    <h4>Bottom Line</h4>
+    <p>Hexbound имеет <strong>сильный технический фундамент</strong> (server-authoritative, fair play, premium UI) и <strong>правильную core loop</strong>. Главные проблемы — экономические (gold inflation, CHA exploit), content depth (PvE однообразие, нет events), и retention gaps (D14-D30 dead zone). Все 5 critical items из Horizon 1 решаемы за 2-3 недели и должны быть сделаны до soft launch. Без них: gold inflation убьёт экономику за 2 месяца, class imbalance кристаллизует toxic meta, а отсутствие onboarding потеряет 60%+ новых игроков на D1.</p>
+  </div>
+</div>
+
+</div><!-- /content -->
+</body>
+</html>

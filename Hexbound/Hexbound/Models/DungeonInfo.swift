@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Boss Info
 
-struct BossInfo: Identifiable {
+struct BossInfo: Identifiable, Hashable {
     let id: Int          // 1–10 boss number
     let name: String
     let level: Int
@@ -57,7 +57,7 @@ struct BossInfo: Identifiable {
 
 // MARK: - Loot Preview
 
-struct LootPreview: Identifiable {
+struct LootPreview: Identifiable, Hashable {
     let id = UUID()
     let icon: String
     let name: String
@@ -65,17 +65,43 @@ struct LootPreview: Identifiable {
     var imageUrl: String? = nil
     var imageKey: String? = nil
     var rarity: ItemRarity = .common
+    /// Raw item type string from server (e.g. "weapon", "boots", "helmet")
+    var itemTypeRaw: String = "weapon"
+
+    /// Fallback image asset key by item type — picks a real asset that exists in the catalog.
+    /// Used when the server doesn't provide a specific imageKey for the item.
+    var fallbackImageKey: String? {
+        switch itemTypeRaw {
+        case "weapon":     return "wpn_rusty_sword"
+        case "helmet":     return "helm_leather_cap"
+        case "chest":      return "chest_cloth_robe"
+        case "gloves":     return "glove_cloth_wraps"
+        case "legs":       return "legs_cloth_pants"
+        case "boots":      return "boot_sandals"
+        case "belt":       return "belt_leather"
+        case "amulet":     return "amu_copper_chain"
+        case "necklace":   return "neck_bone_charm"
+        case "ring":       return "ring_copper"
+        case "relic":      return "relic_old_coin"
+        case "accessory":  return "acc_wooden_shield"
+        case "consumable": return "pot_health_small"
+        default:           return nil
+        }
+    }
+
+    /// Resolved imageKey — specific asset first, then type-based fallback.
+    var resolvedImageKey: String? { imageKey ?? fallbackImageKey }
 
     /// Convert to a lightweight Item for the detail sheet
     func toItem() -> Item {
         Item(
             id: id.uuidString,
             itemName: name,
-            itemType: .weapon,
+            itemType: ItemType(rawValue: itemTypeRaw) ?? .weapon,
             rarity: rarity,
             itemLevel: 1,
             imageUrl: imageUrl,
-            imageKey: imageKey
+            imageKey: resolvedImageKey
         )
     }
 }
@@ -139,7 +165,8 @@ struct DungeonInfo: Identifiable {
                 detail: "\(rarity.displayName) (\(Int(dropChance))%)",
                 imageUrl: item["image_url"] as? String,
                 imageKey: item["image_key"] as? String,
-                rarity: rarity
+                rarity: rarity,
+                itemTypeRaw: itemType
             )
         }
 

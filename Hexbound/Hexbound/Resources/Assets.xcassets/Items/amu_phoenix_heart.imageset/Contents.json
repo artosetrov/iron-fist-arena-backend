@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "amu_phoenix_heart.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -14,7 +15,7 @@
     }
   ],
   "info" : {
-    "author" : "xcode",
+    "author" : "sync-assets",
     "version" : 1
   }
 }

@@ -104,10 +104,8 @@ final class ShellGameViewModel {
 
             if won {
                 result = "win"
-                appState.showToast("Won \(winAmount) gold!", type: .reward)
             } else {
                 result = "lose"
-                appState.showToast("Wrong cup! Lost \(selectedBet) gold", type: .error)
             }
 
             if let newGold = data["gold"] as? Int {

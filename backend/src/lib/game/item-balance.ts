@@ -83,6 +83,37 @@ const DEFAULT_ITEM_TYPE_WEIGHTS: Record<string, Record<string, number>> = {
   ring: { luk: 0.5, str: 0.5 },
 }
 
+// --- ItemBalanceProfile cache (module-level, avoids repeated DB hits per item type) ---
+
+interface CachedProfile {
+  powerWeight: number
+  statWeights: Record<string, number>
+}
+const _itemBalanceProfileCache = new Map<string, CachedProfile>()
+
+async function getItemBalanceProfile(itemType: string): Promise<CachedProfile | null> {
+  if (_itemBalanceProfileCache.has(itemType)) {
+    return _itemBalanceProfileCache.get(itemType)!
+  }
+  try {
+    const profile = await prisma.itemBalanceProfile.findFirst({
+      where: { itemType: itemType as never },
+      select: { powerWeight: true, statWeights: true },
+    })
+    if (profile) {
+      const cached: CachedProfile = {
+        powerWeight: profile.powerWeight,
+        statWeights: profile.statWeights as Record<string, number>,
+      }
+      _itemBalanceProfileCache.set(itemType, cached)
+      return cached
+    }
+  } catch {
+    // fallback — don't cache misses so we retry on next call
+  }
+  return null
+}
+
 // --- Power Score ---
 
 /**
@@ -114,19 +145,11 @@ export async function calculateItemPowerScore(
   // Upgrade bonus
   const upgradeBonus = 1 + upgradeLevel * upgradeMult
 
-  // Item type power weight (from ItemBalanceProfile)
+  // Item type power weight — use module-level cache (no DB hit on repeated calls)
   let typePowerWeight = 1.0
   if (itemType) {
-    try {
-      const profile = await prisma.itemBalanceProfile.findFirst({
-        where: { itemType: itemType as never },
-      })
-      if (profile) {
-        typePowerWeight = profile.powerWeight
-      }
-    } catch {
-      // fallback
-    }
+    const profile = await getItemBalanceProfile(itemType)
+    if (profile) typePowerWeight = profile.powerWeight
   }
 
   return Math.round(statSum * rarityMult * upgradeBonus * typePowerWeight)
@@ -175,17 +198,13 @@ export async function getExpectedPower(itemLevel: number, rarity: Rarity, itemTy
   // Expected average stat = midpoint of range * rarityMult
   const avgStat = ((range.minStat + range.maxStat) / 2) * rarityMult
 
-  // Get item type weights to estimate number of stats
+  // Get item type weights to estimate number of stats — use module-level cache
   let weights: Record<string, number> = { str: 1.0 }
   if (itemType) {
-    try {
-      const profile = await prisma.itemBalanceProfile.findFirst({
-        where: { itemType: itemType as never },
-      })
-      if (profile) {
-        weights = profile.statWeights as Record<string, number>
-      }
-    } catch {
+    const profile = await getItemBalanceProfile(itemType)
+    if (profile) {
+      weights = profile.statWeights
+    } else {
       weights = DEFAULT_ITEM_TYPE_WEIGHTS[itemType] ?? { str: 1.0 }
     }
   }

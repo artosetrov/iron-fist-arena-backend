@@ -84,7 +84,7 @@ struct DungeonVictoryView: View {
             xpReward: vm.victoryXP > 0 ? vm.victoryXP : nil,
             ratingChange: nil,
             firstWinBonus: false,
-            xpBarConfig: nil,
+            xpBarConfig: vm.victoryXPBarConfig,
             dungeonProgress: dungeonProgress,
             lootItems: lootItems,
             onLootTap: nil,

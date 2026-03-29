@@ -144,13 +144,16 @@ struct HubView: View {
                         Image(showDungeonMap ? "icon-lobby" : "icon-dungeons")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 22, height: 22)
+                            .frame(width: 26, height: 26)
                         Text(showDungeonMap ? "CASTLE" : "ADVENTURES")
+                            .font(DarkFantasyTheme.section)
                     }
+                    .frame(minWidth: 220)
                     .padding(.horizontal, LayoutConstants.buttonPaddingH)
                     .padding(.vertical, LayoutConstants.spaceMD)
                 }
                 .buttonStyle(.compactPrimary)
+                .animation(nil, value: showDungeonMap)
                 .accessibilityLabel(showDungeonMap ? "Go to Adventures" : "Go to Castle")
                 .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
             }

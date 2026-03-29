@@ -123,7 +123,6 @@ final class GoldMineViewModel {
             actionSlotId = nil
         }
         HapticManager.success()
-        appState.showToast("Collected \(estimatedGold) gold!", type: .reward)
 
         // Background: actual API call
         do {
@@ -198,7 +197,7 @@ final class GoldMineViewModel {
             if let newGems = data["gems"] as? Int {
                 appState.currentCharacter?.gems = newGems
             }
-            appState.showToast("New mining slot unlocked!", type: .reward)
+            HapticManager.light()
         } catch {
             appState.showToast("Failed to buy slot", subtitle: "Check your gem balance", type: .error)
         }

@@ -83,7 +83,7 @@ struct NPCHint: Identifiable, Equatable {
     static let hub = NPCHint(
         id: "hub_welcome",
         npcName: "Tavern Keeper",
-        npcImage: "building-tavern",
+        npcImage: "shopkeeper",
         message: "Welcome, adventurer! Tap any building on the map to explore. Start with the Arena to earn gold and climb the ranks!"
     )
 
@@ -97,7 +97,7 @@ struct NPCHint: Identifiable, Equatable {
     static let hero = NPCHint(
         id: "hero_stats",
         npcName: "Sage",
-        npcImage: "building-tavern",
+        npcImage: "shopkeeper",
         message: "You have stat points to spend! Go to the STATUS tab and allocate them to make your hero stronger."
     )
 
@@ -111,49 +111,49 @@ struct NPCHint: Identifiable, Equatable {
     static let dungeon = NPCHint(
         id: "dungeon_intro",
         npcName: "Dungeon Guide",
-        npcImage: "building-dungeon",
+        npcImage: "shopkeeper",
         message: "Each dungeon has bosses of increasing difficulty. Defeat them for rare loot and XP! Choose your battles carefully."
     )
 
     static let goldMine = NPCHint(
         id: "gold_mine_intro",
         npcName: "Mine Foreman",
-        npcImage: "building-gold-mine",
+        npcImage: "shopkeeper",
         message: "Start mining to earn gold passively! Each slot takes 4 hours. Come back when it's ready to collect your earnings."
     )
 
     static let battlePass = NPCHint(
         id: "battlepass_intro",
         npcName: "Herald",
-        npcImage: "building-tavern",
+        npcImage: "shopkeeper",
         message: "Complete daily quests and battles to earn Battle Pass XP. Each tier unlocks rewards — premium tier has even more!"
     )
 
     static let achievements = NPCHint(
         id: "achievements_intro",
         npcName: "Chronicler",
-        npcImage: "building-tavern",
+        npcImage: "shopkeeper",
         message: "Track your progress here! Claim rewards when you reach milestones. PvP, Progression, and Ranking achievements await."
     )
 
     static let usePotion = NPCHint(
         id: "use_potion",
         npcName: "Healer",
-        npcImage: "building-shop",
+        npcImage: "shopkeeper",
         message: "Your health is low! Use a health potion from your inventory to restore HP before your next battle."
     )
 
     static let levelUp = NPCHint(
         id: "level_up_stats",
         npcName: "Sage",
-        npcImage: "building-tavern",
+        npcImage: "shopkeeper",
         message: "You leveled up! Don't forget to allocate your new stat points in the STATUS tab on the Hero page."
     )
 
     static let inventory = NPCHint(
         id: "inventory_empty",
         npcName: "Sage",
-        npcImage: "building-tavern",
+        npcImage: "shopkeeper",
         message: "You have no gear yet! Visit the Shop and buy some equipment — you'll need it to survive in the Arena."
     )
 

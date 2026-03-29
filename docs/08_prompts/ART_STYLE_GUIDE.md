@@ -56,6 +56,57 @@ Canonical style reference for all AI-generated art. Use this guide for all DALL-
 
 ---
 
+## Landing Page Character Style (SEPARATE STYLE)
+
+> ⚠️ **Это отдельный стиль** — только для персонажей лендинга (`LANDING_ART_PROMPTS.md`). В игре НЕ используется.
+
+### Ключевые отличия от основного стиля
+
+| | Основной (in-game) | Лендинговый (landing) |
+|---|---|---|
+| Техника | Pen and ink, линейная | Watercolor + pen and ink |
+| Пропорции | Solid, slightly stylized | **Exaggerated caricature** |
+| Персонажи | Серьёзные, угрожающие | **Ugly-funny — repulsive yet humorous** |
+| Фон | White / transparent | White |
+| Фон (боссы) | Warm cream parchment | — |
+
+### Обязательные элементы лендингового стиля
+
+Каждый персонаж лендинга ДОЛЖЕН содержать:
+- **Exaggerated proportions and asymmetrical features** — ничего симметричного и правильного
+- **Ugly-funny — repulsive yet humorous** — персонаж смешной за счёт уродства, не страшный
+- **Visible warts, scars, grime and dirty details** — грязь, шрамы, бородавки по ситуации
+- **Asymmetrical eyes / lopsided expressions** — один глаз больше, кривая ухмылка, перекошенный рот
+- Специфика по классу: drool (warrior), age spots/arcane stains (mage), beady eyes (tank), lolling tongue (dogfolk)
+
+### Prompt структура (лендинг)
+
+```
+use the uploaded image as base reference for character style and proportions,
+single [TYPE] character,
+
+change appearance details:
+[ПОЗА И ОПИСАНИЕ ПЕРСОНАЖА],
+
+caricature grotesque fantasy cartoon style,
+exaggerated proportions and asymmetrical features,
+ugly-funny — repulsive yet humorous,
+[СПЕЦИФИЧЕСКИЕ ГРОТЕСКНЫЕ ДЕТАЛИ ПО ПЕРСОНАЖУ],
+dark humor,
+thick black outlines,
+watercolor shading,
+strong contrast,
+rich colors,
+[ЦВЕТОВОЙ АКЦЕНТ],
+
+one character only,
+full body или portrait,
+[ASPECT RATIO],
+plain white background
+```
+
+---
+
 ## Prompt Template for AI Generation
 
 ### Structure

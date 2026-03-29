@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Login — Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    font-family: 'Georgia', serif;
+    display: flex;
+    gap: 0;
+    min-height: 100vh;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  /* ──────────────────────────────────────────────
+     PHONE FRAME
+  ────────────────────────────────────────────── */
+  .phone-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+    flex: 1;
+    gap: 16px;
+    position: relative;
+  }
+
+  .phone-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a4060;
+    margin-bottom: 4px;
+  }
+
+  .phone-frame {
+    width: 320px;
+    height: 620px;
+    background: #111118;
+    border-radius: 40px;
+    border: 2px solid #2a2040;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px #0d0b18,
+      0 30px 80px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* Phone notch */
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 8px;
+    background: #0a0a0f;
+    border-radius: 4px;
+    z-index: 100;
+  }
+
+  /* ──────────────────────────────────────────────
+     SHARED GAME BG
+  ────────────────────────────────────────────── */
+  .game-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(60,40,100,0.35) 0%, transparent 65%),
+      linear-gradient(180deg, #0e0c1a 0%, #080812 100%);
+  }
+
+  /* ──────────────────────────────────────────────
+     SCREEN A — BIG MODAL (before claim)
+  ────────────────────────────────────────────── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.97);
+  }
+
+  /* Dim overlay behind modal */
+  .screen-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(3px);
+  }
+
+  /* Modal card */
+  .modal {
+    position: relative;
+    width: 272px;
+    background: linear-gradient(160deg, #1a1530 0%, #0f0d20 100%);
+    border-radius: 20px;
+    padding: 0 0 20px;
+    overflow: hidden;
+    box-shadow:
+      0 0 60px rgba(180,130,40,0.18),
+      0 40px 80px rgba(0,0,0,0.9),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+    z-index: 10;
+  }
+
+  /* Gold top border */
+  .modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #c8962a, #f0c040, #c8962a, transparent);
+  }
+
+  /* Corner brackets */
+  .corner { position: absolute; width: 14px; height: 14px; }
+  .corner-tl { top: 8px; left: 8px; border-top: 1.5px solid rgba(212,165,55,0.5); border-left: 1.5px solid rgba(212,165,55,0.5); border-radius: 2px 0 0 0; }
+  .corner-tr { top: 8px; right: 8px; border-top: 1.5px solid rgba(212,165,55,0.5); border-right: 1.5px solid rgba(212,165,55,0.5); border-radius: 0 2px 0 0; }
+  .corner-bl { bottom: 8px; left: 8px; border-bottom: 1.5px solid rgba(212,165,55,0.5); border-left: 1.5px solid rgba(212,165,55,0.5); border-radius: 0 0 0 2px; }
+  .corner-br { bottom: 8px; right: 8px; border-bottom: 1.5px solid rgba(212,165,55,0.5); border-right: 1.5px solid rgba(212,165,55,0.5); border-radius: 0 0 2px 0; }
+
+  /* Header banner */
+  .modal-header {
+    background: linear-gradient(135deg, #1e1535 0%, #2a1e48 50%, #1e1535 100%);
+    padding: 20px 20px 16px;
+    text-align: center;
+    border-bottom: 1px solid rgba(212,165,55,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .modal-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .modal-day-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(212,165,55,0.12);
+    border: 1px solid rgba(212,165,55,0.3);
+    border-radius: 20px;
+    padding: 3px 12px;
+    margin-bottom: 10px;
+  }
+  .modal-day-badge span {
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #d4a537;
+  }
+
+  .modal-title {
+    font-family: 'Arial Black', 'Arial', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #f5e8c0;
+    text-shadow: 0 0 20px rgba(212,165,55,0.4);
+    margin-bottom: 4px;
+  }
+
+  .modal-subtitle {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #7060a0;
+    letter-spacing: 0.5px;
+  }
+
+  /* Big reward showcase */
+  .reward-showcase {
+    padding: 24px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .reward-icon-big {
+    width: 88px;
+    height: 88px;
+    background: linear-gradient(135deg, #2a1e10 0%, #1a1208 100%);
+    border-radius: 18px;
+    border: 2px solid rgba(212,165,55,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    position: relative;
+    box-shadow:
+      0 0 30px rgba(212,165,55,0.2),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    animation: iconFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes iconFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .reward-icon-big::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 26px;
+    background: radial-gradient(circle, rgba(212,165,55,0.12) 0%, transparent 70%);
+    animation: glowPulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .reward-amount {
+    text-align: center;
+  }
+  .reward-amount-value {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: #f0c040;
+    text-shadow: 0 0 20px rgba(240,192,64,0.5);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .reward-amount-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8070b0;
+    margin-top: 4px;
+  }
+
+  /* Day streak */
+  .day-streak {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .streak-dot {
+    width: 24px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(212,165,55,0.2);
+    transition: all 0.3s;
+  }
+  .streak-dot.active {
+    background: linear-gradient(90deg, #c8962a, #f0c040);
+    box-shadow: 0 0 6px rgba(240,192,64,0.5);
+  }
+
+  /* Divider */
+  .gold-divider {
+    margin: 0 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,165,55,0.25) 30%, rgba(212,165,55,0.25) 70%, transparent);
+    position: relative;
+  }
+  .gold-divider::after {
+    content: '◆';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(212,165,55,0.4);
+    font-size: 8px;
+    background: #0f0d20;
+    padding: 0 4px;
+  }
+
+  /* Tomorrow preview */
+  .tomorrow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px 0;
+  }
+  .tomorrow-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #5a4878;
+  }
+  .tomorrow-preview {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #8070a8;
+  }
+
+  /* CLAIM BUTTON */
+  .claim-btn {
+    margin: 16px 16px 0;
+    width: calc(100% - 32px);
+    padding: 16px;
+    background: linear-gradient(180deg, #e8b840 0%, #c8862a 50%, #a86820 100%);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #3a2200;
+    text-shadow: 0 1px 0 rgba(255,220,100,0.4);
+    box-shadow:
+      0 0 24px rgba(212,165,55,0.45),
+      0 4px 12px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Corner diamonds on button */
+  .claim-btn::before {
+    content: '◆  ◆';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 6px;
+    color: rgba(255,255,255,0.0);
+    letter-spacing: 180px;
+    pointer-events: none;
+  }
+
+  /* Left/right diamonds */
+  .btn-diamond-l, .btn-diamond-r {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 8px; height: 8px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 1px;
+  }
+  .btn-diamond-l { left: 10px; }
+  .btn-diamond-r { right: 10px; }
+
+  /* Inner bevel */
+  .claim-btn-inner {
+    position: absolute;
+    inset: 2px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    pointer-events: none;
+  }
+
+  /* Surface shimmer */
+  .claim-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+    border-radius: 12px 12px 0 0;
+    pointer-events: none;
+  }
+
+  .claim-btn:active {
+    filter: brightness(0.88);
+    transform: scale(0.98);
+    box-shadow:
+      0 0 14px rgba(212,165,55,0.35),
+      0 2px 6px rgba(0,0,0,0.5);
+  }
+
+  /* ──────────────────────────────────────────────
+     SCREEN B — POST-CLAIM CONFIRMATION
+  ────────────────────────────────────────────── */
+  .confirm-modal {
+    position: relative;
+    width: 272px;
+    background: linear-gradient(160deg, #1a1530 0%, #0f0d20 100%);
+    border-radius: 20px;
+    padding: 0 0 20px;
+    overflow: hidden;
+    z-index: 10;
+    box-shadow:
+      0 0 60px rgba(240,192,64,0.25),
+      0 40px 80px rgba(0,0,0,0.9),
+      inset 0 1px 0 rgba(255,255,255,0.07);
+    animation: modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .confirm-modal.hidden {
+    display: none;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.88); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .confirm-modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #c8962a, #f0c040, #c8962a, transparent);
+  }
+
+  /* Celebration particles */
+  .particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+  .particle {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    animation: particleFly 1.2s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes particleFly {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
+  }
+
+  /* Claimed header */
+  .claimed-header {
+    background: linear-gradient(135deg, #1e1535 0%, #2a1e48 50%, #1e1535 100%);
+    padding: 18px 20px 14px;
+    text-align: center;
+    border-bottom: 1px solid rgba(212,165,55,0.2);
+    position: relative;
+  }
+  .claimed-header::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .claimed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(80,200,80,0.12);
+    border: 1px solid rgba(80,200,120,0.3);
+    border-radius: 20px;
+    padding: 3px 12px;
+    margin-bottom: 8px;
+  }
+  .claimed-badge span {
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #60c880;
+  }
+  .claimed-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #60c880;
+    box-shadow: 0 0 6px rgba(100,220,130,0.6);
+  }
+
+  .claimed-title {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #f5e8c0;
+  }
+
+  /* Reward card in confirmation */
+  .reward-confirm-card {
+    margin: 16px;
+    background: linear-gradient(135deg, #1c1428 0%, #130f20 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(212,165,55,0.2);
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .reward-confirm-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .reward-icon-sm {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, #2a1e10 0%, #1a1208 100%);
+    border-radius: 10px;
+    border: 1px solid rgba(212,165,55,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(212,165,55,0.15);
+  }
+
+  .reward-confirm-text {
+    flex: 1;
+  }
+  .reward-confirm-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #5a4878;
+    margin-bottom: 2px;
+  }
+  .reward-confirm-value {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: #f0c040;
+    text-shadow: 0 0 14px rgba(240,192,64,0.4);
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+  }
+  .reward-confirm-type {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #8070a0;
+    margin-top: 1px;
+  }
+
+  .added-badge {
+    background: rgba(80,200,80,0.1);
+    border: 1px solid rgba(80,200,100,0.25);
+    border-radius: 20px;
+    padding: 3px 8px;
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: #60c880;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  /* Streak display */
+  .streak-display {
+    margin: 0 16px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .streak-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #5a4878;
+  }
+  .streak-dots {
+    display: flex;
+    gap: 4px;
+  }
+  .sdot {
+    width: 22px; height: 3px;
+    border-radius: 2px;
+    background: rgba(212,165,55,0.15);
+  }
+  .sdot.active {
+    background: linear-gradient(90deg, #c8962a, #f0c040);
+    box-shadow: 0 0 5px rgba(240,192,64,0.4);
+  }
+  .streak-count {
+    font-family: 'Arial Black', sans-serif;
+    font-size: 13px;
+    color: #d4a537;
+    letter-spacing: 1px;
+  }
+
+  /* Tomorrow row */
+  .tomorrow-section {
+    margin: 10px 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tomorrow-lbl {
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #5a4878;
+  }
+  .tomorrow-val {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    color: #8070a0;
+  }
+
+  /* Close / Continue button */
+  .continue-btn {
+    margin: 14px 16px 0;
+    width: calc(100% - 32px);
+    padding: 14px;
+    background: linear-gradient(180deg, #2a2040 0%, #1a1430 100%);
+    border: 1px solid rgba(212,165,55,0.25);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #c8a040;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .continue-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .continue-btn:active {
+    filter: brightness(0.88);
+  }
+
+  /* ──────────────────────────────────────────────
+     DIVIDER between phones
+  ────────────────────────────────────────────── */
+  .center-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 8px;
+  }
+  .arrow-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .flow-step {
+    font-family: 'Arial', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #4a3868;
+    text-align: center;
+    max-width: 60px;
+  }
+  .flow-arrow {
+    color: #3a2858;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  /* ──────────────────────────────────────────────
+     RESET BUTTON
+  ────────────────────────────────────────────── */
+  .reset-btn {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 8px 20px;
+    color: #5a4878;
+    font-family: 'Arial', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .reset-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #8070a0;
+  }
+
+  /* Interactive label */
+  .interactive-hint {
+    font-family: 'Arial', sans-serif;
+    font-size: 10px;
+    color: #3a2858;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .interactive-hint.pulse {
+    animation: hintPulse 2s ease-in-out infinite;
+    color: #6a4878;
+  }
+  @keyframes hintPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     PHONE A — STEP 1: PRE-CLAIM MODAL
+═══════════════════════════════════════════ -->
+<div class="phone-wrapper">
+  <div class="phone-label">Шаг 1 — До получения</div>
+  <div class="phone-frame" id="phoneA">
+    <div class="game-bg"></div>
+
+    <!-- Dimmed game background hint -->
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:80px;opacity:0.15;pointer-events:none;">
+      <div style="width:200px;height:6px;background:linear-gradient(90deg,#c8962a,#f0c040);border-radius:3px;margin-bottom:12px;"></div>
+      <div style="width:140px;height:4px;background:#2a1e48;border-radius:2px;"></div>
+    </div>
+
+    <div class="screen-overlay"></div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;position:relative;z-index:10;padding:20px 0;">
+
+      <div class="modal">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <div class="modal-header">
+          <div class="modal-day-badge">
+            <span>⚔ День 1 из 7</span>
+          </div>
+          <div class="modal-title">Ежедневная награда</div>
+          <div class="modal-subtitle">Заходи каждый день — получи больше</div>
+        </div>
+
+        <div class="reward-showcase">
+          <div class="reward-icon-big">💰</div>
+          <div class="reward-amount">
+            <div class="reward-amount-value">200</div>
+            <div class="reward-amount-label">Золото</div>
+          </div>
+          <div class="day-streak">
+            <div class="streak-dot active"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+            <div class="streak-dot"></div>
+          </div>
+        </div>
+
+        <div class="gold-divider"></div>
+
+        <button class="claim-btn" onclick="triggerClaim()">
+          <div class="btn-diamond-l"></div>
+          <div class="btn-diamond-r"></div>
+          <div class="claim-btn-inner"></div>
+          Получить награду
+        </button>
+
+        <div class="tomorrow-row">
+          <span class="tomorrow-label">Завтра:</span>
+          <div class="tomorrow-preview">⚡ 1 Зелье</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="interactive-hint pulse" id="hintA">↑ Нажми кнопку</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CENTER FLOW ARROWS
+═══════════════════════════════════════════ -->
+<div class="center-divider">
+  <div class="arrow-flow">
+    <div class="flow-step">До</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">Нажать кнопку</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">После</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PHONE B — STEP 2: POST-CLAIM CONFIRMATION
+═══════════════════════════════════════════ -->
+<div class="phone-wrapper">
+  <div class="phone-label">Шаг 2 — После получения</div>
+  <div class="phone-frame" id="phoneB">
+    <div class="game-bg"></div>
+    <div class="screen-overlay"></div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;position:relative;z-index:10;padding:20px 0;" id="confirmScreen">
+
+      <div class="confirm-modal" id="confirmModal">
+        <div class="particles" id="particles"></div>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Claimed header -->
+        <div class="claimed-header">
+          <div class="claimed-badge">
+            <div class="claimed-dot"></div>
+            <span>Получено!</span>
+          </div>
+          <div class="claimed-title">Награда получена</div>
+        </div>
+
+        <!-- Big reward card -->
+        <div class="reward-confirm-card">
+          <div class="reward-icon-sm">💰</div>
+          <div class="reward-confirm-text">
+            <div class="reward-confirm-label">Сегодня</div>
+            <div class="reward-confirm-value">+200</div>
+            <div class="reward-confirm-type">Золото</div>
+          </div>
+          <div class="added-badge">+ добавлено</div>
+        </div>
+
+        <!-- Streak -->
+        <div class="streak-display">
+          <div>
+            <div class="streak-label">Серия входов</div>
+          </div>
+          <div class="streak-dots">
+            <div class="sdot active"></div>
+            <div class="sdot"></div>
+            <div class="sdot"></div>
+            <div class="sdot"></div>
+            <div class="sdot"></div>
+            <div class="sdot"></div>
+            <div class="sdot"></div>
+          </div>
+          <div class="streak-count">1 / 7</div>
+        </div>
+
+        <!-- Tomorrow -->
+        <div class="tomorrow-section">
+          <div class="tomorrow-lbl">Завтра</div>
+          <div class="tomorrow-val">⚡ 1 Зелье</div>
+        </div>
+
+        <!-- Continue -->
+        <button class="continue-btn">Продолжить</button>
+      </div>
+
+    </div>
+  </div>
+  <div class="interactive-hint" id="hintB">↑ Результат после клика</div>
+</div>
+
+<!-- Reset -->
+<button class="reset-btn" onclick="resetFlow()">↺ Сбросить</button>
+
+<script>
+function triggerClaim() {
+  // Animate button on phone A
+  const btn = document.querySelector('.claim-btn');
+  btn.style.transform = 'scale(0.96)';
+  btn.style.filter = 'brightness(0.85)';
+
+  // Spawn particles on phone B
+  spawnParticles();
+
+  setTimeout(() => {
+    btn.style.transform = '';
+    btn.style.filter = '';
+  }, 150);
+
+  // Update hints
+  document.getElementById('hintA').classList.remove('pulse');
+  document.getElementById('hintA').style.color = '#3a2858';
+  document.getElementById('hintB').style.color = '#60c880';
+  document.getElementById('hintB').textContent = '✓ Вот что видит игрок';
+}
+
+function spawnParticles() {
+  const container = document.getElementById('particles');
+  container.innerHTML = '';
+  const colors = ['#f0c040', '#c8962a', '#60c880', '#a080e0', '#ff8040'];
+  const cx = 136, cy = 280;
+  for (let i = 0; i < 28; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.random() * 360) * Math.PI / 180;
+    const dist = 60 + Math.random() * 100;
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist - 40;
+    p.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      --tx:${tx}px; --ty:${ty}px;
+      width:${3+Math.random()*4}px;
+      height:${3+Math.random()*4}px;
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      animation-delay:${Math.random()*0.15}s;
+      animation-duration:${0.8+Math.random()*0.6}s;
+    `;
+    container.appendChild(p);
+  }
+}
+
+function resetFlow() {
+  document.getElementById('hintA').classList.add('pulse');
+  document.getElementById('hintA').style.color = '';
+  document.getElementById('hintA').textContent = '↑ Нажми кнопку';
+  document.getElementById('hintB').style.color = '';
+  document.getElementById('hintB').textContent = '↑ Результат после клика';
+  document.getElementById('particles').innerHTML = '';
+  // Re-trigger animation on confirm modal
+  const m = document.getElementById('confirmModal');
+  m.style.animation = 'none';
+  void m.offsetWidth;
+  m.style.animation = '';
+}
+
+// Auto-trigger particles on load for phone B preview
+window.addEventListener('load', () => {
+  setTimeout(spawnParticles, 500);
+});
+</script>
+
+</body>
+</html>

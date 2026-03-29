@@ -204,6 +204,7 @@ struct CurrencyPurchaseView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .onAppear {
             if initialTab != 0 && initialTab < tabs.count {
                 selectedTab = initialTab
@@ -414,21 +415,22 @@ struct CurrencyPackageCard: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMD) {
-            // Currency icon — themed container
+            // Currency icon — themed container (2x size, no badge)
             VStack {
                 Image(package.currencyType.assetIcon)
                     .resizable()
-                    .frame(width: package.isBestValue ? 36 : 32, height: package.isBestValue ? 36 : 32)
+                    .frame(width: 64, height: 64)
             }
-            .frame(width: 56, height: 56)
+            .frame(width: 88, height: 88)
             .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .fill(accentColor.opacity(0.1))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(accentColor.opacity(0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(accentColor.opacity(0.25), lineWidth: 1.5)
             )
+            .shadow(color: accentColor.opacity(0.15), radius: 8)
             .accessibilityLabel("\(package.currencyType.label) currency icon")
             .accessibilityElement(children: .ignore)
 
@@ -480,40 +482,6 @@ struct CurrencyPackageCard: View {
                 )
         )
         .accessibilityElement(children: .contain)
-        // Corner badge overlay
-        .overlay(alignment: .topTrailing) {
-            if package.isBestValue {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 10))
-                    Text("BEST VALUE")
-                }
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .padding(.horizontal, LayoutConstants.spaceMS)
-                    .padding(.vertical, LayoutConstants.space2XS)
-                    .background(DarkFantasyTheme.goldGradient)
-                    .clipShape(UnevenRoundedRectangle(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: 6,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: LayoutConstants.cardRadius
-                    ))
-            } else if package.isPopular {
-                Text("POPULAR")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .padding(.horizontal, LayoutConstants.spaceMS)
-                    .padding(.vertical, LayoutConstants.space2XS)
-                    .background(DarkFantasyTheme.purple)
-                    .clipShape(UnevenRoundedRectangle(
-                        topLeadingRadius: 0,
-                        bottomLeadingRadius: 6,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: LayoutConstants.cardRadius
-                    ))
-            }
-        }
         .shadow(color: package.isBestValue ? accentColor.opacity(0.15) : .clear, radius: 8)
         // Shimmer on best value
         .shimmer(color: accentColor, duration: 4, isActive: package.isBestValue)

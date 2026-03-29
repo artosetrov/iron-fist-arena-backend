@@ -25,6 +25,21 @@ final class DungeonRoomViewModel {
     /// HP fraction after battle (0.0–1.0) for star rating. nil if unknown.
     var hpFractionAfterBattle: Double?
 
+    // XP bar: snapshot taken just before fight to detect level-up
+    var preFightLevel: Int = 0
+    var preFightXPProgress: Double = 0
+
+    /// XP bar config for the victory screen — built from current character state.
+    var victoryXPBarConfig: XPBarConfig? {
+        guard let char = appState.currentCharacter else { return nil }
+        let leveledUp = char.level > preFightLevel
+        return XPBarConfig(
+            displayLevel: char.level,
+            progress: CGFloat(char.xpPercentage),
+            leveledUp: leveledUp
+        )
+    }
+
     private let cache: GameDataCache
 
     init(appState: AppState, cache: GameDataCache) {
@@ -86,23 +101,37 @@ final class DungeonRoomViewModel {
     // MARK: - Load State
 
     func loadState() async {
-        isLoading = true
         errorMessage = nil
 
-        // Resolve which dungeon to show from appState or active run
+        // ── Cache-first: resolve dungeon immediately from local data ──
+        // The dungeon list is already in GameDataCache / fallback. No need to wait for network.
         let selectedId = appState.selectedDungeonId
+        if let selectedId {
+            dungeon = allDungeons.first { $0.id == selectedId }
+        }
+        // Show default dungeon instantly if nothing selected yet
+        if dungeon == nil {
+            dungeon = DungeonInfo.trainingCamp
+        }
+        selectedBossIndex = currentBossIndex // snap to current boss immediately
+
+        // ── Background refresh: fetch active run + saved progress from server ──
+        // Only show spinner if we truly have zero dungeon data (first-ever open)
+        isLoading = false // always keep UI interactive; API runs in background
 
         let data = await service.getProgress()
-        isLoading = false
 
         guard data != nil else {
-            errorMessage = "Failed to load dungeon data. Check your connection and try again."
+            // Non-blocking error — dungeon is already shown from cache
+            if dungeon == nil {
+                errorMessage = "Failed to load dungeon data. Check your connection and try again."
+            }
             return
         }
 
-        // Try to find dungeon from selected ID first
-        if let selectedId {
-            dungeon = allDungeons.first { $0.id == selectedId }
+        // Apply selected dungeon from server data if we didn't have one
+        if let selectedId, dungeon?.id != selectedId {
+            dungeon = allDungeons.first { $0.id == selectedId } ?? dungeon
         }
 
         // Check for active run
@@ -140,7 +169,7 @@ final class DungeonRoomViewModel {
             defeatedCount = 0
         }
 
-        // Auto-select current boss
+        // Re-snap to current boss after fresh data arrives
         selectedBossIndex = currentBossIndex
     }
 
@@ -149,6 +178,9 @@ final class DungeonRoomViewModel {
     func fight() async {
         guard canFightSelectedBoss else { return }
         isFighting = true
+        // Capture XP snapshot before fight to detect level-up on victory screen
+        preFightLevel = appState.currentCharacter?.level ?? 0
+        preFightXPProgress = appState.currentCharacter?.xpPercentage ?? 0
 
         // Start a run if we don't have one
         if runId.isEmpty {
@@ -225,16 +257,22 @@ final class DungeonRoomViewModel {
             defeatedCount += 1
             showVictory = true
 
-            // Notify loot
+            // Notify rare+ drops as celebration, skip common/uncommon (shown in loot screen)
             if !victoryItems.isEmpty {
                 let first = victoryItems[0]
                 let name = first["name"] as? String ?? "Item"
                 let rarity = first["rarity"] as? String ?? "common"
-                if victoryItems.count > 1 {
-                    appState.showToast("\(rarity.capitalized) \(name) +\(victoryItems.count - 1) more!", type: .reward)
-                } else {
-                    appState.showToast("\(rarity.capitalized) \(name) dropped!", type: .reward)
+                let rarityEnum = ItemRarity(rawValue: rarity) ?? .common
+
+                // Only celebrate epic+ drops
+                if rarityEnum == .epic || rarityEnum == .legendary {
+                    if victoryItems.count > 1 {
+                        appState.showCelebration(.rareDrop, title: "\(rarity.capitalized) \(name)", subtitle: "+\(victoryItems.count - 1) more!")
+                    } else {
+                        appState.showCelebration(.rareDrop, title: "\(rarity.capitalized) \(name)", subtitle: "Rare drop!")
+                    }
                 }
+                // Common/uncommon drops are shown in loot screen — no toast needed
             }
 
             // Check if dungeon is now complete
@@ -280,7 +318,7 @@ final class DungeonRoomViewModel {
         showVictory = false
         if isDungeonComplete {
             // Go back to dungeon select
-            appState.showToast("Dungeon Complete!", type: .achievement)
+            appState.showCelebration(.dungeonClear, title: "Dungeon Complete!", subtitle: "All bosses defeated")
             appState.invalidateCache("quests")
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
         } else {

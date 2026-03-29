@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "helm_crown_of_thorns.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -14,7 +15,7 @@
     }
   ],
   "info" : {
-    "author" : "xcode",
+    "author" : "sync-assets",
     "version" : 1
   }
 }

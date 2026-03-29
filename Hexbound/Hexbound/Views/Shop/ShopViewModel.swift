@@ -173,7 +173,6 @@ final class ShopViewModel {
             appState.currentCharacter?.gold = savedGold - offer.salePrice
         }
         HapticManager.success()
-        appState.showToast("Purchased \(offer.title)!", type: .reward)
         buyingOfferId = nil
 
         // ── Fire API in background ──
@@ -294,7 +293,6 @@ final class ShopViewModel {
         showItemDetail = false
         selectedItem = nil
         lastPurchasedItemId = item.id
-        appState.showToast("Purchased \(item.itemName)!", type: .reward)
         appState.invalidateCache("inventory")
         appState.invalidateCache("quests")
 

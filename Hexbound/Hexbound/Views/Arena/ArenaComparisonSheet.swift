@@ -13,7 +13,7 @@ struct ArenaComparisonSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(GameDataCache.self) private var cache
     @Environment(AppState.self) private var appState
-    @State private var showStaminaConfirm = false
+    // confirmation dialog removed — fight triggers directly
 
     private var winChance: Int {
         ArenaComparisonSheet.estimateWinChance(char: character, opponent: opponent)
@@ -220,7 +220,7 @@ struct ArenaComparisonSheet: View {
 
                 // Item image
                 ItemImageView(
-                    imageKey: item.imageKey,
+                    imageKey: item.resolvedImageKey,
                     imageUrl: item.imageUrl,
                     fallbackIcon: "📦"
                 )
@@ -431,11 +431,7 @@ struct ArenaComparisonSheet: View {
     private var fightButton: some View {
         Button {
             HapticManager.heavy()
-            if staminaCost > 0 {
-                showStaminaConfirm = true
-            } else {
-                onFight()
-            }
+            onFight()
         } label: {
             HStack(spacing: LayoutConstants.spaceXS) {
                 if isFighting {
@@ -460,18 +456,6 @@ struct ArenaComparisonSheet: View {
         }
         .buttonStyle(.fight)
         .disabled(isFighting || !canFight)
-        .confirmationDialog(
-            "SPEND STAMINA",
-            isPresented: $showStaminaConfirm,
-            presenting: staminaCost
-        ) { cost in
-            Button("Fight (\(cost) STA)") {
-                onFight()
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: { cost in
-            Text("Spend \(cost) stamina to fight \(opponent.characterName)?")
-        }
     }
 
     // MARK: - Win Chance Calculation

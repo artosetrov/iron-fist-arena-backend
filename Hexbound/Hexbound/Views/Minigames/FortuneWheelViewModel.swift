@@ -146,11 +146,9 @@ final class FortuneWheelViewModel {
         if result.won {
             SFXManager.shared.play(.uiRewardClaim)
             HapticManager.victory()
-            appState.showToast("Won \(result.winAmount) gold!", subtitle: "x\(String(format: "%.1f", result.multiplier)) multiplier", type: .reward)
         } else {
             SFXManager.shared.play(.uiError)
             HapticManager.shake()
-            appState.showToast("Lost \(selectedBet) gold", subtitle: "Better luck next time", type: .error)
         }
 
         isSpinning = false

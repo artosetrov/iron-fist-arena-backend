@@ -73,7 +73,6 @@ final class AchievementsViewModel {
         cache.cacheAchievements(achievements)
         claimingKey = nil
         HapticManager.success()
-        appState.showToast("Reward Claimed! \(achievement.title)", type: .achievement)
 
         // ── Fire API in background ──
         Task { [weak self] in

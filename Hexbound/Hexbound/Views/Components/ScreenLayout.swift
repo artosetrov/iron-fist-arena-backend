@@ -4,11 +4,15 @@ import SwiftUI
 
 struct HubLogoButton: View {
     @Environment(AppState.self) private var appState
+    /// Optional custom action. When nil, pops `mainPath` by default.
+    var action: (() -> Void)?
 
     var body: some View {
         Button {
             SFXManager.shared.play(.uiBack)
-            if !appState.mainPath.isEmpty {
+            if let action {
+                action()
+            } else if !appState.mainPath.isEmpty {
                 appState.mainPath.removeLast(1)
             }
         } label: {
@@ -42,6 +46,7 @@ struct ScreenLayout<Content: View>: View {
             content
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()

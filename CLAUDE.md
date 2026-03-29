@@ -146,6 +146,41 @@ All `cornerRadius` values MUST use `LayoutConstants` tokens. Never hardcode raw 
 - **NEVER guess button style names.** Open `ButtonStyles.swift` and verify before using.
 - Common mistake: inventing `.accent`, `.primary`, `.background`, `.text` — these DO NOT exist. Use actual tokens: `.gold`, `.bgPrimary`, `.textPrimary`, etc.
 
+### Font Tokens — Exhaustive List (NEVER INVENT OTHERS)
+
+These are the **only** font tokens on `DarkFantasyTheme`. Any other name is a build error.
+
+| Token | Font | Size | Use for |
+|---|---|---|---|
+| `.cinematicTitle` | Oswald | 40 | Full-screen ceremonies, rank-up, boss titles |
+| `.title` | Oswald | 28 | Screen titles, section headers |
+| `.section` | Oswald | 22 | Sub-section headers |
+| `.cardTitle` | Oswald | 18 | Card headers, item names |
+| `.buttonLabel` | Oswald | 18 | Button text |
+| `.body` | Inter | 16 | Body text, descriptions |
+| `.uiLabel` | Inter | 14 | Labels, secondary info |
+| `.caption` | Inter | 12 | Captions, timestamps |
+| `.badge` | Inter | 11 bold | Badges, tiny labels |
+
+**Common mistakes that DO NOT exist:** `.largeTitleFont`, `.titleFont`, `.bodyFont`, `.bodyBoldFont`, `.headlineFont`, `.subtitleFont`, `.captionFont`. For bold variants use `.body.bold()`, `.uiLabel.bold()`, etc.
+
+### Spacing Tokens — Exhaustive List (NEVER INVENT OTHERS)
+
+These are the **only** spacing tokens on `LayoutConstants`. Any other name is a build error.
+
+| Token | Value | Use for |
+|---|---|---|
+| `.space2XS` | 2 | Micro gaps, inline icon offsets |
+| `.spaceXS` | 4 | Badge padding, tight groups |
+| `.spaceSM` | 8 | Card internal gaps |
+| `.spaceMS` | 12 | Compact element padding |
+| `.spaceMD` | 16 | Standard padding, section gaps |
+| `.spaceLG` | 24 | Section separation |
+| `.spaceXL` | 32 | Screen section breaks |
+| `.space2XL` | 48 | Hero areas, dramatic spacing |
+
+**Common mistakes that DO NOT exist:** `.spacingXL`, `.spacingLG`, `.spacingMD`, `.paddingLG`, `.paddingMD`, `.marginLG`. The prefix is `space`, NOT `spacing`/`padding`/`margin`.
+
 ## Stat Colors — Unified Gold Palette (CRITICAL)
 
 All stat bars and stat-related UI use a **unified gold palette** — never per-stat rainbow colors.
@@ -501,6 +536,11 @@ These are the **actual** backend enums. Do not invent values.
 - **Most game lib functions take `prisma` as first arg.** `applyLevelUp(prisma, characterId)`, `updateDailyQuestProgress(prisma, charId, questType, increment)`, `degradeEquipment(prisma, charId)`, `getKFactor(calibrationGames)` (async). When writing new API routes, **copy the exact call patterns from `pvp/fight/route.ts`** — it's the reference implementation.
 - **`CombatResult` fields:** `{ winnerId, loserId, turns: Turn[], totalTurns: number, finalHp: Record<string, number> }`. Use `combatResult.finalHp[characterId]` for HP, `combatResult.totalTurns` for turn count, `combatResult.turns` for combat log. There is NO `.log`, `.duration`, `.player1FinalHp`, `.player2FinalHp`.
 - **Before using any function — check its signature.** Open the source file (`combat.ts`, `stamina.ts`, `live-config.ts`, `progression.ts`, `balance.ts`) and verify: is it async? How many args? What does it return? **Or copy from `pvp/fight/route.ts`** which is known to work. Guessing signatures causes repeated Vercel build failures.
+- **`gems` lives on `User` model, NOT `Character`.** Gold is on Character, gems on User. To deduct both: `prisma.character.update({ gold })` + `prisma.user.update({ gems })`. Past incident: code tried `character.update({ gems })` — field doesn't exist, Prisma build error.
+- **Next.js 15 dynamic route `params` is `Promise`.** In App Router route handlers, `params` must be typed as `Promise<{ id: string }>` and awaited: `const { id } = await params`. Direct destructuring `{ params: { id } }` causes a type error in Next.js 15.
+- **`PvpMatch` uses `player1Id`/`player2Id`, NOT `attackerId`/`defenderId`.** Timestamp field is `playedAt`, not `createdAt`. Past incident: `session-summary/route.ts` used invented field names — Prisma build error.
+- **`Item` is a catalog model with NO `characterId`.** Player items are tracked in `EquipmentInventory` (which has `characterId` + `createdAt`). Never query `prisma.item.findMany({ where: { characterId } })`.
+- **`DailyQuest` uses `day` (String, "YYYY-MM-DD"), NOT `assignedDate` (Date).** Has `completed` (Boolean) but NO `claimed` field. Query pattern: `prisma.dailyQuest.findMany({ where: { characterId, day: todayStr } })`.
 
 ### Economy & Purchase Routes (CRITICAL — TOCTOU Prevention)
 - **All purchase/economy-critical routes MUST validate limits INSIDE a Prisma transaction, never before.**
@@ -838,6 +878,53 @@ The project has an automated error scanner skill at `.claude/skills/error-scanne
 4. **Prisma/cross-cutting** — schema sync between backend/ and admin/, merge conflict markers
 
 **Adding new patterns:** When a new recurring error is discovered, add it to `ERROR_CATALOG.md` with: ID, severity, platform, grep pattern, description, fix, example. Then update the scanner's grep list in `SKILL.md`.
+
+## CDO Verification (MANDATORY — EVERY TASK)
+
+**After completing ANY task**, the agent MUST run CDO Phase 5 verification. This is not optional and cannot be skipped regardless of task size.
+
+### What to scan (grep the codebase):
+
+**1. Invented token names (build errors):**
+```bash
+# Font tokens — ONLY these exist: cinematicTitle, title, section, cardTitle, buttonLabel, body, uiLabel, caption, badge
+grep -rn 'DarkFantasyTheme\.\(largeTitleFont\|titleFont\|bodyFont\|bodyBoldFont\|headlineFont\|subtitleFont\|captionFont\|sectionFont\|labelFont\|captionBoldFont\)' Hexbound/ --include="*.swift"
+
+# Spacing tokens — ONLY these exist: space2XS, spaceXS, spaceSM, spaceMS, spaceMD, spaceLG, spaceXL, space2XL
+grep -rn 'LayoutConstants\.\(spacing\|padding\|margin\)[A-Z]' Hexbound/ --include="*.swift"
+```
+
+**2. @MainActor isolation violations:**
+- Any non-`@MainActor` type calling `HapticManager.*()` or `SFXManager.shared.*()` methods
+
+**3. Design system compliance:**
+```bash
+# Hardcoded colors in Views (should use DarkFantasyTheme tokens)
+grep -rn 'Color(hex:' Hexbound/Hexbound/Views/ --include="*.swift"
+
+# SF Symbol currency icons (should use CurrencyDisplay component)
+grep -rn 'dollarsign\.circle\|diamond\.fill.*currency' Hexbound/Hexbound/Views/ --include="*.swift"
+
+# Force unwraps
+grep -rn '!\s\|!\.\|!\[' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v swiftlint
+```
+
+**4. Structural checks:**
+```bash
+# Junk files in xcodeproj
+ls Hexbound/Hexbound.xcodeproj/ | grep -E '\.(bak|backup|tmp)$'
+
+# Merge conflict markers
+grep -rn '^<<<<<<<\|^=======\$\|^>>>>>>>' . --include="*.swift" --include="*.ts" --include="*.prisma" | grep -v node_modules
+```
+
+### How to report:
+- If ALL checks pass → state "CDO: CLEAN" and proceed
+- If ANY check finds issues → fix them immediately, then re-scan
+- **Never skip CDO even for "small" changes** — small changes cause the most insidious build errors
+
+### CDO skill reference:
+Full CDO orchestrator protocol is at `.claude/skills/cdo/SKILL.md`. For multi-system tasks (3+ domains), run the full CDO pipeline (Phase 1–5), not just Phase 5.
 
 ## Self-Documenting Rules (META — MANDATORY)
 

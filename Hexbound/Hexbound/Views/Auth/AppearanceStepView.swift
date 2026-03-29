@@ -339,57 +339,48 @@ struct AppearanceStepView: View {
     @ViewBuilder
     private func statBonusCell(name: String, value: Int) -> some View {
         let statType = StatType.allCases.first(where: { $0.fullName == name })
-        let color = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
+        let accentColor = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
 
-        HStack(spacing: LayoutConstants.spaceXS) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             if let statType {
                 Image(statType.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 18, height: 18)
+                    .frame(width: 24, height: 24)
             }
 
             Text(name)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
-            Spacer(minLength: 2)
+            Spacer(minLength: 4)
 
             Text("\(value > 0 ? "+" : "")\(value)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel).bold())
-                .foregroundStyle(color)
+                .font(DarkFantasyTheme.section(size: 20).bold())
+                .foregroundStyle(value > 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textDanger)
         }
-        .padding(.horizontal, LayoutConstants.spaceXS + 2)
-        .padding(.vertical, LayoutConstants.spaceXS)
+        .padding(.horizontal, LayoutConstants.spaceMS)
+        .padding(.vertical, LayoutConstants.spaceSM)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgTertiary)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(accentColor.opacity(0.08))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .stroke(value > 0 ? DarkFantasyTheme.gold.opacity(0.25) : DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(value > 0 ? DarkFantasyTheme.gold.opacity(0.5) : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
         )
+        .shadow(color: accentColor.opacity(0.2), radius: 6, y: 2)
     }
 
     // MARK: - Skin Image Helper
 
     @ViewBuilder
     private func skinImage(_ skin: AppearanceSkin) -> some View {
-        if UIImage(named: skin.resolvedImageKey) != nil {
-            Image(skin.resolvedImageKey)
-                .resizable()
-                .scaledToFill()
-        } else if let url = skin.resolvedImageURL {
-            AsyncImage(url: url) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                ProgressView().tint(DarkFantasyTheme.textTertiary)
-            }
-        } else {
-            Image(systemName: "person.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-        }
+        CachedAssetImage(
+            key: skin.resolvedImageKey,
+            url: skin.imageUrl,
+            fallback: "🧑"
+        )
     }
 }

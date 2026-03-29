@@ -6,10 +6,32 @@ import SwiftUI
 struct OpponentIntegratedCard: View {
     let profile: OpponentProfile
 
+    /// Player's own equipped items — used for stat comparison when tapping a slot.
+    var playerEquipment: [Item] = []
+
+    /// Called when player taps an equipped item slot.
+    /// Provides the opponent's item + the player's own item in the same slot (if any) for comparison.
+    var onItemTapped: ((Item, Item?) -> Void)? = nil
+
     // MARK: - Computed
 
     private var equipment: [Item] {
         profile.equipment ?? []
+    }
+
+    /// Finds the player's item that occupies the same logical slot as the given opponent item.
+    private func playerItem(forSlot slot: String, index: Int = 0) -> Item? {
+        switch slot {
+        case "ring":
+            let rings = playerEquipment.filter {
+                ($0.isEquipped ?? false) && ($0.equippedSlot == "ring" || $0.equippedSlot == "ring2")
+            }
+            return index < rings.count ? rings[index] : rings.first
+        default:
+            return playerEquipment.first {
+                ($0.isEquipped ?? false) && $0.equippedSlot == slot
+            }
+        }
     }
 
     // MARK: - Body
@@ -274,24 +296,43 @@ struct OpponentIntegratedCard: View {
 
     @ViewBuilder
     private func equipSlot(_ slot: String, size: CGFloat, index: Int = 0) -> some View {
-        let item = findEquippedItem(slot: slot, index: index)
+        let opponentItem = findEquippedItem(slot: slot, index: index)
         let slotAsset = EquipmentViewModel.slotAssets[slot]
+        let isTappable = opponentItem != nil && onItemTapped != nil
 
-        if let item {
-            ItemCardView(
-                item: item,
-                context: .equipment(slotAsset: slotAsset)
-            ) { }
-            .frame(width: size, height: size)
+        let card = Group {
+            if let opponentItem {
+                ItemCardView(
+                    item: opponentItem,
+                    context: .equipment(slotAsset: slotAsset)
+                ) { }
+                .frame(width: size, height: size)
+            } else {
+                ItemCardView(
+                    rarity: .common,
+                    imageKey: nil,
+                    imageUrl: nil,
+                    fallbackIcon: "",
+                    context: .equipment(slotAsset: slotAsset)
+                ) { }
+                .frame(width: size, height: size)
+            }
+        }
+
+        if isTappable, let opponentItem {
+            Button {
+                HapticManager.light()
+                onItemTapped?(opponentItem, playerItem(forSlot: slot, index: index))
+            } label: {
+                card
+            }
+            .buttonStyle(.plain)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    .stroke(DarkFantasyTheme.gold.opacity(0.25), lineWidth: 1)
+            )
         } else {
-            ItemCardView(
-                rarity: .common,
-                imageKey: nil,
-                imageUrl: nil,
-                fallbackIcon: "",
-                context: .equipment(slotAsset: slotAsset)
-            ) { }
-            .frame(width: size, height: size)
+            card
         }
     }
 }

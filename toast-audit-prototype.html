@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toast Audit — Hexbound Notification Redesign</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-primary: #0D0D14;
+    --bg-secondary: #13131E;
+    --bg-tertiary: #1A1A2A;
+    --bg-abyss: #07070F;
+    --gold: #D4A537;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B6914;
+    --text-primary: #E8DFC8;
+    --text-secondary: #A89878;
+    --text-tertiary: #6B5F4A;
+    --border-medium: #2A2A3E;
+    --border-subtle: #1E1E2E;
+    --danger: #C0392B;
+    --danger-soft: #7B2D26;
+    --info: #2980B9;
+    --success: #27AE60;
+    --purple: #6C3483;
+    --reward: #D4A537;
+  }
+
+  body {
+    background: var(--bg-abyss);
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    padding: 24px 16px 80px;
+  }
+
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 24px;
+    color: var(--gold);
+    text-align: center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(212,165,55,0.2);
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section-title .count {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+
+  /* =================== HOW TOP RPGs DO IT =================== */
+  .reference-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+    max-width: 900px;
+    margin: 0 auto 32px;
+  }
+
+  .reference-card {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-medium);
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .reference-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  }
+
+  .ref-game {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+  }
+
+  .ref-pattern {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .ref-pattern strong {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* =================== AUDIT TABLE =================== */
+  .audit-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* CATEGORY CARDS */
+  .category-card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-medium);
+    margin-bottom: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .category-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .category-header:hover {
+    background: rgba(255,255,255,0.02);
+  }
+
+  .cat-verdict {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .verdict-remove {
+    background: rgba(192,57,43,0.15);
+    border: 1px solid rgba(192,57,43,0.3);
+    color: #E74C3C;
+  }
+
+  .verdict-keep {
+    background: rgba(39,174,96,0.15);
+    border: 1px solid rgba(39,174,96,0.3);
+    color: #2ECC71;
+  }
+
+  .verdict-convert {
+    background: rgba(212,165,55,0.15);
+    border: 1px solid rgba(212,165,55,0.3);
+    color: var(--gold);
+  }
+
+  .verdict-move {
+    background: rgba(41,128,185,0.15);
+    border: 1px solid rgba(41,128,185,0.3);
+    color: #3498DB;
+  }
+
+  .cat-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--text-primary);
+    letter-spacing: 0.3px;
+    flex: 1;
+  }
+
+  .cat-count {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    background: rgba(0,0,0,0.3);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .cat-chevron {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    transition: transform 0.2s;
+  }
+
+  .category-card.open .cat-chevron {
+    transform: rotate(90deg);
+  }
+
+  .cat-body {
+    display: none;
+    padding: 0 16px 14px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .category-card.open .cat-body {
+    display: block;
+  }
+
+  .toast-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(30,30,46,0.5);
+    font-size: 11px;
+  }
+
+  .toast-item:last-child { border-bottom: none; }
+
+  .toast-msg {
+    flex: 1;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .toast-msg code {
+    color: var(--text-primary);
+    background: rgba(0,0,0,0.3);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+
+  .toast-source {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    min-width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .replacement {
+    font-size: 10px;
+    color: var(--gold-dim);
+    margin-top: 4px;
+    padding-left: 20px;
+    font-style: italic;
+  }
+
+  /* =================== STATS BAR =================== */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    max-width: 900px;
+    margin: 20px auto 0;
+  }
+
+  .stat-card {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid var(--border-medium);
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .stat-card.remove .stat-number { color: #E74C3C; }
+  .stat-card.keep .stat-number { color: #2ECC71; }
+  .stat-card.convert .stat-number { color: var(--gold); }
+  .stat-card.move .stat-number { color: #3498DB; }
+
+  /* =================== PHONE COMPARISON =================== */
+  .phone-comparison {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    max-width: 900px;
+    margin: 24px auto 0;
+    flex-wrap: wrap;
+  }
+
+  .phone-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .phone-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+
+  .phone-label.before { color: var(--danger); }
+  .phone-label.after { color: var(--success); }
+
+  .phone {
+    width: 220px;
+    height: 440px;
+    background: var(--bg-primary);
+    border-radius: 36px;
+    border: 2px solid var(--border-medium);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  .dynamic-island {
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 24px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  .status-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 20px 6px;
+    z-index: 50;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .nav-bar {
+    position: absolute;
+    top: 50px; left: 0; right: 0;
+    height: 44px;
+    background: rgba(13,13,20,0.95);
+    border-bottom: 1px solid rgba(42,42,62,0.6);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    z-index: 40;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--gold);
+    font-size: 13px;
+  }
+
+  .back-arrow { font-size: 18px; color: var(--gold); }
+
+  .nav-title {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .screen-content {
+    position: absolute;
+    top: 94px; left: 0; right: 0; bottom: 0;
+    padding: 10px;
+  }
+
+  .inv-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-medium);
+    margin-bottom: 10px;
+  }
+
+  .inv-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .inv-tab.active {
+    color: var(--gold);
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: -1px;
+  }
+
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .item-slot {
+    aspect-ratio: 1;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    position: relative;
+  }
+
+  .item-rarity-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .stars {
+    position: absolute;
+    bottom: 4px; right: 4px;
+    font-size: 6px;
+    color: var(--gold);
+  }
+
+  .home-indicator {
+    position: absolute;
+    bottom: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    z-index: 200;
+  }
+
+  /* =================== BEFORE: TOAST SPAM =================== */
+  .toast-stack-before {
+    position: absolute;
+    top: 50px; left: 8px; right: 8px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .mini-toast {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(19,19,30,0.96);
+    border: 1px solid rgba(42,42,62,0.8);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    font-size: 10px;
+    color: var(--text-primary);
+  }
+
+  .mini-toast.reward { border-color: rgba(212,165,55,0.4); }
+  .mini-toast.info { border-color: rgba(41,128,185,0.3); }
+  .mini-toast.error { border-color: rgba(192,57,43,0.4); }
+
+  .mini-toast-icon {
+    width: 18px; height: 18px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+
+  .mini-toast.reward .mini-toast-icon { background: rgba(212,165,55,0.2); }
+  .mini-toast.info .mini-toast-icon { background: rgba(41,128,185,0.2); }
+  .mini-toast.error .mini-toast-icon { background: rgba(192,57,43,0.2); }
+
+  /* =================== AFTER: INLINE + MINIMAL =================== */
+
+  /* Inline flash on item slot */
+  .item-flash {
+    position: absolute;
+    inset: -1px;
+    border-radius: 8px;
+    border: 2px solid var(--gold);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .item-slot.flash-active .item-flash {
+    animation: itemFlash 1s ease-out;
+  }
+
+  @keyframes itemFlash {
+    0% { opacity: 1; box-shadow: 0 0 12px rgba(212,165,55,0.5); }
+    100% { opacity: 0; box-shadow: 0 0 0 transparent; }
+  }
+
+  /* Floating inline text */
+  .inline-float {
+    position: absolute;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold);
+    pointer-events: none;
+    opacity: 0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+
+  .inline-float.active {
+    animation: floatUp 1.2s ease-out forwards;
+  }
+
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-24px); }
+  }
+
+  /* Checkmark badge on item */
+  .inline-check {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: white;
+    font-weight: 700;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .inline-check.active {
+    animation: checkPop 0.8s ease-out forwards;
+  }
+
+  @keyframes checkPop {
+    0% { opacity: 0; transform: scale(0.3); }
+    40% { opacity: 1; transform: scale(1.15); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Bottom error toast (only important ones stay) */
+  .bottom-toast-zone {
+    position: absolute;
+    bottom: 20px; left: 8px; right: 8px;
+    z-index: 200;
+  }
+
+  .bottom-toast {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(19,19,30,0.96);
+    border: 1px solid rgba(192,57,43,0.5);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    animation: slideUp 0.3s ease-out;
+    opacity: 0;
+  }
+
+  .bottom-toast.visible {
+    opacity: 1;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .bottom-toast-icon {
+    width: 20px; height: 20px;
+    border-radius: 5px;
+    background: rgba(192,57,43,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .bottom-toast-text {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .bottom-toast-action {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    color: var(--gold);
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(212,165,55,0.15);
+    border: 1px solid rgba(212,165,55,0.3);
+    margin-left: auto;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  /* Celebration banner (achievements, level up) */
+  .celebration-banner {
+    position: absolute;
+    top: 94px; left: 0; right: 0;
+    padding: 12px;
+    background: linear-gradient(180deg, rgba(108,52,131,0.3) 0%, rgba(13,13,20,0.95) 100%);
+    border-bottom: 1px solid rgba(108,52,131,0.4);
+    z-index: 60;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .celebration-banner.visible {
+    opacity: 1;
+    animation: bannerReveal 0.5s ease-out;
+  }
+
+  @keyframes bannerReveal {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .celebration-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .celebration-sub {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* Controls */
+  .demo-controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .demo-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid;
+    transition: filter 0.15s;
+  }
+
+  .demo-btn:active { filter: brightness(0.85); }
+
+  .demo-btn.equip { background: rgba(39,174,96,0.15); border-color: rgba(39,174,96,0.3); color: #2ECC71; }
+  .demo-btn.sell { background: rgba(212,165,55,0.15); border-color: rgba(212,165,55,0.3); color: var(--gold); }
+  .demo-btn.error { background: rgba(192,57,43,0.15); border-color: rgba(192,57,43,0.3); color: #E74C3C; }
+  .demo-btn.achieve { background: rgba(108,52,131,0.15); border-color: rgba(108,52,131,0.3); color: #9B59B6; }
+
+  /* =================== RECOMMENDATION BOX =================== */
+  .rec-box {
+    max-width: 900px;
+    margin: 40px auto 0;
+    background: rgba(212,165,55,0.06);
+    border: 1px solid rgba(212,165,55,0.25);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .rec-box-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+
+  .tier {
+    margin-bottom: 16px;
+  }
+
+  .tier-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tier-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .tier-items {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    padding-left: 16px;
+  }
+
+  .tier-items strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .arrow { color: var(--gold-dim); }
+</style>
+</head>
+<body>
+
+<h1>Toast Audit</h1>
+<p class="subtitle">179 тостов -> сколько реально нужно? Как делают топ RPG?</p>
+
+<!-- =================== STATS =================== -->
+<div class="stats-bar">
+  <div class="stat-card remove">
+    <div class="stat-number">~95</div>
+    <div class="stat-label">Убрать</div>
+  </div>
+  <div class="stat-card convert">
+    <div class="stat-number">~45</div>
+    <div class="stat-label">Inline feedback</div>
+  </div>
+  <div class="stat-card move">
+    <div class="stat-number">~15</div>
+    <div class="stat-label">Перенести вниз</div>
+  </div>
+  <div class="stat-card keep">
+    <div class="stat-number">~24</div>
+    <div class="stat-label">Оставить</div>
+  </div>
+</div>
+
+<!-- =================== HOW TOP RPGs DO IT =================== -->
+<div class="section-title">Как делают топ RPG</div>
+<div class="reference-grid">
+  <div class="reference-card">
+    <div class="ref-game">Genshin Impact</div>
+    <div class="ref-pattern">
+      <strong>Pickup:</strong> маленький floating text у подобранного предмета.<br>
+      <strong>Equip:</strong> никакого тоста — предмет просто появляется в слоте с flash-анимацией.<br>
+      <strong>Ошибки:</strong> красный текст по центру экрана (1 сек).
+    </div>
+  </div>
+  <div class="reference-card">
+    <div class="ref-game">Diablo Immortal</div>
+    <div class="ref-pattern">
+      <strong>Loot:</strong> текст плавает над предметом. Legendary = экранная вспышка.<br>
+      <strong>Equip:</strong> звук + визуальное обновление слота.<br>
+      <strong>Тосты:</strong> только ошибки и системные (потеря связи).
+    </div>
+  </div>
+  <div class="reference-card">
+    <div class="ref-game">AFK Arena</div>
+    <div class="ref-pattern">
+      <strong>Rewards:</strong> отдельный экран-церемония.<br>
+      <strong>Equip:</strong> inline анимация + звук.<br>
+      <strong>Тосты:</strong> почти нет. Всё через inline UI.
+    </div>
+  </div>
+  <div class="reference-card">
+    <div class="ref-game">Clash Royale</div>
+    <div class="ref-pattern">
+      <strong>Rewards:</strong> popup/modal с анимацией открытия.<br>
+      <strong>Действия:</strong> кнопка меняет состояние (disabled/success).<br>
+      <strong>Тосты:</strong> не используют вообще.
+    </div>
+  </div>
+</div>
+
+<!-- =================== AUDIT CATEGORIES =================== -->
+<div class="section-title">Аудит всех 179 тостов <span class="count">— нажми для деталей</span></div>
+<div class="audit-container">
+
+  <!-- REMOVE: Routine success confirmations -->
+  <div class="category-card" onclick="this.classList.toggle('open')">
+    <div class="category-header">
+      <span class="cat-verdict verdict-remove">УБРАТЬ</span>
+      <span class="cat-title">Рутинные подтверждения</span>
+      <span class="cat-count">~55 тостов</span>
+      <span class="cat-chevron">›</span>
+    </div>
+    <div class="cat-body">
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Equipped Iron Sword"</code> — игрок сам нажал equip, он знает что произошло</div>
+        <div class="toast-source">InventoryService</div>
+      </div>
+      <div class="replacement">→ flash-анимация на слоте + тактильный feedback (haptic)</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Unequipped Silver Ring"</code> — то же самое</div>
+        <div class="toast-source">InventoryService</div>
+      </div>
+      <div class="replacement">→ предмет визуально "уезжает" из слота, слот мигает пустым</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Stats saved!"</code> — кнопка уже меняет состояние</div>
+        <div class="toast-source">CharacterService</div>
+      </div>
+      <div class="replacement">→ кнопка Save → зеленая галочка на 1 сек</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Stance updated!"</code> — слоты визуально обновляются</div>
+        <div class="toast-source">CharacterService</div>
+      </div>
+      <div class="replacement">→ flash на обновленном слоте + haptic</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Slot boosted!"</code>, <code>"Purchased X!"</code>, <code>"Sold for X gold"</code></div>
+        <div class="toast-source">InventoryService, ShopVM</div>
+      </div>
+      <div class="replacement">→ inline: монеты с анимацией тикают, предмет исчезает/появляется</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Ally request sent!"</code>, <code>"Challenge sent!"</code>, <code>"Запрос отправлен"</code></div>
+        <div class="toast-source">Leaderboard, GuildHall</div>
+      </div>
+      <div class="replacement">→ кнопка transitions: "Send" → "Sent ✓" с disabled state</div>
+    </div>
+  </div>
+
+  <!-- CONVERT: Rewards to inline animation -->
+  <div class="category-card" onclick="this.classList.toggle('open')">
+    <div class="category-header">
+      <span class="cat-verdict verdict-convert">INLINE</span>
+      <span class="cat-title">Награды и покупки → inline анимация</span>
+      <span class="cat-count">~45 тостов</span>
+      <span class="cat-chevron">›</span>
+    </div>
+    <div class="cat-body">
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Healed! HP: X/Y"</code> — HP bar УЖЕ анимируется</div>
+        <div class="toast-source">Arena, Hub</div>
+      </div>
+      <div class="replacement">→ HP bar зеленая вспышка + floating "+50 HP" текст над баром</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"+150 Gold collected"</code>, <code>"Won 80 gold!"</code></div>
+        <div class="toast-source">GoldMine, ShellGame</div>
+      </div>
+      <div class="replacement">→ золотые монеты летят к счётчику gold + tick-up анимация числа</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"All gear repaired!"</code></div>
+        <div class="toast-source">HeroDetail</div>
+      </div>
+      <div class="replacement">→ все сломанные слоты flash-зеленые одновременно + звук ковки</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Reward Claimed!"</code> (daily login, battle pass)</div>
+        <div class="toast-source">DailyLogin, BattlePass</div>
+      </div>
+      <div class="replacement">→ кнопка "Claim" → "Claimed ✓" + reward animation (уже есть)</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"+10 inventory slots! Now: X"</code>, <code>"Stamina +10"</code></div>
+        <div class="toast-source">InventoryService, Hub</div>
+      </div>
+      <div class="replacement">→ floating text +10 над соответствующим счётчиком</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Item +5!"</code> (upgrade)</div>
+        <div class="toast-source">InventoryService</div>
+      </div>
+      <div class="replacement">→ item slot золотая вспышка + level badge анимация</div>
+    </div>
+  </div>
+
+  <!-- KEEP + MOVE TO BOTTOM: Errors -->
+  <div class="category-card" onclick="this.classList.toggle('open')">
+    <div class="category-header">
+      <span class="cat-verdict verdict-move">СНИЗУ</span>
+      <span class="cat-title">Ошибки → оставить, но снизу</span>
+      <span class="cat-count">~55 тостов</span>
+      <span class="cat-chevron">›</span>
+    </div>
+    <div class="cat-body">
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Not enough gold"</code>, <code>"Purchase failed"</code> — блокирующие ошибки</div>
+        <div class="toast-source">ShopService, etc.</div>
+      </div>
+      <div class="replacement">→ перенести вниз + кнопка "Retry" или "Shop"</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Failed to enter dungeon"</code>, <code>"Fight failed"</code></div>
+        <div class="toast-source">DungeonService</div>
+      </div>
+      <div class="replacement">→ bottom toast + "Retry" action button</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Connection error"</code> — сетевые ошибки (дубликаты)</div>
+        <div class="toast-source">Everywhere</div>
+      </div>
+      <div class="replacement">→ дедуплицировать: один bottom toast "No connection" + Retry</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Can't send request — daily limit"</code></div>
+        <div class="toast-source">Leaderboard</div>
+      </div>
+      <div class="replacement">→ bottom toast, но кнопку изначально отключить (disabled state)</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Equip failed — class restriction"</code></div>
+        <div class="toast-source">InventoryService</div>
+      </div>
+      <div class="replacement">→ bottom toast с объяснением</div>
+    </div>
+  </div>
+
+  <!-- KEEP: Celebrations -->
+  <div class="category-card" onclick="this.classList.toggle('open')">
+    <div class="category-header">
+      <span class="cat-verdict verdict-keep">ОСТАВИТЬ</span>
+      <span class="cat-title">Церемонии и важные события</span>
+      <span class="cat-count">~24 тоста</span>
+      <span class="cat-chevron">›</span>
+    </div>
+    <div class="cat-body">
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Level Up!"</code> — важный milestone, допамин</div>
+        <div class="toast-source">Progression</div>
+      </div>
+      <div class="replacement">→ оставить как banner/celebration (НЕ обычный toast)</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Achievement Unlocked!"</code> — заслуженная награда</div>
+        <div class="toast-source">Achievements</div>
+      </div>
+      <div class="replacement">→ специальный celebration banner, отдельный от тост-системы</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Rank Up!"</code> — PvP milestone</div>
+        <div class="toast-source">PvP</div>
+      </div>
+      <div class="replacement">→ celebration banner с эффектом</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Equipment Broke!"</code> — срочная информация</div>
+        <div class="toast-source">Arena</div>
+      </div>
+      <div class="replacement">→ оставить bottom toast + "Repair" action кнопка</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Epic Dragon Sword dropped!"</code> — rare+ лут</div>
+        <div class="toast-source">Dungeon</div>
+      </div>
+      <div class="replacement">→ celebration banner для epic+, inline для common/uncommon</div>
+      <div class="toast-item">
+        <div class="toast-msg"><code>"Quest Complete!"</code> — прогресс</div>
+        <div class="toast-source">DailyQuests</div>
+      </div>
+      <div class="replacement">→ celebration banner (не перекрывает навигацию)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- =================== PHONE BEFORE/AFTER =================== -->
+<div class="section-title">Before → After: одинаковый сценарий</div>
+<p style="text-align:center; font-size:12px; color:var(--text-tertiary); margin-bottom:16px; max-width:900px; margin-left:auto; margin-right:auto;">Сценарий: игрок экипирует предмет, продаёт другой, недостаточно золота на апгрейд, получает achievement</p>
+
+<div class="phone-comparison">
+  <!-- BEFORE -->
+  <div class="phone-col">
+    <div class="phone-label before">Сейчас — 4 тоста стеком</div>
+    <div class="phone">
+      <div class="dynamic-island"></div>
+      <div class="status-bar">
+        <span style="font-weight:700; font-size:12px;">4:45</span>
+        <div style="font-size:10px;">▲ ● ■</div>
+      </div>
+      <div class="nav-bar">
+        <div class="back-btn"><span class="back-arrow">‹</span> Hub</div>
+        <div class="nav-title">Inventory</div>
+      </div>
+      <div class="screen-content">
+        <div class="inv-tabs">
+          <div class="inv-tab active">Inventory</div>
+          <div class="inv-tab">Status</div>
+        </div>
+        <div class="item-grid">
+          <div class="item-slot">⚔️<div class="item-rarity-bar" style="background:#8B4513"></div><div class="stars">★★</div></div>
+          <div class="item-slot">🛡️<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+          <div class="item-slot">🪖<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+          <div class="item-slot" style="border-color:rgba(212,165,55,0.4)">💍<div class="item-rarity-bar" style="background:#D4A537"></div><div class="stars">★★★★</div></div>
+          <div class="item-slot">👢<div class="item-rarity-bar" style="background:#2D4A1E"></div><div class="stars">★★</div></div>
+          <div class="item-slot" style="opacity:0.4"></div>
+        </div>
+      </div>
+      <div class="toast-stack-before">
+        <div class="mini-toast reward"><div class="mini-toast-icon">★</div>Equipped Iron Sword</div>
+        <div class="mini-toast reward"><div class="mini-toast-icon">💰</div>Sold for 120 gold</div>
+        <div class="mini-toast error"><div class="mini-toast-icon">!</div>Not enough gold for upgrade</div>
+        <div class="mini-toast" style="border-color:rgba(108,52,131,0.4)"><div class="mini-toast-icon" style="background:rgba(108,52,131,0.2)">⚔</div>Achievement Unlocked!</div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+    <div style="font-size:10px; color:var(--danger); text-align:center; margin-top:4px;">Back button заблокирован<br>4 тоста одновременно<br>Шум перекрывает контент</div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="phone-col">
+    <div class="phone-label after">Новая система — 3 слоя feedback</div>
+    <div class="phone" id="phone-after">
+      <div class="dynamic-island"></div>
+      <div class="status-bar">
+        <span style="font-weight:700; font-size:12px;">4:45</span>
+        <div style="font-size:10px;">▲ ● ■</div>
+      </div>
+      <div class="nav-bar">
+        <div class="back-btn"><span class="back-arrow">‹</span> Hub</div>
+        <div class="nav-title">Inventory</div>
+      </div>
+
+      <!-- Celebration banner (achievements, level up) -->
+      <div class="celebration-banner" id="celebrationBanner">
+        <div class="celebration-title">Achievement Unlocked!</div>
+        <div class="celebration-sub">First Blood — Win your first PvP battle</div>
+      </div>
+
+      <div class="screen-content">
+        <div class="inv-tabs">
+          <div class="inv-tab active">Inventory</div>
+          <div class="inv-tab">Status</div>
+        </div>
+        <div class="item-grid">
+          <div class="item-slot" id="slot-sword">
+            ⚔️
+            <div class="item-rarity-bar" style="background:#8B4513"></div>
+            <div class="stars">★★</div>
+            <div class="item-flash" id="flash-sword"></div>
+            <div class="inline-check" id="check-sword">✓</div>
+            <div class="inline-float" id="float-equip" style="top:-4px; left:50%; transform:translateX(-50%);">EQUIPPED</div>
+          </div>
+          <div class="item-slot">🛡️<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+          <div class="item-slot">🪖<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+          <div class="item-slot" id="slot-ring" style="border-color:rgba(212,165,55,0.4)">
+            💍
+            <div class="item-rarity-bar" style="background:#D4A537"></div>
+            <div class="stars">★★★★</div>
+            <div class="inline-float" id="float-sell" style="top:-4px; left:50%; transform:translateX(-50%); color:#D4A537;">+120</div>
+          </div>
+          <div class="item-slot">👢<div class="item-rarity-bar" style="background:#2D4A1E"></div><div class="stars">★★</div></div>
+          <div class="item-slot" style="opacity:0.4"></div>
+        </div>
+      </div>
+
+      <!-- Bottom: only error toast -->
+      <div class="bottom-toast-zone">
+        <div class="bottom-toast" id="errorToast">
+          <div class="bottom-toast-icon">!</div>
+          <div class="bottom-toast-text">Not enough gold</div>
+          <div class="bottom-toast-action">SHOP</div>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+
+    <div class="demo-controls">
+      <button class="demo-btn equip" onclick="demoEquip()">Equip</button>
+      <button class="demo-btn sell" onclick="demoSell()">Sell</button>
+      <button class="demo-btn error" onclick="demoError()">Error</button>
+      <button class="demo-btn achieve" onclick="demoAchieve()">Achievement</button>
+    </div>
+    <div style="font-size:10px; color:var(--success); text-align:center; margin-top:4px;">Back button свободен<br>Inline feedback на элементах<br>Ошибки внизу, церемонии отдельно</div>
+  </div>
+</div>
+
+<!-- =================== RECOMMENDATION =================== -->
+<div class="rec-box">
+  <div class="rec-box-title">3-уровневая система нотификаций</div>
+
+  <div class="tier">
+    <div class="tier-title">
+      <span class="tier-badge" style="background:rgba(39,174,96,0.15); border:1px solid rgba(39,174,96,0.3); color:#2ECC71;">СЛОЙ 1</span>
+      Inline Feedback — на самом элементе
+    </div>
+    <div class="tier-items">
+      <strong>Equip/Unequip:</strong> flash-рамка на слоте + haptic <span class="arrow">→</span> убрать тост<br>
+      <strong>Sell:</strong> "+120" floating text + монеты к счётчику <span class="arrow">→</span> убрать тост<br>
+      <strong>Heal:</strong> HP bar green flash + "+50 HP" floating <span class="arrow">→</span> убрать тост<br>
+      <strong>Repair:</strong> слот меняет border с красного на нормальный <span class="arrow">→</span> убрать тост<br>
+      <strong>Upgrade:</strong> level badge пульсирует + "+5" <span class="arrow">→</span> убрать тост<br>
+      <strong>Stats/Stance:</strong> кнопка → "Saved ✓" state <span class="arrow">→</span> убрать тост<br>
+      <strong>Claim:</strong> кнопка → "Claimed ✓" disabled <span class="arrow">→</span> убрать тост<br>
+      <strong>Social:</strong> кнопка → "Sent ✓" disabled <span class="arrow">→</span> убрать тост
+    </div>
+  </div>
+
+  <div class="tier">
+    <div class="tier-title">
+      <span class="tier-badge" style="background:rgba(192,57,43,0.15); border:1px solid rgba(192,57,43,0.3); color:#E74C3C;">СЛОЙ 2</span>
+      Bottom Toast — только ошибки и срочное
+    </div>
+    <div class="tier-items">
+      <strong>Ошибки:</strong> "Not enough gold", "Connection failed", "Fight failed" <span class="arrow">→</span> bottom + Retry/Shop action<br>
+      <strong>Broke:</strong> "Sword broke!" <span class="arrow">→</span> bottom + "Repair" action button<br>
+      <strong>Limits:</strong> "Daily limit reached" <span class="arrow">→</span> bottom, 3 sec<br>
+      <strong>Max 1 toast, дедупликация, swipe-down dismiss</strong>
+    </div>
+  </div>
+
+  <div class="tier">
+    <div class="tier-title">
+      <span class="tier-badge" style="background:rgba(108,52,131,0.15); border:1px solid rgba(108,52,131,0.3); color:#9B59B6;">СЛОЙ 3</span>
+      Celebration Banner — milestone события
+    </div>
+    <div class="tier-items">
+      <strong>Level Up:</strong> баннер под навбаром + звук + вибрация<br>
+      <strong>Achievement:</strong> баннер с названием + описанием<br>
+      <strong>Rank Up:</strong> баннер с новым рангом<br>
+      <strong>Rare+ Drop:</strong> баннер для Epic/Legendary лута<br>
+      <strong>Quest Complete:</strong> баннер<br>
+      <strong>Dungeon Clear:</strong> баннер<br>
+      <strong>Отдельная система от тостов, никогда не перекрывает навигацию</strong>
+    </div>
+  </div>
+</div>
+
+<script>
+  function demoEquip() {
+    const slot = document.getElementById('slot-sword');
+    const check = document.getElementById('check-sword');
+    const float = document.getElementById('float-equip');
+
+    slot.classList.add('flash-active');
+    check.classList.add('active');
+    float.classList.add('active');
+
+    setTimeout(() => {
+      slot.classList.remove('flash-active');
+      check.classList.remove('active');
+      float.classList.remove('active');
+    }, 1500);
+  }
+
+  function demoSell() {
+    const float = document.getElementById('float-sell');
+    float.classList.add('active');
+    setTimeout(() => { float.classList.remove('active'); }, 1500);
+  }
+
+  function demoError() {
+    const toast = document.getElementById('errorToast');
+    toast.classList.add('visible');
+    toast.style.animation = 'slideUp 0.3s ease-out';
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.3s';
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        toast.style.opacity = '';
+        toast.style.transition = '';
+        toast.style.animation = '';
+      }, 300);
+    }, 3000);
+  }
+
+  function demoAchieve() {
+    const banner = document.getElementById('celebrationBanner');
+    banner.classList.add('visible');
+    setTimeout(() => {
+      banner.style.transition = 'opacity 0.5s';
+      banner.style.opacity = '0';
+      setTimeout(() => {
+        banner.classList.remove('visible');
+        banner.style.opacity = '';
+        banner.style.transition = '';
+      }, 500);
+    }, 3000);
+  }
+</script>
+</body>
+</html>

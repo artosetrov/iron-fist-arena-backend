@@ -164,20 +164,14 @@ struct LoginView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button {
+                HubLogoButton {
                     if !appState.authPath.isEmpty {
                         appState.authPath.removeLast()
                     }
-                } label: {
-                    Image("ui-arrow-left")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Go back")
             }
         }
         .onAppear {

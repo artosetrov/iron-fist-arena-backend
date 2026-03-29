@@ -63,3 +63,38 @@ export async function GET(
     )
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getAuthUser(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const { id } = await params
+
+    const character = await prisma.character.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    })
+
+    if (!character) {
+      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+    }
+
+    if (character.userId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    await prisma.character.delete({ where: { id } })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('delete character error:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete character' },
+      { status: 500 }
+    )
+  }
+}

@@ -74,6 +74,12 @@ struct OnboardingDetailView: View {
                 )
                 .onTapGesture {
                     if i < vm.step {
+                        // Go back to a completed step
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            vm.step = i
+                        }
+                    } else if i == vm.step + 1 && vm.canProceed {
+                        // Advance forward if current step is valid
                         withAnimation(.easeInOut(duration: 0.3)) {
                             vm.step = i
                         }

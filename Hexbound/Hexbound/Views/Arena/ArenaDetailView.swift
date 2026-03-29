@@ -5,7 +5,7 @@ struct ArenaDetailView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var vm: ArenaViewModel?
     @State private var refreshRotation: Double = 0
-    @State private var revengeConfirmEntry: RevengeEntry?
+    // confirmation dialog removed — revenge triggers directly
     // Opponent card refresh animation
     @State private var opponentCardsVisible = true
     @State private var opponentCardPhase: RefreshPhase = .idle
@@ -14,6 +14,8 @@ struct ArenaDetailView: View {
     @AppStorage(AppConstants.udNPCArenaGuideDismissed) private var arenaGuideDismissed = false
     @State private var showArenaGuide = false
     @State private var showArenaGuideMini = false
+    // Low HP NPC widget — shown when character HP < 30%
+    @State private var showLowHPGuide = false
 
     var body: some View {
         ZStack {
@@ -117,8 +119,33 @@ struct ArenaDetailView: View {
                         }
                     } // VStack
 
-                    // NPC Guide Widget — player's own avatar as arena coach
-                    if showArenaGuide, let char = appState.currentCharacter {
+                    // Low HP NPC Widget — overrides arena guide when HP < 30%
+                    if showLowHPGuide && isLowHP, let char = appState.currentCharacter {
+                        VStack {
+                            Spacer()
+                            NPCGuideWidget(
+                                npcTitle: "Field Medic",
+                                onDismiss: {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        showLowHPGuide = false
+                                    }
+                                },
+                                avatarSkinKey: char.avatar,
+                                avatarClass: char.characterClass,
+                                plainMessage: "You're critically wounded! Restore your HP before heading into battle.",
+                                onTapCard: {
+                                    appState.shopInitialTab = 3
+                                    appState.mainPath.append(AppRoute.shop)
+                                }
+                            )
+                            .padding(.horizontal, LayoutConstants.npcOuterPadding)
+                            .padding(.bottom, LayoutConstants.npcOuterPadding)
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    // NPC Guide Widget — player's own avatar as arena coach (hidden when HP is critical)
+                    if showArenaGuide && !isLowHP, let char = appState.currentCharacter {
                         VStack {
                             Spacer()
                             NPCGuideWidget(
@@ -142,8 +169,8 @@ struct ArenaDetailView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
 
-                    // Collapsed NPC mini avatar
-                    if showArenaGuideMini, let char = appState.currentCharacter {
+                    // Collapsed NPC mini avatar (hidden when HP is critical)
+                    if showArenaGuideMini && !isLowHP, let char = appState.currentCharacter {
                         VStack {
                             Spacer()
                             HStack {
@@ -204,6 +231,7 @@ struct ArenaDetailView: View {
             .transaction { $0.animation = nil }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .npcHint(.arena, isReady: vm != nil)
         .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
         .toolbar {
@@ -211,35 +239,30 @@ struct ArenaDetailView: View {
                 HubLogoButton()
             }
         }
-        .confirmationDialog(
-            "REVENGE",
-            isPresented: Binding(
-                get: { revengeConfirmEntry != nil },
-                set: { if !$0 { revengeConfirmEntry = nil } }
-            ),
-            titleVisibility: .visible
-        ) {
-            if let entry = revengeConfirmEntry {
-                Button("Fight \(entry.attackerName) (\(vm?.staminaCost ?? 0) STA)") {
-                    Task { await vm?.revenge(revengeId: entry.id) }
-                    revengeConfirmEntry = nil
-                }
-                Button("Cancel", role: .cancel) {
-                    revengeConfirmEntry = nil
-                }
-            }
-        } message: {
-            if let entry = revengeConfirmEntry {
-                Text("\(entry.attackerName) took \(entry.ratingLost) rating from you. Spend stamina to fight back?")
-            }
-        }
+        // confirmation dialog removed — revenge triggers directly from button
         .onAppear {
             AudioManager.shared.playBGM("arena-pvp.mp3")
         }
         .onDisappear {
             AudioManager.shared.playBGM("stray-city.mp3")
         }
+        .onChange(of: isLowHP) { _, lowHP in
+            if lowHP {
+                withAnimation(.easeIn(duration: 0.25)) {
+                    showLowHPGuide = true
+                }
+            } else {
+                // HP recovered — hide the guide
+                withAnimation(.easeOut(duration: 0.2)) {
+                    showLowHPGuide = false
+                }
+            }
+        }
         .task {
+            // Show low HP guide if critically wounded
+            if isLowHP {
+                showLowHPGuide = true
+            }
             // Show arena guide NPC only on first visit (not yet dismissed)
             if !arenaGuideDismissed {
                 showArenaGuide = true
@@ -256,6 +279,14 @@ struct ArenaDetailView: View {
 
             await vm?.loadAll()
         }
+    }
+
+    // MARK: - HP Helpers
+
+    /// True when character HP is critically low (< 30%) and fighting should be blocked
+    private var isLowHP: Bool {
+        guard let char = appState.currentCharacter else { return false }
+        return LowHPPotionBanner.shouldShow(character: char)
     }
 
     // MARK: - Potion Helpers
@@ -575,9 +606,9 @@ struct ArenaDetailView: View {
 
             Spacer()
 
-            // Revenge button — opens confirmation
+            // Revenge button — triggers fight directly
             Button {
-                revengeConfirmEntry = entry
+                Task { await vm.revenge(revengeId: entry.id) }
             } label: {
                 HStack(spacing: 4) {
                     if vm.fightingOpponentId == entry.id {

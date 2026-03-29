@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "relic_old_coin.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
@@ -14,7 +15,7 @@
     }
   ],
   "info" : {
-    "author" : "xcode",
+    "author" : "sync-assets",
     "version" : 1
   }
 }

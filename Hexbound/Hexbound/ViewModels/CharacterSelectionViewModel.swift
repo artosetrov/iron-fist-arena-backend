@@ -4,7 +4,7 @@ import SwiftUI
 final class CharacterSelectionViewModel {
     var characters: [Character] = []
     var selectedCharacterId: String?
-    var isLoading = false
+    var isLoading = true
     var error: String?
 
     var selectedCharacter: Character? {
@@ -65,6 +65,33 @@ final class CharacterSelectionViewModel {
             #if DEBUG
             print("[CharacterSelectionVM] loadCharacters error: \(error)")
             #endif
+        }
+    }
+
+    // MARK: - Delete Character
+
+    var isDeletingCharacter = false
+    var deleteError: String?
+
+    /// Permanently deletes a character. Returns true on success.
+    func deleteCharacter(id: String) async -> Bool {
+        isDeletingCharacter = true
+        deleteError = nil
+
+        do {
+            try await APIClient.shared.delete(APIEndpoints.character(id))
+            // Remove from local list immediately
+            characters.removeAll { $0.id == id }
+            // If deleted hero was selected, auto-select first remaining
+            if selectedCharacterId == id {
+                selectedCharacterId = characters.first?.id
+            }
+            isDeletingCharacter = false
+            return true
+        } catch {
+            deleteError = "Failed to delete hero"
+            isDeletingCharacter = false
+            return false
         }
     }
 

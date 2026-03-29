@@ -263,8 +263,7 @@ final class DungeonRushViewModel {
                 }
             }
 
-            let itemName = (result["item"] as? [String: Any])?["name"] as? String ?? "Item"
-            appState.showToast("Purchased \(itemName)!", type: .reward)
+            HapticManager.light()
         }
     }
 
@@ -291,9 +290,7 @@ final class DungeonRushViewModel {
         await service.rushAbandon()
         isGameOver = true
         lastFightWon = true // Abandoned = kept rewards
-        if accumulatedGold > 0 || accumulatedXp > 0 {
-            appState.showToast("Escaped with \(accumulatedGold) gold!", type: .reward)
-        }
+        HapticManager.light()
     }
 
     func exit() {

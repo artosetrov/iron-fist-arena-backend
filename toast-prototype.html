@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toast Notification — Hexbound Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-primary: #0D0D14;
+    --bg-secondary: #13131E;
+    --bg-tertiary: #1A1A2A;
+    --bg-abyss: #07070F;
+    --gold: #D4A537;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B6914;
+    --text-primary: #E8DFC8;
+    --text-secondary: #A89878;
+    --text-tertiary: #6B5F4A;
+    --border-medium: #2A2A3E;
+    --border-subtle: #1E1E2E;
+    --danger: #C0392B;
+    --info: #2980B9;
+    --success: #27AE60;
+    --purple: #6C3483;
+    --reward: #D4A537;
+  }
+
+  body {
+    background: #07070F;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  /* TAB SWITCHER */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 32px;
+    border: 1px solid var(--border-medium);
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .tab.active {
+    background: linear-gradient(180deg, #1E1A10 0%, #151209 100%);
+    color: var(--gold);
+    border: 1px solid rgba(212, 165, 55, 0.3);
+    box-shadow: 0 0 8px rgba(212, 165, 55, 0.15);
+  }
+
+  /* PHONES CONTAINER */
+  .phones-grid {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  .phone-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    display: none;
+  }
+
+  .phone-card.visible { display: flex; }
+
+  .phone-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-rec {
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: #0D0D14;
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* PHONE MOCKUP */
+  .phone {
+    width: 220px;
+    height: 440px;
+    background: var(--bg-primary);
+    border-radius: 36px;
+    border: 2px solid #2A2A3E;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px #1A1A2A,
+      0 20px 60px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* Dynamic Island */
+  .dynamic-island {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 24px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 20px 6px;
+    z-index: 50;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .status-time { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12px; }
+  .status-icons { display: flex; gap: 4px; align-items: center; font-size: 10px; }
+
+  /* NAVIGATION BAR */
+  .nav-bar {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    right: 0;
+    height: 44px;
+    background: rgba(13,13,20,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(42,42,62,0.6);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    z-index: 40;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .back-arrow {
+    font-size: 18px;
+    line-height: 1;
+    color: var(--gold);
+  }
+
+  .nav-title {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* SCREEN CONTENT */
+  .screen-content {
+    position: absolute;
+    top: 94px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  /* INVENTORY TABS */
+  .inv-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-medium);
+    margin-bottom: 10px;
+  }
+
+  .inv-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.3px;
+  }
+
+  .inv-tab.active {
+    color: var(--gold);
+    border-bottom: 2px solid var(--gold);
+    margin-bottom: -1px;
+  }
+
+  /* ITEM GRID */
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .item-slot {
+    aspect-ratio: 1;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .item-slot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%);
+  }
+
+  .item-rarity-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .stars {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    font-size: 6px;
+    color: var(--gold);
+  }
+
+  /* HOME INDICATOR */
+  .home-indicator {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    z-index: 200;
+  }
+
+  /* ===================== TOAST STYLES ===================== */
+
+  /* CURRENT (BROKEN) — Top */
+  .toast-top-zone {
+    position: absolute;
+    top: 50px;
+    left: 8px;
+    right: 8px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* OPTION A — Bottom */
+  .toast-bottom-zone {
+    position: absolute;
+    bottom: 20px;
+    left: 8px;
+    right: 8px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+  }
+
+  /* OPTION B — Below NavBar */
+  .toast-below-nav-zone {
+    position: absolute;
+    top: 94px;
+    left: 8px;
+    right: 8px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* OPTION C — Bottom Queue */
+  .toast-queue-zone {
+    position: absolute;
+    bottom: 20px;
+    left: 8px;
+    right: 8px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+  }
+
+  /* TOAST PILL */
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(19,19,30,0.96);
+    border: 1px solid rgba(42,42,62,0.8);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 2px 16px rgba(0,0,0,0.6),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: slideIn 0.3s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .toast::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+
+  .toast.info { border-color: rgba(41,128,185,0.5); }
+  .toast.reward { border-color: rgba(212,165,55,0.5); }
+  .toast.error { border-color: rgba(192,57,43,0.5); }
+  .toast.achievement { border-color: rgba(108,52,131,0.5); }
+
+  .toast-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .toast.info .toast-icon { background: rgba(41,128,185,0.2); }
+  .toast.reward .toast-icon { background: rgba(212,165,55,0.2); }
+  .toast.error .toast-icon { background: rgba(192,57,43,0.2); }
+  .toast.achievement .toast-icon { background: rgba(108,52,131,0.2); }
+
+  .toast-body { flex: 1; min-width: 0; }
+  .toast-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Stacked ghost toasts */
+  .toast.ghost-1 {
+    opacity: 0.5;
+    transform: scale(0.95) translateY(4px);
+    transform-origin: bottom center;
+    pointer-events: none;
+  }
+
+  .toast.ghost-2 {
+    opacity: 0.25;
+    transform: scale(0.90) translateY(8px);
+    transform-origin: bottom center;
+    pointer-events: none;
+  }
+
+  /* OVERLAP INDICATOR (for broken state) */
+  .overlap-warning {
+    position: absolute;
+    top: 50px;
+    left: 0; right: 0;
+    height: 94px;
+    background: rgba(192,57,43,0.08);
+    border-left: 2px solid var(--danger);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .overlap-label {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    color: var(--danger);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-align: right;
+  }
+
+  /* SAFE ZONE INDICATOR */
+  .safe-zone-indicator {
+    position: absolute;
+    top: 50px;
+    left: 0; right: 0;
+    height: 44px;
+    background: rgba(39,174,96,0.06);
+    border-left: 2px solid var(--success);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .safe-label {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 7px;
+    color: var(--success);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* QUEUE BADGE */
+  .queue-badge {
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    background: var(--gold);
+    color: #07070F;
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* CONTROLS */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .spawn-btn {
+    padding: 10px 20px;
+    background: linear-gradient(180deg, #2A2010 0%, #1A1508 100%);
+    border: 1px solid rgba(212,165,55,0.4);
+    border-radius: 8px;
+    color: var(--gold);
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .spawn-btn:hover { background: linear-gradient(180deg, #362A15 0%, #241C0A 100%); }
+  .spawn-btn:active { filter: brightness(0.85); }
+
+  .hint-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-align: center;
+    max-width: 200px;
+  }
+
+  /* COMPARISON TABLE */
+  .comparison {
+    width: 100%;
+    max-width: 700px;
+    margin-top: 40px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-medium);
+    overflow: hidden;
+  }
+
+  .comparison-title {
+    background: linear-gradient(180deg, rgba(212,165,55,0.12) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(212,165,55,0.2);
+    padding: 14px 16px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--gold);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .comparison-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 1fr 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .comparison-row:last-child { border-bottom: none; }
+
+  .comparison-cell {
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border-subtle);
+    line-height: 1.4;
+  }
+
+  .comparison-cell:last-child { border-right: none; }
+  .comparison-cell.header {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .comparison-cell.row-label {
+    font-weight: 700;
+    color: var(--text-secondary);
+    font-size: 11px;
+    background: rgba(0,0,0,0.1);
+  }
+
+  .pro { color: #27AE60; font-size: 10px; }
+  .con { color: #C0392B; font-size: 10px; }
+  .rec-badge {
+    display: inline-block;
+    background: rgba(212,165,55,0.15);
+    border: 1px solid rgba(212,165,55,0.3);
+    color: var(--gold);
+    font-size: 9px;
+    font-family: 'Oswald', sans-serif;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes slideInBottom {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .toast-bottom-zone .toast,
+  .toast-queue-zone .toast {
+    animation: slideInBottom 0.3s ease-out;
+  }
+
+  /* RECOMMENDATIONS BOX */
+  .rec-box {
+    width: 100%;
+    max-width: 700px;
+    margin-top: 20px;
+    background: rgba(212,165,55,0.06);
+    border: 1px solid rgba(212,165,55,0.25);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .rec-box-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .rec-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .rec-num {
+    font-family: 'Oswald', sans-serif;
+    color: var(--gold-dim);
+    min-width: 18px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Toast Notification</h1>
+<p class="subtitle">Проблема: тост перекрывает кнопку "назад" → выбери вариант решения</p>
+
+<!-- TAB SWITCHER -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('current')">Сейчас</button>
+  <button class="tab" onclick="switchTab('a')">A: Снизу</button>
+  <button class="tab" onclick="switchTab('b')">B: Под NavBar</button>
+  <button class="tab" onclick="switchTab('c')">C: Очередь ✦</button>
+</div>
+
+<!-- ===================== CURRENT (BROKEN) ===================== -->
+<div class="phone-card visible" id="tab-current">
+  <div class="phone-label">Текущий вариант — <span style="color:#C0392B">⚠ Back button заблокирован</span></div>
+  <div class="phone" id="phone-current">
+    <div class="dynamic-island"></div>
+    <div class="status-bar">
+      <span class="status-time">4:45</span>
+      <div class="status-icons">▲ ● ■</div>
+    </div>
+    <div class="nav-bar">
+      <div class="back-btn"><span class="back-arrow">‹</span> Hub</div>
+      <div class="nav-title">Inventory</div>
+    </div>
+    <div class="overlap-warning">
+      <div class="overlap-label">back<br>button<br>blocked!</div>
+    </div>
+    <div class="screen-content">
+      <div class="inv-tabs">
+        <div class="inv-tab active">Inventory</div>
+        <div class="inv-tab">Status</div>
+      </div>
+      <div class="item-grid">
+        <div class="item-slot">⚔️<div class="item-rarity-bar" style="background:#8B4513"></div><div class="stars">★★</div></div>
+        <div class="item-slot">🛡️<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot">🪖<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot" style="border-color:rgba(212,165,55,0.4)">💍<div class="item-rarity-bar" style="background:#D4A537"></div><div class="stars">★★★★</div></div>
+        <div class="item-slot">👢<div class="item-rarity-bar" style="background:#2D4A1E"></div><div class="stars">★★</div></div>
+        <div class="item-slot" style="opacity:0.4"></div>
+      </div>
+    </div>
+    <div class="toast-top-zone" id="toasts-current"></div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="controls">
+    <button class="spawn-btn" onclick="spawnToast('current')">+ Добавить тост</button>
+    <p class="hint-text">Нажми несколько раз — тосты перекроют кнопку назад</p>
+  </div>
+</div>
+
+<!-- ===================== OPTION A — BOTTOM ===================== -->
+<div class="phone-card" id="tab-a">
+  <div class="phone-label">A: Тост снизу</div>
+  <div class="phone" id="phone-a">
+    <div class="dynamic-island"></div>
+    <div class="status-bar">
+      <span class="status-time">4:45</span>
+      <div class="status-icons">▲ ● ■</div>
+    </div>
+    <div class="nav-bar">
+      <div class="back-btn"><span class="back-arrow">‹</span> Hub</div>
+      <div class="nav-title">Inventory</div>
+    </div>
+    <div class="screen-content">
+      <div class="inv-tabs">
+        <div class="inv-tab active">Inventory</div>
+        <div class="inv-tab">Status</div>
+      </div>
+      <div class="item-grid">
+        <div class="item-slot">⚔️<div class="item-rarity-bar" style="background:#8B4513"></div><div class="stars">★★</div></div>
+        <div class="item-slot">🛡️<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot">🪖<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot" style="border-color:rgba(212,165,55,0.4)">💍<div class="item-rarity-bar" style="background:#D4A537"></div><div class="stars">★★★★</div></div>
+        <div class="item-slot">👢<div class="item-rarity-bar" style="background:#2D4A1E"></div><div class="stars">★★</div></div>
+        <div class="item-slot" style="opacity:0.4"></div>
+      </div>
+    </div>
+    <div class="toast-bottom-zone" id="toasts-a"></div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="controls">
+    <button class="spawn-btn" onclick="spawnToast('a')">+ Добавить тост</button>
+    <p class="hint-text">Back button всегда свободен, тосты снизу</p>
+  </div>
+</div>
+
+<!-- ===================== OPTION B — BELOW NAVBAR ===================== -->
+<div class="phone-card" id="tab-b">
+  <div class="phone-label">B: Под навбаром</div>
+  <div class="phone" id="phone-b">
+    <div class="dynamic-island"></div>
+    <div class="status-bar">
+      <span class="status-time">4:45</span>
+      <div class="status-icons">▲ ● ■</div>
+    </div>
+    <div class="nav-bar">
+      <div class="back-btn"><span class="back-arrow">‹</span> Hub</div>
+      <div class="nav-title">Inventory</div>
+    </div>
+    <div class="safe-zone-indicator"><div class="safe-label">NavBar<br>free!</div></div>
+    <div class="screen-content">
+      <div class="inv-tabs">
+        <div class="inv-tab active">Inventory</div>
+        <div class="inv-tab">Status</div>
+      </div>
+      <div class="item-grid">
+        <div class="item-slot">⚔️<div class="item-rarity-bar" style="background:#8B4513"></div><div class="stars">★★</div></div>
+        <div class="item-slot">🛡️<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot">🪖<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot" style="border-color:rgba(212,165,55,0.4)">💍<div class="item-rarity-bar" style="background:#D4A537"></div><div class="stars">★★★★</div></div>
+        <div class="item-slot">👢<div class="item-rarity-bar" style="background:#2D4A1E"></div><div class="stars">★★</div></div>
+        <div class="item-slot" style="opacity:0.4"></div>
+      </div>
+    </div>
+    <div class="toast-below-nav-zone" id="toasts-b"></div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="controls">
+    <button class="spawn-btn" onclick="spawnToast('b')">+ Добавить тост</button>
+    <p class="hint-text">Тост ниже навбара — back button виден, но тост перекрывает контент</p>
+  </div>
+</div>
+
+<!-- ===================== OPTION C — QUEUE + BOTTOM ===================== -->
+<div class="phone-card" id="tab-c">
+  <div class="phone-label">C: Очередь + снизу &nbsp;<span class="badge-rec">РЕКОМЕНДУЕМ</span></div>
+  <div class="phone" id="phone-c">
+    <div class="dynamic-island"></div>
+    <div class="status-bar">
+      <span class="status-time">4:45</span>
+      <div class="status-icons">▲ ● ■</div>
+    </div>
+    <div class="nav-bar">
+      <div class="back-btn"><span class="back-arrow">‹</span> Hub</div>
+      <div class="nav-title">Inventory</div>
+    </div>
+    <div class="screen-content">
+      <div class="inv-tabs">
+        <div class="inv-tab active">Inventory</div>
+        <div class="inv-tab">Status</div>
+      </div>
+      <div class="item-grid">
+        <div class="item-slot">⚔️<div class="item-rarity-bar" style="background:#8B4513"></div><div class="stars">★★</div></div>
+        <div class="item-slot">🛡️<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot">🪖<div class="item-rarity-bar" style="background:#1a6b8a"></div><div class="stars">★★★</div></div>
+        <div class="item-slot" style="border-color:rgba(212,165,55,0.4)">💍<div class="item-rarity-bar" style="background:#D4A537"></div><div class="stars">★★★★</div></div>
+        <div class="item-slot">👢<div class="item-rarity-bar" style="background:#2D4A1E"></div><div class="stars">★★</div></div>
+        <div class="item-slot" style="opacity:0.4"></div>
+      </div>
+    </div>
+    <div class="toast-queue-zone" id="toasts-c"></div>
+    <div class="home-indicator"></div>
+  </div>
+  <div class="controls">
+    <button class="spawn-btn" onclick="spawnToast('c')">+ Добавить тост</button>
+    <p class="hint-text">Max 2 тоста. Остальные в очереди — появляются по очереди</p>
+  </div>
+</div>
+
+
+<!-- COMPARISON TABLE -->
+<div class="comparison">
+  <div class="comparison-title">Сравнение вариантов</div>
+  <div class="comparison-row">
+    <div class="comparison-cell header row-label">Параметр</div>
+    <div class="comparison-cell header">Сейчас</div>
+    <div class="comparison-cell header">A: Снизу</div>
+    <div class="comparison-cell header">B: Под NavBar</div>
+    <div class="comparison-cell header">C: Очередь ✦</div>
+  </div>
+  <div class="comparison-row">
+    <div class="comparison-cell row-label">Back button</div>
+    <div class="comparison-cell"><span class="con">✗ Блокирует</span></div>
+    <div class="comparison-cell"><span class="pro">✓ Свободен</span></div>
+    <div class="comparison-cell"><span class="pro">✓ Свободен</span></div>
+    <div class="comparison-cell"><span class="pro">✓ Свободен</span></div>
+  </div>
+  <div class="comparison-row">
+    <div class="comparison-cell row-label">Thumb zone</div>
+    <div class="comparison-cell"><span class="con">✗ Верх = неудобно</span></div>
+    <div class="comparison-cell"><span class="pro">✓ Снизу = удобно</span></div>
+    <div class="comparison-cell"><span class="con">✗ Сверху</span></div>
+    <div class="comparison-cell"><span class="pro">✓ Снизу</span></div>
+  </div>
+  <div class="comparison-row">
+    <div class="comparison-cell row-label">Нагромождение</div>
+    <div class="comparison-cell"><span class="con">✗ Много тостов стеком</span></div>
+    <div class="comparison-cell"><span class="con">✗ Стек растёт вверх</span></div>
+    <div class="comparison-cell"><span class="con">✗ Перекрывает контент</span></div>
+    <div class="comparison-cell"><span class="pro">✓ Max 2, очередь</span></div>
+  </div>
+  <div class="comparison-row">
+    <div class="comparison-cell row-label">Перекрытие контента</div>
+    <div class="comparison-cell"><span class="con">✗ NavBar + контент</span></div>
+    <div class="comparison-cell"><span class="con">✗ Нижний контент</span></div>
+    <div class="comparison-cell"><span class="con">✗ Верхний контент</span></div>
+    <div class="comparison-cell" style="color:#D4A537">~ Минимально (2 тоста)</div>
+  </div>
+  <div class="comparison-row">
+    <div class="comparison-cell row-label">Сложность реализации</div>
+    <div class="comparison-cell">—</div>
+    <div class="comparison-cell" style="color:#27AE60">Простая</div>
+    <div class="comparison-cell" style="color:#27AE60">Простая</div>
+    <div class="comparison-cell" style="color:#D4A537">Средняя (очередь)</div>
+  </div>
+  <div class="comparison-row">
+    <div class="comparison-cell row-label">Итог</div>
+    <div class="comparison-cell"><span class="con">Сломано</span></div>
+    <div class="comparison-cell" style="color:#D4A537">Хорошо</div>
+    <div class="comparison-cell" style="color:#A89878">Приемлемо</div>
+    <div class="comparison-cell"><span class="pro">Лучший вариант</span><br><span class="rec-badge">РЕКОМЕНДУЕМ</span></div>
+  </div>
+</div>
+
+<!-- RECOMMENDATIONS BOX -->
+<div class="rec-box">
+  <div class="rec-box-title">✦ Рекомендация — вариант C</div>
+  <div class="rec-item"><span class="rec-num">1.</span> Тосты переезжают в нижнюю зону (над home indicator) — back button всегда свободен</div>
+  <div class="rec-item"><span class="rec-num">2.</span> Максимум 2 тоста одновременно — остальные в очереди (<code style="font-size:10px;color:var(--gold-dim)">toastQueue: [Toast]</code>)</div>
+  <div class="rec-item"><span class="rec-num">3.</span> Каждый тост живёт 3 сек (actionable — 5 сек), после dismiss — следующий из очереди с задержкой 200ms</div>
+  <div class="rec-item"><span class="rec-num">4.</span> Свайп вниз → dismiss (вместо свайп вверх сейчас). Стек растёт вверх от низа экрана</div>
+  <div class="rec-item"><span class="rec-num">5.</span> Если внизу есть sticky CTA (кнопка Fight, Confirm) → сдвигаем toast зону выше на высоту кнопки</div>
+</div>
+
+<script>
+  const TOAST_TYPES = [
+    { type: 'info', icon: 'ℹ', title: 'Unequipped Silver Ring' },
+    { type: 'reward', icon: '★', title: 'Item Equipped: Iron Sword' },
+    { type: 'error', icon: '!', title: 'Not enough gold' },
+    { type: 'achievement', icon: '⚔', title: 'Achievement Unlocked' },
+    { type: 'reward', icon: '💰', title: '+150 Gold collected' },
+    { type: 'info', icon: 'ℹ', title: 'Stamina restored +10' },
+  ];
+
+  const queues = { current: [], a: [], b: [], c: [] };
+  const activeCounts = { current: 0, a: 0, b: 0, c: 0 };
+  const MAX_VISIBLE = { current: 10, a: 10, b: 10, c: 2 };
+  let toastCounters = { current: 0, a: 0, b: 0, c: 0 };
+
+  function switchTab(id) {
+    document.querySelectorAll('.phone-card').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('visible');
+    event.target.classList.add('active');
+  }
+
+  function spawnToast(variant) {
+    const idx = toastCounters[variant] % TOAST_TYPES.length;
+    toastCounters[variant]++;
+    const tData = TOAST_TYPES[idx];
+
+    if (variant === 'c') {
+      // Queue system
+      queues[variant].push(tData);
+      processQueue(variant);
+    } else {
+      addToastToDOM(variant, tData);
+    }
+  }
+
+  function processQueue(variant) {
+    const zone = document.getElementById('toasts-' + variant);
+    const currentToasts = zone.querySelectorAll('.toast:not(.ghost-1):not(.ghost-2)');
+    if (currentToasts.length < MAX_VISIBLE[variant] && queues[variant].length > 0) {
+      const tData = queues[variant].shift();
+      addToastToDOM(variant, tData);
+
+      // Update ghost previews
+      updateGhosts(variant);
+    }
+  }
+
+  function updateGhosts(variant) {
+    if (variant !== 'c') return;
+    const zone = document.getElementById('toasts-' + variant);
+
+    // Remove old ghosts
+    zone.querySelectorAll('.ghost-1, .ghost-2').forEach(g => g.remove());
+
+    if (queues[variant].length >= 1) {
+      const g1 = createToastEl(queues[variant][0]);
+      g1.classList.add('ghost-1');
+      zone.appendChild(g1);
+    }
+    if (queues[variant].length >= 2) {
+      const g2 = createToastEl(queues[variant][1]);
+      g2.classList.add('ghost-2');
+      zone.appendChild(g2);
+    }
+
+    // Show queue badge on active toast
+    const activeToast = zone.querySelector('.toast:not(.ghost-1):not(.ghost-2)');
+    if (activeToast && queues[variant].length > 0) {
+      let badge = activeToast.querySelector('.queue-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'queue-badge';
+        activeToast.style.position = 'relative';
+        activeToast.appendChild(badge);
+      }
+      badge.textContent = '+' + queues[variant].length;
+    }
+  }
+
+  function createToastEl(tData) {
+    const el = document.createElement('div');
+    el.className = 'toast ' + tData.type;
+    el.innerHTML = `
+      <div class="toast-icon">${tData.icon}</div>
+      <div class="toast-body">
+        <div class="toast-title">${tData.title}</div>
+      </div>
+    `;
+    return el;
+  }
+
+  function addToastToDOM(variant, tData) {
+    const zone = document.getElementById('toasts-' + variant);
+    const el = createToastEl(tData);
+
+    // For bottom zones, prepend (shows at bottom)
+    if (variant === 'a' || variant === 'b' || variant === 'c') {
+      zone.insertBefore(el, zone.firstChild);
+    } else {
+      zone.appendChild(el);
+    }
+
+    activeCounts[variant]++;
+
+    // Auto-remove after 3s
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.3s, transform 0.3s';
+      el.style.opacity = '0';
+      el.style.transform = variant === 'current' || variant === 'b'
+        ? 'translateY(-8px)'
+        : 'translateY(8px)';
+
+      setTimeout(() => {
+        el.remove();
+        activeCounts[variant]--;
+
+        if (variant === 'c') {
+          // Update ghosts and process next
+          zone.querySelectorAll('.ghost-1, .ghost-2').forEach(g => g.remove());
+          setTimeout(() => processQueue(variant), 200);
+        }
+      }, 300);
+    }, 3000);
+  }
+</script>
+</body>
+</html>

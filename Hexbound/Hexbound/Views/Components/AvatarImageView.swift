@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Reusable avatar image that resolves the character's skinKey via GameDataCache.
+/// Reusable avatar image that resolves the character's skinKey via GameDataCache + AssetManager.
+/// Uses 3-tier resolution: bundle → disk cache → network.
 /// Falls back to the class icon when no skin image is available.
 struct AvatarImageView: View {
     @Environment(GameDataCache.self) private var cache
@@ -9,29 +10,25 @@ struct AvatarImageView: View {
     let characterClass: CharacterClass
     let size: CGFloat
 
+    @State private var resolvedImage: UIImage?
+    @State private var isLoading = false
+
     var body: some View {
-        if let key = cache.skinImageKey(for: skinKey), UIImage(named: key) != nil {
-            // Local bundled asset — instant, offline
-            Image(key)
+        let resolvedKey = cache.skinImageKey(for: skinKey)
+        if let image = resolvedImage ?? AssetManager.shared.image(forKey: resolvedKey) {
+            Image(uiImage: image)
                 .resizable().scaledToFill()
                 .frame(width: size, height: size)
                 .clipped()
-        } else if let url = cache.skinImageURL(for: skinKey) {
-            // Remote fallback
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                case .failure:
-                    fallbackIcon
-                case .empty:
-                    ProgressView().tint(DarkFantasyTheme.textTertiary)
-                @unknown default:
-                    fallbackIcon
+        } else if isLoading {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgTertiary)
+                .frame(width: size, height: size)
+                .overlay {
+                    ProgressView()
+                        .tint(DarkFantasyTheme.textTertiary)
+                        .scaleEffect(0.6)
                 }
-            }
-            .frame(width: size, height: size)
-            .clipped()
         } else {
             fallbackIcon
         }
@@ -41,5 +38,18 @@ struct AvatarImageView: View {
         Text(characterClass.icon)
             .font(.system(size: size * 0.5))
             .frame(width: size, height: size)
+            .task {
+                // Try to fetch from network in background
+                let resolvedKey = cache.skinImageKey(for: skinKey)
+                let resolvedURL = cache.skinImageURL(for: skinKey)?.absoluteString
+                guard resolvedKey != nil || resolvedURL != nil else { return }
+
+                isLoading = true
+                resolvedImage = await AssetManager.shared.fetchIfNeeded(
+                    key: resolvedKey,
+                    url: resolvedURL
+                )
+                isLoading = false
+            }
     }
 }

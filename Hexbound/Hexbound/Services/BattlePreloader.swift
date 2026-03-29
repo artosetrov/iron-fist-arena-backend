@@ -126,9 +126,12 @@ final class BattlePreloader {
                     await MainActor.run { [weak self] in
                         switch error {
                         case .clientError(_, let message):
+                            // Server returned specific error (e.g. "Not enough stamina", "Not enough HP")
                             self?.appState.showToast(message, type: .error)
+                        case .serverError(_, let message):
+                            self?.appState.showToast("Server error", subtitle: message, type: .error)
                         default:
-                            self?.appState.showToast("Failed to prepare battle", subtitle: "Check connection and try again", type: .error)
+                            self?.appState.showToast("Connection error", subtitle: "Check your internet and try again", type: .error)
                         }
                     }
                 }
@@ -137,7 +140,7 @@ final class BattlePreloader {
                 await cacheStore.removeInFlight(cacheKey)
                 if showErrors {
                     await MainActor.run { [weak self] in
-                        self?.appState.showToast("Failed to prepare battle", subtitle: "Check connection and try again", type: .error)
+                        self?.appState.showToast("Connection error", subtitle: "Check your internet and try again", type: .error)
                     }
                 }
                 return nil
@@ -191,6 +194,7 @@ final class BattlePreloader {
             let resultDict = response["result"] as? [String: Any] ?? [:]
             let lootArray = response["loot"] as? [[String: Any]] ?? []
             let staminaDict = response["stamina"] as? [String: Any] ?? [:]
+            let hpDict = response["post_combat_hp"] as? [String: Any] ?? [:]
 
             let durabilityArray = response["durability_changes"] as? [[String: Any]] ?? []
 
@@ -209,7 +213,9 @@ final class BattlePreloader {
                 staminaCurrent: staminaDict["current"] as? Int ?? 0,
                 staminaMax: staminaDict["max"] as? Int ?? 120,
                 matchId: response["matchId"] as? String,
-                durabilityDegraded: durabilityArray
+                durabilityDegraded: durabilityArray,
+                hpCurrent: hpDict["player"] as? Int ?? 0,
+                hpMax: 0
             )
         } catch {
             // Resolve failure is non-fatal — server will reconcile
@@ -255,4 +261,6 @@ struct ResolveResult {
     let staminaMax: Int
     let matchId: String?
     let durabilityDegraded: [[String: Any]]
+    let hpCurrent: Int
+    let hpMax: Int
 }

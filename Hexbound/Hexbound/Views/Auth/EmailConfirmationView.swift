@@ -105,6 +105,16 @@ struct EmailConfirmationView: View {
             .padding(.horizontal, LayoutConstants.screenPadding)
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                HubLogoButton {
+                    appState.pendingConfirmationEmail = nil
+                    appState.authPath = NavigationPath()
+                    appState.authPath.append(AppRoute.login)
+                }
+            }
+        }
         .onAppear {
             appState.pendingConfirmationEmail = email
             withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {

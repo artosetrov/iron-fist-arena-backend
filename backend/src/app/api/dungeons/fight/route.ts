@@ -143,6 +143,12 @@ export async function POST(req: NextRequest) {
     }))
 
     const playerStartHp = playerStats.currentHp ?? character.maxHp
+    // Track final HP after all combat rounds
+    let playerFinalHp = playerStartHp
+    if (primaryCombatResult) {
+      playerFinalHp = Math.max(primaryCombatResult.finalHp[character_id] ?? 0, 0)
+    }
+    const now = new Date()
 
     const combatDataPayload = {
       player: {
@@ -182,6 +188,11 @@ export async function POST(req: NextRequest) {
         if (lockedRun.currentFloor !== currentFloor) throw new Error('DUNGEON_RUN_STALE')
 
         await tx.dungeonRun.delete({ where: { id: run.id } })
+        // Save final HP after defeat
+        await tx.character.update({
+          where: { id: character_id },
+          data: { currentHp: playerFinalHp, lastHpUpdate: now },
+        })
       })
 
       const durabilityResult = await degradeEquipment(prisma, character_id)
@@ -241,6 +252,8 @@ export async function POST(req: NextRequest) {
         data: {
           gold: { increment: goldReward },
           currentXp: { increment: xpReward },
+          currentHp: playerFinalHp,
+          lastHpUpdate: now,
         },
       })
 

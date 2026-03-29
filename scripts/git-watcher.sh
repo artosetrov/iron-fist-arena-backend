@@ -3,10 +3,14 @@
 # git-watcher.sh — Watches for .git-trigger file and auto-commits
 # Run this in a terminal tab: ./scripts/git-watcher.sh
 # Claude creates .git-trigger with commit message → this script commits & pushes
+#
+# Asset sync: Automatically runs sync-assets.sh before each commit to pull
+# latest assets from Supabase Storage into the Xcode bundle.
 # =============================================================================
 
 REPO_DIR="/Users/artosetrov/Documents/Cursor AI/PVP RPG"
 TRIGGER="$REPO_DIR/.git-trigger"
+SYNC_SCRIPT="$REPO_DIR/scripts/sync-assets.sh"
 
 echo "🔮 Git watcher started. Watching for $TRIGGER..."
 
@@ -21,6 +25,13 @@ while true; do
 
     cd "$REPO_DIR"
     rm -f .git/index.lock .git/HEAD.lock
+
+    # 🎨 Auto-sync assets from Supabase before committing
+    if [ -x "$SYNC_SCRIPT" ]; then
+      echo "🎨 Syncing assets from Supabase..."
+      "$SYNC_SCRIPT" --pre-commit 2>&1 | tail -5
+      echo "---"
+    fi
 
     git add -A
 

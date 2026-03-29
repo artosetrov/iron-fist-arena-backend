@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getUpgradeStatBonus } from '@/lib/game/item-balance'
+import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
               id: true, itemName: true, itemType: true, rarity: true, itemLevel: true,
               baseStats: true, setName: true, specialEffect: true, uniquePassive: true,
               imageUrl: true, imageKey: true, classRestriction: true, description: true,
+              catalogId: true,
             },
           },
         },
@@ -59,7 +61,8 @@ export async function GET(req: NextRequest) {
       for (const [stat, baseValue] of Object.entries(baseStats)) {
         effectiveStats[stat] = baseValue + eq.upgradeLevel * upgradeStatBonus
       }
-      return { ...eq, effectiveStats }
+      const isTwoHanded = eq.item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(eq.item.catalogId)
+      return { ...eq, effectiveStats, isTwoHanded }
     })
 
     return NextResponse.json({

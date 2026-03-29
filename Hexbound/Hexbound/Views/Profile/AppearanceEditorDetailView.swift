@@ -79,6 +79,7 @@ struct AppearanceEditorDetailView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -427,22 +428,11 @@ struct AppearanceEditorDetailView: View {
 
     // MARK: - Skin Image Helper
 
-    @ViewBuilder
     private func editorSkinImage(_ skin: AppearanceSkin) -> some View {
-        if UIImage(named: skin.resolvedImageKey) != nil {
-            Image(skin.resolvedImageKey)
-                .resizable()
-                .scaledToFill()
-        } else if let url = skin.resolvedImageURL {
-            AsyncImage(url: url) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                ProgressView().tint(DarkFantasyTheme.textTertiary)
-            }
-        } else {
-            Image(systemName: "person.fill")
-                .font(.system(size: 32)) // SF Symbol icon — keep as is
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-        }
+        CachedAssetImage(
+            key: skin.resolvedImageKey,
+            url: skin.imageUrl,
+            fallback: "🧑"
+        )
     }
 }
