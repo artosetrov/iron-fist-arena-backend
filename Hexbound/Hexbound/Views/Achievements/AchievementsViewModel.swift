@@ -9,8 +9,6 @@ final class AchievementsViewModel {
     var isLoading = false
     var errorMessage: String? = nil
     var selectedTab = 0
-    var claimingKey: String?
-
     static let tabs = ["PvP", "Progress", "Ranking"]
     static let tabCategories = ["pvp", "progression", "ranking"]
 
@@ -64,28 +62,23 @@ final class AchievementsViewModel {
     // MARK: - Claim
 
     func claim(_ achievement: Achievement) async {
-        claimingKey = achievement.key
-
         // ── Optimistic UI: mark claimed instantly ──
         if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
             achievements[idx].rewardClaimed = true
         }
         cache.cacheAchievements(achievements)
-        claimingKey = nil
         HapticManager.success()
+        SFXManager.shared.play(.uiRewardClaim)
 
-        // ── Fire API in background ──
-        Task { [weak self] in
-            guard let self else { return }
-            let success = await service.claim(achievementKey: achievement.key)
-            if !success {
-                // Revert on failure
-                if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
-                    achievements[idx].rewardClaimed = false
-                }
-                cache.cacheAchievements(achievements)
-                appState.showToast("Claim failed. Try again.", type: .error)
+        // ── API call (runs after UI update thanks to await suspension) ──
+        let success = await service.claim(achievementKey: achievement.key)
+        if !success {
+            // Revert on failure
+            if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
+                achievements[idx].rewardClaimed = false
             }
+            cache.cacheAchievements(achievements)
+            appState.showToast("Claim failed. Try again.", type: .error)
         }
     }
 

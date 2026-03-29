@@ -180,11 +180,9 @@ struct ItemDetailSheet: View {
                     .accessibilityLabel("Item name")
 
                 VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        badgePill(item.itemType.displayName, style: .secondary)
-                        if item.isTwoHanded == true {
-                            badgePill("Two-Handed", style: .twoHanded)
-                        }
+                    badgePill(item.itemType.displayName, style: .secondary)
+                    if item.isTwoHanded == true {
+                        badgePill("Two-Handed", style: .twoHanded)
                     }
                     badgePill(item.rarity.displayName, style: .rarity)
                 }
@@ -330,6 +328,24 @@ struct ItemDetailSheet: View {
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
+
+                // Repair button — inline, hugs content width
+                if isDamaged && shopMode == nil && !viewMode {
+                    Button {
+                        HapticManager.medium()
+                        onRepair()
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "wrench.and.screwdriver.fill")
+                                .font(.system(size: 13))
+                            Text("REPAIR")
+                            Text("·")
+                            CurrencyDisplay(gold: repairCost, size: .compact, currencyType: .gold, animated: false)
+                        }
+                    }
+                    .buttonStyle(isBroken ? .primary : .secondary)
+                    .fixedSize()
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, LayoutConstants.cardPadding)
@@ -343,43 +359,98 @@ struct ItemDetailSheet: View {
 
     @ViewBuilder
     private var comparisonSection: some View {
-        if let compared = comparedItem {
-            let itemStats = item.effectiveStats
-            let comparedStats = compared.effectiveStats
-            let allKeys = Set(itemStats.keys).union(Set(comparedStats.keys))
-            let deltas = allKeys.compactMap { key -> (String, Int)? in
-                let val = itemStats[key] ?? 0
-                let comp = comparedStats[key] ?? 0
-                let delta = val - comp
-                return delta != 0 ? (key, delta) : nil
-            }.sorted(by: { $0.0 < $1.0 })
+        let itemStats = item.effectiveStats
+        let comparedStats = comparedItem?.effectiveStats ?? [:]
+        let showComparison = comparedItem != nil || shopMode != nil
+        let allKeys = Set(itemStats.keys).union(Set(comparedStats.keys))
+        let deltas = allKeys.compactMap { key -> (String, Int)? in
+            let val = itemStats[key] ?? 0
+            let comp = comparedStats[key] ?? 0
+            let delta = val - comp
+            return delta != 0 ? (key, delta) : nil
+        }.sorted(by: { $0.0 < $1.0 })
 
-            if !deltas.isEmpty {
-                VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-                    sectionHeader(icon: "arrow.left.arrow.right", title: "VS. EQUIPPED")
+        if showComparison && !deltas.isEmpty {
+            let title = comparedItem != nil ? "VS. EQUIPPED" : "STAT BONUS"
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+                sectionHeader(icon: "arrow.left.arrow.right", title: title)
 
-                    ForEach(deltas, id: \.0) { key, delta in
-                        HStack {
-                            Text(Item.statLabels[key] ?? key.capitalized)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            Spacer()
-                            HStack(spacing: LayoutConstants.spaceXS) {
-                                Text(delta > 0 ? "▲" : "▼")
-                                    .font(.system(size: 10)) // emoji text — keep as is
-                                Text(delta > 0 ? "+\(delta)" : "\(delta)")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                            }
-                            .foregroundStyle(delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
-                        }
-                    }
+                ForEach(deltas, id: \.0) { key, delta in
+                    comparisonStatCell(key: key, delta: delta)
                 }
-                .padding(.horizontal, LayoutConstants.cardPadding)
-                .padding(.vertical, LayoutConstants.spaceMD)
-
-                sectionDivider
             }
+            .padding(.horizontal, LayoutConstants.cardPadding)
+            .padding(.vertical, LayoutConstants.spaceMD)
+
+            sectionDivider
         }
+    }
+
+    /// Stat comparison cell matching LeaderboardPlayerDetailSheet style:
+    /// icon + stat name + delta badge pill + current item value
+    private func comparisonStatCell(key: String, delta: Int) -> some View {
+        let statType = StatType.allCases.first(where: { $0.apiKey == key })
+        let deltaColor = delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+        let arrow = delta > 0 ? "▲" : "▼"
+        let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
+        let statName = Item.statLabels[key] ?? key.capitalized
+        let itemValue = item.effectiveStats[key] ?? 0
+
+        return HStack(spacing: LayoutConstants.spaceXS) {
+            if let statType {
+                Image(statType.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+            }
+
+            Text(statName)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.statColor(for: key))
+                .lineLimit(1)
+
+            Spacer(minLength: 4)
+
+            Text(label)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                .foregroundStyle(deltaColor)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.spaceXS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(deltaColor.opacity(0.15))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .stroke(deltaColor.opacity(0.4), lineWidth: 1)
+                        )
+                )
+
+            Text("+\(itemValue)")
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .frame(minWidth: 36, alignment: .trailing)
+        }
+        .padding(LayoutConstants.spaceSM + 2)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 2,
+            inset: 2,
+            color: DarkFantasyTheme.borderMedium.opacity(0.15)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
     }
 
     // MARK: - Section 4: Effects
@@ -442,32 +513,34 @@ struct ItemDetailSheet: View {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                 sectionHeader(icon: "coins.circle.fill", title: "ECONOMY")
 
-                HStack(spacing: LayoutConstants.spaceLG) {
-                    if buy > 0 {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Text("Buy:")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            CurrencyDisplay(
-                                gold: buy,
-                                size: .mini,
-                                currencyType: .gold,
-                                animated: false
-                            )
-                        }
+                // Sell price — primary (this is what matters when you own the item)
+                if sell > 0 {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text("Sell:")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        CurrencyDisplay(
+                            gold: sell,
+                            size: .compact,
+                            currencyType: .gold,
+                            animated: false
+                        )
                     }
-                    if sell > 0 {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Text("Sell:")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            CurrencyDisplay(
-                                gold: sell,
-                                size: .mini,
-                                currencyType: .gold,
-                                animated: false
-                            )
-                        }
+                }
+
+                // Buy price — secondary/dimmed (already purchased)
+                if buy > 0 {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text("Buy:")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        CurrencyDisplay(
+                            gold: buy,
+                            size: .mini,
+                            currencyType: .gold,
+                            animated: false
+                        )
+                        .opacity(0.6)
                     }
                 }
             }
@@ -572,8 +645,6 @@ struct ItemDetailSheet: View {
                 shopBuySection(shop)
             } else if showUpgradeConfirm {
                 upgradeConfirmPanel
-            } else if isBroken {
-                repairButton(style: .primary)
             } else {
                 if item.itemType == .consumable {
                     Button("USE") { HapticManager.medium(); onUse() }
@@ -586,21 +657,21 @@ struct ItemDetailSheet: View {
                             onUnequip()
                         }
                         .buttonStyle(.secondary)
-                        if isDamaged {
-                            repairButton(style: .primary)
-                        } else if canUpgrade {
+                        if canUpgrade {
                             Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
                                 .buttonStyle(.primary)
                         }
                     }
                 } else {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        Button("EQUIP") {
-                            HapticManager.medium()
-                            SFXManager.shared.play(.uiEquip)
-                            onEquip()
+                        if !isBroken {
+                            Button("EQUIP") {
+                                HapticManager.medium()
+                                SFXManager.shared.play(.uiEquip)
+                                onEquip()
+                            }
+                            .buttonStyle(.secondary)
                         }
-                        .buttonStyle(.secondary)
                         // Sell with confirmation for rare+ items
                         Button("SELL") {
                             HapticManager.light()
@@ -613,9 +684,7 @@ struct ItemDetailSheet: View {
                         }
                         .buttonStyle(.secondary)
                     }
-                    if isDamaged {
-                        repairButton(style: .secondary)
-                    } else if canUpgrade {
+                    if canUpgrade {
                         Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }
                             .buttonStyle(.secondary)
                     }
@@ -636,30 +705,6 @@ struct ItemDetailSheet: View {
             Text("This \(item.rarity.displayName) item will be lost permanently.")
         }
     }
-
-    /// Reusable repair button with CurrencyDisplay (no emoji)
-    @ViewBuilder
-    private func repairButton(style: ButtonStyleType) -> some View {
-        let label = HStack(spacing: LayoutConstants.spaceXS) {
-            Text("REPAIR ·")
-            CurrencyDisplay(gold: repairCost, size: .mini, currencyType: .gold, animated: false)
-        }
-        if style == .primary {
-            Button {
-                HapticManager.medium()
-                onRepair()
-            } label: { label }
-            .buttonStyle(.primary)
-        } else {
-            Button {
-                HapticManager.medium()
-                onRepair()
-            } label: { label }
-            .buttonStyle(.secondary)
-        }
-    }
-
-    private enum ButtonStyleType { case primary, secondary }
 
     @ViewBuilder
     private func shopBuySection(_ shop: ShopContext) -> some View {

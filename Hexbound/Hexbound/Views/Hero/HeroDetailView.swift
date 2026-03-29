@@ -174,8 +174,11 @@ struct HeroDetailView: View {
         guard var items = appState.cachedInventory else { return }
         guard let potion = items.first(where: { $0.consumableType?.contains("health_potion") == true }) else { return }
 
-        // Optimistic UI — update instantly
+        // Optimistic UI — update inventory + HP instantly
         let previousItems = items
+        let previousHp = appState.currentCharacter?.currentHp ?? 0
+        let maxHp = appState.currentCharacter?.maxHp ?? 100
+
         if let qty = potion.quantity, qty > 1 {
             items = items.map { existing in
                 guard existing.id == potion.id else { return existing }
@@ -188,10 +191,15 @@ struct HeroDetailView: View {
         }
         appState.cachedInventory = items
         inventoryVM?.items = items
-        HapticManager.success()
-        appState.showToast("Healed!", type: .reward)
 
-        // Fire API in background
+        let estimatedHeal = max(Int(Double(maxHp) * 0.3), 50)
+        let newHp = min(previousHp + estimatedHeal, maxHp)
+        appState.currentCharacter?.currentHp = newHp
+
+        HapticManager.success()
+        appState.showToast("Healed! HP: \(newHp)/\(maxHp)", type: .reward)
+
+        // Fire API in background — server corrects HP on success
         let potionId = potion.id
         let consumableType = potion.consumableType
         let service = InventoryService(appState: appState)
@@ -201,6 +209,7 @@ struct HeroDetailView: View {
                 await MainActor.run {
                     appState.cachedInventory = previousItems
                     inventoryVM?.items = previousItems
+                    appState.currentCharacter?.currentHp = previousHp
                 }
             }
         }

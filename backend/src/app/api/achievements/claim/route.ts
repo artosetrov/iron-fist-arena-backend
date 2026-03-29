@@ -3,6 +3,8 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
 import { applyLevelUp } from '@/lib/game/progression'
+import { awardBattlePassXp } from '@/lib/game/battle-pass'
+import { getBattlePassConfig } from '@/lib/game/live-config'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -84,6 +86,10 @@ export async function POST(req: NextRequest) {
 
       return { rewardType: def.rewardType, rewardAmount: def.rewardAmount }
     })
+
+    // Award Battle Pass XP for achievement claim
+    const BATTLE_PASS = await getBattlePassConfig()
+    await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_ACHIEVEMENT)
 
     // Check for level-up if XP was awarded (outside tx is fine)
     let levelUpResult = null

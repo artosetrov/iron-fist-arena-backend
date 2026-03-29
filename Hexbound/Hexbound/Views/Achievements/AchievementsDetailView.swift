@@ -54,10 +54,7 @@ struct AchievementsDetailView: View {
                                 ForEach(Array(vm.filteredAchievements.enumerated()), id: \.element.id) { index, achievement in
                                     AchievementCardView(
                                         achievement: achievement,
-                                        isClaiming: vm.claimingKey == achievement.key,
                                         onClaim: {
-                                            HapticManager.success()
-                                            SFXManager.shared.play(.uiRewardClaim)
                                             Task { await vm.claim(achievement) }
                                         }
                                     )

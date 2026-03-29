@@ -189,10 +189,27 @@ final class InventoryViewModel {
             items.removeAll { $0.id == item.id }
         }
         appState.cachedInventory = items
+
+        // Optimistic stat update — estimate HP/stamina change immediately
+        let previousHp = appState.currentCharacter?.currentHp ?? 0
+        let previousStamina = appState.currentCharacter?.currentStamina ?? 0
+        let isHealthPotion = item.consumableType?.contains("health_potion") == true
+        let isStaminaPotion = item.consumableType?.contains("stamina_potion") == true
+
+        if isHealthPotion, var char = appState.currentCharacter {
+            let estimatedHeal = max(Int(Double(char.maxHp) * 0.3), 50)
+            char.currentHp = min(char.currentHp + estimatedHeal, char.maxHp)
+            appState.currentCharacter = char
+        } else if isStaminaPotion, var char = appState.currentCharacter {
+            let estimatedRestore = max(Int(Double(char.maxStamina) * 0.3), 20)
+            char.currentStamina = min(char.currentStamina + estimatedRestore, char.maxStamina)
+            appState.currentCharacter = char
+        }
+
         HapticManager.success()
         appState.showToast("Used \(item.displayName)", type: .reward)
 
-        // Fire API in background — revert on failure
+        // Fire API in background — revert on failure, server corrects stat values on success
         let itemId = item.id
         let consumableType = item.consumableType
         Task { [weak self] in
@@ -201,6 +218,12 @@ final class InventoryViewModel {
                 await MainActor.run {
                     self?.items = previousItems
                     self?.appState.cachedInventory = previousItems
+                    // Revert optimistic stat changes
+                    if isHealthPotion {
+                        self?.appState.currentCharacter?.currentHp = previousHp
+                    } else if isStaminaPotion {
+                        self?.appState.currentCharacter?.currentStamina = previousStamina
+                    }
                 }
             } else {
                 await MainActor.run {

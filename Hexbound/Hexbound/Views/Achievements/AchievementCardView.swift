@@ -2,7 +2,6 @@ import SwiftUI
 
 struct AchievementCardView: View {
     let achievement: Achievement
-    let isClaiming: Bool
     let onClaim: () -> Void
 
     @State private var showClaimBurst = false
@@ -64,20 +63,15 @@ struct AchievementCardView: View {
 
             Spacer()
 
-            // Claim button (L1 fix: removed duplicate HapticManager call)
+            // Claim button
             if achievement.canClaim {
                 Button(action: {
                     showClaimBurst = true
                     onClaim()
                 }) {
-                    if isClaiming {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
-                    } else {
-                        Text("Claim")
-                    }
+                    Text("Claim")
                 }
                 .buttonStyle(.compactPrimary)
-                .disabled(isClaiming)
             }
         }
         .padding(LayoutConstants.spaceSM)
@@ -110,6 +104,7 @@ struct AchievementCardView: View {
             length: 14,
             thickness: 1.5
         )
+        .compositingGroup()
         // H5 fix: no .opacity(0.6) — use muted colors instead for claimed cards
         .brightness(isPressed ? -0.06 : 0) // M5 fix: press state
         // Dual shadow (design system rule)

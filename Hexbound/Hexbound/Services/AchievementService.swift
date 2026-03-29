@@ -40,14 +40,12 @@ final class AchievementService {
                 body: ["character_id": charId, "achievement_key": achievementKey]
             )
             // Refresh character in background (don't block UI)
-            Task { [weak self] in
-                guard let appState = self?.appState else { return }
-                let charService = CharacterService(appState: appState)
+            Task {
+                let charService = CharacterService(appState: self.appState)
                 await charService.loadCharacter()
             }
             return true
         } catch {
-            appState.showToast("Failed to claim reward", subtitle: "Check connection and try again", type: .error)
             return false
         }
     }

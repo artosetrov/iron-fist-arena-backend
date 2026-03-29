@@ -179,7 +179,7 @@ final class InventoryService {
                 )
             }
 
-            // Single write-back to avoid @Observable re-entrant access
+            // Update character stats from server response (corrects optimistic estimates)
             if var char = appState.currentCharacter {
                 if let stamina = response["stamina"] as? [String: Any],
                    let after = stamina["after"] as? Int {
@@ -191,9 +191,8 @@ final class InventoryService {
                 }
                 appState.currentCharacter = char
             }
-            // Invalidate inventory cache (consumable quantity changed)
-            appState.cachedInventory = nil
-            HapticManager.light()
+            // Don't nil cachedInventory — caller already applied optimistic update.
+            // Server confirmed success, so the optimistic state is correct.
             return true
         } catch let error as APIError {
             switch error {
