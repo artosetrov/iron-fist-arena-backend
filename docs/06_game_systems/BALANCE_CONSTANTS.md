@@ -74,7 +74,7 @@ Leveled Reward = Base × (1 + (level - 1) × 0.02)
 | **First Win of Day** | 2.0× | First PvP win daily | No |
 | **Revenge Win** | 1.5× | Beat player who beat you | No |
 | **Win Streak** | Variable | See below | Yes |
-| **CHA Bonus** | +1.5% per CHA | Uncapped | Yes |
+| **CHA Bonus** | Tiered (see below) | Hard cap +125% | Yes |
 | **Loss Streak Recovery** | Variable | See below | Yes |
 
 ### Win Streak Bonuses
@@ -93,8 +93,8 @@ Gold reward multiplier based on consecutive wins:
 **Example (200 base gold, 3-win streak, CHA 30):**
 - Level scaling: 200 × 1.0 = 200
 - Streak bonus: 200 × 1.20 = 240
-- CHA bonus: 240 × 1.30 = 312 gold
-- **Total: 312 gold**
+- CHA bonus: 240 × 1.75 = 420 gold
+- **Total: 420 gold**
 
 ### Loss Streak Recovery Bonuses
 
@@ -112,18 +112,18 @@ When a losing streak is broken by a win, bonus gold is awarded:
 Charisma gold bonus uses tiered diminishing returns with a hard cap:
 
 ```
-CHA 0-30:  +1.5% per point (max +45%)
-CHA 31-60: +0.5% per point (max +60% cumulative)
-CHA 61+:   +0.2% per point (hard cap +75%)
+CHA 0-30:  +2.5% per point (max +75%)
+CHA 31-60: +1.0% per point (max +105% cumulative)
+CHA 61+:   +0.5% per point (hard cap +125%)
 ```
 
 **Calculation:**
-- CHA 25 → +37.5% gold (25 × 1.5%)
-- CHA 30 → +45% gold (cap for tier 1)
-- CHA 50 → +55% gold (45% + 20 × 0.5%)
-- CHA 60 → +60% gold (45% + 30 × 0.5%)
-- CHA 100 → +68% gold (45% + 15% + 40 × 0.2%)
-- Hard cap: +75% regardless of CHA value
+- CHA 25 → +62.5% gold (25 × 2.5%)
+- CHA 30 → +75% gold (cap for tier 1)
+- CHA 50 → +95% gold (75% + 20 × 1.0%)
+- CHA 60 → +105% gold (75% + 30 × 1.0%)
+- CHA 100 → +125% gold (75% + 30% + 40 × 0.5% = 125%, at hard cap)
+- Hard cap: +125% regardless of CHA value
 
 ---
 
@@ -605,6 +605,7 @@ Roguelike artifacts offered as 3 choices after miniboss kills. Max 2 per run (2 
 | Arcane Scholar | INT/WIS | +15 INT, +10 WIS | +15 MRes, +10 INT | +30 INT, +20 WIS, +25 MRes |
 | Berserker's Wrath | STR/Crit | +20 STR, +5 AGI | +8 Crit, +10 STR | +35 STR, +15 Crit, +200 MaxHP |
 | Fortune Seeker | LUK/CHA | +15 LUK, +5 CHA | +20 LUK, +10% gold | +40 LUK, +15 CHA, +5% drops |
+| Wanderer's Charm | CHA/LUK (early) | +8 CHA, +8 LUK | +15 CHA, +15 LUK, +3% gold, +2% drops | — (3-piece set) |
 
 ---
 

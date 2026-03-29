@@ -83,6 +83,17 @@ export const ITEM_SETS: ItemSetDefinition[] = [
       { piecesRequired: 5, name: '5-Piece', effects: [{ stat: 'luk', value: 40 }, { stat: 'cha', value: 15 }, { stat: 'dropBonus', value: 5 }] },
     ],
   },
+  // Wanderer's Charm — early-game CHA/LUK set (drops from floor 3+ bosses)
+  {
+    id: 'set_wanderers_charm',
+    name: "Wanderer's Charm",
+    description: 'Trinkets blessed by travelling fortune-tellers. A stepping stone to true luck.',
+    pieces: ['charm_ring', 'charm_amulet', 'charm_belt'],
+    bonuses: [
+      { piecesRequired: 2, name: '2-Piece', effects: [{ stat: 'cha', value: 8 }, { stat: 'luk', value: 8 }] },
+      { piecesRequired: 3, name: '3-Piece', effects: [{ stat: 'cha', value: 15 }, { stat: 'luk', value: 15 }, { stat: 'goldBonus', value: 3 }, { stat: 'dropBonus', value: 2 }] },
+    ],
+  },
 ]
 
 // --- Boss-Exclusive Drop Definitions ---
@@ -109,6 +120,10 @@ export const BOSS_EXCLUSIVE_DROPS: BossExclusiveDrop[] = [
   { bossId: 'champion_decay', bossName: 'Champion of Decay', itemKey: 'fortune_amulet', dropChance: 8, minFloor: 8 },
   { bossId: 'iron_tyrant', bossName: 'The Iron Tyrant', itemKey: 'bastion_gloves', dropChance: 12, minFloor: 10 },
   { bossId: 'iron_tyrant', bossName: 'The Iron Tyrant', itemKey: 'bastion_legs', dropChance: 10, minFloor: 10 },
+  // Wanderer's Charm — early-game CHA/LUK set (floor 3+ bosses)
+  { bossId: 'warden_depths', bossName: 'Warden of the Depths', itemKey: 'charm_ring', dropChance: 15, minFloor: 3 },
+  { bossId: 'lord_shadows', bossName: 'Lord of Shadows', itemKey: 'charm_amulet', dropChance: 15, minFloor: 3 },
+  { bossId: 'bone_king', bossName: 'The Bone King', itemKey: 'charm_belt', dropChance: 15, minFloor: 3 },
   // Rush miniboss exclusive drops
   { bossId: 'rush_miniboss', bossName: 'Rush Miniboss', itemKey: 'shadow_gloves', dropChance: 8, minFloor: 6 },
   { bossId: 'rush_miniboss', bossName: 'Rush Miniboss', itemKey: 'berserker_gloves', dropChance: 8, minFloor: 6 },

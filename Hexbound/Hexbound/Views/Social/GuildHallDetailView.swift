@@ -86,16 +86,17 @@ struct GuildHallDetailView: View {
             let viewModel = GuildHallViewModel(characterId: charId)
             vm = viewModel
 
-            // Deep-link: open message thread directly
+            // Deep-link: open message thread instantly (conversations load in background)
             if let targetId = openMessageTo, let targetName = messageName {
                 viewModel.selectedTab = .scrolls
-                await viewModel.loadConversations()
+                // Open thread immediately — don't wait for conversations to load
                 await viewModel.openThread(characterId: targetId, characterName: targetName)
             } else {
                 // Parallel prefetch all tabs for instant switching
                 async let friendsTask: () = viewModel.loadFriends()
                 async let challengesTask: () = viewModel.loadChallenges()
-                _ = await (friendsTask, challengesTask)
+                async let scrollsTask: () = viewModel.loadConversations()
+                _ = await (friendsTask, challengesTask, scrollsTask)
             }
         }
         .onChange(of: vm?.selectedTab) { _, newTab in
@@ -111,6 +112,12 @@ struct GuildHallDetailView: View {
             if let error {
                 appState.showToast(error, type: .error)
                 vm?.sendMessageError = nil
+            }
+        }
+        .onChange(of: vm?.actionError) { _, error in
+            if let error {
+                appState.showToast(error, type: .error)
+                vm?.actionError = nil
             }
         }
         .sheet(isPresented: Binding(
@@ -267,7 +274,7 @@ struct GuildHallDetailView: View {
             } else {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Button {
-                        Task { await vm.acceptRequest(request) }
+                        _ = vm.acceptRequest(request)
                     } label: {
                         Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .bold))
@@ -279,7 +286,7 @@ struct GuildHallDetailView: View {
                     .accessibilityLabel("Accept \(request.characterName)")
 
                     Button {
-                        Task { await vm.declineRequest(request) }
+                        _ = vm.declineRequest(request)
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 14, weight: .bold))
@@ -419,22 +426,12 @@ struct GuildHallDetailView: View {
             } else {
                 Menu {
                     Button {
-                        Task {
-                            let success = await vm.sendChallenge(targetId: friend.id)
-                            if success {
-                                appState.showToast(
-                                    "Challenge Sent",
-                                    subtitle: "\(friend.characterName) has 24h to respond",
-                                    type: .info
-                                )
-                            } else {
-                                appState.showToast(
-                                    "Challenge Failed",
-                                    subtitle: "Could not send challenge",
-                                    type: .error
-                                )
-                            }
-                        }
+                        _ = vm.sendChallenge(targetId: friend.id)
+                        appState.showToast(
+                            "Challenge Sent",
+                            subtitle: "\(friend.characterName) has 24h to respond",
+                            type: .info
+                        )
                     } label: {
                         Label("Challenge", systemImage: "flame.fill")
                     }
@@ -448,13 +445,13 @@ struct GuildHallDetailView: View {
                     Divider()
 
                     Button(role: .destructive) {
-                        Task { await vm.removeFriend(friend) }
+                        _ = vm.removeFriend(friend)
                     } label: {
                         Label("Remove Ally", systemImage: "person.badge.minus")
                     }
 
                     Button(role: .destructive) {
-                        Task { await vm.blockUser(friend.id) }
+                        _ = vm.blockUser(friend.id)
                     } label: {
                         Label("Block", systemImage: "hand.raised.fill")
                     }
@@ -609,8 +606,8 @@ struct GuildHallDetailView: View {
 
     @ViewBuilder
     private func conversationsList(_ vm: GuildHallViewModel) -> some View {
-        switch vm.scrollsLoadState {
-        case .idle, .loading:
+        // Cache-first: show cached conversations immediately, skeleton only when empty
+        if vm.conversations.isEmpty && (vm.scrollsLoadState == .idle || vm.scrollsLoadState == .loading) {
             VStack(spacing: LayoutConstants.spaceMD) {
                 ForEach(0..<3, id: \.self) { _ in
                     RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -620,8 +617,7 @@ struct GuildHallDetailView: View {
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-
-        case .error:
+        } else if vm.conversations.isEmpty && vm.scrollsLoadState == .error {
             VStack(spacing: LayoutConstants.spaceMD) {
                 ErrorStateView(
                     message: "Failed to load scrolls",
@@ -629,15 +625,12 @@ struct GuildHallDetailView: View {
                 )
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-
-        case .loaded:
-            if vm.conversations.isEmpty {
-                scrollsEmptyState
-            } else {
-                ForEach(vm.conversations) { convo in
-                    conversationRow(convo, vm: vm)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                }
+        } else if vm.conversations.isEmpty {
+            scrollsEmptyState
+        } else {
+            ForEach(vm.conversations) { convo in
+                conversationRow(convo, vm: vm)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
             }
         }
     }
@@ -742,15 +735,8 @@ struct GuildHallDetailView: View {
             // Thread header — sticky top bar
             threadHeader(vm)
 
-            // Messages list — reversed scroll (newest at bottom)
-            switch vm.threadLoadState {
-            case .idle, .loading:
-                Spacer()
-                ProgressView()
-                    .tint(DarkFantasyTheme.gold)
-                Spacer()
-
-            case .error:
+            // Messages area — opens instantly, messages load in background
+            if vm.threadLoadState == .error {
                 Spacer()
                 VStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "exclamationmark.triangle")
@@ -768,40 +754,45 @@ struct GuildHallDetailView: View {
                     .buttonStyle(.primary)
                 }
                 Spacer()
-
-            case .loaded:
-                if vm.activeThread.isEmpty {
-                    Spacer()
-                    threadEmptyState
-                    Spacer()
-                } else {
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(spacing: LayoutConstants.spaceSM) {
-                                // Date divider
-                                dateDivider("Today")
-
-                                // Backend returns ASC order (oldest→newest) — no reverse needed
-                                ForEach(vm.activeThread) { msg in
-                                    messageBubble(msg, vm: vm)
-                                        .id(msg.id)
-                                        .transition(.asymmetric(
-                                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                                            removal: .opacity
-                                        ))
-                                }
+            } else if vm.activeThread.isEmpty && !vm.isLoadingThreadMessages {
+                Spacer()
+                threadEmptyState
+                Spacer()
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: LayoutConstants.spaceSM) {
+                            // Inline loading indicator while messages arrive
+                            if vm.isLoadingThreadMessages {
+                                ProgressView()
+                                    .tint(DarkFantasyTheme.gold)
+                                    .padding(.vertical, LayoutConstants.spaceLG)
                             }
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.top, LayoutConstants.spaceSM)
-                            .padding(.bottom, LayoutConstants.spaceSM)
+
+                            if !vm.activeThread.isEmpty {
+                                dateDivider("Today")
+                            }
+
+                            // Backend returns ASC order (oldest→newest) — no reverse needed
+                            ForEach(vm.activeThread) { msg in
+                                messageBubble(msg, vm: vm)
+                                    .id(msg.id)
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
+                            }
                         }
-                        .defaultScrollAnchor(.bottom)
-                        .onChange(of: vm.activeThread.count) { _, _ in
-                            // Auto-scroll to newest message
-                            if let lastId = vm.activeThread.last?.id {
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    proxy.scrollTo(lastId, anchor: .bottom)
-                                }
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.top, LayoutConstants.spaceSM)
+                        .padding(.bottom, LayoutConstants.spaceSM)
+                    }
+                    .defaultScrollAnchor(.bottom)
+                    .onChange(of: vm.activeThread.count) { _, _ in
+                        // Auto-scroll to newest message
+                        if let lastId = vm.activeThread.last?.id {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                proxy.scrollTo(lastId, anchor: .bottom)
                             }
                         }
                     }
@@ -1392,7 +1383,7 @@ struct GuildHallDetailView: View {
                 .disabled(isProcessing)
 
                 Button {
-                    Task { await vm.declineChallenge(challenge) }
+                    _ = vm.declineChallenge(challenge)
                 } label: {
                     Text("DECLINE")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
@@ -1482,7 +1473,7 @@ struct GuildHallDetailView: View {
 
                     // Cancel button
                     Button {
-                        Task { await vm.cancelOutgoingChallenge(challenge) }
+                        _ = vm.cancelOutgoingChallenge(challenge)
                     } label: {
                         HStack(spacing: 4) {
                             if isProcessing {

@@ -179,9 +179,31 @@ struct CombatResultDetailView: View {
                     }
                 }))
             }
+            // Session stats button
+            if let charId = appState.currentCharacter?.id {
+                buttons.append(ResultButton(title: "SESSION STATS", icon: "chart.bar.fill", style: .secondary, action: {
+                    appState.combatData = nil
+                    appState.combatResult = nil
+                    appState.invalidateCache("quests")
+                    appState.mainPath = NavigationPath()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        appState.mainPath.append(AppRoute.sessionSummary(characterId: charId))
+                    }
+                }))
+            }
         } else {
             buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .primary, action: {
-                goBack()
+                if let charId = appState.currentCharacter?.id {
+                    appState.combatData = nil
+                    appState.combatResult = nil
+                    appState.invalidateCache("quests")
+                    appState.mainPath = NavigationPath()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        appState.mainPath.append(AppRoute.sessionSummary(characterId: charId))
+                    }
+                } else {
+                    goBack()
+                }
             }))
         }
 

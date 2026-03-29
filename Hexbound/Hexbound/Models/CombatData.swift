@@ -42,9 +42,12 @@ struct CombatFighter: Codable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id
-        case characterName
+        case characterName = "character_name"
         case characterClass = "class"
-        case origin, level, maxHp, currentHp, avatar
+        case origin, level
+        case maxHp = "max_hp"
+        case currentHp = "current_hp"
+        case avatar
     }
 }
 

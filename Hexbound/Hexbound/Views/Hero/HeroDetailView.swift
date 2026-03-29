@@ -463,10 +463,10 @@ struct HeroDetailView: View {
                 Image(stat.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 22, height: 22)
+                    .frame(width: 32, height: 32)
 
                 Text(stat.fullName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(color)
                     .lineLimit(1)
 
@@ -966,6 +966,7 @@ struct HeroDetailView: View {
                     accentColor: DarkFantasyTheme.hpBlood,
                     ctaText: "Get Potions"
                 ) {
+                    appState.shopInitialTab = 3
                     appState.mainPath.append(AppRoute.shop)
                 }
             }
@@ -996,38 +997,56 @@ struct HeroDetailView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: LayoutConstants.spaceMD) {
-                if UIImage(named: icon) != nil {
-                    Image(icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
-                } else {
-                    Image(systemName: sfFallback)
-                        .font(.system(size: 24))
-                        .foregroundStyle(accentColor)
-                        .frame(width: 36, height: 36)
+            VStack(spacing: LayoutConstants.spaceMS) {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    if UIImage(named: icon) != nil {
+                        Image(icon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
+                    } else {
+                        Image(systemName: sfFallback)
+                            .font(.system(size: 28))
+                            .foregroundStyle(accentColor)
+                            .frame(width: 40, height: 40)
+                    }
+
+                    VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                        Text(title)
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .foregroundStyle(accentColor)
+                        Text(subtitle)
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: 0)
                 }
 
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text(title)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                        .foregroundStyle(accentColor)
-                    Text(subtitle)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .lineLimit(2)
+                // CTA button — full-width, ornamental style
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: "cart.fill")
+                        .font(.system(size: 14, weight: .bold))
+                    Text(ctaText)
+                        .font(DarkFantasyTheme.buttonLabel)
                 }
-
-                Spacer(minLength: 0)
-
-                Text(ctaText)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .padding(.horizontal, LayoutConstants.spaceSM)
-                    .padding(.vertical, LayoutConstants.spaceXS)
-                    .background(accentColor)
-                    .clipShape(Capsule())
+                .foregroundStyle(DarkFantasyTheme.textOnGold)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
+                .background(
+                    LinearGradient(
+                        colors: [accentColor, accentColor.opacity(0.8)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                .surfaceLighting(cornerRadius: LayoutConstants.buttonRadius)
+                .innerBorder(cornerRadius: LayoutConstants.buttonRadius - 1, inset: 1, color: accentColor.opacity(0.3))
+                .cornerBrackets(color: accentColor.opacity(0.5), length: 10, thickness: 1.5)
+                .cornerDiamonds(color: accentColor.opacity(0.4), size: 4)
+                .compositingGroup()
             }
             .padding(LayoutConstants.cardPadding)
             .background(

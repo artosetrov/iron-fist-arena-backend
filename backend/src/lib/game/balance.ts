@@ -159,9 +159,9 @@ export const COMBAT = {
   CRIT_PER_AGI: 0.15,           // was 0.3 — AGI crit contribution halved
   DODGE_PER_AGI: 0.2,           // was 0.3 — dodge slightly nerfed
   DODGE_PER_LUK: 0.1,           // NEW — LUK adds minor dodge
-  // CHA intimidation: reduces enemy damage by 0.15% per CHA point (max 15%)
-  CHA_INTIMIDATION_PER_POINT: 0.15,
-  CHA_INTIMIDATION_CAP: 15,
+  // CHA intimidation: reduces enemy damage by 0.25% per CHA point (max 25%)
+  CHA_INTIMIDATION_PER_POINT: 0.25,
+  CHA_INTIMIDATION_CAP: 25,
 } as const;
 
 // --- Battle Fatigue (anti-stall mechanic) ---
@@ -215,21 +215,21 @@ export const DROP_CHANCES: Record<string, number> = {
 
 /**
  * CHA gold bonus with diminishing returns:
- * - CHA 0-30:  +1.5% per point (max +45%)
- * - CHA 31-60: +0.5% per point (max +60% cumulative)
- * - CHA 61+:   +0.2% per point (hard cap +75%)
+ * - CHA 0-30:  +2.5% per point (max +75%)
+ * - CHA 31-60: +1.0% per point (max +105% cumulative)
+ * - CHA 61+:   +0.5% per point (hard cap +125%)
  */
 export function chaGoldBonus(baseGold: number, cha: number): number {
   let bonus = 0;
   if (cha <= 30) {
-    bonus = cha * 0.015;
+    bonus = cha * 0.025;
   } else if (cha <= 60) {
-    bonus = 30 * 0.015 + (cha - 30) * 0.005;
+    bonus = 30 * 0.025 + (cha - 30) * 0.01;
   } else {
-    bonus = 30 * 0.015 + 30 * 0.005 + (cha - 60) * 0.002;
+    bonus = 30 * 0.025 + 30 * 0.01 + (cha - 60) * 0.005;
   }
-  // Hard cap at 75%
-  bonus = Math.min(bonus, 0.75);
+  // Hard cap at 125%
+  bonus = Math.min(bonus, 1.25);
   return Math.floor(baseGold * (1 + bonus));
 }
 

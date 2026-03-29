@@ -197,6 +197,7 @@ model User {
   premiumUntil  DateTime? @map("premium_until")
   role          String    @default("player")
   createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
   lastLogin     DateTime? @map("last_login")
   isBanned      Boolean   @default(false) @map("is_banned")
   banReason     String?   @map("ban_reason")
@@ -271,6 +272,7 @@ model Character {
   inventorySlots    Int       @default(28) @map("inventory_slots")
   dailyBonusDate    DateTime? @map("daily_bonus_date")
   createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
   lastPlayed        DateTime? @map("last_played")
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -345,6 +347,7 @@ model Item {
   itemClass       String?   @map("item_class")
   upgradeConfig   Json?     @map("upgrade_config")
   createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   equipment       EquipmentInventory[]
   dungeonDrops    DungeonDrop[]
@@ -412,6 +415,7 @@ model PvpMatch {
   seasonNumber  Int?      @map("season_number")
   isRevenge     Boolean   @default(false) @map("is_revenge")
   playedAt      DateTime  @default(now()) @map("played_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   player1       Character @relation("player1", fields: [player1Id], references: [id])
   player2       Character @relation("player2", fields: [player2Id], references: [id])
@@ -535,6 +539,7 @@ model Season {
   startAt   DateTime  @map("start_at")
   endAt     DateTime  @map("end_at")
   createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   battlePasses      BattlePass[]
   battlePassRewards BattlePassReward[]
@@ -555,6 +560,7 @@ model DailyQuest {
   completed   Boolean   @default(false)
   day         String    // "YYYY-MM-DD"
   createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
@@ -1286,6 +1292,7 @@ model DirectMessage {
   quickId     String?  @map("quick_id")
   isRead      Boolean  @default(false) @map("is_read")
   createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
   expiresAt   DateTime @map("expires_at")
 
   sender      Character @relation("sent_messages", fields: [senderId], references: [id], onDelete: Cascade)
@@ -1308,6 +1315,7 @@ model Challenge {
   message         String?         @db.VarChar(100)
   goldWager       Int             @default(0) @map("gold_wager")
   createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
   expiresAt       DateTime        @map("expires_at")
   respondedAt     DateTime?       @map("responded_at")
   completedAt     DateTime?       @map("completed_at")

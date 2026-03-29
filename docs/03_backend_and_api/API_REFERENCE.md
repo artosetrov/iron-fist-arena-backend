@@ -1,5 +1,5 @@
 # API Reference (Source of Truth)
-*Derived from backend routes. Updated: 2026-03-19*
+*Derived from backend routes. Updated: 2026-03-29*
 
 ## Auth (`/api/auth/*`)
 
@@ -30,6 +30,8 @@
 | PUT | /characters/[id]/stance | Yes | Set combat stance |
 | POST | /characters/[id]/allocate-stats | Yes | Allocate stat points |
 | POST | /characters/[id]/respec-stats | Yes | Reset stats (costs gems) |
+| GET | /characters/[id]/set-bonuses | Yes | Active set bonuses for equipped items |
+| GET | /characters/[id]/stance | Yes | Get current combat stance |
 
 ## PvP (`/api/pvp/*`)
 
@@ -129,19 +131,25 @@
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| POST | /gold-mine/start | Yes | Begin mining |
-| GET | /gold-mine/status | Yes | Slot status |
-| POST | /gold-mine/collect | Yes | Claim finished |
-| POST | /gold-mine/buy-slot | Yes | Add slot |
-| POST | /gold-mine/boost | Yes | Speed up |
+| POST | /minigames/gold-mine/start | Yes | Begin mining |
+| GET | /minigames/gold-mine/status | Yes | Slot status |
+| POST | /minigames/gold-mine/collect | Yes | Claim finished |
+| POST | /minigames/gold-mine/buy-slot | Yes | Add slot |
+| POST | /minigames/gold-mine/boost | Yes | Speed up |
 
 ## Shell Game
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| POST | /shell-game/start | Yes | Initialize |
-| POST | /shell-game/play | Yes | Bet + guess |
-| POST | /shell-game/guess | Yes | Finalize guess |
+| POST | /minigames/shell-game/start | Yes | Initialize |
+| POST | /minigames/shell-game/play | Yes | Bet + guess |
+| POST | /minigames/shell-game/guess | Yes | Finalize guess |
+
+## Fortune Wheel
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| POST | /minigames/fortune-wheel/spin | Yes | Spin the wheel |
 
 ## Daily Systems
 
@@ -175,6 +183,7 @@
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | /leaderboard | Yes | Top 100 |
+| GET | /leaderboard/search | No | Search characters by name (IP-rate-limited) |
 | GET | /game/init | Yes | Full game state |
 | GET | /me | Yes | Current user |
 
@@ -222,6 +231,45 @@
 | POST | /push/register | Yes | Register device |
 | POST | /push/unregister | Yes | Unregister |
 
+## Social (`/api/social/*`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /social/friends | Yes | Friend list with status |
+| POST | /social/friends | Yes | Send/accept/decline/remove/block friend |
+| GET | /social/challenges | Yes | Incoming/outgoing/completed challenges |
+| POST | /social/challenges | Yes | Send/accept/decline duel challenge |
+| GET | /social/messages | Yes | Conversation list |
+| POST | /social/messages | Yes | Send direct message |
+| GET | /social/status | Yes | Social badge counts (pending, challenges, messages, revenges) |
+| POST | /social/status | Yes | Get friendship status between two characters |
+
+## Milestones
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /milestones | Yes | Milestone progress |
+| POST | /milestones | Yes | Claim milestone reward |
+
+## Guild Challenge
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /guild-challenge | Yes | Weekly guild challenge progress |
+| POST | /guild-challenge | Yes | Claim community reward |
+
+## Session Summary
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /session-summary | Yes | Session stats (matches, gold, XP, items earned in last 30min) |
+
+## Assets
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| GET | /assets/manifest | No | Asset manifest (items, skins, bosses) with URLs; cached 60s |
+
 ## Admin Endpoints
 
 All endpoints below require `admin` role. Key admin capabilities:
@@ -252,3 +300,15 @@ All endpoints below require `admin` role. Key admin capabilities:
 | GET/POST | /admin/config | Manage game config |
 | POST | /admin/config/snapshot | Save/rollback config |
 | GET | /admin/balance/simulate | Run balance sims |
+| GET/POST | /admin/item-balance/config | Balance config values |
+| GET | /admin/item-balance/power-scores | Calculate item power scores |
+| GET/PUT | /admin/item-balance/profiles | CRUD balance profiles |
+| POST | /admin/item-balance/suggest | Balance suggestions |
+| POST | /admin/item-balance/apply-suggestions | Apply balance changes |
+| POST | /admin/item-balance/validate | Validate balance changes |
+| POST | /admin/item-balance/simulate/combat | Combat simulation |
+| POST | /admin/item-balance/simulate/item-impact | Item impact analysis |
+| POST | /admin/item-balance/simulate/matchups | Matchup simulation |
+| GET | /admin/item-balance/simulation-history | Simulation history |
+| GET/POST | /admin/dungeon-map-layout | Dungeon node positions |
+| GET/POST | /admin/hub-layout | Hub building positions |

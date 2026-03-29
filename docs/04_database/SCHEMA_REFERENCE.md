@@ -1,5 +1,5 @@
 # Database Schema Reference (Source of Truth)
-*Derived from Prisma schema. Updated: 2026-03-19*
+*Derived from Prisma schema. Updated: 2026-03-29*
 
 ## Core User & Auth
 
@@ -165,6 +165,55 @@
 
 ---
 
+## Social
+
+### Friendship
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| requesterId | String (UUID) | Who sent the request |
+| receiverId | String (UUID) | Who received it |
+| status | FriendshipStatus | PENDING, ACCEPTED, BLOCKED |
+| createdAt | DateTime | Request date |
+| updatedAt | DateTime | Last status change |
+
+**Unique constraints:** (requesterId, receiverId)
+
+### DirectMessage
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| senderId | String (UUID) | Sender character |
+| receiverId | String (UUID) | Recipient character |
+| content | String | Message text |
+| isRead | Boolean | Read status |
+| createdAt | DateTime | Sent at |
+
+### Challenge
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| challengerId | String (UUID) | Who sent the challenge |
+| defenderId | String (UUID) | Who received it |
+| status | ChallengeStatus | PENDING, ACCEPTED, DECLINED, EXPIRED, COMPLETED |
+| matchId | String (UUID)? | Resulting PvP match |
+| createdAt | DateTime | Challenge date |
+| expiresAt | DateTime | Expiry window |
+
+### GuildChallenge
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| challengeType | String | Weekly challenge type |
+| targetValue | Int | Community goal |
+| currentValue | Int | Current progress |
+| reward | JSON | Community reward |
+| startsAt | DateTime | Challenge start |
+| endsAt | DateTime | Challenge end |
+| createdAt | DateTime |
+
+---
+
 ## Dungeons
 
 ### Dungeon
@@ -200,6 +249,16 @@
 | waveNumber | Int | Order (1-N) |
 | enemyCount | Int | Mobs per wave |
 | enemyType | String | Mob catalog ID |
+| createdAt | DateTime |
+
+### DungeonWaveEnemy
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| waveId | String (UUID) | Parent wave |
+| enemyName | String | Display name |
+| baseHealth | Int | HP |
+| baseStats | JSON | {strength: 10, ...} |
 | createdAt | DateTime |
 
 ### DungeonRun
@@ -412,6 +471,20 @@
 | order | Int | Display order |
 | createdAt | DateTime |
 
+### QuestDefinition
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| questKey | String | Unique template key |
+| questName | String | Display name |
+| description | String | Objective text |
+| questType | QuestType | PVP_WINS, DUNGEON_CLEARS, etc. |
+| targetValue | Int | Required count |
+| goldReward | BigInt | Gold payout |
+| gemReward | Int | Gem payout |
+| createdAt | DateTime |
+| updatedAt | DateTime |
+
 ---
 
 ## Training & Stamina
@@ -481,6 +554,34 @@
 | cosmeticId | String (UUID) | Skin template |
 | isPrimary | Boolean | Currently equipped |
 | unlockedAt | DateTime | Purchase/earn date |
+
+---
+
+## Events & Milestones
+
+### Event
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| catalogId | String | Unique identifier |
+| eventName | String | Display name |
+| eventType | EventType | BOSS_RUSH, GOLD_RUSH, XP_BOOST, etc. |
+| description | String | Event details |
+| multiplier | Float? | Bonus multiplier |
+| startsAt | DateTime | Event start |
+| endsAt | DateTime | Event end |
+| isActive | Boolean | Currently running |
+| createdAt | DateTime |
+
+### MilestoneClaim
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| characterId | String (UUID) | Player |
+| milestoneKey | String | Milestone identifier |
+| claimedAt | DateTime | Claim time |
+
+**Unique constraints:** (characterId, milestoneKey)
 
 ---
 
@@ -739,5 +840,11 @@
 **FeatureFlagType:** BOOLEAN, PERCENTAGE, SEGMENT, JSON
 
 **ConfigType:** INT, FLOAT, STRING, JSON
+
+**FriendshipStatus:** PENDING, ACCEPTED, BLOCKED
+
+**ChallengeStatus:** PENDING, ACCEPTED, DECLINED, EXPIRED, COMPLETED
+
+**EventType:** BOSS_RUSH, GOLD_RUSH, XP_BOOST, DROP_BOOST, PVP_TOURNAMENT
 
 **MailTargetType:** USER, SEGMENT, BROADCAST

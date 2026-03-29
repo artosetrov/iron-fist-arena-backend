@@ -33,6 +33,7 @@ class GuildHallViewModel {
     var activeThreadCharacterClass: String?
     var threadLoadState: LoadState = .idle
     var isSendingMessage = false
+    var isLoadingThreadMessages = false
     var composedMessage = ""
 
     // Duels tab
@@ -48,6 +49,7 @@ class GuildHallViewModel {
     var processingFriendId: String?
     var processingChallengeId: String?
     var sendMessageError: String?
+    var actionError: String?
 
     // Thread polling
     private var isPollingActive = false
@@ -123,55 +125,119 @@ class GuildHallViewModel {
         }
     }
 
-    // MARK: - Friend Actions
+    // MARK: - Friend Actions (Optimistic UI)
 
-    func acceptRequest(_ request: FriendRequest) async {
-        processingRequestId = request.friendshipId
-        let success = await socialService.acceptFriendRequest(
-            characterId: characterId,
-            requesterId: request.id
-        )
-        processingRequestId = nil
-        if success {
-            await loadFriends()
-        }
+    /// Result of an optimistic action — caller shows toast based on this
+    enum ActionResult {
+        case success
+        case failed(String)
     }
 
-    func declineRequest(_ request: FriendRequest) async {
-        processingRequestId = request.friendshipId
-        let success = await socialService.declineFriendRequest(
-            characterId: characterId,
-            requesterId: request.id
+    func acceptRequest(_ request: FriendRequest) -> ActionResult {
+        // Optimistic: remove from requests, add to friends
+        let savedRequests = incomingRequests
+        let savedFriends = friends
+        let savedCount = friendCount
+        incomingRequests.removeAll { $0.friendshipId == request.friendshipId }
+        let newFriend = FriendEntry(
+            id: request.id,
+            friendshipId: request.friendshipId,
+            characterName: request.characterName,
+            characterClass: request.characterClass,
+            origin: request.origin,
+            level: request.level,
+            pvpRating: request.pvpRating,
+            avatar: request.avatar,
+            lastActiveAt: nil
         )
-        processingRequestId = nil
-        if success {
-            incomingRequests.removeAll { $0.friendshipId == request.friendshipId }
+        friends.append(newFriend)
+        friendCount = friends.count
+        HapticManager.light()
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await self.socialService.acceptFriendRequest(
+                characterId: self.characterId,
+                requesterId: request.id
+            )
+            if !success {
+                self.incomingRequests = savedRequests
+                self.friends = savedFriends
+                self.friendCount = savedCount
+                self.actionError = "Failed to accept request"
+            } else {
+                // Silently refresh to get accurate data
+                await self.loadFriends()
+            }
         }
+        return .success
     }
 
-    func removeFriend(_ friend: FriendEntry) async {
-        processingFriendId = friend.id
-        let success = await socialService.removeFriend(
-            characterId: characterId,
-            friendId: friend.id
-        )
-        processingFriendId = nil
-        if success {
-            friends.removeAll { $0.id == friend.id }
-            friendCount = friends.count
+    func declineRequest(_ request: FriendRequest) -> ActionResult {
+        let savedRequests = incomingRequests
+        incomingRequests.removeAll { $0.friendshipId == request.friendshipId }
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await self.socialService.declineFriendRequest(
+                characterId: self.characterId,
+                requesterId: request.id
+            )
+            if !success {
+                self.incomingRequests = savedRequests
+                self.actionError = "Failed to decline request"
+            }
         }
+        return .success
     }
 
-    func blockUser(_ targetId: String) async {
-        let success = await socialService.blockUser(
-            characterId: characterId,
-            targetId: targetId
-        )
-        if success {
-            friends.removeAll { $0.id == targetId }
-            incomingRequests.removeAll { $0.id == targetId }
-            friendCount = friends.count
+    func removeFriend(_ friend: FriendEntry) -> ActionResult {
+        let savedFriends = friends
+        let savedCount = friendCount
+        friends.removeAll { $0.id == friend.id }
+        friendCount = friends.count
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await self.socialService.removeFriend(
+                characterId: self.characterId,
+                friendId: friend.id
+            )
+            if !success {
+                self.friends = savedFriends
+                self.friendCount = savedCount
+                self.actionError = "Failed to remove ally"
+            }
         }
+        return .success
+    }
+
+    func blockUser(_ targetId: String) -> ActionResult {
+        let savedFriends = friends
+        let savedRequests = incomingRequests
+        let savedCount = friendCount
+        friends.removeAll { $0.id == targetId }
+        incomingRequests.removeAll { $0.id == targetId }
+        friendCount = friends.count
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await self.socialService.blockUser(
+                characterId: self.characterId,
+                targetId: targetId
+            )
+            if !success {
+                self.friends = savedFriends
+                self.incomingRequests = savedRequests
+                self.friendCount = savedCount
+                self.actionError = "Failed to block user"
+            }
+        }
+        return .success
     }
 
     // MARK: - Computed
@@ -199,13 +265,18 @@ class GuildHallViewModel {
     // MARK: - Scrolls (Messages)
 
     func loadConversations() async {
-        scrollsLoadState = .loading
+        // Cache-first: only show skeleton if no cached conversations
+        if conversations.isEmpty {
+            scrollsLoadState = .loading
+        }
         do {
             let response = try await messageService.getConversations(characterId: characterId)
             conversations = response
             scrollsLoadState = .loaded
         } catch {
-            scrollsLoadState = .error
+            if conversations.isEmpty {
+                scrollsLoadState = .error
+            }
         }
     }
 
@@ -214,19 +285,29 @@ class GuildHallViewModel {
         activeThreadCharacterName = characterName
         activeThreadCharacterAvatar = avatar ?? conversations.first(where: { $0.otherCharacter.id == targetId })?.otherCharacter.avatar
         activeThreadCharacterClass = characterClass ?? conversations.first(where: { $0.otherCharacter.id == targetId })?.otherCharacter.characterClass
-        threadLoadState = .loading
+        // Show thread UI instantly — messages load in background
+        threadLoadState = .loaded
         composedMessage = ""
+        activeThread = []
+        isLoadingThreadMessages = true
         do {
             let messages = try await messageService.getThread(
                 characterId: characterId,
                 withCharacterId: targetId
             )
-            activeThread = messages
-            threadLoadState = .loaded
-            // Reload conversations to reflect read status
-            await loadConversations()
+            withAnimation(.easeOut(duration: 0.2)) {
+                activeThread = messages
+            }
+            isLoadingThreadMessages = false
+            // Background: refresh conversations to update read status
+            Task { [weak self] in
+                await self?.loadConversations()
+            }
         } catch {
-            threadLoadState = .error
+            isLoadingThreadMessages = false
+            if activeThread.isEmpty {
+                threadLoadState = .error
+            }
         }
     }
 
@@ -373,45 +454,62 @@ class GuildHallViewModel {
         processingChallengeId = nil
     }
 
-    func declineChallenge(_ challenge: IncomingChallenge) async {
-        processingChallengeId = challenge.id
-        do {
-            try await challengeService.declineChallenge(
-                characterId: characterId,
-                challengeId: challenge.id
-            )
-            incomingChallenges.removeAll { $0.id == challenge.id }
-        } catch {
-            // Error handled by service
+    func declineChallenge(_ challenge: IncomingChallenge) -> ActionResult {
+        let savedChallenges = incomingChallenges
+        incomingChallenges.removeAll { $0.id == challenge.id }
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.challengeService.declineChallenge(
+                    characterId: self.characterId,
+                    challengeId: challenge.id
+                )
+            } catch {
+                self.incomingChallenges = savedChallenges
+                self.actionError = "Failed to decline challenge"
+            }
         }
-        processingChallengeId = nil
+        return .success
     }
 
-    func cancelOutgoingChallenge(_ challenge: OutgoingChallenge) async {
-        processingChallengeId = challenge.id
-        do {
-            try await challengeService.cancelChallenge(
-                characterId: characterId,
-                challengeId: challenge.id
-            )
-            outgoingChallenges.removeAll { $0.id == challenge.id }
-        } catch {
-            // Error handled by service
+    func cancelOutgoingChallenge(_ challenge: OutgoingChallenge) -> ActionResult {
+        let savedChallenges = outgoingChallenges
+        outgoingChallenges.removeAll { $0.id == challenge.id }
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await self.challengeService.cancelChallenge(
+                    characterId: self.characterId,
+                    challengeId: challenge.id
+                )
+            } catch {
+                self.outgoingChallenges = savedChallenges
+                self.actionError = "Failed to cancel challenge"
+            }
         }
-        processingChallengeId = nil
+        return .success
     }
 
-    func sendChallenge(targetId: String, message: String? = nil) async -> Bool {
-        do {
-            _ = try await challengeService.sendChallenge(
-                characterId: characterId,
-                targetId: targetId,
-                message: message
-            )
-            return true
-        } catch {
-            return false
+    func sendChallenge(targetId: String, message: String? = nil) -> ActionResult {
+        HapticManager.light()
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.challengeService.sendChallenge(
+                    characterId: self.characterId,
+                    targetId: targetId,
+                    message: message
+                )
+            } catch {
+                self.actionError = "Failed to send challenge"
+            }
         }
+        return .success
     }
 
     /// Count of pending outgoing challenges (for daily limit display)
