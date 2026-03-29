@@ -3,7 +3,6 @@ import SwiftUI
 struct BPRewardNodeView: View {
     let reward: BPReward
     let state: BPRewardState
-    let isClaiming: Bool
     let onClaim: () -> Void
 
     @State private var showClaimBurst = false
@@ -45,16 +44,17 @@ struct BPRewardNodeView: View {
                 }
             }
 
-            // Name + amount
-            Text(reward.rewardName)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-
+            // Name + amount — unified format: "Gold x130" or just "Skin"
             if reward.amount > 1 {
-                Text("x\(reward.amount)")
+                Text("\(reward.rewardName) x\(reward.amount)")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
+            } else {
+                Text(reward.rewardName)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
             }
 
             // Status
@@ -65,16 +65,9 @@ struct BPRewardNodeView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             case .claimable:
                 Button {
-                    HapticManager.medium()
                     onClaim()
                 } label: {
-                    if isClaiming {
-                        ProgressView()
-                            .tint(DarkFantasyTheme.textOnGold)
-                            .scaleEffect(0.7)
-                    } else {
-                        Text("Claim")
-                    }
+                    Text("Claim")
                 }
                 .buttonStyle(.compactPrimary)
             case .claimed:
@@ -86,7 +79,6 @@ struct BPRewardNodeView: View {
         .frame(width: 90)
         .onChange(of: state) { oldState, newState in
             if oldState == .claimable && newState == .claimed {
-                HapticManager.success()
                 showClaimBurst = true
             }
         }

@@ -24,7 +24,10 @@ final class DailyLoginPopupViewModel {
         let data = await service.getStatus()
         loginData = data
         isLoading = false
-        hasClaimed = !(data?.canClaim ?? true)
+        let canClaim = data?.canClaim ?? false
+        hasClaimed = !canClaim
+        // Sync hub badge state with fresh server data
+        appState.dailyLoginCanClaim = canClaim
     }
 
     func claimReward() async {
@@ -40,6 +43,8 @@ final class DailyLoginPopupViewModel {
         }
         isClaiming = false
         appState.dailyLoginCanClaim = false
+        // Invalidate cached daily login so Hub doesn't re-read stale canClaim=true
+        appState.cachedDailyLogin = nil
 
         // Fire API in background — don't block UI
         Task {

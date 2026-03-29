@@ -41,8 +41,6 @@ class GuildHallViewModel {
     var outgoingChallenges: [OutgoingChallenge] = []
     var completedChallenges: [CompletedChallenge] = []
     var duelsLoadState: LoadState = .idle
-    var duelResult: DuelResult?
-    var showDuelResult = false
 
     // Processing states
     var processingRequestId: String?
@@ -58,9 +56,11 @@ class GuildHallViewModel {
     private let challengeService = ChallengeService.shared
     private let messageService = MessageService.shared
     private var characterId: String
+    private let appState: AppState
 
-    init(characterId: String) {
+    init(characterId: String, appState: AppState) {
         self.characterId = characterId
+        self.appState = appState
     }
 
     // MARK: - Thread Polling (auto-refresh incoming messages)
@@ -438,7 +438,7 @@ class GuildHallViewModel {
         }
     }
 
-    /// Accepts an incoming challenge and shows duel result.
+    /// Accepts an incoming challenge, builds CombatData, and navigates to combat playback screen.
     /// Returns error message on failure (nil on success) so the View can show a toast.
     func acceptChallenge(_ challenge: IncomingChallenge) async -> String? {
         guard processingChallengeId == nil else { return nil } // prevent double-tap
@@ -449,9 +449,90 @@ class GuildHallViewModel {
                 characterId: characterId,
                 challengeId: challenge.id
             )
-            duelResult = result
-            showDuelResult = true
+
+            // Build CombatData from duel result for combat playback
+            // Defender = current player (accepter), Challenger = opponent
+            let playerFighter = CombatFighter(
+                id: result.defender.id,
+                characterName: result.defender.characterName,
+                characterClass: CharacterClass(rawValue: result.defender.characterClass) ?? .warrior,
+                origin: CharacterOrigin(rawValue: result.defender.origin ?? "human") ?? .human,
+                level: result.defender.level,
+                maxHp: result.defender.maxHp,
+                currentHp: nil,
+                avatar: result.defender.avatar
+            )
+            let enemyFighter = CombatFighter(
+                id: result.challenger.id,
+                characterName: result.challenger.characterName,
+                characterClass: CharacterClass(rawValue: result.challenger.characterClass) ?? .warrior,
+                origin: CharacterOrigin(rawValue: result.challenger.origin ?? "human") ?? .human,
+                level: result.challenger.level,
+                maxHp: result.challenger.maxHp,
+                currentHp: nil,
+                avatar: result.challenger.avatar
+            )
+
+            let combatResultInfo = CombatResultInfo(
+                isWin: result.won,
+                winnerId: result.winnerId,
+                goldReward: result.goldReward,
+                xpReward: result.xpReward,
+                turnsTaken: result.totalTurns,
+                ratingChange: result.ratingChange,
+                firstWinBonus: nil,
+                leveledUp: nil,
+                newLevel: nil,
+                statPointsAwarded: nil
+            )
+
+            let combatData = CombatData(
+                player: playerFighter,
+                enemy: enemyFighter,
+                combatLog: result.combatLog,
+                result: combatResultInfo,
+                rewards: CombatRewards(gold: result.goldReward, xp: result.xpReward),
+                source: "challenge",
+                matchId: result.matchId
+            )
+
+            // Clear previous combat state
+            appState.combatData = nil
+            appState.combatResult = nil
+            appState.resolveResult = nil
+            appState.pendingLoot = []
+
+            // Remove accepted challenge from list
             incomingChallenges.removeAll { $0.id == challenge.id }
+
+            // Navigate to combat playback screen
+            appState.mainPath.append(AppRoute.combat)
+
+            // Deliver combat data — CombatDetailView picks this up and starts playback
+            appState.combatData = combatData
+
+            // Pre-fill resolve result so CombatResultDetailView has reward data
+            // (challenge combat is already resolved server-side, no need for separate resolve call)
+            appState.resolveResult = ResolveResult(
+                verified: true,
+                clientMatches: true,
+                serverWinnerId: result.winnerId,
+                goldReward: result.goldReward,
+                xpReward: result.xpReward,
+                ratingChange: result.ratingChange,
+                firstWinBonus: false,
+                leveledUp: false,
+                newLevel: nil,
+                statPointsAwarded: nil,
+                loot: [],
+                staminaCurrent: appState.currentCharacter?.currentStamina ?? 0,
+                staminaMax: appState.currentCharacter?.maxStamina ?? 120,
+                matchId: result.matchId,
+                durabilityDegraded: [],
+                hpCurrent: nil,
+                hpMax: nil
+            )
+
             HapticManager.heavy()
             return nil
         } catch let apiError as APIError {

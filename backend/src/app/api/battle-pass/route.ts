@@ -3,15 +3,20 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { bpXpForLevel } from '@/lib/game/balance'
 
-function formatRewardName(rewardType: string, amount: number): string {
+function formatRewardName(rewardType: string): string {
   switch (rewardType) {
-    case 'gold': return `${amount} Gold`
-    case 'gems': return `${amount} Gems`
-    case 'xp': return `${amount} XP`
-    case 'stamina': return `${amount} Stamina`
+    case 'gold': return 'Gold'
+    case 'gems': return 'Gems'
+    case 'xp': return 'XP'
+    case 'stamina': return 'Stamina'
     case 'chest': return 'Chest'
     case 'skin': return 'Skin'
     case 'item': return 'Item'
+    case 'consumable': return 'Consumable'
+    case 'cosmetic': return 'Cosmetic'
+    case 'title': return 'Title'
+    case 'frame': return 'Frame'
+    case 'effect': return 'Effect'
     default: return rewardType
   }
 }
@@ -117,7 +122,7 @@ export async function GET(req: NextRequest) {
       .map((r) => ({
         level: r.bpLevel,
         reward_type: r.rewardType,
-        reward_name: formatRewardName(r.rewardType, r.rewardAmount),
+        reward_name: formatRewardName(r.rewardType),
         amount: r.rewardAmount,
         claimed: r.claimed,
       }))
@@ -127,7 +132,7 @@ export async function GET(req: NextRequest) {
       .map((r) => ({
         level: r.bpLevel,
         reward_type: r.rewardType,
-        reward_name: formatRewardName(r.rewardType, r.rewardAmount),
+        reward_name: formatRewardName(r.rewardType),
         amount: r.rewardAmount,
         claimed: r.claimed,
       }))

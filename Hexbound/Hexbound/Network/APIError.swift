@@ -3,7 +3,7 @@ import Foundation
 enum APIError: LocalizedError {
     case invalidURL
     case unauthorized
-    case rateLimited
+    case rateLimited(message: String)
     case serverError(statusCode: Int, message: String)
     case clientError(statusCode: Int, message: String)
     case decodingError(Error)
@@ -22,8 +22,8 @@ enum APIError: LocalizedError {
             "Invalid URL"
         case .unauthorized:
             "Session expired, please login again"
-        case .rateLimited:
-            "Too many requests. Please try again later."
+        case .rateLimited(let message):
+            message
         case .serverError(_, let message):
             message
         case .clientError(_, let message):

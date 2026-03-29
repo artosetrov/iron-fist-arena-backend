@@ -62,6 +62,8 @@ final class ShellGameViewModel {
         } catch let error as APIError {
             isPlaying = false
             switch error {
+            case .rateLimited(let message):
+                appState.showToast(message, type: .error)
             case .clientError(_, let message):
                 appState.showToast(message, type: .error)
             default:

@@ -18,12 +18,24 @@ struct InboxRowView: View {
         switch message.senderType {
         case "system": return DarkFantasyTheme.gold
         case "admin": return DarkFantasyTheme.purple
+        case "arena_result":
+            if let bd = message.battleData {
+                return bd.isWin ? DarkFantasyTheme.gold : DarkFantasyTheme.danger
+            }
+            return DarkFantasyTheme.gold
+        case "battle_invite":
+            if let inv = message.inviteData {
+                if inv.isAccepted { return DarkFantasyTheme.success }
+                if inv.isDeclined || inv.isExpired { return DarkFantasyTheme.textTertiary }
+            }
+            return DarkFantasyTheme.orange
         default: return DarkFantasyTheme.goldDim
         }
     }
 
     private var isSystem: Bool {
         message.senderType == "system" || message.senderType == "admin"
+            || message.senderType == "arena_result" || message.senderType == "battle_invite"
     }
 
     var body: some View {
@@ -99,8 +111,43 @@ struct InboxRowView: View {
 
                     Spacer(minLength: 4)
 
-                    // Attachment pills preview
-                    if let attachments = message.attachments, !attachments.isEmpty,
+                    // Battle result: rating change badge
+                    if let battle = message.battleData {
+                        Text("\(battle.ratingChange > 0 ? "+" : "")\(battle.ratingChange)")
+                            .font(DarkFantasyTheme.section(size: 11))
+                            .foregroundStyle(battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(DarkFantasyTheme.bgTertiary)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke((battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger).opacity(0.3), lineWidth: 0.5)
+                                    )
+                            )
+                    }
+
+                    // Battle invite: status badge
+                    if let invite = message.inviteData {
+                        Text(invite.status.uppercased())
+                            .font(DarkFantasyTheme.section(size: 11))
+                            .foregroundStyle(inviteStatusColor(invite.status))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(DarkFantasyTheme.bgTertiary)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(inviteStatusColor(invite.status).opacity(0.3), lineWidth: 0.5)
+                                    )
+                            )
+                    }
+
+                    // Attachment pills preview (non-battle mails)
+                    if !message.isBattleResult && !message.isBattleInvite,
+                        let attachments = message.attachments, !attachments.isEmpty,
                         !message.isClaimed
                     {
                         attachmentPills(attachments)
@@ -181,6 +228,18 @@ struct InboxRowView: View {
         switch message.senderType {
         case "system": return "scroll.fill"
         case "admin": return "megaphone.fill"
+        case "arena_result":
+            if let bd = message.battleData {
+                return bd.isWin ? "trophy.fill" : "xmark.shield.fill"
+            }
+            return "swords"
+        case "battle_invite":
+            if let inv = message.inviteData {
+                if inv.isAccepted { return "checkmark.circle.fill" }
+                if inv.isDeclined { return "xmark.circle.fill" }
+                if inv.isExpired { return "clock.badge.xmark" }
+            }
+            return "swords"
         case "player": return "person.fill"
         default: return "envelope.fill"
         }
@@ -227,15 +286,25 @@ struct InboxRowView: View {
             GoldDivider()
                 .padding(.horizontal, LayoutConstants.spaceMD)
 
-            // Message body
-            Text(message.body)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(nil)
-                .padding(.horizontal, LayoutConstants.spaceMD)
+            // Structured content by type
+            if message.isBattleResult, let battle = message.battleData {
+                battleResultContent(battle)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+            } else if message.isBattleInvite, let invite = message.inviteData {
+                battleInviteContent(invite)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+            } else {
+                // Regular mail: plain text body
+                Text(message.body)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(nil)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+            }
 
-            // Attachments card
-            if let attachments = message.attachments, !attachments.isEmpty {
+            // Attachments card (only for regular mails with claimable rewards)
+            if !message.isBattleResult && !message.isBattleInvite,
+                let attachments = message.attachments, !attachments.isEmpty {
                 attachmentsCard(attachments)
                     .padding(.horizontal, LayoutConstants.spaceMD)
             }
@@ -246,6 +315,100 @@ struct InboxRowView: View {
                 .padding(.bottom, LayoutConstants.spaceMD)
         }
         .padding(.top, LayoutConstants.spaceXS)
+    }
+
+    // MARK: - Battle Result Content
+
+    private func battleResultContent(_ battle: BattleResultData) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Fight type label
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: "swords")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                Text(battle.label)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                Spacer()
+
+                Text("\(battle.totalTurns) turns")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+
+            // Rating change row
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .frame(width: 20)
+
+                Text("Rating")
+                    .font(DarkFantasyTheme.body(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                Spacer()
+
+                Text("\(battle.ratingBefore) → \(battle.ratingAfter)")
+                    .font(DarkFantasyTheme.section(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                Text("(\(battle.ratingChange > 0 ? "+" : "")\(battle.ratingChange))")
+                    .font(DarkFantasyTheme.section(size: 14))
+                    .foregroundStyle(battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
+            }
+
+            // Gold reward row
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image("icon-gold")
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .frame(width: 20)
+
+                Text("Gold")
+                    .font(DarkFantasyTheme.body(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                Spacer()
+
+                Text("+\(battle.goldReward)")
+                    .font(DarkFantasyTheme.section(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+            }
+
+            // XP reward row
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(DarkFantasyTheme.cyan)
+                    .frame(width: 20)
+
+                Text("XP")
+                    .font(DarkFantasyTheme.body(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                Spacer()
+
+                Text("+\(battle.xpReward)")
+                    .font(DarkFantasyTheme.section(size: 14))
+                    .foregroundStyle(DarkFantasyTheme.cyan)
+            }
+        }
+        .padding(LayoutConstants.cardPadding)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgTertiary.opacity(0.6),
+                glowColor: accentColor.opacity(0.04),
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.radiusSM
+            )
+        )
+        .innerBorder(
+            cornerRadius: LayoutConstants.radiusSM - 1, inset: 1,
+            color: accentColor.opacity(0.08))
+        .compositingGroup()
     }
 
     // MARK: - Attachments Card
@@ -274,6 +437,156 @@ struct InboxRowView: View {
             cornerRadius: LayoutConstants.radiusSM - 1, inset: 1,
             color: accentColor.opacity(0.08))
         .compositingGroup()
+    }
+
+    // MARK: - Battle Invite Content
+
+    private func battleInviteContent(_ invite: BattleInviteData) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Challenger info row
+            HStack(spacing: LayoutConstants.spaceMD) {
+                // Challenger avatar
+                if let avatar = invite.challengerAvatar, !avatar.isEmpty {
+                    AvatarImageView(
+                        skinKey: avatar,
+                        characterClass: invite.challengerClassEnum,
+                        size: 44
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                } else {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        )
+                }
+
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(invite.challengerName)
+                        .font(DarkFantasyTheme.section(size: 16))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        Text("Lv.\(invite.challengerLevel)")
+                            .font(DarkFantasyTheme.body(size: 12))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                        Text("·")
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                        Text(invite.challengerClass.capitalized)
+                            .font(DarkFantasyTheme.body(size: 12))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                        Text("·")
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                        Text("\(invite.challengerRating)")
+                            .font(DarkFantasyTheme.section(size: 12))
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                    }
+                }
+
+                Spacer()
+            }
+
+            // Challenge message (if any)
+            if let msg = invite.message, !msg.isEmpty {
+                Text("\"\(msg)\"")
+                    .font(DarkFantasyTheme.body(size: 14).italic())
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Action buttons (only for pending invites)
+            if invite.isPending {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Button {
+                        acceptInvite(invite)
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "swords")
+                                .font(.system(size: 13))
+                            Text("FIGHT")
+                                .font(DarkFantasyTheme.section(size: 14))
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.primary)
+
+                    Button {
+                        declineInvite(invite)
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("DECLINE")
+                                .font(DarkFantasyTheme.section(size: 14))
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.secondary)
+                }
+            } else {
+                // Resolved status
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: invite.isAccepted ? "checkmark.circle.fill" : invite.isDeclined ? "xmark.circle.fill" : "clock")
+                        .foregroundStyle(inviteStatusColor(invite.status))
+                    Text(invite.status.capitalized)
+                        .font(DarkFantasyTheme.body(size: 14))
+                        .foregroundStyle(inviteStatusColor(invite.status))
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, LayoutConstants.spaceXS)
+            }
+        }
+        .padding(LayoutConstants.cardPadding)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgTertiary.opacity(0.6),
+                glowColor: accentColor.opacity(0.04),
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.radiusSM
+            )
+        )
+        .innerBorder(
+            cornerRadius: LayoutConstants.radiusSM - 1, inset: 1,
+            color: accentColor.opacity(0.08))
+        .compositingGroup()
+    }
+
+    private func inviteStatusColor(_ status: String) -> Color {
+        switch status {
+        case "accepted": return DarkFantasyTheme.success
+        case "declined": return DarkFantasyTheme.danger
+        case "expired": return DarkFantasyTheme.textTertiary
+        default: return DarkFantasyTheme.orange
+        }
+    }
+
+    private func acceptInvite(_ invite: BattleInviteData) {
+        HapticManager.heavy()
+        // Navigate to guild hall which handles challenge acceptance with combat playback
+        appState.mainPath.append(AppRoute.guildHall)
+    }
+
+    private func declineInvite(_ invite: BattleInviteData) {
+        HapticManager.light()
+        Task {
+            do {
+                try await ChallengeService.shared.declineChallenge(
+                    characterId: characterId,
+                    challengeId: invite.challengeId
+                )
+                // Mark the mail as read since the action is done
+                viewModel.markAsRead(messageId: message.id, characterId: characterId)
+                appState.showToast("Challenge declined", type: .info)
+            } catch {
+                appState.showToast("Failed to decline", type: .error)
+            }
+        }
     }
 
     private func rewardPill(_ attachment: MailAttachment) -> some View {

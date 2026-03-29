@@ -203,8 +203,9 @@ struct DailyLoginDetailView: View {
         vm: DailyLoginPopupViewModel,
         isBonus: Bool = false
     ) -> some View {
-        let isCurrentDay = reward.day == data.currentDay && data.canClaim
-        let isClaimed = reward.day < data.currentDay || (reward.day == data.currentDay && !data.canClaim)
+        let effectiveCanClaim = data.canClaim && !vm.hasClaimed
+        let isCurrentDay = reward.day == data.currentDay && effectiveCanClaim
+        let isClaimed = reward.day < data.currentDay || (reward.day == data.currentDay && !effectiveCanClaim)
         let isLocked = !isClaimed && !isCurrentDay
         let _ = vm.claimedDayBounce == reward.day
 
@@ -381,7 +382,9 @@ struct DailyLoginDetailView: View {
                     Text("REWARD CLAIMED")
                 }
             }
-            .buttonStyle(.primary)
+            .buttonStyle(.neutral)
+            .disabled(true)
+            .opacity(0.6)
         } else {
             Button {
                 HapticManager.success()

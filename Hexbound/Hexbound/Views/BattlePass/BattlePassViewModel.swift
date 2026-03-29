@@ -8,7 +8,6 @@ final class BattlePassViewModel {
     var data: BattlePassData?
     var isLoading = false
     var errorMessage: String?
-    var claimingLevel: Int?
     var isBuyingPremium = false
 
     private let cache: GameDataCache
@@ -60,7 +59,6 @@ final class BattlePassViewModel {
         guard rewardState(reward) == .claimable else { return }
 
         // ── Optimistic UI: mark claimed instantly ──
-        claimingLevel = reward.level
         if var bp = data {
             if reward.track == "premium" {
                 if let idx = bp.premiumRewards.firstIndex(where: { $0.level == reward.level }) {
@@ -74,26 +72,21 @@ final class BattlePassViewModel {
             data = bp
             cache.cacheBattlePass(bp)
         }
-        claimingLevel = nil
         HapticManager.success()
 
         // ── Fire API in background, refresh for server-true state ──
         Task { [weak self] in
             guard let self else { return }
             let success = await service.claimReward(level: reward.level)
-            if success {
-                // Silently refresh to get accurate server state
-                if let freshData = await service.loadBattlePass() {
-                    data = freshData
-                    cache.cacheBattlePass(freshData)
+            // Refresh to get accurate server state regardless of outcome
+            if let freshData = await service.loadBattlePass() {
+                data = freshData
+                cache.cacheBattlePass(freshData)
+            }
+            if !success {
+                appState.showToast("Claim failed", subtitle: "Try again", type: .error, actionLabel: "Retry") {
+                    Task { [weak self] in await self?.claimReward(reward) }
                 }
-            } else {
-                // Revert: re-load from server
-                if let freshData = await service.loadBattlePass() {
-                    data = freshData
-                    cache.cacheBattlePass(freshData)
-                }
-                appState.showToast("Claim failed", subtitle: "Try again", type: .error)
             }
         }
     }

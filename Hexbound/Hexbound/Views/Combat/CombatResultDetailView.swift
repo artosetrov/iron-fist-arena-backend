@@ -155,10 +155,23 @@ struct CombatResultDetailView: View {
 
         var buttons: [ResultButton] = []
 
-        if source == "arena" || source == "pvp" {
-            buttons.append(ResultButton(title: "FIGHT AGAIN", icon: "swords", style: .primary, action: {
-                goBack()
-            }))
+        if source == "arena" || source == "pvp" || source == "challenge" {
+            // "Fight Again" for arena, "Back to Guild Hall" for challenges
+            if source == "challenge" {
+                buttons.append(ResultButton(title: "GUILD HALL", icon: "building.columns.fill", style: .primary, action: {
+                    appState.combatData = nil
+                    appState.combatResult = nil
+                    appState.invalidateCache("quests")
+                    appState.mainPath = NavigationPath()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        appState.mainPath.append(AppRoute.guildHall)
+                    }
+                }))
+            } else {
+                buttons.append(ResultButton(title: "FIGHT AGAIN", icon: "swords", style: .primary, action: {
+                    goBack()
+                }))
+            }
             // Send message to opponent after PvP
             if let enemy = combatData?.enemy {
                 buttons.append(ResultButton(title: "SEND MESSAGE", icon: "envelope.fill", style: .secondary, action: {

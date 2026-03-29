@@ -21,6 +21,7 @@ import { cacheDeletePrefix } from '@/lib/cache'
 import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { degradeEquipment } from '@/lib/game/durability'
+import { createBattleResultMail, createBattleInviteMail, updateBattleInviteStatus } from '@/lib/game/battle-mail'
 
 const MAX_PENDING_CHALLENGES = 5
 const CHALLENGE_EXPIRY_HOURS = 24
@@ -231,6 +232,7 @@ export async function POST(req: NextRequest) {
         pvpLossStreak: true,
         currentHp: true,
         gold: true,
+        avatar: true,
       },
     })
     if (!character) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
@@ -264,7 +266,7 @@ async function handleSend(character: any, body: any) {
   // Check target exists
   const target = await prisma.character.findUnique({
     where: { id: target_id },
-    select: { id: true, characterName: true },
+    select: { id: true, characterName: true, class: true, level: true, pvpRating: true, avatar: true },
   })
   if (!target) {
     return NextResponse.json({ error: 'Target not found' }, { status: 404 })
@@ -342,6 +344,21 @@ async function handleSend(character: any, body: any) {
     }),
   ])
 
+  // Fire-and-forget: create battle invite mail in defender's inbox
+  createBattleInviteMail(prisma, {
+    challengeId: challenge.id,
+    challengerId: character.id,
+    challengerName: character.characterName,
+    challengerClass: character.class,
+    challengerLevel: character.level,
+    challengerRating: character.pvpRating,
+    challengerAvatar: character.avatar ?? null,
+    defenderId: target_id,
+    message: challenge.message,
+    goldWager: 0,
+    expiresAt,
+  }).catch((err: unknown) => console.error('battle invite mail error:', err))
+
   return NextResponse.json({
     challenge: {
       id: challenge.id,
@@ -395,10 +412,18 @@ async function handleAccept(character: any, body: any) {
 
   await initCombatConfig()
 
-  // Load full combat data for both
-  const [attackerData, defenderData] = await Promise.all([
+  // Load full combat data for both + origin for display
+  const [attackerData, defenderData, challengerDisplay, defenderDisplay] = await Promise.all([
     loadCombatCharacter(challenge.challengerId),
     loadCombatCharacter(character.id),
+    prisma.character.findUnique({
+      where: { id: challenge.challengerId },
+      select: { origin: true },
+    }),
+    prisma.character.findUnique({
+      where: { id: character.id },
+      select: { origin: true },
+    }),
   ])
 
   if (!attackerData || !defenderData) {
@@ -534,6 +559,24 @@ async function handleAccept(character: any, body: any) {
     degradeEquipment(prisma, winnerId),
     degradeEquipment(prisma, loserId),
     cacheDeletePrefix(`leaderboard:`),
+    updateBattleInviteStatus(prisma, challenge_id, 'accepted'),
+    createBattleResultMail(prisma, {
+      winnerId,
+      loserId,
+      winnerName: challengerWon ? challenge.challenger.characterName : character.characterName,
+      loserName: challengerWon ? character.characterName : challenge.challenger.characterName,
+      fightType: 'challenge',
+      matchId: pvpMatch.id,
+      totalTurns: combatResult.totalTurns,
+      winnerRatingBefore: winner.pvpRating,
+      winnerRatingAfter: newWinnerRating,
+      winnerGold,
+      winnerXp,
+      loserRatingBefore: loser.pvpRating,
+      loserRatingAfter: newLoserRating,
+      loserGold,
+      loserXp,
+    }),
   ]).catch((err: any) => console.error('duel post-combat side effects error:', err))
 
   // Build response with combat data for the accepter (defender)
@@ -556,6 +599,25 @@ async function handleAccept(character: any, body: any) {
       xpReward: defenderWon ? winnerXp : loserXp,
       challengerName: challenge.challenger.characterName,
       defenderName: character.characterName,
+      // Fighter display data for combat playback on client
+      challenger: {
+        id: attackerData.id,
+        characterName: attackerData.name,
+        class: attackerData.class,
+        origin: challengerDisplay?.origin ?? 'human',
+        level: attackerData.level,
+        maxHp: attackerData.maxHp,
+        avatar: attackerData.avatar ?? null,
+      },
+      defender: {
+        id: defenderData.id,
+        characterName: defenderData.name,
+        class: defenderData.class,
+        origin: defenderDisplay?.origin ?? 'human',
+        level: defenderData.level,
+        maxHp: defenderData.maxHp,
+        avatar: defenderData.avatar ?? null,
+      },
     },
   })
 }
@@ -584,6 +646,10 @@ async function handleDecline(character: any, body: any) {
       respondedAt: new Date(),
     },
   })
+
+  // Fire-and-forget: update invite mail status
+  updateBattleInviteStatus(prisma, challenge_id, 'declined')
+    .catch((err: unknown) => console.error('invite status update error:', err))
 
   return NextResponse.json({ success: true })
 }

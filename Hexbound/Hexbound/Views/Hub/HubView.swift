@@ -45,6 +45,10 @@ struct HubView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                 }
 
+                // Battle Invite Banner — shows when pending PvP challenges exist
+                BattleInviteBanner()
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+
                 // Quest Reward Widget — shows when completed quests have unclaimed rewards
                 QuestRewardWidget()
                     .padding(.horizontal, LayoutConstants.screenPadding)
@@ -226,6 +230,10 @@ struct HubView: View {
             if cache.cachedSocialStatus() == nil {
                 Task { await prefetchSocialStatus() }
             }
+            // Background-prefetch incoming challenges for battle invite banner
+            if cache.cachedIncomingChallenges() == nil {
+                Task { await prefetchIncomingChallenges() }
+            }
         }
     }
 
@@ -345,6 +353,16 @@ struct HubView: View {
         guard let charId = appState.currentCharacter?.id else { return }
         guard let status = await SocialService.shared.getSocialStatus(characterId: charId) else { return }
         cache.cacheSocialStatus(status)
+    }
+
+    private func prefetchIncomingChallenges() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        do {
+            let response = try await ChallengeService.shared.getChallenges(characterId: charId)
+            cache.cacheIncomingChallenges(response.incoming)
+        } catch {
+            // Silent — banner just won't show
+        }
     }
 
     // MARK: - Onboarding Methods
@@ -780,6 +798,300 @@ struct FirstWinBonusCard: View {
     }
 }
 
+// MARK: - Battle Invite Banner
+
+/// Shows on Hub when there are pending incoming PvP challenges.
+/// Single invite: shows challenger info + FIGHT / DECLINE buttons.
+/// Multiple invites: shows first invite + "N more" counter.
+/// Hidden when no pending challenges exist.
+struct BattleInviteBanner: View {
+    @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
+
+    @State private var isAccepting = false
+    @State private var isDeclining = false
+
+    private var challenges: [IncomingChallenge] {
+        cache.incomingChallenges
+    }
+
+    private var firstChallenge: IncomingChallenge? {
+        challenges.first
+    }
+
+    var body: some View {
+        if let challenge = firstChallenge {
+            inviteCard(challenge)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+    }
+
+    private func inviteCard(_ challenge: IncomingChallenge) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Header row
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: "swords")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(DarkFantasyTheme.orange)
+
+                Text("BATTLE CHALLENGE")
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .foregroundStyle(DarkFantasyTheme.orange)
+
+                Spacer()
+
+                if challenges.count > 1 {
+                    Text("+\(challenges.count - 1) more")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+            }
+
+            // Challenger info row
+            HStack(spacing: LayoutConstants.spaceMD) {
+                // Avatar
+                if let avatar = challenge.challenger.avatar, !avatar.isEmpty {
+                    AvatarImageView(
+                        skinKey: avatar,
+                        characterClass: challenge.challenger.classEnum,
+                        size: 40
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                } else {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                        .frame(width: 40, height: 40)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        )
+                }
+
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(challenge.challenger.characterName)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        Text("Lv.\(challenge.challenger.level)")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                        Text(challenge.challenger.rankName)
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.gold)
+                    }
+                }
+
+                Spacer()
+            }
+
+            // Action buttons
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Button {
+                    acceptChallenge(challenge)
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        if isAccepting {
+                            ProgressView()
+                                .tint(DarkFantasyTheme.textOnGold)
+                                .scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "swords")
+                                .font(.system(size: 12, weight: .bold))
+                        }
+                        Text("FIGHT")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.primary)
+                .disabled(isAccepting || isDeclining)
+
+                Button {
+                    declineChallenge(challenge)
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        if isDeclining {
+                            ProgressView()
+                                .tint(DarkFantasyTheme.textSecondary)
+                                .scaleEffect(0.7)
+                        } else {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        Text("DECLINE")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.secondary)
+                .disabled(isAccepting || isDeclining)
+
+                // View all button (if multiple)
+                if challenges.count > 1 {
+                    Button {
+                        HapticManager.light()
+                        appState.mainPath.append(AppRoute.guildHall)
+                    } label: {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .buttonStyle(.secondary)
+                    .disabled(isAccepting || isDeclining)
+                }
+            }
+        }
+        .padding(LayoutConstants.bannerPadding)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: 0.4,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.orange.opacity(0.12))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.orange.opacity(0.5), lineWidth: 1.5)
+        )
+        .cornerBrackets(color: DarkFantasyTheme.orange.opacity(0.5), length: 14, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.orange.opacity(0.12), radius: 8, y: 2)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
+    }
+
+    // MARK: - Actions
+
+    private func acceptChallenge(_ challenge: IncomingChallenge) {
+        guard !isAccepting else { return }
+        isAccepting = true
+        HapticManager.heavy()
+
+        Task {
+            guard let charId = appState.currentCharacter?.id else {
+                isAccepting = false
+                return
+            }
+            do {
+                let result = try await ChallengeService.shared.acceptChallenge(
+                    characterId: charId,
+                    challengeId: challenge.id
+                )
+
+                // Build CombatData for playback (same pattern as GuildHallViewModel)
+                let playerFighter = CombatFighter(
+                    id: result.defender.id,
+                    characterName: result.defender.characterName,
+                    characterClass: CharacterClass(rawValue: result.defender.characterClass) ?? .warrior,
+                    origin: CharacterOrigin(rawValue: result.defender.origin ?? "human") ?? .human,
+                    level: result.defender.level,
+                    maxHp: result.defender.maxHp,
+                    currentHp: nil,
+                    avatar: result.defender.avatar
+                )
+                let enemyFighter = CombatFighter(
+                    id: result.challenger.id,
+                    characterName: result.challenger.characterName,
+                    characterClass: CharacterClass(rawValue: result.challenger.characterClass) ?? .warrior,
+                    origin: CharacterOrigin(rawValue: result.challenger.origin ?? "human") ?? .human,
+                    level: result.challenger.level,
+                    maxHp: result.challenger.maxHp,
+                    currentHp: nil,
+                    avatar: result.challenger.avatar
+                )
+                let combatResultInfo = CombatResultInfo(
+                    isWin: result.won,
+                    winnerId: result.winnerId,
+                    goldReward: result.goldReward,
+                    xpReward: result.xpReward,
+                    turnsTaken: result.totalTurns,
+                    ratingChange: result.ratingChange,
+                    firstWinBonus: nil, leveledUp: nil, newLevel: nil, statPointsAwarded: nil
+                )
+                let combatData = CombatData(
+                    player: playerFighter, enemy: enemyFighter,
+                    combatLog: result.combatLog, result: combatResultInfo,
+                    rewards: CombatRewards(gold: result.goldReward, xp: result.xpReward),
+                    source: "challenge", matchId: result.matchId
+                )
+
+                // Clear combat state + navigate
+                appState.combatData = nil
+                appState.combatResult = nil
+                appState.resolveResult = nil
+                appState.pendingLoot = []
+                appState.mainPath.append(AppRoute.combat)
+                appState.combatData = combatData
+                appState.resolveResult = ResolveResult(
+                    verified: true, clientMatches: true,
+                    serverWinnerId: result.winnerId,
+                    goldReward: result.goldReward, xpReward: result.xpReward,
+                    ratingChange: result.ratingChange,
+                    firstWinBonus: false, leveledUp: false,
+                    newLevel: nil, statPointsAwarded: nil,
+                    loot: [],
+                    staminaCurrent: appState.currentCharacter?.currentStamina ?? 0,
+                    staminaMax: appState.currentCharacter?.maxStamina ?? 120,
+                    matchId: result.matchId,
+                    durabilityDegraded: [], hpCurrent: nil, hpMax: nil
+                )
+
+                // Remove from cache
+                cache.cacheIncomingChallenges(
+                    cache.incomingChallenges.filter { $0.id != challenge.id }
+                )
+            } catch let apiError as APIError {
+                switch apiError {
+                case .serverError(_, let msg):
+                    appState.showToast(msg, type: .error)
+                default:
+                    appState.showToast(apiError.localizedDescription, type: .error)
+                }
+                HapticManager.error()
+            } catch {
+                appState.showToast("Failed to start duel", type: .error)
+                HapticManager.error()
+            }
+            isAccepting = false
+        }
+    }
+
+    private func declineChallenge(_ challenge: IncomingChallenge) {
+        guard !isDeclining else { return }
+        isDeclining = true
+        HapticManager.light()
+
+        // Optimistic: remove from cache
+        let savedChallenges = cache.incomingChallenges
+        cache.cacheIncomingChallenges(
+            cache.incomingChallenges.filter { $0.id != challenge.id }
+        )
+
+        Task {
+            guard let charId = appState.currentCharacter?.id else {
+                isDeclining = false
+                return
+            }
+            do {
+                try await ChallengeService.shared.declineChallenge(
+                    characterId: charId,
+                    challengeId: challenge.id
+                )
+                appState.showToast("Challenge declined", type: .info)
+            } catch {
+                // Revert on failure
+                cache.cacheIncomingChallenges(savedChallenges)
+                appState.showToast("Failed to decline", type: .error)
+            }
+            isDeclining = false
+        }
+    }
+}
+
 // MARK: - Quest Reward Widget
 
 /// Shows on Hub when there are completed-but-unclaimed daily quests.
@@ -1191,78 +1503,218 @@ struct FloatingSoundToggle: View {
     private let settings = SettingsManager.shared
     @State private var isMuted: Bool = SettingsManager.shared.isMuted
 
+    // Tap feedback
+    @State private var tapScale: CGFloat = 1.0
+
+    // Sound wave rings (expand + fade on tap)
+    @State private var waveScales: [CGFloat] = [1.0, 1.0, 1.0]
+    @State private var waveOpacities: [Double] = [0.0, 0.0, 0.0]
+
+    // Idle animation (sound on)
+    @State private var idleGlow = false
+    @State private var eq1: CGFloat = 0.35
+    @State private var eq2: CGFloat = 0.5
+    @State private var eq3: CGFloat = 0.25
+
     private var accentColor: Color {
         isMuted ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.gold
     }
 
-    private var iconSize: CGFloat { size * 0.39 }
+    private var glowOpacity: Double {
+        if isMuted { return 0.15 }
+        return idleGlow ? 0.5 : 0.25
+    }
+
+    private var glowRadius: CGFloat {
+        if isMuted { return 4 }
+        return idleGlow ? 14 : 8
+    }
 
     var body: some View {
         Button {
-            isMuted.toggle()
-            settings.isMuted = isMuted
-            if isMuted {
-                AudioManager.shared.stopBGM()
-            } else {
-                AudioManager.shared.syncVolume()
-                AudioManager.shared.playBGM("stray-city.mp3")
-            }
+            performToggle()
         } label: {
-            Image(isMuted ? "hud-sound-off" : "hud-sound-on")
-                .resizable()
-                .scaledToFit()
-                .frame(width: size * 0.75, height: size * 0.75)
-                .frame(width: size, height: size)
-                .background(
-                    ZStack {
-                        Circle()
-                            .fill(DarkFantasyTheme.bgSecondary)
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [accentColor.opacity(0.08), .clear],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: size / 2
-                                )
-                            )
-                        // Surface lighting on circle
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.08),
-                                        Color.clear,
-                                        Color.black.opacity(0.12)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                    }
-                )
-                .overlay(
-                    Circle()
-                        .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
-                )
-                .overlay(
-                    // Inner bevel on circle
+            ZStack {
+                // Expanding wave rings (tap only)
+                ForEach(0..<3, id: \.self) { i in
                     Circle()
                         .stroke(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.08), Color.clear, Color.black.opacity(0.12)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: 1
+                            DarkFantasyTheme.gold,
+                            lineWidth: 1.5 - CGFloat(i) * 0.3
                         )
-                        .padding(3)
-                )
-                .shadow(color: accentColor.opacity(0.25), radius: 8, y: 2)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
+                        .frame(width: size, height: size)
+                        .scaleEffect(waveScales[i])
+                        .opacity(waveOpacities[i])
+                }
+
+                // Main icon + chrome
+                soundButtonContent
+
+                // Equalizer bars below icon (idle indicator)
+                if !isMuted {
+                    equalizerBars
+                        .transition(.opacity.animation(.easeInOut(duration: 0.4)))
+                }
+            }
         }
         .buttonStyle(.scalePress(0.9))
         .contentShape(Circle())
+        .onAppear {
+            if !isMuted { startIdleLoop() }
+        }
+        .onDisappear {
+            stopIdleLoop()
+        }
+    }
+
+    // MARK: - Main Button Content
+
+    private var soundButtonContent: some View {
+        Image(isMuted ? "hud-sound-off" : "hud-sound-on")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size * 0.75, height: size * 0.75)
+            .frame(width: size, height: size)
+            .background(
+                ZStack {
+                    Circle()
+                        .fill(DarkFantasyTheme.bgSecondary)
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [accentColor.opacity(isMuted ? 0.04 : 0.12), .clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: size / 2
+                            )
+                        )
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.08),
+                                    Color.clear,
+                                    Color.black.opacity(0.12)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                }
+            )
+            .overlay(
+                Circle()
+                    .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.08), Color.clear, Color.black.opacity(0.12)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
+                    .padding(3)
+            )
+            .shadow(color: accentColor.opacity(glowOpacity), radius: glowRadius, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
+            .scaleEffect(tapScale)
+            .animation(.spring(response: 0.3, dampingFraction: 0.45), value: tapScale)
+            .animation(.easeInOut(duration: 2.5), value: idleGlow)
+            .animation(.easeInOut(duration: 0.3), value: isMuted)
+    }
+
+    // MARK: - Equalizer Bars
+
+    private var equalizerBars: some View {
+        HStack(spacing: 2) {
+            equalizerBar(height: eq1, maxHeight: 8)
+            equalizerBar(height: eq2, maxHeight: 8)
+            equalizerBar(height: eq3, maxHeight: 8)
+        }
+        .offset(y: size * 0.52)
+    }
+
+    private func equalizerBar(height: CGFloat, maxHeight: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 1)
+            .fill(
+                LinearGradient(
+                    colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .frame(width: 2.5, height: max(2.5, height * maxHeight))
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 2)
+    }
+
+    // MARK: - Actions
+
+    private func performToggle() {
+        isMuted.toggle()
+        settings.isMuted = isMuted
+
+        if isMuted {
+            AudioManager.shared.stopBGM()
+            stopIdleLoop()
+        } else {
+            AudioManager.shared.syncVolume()
+            AudioManager.shared.playBGM("stray-city.mp3")
+            triggerTapBounce()
+            triggerWaves()
+            startIdleLoop()
+        }
+    }
+
+    private func triggerTapBounce() {
+        tapScale = 1.15
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
+            tapScale = 1.0
+        }
+    }
+
+    private func triggerWaves() {
+        let delays: [Int] = [0, 100, 200]
+        let maxScales: [CGFloat] = [1.7, 2.0, 2.3]
+
+        for i in 0..<3 {
+            Task { @MainActor in
+                if delays[i] > 0 {
+                    try? await Task.sleep(for: .milliseconds(delays[i]))
+                }
+                waveScales[i] = 1.0
+                waveOpacities[i] = 0.4 - Double(i) * 0.06
+                withAnimation(.easeOut(duration: 0.65)) {
+                    waveScales[i] = maxScales[i]
+                    waveOpacities[i] = 0.0
+                }
+            }
+        }
+    }
+
+    private func startIdleLoop() {
+        withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+            idleGlow = true
+        }
+        withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+            eq1 = 0.9
+        }
+        withAnimation(.easeInOut(duration: 0.45).repeatForever(autoreverses: true).delay(0.15)) {
+            eq2 = 0.85
+        }
+        withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true).delay(0.3)) {
+            eq3 = 1.0
+        }
+    }
+
+    private func stopIdleLoop() {
+        idleGlow = false
+        eq1 = 0.35
+        eq2 = 0.5
+        eq3 = 0.25
     }
 }
 

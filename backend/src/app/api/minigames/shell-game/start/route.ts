@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     })
     if (todayGames >= 20) {
       return NextResponse.json(
-        { message: 'Daily shell game limit reached (20/day)' },
+        { error: 'Daily shell game limit reached (20/day)' },
         { status: 429 }
       )
     }

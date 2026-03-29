@@ -103,6 +103,26 @@ struct SentChallengeInfo: Codable {
     // No CodingKeys — all keys are camelCase from backend.
 }
 
+// MARK: - Duel Fighter (display data for combat playback)
+
+struct DuelFighter: Codable {
+    let id: String
+    let characterName: String
+    let characterClass: String
+    let origin: String?
+    let level: Int
+    let maxHp: Int
+    let avatar: String?
+
+    // Only "class" needs explicit mapping (Swift reserved keyword).
+    // All other keys are camelCase — .convertFromSnakeCase passes them through.
+    enum CodingKeys: String, CodingKey {
+        case id, characterName
+        case characterClass = "class"
+        case origin, level, maxHp, avatar
+    }
+}
+
 // MARK: - Duel Result Response
 
 struct DuelResultResponse: Codable {
@@ -115,7 +135,8 @@ struct DuelResult: Codable {
     let won: Bool
     let winnerId: String
     let loserId: String
-    let turns: Int?
+    let combatLog: [CombatLog]
+    let totalTurns: Int
     let ratingBefore: Int
     let ratingAfter: Int
     let ratingChange: Int
@@ -123,6 +144,8 @@ struct DuelResult: Codable {
     let xpReward: Int
     let challengerName: String
     let defenderName: String
+    let challenger: DuelFighter
+    let defender: DuelFighter
     // No CodingKeys — all keys are camelCase from backend.
 }
 

@@ -187,8 +187,7 @@ struct BattlePassDetailView: View {
                         ForEach(Array(rewards.enumerated()), id: \.element.id) { index, reward in
                             BPRewardNodeView(
                                 reward: reward,
-                                state: vm.rewardState(reward),
-                                isClaiming: vm.claimingLevel == reward.level
+                                state: vm.rewardState(reward)
                             ) {
                                 HapticManager.medium()
                                 SFXManager.shared.play(.uiRewardClaim)

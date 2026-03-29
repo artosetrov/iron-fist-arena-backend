@@ -26,6 +26,7 @@ import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { degradeEquipment } from '@/lib/game/durability'
 import { cacheDeletePrefix } from '@/lib/cache'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
+import { createBattleResultMail } from '@/lib/game/battle-mail'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -455,6 +456,25 @@ export async function POST(req: NextRequest) {
     if (lootItem) loot.push(lootItem)
 
     const ratingChange = attackerNewRating - attacker.pvpRating
+
+    // Fire-and-forget: create battle result mail for both players
+    createBattleResultMail(prisma, {
+      winnerId,
+      loserId,
+      winnerName: attackerWon ? attacker.characterName : defender.characterName,
+      loserName: attackerWon ? defender.characterName : attacker.characterName,
+      fightType: isRevenge ? 'revenge' : 'arena',
+      matchId: pvpMatch.id,
+      totalTurns: combatResult.totalTurns,
+      winnerRatingBefore: attackerWon ? attacker.pvpRating : defender.pvpRating,
+      winnerRatingAfter: attackerWon ? attackerNewRating : defenderNewRating,
+      winnerGold: goldReward,
+      winnerXp: xpReward,
+      loserRatingBefore: attackerWon ? defender.pvpRating : attacker.pvpRating,
+      loserRatingAfter: attackerWon ? defenderNewRating : attackerNewRating,
+      loserGold: defenderGoldReward,
+      loserXp: defenderXpReward,
+    }).catch((err: unknown) => console.error('battle mail error (pvp/resolve):', err))
 
     return NextResponse.json({
       verified: true,

@@ -17,41 +17,20 @@ struct InboxDetailView: View {
 
             VStack(spacing: 0) {
                 // Ornamental title — sticky above scroll
-                OrnamentalTitle("MAIL", subtitle: unreadSubtitle)
+                OrnamentalTitle("MESSAGES", subtitle: unreadSubtitle)
                     .padding(.top, LayoutConstants.spaceXS)
 
-                // Tab Switcher — sticky
-                TabSwitcher(
-                    tabs: InboxViewModel.Tab.allCases.map(\.rawValue),
-                    selectedIndex: Binding(
-                        get: { InboxViewModel.Tab.allCases.firstIndex(of: viewModel.selectedTab) ?? 0 },
-                        set: { newValue in
-                            viewModel.selectedTab = InboxViewModel.Tab.allCases[newValue]
-                        }
-                    )
-                )
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, LayoutConstants.spaceSM)
-
-                // Content by tab
-                switch viewModel.selectedTab {
-                case .mail:
-                    mailTabContent
-                case .scrolls:
-                    scrollsTabContent
-                }
-
-                if let error = viewModel.error, viewModel.selectedTab == .mail {
-                    ErrorBanner(message: error) {
-                        Task { await viewModel.fetchInbox(characterId: characterId) }
-                    }
-                    .padding(.horizontal, LayoutConstants.spaceMD)
+                // Filter pills — sticky
+                filterPills
+                    .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.bottom, LayoutConstants.spaceSM)
-                }
 
-                if let error = viewModel.scrollsError, viewModel.selectedTab == .scrolls {
+                // Unified content
+                unifiedContent
+
+                if let error = viewModel.error {
                     ErrorBanner(message: error) {
-                        Task { await viewModel.loadConversations(characterId: characterId) }
+                        Task { await viewModel.fetchAll(characterId: characterId) }
                     }
                     .padding(.horizontal, LayoutConstants.spaceMD)
                     .padding(.bottom, LayoutConstants.spaceSM)
@@ -70,7 +49,7 @@ struct InboxDetailView: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(DarkFantasyTheme.gold)
 
-                    Text("MAIL")
+                    Text("MESSAGES")
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
 
@@ -81,69 +60,97 @@ struct InboxDetailView: View {
             }
         }
         .task {
-            // Fetch both in parallel
-            async let mailTask: () = viewModel.fetchInbox(characterId: characterId)
-            async let scrollsTask: () = viewModel.loadConversations(characterId: characterId)
-            _ = await (mailTask, scrollsTask)
+            await viewModel.fetchAll(characterId: characterId)
         }
     }
 
-    // MARK: - Mail Tab
+    // MARK: - Filter Pills
 
-    private var mailTabContent: some View {
-        Group {
-            if viewModel.isLoading && viewModel.messages.isEmpty {
-                loadingState
-            } else if viewModel.messages.isEmpty {
-                EmptyMailState()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: LayoutConstants.spaceSM) {
-                        ForEach(viewModel.messages) { message in
-                            InboxRowView(
-                                message: message,
-                                viewModel: viewModel,
-                                characterId: characterId
-                            )
+    private var filterPills: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            ForEach(InboxFilter.allCases, id: \.self) { filter in
+                let isSelected = viewModel.selectedFilter == filter
+                let count = countForFilter(filter)
+
+                Button {
+                    viewModel.selectedFilter = filter
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text(filter.rawValue)
+                            .font(DarkFantasyTheme.section(size: 12))
+
+                        if count > 0, filter != .all {
+                            Text("\(count)")
+                                .font(DarkFantasyTheme.badge)
+                                .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.gold)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(
+                                    Capsule()
+                                        .fill(isSelected ? DarkFantasyTheme.gold.opacity(0.3) : DarkFantasyTheme.bgTertiary)
+                                )
                         }
                     }
-                    .padding(.horizontal, LayoutConstants.spaceMD)
-                    .padding(.top, LayoutConstants.spaceSM)
-                    .padding(.bottom, LayoutConstants.spaceLG)
+                    .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceXS + 2)
+                    .background(
+                        Capsule()
+                            .fill(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(isSelected ? DarkFantasyTheme.goldBright.opacity(0.4) : DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
+                    )
                 }
-                .refreshable {
-                    await viewModel.fetchInbox(characterId: characterId)
-                }
+                .buttonStyle(.plain)
             }
+            Spacer()
         }
     }
 
-    // MARK: - Scrolls Tab (Player Conversations)
+    private func countForFilter(_ filter: InboxFilter) -> Int {
+        switch filter {
+        case .all: return viewModel.totalUnreadCount
+        case .battles: return viewModel.unifiedItems.filter { $0.category == .battles && $0.isUnread }.count
+        case .messages: return viewModel.scrollsUnreadCount
+        case .system: return viewModel.unifiedItems.filter { $0.category == .system && $0.isUnread }.count
+        }
+    }
 
-    private var scrollsTabContent: some View {
+    // MARK: - Unified Content
+
+    private var unifiedContent: some View {
         Group {
-            if viewModel.isLoadingScrolls && viewModel.conversations.isEmpty {
+            if viewModel.isLoading && viewModel.isLoadingScrolls && viewModel.unifiedItems.isEmpty {
                 loadingState
-            } else if viewModel.conversations.isEmpty {
-                EmptyScrollsState()
+            } else if viewModel.filteredItems.isEmpty {
+                emptyState
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: LayoutConstants.spaceSM) {
-                        ForEach(viewModel.conversations) { conversation in
-                            InboxConversationRow(conversation: conversation)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    HapticManager.light()
-                                    // Navigate to Guild Hall message thread via deep-link
-                                    appState.mainPath.append(
-                                        AppRoute.guildHallMessage(
-                                            characterId: conversation.otherCharacter.id,
-                                            characterName: conversation.otherCharacter.characterName
+                        ForEach(viewModel.filteredItems) { item in
+                            switch item {
+                            case .mail(let message):
+                                InboxRowView(
+                                    message: message,
+                                    viewModel: viewModel,
+                                    characterId: characterId
+                                )
+                            case .conversation(let conversation):
+                                InboxConversationRow(conversation: conversation)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        HapticManager.light()
+                                        appState.mainPath.append(
+                                            AppRoute.guildHallMessage(
+                                                characterId: conversation.otherCharacter.id,
+                                                characterName: conversation.otherCharacter.characterName
+                                            )
                                         )
-                                    )
-                                }
+                                    }
+                            }
                         }
                     }
                     .padding(.horizontal, LayoutConstants.spaceMD)
@@ -151,10 +158,22 @@ struct InboxDetailView: View {
                     .padding(.bottom, LayoutConstants.spaceLG)
                 }
                 .refreshable {
-                    await viewModel.loadConversations(characterId: characterId)
+                    await viewModel.fetchAll(characterId: characterId)
                 }
             }
         }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            Image(systemName: "tray")
+                .font(.system(size: 36))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+            Text("No messages")
+                .font(DarkFantasyTheme.section(size: 16))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .padding(.vertical, LayoutConstants.space2XL)
     }
 
     // MARK: - Helpers

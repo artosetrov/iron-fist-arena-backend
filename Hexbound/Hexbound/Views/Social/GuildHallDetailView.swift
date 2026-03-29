@@ -83,7 +83,7 @@ struct GuildHallDetailView: View {
         }
         .task {
             guard let charId = appState.currentCharacter?.id else { return }
-            let viewModel = GuildHallViewModel(characterId: charId)
+            let viewModel = GuildHallViewModel(characterId: charId, appState: appState)
             vm = viewModel
 
             // Deep-link: open message thread instantly (conversations load in background)
@@ -120,17 +120,8 @@ struct GuildHallDetailView: View {
                 vm?.actionError = nil
             }
         }
-        .sheet(isPresented: Binding(
-            get: { vm?.showDuelResult ?? false },
-            set: { newValue in
-                vm?.showDuelResult = newValue
-                if !newValue { vm?.duelResult = nil }
-            }
-        )) {
-            if let result = vm?.duelResult {
-                duelResultSheet(result)
-            }
-        }
+        // Duel result sheet removed — challenge fights now navigate to CombatDetailView
+        // for full combat playback, then CombatResultDetailView shows the outcome.
     }
 
     // MARK: - Allies Tab
@@ -1744,110 +1735,7 @@ struct GuildHallDetailView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
-    // MARK: - Duel Result Sheet
-
-    private func duelResultSheet(_ result: DuelResult) -> some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            Spacer().frame(height: LayoutConstants.spaceLG)
-
-            // Trophy / Skull icon
-            Image(systemName: result.won ? "trophy.fill" : "xmark.shield.fill")
-                .font(.system(size: 56, weight: .bold))
-                .foregroundStyle(result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
-                .shadow(color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.4), radius: 12)
-
-            Text(result.won ? "VICTORY" : "DEFEAT")
-                .font(DarkFantasyTheme.title(size: 28))
-                .foregroundStyle(result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
-                .tracking(4)
-
-            GoldDivider()
-
-            // Opponent info
-            Text("vs \(result.won ? result.defenderName : result.challengerName)")
-                .font(DarkFantasyTheme.section(size: 16))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-            // Rewards panel
-            VStack(spacing: LayoutConstants.spaceSM) {
-                // Rating change
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                    Text("Rating")
-                        .font(DarkFantasyTheme.body(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Spacer()
-                    Text("\(result.ratingBefore) → \(result.ratingAfter)")
-                        .font(DarkFantasyTheme.section(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    Text("(\(result.ratingChange > 0 ? "+" : "")\(result.ratingChange))")
-                        .font(DarkFantasyTheme.section(size: 14))
-                        .foregroundStyle(result.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
-                }
-
-                // Gold reward
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image("icon-gold")
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                    Text("Gold")
-                        .font(DarkFantasyTheme.body(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Spacer()
-                    Text("+\(result.goldReward)")
-                        .font(DarkFantasyTheme.section(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                }
-
-                // XP reward
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                    Text("XP")
-                        .font(DarkFantasyTheme.body(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Spacer()
-                    Text("+\(result.xpReward)")
-                        .font(DarkFantasyTheme.section(size: 14))
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                }
-            }
-            .padding(LayoutConstants.cardPadding)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.cardRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
-            .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.1))
-            .cornerBrackets(color: (result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger).opacity(0.3), length: 14, thickness: 1.5)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-
-            Spacer()
-
-            Button {
-                vm?.showDuelResult = false
-                vm?.duelResult = nil
-                // Reload challenges to reflect new state
-                Task { await vm?.loadChallenges() }
-            } label: {
-                Text("Continue")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.primary)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.bottom, LayoutConstants.spaceLG)
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-        .presentationBackground(DarkFantasyTheme.bgPrimary)
-    }
+    // Duel result sheet removed — challenge fights now use CombatDetailView → CombatResultDetailView flow.
 
     // MARK: - Helpers
 

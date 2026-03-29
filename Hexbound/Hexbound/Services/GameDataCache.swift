@@ -68,6 +68,9 @@ final class GameDataCache {
     private(set) var socialStatus: SocialStatus?
     private var socialStatusFetchedAt: Date?
 
+    private(set) var incomingChallenges: [IncomingChallenge] = []
+    private var incomingChallengesFetchedAt: Date?
+
     // MARK: - Feature Flags (resolved server-side, keyed by flag key)
 
     private(set) var featureFlags: [String: Any] = [:]
@@ -476,6 +479,25 @@ final class GameDataCache {
         socialStatusFetchedAt = Date()
     }
 
+    // MARK: - Incoming Challenges Cache (60s TTL)
+
+    private let incomingChallengesTTL: TimeInterval = 60
+
+    func cachedIncomingChallenges() -> [IncomingChallenge]? {
+        guard let fetchedAt = incomingChallengesFetchedAt,
+              Date().timeIntervalSince(fetchedAt) < incomingChallengesTTL else { return nil }
+        return incomingChallenges
+    }
+
+    func cacheIncomingChallenges(_ data: [IncomingChallenge]) {
+        incomingChallenges = data
+        incomingChallengesFetchedAt = Date()
+    }
+
+    func invalidateIncomingChallenges() {
+        incomingChallengesFetchedAt = nil
+    }
+
     // MARK: - Reset
 
     func invalidateAll() {
@@ -506,6 +528,8 @@ final class GameDataCache {
         historyFetchedAt = nil
         socialStatus = nil
         socialStatusFetchedAt = nil
+        incomingChallenges = []
+        incomingChallengesFetchedAt = nil
         featureFlags = [:]
         gameConfig = nil
         isInitLoaded = false

@@ -139,7 +139,8 @@ actor APIClient {
             }
             throw APIError.unauthorized
         case 429:
-            throw APIError.rateLimited
+            let message = extractErrorMessage(from: data) ?? "Too many requests. Please try again later."
+            throw APIError.rateLimited(message: message)
         case 400..<500:
             let message = extractErrorMessage(from: data) ?? "Client error"
             throw APIError.clientError(statusCode: httpResponse.statusCode, message: message)
