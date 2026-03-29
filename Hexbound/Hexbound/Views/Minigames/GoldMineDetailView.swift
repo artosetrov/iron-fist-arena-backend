@@ -272,6 +272,9 @@ private struct MineSlotCard: View {
             previousStatus = status
             startGlowIfNeeded()
         }
+        .onDisappear {
+            glowPulse = false
+        }
         .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { now in
             if status == "mining" {
                 progressTick = now

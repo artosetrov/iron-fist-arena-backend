@@ -95,6 +95,9 @@ struct DailyLoginDetailView: View {
                 glowRotation = 360
             }
         }
+        .onDisappear {
+            glowRotation = 0
+        }
     }
 
     // MARK: - Modal Header

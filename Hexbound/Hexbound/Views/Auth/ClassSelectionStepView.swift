@@ -188,15 +188,15 @@ struct ClassSelectionStepView: View {
 
                     ZStack(alignment: .leading) {
                         // Track
-                        RoundedRectangle(cornerRadius: 5)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .fill(DarkFantasyTheme.bgTertiary)
 
                         // Fill — unified gold gradient
-                        RoundedRectangle(cornerRadius: 5)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                             .fill(DarkFantasyTheme.statBarGradient(value: stat.value))
                             .frame(width: fillWidth)
                             .overlay(
-                                BarFillHighlight(cornerRadius: 5)
+                                BarFillHighlight(cornerRadius: LayoutConstants.radiusSM)
                             )
 
                         // Stat name inside the bar (left-aligned)

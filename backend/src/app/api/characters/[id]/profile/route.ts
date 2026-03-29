@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+    if (!(await rateLimit(`profile:${ip}`, 60, 60_000))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
     const { id } = await params
 
     const raw = await prisma.character.findUnique({

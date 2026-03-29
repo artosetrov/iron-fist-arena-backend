@@ -141,8 +141,9 @@ struct FortuneWheelDetailView: View {
                         .scaleEffect(resultScale)
                         .animation(.spring(response: 0.4, dampingFraction: 0.6), value: resultScale)
                 } else {
-                    Image(systemName: "diamond.fill")
-                        .font(.system(size: 16))
+                    Image("icon-gems")
+                        .resizable()
+                        .frame(width: 12, height: 12)
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }

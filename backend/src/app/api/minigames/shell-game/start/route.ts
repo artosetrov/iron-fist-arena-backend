@@ -48,13 +48,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    if (character.gold < bet_amount) {
-      return NextResponse.json(
-        { error: 'Not enough gold' },
-        { status: 400 }
-      )
-    }
-
     // Daily limit: max 20 shell games per day
     const today = new Date().toISOString().split('T')[0]
     const todayGames = await prisma.minigameSession.count({
@@ -74,22 +67,39 @@ export async function POST(req: NextRequest) {
     // Generate secret shell (0, 1, or 2)
     const correctShell = Math.floor(Math.random() * 3)
 
-    // Deduct gold and create session in a transaction
-    const [, session] = await prisma.$transaction([
-      prisma.character.update({
-        where: { id: character_id },
-        data: { gold: { decrement: bet_amount } },
-      }),
-      prisma.minigameSession.create({
-        data: {
-          characterId: character_id,
-          gameType: 'shell_game',
-          betAmount: bet_amount,
-          secretData: { correctShell },
-          status: 'active',
-        },
-      }),
-    ])
+    // Lock the row, re-check gold, then deduct + create session atomically
+    let session: Awaited<ReturnType<typeof prisma.minigameSession.create>>
+    try {
+      session = await prisma.$transaction(async (tx) => {
+        const locked = await tx.$queryRaw<{ gold: number }[]>`
+          SELECT gold FROM "Character" WHERE id = ${character_id} FOR UPDATE
+        `
+        const currentGold = locked[0]?.gold ?? 0
+        if (currentGold < bet_amount) {
+          throw Object.assign(new Error('Not enough gold'), { code: 'INSUFFICIENT_GOLD' })
+        }
+
+        await tx.character.update({
+          where: { id: character_id },
+          data: { gold: { decrement: bet_amount } },
+        })
+
+        return tx.minigameSession.create({
+          data: {
+            characterId: character_id,
+            gameType: 'shell_game',
+            betAmount: bet_amount,
+            secretData: { correctShell },
+            status: 'active',
+          },
+        })
+      }, { isolationLevel: 'Serializable' })
+    } catch (err: any) {
+      if (err.code === 'INSUFFICIENT_GOLD') {
+        return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+      }
+      throw err
+    }
 
     // Update daily quest progress for gold spent
     await updateDailyQuestProgress(prisma, character_id, 'gold_spent', bet_amount)

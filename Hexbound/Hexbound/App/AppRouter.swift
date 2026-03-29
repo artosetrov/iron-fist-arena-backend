@@ -57,6 +57,9 @@ enum AppRoute: Hashable, Codable {
     // Battle Pass
     case battlePass
 
+    // Session Summary
+    case sessionSummary(characterId: String)
+
     // Settings
     case settings
     case appearanceEditor
@@ -164,6 +167,10 @@ struct MainRouterView: View {
         // Battle Pass
         case .battlePass: BattlePassDetailView()
         
+        // Session Summary
+        case .sessionSummary(let characterId):
+            SessionSummaryNavigationWrapper(characterId: characterId)
+
         // Settings
         case .settings: SettingsDetailView()
         case .appearanceEditor: AppearanceEditorDetailView()
@@ -250,6 +257,24 @@ struct PlaceholderView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Session Summary Navigation Wrapper
+
+/// Wraps SessionSummaryView for NavigationStack routing, providing a dismiss closure
+/// that pops the current route off the navigation path.
+struct SessionSummaryNavigationWrapper: View {
+    @Environment(AppState.self) private var appState
+    let characterId: String
+
+    var body: some View {
+        SessionSummaryView(characterId: characterId) {
+            if !appState.mainPath.isEmpty {
+                appState.mainPath.removeLast()
+            }
+        }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

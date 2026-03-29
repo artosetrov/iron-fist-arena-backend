@@ -239,8 +239,9 @@ struct AppearanceEditorDetailView: View {
 
                         // Gem price badge
                         HStack(spacing: LayoutConstants.space2XS) {
-                            Image(systemName: "diamond.fill")
-                                .font(.system(size: 8)) // SF Symbol icon — keep as is
+                            Image("icon-gems")
+                                .resizable()
+                                .frame(width: 8, height: 8)
                             Text("\(skin.priceGems)")
                                 .font(DarkFantasyTheme.body(size: 10))
                         }

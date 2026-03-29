@@ -537,8 +537,9 @@ struct ItemDetailSheet: View {
                 }
                 if let setName = item.setName, !setName.isEmpty {
                     HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(systemName: "diamond.fill")
-                            .font(.system(size: 10)) // SF Symbol icon — keep as is
+                        Image("icon-gems")
+                            .resizable()
+                            .frame(width: 10, height: 10)
                             .foregroundStyle(DarkFantasyTheme.success)
                         Text("Set: \(setName)")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))

@@ -91,6 +91,9 @@ struct RankUpCeremonyView: View {
         .onAppear {
             startCeremony()
         }
+        .onDisappear {
+            glowOpacity = 0
+        }
     }
 
     // MARK: - Components

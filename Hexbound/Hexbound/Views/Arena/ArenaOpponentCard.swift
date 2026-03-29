@@ -158,10 +158,10 @@ struct ArenaOpponentCard: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
                 .background(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(classColor.opacity(0.12))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 4)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                 .stroke(classColor.opacity(0.25), lineWidth: 0.5)
                         )
                 )
@@ -199,10 +199,10 @@ struct ArenaOpponentCard: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 5)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .stroke(color.opacity(0.15), lineWidth: 0.5)
                 )
         )

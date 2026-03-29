@@ -524,6 +524,7 @@ model MinigameSession {
 
   @@index([characterId])
   @@index([characterId, status])
+  @@index([characterId, gameType, status])
   @@map("minigame_sessions")
 }
 
@@ -558,6 +559,7 @@ model DailyQuest {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([characterId, questType, day])
+  @@index([characterId, day])
   @@map("daily_quests")
 }
 
@@ -845,6 +847,8 @@ model AdminLog {
   details   Json?
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([adminId])
+  @@index([action])
   @@map("admin_logs")
 }
 

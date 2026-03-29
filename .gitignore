@@ -3,4 +3,7 @@
 *~
 .env
 .env.local
-u2net.onnx
+*.onnx
+.next/
+node_modules/
+*.docx

@@ -362,6 +362,11 @@ async function handleAccept(character: any, body: any) {
 
   const challenge = await prisma.challenge.findUnique({
     where: { id: challenge_id },
+    include: {
+      challenger: {
+        select: { characterName: true },
+      },
+    },
   })
   if (!challenge) return NextResponse.json({ error: 'Challenge not found' }, { status: 404 })
   if (challenge.defenderId !== character.id) {
@@ -549,10 +554,7 @@ async function handleAccept(character: any, body: any) {
         : newLoserRating - loser.pvpRating,
       goldReward: defenderWon ? winnerGold : loserGold,
       xpReward: defenderWon ? winnerXp : loserXp,
-      challengerName: (await prisma.character.findUnique({
-        where: { id: challenge.challengerId },
-        select: { characterName: true },
-      }))?.characterName ?? 'Unknown',
+      challengerName: challenge.challenger.characterName,
     },
   })
 }

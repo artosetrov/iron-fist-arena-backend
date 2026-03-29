@@ -103,7 +103,7 @@ struct WidgetPill: View {
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, 2)
                     .background(
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
                             .fill(accentColor.opacity(0.2))
                     )
             }

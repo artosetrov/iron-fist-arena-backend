@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cacheGet, cacheSet } from '@/lib/cache'
+import { rateLimit } from '@/lib/rate-limit'
 
 const LEADERBOARD_CACHE_TTL = 60 * 1000 // 60 seconds
 
 export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+    if (!(await rateLimit(`leaderboard:${ip}`, 30, 60_000))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+
     const limitParam = req.nextUrl.searchParams.get('limit')
     const limit = Math.min(Math.max(parseInt(limitParam || '100', 10) || 100, 1), 500)
 

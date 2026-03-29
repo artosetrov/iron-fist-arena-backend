@@ -135,14 +135,12 @@
 		9B915A3F27C2BAD0EE009839 /* BattlePassDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD40BDBCA20D23E4447ED1C6 /* BattlePassDetailView.swift */; };
 		9C1661144B791A9D961831B7 /* RegisterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF910FAC6901DEB5410930AB /* RegisterDetailView.swift */; };
 		9C34F625C37E95BB45CA66C9 /* DungeonSelectDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */; };
-		9C4D0C346C21E578DEFB215D /* ShopItemCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F2B72E095487CEDDF1F44A /* ShopItemCardView.swift */; };
 		9C5D1E6F7A8B9C0D1E2F3A4B /* MerchantTipProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */; };
 		9DCB45F2EBAF8C55EDF393C3 /* CharacterAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75A07A9A439E7FDBB6F57E0 /* CharacterAvatar.swift */; };
 		9FFC603AFA333C9FE0297080 /* HeroIntegratedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */; };
 		A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8812C4317B938859A4087AC /* ShellGameViewModel.swift */; };
 		A0E1F2A3B4C5D6E7F8091A2B /* EmailConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */; };
 		A197D004F08DF73AC34CD691 /* AchievementCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790428D0ACD6FA1C13F6B19C /* AchievementCardView.swift */; };
-		A1B2C3D4E5F6000000000001 /* HubCharacterCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6000000000002 /* HubCharacterCard.swift */; };
 		A1B2C3D4E5F60001AABB0001 /* DungeonInfoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001AABB0002 /* DungeonInfoSheet.swift */; };
 		A1B2C3D4E5F60001AABB0003 /* LootPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60001AABB0004 /* LootPreviewSheet.swift */; };
 		A1B2C3D4E5F60718A9B0C1D2 /* ClassSelectionStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */; };
@@ -389,7 +387,6 @@
 		9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPRingShape.swift; sourceTree = "<group>"; };
 		A0394C602F688BD400860F7B /* HexboundProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = HexboundProducts.storekit; path = Hexbound/Resources/HexboundProducts.storekit; sourceTree = "<group>"; };
 		A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectViewModel.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6000000000002 /* HubCharacterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubCharacterCard.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001AABB0002 /* DungeonInfoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonInfoSheet.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001AABB0004 /* LootPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LootPreviewSheet.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassSelectionStepView.swift; sourceTree = "<group>"; };
@@ -462,7 +459,6 @@
 		D4E5F6A70819BAC1D2E3F4A6 /* TutorialManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialManager.swift; sourceTree = "<group>"; };
 		D4E5F6A70819BAC1D2E3F4A8 /* TutorialTooltipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialTooltipView.swift; sourceTree = "<group>"; };
 		D5A6B7C8D9E0F1A2B3C4D5E7 /* GuestGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestGateView.swift; sourceTree = "<group>"; };
-		D6F2B72E095487CEDDF1F44A /* ShopItemCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItemCardView.swift; sourceTree = "<group>"; };
 		D7B837363250403614BE1A4F /* TavernDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TavernDetailView.swift; sourceTree = "<group>"; };
 		D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardService.swift; sourceTree = "<group>"; };
 		D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StanceSelectorDetailView.swift; sourceTree = "<group>"; };
@@ -563,7 +559,6 @@
 				2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */,
 				PP0001FREF00001 /* PremiumPurchaseView.swift */,
 				A2F009488F46769899A91153 /* ShopDetailView.swift */,
-				D6F2B72E095487CEDDF1F44A /* ShopItemCardView.swift */,
 				OFFER001REF00002 /* ShopOfferBannerView.swift */,
 				A3B3FD0A4C0013A14D91E308 /* ShopViewModel.swift */,
 			);
@@ -921,7 +916,6 @@
 				C1A00001CITY00000007 /* CityBuildingView.swift */,
 				C1A00002EFCT00000002 /* CityMapEffects.swift */,
 				C1A00001CITY00000008 /* CityMapView.swift */,
-				A1B2C3D4E5F6000000000002 /* HubCharacterCard.swift */,
 				07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */,
 				81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */,
 				D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */,
@@ -1372,7 +1366,6 @@
 				C1A00001CITY00000003 /* CityBuildingView.swift in Sources */,
 				C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */,
 				C1A00001CITY00000004 /* CityMapView.swift in Sources */,
-				A1B2C3D4E5F6000000000001 /* HubCharacterCard.swift in Sources */,
 				07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */,
 				078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */,
 				51E2F782E669CC65903D964A /* InventoryService.swift in Sources */,
@@ -1445,7 +1438,6 @@
 				319EBA8EDCD2DAD9FF12F314 /* ShopItem.swift in Sources */,
 				OFFER001BLD00001 /* ShopOffer.swift in Sources */,
 				OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */,
-				9C4D0C346C21E578DEFB215D /* ShopItemCardView.swift in Sources */,
 				4442F83247EBA7804A2839E5 /* ShopService.swift in Sources */,
 				E470471DEBA32722051221AF /* ShopViewModel.swift in Sources */,
 				PP0001BUILD00001 /* PremiumPurchaseView.swift in Sources */,

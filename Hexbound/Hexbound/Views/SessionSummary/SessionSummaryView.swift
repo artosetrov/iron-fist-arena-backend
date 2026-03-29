@@ -25,10 +25,10 @@ struct SessionSummaryView: View {
 
     @ViewBuilder
     private func content(vm: SessionSummaryViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spacingLG) {
+        VStack(spacing: LayoutConstants.spaceLG) {
             // Title
             OrnamentalTitle(text: L10n.t(.sessionSummaryTitle, fallback: "Session Complete"))
-                .padding(.top, LayoutConstants.spacingMD)
+                .padding(.top, LayoutConstants.spaceMD)
 
             if vm.isLoading {
                 Spacer()
@@ -37,7 +37,7 @@ struct SessionSummaryView: View {
                 Spacer()
             } else if let summary = vm.summary {
                 ScrollView {
-                    VStack(spacing: LayoutConstants.spacingMD) {
+                    VStack(spacing: LayoutConstants.spaceMD) {
                         // Combat Stats
                         combatCard(summary: summary)
 
@@ -52,7 +52,7 @@ struct SessionSummaryView: View {
                         // Rating
                         ratingCard(summary: summary)
                     }
-                    .padding(.horizontal, LayoutConstants.spacingMD)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
                 }
 
                 // Dismiss button
@@ -63,12 +63,12 @@ struct SessionSummaryView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.primary)
-                .padding(.horizontal, LayoutConstants.spacingLG)
-                .padding(.bottom, LayoutConstants.spacingLG)
+                .padding(.horizontal, LayoutConstants.spaceLG)
+                .padding(.bottom, LayoutConstants.spaceLG)
             } else {
                 Spacer()
                 Text(vm.error ?? "No session data")
-                    .font(DarkFantasyTheme.bodyFont)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Spacer()
                 Button {
@@ -78,8 +78,8 @@ struct SessionSummaryView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.primary)
-                .padding(.horizontal, LayoutConstants.spacingLG)
-                .padding(.bottom, LayoutConstants.spacingLG)
+                .padding(.horizontal, LayoutConstants.spaceLG)
+                .padding(.bottom, LayoutConstants.spaceLG)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -89,10 +89,10 @@ struct SessionSummaryView: View {
     // MARK: - Cards
 
     private func combatCard(summary: SessionSummaryData) -> some View {
-        VStack(spacing: LayoutConstants.spacingSM) {
+        VStack(spacing: LayoutConstants.spaceSM) {
             sectionHeader("Combat")
 
-            HStack(spacing: LayoutConstants.spacingLG) {
+            HStack(spacing: LayoutConstants.spaceLG) {
                 statPill(label: "Matches", value: "\(summary.matchesPlayed)", color: DarkFantasyTheme.gold)
                 statPill(label: "Wins", value: "\(summary.wins)", color: DarkFantasyTheme.success)
                 statPill(label: "Losses", value: "\(summary.losses)", color: DarkFantasyTheme.danger)
@@ -104,11 +104,11 @@ struct SessionSummaryView: View {
                 VStack(spacing: 4) {
                     HStack {
                         Text("Win Rate")
-                            .font(DarkFantasyTheme.captionFont)
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Spacer()
                         Text("\(Int(winRate * 100))%")
-                            .font(DarkFantasyTheme.captionBoldFont)
+                            .font(DarkFantasyTheme.caption.bold())
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
                     GeometryReader { geo in
@@ -126,7 +126,7 @@ struct SessionSummaryView: View {
                 }
             }
         }
-        .padding(LayoutConstants.spacingMD)
+        .padding(LayoutConstants.spaceMD)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -143,10 +143,10 @@ struct SessionSummaryView: View {
     }
 
     private func rewardsCard(summary: SessionSummaryData) -> some View {
-        VStack(spacing: LayoutConstants.spacingSM) {
+        VStack(spacing: LayoutConstants.spaceSM) {
             sectionHeader("Rewards Earned")
 
-            HStack(spacing: LayoutConstants.spacingLG) {
+            HStack(spacing: LayoutConstants.spaceLG) {
                 rewardRow(icon: "icon-gold", label: "Gold", value: "+\(summary.goldEarned)")
                 rewardRow(icon: "icon-xp", label: "XP", value: "+\(summary.xpEarned)")
             }
@@ -157,13 +157,13 @@ struct SessionSummaryView: View {
                         .font(.system(size: 14))
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Text("\(summary.itemsGained) items obtained")
-                        .font(DarkFantasyTheme.captionFont)
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Spacer()
                 }
             }
         }
-        .padding(LayoutConstants.spacingMD)
+        .padding(LayoutConstants.spaceMD)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -180,17 +180,17 @@ struct SessionSummaryView: View {
     }
 
     private func questCard(summary: SessionSummaryData) -> some View {
-        VStack(spacing: LayoutConstants.spacingSM) {
+        VStack(spacing: LayoutConstants.spaceSM) {
             sectionHeader("Daily Quests")
 
             HStack {
                 Text("\(summary.questsCompleted)/\(summary.questsTotal) completed")
-                    .font(DarkFantasyTheme.bodyFont)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Spacer()
                 if summary.questsCompleted == summary.questsTotal {
                     Text("ALL DONE")
-                        .font(DarkFantasyTheme.captionBoldFont)
+                        .font(DarkFantasyTheme.caption.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -210,7 +210,7 @@ struct SessionSummaryView: View {
             }
             .frame(height: 10)
         }
-        .padding(LayoutConstants.spacingMD)
+        .padding(LayoutConstants.spaceMD)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -226,23 +226,23 @@ struct SessionSummaryView: View {
     }
 
     private func ratingCard(summary: SessionSummaryData) -> some View {
-        HStack(spacing: LayoutConstants.spacingMD) {
+        HStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: summary.ratingChange >= 0 ? "arrow.up.right" : "arrow.down.right")
                 .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(summary.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Rating Change")
-                    .font(DarkFantasyTheme.captionFont)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Text("\(summary.ratingChange > 0 ? "+" : "")\(summary.ratingChange)")
-                    .font(DarkFantasyTheme.titleFont)
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(summary.ratingChange >= 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
             }
 
             Spacer()
         }
-        .padding(LayoutConstants.spacingMD)
+        .padding(LayoutConstants.spaceMD)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -262,7 +262,7 @@ struct SessionSummaryView: View {
     private func sectionHeader(_ title: String) -> some View {
         HStack {
             Text(title.uppercased())
-                .font(DarkFantasyTheme.captionBoldFont)
+                .font(DarkFantasyTheme.caption.bold())
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .tracking(1.5)
             Spacer()
@@ -272,10 +272,10 @@ struct SessionSummaryView: View {
     private func statPill(label: String, value: String, color: Color) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(DarkFantasyTheme.titleFont)
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(color)
             Text(label)
-                .font(DarkFantasyTheme.captionFont)
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -289,10 +289,10 @@ struct SessionSummaryView: View {
                 .frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
-                    .font(DarkFantasyTheme.bodyBoldFont)
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text(label)
-                    .font(DarkFantasyTheme.captionFont)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             Spacer()

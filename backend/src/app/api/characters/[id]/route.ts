@@ -87,7 +87,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    await prisma.character.delete({ where: { id } })
+    // PvpMatch has no onDelete cascade on its FK references — must clean up manually.
+    // All other related tables (EquipmentInventory, Achievement, DailyQuest, etc.) have
+    // onDelete: Cascade in the schema and are handled automatically by Postgres.
+    await prisma.$transaction([
+      // Nullify optional FK columns first (winner/loser can be null)
+      prisma.pvpMatch.updateMany({ where: { winnerId: id }, data: { winnerId: null } }),
+      prisma.pvpMatch.updateMany({ where: { loserId: id }, data: { loserId: null } }),
+      // Delete matches where the character is a required participant (player1/player2)
+      prisma.pvpMatch.deleteMany({ where: { OR: [{ player1Id: id }, { player2Id: id }] } }),
+      // Delete the character — cascades to all other related tables via DB constraints
+      prisma.character.delete({ where: { id } }),
+    ])
 
     return NextResponse.json({ success: true })
   } catch (error) {
