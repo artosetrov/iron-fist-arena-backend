@@ -181,7 +181,8 @@ final class AppearanceEditorViewModel {
             pick = raceSkins[0]
         } else {
             repeat {
-                pick = raceSkins.randomElement()!
+                guard let randomPick = raceSkins.randomElement() else { return }
+                pick = randomPick
             } while pick.skinKey == currentKey
         }
 
@@ -225,47 +226,58 @@ final class AppearanceEditorViewModel {
 
     // MARK: - Save
 
-    func save() async {
+    func save() {
         guard canSave, let char = character else { return }
 
-        isSaving = true
+        // Save previous state for revert
+        let prevOrigin = char.origin
+        let prevGender = char.gender ?? .male
+        let prevAvatar = char.avatar
+
+        // Optimistic: update character instantly
+        if let newOrigin = selectedOrigin { appState.currentCharacter?.origin = newOrigin }
+        appState.currentCharacter?.gender = selectedGender
+        appState.currentCharacter?.avatar = selectedSkinKey
+        HapticManager.success()
+        isSaving = false
+        didSave = true
         errorMessage = ""
 
-        do {
-            var body: [String: Any] = [:]
-            if selectedOrigin != char.origin {
-                body["origin"] = selectedOrigin?.rawValue
-            }
-            if selectedGender != (char.gender ?? .male) {
-                body["gender"] = selectedGender.rawValue
-            }
-            if selectedSkinKey != char.avatar {
-                body["avatar"] = selectedSkinKey
-            }
+        // Build request body
+        var body: [String: Any] = [:]
+        if selectedOrigin != prevOrigin { body["origin"] = selectedOrigin?.rawValue }
+        if selectedGender != prevGender { body["gender"] = selectedGender.rawValue }
+        if selectedSkinKey != prevAvatar { body["avatar"] = selectedSkinKey }
 
-            let result = try await APIClient.shared.patchRaw(
-                APIEndpoints.changeAppearance(char.id),
-                body: body
-            )
-
-            if let charData = result["character"] as? [String: Any] {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let updated = try decoder.decode(Character.self, from: jsonData)
-
-                appState.currentCharacter = updated
-                isSaving = false
-                didSave = true
-            } else {
-                isSaving = false
-            }
-        } catch {
-            isSaving = false
-            if let apiError = error as? APIError {
-                errorMessage = apiError.localizedDescription
-            } else {
-                errorMessage = "Failed to update appearance"
+        // Fire API in background
+        let charId = char.id
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let result = try await APIClient.shared.patchRaw(
+                    APIEndpoints.changeAppearance(charId),
+                    body: body
+                )
+                // Update with server-confirmed character data
+                if let charData = result["character"] as? [String: Any] {
+                    let jsonData = try JSONSerialization.data(withJSONObject: charData)
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    let updated = try decoder.decode(Character.self, from: jsonData)
+                    appState.currentCharacter = updated
+                }
+            } catch {
+                // Revert on failure
+                appState.currentCharacter?.origin = prevOrigin
+                appState.currentCharacter?.gender = prevGender
+                appState.currentCharacter?.avatar = prevAvatar
+                didSave = false
+                if let apiError = error as? APIError {
+                    errorMessage = apiError.localizedDescription
+                } else {
+                    errorMessage = "Failed to update appearance"
+                }
+                appState.showToast("Appearance change failed", subtitle: "Please try again", type: .error)
             }
         }
     }

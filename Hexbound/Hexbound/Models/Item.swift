@@ -71,6 +71,12 @@ struct Item: Codable, Identifiable {
         effectiveStats.values.reduce(0, +)
     }
 
+    /// Estimated gold cost to repair this item (2g per missing durability point)
+    var repairCost: Int? {
+        guard let dur = durability, let maxDur = maxDurability, dur < maxDur else { return nil }
+        return (maxDur - dur) * 2
+    }
+
     /// Slot this item can go in (uses equippedSlot if set, otherwise derives from itemType)
     var equipSlot: String {
         if let slot = equippedSlot, !slot.isEmpty { return slot }

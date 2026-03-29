@@ -137,16 +137,23 @@ final class CharacterViewModel {
         }
     }
 
-    func respecStats() async {
+    func respecStats() {
         isRespeccing = true
-        let success = await service.respecStats()
-        isRespeccing = false
-        if success {
-            pendingChanges.removeAll()
+        pendingChanges.removeAll()
+        HapticManager.success()
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.respecStats()
+            isRespeccing = false
+            if !success {
+                appState.showToast("Respec failed", subtitle: "Try again", type: .error)
+            }
         }
     }
 
-    func saveStats() async {
+    func saveStats() {
         guard hasChanges else { return }
         isSaving = true
 
@@ -156,10 +163,21 @@ final class CharacterViewModel {
             statChanges[stat.apiKey] = delta
         }
 
-        let success = await service.allocateStats(statChanges: statChanges)
+        // Optimistic: clear pending + show success instantly
+        let savedPending = pendingChanges
+        pendingChanges.removeAll()
+        HapticManager.success()
         isSaving = false
-        if success {
-            pendingChanges.removeAll()
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.allocateStats(statChanges: statChanges)
+            if !success {
+                // Revert on failure
+                pendingChanges = savedPending
+                appState.showToast("Failed to save stats", subtitle: "Try again", type: .error)
+            }
         }
     }
 }

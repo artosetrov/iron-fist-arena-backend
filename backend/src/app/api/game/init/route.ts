@@ -196,6 +196,23 @@ export async function GET(req: NextRequest) {
       character.lastHpUpdate ?? new Date()
     )
 
+    // Persist regen updates to DB if changed
+    const regenUpdates: Record<string, unknown> = {}
+    if (staminaResult.updated) {
+      regenUpdates.currentStamina = staminaResult.stamina
+      regenUpdates.lastStaminaUpdate = new Date()
+    }
+    if (hpResult.updated) {
+      regenUpdates.currentHp = hpResult.hp
+      regenUpdates.lastHpUpdate = new Date()
+    }
+    if (Object.keys(regenUpdates).length > 0) {
+      await prisma.character.update({
+        where: { id: characterId },
+        data: regenUpdates,
+      })
+    }
+
     // Format quests with metadata
     const formattedQuests = quests.map((q) => {
       const meta = QUEST_META[q.questType]

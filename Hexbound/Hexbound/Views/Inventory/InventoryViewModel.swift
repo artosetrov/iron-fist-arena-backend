@@ -235,8 +235,11 @@ final class InventoryViewModel {
 
     func upgrade(_ item: Item, useProtection: Bool) async {
         showItemDetail = false
+        HapticManager.medium()
+
+        // Upgrade must wait for server result (success/fail/level-change is server-authoritative)
+        // But we dismiss UI instantly and show result as toast
         guard let result = await shopService.upgrade(inventoryId: item.id, useProtection: useProtection) else { return }
-        // Update the item's upgradeLevel in local array
         items = items.map { existing in
             guard existing.id == item.id else { return existing }
             var updated = existing
@@ -247,41 +250,92 @@ final class InventoryViewModel {
         appState.invalidateCache("quests")
         if result.success {
             SFXManager.shared.play(.uiUpgradeSuccess)
+            HapticManager.success()
             appState.showToast("⬆ \(item.itemName) +\(result.newLevel)!", type: .reward)
         } else if result.protectionUsed {
             appState.showToast("Protected — level kept at +\(result.newLevel)", type: .info)
         } else if result.levelLost {
+            HapticManager.error()
             appState.showToast("❌ Failed! Dropped to +\(result.newLevel)", type: .error)
         } else {
+            HapticManager.error()
             appState.showToast("❌ Upgrade failed", subtitle: "Level unchanged", type: .error)
         }
     }
 
-    func repair(_ item: Item) async {
+    func repair(_ item: Item) {
         showItemDetail = false
-        guard let result = await shopService.repair(inventoryId: item.id) else { return }
+
+        // Optimistic: restore durability + deduct gold instantly
+        let previousItems = items
+        let previousGold = appState.currentCharacter?.gold ?? 0
+        let repairCost = item.repairCost ?? 0
+
         items = items.map { existing in
             guard existing.id == item.id else { return existing }
             var updated = existing
-            updated.durability = result.newDurability
-            updated.maxDurability = result.maxDurability
+            updated.durability = existing.maxDurability
             return updated
         }
         appState.cachedInventory = items
-        appState.showToast("Repaired for \(result.repairCost) gold", type: .reward)
+        if repairCost > 0 {
+            appState.currentCharacter?.gold = max(0, previousGold - repairCost)
+        }
+        HapticManager.success()
+        appState.showToast("Repaired!", type: .reward)
+
+        // Fire API in background
+        let itemId = item.id
+        Task { [weak self] in
+            guard let self else { return }
+            guard let result = await shopService.repair(inventoryId: itemId) else {
+                // Revert on failure
+                items = previousItems
+                appState.cachedInventory = previousItems
+                appState.currentCharacter?.gold = previousGold
+                appState.showToast("Repair failed", type: .error)
+                return
+            }
+            // Sync with server values
+            items = items.map { existing in
+                guard existing.id == itemId else { return existing }
+                var updated = existing
+                updated.durability = result.newDurability
+                updated.maxDurability = result.maxDurability
+                return updated
+            }
+            appState.cachedInventory = items
+        }
     }
 
     // MARK: - Expand Inventory
 
-    func expandInventory() async {
+    func expandInventory() {
         guard canExpand else { return }
         guard gold >= expandCost else {
             appState.showToast("Not enough gold", subtitle: "Earn gold in arena or dungeons", type: .error)
             return
         }
-        if let newSlots = await service.expandInventory() {
-            totalSlots = newSlots
-            appState.showToast("+10 inventory slots! Now: \(newSlots)", type: .reward)
+
+        // Optimistic: increase slots + deduct gold instantly
+        let previousSlots = totalSlots
+        let previousGold = appState.currentCharacter?.gold ?? 0
+        totalSlots += 10
+        appState.currentCharacter?.gold = max(0, previousGold - expandCost)
+        HapticManager.success()
+        appState.showToast("+10 inventory slots! Now: \(totalSlots)", type: .reward)
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            if let newSlots = await service.expandInventory() {
+                totalSlots = newSlots
+            } else {
+                // Revert on failure
+                totalSlots = previousSlots
+                appState.currentCharacter?.gold = previousGold
+                appState.showToast("Failed to expand", type: .error)
+            }
         }
     }
 

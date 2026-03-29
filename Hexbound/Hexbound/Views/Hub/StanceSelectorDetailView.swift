@@ -97,14 +97,9 @@ struct StanceSelectorDetailView: View {
                                 .frame(height: 12)
 
                             Button {
-                                Task { await vm.saveStance() }
+                                vm.saveStance()
                             } label: {
-                                if vm.isSaving {
-                                    ProgressView()
-                                        .tint(DarkFantasyTheme.textOnGold)
-                                } else {
-                                    Text("SAVE STANCE")
-                                }
+                                Text("SAVE STANCE")
                             }
                             .buttonStyle(.primary)
                             .disabled(vm.isSaving)

@@ -70,6 +70,14 @@ export async function loadCombatCharacter(characterId: string): Promise<Characte
     character.lastHpUpdate ?? new Date(),
   )
 
+  // Persist regen-applied HP to DB so it is not stale on next read
+  if (hpRegen.updated) {
+    await prisma.character.update({
+      where: { id: characterId },
+      data: { currentHp: hpRegen.hp, lastHpUpdate: new Date() },
+    })
+  }
+
   // Build equipped skills array
   const equippedSkills: SkillDefinition[] = character.characterSkills
     .filter((cs) => cs.skill.isActive)

@@ -51,45 +51,82 @@ final class InboxViewModel {
 
     // MARK: - Actions
 
-    func markAsRead(messageId: String, characterId: String) async {
-        do {
-            let _: SuccessResponse = try await apiClient.post(
-                "/api/mail/\(messageId)/read",
-                body: ["character_id": characterId]
-            )
-            if let idx = messages.firstIndex(where: { $0.id == messageId }) {
-                messages[idx] = messages[idx].withRead()
+    func markAsRead(messageId: String, characterId: String) {
+        // Optimistic: mark read instantly
+        if let idx = messages.firstIndex(where: { $0.id == messageId }) {
+            messages[idx] = messages[idx].withRead()
+        }
+        unreadCount = max(0, unreadCount - 1)
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let _: SuccessResponse = try await apiClient.post(
+                    "/api/mail/\(messageId)/read",
+                    body: ["character_id": characterId]
+                )
+            } catch {
+                // Revert — re-fetch to get accurate state
+                await fetchInbox(characterId: characterId)
             }
-            unreadCount = max(0, unreadCount - 1)
-        } catch {
-            self.error = error.localizedDescription
         }
     }
 
-    func claimAttachments(messageId: String, characterId: String) async {
-        do {
-            let _: MailClaimResponse = try await apiClient.post(
-                "/api/mail/\(messageId)/claim",
-                body: ["character_id": characterId]
-            )
-            if let idx = messages.firstIndex(where: { $0.id == messageId }) {
-                messages[idx] = messages[idx].withClaimed()
+    func claimAttachments(messageId: String, characterId: String, appState: AppState) {
+        // Save for revert
+        guard let idx = messages.firstIndex(where: { $0.id == messageId }) else { return }
+        let savedMessage = messages[idx]
+
+        // Optimistic: mark claimed instantly
+        messages[idx] = messages[idx].withClaimed()
+        HapticManager.success()
+        SFXManager.shared.play(.uiRewardClaim)
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let _: MailClaimResponse = try await apiClient.post(
+                    "/api/mail/\(messageId)/claim",
+                    body: ["character_id": characterId]
+                )
+            } catch {
+                // Revert on failure
+                if let revertIdx = messages.firstIndex(where: { $0.id == messageId }) {
+                    messages[revertIdx] = savedMessage
+                }
+                appState.showToast("Failed to claim rewards", subtitle: "Please try again", type: .error)
             }
-        } catch {
-            self.error = error.localizedDescription
         }
     }
 
-    func deleteMail(messageId: String, characterId: String) async {
-        do {
-            let _: SuccessResponse = try await apiClient.post(
-                "/api/mail/\(messageId)/delete",
-                body: ["character_id": characterId]
-            )
-            messages.removeAll { $0.id == messageId }
-            totalMessages -= 1
-        } catch {
-            self.error = error.localizedDescription
+    func deleteMail(messageId: String, characterId: String, appState: AppState) {
+        // Save for revert
+        guard let idx = messages.firstIndex(where: { $0.id == messageId }) else { return }
+        let savedMessage = messages[idx]
+        let savedIndex = idx
+
+        // Optimistic: remove instantly
+        messages.remove(at: idx)
+        totalMessages -= 1
+        HapticManager.light()
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let _: SuccessResponse = try await apiClient.post(
+                    "/api/mail/\(messageId)/delete",
+                    body: ["character_id": characterId]
+                )
+            } catch {
+                // Revert on failure
+                let insertAt = min(savedIndex, messages.count)
+                messages.insert(savedMessage, at: insertAt)
+                totalMessages += 1
+                appState.showToast("Failed to delete mail", subtitle: "Please try again", type: .error)
+            }
         }
     }
 }

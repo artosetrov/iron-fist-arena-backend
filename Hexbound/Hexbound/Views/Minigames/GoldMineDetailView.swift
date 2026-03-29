@@ -444,8 +444,7 @@ private struct MineSlotCard: View {
 
         case "mining":
             Button {
-                HapticManager.light()
-                Task { await vm.boost(slotIndex: index) }
+                vm.boost(slotIndex: index)
             } label: {
                 HStack(spacing: LayoutConstants.space2XS) {
                     Text("BOOST")
@@ -546,7 +545,7 @@ private struct LockedMineCard: View {
                 }
 
                 Button {
-                    Task { await vm.buySlot() }
+                    vm.buySlot()
                 } label: {
                     Text("UNLOCK")
                         .frame(maxWidth: .infinity)

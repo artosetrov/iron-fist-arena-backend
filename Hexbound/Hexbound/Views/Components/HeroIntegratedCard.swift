@@ -240,17 +240,8 @@ struct HeroIntegratedCard: View {
                     Image(character.characterClass.iconAsset)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 28, height: 28)
-                        .padding(5)
-                        .background(
-                            Circle()
-                                .fill(DarkFantasyTheme.bgAbyss.opacity(0.85))
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1.5)
-                        )
-                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 2)
+                        .frame(width: 36, height: 36)
+                        .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3, y: 1)
 
                     Spacer()
 

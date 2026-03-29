@@ -17,7 +17,6 @@ struct LeaderboardPlayerDetailSheet: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var friendshipState: FriendshipButtonState = .none
-    @State private var isFriendActionLoading = false
     @State private var challengeSent = false
 
     // Item detail inspection
@@ -473,20 +472,15 @@ struct LeaderboardPlayerDetailSheet: View {
 
         case .requestReceived:
             Button {
-                Task { await acceptFriendRequest() }
+                acceptFriendRequest()
             } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    if isFriendActionLoading {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
-                    } else {
-                        Image(systemName: "checkmark")
-                    }
+                    Image(systemName: "checkmark")
                     Text("Accept")
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
-            .disabled(isFriendActionLoading)
             .accessibilityLabel("Accept ally request")
 
         case .friends:
@@ -564,16 +558,24 @@ struct LeaderboardPlayerDetailSheet: View {
         }
     }
 
-    private func acceptFriendRequest() async {
+    private func acceptFriendRequest() {
         guard let charId = appState.currentCharacter?.id else { return }
-        isFriendActionLoading = true
-        let success = await SocialService.shared.acceptFriendRequest(
-            characterId: charId,
-            requesterId: entry.characterId
-        )
-        isFriendActionLoading = false
-        if success {
-            friendshipState = .friends
+
+        // Optimistic: show friends state instantly
+        friendshipState = .friends
+        HapticManager.success()
+
+        // Fire API in background
+        let requesterId = entry.characterId
+        Task {
+            let success = await SocialService.shared.acceptFriendRequest(
+                characterId: charId,
+                requesterId: requesterId
+            )
+            if !success {
+                self.friendshipState = .requestReceived
+                self.appState.showToast("Failed to accept request", type: .error)
+            }
         }
     }
 

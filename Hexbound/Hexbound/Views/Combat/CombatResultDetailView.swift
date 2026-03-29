@@ -390,6 +390,65 @@ struct CombatResultDetailView: View {
                         .frame(height: 1)
                 }
 
+                // Comparison vs equipped item
+                if !isGold, let type = type, let stats = stats {
+                    let equipped = appState.cachedInventory?.first {
+                        $0.isEquipped == true && $0.itemType == type
+                    }
+                    let equippedStats = equipped?.effectiveStats ?? [:]
+                    let allKeys = Set(stats.keys).union(Set(equippedStats.keys))
+                    let deltas = allKeys.compactMap { key -> (String, Int)? in
+                        let val = stats[key] ?? 0
+                        let comp = equippedStats[key] ?? 0
+                        let delta = val - comp
+                        return delta != 0 ? (key, delta) : nil
+                    }.sorted(by: { $0.0 < $1.0 })
+
+                    if !deltas.isEmpty {
+                        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+                            HStack(spacing: LayoutConstants.spaceXS) {
+                                Image(systemName: "arrow.left.arrow.right")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                                Text(equipped != nil ? "VS. EQUIPPED" : "STAT BONUS")
+                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                                    .tracking(1.2)
+                            }
+
+                            ForEach(deltas, id: \.0) { key, delta in
+                                lootComparisonRow(key: key, delta: delta, itemValue: stats[key] ?? 0)
+                            }
+                        }
+                        .padding(.horizontal, LayoutConstants.cardPadding)
+                        .padding(.vertical, LayoutConstants.spaceMD)
+
+                        Rectangle()
+                            .fill(DarkFantasyTheme.borderSubtle)
+                            .frame(height: 1)
+                    }
+                }
+
+                // Sell price
+                if !isGold {
+                    let sellPrice = item["sell_price"] as? Int ?? item["sellPrice"] as? Int ?? 0
+                    if sellPrice > 0 {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Text("Sell:")
+                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            CurrencyDisplay(gold: sellPrice, size: .compact, currencyType: .gold, animated: false)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, LayoutConstants.cardPadding)
+                        .padding(.vertical, LayoutConstants.spaceMD)
+
+                        Rectangle()
+                            .fill(DarkFantasyTheme.borderSubtle)
+                            .frame(height: 1)
+                    }
+                }
+
                 if let desc = description, !desc.isEmpty {
                     Text(desc)
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -423,6 +482,49 @@ struct CombatResultDetailView: View {
             .transition(.scale(scale: 0.85).combined(with: .opacity))
         }
         .transition(.opacity)
+    }
+
+    // MARK: - Loot Comparison Row
+
+    private func lootComparisonRow(key: String, delta: Int, itemValue: Int) -> some View {
+        let statType = StatType.allCases.first(where: { $0.apiKey == key })
+        let deltaColor = delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+        let arrow = delta > 0 ? "▲" : "▼"
+        let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
+
+        return HStack(spacing: LayoutConstants.spaceXS) {
+            if let statType {
+                Image(statType.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 20, height: 20)
+            }
+
+            Text(Item.statLabels[key] ?? key.capitalized)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+            Spacer(minLength: 4)
+
+            Text(label)
+                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                .foregroundStyle(deltaColor)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.spaceXS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(deltaColor.opacity(0.15))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .stroke(deltaColor.opacity(0.4), lineWidth: 1)
+                        )
+                )
+
+            Text("+\(itemValue)")
+                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .frame(minWidth: 30, alignment: .trailing)
+        }
     }
 
     // MARK: - Fallback

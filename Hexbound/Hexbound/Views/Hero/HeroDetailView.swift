@@ -46,7 +46,7 @@ struct HeroDetailView: View {
                         onSell: { let _ = Task { await vm.sell(item) } },
                         onUse: { let _ = Task { await vm.useItem(item) } },
                         onUpgrade: { useProtection in let _ = Task { await vm.upgrade(item, useProtection: useProtection) } },
-                        onRepair: { let _ = Task { await vm.repair(item) } },
+                        onRepair: { vm.repair(item) },
                         onClose: { vm.showItemDetail = false }
                     )
                     .transition(.opacity)
@@ -685,13 +685,9 @@ struct HeroDetailView: View {
                         .frame(maxWidth: .infinity)
 
                     Button {
-                        Task { await vm.saveStats() }
+                        vm.saveStats()
                     } label: {
-                        if vm.isSaving {
-                            ProgressView().tint(DarkFantasyTheme.textOnGold)
-                        } else {
-                            Text("SAVE STATS")
-                        }
+                        Text("SAVE STATS")
                     }
                     .buttonStyle(.primary)
                     .disabled(vm.isSaving)
@@ -814,7 +810,7 @@ struct HeroDetailView: View {
                         .buttonStyle(.ghost)
 
                         Button {
-                            Task { await vm.respecStats() }
+                            vm.respecStats()
                             showRespecConfirm = false
                         } label: {
                             if vm.isRespeccing {
@@ -1146,7 +1142,7 @@ struct HeroDetailView: View {
                 // Expand inventory button — secondary style, full width
                 if vm.canExpand {
                     Button {
-                        Task { await vm.expandInventory() }
+                        vm.expandInventory()
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "plus.square.dashed")

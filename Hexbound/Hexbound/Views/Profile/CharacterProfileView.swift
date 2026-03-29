@@ -16,10 +16,8 @@ struct CharacterProfileView: View {
 
     // Friendship state
     @State private var friendshipState: FriendshipButtonState = .none
-    @State private var isFriendActionLoading = false
 
     // Challenge state
-    @State private var isSendingChallenge = false
     @State private var challengeSent = false
 
     // Friend chip animation
@@ -190,11 +188,9 @@ struct CharacterProfileView: View {
     private var actionButtons: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Row 1: Challenge (full width)
-            Button { Task { await sendChallenge() } } label: {
+            Button { sendChallenge() } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    if isSendingChallenge {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
-                    } else if challengeSent {
+                    if challengeSent {
                         Image(systemName: "checkmark.circle.fill")
                         Text("Вызов отправлен")
                     } else {
@@ -205,7 +201,7 @@ struct CharacterProfileView: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
-            .disabled(isSendingChallenge || challengeSent)
+            .disabled(challengeSent)
 
             // Row 2: Message + dynamic friend button
             HStack(spacing: LayoutConstants.spaceSM) {
@@ -229,44 +225,34 @@ struct CharacterProfileView: View {
     private var friendActionButton: some View {
         switch friendshipState {
         case .none:
-            Button { Task { await sendFriendRequest() } } label: {
+            Button { sendFriendRequest() } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    if isFriendActionLoading {
-                        ProgressView().tint(DarkFantasyTheme.textPrimary)
-                    } else {
-                        Image(systemName: "person.badge.plus")
-                    }
+                    Image(systemName: "person.badge.plus")
                     Text("Союзник")
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.secondary)
-            .disabled(isFriendActionLoading)
 
         case .requestSent:
             // Button disappears — chip shows above
             EmptyView()
 
         case .requestReceived:
-            Button { Task { await acceptFriendRequest() } } label: {
+            Button { acceptFriendRequest() } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    if isFriendActionLoading {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
-                    } else {
-                        Image(systemName: "checkmark")
-                    }
+                    Image(systemName: "checkmark")
                     Text("Принять")
                 }
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
-            .disabled(isFriendActionLoading)
 
         case .friends:
             // Show ··· context menu (remove/block)
             Menu {
                 Button(role: .destructive) {
-                    Task { await removeFriend() }
+                    removeFriend()
                 } label: {
                     Label("Удалить из союзников", systemImage: "person.badge.minus")
                 }
@@ -538,96 +524,132 @@ struct CharacterProfileView: View {
         ))
     }
 
-    private func sendFriendRequest() async {
+    private func sendFriendRequest() {
         guard let charId = appState.currentCharacter?.id else { return }
-        isFriendActionLoading = true
-        let errorMsg = await SocialService.shared.sendFriendRequest(
-            characterId: charId,
-            targetId: characterId
-        )
-        isFriendActionLoading = false
 
-        if errorMsg == nil {
-            // New UX: transition to chip instead of keeping button
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                friendshipState = .requestSent
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                    showFriendChip = true
-                }
-            }
-            SFXManager.shared.play(.uiConfirm)
-            HapticManager.success()
-            appState.showToast("Запрос отправлен", subtitle: "\(characterName) получит уведомление", type: .info)
-        } else {
-            HapticManager.error()
-            let reason: String
-            switch errorMsg {
-            case "Already friends or request pending":
-                reason = "Запрос уже отправлен"
-                friendshipState = .requestSent
+        // Optimistic: show sent state instantly
+        let previousState = friendshipState
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+            friendshipState = .requestSent
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                 showFriendChip = true
-            case "Friend list full":
-                reason = "Список союзников полон (макс. 50)"
-                friendshipState = .maxReached
-            case "Cannot send request":
-                reason = "Этот игрок недоступен"
-            case "Too many requests today":
-                reason = "Лимит запросов на сегодня (20/день)"
-            case "Cooldown active":
-                reason = "Подождите 24ч перед повторной отправкой"
-            default:
-                reason = errorMsg ?? "Что-то пошло не так"
             }
-            appState.showToast("Не удалось отправить запрос", subtitle: reason, type: .error)
+        }
+        SFXManager.shared.play(.uiConfirm)
+        HapticManager.success()
+        appState.showToast("Запрос отправлен", subtitle: "\(characterName) получит уведомление", type: .info)
+
+        // Fire API in background
+        let targetId = characterId
+        let targetName = characterName
+        Task {
+            let errorMsg = await SocialService.shared.sendFriendRequest(
+                characterId: charId,
+                targetId: targetId
+            )
+            if let errorMsg {
+                // Revert on failure
+                HapticManager.error()
+                withAnimation { self.friendshipState = previousState }
+                self.showFriendChip = false
+                let reason: String
+                switch errorMsg {
+                case "Already friends or request pending":
+                    reason = "Запрос уже отправлен"
+                    self.friendshipState = .requestSent
+                    self.showFriendChip = true
+                case "Friend list full":
+                    reason = "Список союзников полон (макс. 50)"
+                    self.friendshipState = .maxReached
+                case "Cannot send request":
+                    reason = "Этот игрок недоступен"
+                case "Too many requests today":
+                    reason = "Лимит запросов на сегодня (20/день)"
+                case "Cooldown active":
+                    reason = "Подождите 24ч перед повторной отправкой"
+                default:
+                    reason = errorMsg
+                }
+                self.appState.showToast("Не удалось отправить запрос", subtitle: reason, type: .error)
+            }
         }
     }
 
-    private func acceptFriendRequest() async {
+    private func acceptFriendRequest() {
         guard let charId = appState.currentCharacter?.id else { return }
-        isFriendActionLoading = true
-        let success = await SocialService.shared.acceptFriendRequest(
-            characterId: charId,
-            requesterId: characterId
-        )
-        isFriendActionLoading = false
-        if success {
-            withAnimation { friendshipState = .friends }
-            showFriendChip = true
+
+        // Optimistic: show friends state instantly
+        withAnimation { friendshipState = .friends }
+        showFriendChip = true
+        HapticManager.success()
+
+        // Fire API in background
+        let targetId = characterId
+        Task {
+            let success = await SocialService.shared.acceptFriendRequest(
+                characterId: charId,
+                requesterId: targetId
+            )
+            if !success {
+                withAnimation { self.friendshipState = .requestReceived }
+                self.showFriendChip = false
+                self.appState.showToast("Не удалось принять запрос", type: .error)
+            }
         }
     }
 
-    private func removeFriend() async {
+    private func removeFriend() {
         guard let charId = appState.currentCharacter?.id else { return }
-        _ = await SocialService.shared.removeFriend(characterId: charId, friendId: characterId)
+
+        // Optimistic: remove instantly
         withAnimation { friendshipState = .none }
         showFriendChip = false
+        HapticManager.light()
+
+        // Fire API in background
+        let targetId = characterId
+        Task {
+            let success = await SocialService.shared.removeFriend(characterId: charId, friendId: targetId)
+            if !success {
+                withAnimation { self.friendshipState = .friends }
+                self.showFriendChip = true
+                self.appState.showToast("Не удалось удалить союзника", type: .error)
+            }
+        }
     }
 
-    private func sendChallenge() async {
+    private func sendChallenge() {
         guard let charId = appState.currentCharacter?.id else { return }
-        isSendingChallenge = true
 
-        do {
-            _ = try await ChallengeService.shared.sendChallenge(
-                characterId: charId,
-                targetId: characterId,
-                message: nil
-            )
-            challengeSent = true
-            SFXManager.shared.play(.uiConfirm)
-            appState.showToast("Вызов отправлен", subtitle: "\(characterName) — 24ч на ответ", type: .info)
-        } catch {
-            appState.showToast(
-                "Не удалось отправить вызов",
-                subtitle: "Попробуйте позже",
-                type: .error,
-                actionLabel: "Повторить",
-                action: { Task { await sendChallenge() } }
-            )
+        // Optimistic: show sent state instantly
+        challengeSent = true
+        SFXManager.shared.play(.uiConfirm)
+        HapticManager.light()
+        appState.showToast("Вызов отправлен", subtitle: "\(characterName) — 24ч на ответ", type: .info)
+
+        // Fire API in background
+        let targetId = characterId
+        let targetName = characterName
+        Task {
+            do {
+                _ = try await ChallengeService.shared.sendChallenge(
+                    characterId: charId,
+                    targetId: targetId,
+                    message: nil
+                )
+            } catch {
+                self.challengeSent = false
+                self.appState.showToast(
+                    "Не удалось отправить вызов",
+                    subtitle: "Попробуйте позже",
+                    type: .error,
+                    actionLabel: "Повторить",
+                    action: { self.sendChallenge() }
+                )
+            }
         }
-        isSendingChallenge = false
     }
 
     // MARK: - Data Loading

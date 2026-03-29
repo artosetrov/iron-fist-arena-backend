@@ -152,54 +152,77 @@ final class GoldMineViewModel {
 
     // MARK: - Boost
 
-    func boost(slotIndex: Int) async {
+    func boost(slotIndex: Int) {
         guard let charId = appState.currentCharacter?.id else { return }
         actionSlotId = "\(slotIndex)"
 
-        do {
-            let data = try await APIClient.shared.postRaw(
-                APIEndpoints.goldMineBoost,
-                body: ["character_id": charId, "slot_index": slotIndex]
-            )
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                slots = updatedSlots
-            }
-            if let newGems = data["gems"] as? Int {
-                appState.currentCharacter?.gems = newGems
+        // Optimistic: deduct gems + show boosted
+        let prevGems = appState.currentCharacter?.gems ?? 0
+        let boostCost = 10
+        appState.currentCharacter?.gems = max(0, prevGems - boostCost)
+        HapticManager.success()
+        appState.showToast("Slot boosted!", type: .info)
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await APIClient.shared.postRaw(
+                    APIEndpoints.goldMineBoost,
+                    body: ["character_id": charId, "slot_index": slotIndex]
+                )
+                if let updatedSlots = data["slots"] as? [[String: Any]] {
+                    slots = updatedSlots
+                }
+                if let newGems = data["gems"] as? Int {
+                    appState.currentCharacter?.gems = newGems
+                }
+            } catch {
+                // Revert gems on failure
+                appState.currentCharacter?.gems = prevGems
+                appState.showToast("Failed to boost", subtitle: "Check your gem balance", type: .error)
             }
             actionSlotId = nil
-            appState.showToast("Slot boosted!", type: .info)
-        } catch {
-            actionSlotId = nil
-            appState.showToast("Failed to boost", subtitle: "Check your gem balance", type: .error)
         }
     }
 
     // MARK: - Buy Slot
 
-    func buySlot() async {
+    func buySlot() {
         guard !isBuyingSlot else { return }
         guard let charId = appState.currentCharacter?.id else { return }
         isBuyingSlot = true
-        defer { isBuyingSlot = false }
 
-        do {
-            let data = try await APIClient.shared.postRaw(
-                APIEndpoints.goldMineBuySlot,
-                body: ["character_id": charId]
-            )
-            if let newMax = data["max_slots"] as? Int {
-                maxSlots = newMax
+        // Optimistic: deduct gems instantly
+        let prevGems = appState.currentCharacter?.gems ?? 0
+        let slotCost = 50
+        appState.currentCharacter?.gems = max(0, prevGems - slotCost)
+        HapticManager.success()
+        appState.showToast("New mining slot unlocked!", type: .reward)
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await APIClient.shared.postRaw(
+                    APIEndpoints.goldMineBuySlot,
+                    body: ["character_id": charId]
+                )
+                if let newMax = data["max_slots"] as? Int {
+                    maxSlots = newMax
+                }
+                if let updatedSlots = data["slots"] as? [[String: Any]] {
+                    slots = updatedSlots
+                }
+                if let newGems = data["gems"] as? Int {
+                    appState.currentCharacter?.gems = newGems
+                }
+            } catch {
+                // Revert on failure
+                appState.currentCharacter?.gems = prevGems
+                appState.showToast("Failed to buy slot", subtitle: "Check your gem balance", type: .error)
             }
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                slots = updatedSlots
-            }
-            if let newGems = data["gems"] as? Int {
-                appState.currentCharacter?.gems = newGems
-            }
-            HapticManager.light()
-        } catch {
-            appState.showToast("Failed to buy slot", subtitle: "Check your gem balance", type: .error)
+            isBuyingSlot = false
         }
     }
 

@@ -53,7 +53,7 @@ struct AppearanceEditorDetailView: View {
 
                         // Save button with gold cost
                         Button {
-                            Task { await vm.save() }
+                            vm.save()
                         } label: {
                             if vm.isSaving {
                                 ProgressView().tint(DarkFantasyTheme.textOnGold)

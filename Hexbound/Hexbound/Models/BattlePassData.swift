@@ -5,7 +5,7 @@ struct BattlePassData: Codable {
     let currentLevel: Int
     let currentXp: Int
     let xpToNext: Int
-    let hasPremium: Bool
+    var hasPremium: Bool
     var freeRewards: [BPReward]
     var premiumRewards: [BPReward]
 

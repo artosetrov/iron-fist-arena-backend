@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
               id: true, itemName: true, itemType: true, rarity: true, itemLevel: true,
               baseStats: true, setName: true, specialEffect: true, uniquePassive: true,
               imageUrl: true, imageKey: true, classRestriction: true, description: true,
-              catalogId: true,
+              catalogId: true, buyPrice: true, sellPrice: true,
             },
           },
         },

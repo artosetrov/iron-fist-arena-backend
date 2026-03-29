@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct InboxRowView: View {
+    @Environment(AppState.self) private var appState
+
     let message: MailMessage
     let viewModel: InboxViewModel
     let characterId: String
@@ -34,10 +36,8 @@ struct InboxRowView: View {
                         isExpanded.toggle()
 
                         if isExpanded && !message.isRead {
-                            Task {
-                                await viewModel.markAsRead(
-                                    messageId: message.id, characterId: characterId)
-                            }
+                            viewModel.markAsRead(
+                                messageId: message.id, characterId: characterId)
                         }
                     }
                 }
@@ -410,21 +410,19 @@ struct InboxRowView: View {
     }
 
     private func claimAttachments() {
+        viewModel.claimAttachments(messageId: message.id, characterId: characterId, appState: appState)
         isClaiming = true
-        Task {
-            await viewModel.claimAttachments(messageId: message.id, characterId: characterId)
+        // Reset after brief delay (optimistic already applied)
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
             isClaiming = false
         }
     }
 
     private func deleteMail() {
-        isDeleting = true
-        Task {
-            await viewModel.deleteMail(messageId: message.id, characterId: characterId)
-            withAnimation {
-                isExpanded = false
-            }
-            isDeleting = false
+        viewModel.deleteMail(messageId: message.id, characterId: characterId, appState: appState)
+        withAnimation {
+            isExpanded = false
         }
     }
 }

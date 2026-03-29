@@ -47,6 +47,23 @@ export async function GET(
       character.lastHpUpdate ?? new Date()
     )
 
+    // Persist regen updates to DB if changed
+    const regenUpdates: Record<string, unknown> = {}
+    if (staminaResult.updated) {
+      regenUpdates.currentStamina = staminaResult.stamina
+      regenUpdates.lastStaminaUpdate = new Date()
+    }
+    if (hpResult.updated) {
+      regenUpdates.currentHp = hpResult.hp
+      regenUpdates.lastHpUpdate = new Date()
+    }
+    if (Object.keys(regenUpdates).length > 0) {
+      await prisma.character.update({
+        where: { id },
+        data: regenUpdates,
+      })
+    }
+
     return NextResponse.json({
       character: {
         ...character,

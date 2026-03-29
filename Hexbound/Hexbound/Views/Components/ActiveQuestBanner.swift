@@ -74,18 +74,11 @@ struct ActiveQuestBanner: View {
             // Progress / Claim
             if quest.canClaim {
                 Button {
-                    Task { await claimQuest(quest) }
+                    claimQuest(quest)
                 } label: {
-                    if claimingId == quest.id {
-                        ProgressView()
-                            .tint(DarkFantasyTheme.textOnGold)
-                            .scaleEffect(0.7)
-                    } else {
-                        Text("Claim")
-                    }
+                    Text("Claim")
                 }
                 .buttonStyle(.compactPrimary)
-                .disabled(claimingId == quest.id)
             } else {
                 // Progress pill
                 Text("\(quest.progress)/\(quest.target)")
@@ -128,19 +121,32 @@ struct ActiveQuestBanner: View {
 
     // MARK: - Claim
 
-    private func claimQuest(_ quest: Quest) async {
-        claimingId = quest.id
-        let service = QuestService(appState: appState)
-        let success = await service.claimQuest(questId: quest.id)
-        claimingId = nil
-        if success {
-            // Update cached quest in-place
-            if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == quest.id }) {
-                withAnimation(.easeOut(duration: 0.3)) {
-                    appState.cachedTypedQuests?[idx].rewardClaimed = true
-                }
+    private func claimQuest(_ quest: Quest) {
+        // Optimistic: mark claimed instantly
+        if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == quest.id }) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                appState.cachedTypedQuests?[idx].rewardClaimed = true
             }
-            appState.showToast("Quest Complete! \(quest.title)", type: .quest)
+        }
+        HapticManager.success()
+        SFXManager.shared.play(.uiRewardClaim)
+        appState.showToast("Quest Complete! \(quest.title)", type: .quest)
+        claimingId = nil
+
+        // Fire API in background
+        let questId = quest.id
+        Task {
+            let service = QuestService(appState: self.appState)
+            let success = await service.claimQuest(questId: questId)
+            if !success {
+                // Revert on failure
+                if let idx = self.appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        self.appState.cachedTypedQuests?[idx].rewardClaimed = false
+                    }
+                }
+                self.appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error)
+            }
         }
     }
 }

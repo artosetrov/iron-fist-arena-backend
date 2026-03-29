@@ -29,13 +29,29 @@ final class StanceSelectorViewModel {
         self.originalDefense = stance.defense
     }
 
-    func saveStance() async {
+    func saveStance() {
         guard hasChanges else { return }
-        isSaving = true
-        let success = await service.setStance(attack: attackZone, defense: defenseZone)
-        isSaving = false
-        if success {
-            if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+
+        // Optimistic: update character stance + navigate back instantly
+        let prevAttack = appState.currentCharacter?.combatStance?.attack
+        let prevDefense = appState.currentCharacter?.combatStance?.defense
+        appState.currentCharacter?.combatStance = CombatStance(attack: attackZone, defense: defenseZone)
+        HapticManager.success()
+        if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+
+        // Fire API in background
+        let attack = attackZone
+        let defense = defenseZone
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.setStance(attack: attack, defense: defense)
+            if !success {
+                // Revert on failure
+                if let prevAttack, let prevDefense {
+                    appState.currentCharacter?.combatStance = CombatStance(attack: prevAttack, defense: prevDefense)
+                }
+                appState.showToast("Failed to save stance", subtitle: "Please try again", type: .error)
+            }
         }
     }
 

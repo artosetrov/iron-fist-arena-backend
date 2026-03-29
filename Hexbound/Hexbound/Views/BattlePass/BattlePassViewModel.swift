@@ -98,15 +98,27 @@ final class BattlePassViewModel {
         }
     }
 
-    func buyPremium() async {
+    func buyPremium() {
         guard !isBuyingPremium else { return }
-        HapticManager.heavy()
         isBuyingPremium = true
-        defer { isBuyingPremium = false }
-        let success = await service.buyPremium()
-        if success {
-            HapticManager.legendaryReveal()
-            await loadBattlePass()
+
+        // Optimistic: mark premium instantly
+        data?.hasPremium = true
+        HapticManager.legendaryReveal()
+
+        // Fire API in background
+        Task { [weak self] in
+            guard let self else { return }
+            let success = await service.buyPremium()
+            isBuyingPremium = false
+            if success {
+                // Silent refresh to sync tier data
+                await loadBattlePass()
+            } else {
+                // Revert on failure
+                data?.hasPremium = false
+                appState.showToast("Purchase failed", subtitle: "Try again", type: .error)
+            }
         }
     }
 }

@@ -45,6 +45,7 @@ export interface LootResponseItem {
   base_stats: Record<string, number>;
   image_key: string | null;
   image_url: string | null;
+  sell_price: number;
 }
 
 // Ordered rarities for the distribution roll
@@ -351,6 +352,7 @@ export async function persistLoot(
     base_stats: (catalogItem.baseStats ?? {}) as Record<string, number>,
     image_key: resolvedImage.imageKey,
     image_url: resolvedImage.imageUrl,
+    sell_price: catalogItem.sellPrice,
   };
 }
 

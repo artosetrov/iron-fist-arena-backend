@@ -296,7 +296,11 @@ final class DungeonRoomViewModel {
         } else {
             // Defeat — run is deleted server-side
             runId = ""
-            appState.showToast("Defeated!", subtitle: "Heal up and try again", type: .error)
+            appState.showToast("Defeated!", subtitle: "Regroup and try again", type: .error)
+            // Refresh character data (HP, stamina may have changed)
+            Task { [characterService] in
+                await characterService.loadCharacter()
+            }
         }
     }
 
