@@ -539,6 +539,7 @@ These are the **actual** backend enums. Do not invent values.
 - **`gems` lives on `User` model, NOT `Character`.** Gold is on Character, gems on User. To deduct both: `prisma.character.update({ gold })` + `prisma.user.update({ gems })`. Past incident: code tried `character.update({ gems })` — field doesn't exist, Prisma build error.
 - **Next.js 15 dynamic route `params` is `Promise`.** In App Router route handlers, `params` must be typed as `Promise<{ id: string }>` and awaited: `const { id } = await params`. Direct destructuring `{ params: { id } }` causes a type error in Next.js 15.
 - **`PvpMatch` uses `player1Id`/`player2Id`, NOT `attackerId`/`defenderId`.** Timestamp field is `playedAt`, not `createdAt`. Past incident: `session-summary/route.ts` used invented field names — Prisma build error.
+- **Character deletion requires manual PvpMatch cleanup.** PvpMatch FK refs (player1Id, player2Id, winnerId, loserId) have no `onDelete: Cascade`. Before `prisma.character.delete()`: nullify winnerId/loserId, then deleteMany matches where player1Id/player2Id. All other related models (EquipmentInventory, Achievement, etc.) have `onDelete: Cascade` and auto-cleanup. Past incident (2026-03-29): bare `character.delete()` returned 500 FK violation for any character with PvP history.
 - **`Item` is a catalog model with NO `characterId`.** Player items are tracked in `EquipmentInventory` (which has `characterId` + `createdAt`). Never query `prisma.item.findMany({ where: { characterId } })`.
 - **`DailyQuest` uses `day` (String, "YYYY-MM-DD"), NOT `assignedDate` (Date).** Has `completed` (Boolean) but NO `claimed` field. Query pattern: `prisma.dailyQuest.findMany({ where: { characterId, day: todayStr } })`.
 
@@ -547,8 +548,11 @@ These are the **actual** backend enums. Do not invent values.
 - **Pattern:** Use interactive `$transaction(async (tx) => { ... })` with `SELECT FOR UPDATE` row lock + `Serializable` isolation.
 - **Why:** Checking `maxPurchases` before the transaction creates a race condition. Two concurrent requests can both pass the check, then both execute inside the transaction. Row locks prevent this.
 - **Example (reference):** `backend/src/routes/shop/offers/route.ts` — validates purchase count re-checked INSIDE transaction after row lock.
-- **Applies to:** Shop offers, consumables, any route checking purchase limits, spending limits, or inventory capacity.
-- **Past incident:** Two concurrent gem purchases both passed `maxPurchases` check before transaction, both succeeded — user received double gems.
+- **Applies to:** Shop offers, consumables, PvP stamina checks, minigame bets, any route checking resource limits.
+- **Past incidents:**
+  - Two concurrent gem purchases both passed `maxPurchases` check before transaction, both succeeded — user received double gems.
+  - `pvp/fight` + `pvp/resolve` checked stamina outside transaction — two concurrent fights both passed, player got free fights. Fixed 2026-03-29 with FOR UPDATE inside $transaction.
+  - `shell-game/start` checked gold outside transaction — race condition on bet deduction. Fixed 2026-03-29 to match fortune-wheel pattern.
 
 ### Atomic Increments (CRITICAL — Race Condition Prevention)
 - **All counter/progress increment operations MUST use atomic SQL**, not read-then-write pattern.
@@ -570,6 +574,20 @@ These are the **actual** backend enums. Do not invent values.
 - **Past incidents:**
   - `shop/items/route.ts`: 160ms overhead from calling `getGameConfig()` once per consumable in loop.
   - `social/messages/route.ts`: Called `character.findUnique()` inside Promise.all per conversation.
+
+### Public Route Rate Limiting (CRITICAL)
+- **All unauthenticated GET routes MUST have IP-based rate limiting**, even if they return "public" data.
+- **Pattern:** `const ip = req.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown'; await rateLimit('route:' + ip, limit, windowMs);`
+- **Why:** Without rate limiting, public endpoints can be scraped (leaderboard enumeration, character profile harvesting).
+- **Limits:** Leaderboard 30/min, search 20/min, profile 60/min — adjust per endpoint cost.
+- **Utility:** `src/lib/rate-limit.ts` — supports Upstash Redis (prod) + in-memory fallback (dev).
+- **Past incident (2026-03-29):** Leaderboard, search, and profile routes had zero rate limiting. Added IP-based limits to all three.
+
+### Minigame Daily Limits (CRITICAL)
+- **All minigames MUST have a server-enforced daily play limit.** Client-only limits are bypassable.
+- **Pattern:** Count today's sessions via `prisma.minigameSession.count({ where: { characterId, gameType, createdAt: { gte: todayStart } } })` at the top of the handler.
+- **Limits:** Shell Game 20/day, Fortune Wheel 10/day, Gold Mine (per slot collection schedule).
+- **Past incident (2026-03-29):** Shell Game had no daily limit — infinite grind at RTP=50%. Added 20/day server check.
 
 ### API Route Error Handling (CRITICAL)
 - **Every API route handler MUST wrap its body in try/catch.**
