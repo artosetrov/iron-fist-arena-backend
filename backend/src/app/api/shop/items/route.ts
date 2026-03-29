@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ItemType, Rarity } from '@prisma/client'
 import { getGameConfig } from '@/lib/game/config'
+import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
 
 // Hardcoded price fallbacks — overridden by GameConfig consumable.price.* keys
 const DEFAULT_CONSUMABLE_PRICES: Record<string, number> = {
@@ -19,6 +20,26 @@ const GEM_PACK_REQUIRED_LEVELS: Record<string, number> = {
   gem_pack_small: 1,
   gem_pack_medium: 5,
   gem_pack_large: 10,
+}
+
+// Gem pack fallback gold prices — used when buyPrice = 0 in DB
+const GEM_PACK_FALLBACK_PRICES: Record<string, number> = {
+  gem_pack_small: 500,
+  gem_pack_medium: 1200,
+  gem_pack_large: 3000,
+}
+
+// Calculate fallback price for equipment items with buyPrice = 0
+function calculateFallbackPrice(rarity: string, level: number): number {
+  const base = {
+    common: 100,
+    uncommon: 300,
+    rare: 800,
+    epic: 2500,
+    legendary: 8000,
+  }
+  const basePrice = base[rarity as keyof typeof base] ?? 100
+  return Math.round(basePrice * (1 + (level - 1) * 0.15))
 }
 
 export async function GET(req: NextRequest) {
@@ -140,7 +161,7 @@ export async function GET(req: NextRequest) {
       rarity: item.rarity.toLowerCase(),
       item_level: item.itemLevel,
       required_level: item.itemLevel,
-      gold_price: item.buyPrice,
+      gold_price: item.buyPrice > 0 ? item.buyPrice : calculateFallbackPrice(item.rarity.toLowerCase(), item.itemLevel),
       gem_price: 0,
       sell_price: item.sellPrice,
       base_stats: item.baseStats,
@@ -151,6 +172,7 @@ export async function GET(req: NextRequest) {
       unique_passive: item.uniquePassive,
       set_name: item.setName,
       class_restriction: item.classRestriction?.toLowerCase() ?? null,
+      is_two_handed: item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(item.catalogId),
     }))
 
     // Batch-load all consumable prices from GameConfig ONCE (fix N+1)
@@ -181,6 +203,16 @@ export async function GET(req: NextRequest) {
         let goldPrice = item.buyPrice
         if (!isGemPack && consumablePriceMap.has(catalogId)) {
           goldPrice = consumablePriceMap.get(catalogId)!
+        }
+
+        // Gem packs: fallback price if buyPrice is 0
+        if (isGemPack && goldPrice <= 0) {
+          goldPrice = GEM_PACK_FALLBACK_PRICES[catalogId] ?? 500
+        }
+
+        // Safety net: no item should ever cost 0 gold
+        if (goldPrice <= 0) {
+          goldPrice = calculateFallbackPrice(item.rarity.toLowerCase(), item.itemLevel)
         }
 
         return {

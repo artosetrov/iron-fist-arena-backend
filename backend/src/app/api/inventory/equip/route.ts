@@ -5,6 +5,7 @@ import { EquippedSlot, ItemType } from '@prisma/client'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
+import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
 
 // Map item types to possible equipment slots (priority order).
 // Universal slots: amulet accepts necklace, relic accepts accessory + weapon (off-hand).
@@ -43,11 +44,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verify character ownership
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-      select: { userId: true, level: true, class: true },
-    })
+    // Verify character ownership + fetch inventory item in parallel (saves one DB round-trip)
+    const [character, inventoryItem] = await Promise.all([
+      prisma.character.findUnique({
+        where: { id: character_id },
+        select: { userId: true, level: true, class: true },
+      }),
+      prisma.equipmentInventory.findUnique({
+        where: { id: inventory_id },
+        include: { item: true },
+      }),
+    ])
 
     if (!character) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
@@ -57,12 +64,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get the inventory item with its item details
-    const inventoryItem = await prisma.equipmentInventory.findUnique({
-      where: { id: inventory_id },
-      include: { item: true },
-    })
-
     if (!inventoryItem) {
       return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 })
     }
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
     }
 
-    // Bug 4: Prevent equipping broken items
+    // Prevent equipping broken items
     if (inventoryItem.durability === 0) {
       return NextResponse.json(
         { error: 'Cannot equip a broken item. Repair it first.' },
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Bug 3: Check character level meets item level requirement
+    // Check character level meets item level requirement
     if (character.level < inventoryItem.item.itemLevel) {
       return NextResponse.json(
         { error: 'Character level too low for this item' },
@@ -107,18 +108,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Item is already equipped' })
     }
 
-    // Generic multi-slot logic: find first empty slot, or replace first occupied
-    let slot: EquippedSlot | null = null
+    // Batch-load all occupied slots for this character at once (avoids N+1 per candidate slot)
+    const occupiedRows = await prisma.equipmentInventory.findMany({
+      where: {
+        characterId: character_id,
+        equippedSlot: { in: possibleSlots as EquippedSlot[] },
+        isEquipped: true,
+      },
+      select: { equippedSlot: true },
+    })
+    const occupiedSlots = new Set(occupiedRows.map((r) => r.equippedSlot))
 
+    // Find first empty slot, or fall back to priority slot
+    let slot: EquippedSlot | null = null
     for (const candidate of possibleSlots) {
-      const occupied = await prisma.equipmentInventory.findFirst({
-        where: {
-          characterId: character_id,
-          equippedSlot: candidate,
-          isEquipped: true,
-        },
-      })
-      if (!occupied) {
+      if (!occupiedSlots.has(candidate)) {
         slot = candidate
         break
       }
@@ -129,9 +133,13 @@ export async function POST(req: NextRequest) {
       slot = possibleSlots[0]
     }
 
+    // For two-handed weapons: also clear the relic (off-hand) slot
+    const isTwoHanded = inventoryItem.item.itemType === 'weapon' &&
+      TWO_HANDED_CATALOG_IDS.has(inventoryItem.item.catalogId)
+
     // Unequip any item currently in that slot, then equip the new one
-    await prisma.$transaction([
-      // Unequip current item in that slot
+    const updates: Parameters<typeof prisma.$transaction>[0] = [
+      // Unequip current item in target slot
       prisma.equipmentInventory.updateMany({
         where: {
           characterId: character_id,
@@ -151,23 +159,47 @@ export async function POST(req: NextRequest) {
           equippedSlot: slot as EquippedSlot,
         },
       }),
+    ]
+
+    // If two-handed: also unequip off-hand (relic) slot
+    if (isTwoHanded) {
+      updates.unshift(
+        prisma.equipmentInventory.updateMany({
+          where: {
+            characterId: character_id,
+            equippedSlot: 'relic',
+            isEquipped: true,
+          },
+          data: {
+            isEquipped: false,
+            equippedSlot: null,
+          },
+        })
+      )
+    }
+
+    await prisma.$transaction(updates)
+
+    // Recalculate derived stats + invalidate caches + fetch updated inventory — all in parallel
+    // Previously sequential (3 awaits = ~150-200ms extra); now parallel saves that time.
+    const [equipment] = await Promise.all([
+      prisma.equipmentInventory.findMany({
+        where: { characterId: character_id },
+        include: { item: true },
+        orderBy: { acquiredAt: 'desc' },
+      }),
+      recalculateDerivedStats(character_id),
+      invalidateSkillCache(character_id),
+      invalidatePassiveCache(character_id),
     ])
 
-    // Recalculate derived stats (maxHp, armor, magicResist)
-    await recalculateDerivedStats(character_id)
+    // Enrich equipment with isTwoHanded flag (same as GET /api/inventory)
+    const enrichedEquipment = equipment.map(eq => ({
+      ...eq,
+      isTwoHanded: eq.item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(eq.item.catalogId),
+    }))
 
-    // Invalidate combat caches so PvP uses fresh equipment data
-    await invalidateSkillCache(character_id)
-    await invalidatePassiveCache(character_id)
-
-    // Return updated inventory
-    const equipment = await prisma.equipmentInventory.findMany({
-      where: { characterId: character_id },
-      include: { item: true },
-      orderBy: { acquiredAt: 'desc' },
-    })
-
-    return NextResponse.json({ equipment })
+    return NextResponse.json({ equipment: enrichedEquipment })
   } catch (error) {
     console.error('equip item error:', error)
     return NextResponse.json(

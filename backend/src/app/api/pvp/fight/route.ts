@@ -104,6 +104,7 @@ export async function POST(req: NextRequest) {
       gold: true,
       maxHp: true,
       currentHp: true,
+      lastHpUpdate: true,
       pvpWins: true,
       pvpLosses: true,
       pvpWinStreak: true,
@@ -146,12 +147,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Check minimum HP threshold (10% of maxHp) — block fights when near death
+    // Use calculateCurrentHp to account for HP regen (same as /pvp/prepare)
+    const { calculateCurrentHp } = await import('@/lib/game/hp-regen')
+    const hpResult = await calculateCurrentHp(
+      attacker.currentHp,
+      attacker.maxHp,
+      attacker.lastHpUpdate ?? new Date()
+    )
+    const currentHp = hpResult.hp
+    if (hpResult.updated) {
+      await prisma.character.update({
+        where: { id: character_id },
+        data: { currentHp, lastHpUpdate: new Date() },
+      })
+    }
+
     const minHpRequired = Math.ceil(attacker.maxHp * 0.1)
-    if (attacker.currentHp < minHpRequired) {
+    if (currentHp < minHpRequired) {
       return NextResponse.json(
         {
-          error: 'Not enough health to fight',
-          currentHp: attacker.currentHp,
+          error: 'Not enough health to fight. Use a health potion first!',
+          currentHp,
           minHealthRequired: minHpRequired,
           maxHp: attacker.maxHp,
         },
