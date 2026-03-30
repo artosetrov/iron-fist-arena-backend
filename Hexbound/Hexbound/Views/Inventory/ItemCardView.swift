@@ -395,12 +395,12 @@ private extension ItemCardView {
                 Image(systemName: delta > 0 ? "arrow.up" : "arrow.down")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
-                    .padding(3)
+                    .padding(LayoutConstants.spaceXS)
                     .background(
                         Circle()
                             .fill(DarkFantasyTheme.bgSecondary.opacity(0.9))
                     )
-                    .padding(3)
+                    .padding(LayoutConstants.spaceXS)
             } else if isTwoHanded {
                 twoHandedBadge
             }
@@ -428,7 +428,7 @@ private extension ItemCardView {
                 Capsule()
                     .stroke(DarkFantasyTheme.stamina.opacity(0.4), lineWidth: 1)
             )
-            .padding(3)
+            .padding(LayoutConstants.spaceXS)
     }
 
     // MARK: - Top-Trailing Overlay

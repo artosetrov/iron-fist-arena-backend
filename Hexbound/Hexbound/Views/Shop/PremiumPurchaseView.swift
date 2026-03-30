@@ -5,10 +5,11 @@ import StoreKit
 
 struct PremiumFeature: Identifiable {
     let id = UUID()
-    let icon: String       // SF Symbol name
+    let icon: String       // SF Symbol name or asset name
     let title: String
     let description: String
     let highlight: Bool    // gold accent for key features
+    let assetIcon: Bool = false  // whether icon is from asset catalog
 }
 
 // MARK: - PremiumPurchaseView
@@ -26,9 +27,9 @@ struct PremiumPurchaseView: View {
         .init(icon: "bolt.fill", title: "+20% XP from all sources",
               description: "Level up faster — PvP, dungeons, training, and quests all give 20% more experience.",
               highlight: true),
-        .init(icon: "dollarsign.circle.fill", title: "+20% Gold from all sources",
+        .init(icon: "icon-gold", title: "+20% Gold from all sources",
               description: "Earn more gold from battles, dungeons, daily quests, and Gold Mine.",
-              highlight: true),
+              highlight: true, assetIcon: true),
         .init(icon: "shield.lefthalf.filled", title: "5 Free PvP fights per day",
               description: "Two extra stamina-free arena fights daily (up from 3).",
               highlight: false),
@@ -378,9 +379,17 @@ struct PremiumFeatureRow: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMD) {
             // Icon
-            Image(systemName: feature.icon)
-                .font(.system(size: 20))
-                .foregroundStyle(feature.highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.premiumPink)
+            Group {
+                if feature.assetIcon {
+                    Image(feature.icon)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Image(systemName: feature.icon)
+                }
+            }
+            .font(.system(size: 20))
+            .foregroundStyle(feature.highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.premiumPink)
                 .frame(width: 36, height: 36)
                 .background(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)

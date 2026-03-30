@@ -146,7 +146,7 @@ struct WidgetPill: View {
                         ),
                         lineWidth: 0.5
                     )
-                    .padding(2)
+                    .padding(LayoutConstants.space2XS)
             }
         )
         // Pulsing glow for urgent pills

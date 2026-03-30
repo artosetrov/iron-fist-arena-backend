@@ -617,7 +617,7 @@ struct PremiumUnlockCard: View {
             // Quick benefits preview
             HStack(spacing: LayoutConstants.spaceSM) {
                 PremiumBenefitChip(icon: "bolt.fill", text: "+20% XP")
-                PremiumBenefitChip(icon: "dollarsign.circle.fill", text: "+20% Gold")
+                PremiumBenefitChip(icon: "icon-gold", text: "+20% Gold", assetIcon: true)
                 PremiumBenefitChip(icon: "sparkles", text: "Exclusive")
             }
 
@@ -651,11 +651,19 @@ struct PremiumUnlockCard: View {
 struct PremiumBenefitChip: View {
     let icon: String
     let text: String
+    let assetIcon: Bool = false
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
+            if assetIcon {
+                Image(icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+            } else {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+            }
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
         }

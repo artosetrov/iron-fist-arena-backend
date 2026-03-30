@@ -123,13 +123,13 @@ Dodge Chance = min(
 
 | Factor | Contribution | Notes |
 |--------|--------------|-------|
-| AGI | 0.2× per point | Primary dodge stat |
-| LUK | 0.1× per point | Secondary dodge |
+| AGI | 0.2× per point | Primary dodge stat (nerfed from 0.3) |
+| LUK | 0.1× per point | New secondary dodge contributor |
 | Rogue Class Bonus | +3% flat | Rogues naturally evasive |
 | Stance Bonus | 0–8% | Defense zone modifiers |
 
 **Example (AGI 50, LUK 20, Rogue class, legs stance):**
-- Dodge = min(50 × 0.2 + 20 × 0.1 + 3 + 3, 30) = min(16 + 2 + 3 + 3, 30) = 24%
+- Dodge = min(50 × 0.2 + 20 × 0.1 + 3 + 3, 30) = min(10 + 2 + 3 + 3, 30) = 18%
 
 ### Rogue Class Passive
 
@@ -189,8 +189,8 @@ Attacker's CHA reduces defender's outgoing damage:
 
 ```
 Intimidation Reduction = min(
-  (Attacker CHA × 0.15) / 100,
-  15% max
+  Attacker CHA × 0.25 / 100,
+  25% max
 )
 
 Defender Damage = Base Damage × (1 - intimidation_reduction)
@@ -199,12 +199,14 @@ Defender Damage = Base Damage × (1 - intimidation_reduction)
 | CHA Value | Damage Reduction | Notes |
 |-----------|-----------------|-------|
 | 0 | 0% | No reduction |
-| 50 | 7.5% | Mid-game |
-| 100 | 15% | Cap reached |
+| 50 | 12.5% | Mid-game |
+| 60 | 15% | Mid-tier |
+| 100 | 25% | Cap reached |
 
 **Example:**
-- Attacker CHA 60 → Defender takes min(60 × 0.15, 15) = 9% less damage
-- Attacker CHA 100+ → Defender takes 15% less damage (capped)
+- Attacker CHA 50 → Defender takes min(50 × 0.25, 25) = 12.5% less damage
+- Attacker CHA 60 → Defender takes min(60 × 0.25, 25) = 15% less damage
+- Attacker CHA 100+ → Defender takes 25% less damage (capped)
 
 ---
 
@@ -392,8 +394,8 @@ COMBAT FLOW:
    └─ × (1 + attacker_stance_offense/100)
    └─ × (1 - defender_stance_defense/100)
 
-9. Intimidation (Defender CHA)
-   └─ × (1 - min(def_cha × 0.15, 15%) / 100)
+9. Intimidation (Attacker CHA)
+   └─ × (1 - min(att_cha × 0.25, 25%) / 100)
 
 10. Passive Damage Reduction (Defender)
     └─ × (1 - min(damageReduction, 50%) / 100)

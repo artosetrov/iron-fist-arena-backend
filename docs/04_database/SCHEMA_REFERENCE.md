@@ -1,5 +1,5 @@
 # Database Schema Reference (Source of Truth)
-*Derived from Prisma schema. Updated: 2026-03-29*
+*Derived from Prisma schema. Updated: 2026-03-30*
 
 ## Core User & Auth
 
@@ -7,22 +7,19 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| email | String | Unique |
-| username | String | Unique |
+| email | String? | Unique, optional |
+| username | String? | Optional |
 | passwordHash | String? | Null for OAuth users |
-| googleId | String? | Google OAuth |
-| appleId | String? | Apple OAuth |
-| gems | Int | Premium currency (default: 0) |
-| gold | Int | Soft currency (default: 0) |
+| authProvider | String? | Generic auth provider field |
 | role | UserRole | ADMIN, MODERATOR, PLAYER (default: PLAYER) |
 | isBanned | Boolean | Default: false |
 | banReason | String? | Ban details |
 | createdAt | DateTime | Account creation |
 | updatedAt | DateTime | Last modified |
 
-**Unique constraints:** email, username, googleId, appleId
+**Unique constraints:** email, username (if provided)
 
-**Relations:** Character (1-N), Mail (1-N), Achievements (1-N), Training (1-N), GoldMine (1-N), Minigames (1-N)
+**Relations:** Character (1-N), Mail (1-N), Achievements (1-N), PushToken (1-N)
 
 ---
 
@@ -33,37 +30,45 @@
 |-------|------|-------|
 | id | String (UUID) | Primary key |
 | userId | String (UUID) | Foreign key to User |
-| characterName | String | Unique per user |
-| class | CharacterClass | WARRIOR, ROGUE, MAGE, TANK |
-| origin | CharacterOrigin | HUMAN, ORC, SKELETON, DEMON, DOGFOLK |
-| gender | CharacterGender | MALE, FEMALE |
-| level | Int | Current level (1-100) |
-| experience | BigInt | XP to next level |
-| health | Int | Current HP |
-| maxHealth | Int | Max HP from stats |
-| strength | Int | STR stat |
-| constitution | Int | CON stat |
-| dexterity | Int | DEX stat |
-| intelligence | Int | INT stat |
-| wisdom | Int | WIS stat |
-| charisma | Int | CHA stat |
-| damage | Int | Calculated from STR |
-| armor | Int | Calculated from CON/DEX |
-| gold | BigInt | Soft currency |
-| gems | Int | Premium currency override |
-| pvpRating | Int | Elo rating (default: 1600) |
-| stamina | Int | Current stamina |
-| maxStamina | Int | Stamina cap |
-| inventorySlots | Int | Usable slots (default: 20) |
-| skillPoints | Int | Unallocated points |
-| passivePoints | Int | Unallocated points |
+| characterName | String | Unique |
+| class | CharacterClass | warrior, rogue, mage, tank |
+| origin | CharacterOrigin | human, orc, skeleton, demon, dogfolk |
+| gender | CharacterGender | male, female (default: male) |
+| avatar | String | Avatar ID (default: "warlord") |
+| level | Int | Current level (default: 1) |
+| currentXp | Int | XP toward next level (default: 0) |
+| prestigeLevel | Int | Prestige rank (default: 0) |
+| statPointsAvailable | Int | Unallocated stat points (default: 0) |
+| passivePointsAvailable | Int | Unallocated passive points (default: 0) |
+| str | Int | Strength stat (default: 10) |
+| agi | Int | Agility stat (default: 10) |
+| vit | Int | Vitality stat (default: 10) |
+| end | Int | Endurance stat (default: 10) |
+| int | Int | Intelligence stat (default: 10) |
+| wis | Int | Wisdom stat (default: 10) |
+| luk | Int | Luck stat (default: 10) |
+| cha | Int | Charisma stat (default: 10) |
+| gold | Int | Soft currency (default: 500) |
+| arenaTokens | Int | PvP currency (default: 0) |
+| maxHp | Int | Max health points (default: 100) |
+| currentHp | Int | Current HP (default: 100) |
+| armor | Int | Armor defense (default: 0) |
+| magicResist | Int | Magic resistance (default: 0) |
+| combatStance | JSON? | Active combat stance |
+| currentStamina | Int | Current stamina (default: 120) |
+| maxStamina | Int | Max stamina (default: 120) |
+| lastStaminaUpdate | DateTime? | Stamina regen timestamp |
+| lastHpUpdate | DateTime? | HP regen timestamp |
+| bonusTrainings | Int | Extra training sessions available (default: 0) |
+| bonusTrainingsDate | DateTime? | When bonus trainings expire |
+| bonusTrainingsBuys | Int | Number of bonus training purchases (default: 0) |
 | createdAt | DateTime | Creation date |
 | updatedAt | DateTime | Last modified |
 | deletedAt | DateTime? | Soft delete |
 
-**Unique constraints:** (userId, characterName)
+**Unique constraints:** characterName
 
-**Relations:** EquipmentInventory (1-N), ConsumableInventory (1-N), Skills (1-N), Passives (1-N), PvpMatches (1-N), Dungeons (1-N)
+**Relations:** EquipmentInventory (1-N), ConsumableInventory (1-N), CharacterSkill (1-N), CharacterPassive (1-N), PvpMatch (2), DungeonRun (1-N), ShopOfferPurchase (1-N), Friendship (2), DirectMessage (2), Challenge (2), DailyLoginReward (1-N), BattlePass (1-N), DailyGemCard (1-N), AchievementDefinition (1-N), MailRecipient (1-N)
 
 ---
 
@@ -73,21 +78,21 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique item identifier |
-| itemName | String | Display name |
-| itemType | ItemType | WEAPON, HELMET, CHEST, etc. |
-| rarity | ItemRarity | COMMON, UNCOMMON, RARE, EPIC, LEGENDARY |
-| baseStats | JSON | {strength: 5, dexterity: 3, ...} |
-| bonusType | BonusType | How stats apply |
-| restrictions | JSON? | Class/level restrictions |
-| shopPrice | Int | Gold cost |
-| shopGemPrice | Int? | Gem cost (if premium) |
+| key | String | Unique item identifier |
+| name | String | Display name |
+| type | ItemType | weapon, helmet, chest, gloves, legs, boots, accessory, amulet, belt, relic, necklace, ring, consumable |
+| rarity | Rarity | common, uncommon, rare, epic, legendary |
+| baseStats | JSON | {str: 5, agi: 3, ...} |
+| bonusType | String | How stats apply |
 | sellValue | Int | Gold when sold |
 | minLevel | Int | Level requirement (default: 1) |
-| rollableStats | JSON | Which stats can roll |
+| imageKey | String? | Asset catalog image reference |
 | createdAt | DateTime |
+| updatedAt | DateTime |
 
-**Relations:** EquipmentInventory (1-N)
+**Unique constraints:** key
+
+**Relations:** EquipmentInventory (1-N), DungeonDrop (1-N)
 
 ### EquipmentInventory
 | Field | Type | Notes |
@@ -95,15 +100,14 @@
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Foreign key to Character |
 | itemId | String (UUID) | Foreign key to Item |
-| upgradeLevel | Int | Enhancement level (0-10) |
+| upgradeLevel | Int | Enhancement level (0-10, default: 0) |
 | durability | Int | Current durability |
 | maxDurability | Int | Max durability |
-| isEquipped | Boolean | Currently worn |
-| equippedSlot | EquipSlot? | WEAPON, HEAD, CHEST, etc. |
-| rolledStats | JSON? | {strength: +8, dex: +2} |
+| isEquipped | Boolean | Currently worn (default: false) |
+| equippedSlot | EquippedSlot? | weapon, weapon_offhand, helmet, chest, gloves, legs, boots, accessory, amulet, belt, relic, necklace, ring, ring2 |
+| rolledStats | JSON? | {str: +8, agi: +2} |
 | createdAt | DateTime |
-
-**Unique constraints:** (characterId, itemId, equippedSlot) when isEquipped = true
+| updatedAt | DateTime |
 
 **Relations:** Character, Item
 
@@ -112,7 +116,7 @@
 |-------|------|-------|
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Foreign key to Character |
-| consumableType | ConsumableType | HEALTH_POTION, STAMINA_RESTORE, BUFF_ATTACK, etc. |
+| consumableType | ConsumableType | stamina_potion_small, stamina_potion_medium, stamina_potion_large, health_potion_small, health_potion_medium, health_potion_large |
 | quantity | Int | Stack count |
 | createdAt | DateTime |
 
@@ -130,28 +134,31 @@
 | id | String (UUID) | Primary key |
 | challengerId | String (UUID) | Player who started fight |
 | defenderId | String (UUID) | Opponent |
-| isRevenge | Boolean | Revenge match |
-| challengerBefore | Int | Challenger rating before |
-| defenderBefore | Int | Defender rating before |
-| challengerAfter | Int | Challenger rating after |
-| defenderAfter | Int | Defender rating after |
-| winner | String (UUID) | Winner ID |
-| result | BattleResult | WIN, LOSS, DRAW |
+| isRevenge | Boolean | Revenge match (default: false) |
+| challengerRatingBefore | Int | Challenger rating before |
+| defenderRatingBefore | Int | Defender rating before |
+| challengerRatingAfter | Int | Challenger rating after |
+| defenderRatingAfter | Int | Defender rating after |
+| winnerId | String (UUID) | Winner ID |
+| result | String | WIN, LOSS, DRAW |
 | duration | Int | Battle duration (seconds) |
 | battleData | JSON | Full fight log |
 | createdAt | DateTime |
 
-**Relations:** Character (2 relations), RevengeQueue
+**Relations:** Character (2 relations)
 
-### RevengeQueue
+### Challenge
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| characterId | String (UUID) | Who lost |
-| opponentId | String (UUID) | Who won |
-| matchId | String (UUID) | Original match |
-| expiresAt | DateTime | Revenge window closes |
-| createdAt | DateTime |
+| challengerId | String (UUID) | Who sent the challenge |
+| defenderId | String (UUID) | Who received it |
+| status | ChallengeStatus | pending, accepted, declined, expired, completed |
+| matchId | String (UUID)? | Resulting PvP match |
+| createdAt | DateTime | Challenge date |
+| expiresAt | DateTime | Expiry window |
+
+**Relations:** Character (2)
 
 ### PvpBattleTicket
 | Field | Type | Notes |
@@ -171,13 +178,15 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| requesterId | String (UUID) | Who sent the request |
-| receiverId | String (UUID) | Who received it |
-| status | FriendshipStatus | PENDING, ACCEPTED, BLOCKED |
+| userId | String (UUID) | First character |
+| friendId | String (UUID) | Second character |
+| status | FriendshipStatus | pending, accepted, blocked (default: pending) |
 | createdAt | DateTime | Request date |
 | updatedAt | DateTime | Last status change |
 
-**Unique constraints:** (requesterId, receiverId)
+**Unique constraints:** (userId, friendId)
+
+**Relations:** Character (2)
 
 ### DirectMessage
 | Field | Type | Notes |
@@ -186,31 +195,10 @@
 | senderId | String (UUID) | Sender character |
 | receiverId | String (UUID) | Recipient character |
 | content | String | Message text |
-| isRead | Boolean | Read status |
+| isRead | Boolean | Read status (default: false) |
 | createdAt | DateTime | Sent at |
 
-### Challenge
-| Field | Type | Notes |
-|-------|------|-------|
-| id | String (UUID) | Primary key |
-| challengerId | String (UUID) | Who sent the challenge |
-| defenderId | String (UUID) | Who received it |
-| status | ChallengeStatus | PENDING, ACCEPTED, DECLINED, EXPIRED, COMPLETED |
-| matchId | String (UUID)? | Resulting PvP match |
-| createdAt | DateTime | Challenge date |
-| expiresAt | DateTime | Expiry window |
-
-### GuildChallenge
-| Field | Type | Notes |
-|-------|------|-------|
-| id | String (UUID) | Primary key |
-| challengeType | String | Weekly challenge type |
-| targetValue | Int | Community goal |
-| currentValue | Int | Current progress |
-| reward | JSON | Community reward |
-| startsAt | DateTime | Challenge start |
-| endsAt | DateTime | Challenge end |
-| createdAt | DateTime |
+**Relations:** Character (2)
 
 ---
 
@@ -220,26 +208,57 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| dungeonName | String | Display name |
+| key | String | Unique identifier |
+| name | String | Display name |
+| type | DungeonType | story, side, event, endgame |
+| difficulty | DungeonDifficulty | easy, normal, hard, nightmare, rush |
 | minimumLevel | Int | Entry level |
-| difficulty | DifficultyTier | EASY, NORMAL, HARD, NIGHTMARE |
-| recommendedPower | Int | Target stats |
-| floors | Int | Number of levels |
-| bossHealth | Int | Boss HP per floor |
-| lootTable | JSON | Drop pool |
+| recommendedPower | Int | Target stat sum |
+| floorCount | Int | Number of levels |
+| lootTable | JSON | Drop pool configuration |
 | createdAt | DateTime |
+| updatedAt | DateTime |
+
+**Unique constraints:** key
+
+**Relations:** DungeonBoss (1-N), DungeonWave (1-N), DungeonRun (1-N), DungeonDrop (1-N)
 
 ### DungeonBoss
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
 | dungeonId | String (UUID) | Parent dungeon |
-| bossName | String | Display name |
-| baseHealth | Int | HP formula |
-| baseStats | JSON | {strength: 20, ...} |
-| abilities | JSON | Boss moves |
+| name | String | Display name |
+| health | Int | Boss HP |
+| damage | Int | Boss damage |
+| defense | Int | Boss defense (default: 0) |
+| speed | Int | Boss speed (default: 0) |
+| critChance | Float | Boss crit chance (default: 0) |
+| description | String? | Boss lore |
+| lore | String? | Extended lore |
+| imageUrl | String? | Boss image URL |
+| imagePrompt | String? | AI image generation prompt |
+| floorNumber | Int | Which floor |
+| sortOrder | Int | Display order (default: 0) |
 | createdAt | DateTime |
+| updatedAt | DateTime |
+
+**Relations:** Dungeon, BossAbility (1-N)
+
+### BossAbility
+| Field | Type | Notes |
+|-------|------|-------|
+| id | String (UUID) | Primary key |
+| bossId | String (UUID) | Parent boss |
+| name | String | Ability name |
+| abilityType | String | Type identifier |
+| damage | Int | Damage dealt (default: 0) |
+| cooldown | Int | Cooldown in seconds (default: 0) |
+| specialEffect | String? | Special effect description |
+| description | String? | Full description |
+| createdAt | DateTime |
+
+**Relations:** DungeonBoss
 
 ### DungeonWave
 | Field | Type | Notes |
@@ -247,19 +266,23 @@
 | id | String (UUID) | Primary key |
 | dungeonId | String (UUID) | Parent dungeon |
 | waveNumber | Int | Order (1-N) |
-| enemyCount | Int | Mobs per wave |
-| enemyType | String | Mob catalog ID |
 | createdAt | DateTime |
+
+**Unique constraints:** (dungeonId, waveNumber)
+
+**Relations:** Dungeon, DungeonWaveEnemy (1-N)
 
 ### DungeonWaveEnemy
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
 | waveId | String (UUID) | Parent wave |
-| enemyName | String | Display name |
-| baseHealth | Int | HP |
-| baseStats | JSON | {strength: 10, ...} |
+| enemyType | String | Enemy catalog ID |
+| level | Int | Enemy level |
+| count | Int | Count per wave (default: 1) |
 | createdAt | DateTime |
+
+**Relations:** DungeonWave
 
 ### DungeonRun
 | Field | Type | Notes |
@@ -272,30 +295,25 @@
 | maxHealth | Int | Run HP cap |
 | completedWaves | Int | Defeated enemies |
 | goldEarned | BigInt | Current rewards |
-| status | DungeonStatus | IN_PROGRESS, COMPLETED, ABANDONED, FAILED |
+| status | String | IN_PROGRESS, COMPLETED, ABANDONED, FAILED |
 | startedAt | DateTime |
 | finishedAt | DateTime? |
 | updatedAt | DateTime |
 
-**Relations:** DungeonProgress (1-N), DungeonDrop (1-N)
-
-### DungeonProgress
-| Field | Type | Notes |
-|-------|------|-------|
-| id | String (UUID) | Primary key |
-| runId | String (UUID) | Parent run |
-| floor | Int | Floor number |
-| wavesSurvived | Int | Enemies defeated |
-| bossDefeated | Boolean | Boss killed |
+**Relations:** Character, Dungeon, DungeonDrop (1-N)
 
 ### DungeonDrop
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| runId | String (UUID) | Parent run |
+| dungeonId | String (UUID) | Parent dungeon |
 | itemId | String (UUID) | Dropped item |
-| amount | Int | Quantity (for gold/consumables) |
-| claimedAt | DateTime? | Pickup time |
+| dropChance | Float | Drop probability (0-100) |
+| minQuantity | Int | Min quantity (default: 1) |
+| maxQuantity | Int | Max quantity (default: 1) |
+| createdAt | DateTime |
+
+**Relations:** Dungeon, Item
 
 ---
 
@@ -305,15 +323,21 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| skillName | String | Display name |
+| key | String | Unique identifier |
+| name | String | Display name |
 | description | String | How it works |
 | skillClass | CharacterClass | Learned by |
-| cooldown | Int | Cooldown (seconds) |
+| cooldown | Int | Cooldown (milliseconds) |
 | manaCost | Int | Resource cost |
-| baseScaling | JSON | {strength: 1.2, dex: 0.8} |
+| damageType | SkillDamageType | physical, magical, true_damage, poison |
+| targetType | SkillTargetType | single_enemy, self_buff, aoe |
+| baseScaling | JSON | {str: 1.2, agi: 0.8} |
 | unlockLevel | Int | Level requirement |
 | createdAt | DateTime |
+
+**Unique constraints:** key
+
+**Relations:** CharacterSkill (1-N)
 
 ### CharacterSkill
 | Field | Type | Notes |
@@ -321,12 +345,14 @@
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Player |
 | skillId | String (UUID) | Skill |
-| skillRank | Int | 1-5 enhancement level |
-| equipped | Boolean | In loadout |
-| equippedSlot | Int | Hotbar position (1-6) |
+| skillRank | Int | 1-5 enhancement level (default: 1) |
+| equipped | Boolean | In loadout (default: false) |
+| equippedSlot | Int? | Hotbar position (1-6) |
 | createdAt | DateTime |
 
-**Unique constraints:** (characterId, skillId), (characterId, equippedSlot) when equipped = true
+**Unique constraints:** (characterId, skillId)
+
+**Relations:** Character, Skill
 
 ---
 
@@ -336,15 +362,20 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| nodeName | String | Display name |
+| key | String | Unique identifier |
+| name | String | Display name |
 | description | String | Passive effect |
 | stats | JSON | Granted stats |
+| bonusType | PassiveBonusType | flat_stat, percent_stat, flat_damage, percent_damage, flat_crit_chance, flat_dodge_chance, flat_hp, percent_hp, flat_armor, flat_magic_resist, percent_armor, percent_magic_resist, lifesteal, cooldown_reduction, damage_reduction |
 | pointCost | Int | Points to unlock |
 | nodeClass | CharacterClass? | Class restriction |
 | posX | Int | Tree position X |
 | posY | Int | Tree position Y |
 | createdAt | DateTime |
+
+**Unique constraints:** key
+
+**Relations:** PassiveConnection (2), CharacterPassive (1-N)
 
 ### PassiveConnection
 | Field | Type | Notes |
@@ -353,6 +384,8 @@
 | fromNodeId | String (UUID) | Parent node |
 | toNodeId | String (UUID) | Connected node |
 | createdAt | DateTime |
+
+**Relations:** PassiveNode (2)
 
 ### CharacterPassive
 | Field | Type | Notes |
@@ -364,6 +397,8 @@
 
 **Unique constraints:** (characterId, passiveNodeId)
 
+**Relations:** Character, PassiveNode
+
 ---
 
 ## Shop & Economy
@@ -372,26 +407,43 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| offerName | String | Bundle name |
-| description | String | What's included |
-| items | JSON | [{itemId: "...", quantity: 5}, ...] |
-| goldPrice | BigInt | Gold cost |
-| gemPrice | Int? | Gem cost |
-| isBundle | Boolean | Cosmetic grouping |
-| isFlashSale | Boolean | Limited-time flag |
+| key | String | Unique identifier |
+| title | String | Display name |
+| description | String? | What's included |
+| offerType | String | bundle, daily_deal, flash_sale, starter_pack, level_up (default: "bundle") |
+| contents | JSON | [{type: "gold"/"gems"/"item"/"consumable", id?: string, quantity: number}] |
+| originalPrice | Int | Display-only "was X" |
+| salePrice | Int | Actual price |
+| currency | String | gold, gems (default: "gold") |
+| discountPct | Int | 0-100 (default: 0) |
+| maxPurchases | Int | Per character, 0=unlimited (default: 1) |
+| minLevel | Int | Min level (default: 1) |
+| maxLevel | Int | Max level (default: 999) |
+| sortOrder | Int | Display order (default: 0) |
+| imageKey | String? | Asset reference |
+| tags | String[] | Categorization |
+| isActive | Boolean | Currently available (default: false) |
 | startsAt | DateTime? | Sale start |
 | endsAt | DateTime? | Sale end |
-| maxPurchases | Int? | Limit per player |
+| createdBy | String? | Admin ID |
 | createdAt | DateTime |
+| updatedAt | DateTime |
+
+**Unique constraints:** key
+
+**Relations:** ShopOfferPurchase (1-N)
 
 ### ShopOfferPurchase
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| characterId | String (UUID) | Buyer |
 | offerId | String (UUID) | What was bought |
-| purchasedAt | DateTime |
+| characterId | String (UUID) | Buyer |
+| price | Int | Price paid |
+| currency | String | gold, gems |
+| createdAt | DateTime |
+
+**Relations:** ShopOffer, Character
 
 ---
 
@@ -401,13 +453,17 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier (e.g., "s1_dawn") |
-| seasonName | String | Display name |
+| key | String | Unique identifier |
+| name | String | Display name |
 | description | String | Theme/story |
+| seasonNumber | Int | 1, 2, 3, ... |
 | startsAt | DateTime | Start date |
 | endsAt | DateTime | End date |
-| seasonNumber | Int | 1, 2, 3, ... |
 | createdAt | DateTime |
+
+**Unique constraints:** key
+
+**Relations:** BattlePass (1-N), BattlePassReward (1-N)
 
 ### BattlePass
 | Field | Type | Notes |
@@ -415,12 +471,16 @@
 | id | String (UUID) | Primary key |
 | seasonId | String (UUID) | Associated season |
 | characterId | String (UUID) | Player |
-| currentLevel | Int | Progress (0-100) |
-| currentXp | Int | XP in level |
-| isPremium | Boolean | Premium pass owned |
+| currentLevel | Int | Progress (0-100, default: 0) |
+| currentXp | Int | XP in level (default: 0) |
+| isPremium | Boolean | Premium pass owned (default: false) |
 | premiumUnlockedAt | DateTime? | Upgrade date |
+| createdAt | DateTime |
+| updatedAt | DateTime |
 
 **Unique constraints:** (seasonId, characterId)
+
+**Relations:** Season, Character
 
 ### BattlePassReward
 | Field | Type | Notes |
@@ -432,14 +492,7 @@
 | premiumReward | JSON | Premium track reward |
 | createdAt | DateTime |
 
-### BattlePassClaim
-| Field | Type | Notes |
-|-------|------|-------|
-| id | String (UUID) | Primary key |
-| battlePassId | String (UUID) | Character's pass |
-| rewardLevel | Int | Which level |
-| track | BPTrack | FREE, PREMIUM |
-| claimedAt | DateTime |
+**Relations:** Season
 
 ---
 
@@ -455,35 +508,39 @@
 | claimedAt | DateTime? | Claim time |
 | resetAt | DateTime | Reset timestamp |
 
-**Unique constraints:** (characterId, day) per reset cycle
+**Unique constraints:** (characterId, day, resetAt period)
+
+**Relations:** Character
 
 ### DailyQuest
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Quest template |
-| questName | String | Display name |
+| key | String | Quest template |
+| name | String | Display name |
 | description | String | Objective |
-| questType | QuestType | PVP_WINS, DUNGEON_CLEARS, etc. |
+| questType | QuestType | pvp_wins, dungeons_complete, gold_spent, item_upgrade, consumable_use, shell_game_play, gold_mine_collect |
 | targetValue | Int | How many to complete |
 | goldReward | BigInt | Completion reward |
 | gemReward | Int | Bonus reward |
 | order | Int | Display order |
 | createdAt | DateTime |
 
-### QuestDefinition
+**Unique constraints:** key
+
+### QuestProgress
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| questKey | String | Unique template key |
-| questName | String | Display name |
-| description | String | Objective text |
-| questType | QuestType | PVP_WINS, DUNGEON_CLEARS, etc. |
-| targetValue | Int | Required count |
-| goldReward | BigInt | Gold payout |
-| gemReward | Int | Gem payout |
-| createdAt | DateTime |
-| updatedAt | DateTime |
+| characterId | String (UUID) | Player |
+| questId | String (UUID) | Quest |
+| progress | Int | Current count |
+| completedAt | DateTime? | Completion timestamp |
+| resetAt | DateTime | Daily reset timestamp |
+
+**Unique constraints:** (characterId, questId, resetAt period)
+
+**Relations:** Character, DailyQuest
 
 ---
 
@@ -494,11 +551,13 @@
 |-------|------|-------|
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Player |
-| sessionType | TrainingType | AI_BATTLE, SPARRING |
+| sessionType | String | AI_BATTLE, SPARRING |
 | startedAt | DateTime |
 | finishedAt | DateTime? |
 | stamina | Int | Cost |
 | goldReward | Int | Earnings |
+
+**Relations:** Character
 
 ---
 
@@ -519,16 +578,20 @@
 
 **Unique constraints:** (characterId, slotNumber)
 
+**Relations:** Character
+
 ### MinigameSession
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Player |
-| gameType | GameType | SHELL_GAME, DICE_ROLL |
+| gameType | String | SHELL_GAME, DICE_ROLL |
 | wager | Int | Bet amount |
-| result | GameResult | WIN, LOSS |
+| result | String | WIN, LOSS |
 | payout | BigInt | Earnings or loss |
 | createdAt | DateTime |
+
+**Relations:** Character
 
 ---
 
@@ -538,13 +601,15 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| cosmeticName | String | Display name |
-| cosmeticType | CosmeticType | APPEARANCE, EFFECT, EMOTE, TITLE |
+| key | String | Unique identifier |
+| name | String | Display name |
+| type | CosmeticType | frame, title, effect, skin |
 | description | String |
-| rarity | ItemRarity | COMMON, RARE, LEGENDARY |
+| rarity | Rarity | common, uncommon, rare, epic, legendary |
 | purchasePrice | Int | Gem cost |
 | createdAt | DateTime |
+
+**Unique constraints:** key
 
 ### AppearanceSkin
 | Field | Type | Notes |
@@ -552,8 +617,10 @@
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Owner |
 | cosmeticId | String (UUID) | Skin template |
-| isPrimary | Boolean | Currently equipped |
+| isPrimary | Boolean | Currently equipped (default: false) |
 | unlockedAt | DateTime | Purchase/earn date |
+
+**Relations:** Character, Cosmetic
 
 ---
 
@@ -563,15 +630,17 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| eventName | String | Display name |
-| eventType | EventType | BOSS_RUSH, GOLD_RUSH, XP_BOOST, etc. |
+| key | String | Unique identifier |
+| name | String | Display name |
+| type | EventType | boss_rush, gold_rush, double_xp, drop_rate_boost, class_spotlight, tournament, weekend_warrior |
 | description | String | Event details |
 | multiplier | Float? | Bonus multiplier |
 | startsAt | DateTime | Event start |
 | endsAt | DateTime | Event end |
-| isActive | Boolean | Currently running |
+| isActive | Boolean | Currently running (default: false) |
 | createdAt | DateTime |
+
+**Unique constraints:** key
 
 ### MilestoneClaim
 | Field | Type | Notes |
@@ -583,6 +652,8 @@
 
 **Unique constraints:** (characterId, milestoneKey)
 
+**Relations:** Character
+
 ---
 
 ## Achievements
@@ -591,12 +662,15 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| catalogId | String | Unique identifier |
-| achievementName | String | Display name |
+| key | String | Unique identifier |
+| name | String | Display name |
 | description | String | How to earn |
-| rewardType | String | Gold, gems, cosmetic |
+| category | String | pvp, progression, ranking |
+| rewardType | String | gold, gems, cosmetic |
 | rewardAmount | Int | Value |
 | createdAt | DateTime |
+
+**Unique constraints:** key
 
 ### AchievementDefinition
 | Field | Type | Notes |
@@ -604,11 +678,13 @@
 | id | String (UUID) | Primary key |
 | achievementId | String (UUID) | Template |
 | characterId | String (UUID) | Player |
-| progress | Int | Current (e.g., wins 23/50) |
-| isUnlocked | Boolean | Earned |
+| progress | Int | Current (e.g., wins 23/50, default: 0) |
+| isUnlocked | Boolean | Earned (default: false) |
 | unlockedAt | DateTime? | Date earned |
 
 **Unique constraints:** (achievementId, characterId)
+
+**Relations:** Achievement, Character
 
 ---
 
@@ -629,11 +705,13 @@
 | id | String (UUID) | Primary key |
 | mailId | String (UUID) | Message |
 | recipientId | String (UUID) | Character |
-| isRead | Boolean | Opened |
-| itemsClaimed | Boolean | Attachments collected |
+| isRead | Boolean | Opened (default: false) |
+| itemsClaimed | Boolean | Attachments collected (default: false) |
 | readAt | DateTime? |
 | claimedAt | DateTime? |
 | deletedAt | DateTime? |
+
+**Relations:** MailMessage, Character
 
 ---
 
@@ -643,44 +721,40 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| configKey | String | e.g., "max_stamina", "daily_login_gold" |
+| key | String | e.g., "max_stamina", "daily_login_gold" |
 | value | String / JSON | Config value |
-| dataType | ConfigType | INT, FLOAT, STRING, JSON |
+| dataType | String | INT, FLOAT, STRING, JSON |
 | description | String | What it controls |
-| modifiedBy | String (UUID) | Admin who changed it |
-| modifiedAt | DateTime |
+| modifiedBy | String? | Admin ID |
+| modifiedAt | DateTime | Last change |
 
-### ConfigSnapshot
-| Field | Type | Notes |
-|-------|------|-------|
-| id | String (UUID) | Primary key |
-| snapshotName | String | Label (e.g., "Balance Pass v2") |
-| configSnapshot | JSON | Full config at moment |
-| createdBy | String (UUID) | Admin |
-| createdAt | DateTime |
-| note | String? | Change notes |
+**Unique constraints:** key
 
 ### FeatureFlag
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| flagKey | String | e.g., "enable_new_dungeon" |
-| flagType | FeatureFlagType | BOOLEAN, PERCENTAGE, SEGMENT, JSON |
+| key | String | e.g., "enable_new_dungeon" |
+| flagType | String | BOOLEAN, PERCENTAGE, SEGMENT, JSON |
 | value | String / JSON | Current value |
-| isEnabled | Boolean | Global on/off |
+| isEnabled | Boolean | Global on/off (default: false) |
 | createdAt | DateTime |
 | updatedAt | DateTime |
+
+**Unique constraints:** key
 
 ### DesignToken
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| tokenKey | String | e.g., "color_gold_primary" |
-| tokenType | TokenType | COLOR, SIZE, FONT, SPACING |
+| key | String | e.g., "color_gold_primary" |
+| type | String | COLOR, SIZE, FONT, SPACING |
 | value | String | Token value (hex, px, etc.) |
 | iosValue | String? | Platform override |
 | androidValue | String? | Platform override |
 | createdAt | DateTime |
+
+**Unique constraints:** key
 
 ---
 
@@ -700,7 +774,7 @@
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| profileName | String | Label for sim |
+| name | String | Label for sim |
 | itemStats | JSON | Item modifications |
 | createdBy | String (UUID) | Admin |
 | createdAt | DateTime |
@@ -731,7 +805,7 @@
 | price | String | Currency amount |
 | currency | String | USD, GBP, JPY, etc. |
 | receipt | String | Encrypted Apple receipt |
-| verified | Boolean | Server-verified |
+| verified | Boolean | Server-verified (default: false) |
 | createdAt | DateTime |
 
 ---
@@ -744,9 +818,11 @@
 | id | String (UUID) | Primary key |
 | characterId | String (UUID) | Owner |
 | cardIndex | Int | 0-4 (5 cards) |
-| revealed | Boolean | Flipped |
+| revealed | Boolean | Flipped (default: false) |
 | revealedAt | DateTime? |
 | resetAt | DateTime | Daily reset |
+
+**Relations:** Character
 
 ### PushToken
 | Field | Type | Notes |
@@ -754,31 +830,24 @@
 | id | String (UUID) | Primary key |
 | userId | String (UUID) | Device owner |
 | token | String | FCM / APNs token |
-| platform | Platform | IOS, ANDROID, WEB |
-| isActive | Boolean | Device still registered |
+| platform | String | IOS, ANDROID, WEB |
+| isActive | Boolean | Device still registered (default: true) |
 | registeredAt | DateTime |
 | lastUsedAt | DateTime? |
+
+**Relations:** User
 
 ### PushCampaign
 | Field | Type | Notes |
 |-------|------|-------|
 | id | String (UUID) | Primary key |
-| campaignName | String | Label |
+| name | String | Label |
 | targetSegment | String | ALL, NEW_PLAYERS, VIP |
 | title | String | Notification title |
 | body | String | Notification body |
 | deepLink | String? | Action URL |
 | sentAt | DateTime? | Delivery time |
-| createdBy | String (UUID) | Admin |
-
-### PushLog
-| Field | Type | Notes |
-|-------|------|-------|
-| id | String (UUID) | Primary key |
-| campaignId | String (UUID) | Which campaign |
-| tokenId | String (UUID) | Recipient device |
-| status | PushStatus | SENT, FAILED, OPENED |
-| sentAt | DateTime |
+| createdBy | String (UUID) | Admin ID |
 
 ### LegendaryShard
 | Field | Type | Notes |
@@ -789,62 +858,54 @@
 | quantity | Int | Count toward completion |
 | completedAt | DateTime? | Full shard earned |
 
+**Relations:** Character
+
 ---
 
 ## Enums
 
-**CharacterClass:** WARRIOR, ROGUE, MAGE, TANK
+**CharacterClass:** warrior, rogue, mage, tank
 
-**CharacterOrigin:** HUMAN, ORC, SKELETON, DEMON, DOGFOLK
+**CharacterOrigin:** human, orc, skeleton, demon, dogfolk
 
-**CharacterGender:** MALE, FEMALE
+**CharacterGender:** male, female
 
-**ItemType:** WEAPON, HELMET, CHEST, GLOVES, LEGS, BOOTS, ACCESSORY, AMULET, BELT, RELIC, NECKLACE, RING, CONSUMABLE
+**ItemType:** weapon, helmet, chest, gloves, legs, boots, accessory, amulet, belt, relic, necklace, ring, consumable
 
-**ItemRarity:** COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
+**Rarity:** common, uncommon, rare, epic, legendary
 
-**DamageType:** PHYSICAL, MAGICAL, TRUE_DAMAGE, POISON
+**EquippedSlot:** weapon, weapon_offhand, helmet, chest, gloves, legs, boots, accessory, amulet, belt, relic, necklace, ring, ring2
 
-**BonusType:** FLAT_STAT, PERCENT_STAT, CONDITIONAL, TRIGGER
+**ConsumableType:** stamina_potion_small, stamina_potion_medium, stamina_potion_large, health_potion_small, health_potion_medium, health_potion_large
 
-**EquipSlot:** WEAPON, HEAD, CHEST, HANDS, LEGS, FEET, ACCESSORY, AMULET, BELT, RELIC, NECK, RING_1, RING_2
+**QuestType:** pvp_wins, dungeons_complete, gold_spent, item_upgrade, consumable_use, shell_game_play, gold_mine_collect
 
-**ConsumableType:** HEALTH_POTION, STAMINA_RESTORE, BUFF_ATTACK, BUFF_DEFENSE, BUFF_XP, BUFF_GOLD
+**CosmeticType:** frame, title, effect, skin
 
-**BattleResult:** WIN, LOSS, DRAW
+**EventType:** boss_rush, gold_rush, double_xp, drop_rate_boost, class_spotlight, tournament, weekend_warrior
 
-**DifficultyTier:** EASY, NORMAL, HARD, NIGHTMARE
+**DungeonDifficulty:** easy, normal, hard, nightmare, rush
 
-**DungeonStatus:** IN_PROGRESS, COMPLETED, ABANDONED, FAILED
+**DungeonType:** story, side, event, endgame
 
-**QuestType:** PVP_WINS, DUNGEON_CLEARS, SKILL_USES, LEVEL_UP, EQUIP_ITEMS
+**SkillDamageType:** physical, magical, true_damage, poison
 
-**TrainingType:** AI_BATTLE, SPARRING
+**SkillTargetType:** single_enemy, self_buff, aoe
 
-**GameType:** SHELL_GAME, DICE_ROLL
+**PassiveBonusType:** flat_stat, percent_stat, flat_damage, percent_damage, flat_crit_chance, flat_dodge_chance, flat_hp, percent_hp, flat_armor, flat_magic_resist, percent_armor, percent_magic_resist, lifesteal, cooldown_reduction, damage_reduction
 
-**GameResult:** WIN, LOSS
+**ChallengeStatus:** pending, accepted, declined, expired, completed
 
-**CosmeticType:** APPEARANCE, EFFECT, EMOTE, TITLE
+**FriendshipStatus:** pending, accepted, blocked
 
-**UserRole:** ADMIN, MODERATOR, PLAYER
+**UserRole:** admin, moderator, player
 
-**BPTrack:** FREE, PREMIUM
-
-**Platform:** IOS, ANDROID, WEB
-
-**PushStatus:** SENT, FAILED, OPENED
-
-**TokenType:** COLOR, SIZE, FONT, SPACING
-
-**FeatureFlagType:** BOOLEAN, PERCENTAGE, SEGMENT, JSON
-
-**ConfigType:** INT, FLOAT, STRING, JSON
-
-**FriendshipStatus:** PENDING, ACCEPTED, BLOCKED
-
-**ChallengeStatus:** PENDING, ACCEPTED, DECLINED, EXPIRED, COMPLETED
-
-**EventType:** BOSS_RUSH, GOLD_RUSH, XP_BOOST, DROP_BOOST, PVP_TOURNAMENT
-
-**MailTargetType:** USER, SEGMENT, BROADCAST
+**Notes:**
+- Character stats are 8-dimensional: STR, AGI, VIT, END, INT, WIS, LUK, CHA (not 6)
+- User authentication uses generic `authProvider` field, not separate googleId/appleId
+- ConsumableType values include size variants (small/medium/large)
+- QuestType has 7 values reflecting actual quest mechanics
+- EventType has 7 event types for variety in live operations
+- BossAbility is a separate model for granular boss ability management
+- EquippedSlot includes ring2 for dual-ring support
+- PassiveBonusType includes comprehensive damage/defense scaling and utility effects

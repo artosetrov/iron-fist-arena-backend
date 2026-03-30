@@ -231,9 +231,9 @@ struct ArenaComparisonSheet: View {
                 Text(item.rarity.displayName.prefix(1).uppercased())
                     .font(DarkFantasyTheme.body(size: 9).bold())
                     .foregroundStyle(.white)
-                    .padding(3)
+                    .padding(LayoutConstants.spaceXS)
                     .background(Circle().fill(DarkFantasyTheme.rarityColor(for: item.rarity)))
-                    .padding(4)
+                    .padding(LayoutConstants.spaceSM)
             }
 
             // Item name

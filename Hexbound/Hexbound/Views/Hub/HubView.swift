@@ -1541,7 +1541,7 @@ struct FloatingActionIcon: View {
                                 ),
                                 lineWidth: 1
                             )
-                            .padding(3)
+                            .padding(LayoutConstants.spaceXS)
                     )
                     .shadow(color: accentColor.opacity(0.25), radius: 8, y: 2)
                     .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
@@ -1696,7 +1696,7 @@ struct FloatingSoundToggle: View {
                         ),
                         lineWidth: 1
                     )
-                    .padding(3)
+                    .padding(LayoutConstants.spaceXS)
             )
             .shadow(color: accentColor.opacity(glowOpacity), radius: glowRadius, y: 2)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)

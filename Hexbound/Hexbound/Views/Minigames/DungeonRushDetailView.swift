@@ -130,7 +130,7 @@ struct DungeonRushDetailView: View {
                             .overlay(
                                 Circle()
                                     .stroke(DarkFantasyTheme.gold.opacity(0.12), lineWidth: 1)
-                                    .padding(6)
+                                    .padding(LayoutConstants.spaceSM)
                             )
                             .shadow(color: DarkFantasyTheme.gold.opacity(portalGlow ? 0.35 : 0.15), radius: 30)
                             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 5)
@@ -277,8 +277,8 @@ struct DungeonRushDetailView: View {
                 let opacity = 0.08 + sin(phase * 0.02 + seed) * 0.12
 
                 let color = i % 3 == 0
-                    ? Color(red: 0.83, green: 0.65, blue: 0.22).opacity(opacity)
-                    : Color(red: 0.55, green: 0.36, blue: 0.96).opacity(opacity * 0.7)
+                    ? DarkFantasyTheme.gold.opacity(opacity)
+                    : DarkFantasyTheme.purple.opacity(opacity * 0.7)
 
                 context.fill(
                     Path(ellipseIn: CGRect(x: x, y: y, width: particleSize, height: particleSize)),
@@ -643,7 +643,7 @@ struct DungeonRushDetailView: View {
                                     .font(.system(size: 6, weight: .bold))
                                     .foregroundStyle(DarkFantasyTheme.success)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                                    .padding(2)
+                                    .padding(LayoutConstants.space2XS)
                             }
                         }
                         .frame(width: isCurrent ? 40 : 30, height: isCurrent ? 48 : 36)

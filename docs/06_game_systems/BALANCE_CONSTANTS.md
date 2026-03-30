@@ -179,6 +179,21 @@ At level 50:
 - Must prestige to level up again
 - Prestige resets level to 1, keeps XP
 
+### Stat Effects
+
+| Stat | Primary Effect | Secondary Effect |
+|------|---|---|
+| STR | Damage scaling | — |
+| AGI | Attack speed, Crit % | — |
+| VIT | Max HP scaling | — |
+| END | Armor scaling | — |
+| INT | Magic damage scaling | — |
+| WIS | Magic resist scaling | — |
+| **LUK** | **Drop rate (+0.3% per point)** | **Dodge (+0.1 per point)** |
+| CHA | Gold rewards (tiered diminishing) | — |
+
+**LUK Note:** Luck now contributes to dodge chance at 0.1 per point, providing a defensive stat synergy beyond loot drops.
+
 ---
 
 ## Prestige System
@@ -479,24 +494,26 @@ BP XP for Level N = 100 + N × 50
 
 ## PvP Matchmaking Parameters
 
-Matchmaking uses a **3-phase cascade** — each phase widens the search if too few candidates are found.
+Matchmaking uses a **4-phase cascade** — each phase widens the search if too few candidates are found.
 
 | Parameter | `/pvp/opponents` | `/pvp/find-match` |
 |-----------|-------------------|-------------------|
 | Max returned | 5 | 3 |
 | Level range | ±10 | ±10 |
 | Gear score tolerance | ±80% | ±80% |
+| Rating range (Phase 1) | ±200 ELO | ±200 ELO |
 | Display (iOS) | 2 at a time (carousel) | N/A |
 
-**Phase 1:** Level ±10 AND gear score ±80% → `take: 15`
-**Phase 2 (fallback):** Level ±10 only (no gear filter) → merge without duplicates
-**Phase 3 (final fallback):** ANY character (no level/gear filter) → merge without duplicates
+**Phase 1 (tightest):** Level ±10 AND Gear score ±80% AND Rating ±200 ELO → `take: 15`
+**Phase 2:** Level ±10 AND Gear score ±80% (drops rating filter) → merge without duplicates
+**Phase 3:** Level ±10 only (drops gear filter) → merge without duplicates
+**Phase 4 (final fallback):** ANY character (no level/gear/rating filter) → merge without duplicates
 
-Sorting: closest `levelDiff` first, then closest `gearDiff`. Top N returned.
+Sorting: closest `ratingDiff` first, then closest `levelDiff`, then closest `gearDiff`. Top N returned.
 
-**Why wide range:** Early-stage player pool is small. The cascade ensures opponents are always shown, with closest matches ranked first. Tighten ranges as player base grows.
+**Why wide range:** Early-stage player pool is small. The 4-phase cascade ensures opponents are always shown, with closest matches ranked first. As player base grows, rating filtering in Phase 1 provides more balanced matchups while fallback phases guarantee selection.
 
-**Note:** Matchmaking does NOT use `pvpRating` for filtering — rating is display-only. If rating-based matchmaking is added, see archive audit for smurf/manipulation concerns.
+**Rating in Matchmaking:** Phase 1 now uses `pvpRating` (±200 ELO) for balanced early matches. Phases 2–4 drop rating filters for broader fallback pools. This prevents smurf matchups while keeping the pool diverse when needed.
 
 ---
 

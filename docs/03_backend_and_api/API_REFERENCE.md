@@ -272,43 +272,74 @@
 
 ## Admin Endpoints
 
-All endpoints below require `admin` role. Key admin capabilities:
+All endpoints below require `admin` role. Admin operations are split between two codebases:
+- **Backend API** (`/backend/src/app/api/admin/*`): Core admin operations, moderation, monitoring
+- **Admin Panel API** (`/admin/src/app/api/*`): Admin dashboard CRUD operations (items, events, dungeons, etc.)
+
+### Backend Admin API (Core Operations)
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | /admin/users | Search/browse users |
-| POST | /admin/users/[id]/ban | Ban user |
-| POST | /admin/users/[id]/unban | Unban user |
-| POST | /admin/users/[id]/grant | Grant gold/gems/items |
-| POST | /admin/users/[id]/reset | Reset inventory |
-| GET/POST | /admin/items | CRUD items |
-| GET/POST | /admin/consumables | CRUD consumables |
-| GET/POST | /admin/skills | CRUD skills |
-| GET/POST | /admin/passives | CRUD passives |
-| GET/POST | /admin/achievements | CRUD achievements |
-| GET/POST | /admin/events | CRUD events |
-| GET/POST | /admin/seasons | CRUD seasons |
-| GET/POST | /admin/dungeons | CRUD dungeons |
-| GET/POST | /admin/appearances | CRUD cosmetics |
+| POST | /admin/ban | Ban user (expects `{user_id, reason}`) |
+| POST | /admin/unban | Unban user (expects `{user_id}`) |
 | GET | /admin/economy | Economy overview |
 | GET | /admin/matches | Browse PvP matches |
 | GET | /admin/stats | Game statistics |
-| GET/POST | /admin/design-tokens | Manage UI tokens |
-| GET/POST | /admin/mail | Broadcast/segment mail |
-| POST | /admin/push/campaign | Create push campaign |
-| GET/POST | /admin/feature-flags | Toggle features |
-| GET/POST | /admin/config | Manage game config |
-| POST | /admin/config/snapshot | Save/rollback config |
-| GET | /admin/balance/simulate | Run balance sims |
-| GET/POST | /admin/item-balance/config | Balance config values |
+| GET | /admin/achievements | View/search achievements |
+| POST | /admin/achievements | Create/update achievement |
+| GET | /admin/skills | View/search skills |
+| POST | /admin/skills | Create/update skill |
+| GET | /admin/passives | View passive tree |
+| POST | /admin/passives | Create/update passive |
+| POST | /admin/passives/connections | Manage passive connections |
+| GET | /admin/characters | Character lookup |
+| GET | /admin/design-tokens | Get UI theme tokens |
+| POST | /admin/design-tokens | Update UI tokens |
+| POST | /admin/events | Create/send events |
+| POST | /admin/seasons | Create/manage season |
+| GET/POST | /admin/hub-layout | Manage hub building positions |
+| GET/POST | /admin/dungeon-map-layout | Manage dungeon node positions |
+| GET | /admin/iap | View IAP analytics |
+| POST | /admin/item-balance/config | Update balance config |
 | GET | /admin/item-balance/power-scores | Calculate item power scores |
-| GET/PUT | /admin/item-balance/profiles | CRUD balance profiles |
-| POST | /admin/item-balance/suggest | Balance suggestions |
+| GET | /admin/item-balance/profiles | Get balance profiles |
+| POST | /admin/item-balance/suggest | Generate balance suggestions |
 | POST | /admin/item-balance/apply-suggestions | Apply balance changes |
 | POST | /admin/item-balance/validate | Validate balance changes |
 | POST | /admin/item-balance/simulate/combat | Combat simulation |
 | POST | /admin/item-balance/simulate/item-impact | Item impact analysis |
 | POST | /admin/item-balance/simulate/matchups | Matchup simulation |
 | GET | /admin/item-balance/simulation-history | Simulation history |
-| GET/POST | /admin/dungeon-map-layout | Dungeon node positions |
-| GET/POST | /admin/hub-layout | Hub building positions |
+
+### Admin Panel API (Dashboard CRUD)
+
+Admin dashboard operations are handled by the Admin Panel's own Next.js application (`/admin`). These are NOT backend API routes but are called by the admin dashboard frontend:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET/POST | /api/items | CRUD items |
+| GET/POST | /api/events | CRUD events |
+| GET/POST | /api/seasons | CRUD seasons |
+| GET/POST | /api/dungeons | CRUD dungeons |
+| GET | /api/dungeons/[id] | Get dungeon by ID |
+| GET/POST | /api/dungeon-map-layout | Manage dungeon layout |
+| GET/POST | /api/admin/item-balance/* | Balance configuration suite |
+| POST | /api/upload | Upload assets (images) |
+| POST | /api/settings/role | Manage admin roles |
+| POST | /api/auth/login | Admin login |
+| POST | /api/auth/logout | Admin logout |
+
+### NOT IMPLEMENTED
+
+The following endpoints are documented in legacy docs but do not exist:
+- `POST /admin/users/[id]/grant` — Grant gold/gems/items (not implemented)
+- `POST /admin/users/[id]/reset` — Reset inventory (not implemented)
+- `GET/POST /admin/consumables` — CRUD consumables (not implemented)
+- `GET/POST /admin/appearances` — CRUD cosmetics (not implemented)
+- `GET/POST /admin/mail` — Broadcast/segment mail (not implemented)
+- `POST /admin/push/campaign` — Create push campaign (not implemented)
+- `GET/POST /admin/feature-flags` — Toggle features (not implemented)
+- `GET/POST /admin/config` — Manage game config (not implemented)
+- `POST /admin/config/snapshot` — Save/rollback config (not implemented)
+- `GET /admin/balance/simulate` — Run balance sims (not implemented)
