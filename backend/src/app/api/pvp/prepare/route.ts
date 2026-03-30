@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { calculateCurrentHp } from '@/lib/game/hp-regen'
+// HP regen intentionally NOT used in Arena — players must use potions
 import {
   getStaminaConfig,
   getCombatConfig,
@@ -106,36 +106,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Calculate current stamina and HP with regen
-    const [staminaResult, hpResult] = await Promise.all([
-      calculateCurrentStamina(
-        attacker.currentStamina,
-        attacker.maxStamina,
-        attacker.lastStaminaUpdate ?? new Date()
-      ),
-      calculateCurrentHp(
-        attacker.currentHp,
-        attacker.maxHp,
-        attacker.lastHpUpdate ?? new Date()
-      ),
-    ])
+    // Calculate current stamina with regen (HP does NOT regen in Arena — use potions)
+    const staminaResult = await calculateCurrentStamina(
+      attacker.currentStamina,
+      attacker.maxStamina,
+      attacker.lastStaminaUpdate ?? new Date()
+    )
     const currentStamina = staminaResult.stamina
-    const currentHp = hpResult.hp
+    const currentHp = attacker.currentHp
 
-    // Persist regen updates to DB if changed
-    const regenUpdates: Record<string, unknown> = {}
+    // Persist stamina regen to DB if changed
     if (staminaResult.updated) {
-      regenUpdates.currentStamina = currentStamina
-      regenUpdates.lastStaminaUpdate = new Date()
-    }
-    if (hpResult.updated) {
-      regenUpdates.currentHp = currentHp
-      regenUpdates.lastHpUpdate = new Date()
-    }
-    if (Object.keys(regenUpdates).length > 0) {
       await prisma.character.update({
         where: { id: character_id },
-        data: regenUpdates,
+        data: {
+          currentStamina,
+          lastStaminaUpdate: new Date(),
+        },
       })
     }
 
@@ -151,9 +138,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check minimum HP threshold (10% of maxHp) — block fights when near death
-    const minHpRequired = Math.ceil(attacker.maxHp * 0.1)
-    console.log(`[HP-SYNC] pvp/prepare: dbHp=${attacker.currentHp}, regenHp=${currentHp}, maxHp=${attacker.maxHp}, minRequired=${minHpRequired}, regenUpdated=${hpResult.updated}`)
+    // Check minimum HP threshold (30% of maxHp) — block fights when low HP, use potions to heal
+    const minHpRequired = Math.ceil(attacker.maxHp * 0.3)
+    console.log(`[HP-SYNC] pvp/prepare: currentHp=${currentHp}, maxHp=${attacker.maxHp}, minRequired=${minHpRequired}`)
     if (currentHp < minHpRequired) {
       console.warn('pvp prepare: HP check failed', { characterId: character_id, currentHp, minHpRequired, maxHp: attacker.maxHp })
       return NextResponse.json(

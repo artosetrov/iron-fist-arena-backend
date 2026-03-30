@@ -66,9 +66,9 @@ final class ArenaViewModel {
     }
 
     var canFight: Bool {
-        // Match backend threshold: 10% of maxHp (was 30% — caused "Not enough health" mismatch)
+        // Match backend threshold: 30% of maxHp — use potions to heal
         let hpPct = character?.hpPercentage ?? 1.0
-        let hpOK = hpPct >= 0.10
+        let hpOK = hpPct >= 0.30
         #if DEBUG
         if let c = character {
             print("[HP-SYNC] canFight: hp=\(c.currentHp)/\(c.maxHp) (\(Int(hpPct * 100))%), hpOK=\(hpOK), stamina=\(currentStamina)")
