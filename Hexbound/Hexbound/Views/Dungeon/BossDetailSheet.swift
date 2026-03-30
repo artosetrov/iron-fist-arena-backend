@@ -16,6 +16,8 @@ struct BossDetailSheet: View {
     var isNavigationMode: Bool = true
 
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedLootForModal: LootPreview? = nil
+    @State private var showLootModal = false
 
     private var stateColor: Color {
         switch state {
@@ -121,13 +123,36 @@ struct BossDetailSheet: View {
                 .padding(.trailing, LayoutConstants.screenPadding)
             }
         }
+        // Loot detail modal — renders ON TOP of boss detail (FIX #4)
+        .overlay {
+            if showLootModal, let loot = selectedLootForModal {
+                LootPreviewSheet(loot: loot, onClose: {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        showLootModal = false
+                    }
+                })
+                .transition(.opacity)
+                .zIndex(100)
+            }
+        }
         .modifier(BossDetailPresentationModifier(isNavigationMode: isNavigationMode))
         .navigationBarBackButtonHidden(isNavigationMode)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             if isNavigationMode {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    HubLogoButton()
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Bosses")
+                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        }
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    }
+                    .buttonStyle(.plain)
                 }
                 ToolbarItem(placement: .principal) {
                     Text(boss.name.uppercased())
@@ -405,7 +430,10 @@ struct BossDetailSheet: View {
             ) {
                 ForEach(boss.loot) { lootItem in
                     ItemCardView(item: lootItem.toItem(), context: .loot) {
-                        onLootTap(lootItem)
+                        selectedLootForModal = lootItem
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showLootModal = true
+                        }
                     }
                 }
             }

@@ -405,9 +405,10 @@ struct HeroDetailView: View {
         VStack(spacing: LayoutConstants.sectionGap) {
             // Stat Points Banner (unified component)
             VStack(spacing: LayoutConstants.spaceSM) {
-                if vm.availablePoints > 0 {
-                    StatPointsBadge(points: vm.availablePoints, style: .banner)
-                }
+                // Always render badge to prevent layout jump — hide via opacity
+                StatPointsBadge(points: max(vm.availablePoints, 0), style: .banner)
+                    .opacity(vm.availablePoints > 0 ? 1 : 0)
+                    .animation(.easeOut(duration: 0.2), value: vm.availablePoints > 0)
 
                 // Grouped Stats
                 ForEach(StatGroup.allCases, id: \.self) { group in
@@ -422,8 +423,8 @@ struct HeroDetailView: View {
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-            // Extra bottom padding when sticky bar is visible
-            .padding(.bottom, vm.hasChanges ? 80 : 0)
+            // Extra bottom padding — always reserve when stat points exist to prevent scroll jump
+            .padding(.bottom, (appState.currentCharacter?.statPoints ?? 0) > 0 ? 80 : 0)
 
             // Respec Stats — directly after stat list
             respecStatsCard(vm: vm)
@@ -456,7 +457,7 @@ struct HeroDetailView: View {
         }
     }
 
-    // MARK: - Stat Cell (3-row layout)
+    // MARK: - Stat Cell (icon-left layout, no GeometryReader)
 
     @ViewBuilder
     private func statCell(_ stat: StatType, vm: CharacterViewModel, char: Character) -> some View {
@@ -466,178 +467,187 @@ struct HeroDetailView: View {
         let hasPoints = (appState.currentCharacter?.statPoints ?? 0) > 0
         let isClassPrimary = StatType.primaryStats(for: char.characterClass).contains(stat)
 
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-            // ── Row 1: Icon + Name + Info + Spacer + [-] Value [+] ──
-            HStack(spacing: LayoutConstants.spaceXS) {
-                Image(stat.iconAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 32, height: 32)
+        HStack(alignment: .center, spacing: LayoutConstants.spaceMD) {
+            // ── Left: Large icon ──
+            Image(stat.iconAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 56, height: 56)
 
-                Text(stat.fullName)
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(color)
-                    .lineLimit(1)
+            // ── Right: Name row + bar + derived ──
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
 
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        tooltipStat = tooltipStat == stat ? nil : stat
+                // ── Row 1: Name + Info + Badge + Spacer + [-] Value [+] ──
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text(stat.fullName)
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(color)
+                        .lineLimit(1)
+
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            tooltipStat = tooltipStat == stat ? nil : stat
+                        }
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 14)) // SF Symbol
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 14)) // SF Symbol — enlarged from 11
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                }
-                .buttonStyle(.plain)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-                .accessibilityLabel("\(stat.fullName) info")
+                    .buttonStyle(.plain)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel("\(stat.fullName) info")
 
-                // Class recommendation badge
-                if isClassPrimary {
-                    Text(char.characterClass.displayName.uppercased())
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
-                }
+                    if isClassPrimary {
+                        Text(char.characterClass.displayName.uppercased())
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
+                    }
 
-                Spacer(minLength: 4)
+                    Spacer(minLength: 4)
 
-                // Minus button (only when pending delta > 0)
-                if delta > 0 {
+                    // Minus button — always reserves space to prevent layout shift
                     Button { HapticManager.light(); vm.decrement(stat) } label: {
                         Image(systemName: "minus")
                             .font(.system(size: 15, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.danger)
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
                     .buttonStyle(.plain)
-                    .frame(width: 48, height: 48)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
+                    .opacity(delta > 0 ? 1 : 0)
+                    .disabled(delta <= 0)
+                    .animation(.easeOut(duration: 0.15), value: delta > 0)
                     .accessibilityLabel("Decrease \(stat.fullName)")
-                }
+                    .accessibilityHidden(delta <= 0)
 
-                // Value display
-                NumberTickUpText(
-                    value: value,
-                    color: delta > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textPrimary,
-                    font: DarkFantasyTheme.section(size: LayoutConstants.textSection)
-                )
-                .frame(minWidth: 36, alignment: .trailing)
+                    // Value display — large 28pt
+                    NumberTickUpText(
+                        value: value,
+                        color: delta > 0 ? DarkFantasyTheme.textSuccess : DarkFantasyTheme.textPrimary,
+                        font: DarkFantasyTheme.title
+                    )
+                    .frame(minWidth: 40, alignment: .trailing)
 
-                // Plus button
-                if hasPoints {
+                    // Plus button — always reserves space when stat points exist
                     Button { HapticManager.selection(); vm.increment(stat) } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .bold)) // SF Symbol
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
                     .buttonStyle(.plain)
-                    .frame(width: 48, height: 48)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
-                    .disabled(vm.availablePoints <= 0)
+                    .opacity(hasPoints ? 1 : 0)
+                    .disabled(vm.availablePoints <= 0 || !hasPoints)
                     .accessibilityLabel("Increase \(stat.fullName)")
+                    .accessibilityHidden(!hasPoints)
                 }
-            }
 
-            // ── Row 1.5: Two-zone progress bar ──
-            // Left half = base zone (0–10, dim gold)
-            // Right half = bonus zone (10+, bright gold)
-            // Separator always visible at midpoint as base/bonus boundary
-            GeometryReader { geo in
-                let total = geo.size.width
-                let half = total * 0.5
-                let baseMax: CGFloat = 10
-                let baseVal = min(CGFloat(value), baseMax)
-                let bonusVal = max(CGFloat(0), CGFloat(value) - baseMax)
-                let baseFill = (baseVal / baseMax) * half
-                let bonusFill = min(bonusVal, baseMax) / baseMax * half
+                // ── Row 2: Two-zone progress bar (pure HStack, no GeometryReader) ──
+                // Base zone = 0–10, bonus zone = 10–20.
+                // Each zone is 50% of total bar width. Fill % within each zone.
+                let baseMax: Double = 10
+                let basePct = min(Double(value), baseMax) / baseMax   // 0…1 within left half
+                let bonusPct = max(0, Double(value) - baseMax) / baseMax // 0…1 within right half
 
-                ZStack(alignment: .leading) {
+                ZStack {
                     // Track background
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.bgTertiary)
 
-                    // Fill zones — clipped to track shape as a unit
-                    ZStack(alignment: .leading) {
-                        // Base zone (0–10): dim gold
-                        if baseFill > 0 {
-                            LinearGradient(
-                                colors: [DarkFantasyTheme.statBarFill.opacity(0.55), DarkFantasyTheme.statBarFill],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                            .frame(width: baseFill)
+                    // Two-zone fill
+                    HStack(spacing: 0) {
+                        // Left half: base zone
+                        ZStack(alignment: .leading) {
+                            Color.clear
+                            if basePct > 0 {
+                                LinearGradient(
+                                    colors: [DarkFantasyTheme.statBarFill.opacity(0.55), DarkFantasyTheme.statBarFill],
+                                    startPoint: .leading, endPoint: .trailing
+                                )
+                                .mask(alignment: .leading) {
+                                    Rectangle()
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .scaleEffect(x: basePct, anchor: .leading)
+                                }
+                            }
                         }
-                        // Bonus zone (10+): bright gold, anchored at the midpoint
-                        if bonusFill > 0 {
-                            HStack(spacing: 0) {
-                                Color.clear.frame(width: half)
+
+                        // Separator
+                        Rectangle()
+                            .fill(DarkFantasyTheme.bgAbyss.opacity(value >= 10 ? 0.9 : 0.35))
+                            .frame(width: 1.5)
+
+                        // Right half: bonus zone
+                        ZStack(alignment: .leading) {
+                            Color.clear
+                            if bonusPct > 0 {
                                 LinearGradient(
                                     colors: [DarkFantasyTheme.statBoosted.opacity(0.65), DarkFantasyTheme.statBoosted],
                                     startPoint: .leading, endPoint: .trailing
                                 )
-                                .frame(width: bonusFill)
+                                .mask(alignment: .leading) {
+                                    Rectangle()
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .scaleEffect(x: bonusPct, anchor: .leading)
+                                }
                             }
                         }
                     }
-                    .frame(width: total, alignment: .leading)
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                     .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
-                    .animation(.easeOut(duration: MotionConstants.tickUpShort), value: value)
-
-                    // Zone separator — brighter when bonus is active
-                    Rectangle()
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(value >= Int(baseMax) ? 0.9 : 0.35))
-                        .frame(width: 1.5)
-                        .offset(x: half - 0.75)
                 }
-            }
-            .frame(height: 8)
+                .frame(height: 8)
+                .drawingGroup() // Flatten to Metal texture — prevents layout reflow on fill change
+                .animation(.easeOut(duration: MotionConstants.tickUpShort), value: value)
 
-            // ── Row 2: Derived stat + benefit pills (moved here from Row 1) ──
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Text(vm.primaryDerivedLabel(for: stat))
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                    .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
+                // ── Row 3: Derived stat + benefit pills ──
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text(vm.primaryDerivedLabel(for: stat))
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
 
-                if hasPoints {
-                    HStack(spacing: 4) {
-                        ForEach(vm.perPointBenefits(for: stat), id: \.self) { hint in
-                            Text(hint)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                                .foregroundStyle(DarkFantasyTheme.textSuccess)
-                                .padding(.horizontal, LayoutConstants.spaceXS)
-                                .padding(.vertical, LayoutConstants.space2XS)
-                                .background(DarkFantasyTheme.success.opacity(0.1))
-                                .clipShape(Capsule())
+                    if hasPoints {
+                        HStack(spacing: 4) {
+                            ForEach(vm.perPointBenefits(for: stat), id: \.self) { hint in
+                                Text(hint)
+                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .foregroundStyle(DarkFantasyTheme.textSuccess)
+                                    .padding(.horizontal, LayoutConstants.spaceXS)
+                                    .padding(.vertical, LayoutConstants.space2XS)
+                                    .background(DarkFantasyTheme.success.opacity(0.1))
+                                    .clipShape(Capsule())
+                            }
                         }
                     }
                 }
-            }
-            .padding(.leading, 30) // Align under name (past icon)
 
-            // ── Row 3: Tooltip (conditional, on info tap) ──
-            if tooltipStat == stat {
-                Text(stat.description)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .padding(LayoutConstants.spaceSM)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(DarkFantasyTheme.bgTertiary)
-                    .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: color.opacity(0.08))
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .stroke(color.opacity(0.2), lineWidth: 0.5)
-                    )
-                    .transition(.opacity)
+                // ── Row 4: Tooltip (conditional, on info tap) ──
+                if tooltipStat == stat {
+                    Text(stat.description)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .padding(LayoutConstants.spaceSM)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(DarkFantasyTheme.bgTertiary)
+                        .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: color.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .stroke(color.opacity(0.2), lineWidth: 0.5)
+                        )
+                        .transition(.opacity)
+                }
             }
         }
-        .padding(LayoutConstants.spaceSM + 2)
+        .padding(LayoutConstants.spaceMS)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -979,7 +989,7 @@ struct HeroDetailView: View {
 
         if lowStamina && !hasStaminaPotion {
             lowResourceBanner(
-                icon: "pot_stamina_small",
+                icon: "stamina_potion_small",
                 sfFallback: "bolt.fill",
                 title: "Stamina is low",
                 subtitle: "Buy stamina potions to keep fighting",
@@ -1001,79 +1011,58 @@ struct HeroDetailView: View {
         ctaText: String,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
-            VStack(spacing: LayoutConstants.spaceMS) {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    if UIImage(named: icon) != nil {
-                        Image(icon)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 40, height: 40)
-                    } else {
-                        Image(systemName: sfFallback)
-                            .font(.system(size: 28))
-                            .foregroundStyle(accentColor)
-                            .frame(width: 40, height: 40)
-                    }
-
-                    VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                        Text(title)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                            .foregroundStyle(accentColor)
-                        Text(subtitle)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer(minLength: 0)
+        VStack(spacing: LayoutConstants.spaceMS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                if UIImage(named: icon) != nil {
+                    Image(icon)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                } else {
+                    Image(systemName: sfFallback)
+                        .font(.system(size: 28))
+                        .foregroundStyle(accentColor)
+                        .frame(width: 40, height: 40)
                 }
 
-                // CTA button — full-width, ornamental style
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "cart.fill")
-                        .font(.system(size: 14, weight: .bold))
-                    Text(ctaText)
-                        .font(DarkFantasyTheme.buttonLabel)
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(title)
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .foregroundStyle(accentColor)
+                    Text(subtitle)
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .lineLimit(2)
                 }
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
-                .background(
-                    LinearGradient(
-                        colors: [accentColor, accentColor.opacity(0.8)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
-                .surfaceLighting(cornerRadius: LayoutConstants.buttonRadius)
-                .innerBorder(cornerRadius: LayoutConstants.buttonRadius - 1, inset: 1, color: accentColor.opacity(0.3))
-                .cornerBrackets(color: accentColor.opacity(0.5), length: 10, thickness: 1.5)
-                .cornerDiamonds(color: accentColor.opacity(0.4), size: 4)
-                .compositingGroup()
+
+                Spacer(minLength: 0)
             }
-            .padding(LayoutConstants.cardPadding)
-            .background(
-                RadialGlowBackground(
-                    baseColor: accentColor.opacity(0.08),
-                    glowColor: accentColor.opacity(0.04),
-                    glowIntensity: 0.3,
-                    cornerRadius: LayoutConstants.panelRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: accentColor.opacity(0.10))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
-            )
-            .cornerBrackets(color: accentColor.opacity(0.4), length: 12, thickness: 1.5)
-            .compositingGroup()
-            .shadow(color: accentColor.opacity(0.1), radius: 4, y: 1)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+
+            // CTA — proper ButtonStyle from design system
+            Button(action: action) {
+                Text(ctaText)
+            }
+            .buttonStyle(.secondary)
         }
-        .buttonStyle(.scalePress(0.97))
+        .padding(LayoutConstants.cardPadding)
+        .background(
+            RadialGlowBackground(
+                baseColor: accentColor.opacity(0.08),
+                glowColor: accentColor.opacity(0.04),
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: accentColor.opacity(0.10))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(accentColor.opacity(0.3), lineWidth: 1.5)
+        )
+        .cornerBrackets(color: accentColor.opacity(0.4), length: 12, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: accentColor.opacity(0.1), radius: 4, y: 1)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 

@@ -11,7 +11,6 @@ struct DungeonInfoSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
-    @State private var selectedBoss: BossInfo?
 
     // MARK: - Derived
 
@@ -58,10 +57,7 @@ struct DungeonInfoSheet: View {
                             .padding(.vertical, LayoutConstants.spaceMD)
                         loreSection
 
-                        // ── Boss list ─────────────────────────────
-                        GoldDivider()
-                            .padding(.vertical, LayoutConstants.spaceMD)
-                        bossListSection
+                        // Boss list removed — already shown on main dungeon page (FIX #6)
 
                         Spacer(minLength: onEnter != nil ? 120 : 40)
                     }
@@ -74,18 +70,7 @@ struct DungeonInfoSheet: View {
         .safeAreaInset(edge: .bottom) {
             if onEnter != nil { enterCTA }
         }
-        .sheet(item: $selectedBoss) { boss in
-            BossDetailSheet(
-                boss: boss,
-                state: bossStateFor(boss),
-                bossIndex: dungeon.bosses.firstIndex(where: { $0.id == boss.id }) ?? 0,
-                stamina: currentStamina,
-                energyCost: dungeon.energyCost,
-                isFighting: false,
-                onFight: {},
-                onLootTap: { _ in }
-            )
-        }
+        // Boss detail sheet removed — boss list is on main dungeon page (FIX #6)
     }
 
     // MARK: - Portrait Header
@@ -423,201 +408,7 @@ struct DungeonInfoSheet: View {
         }
     }
 
-    // MARK: - Boss List
-
-    private func bossStateFor(_ boss: BossInfo) -> BossState {
-        if boss.id <= defeatedCount { return .defeated }
-        if boss.id == defeatedCount + 1 { return .current }
-        return .locked
-    }
-
-    @ViewBuilder
-    private var bossListSection: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            sectionHeader(label: "BOSSES (\(defeatedCount)/\(dungeon.totalBosses))")
-
-            ForEach(dungeon.bosses) { boss in
-                let state = bossStateFor(boss)
-                bossCard(boss, state: state)
-                    .opacity(state == .locked ? 0.42 : 1.0)
-                    .onTapGesture {
-                        guard state != .locked else { return }
-                        HapticManager.light()
-                        selectedBoss = boss
-                    }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func bossCard(_ boss: BossInfo, state: BossState) -> some View {
-        let isDefeated = state == .defeated
-        let isCurrent  = state == .current
-        let cardAccent: Color = isCurrent ? themeColor : DarkFantasyTheme.borderMedium
-
-        HStack(spacing: LayoutConstants.spaceMS) {
-            bossAvatar(boss, state: state)
-
-            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                // Name + badge row
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text(boss.name)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
-                        .foregroundStyle(
-                            isDefeated ? DarkFantasyTheme.textTertiary :
-                            isCurrent  ? DarkFantasyTheme.goldBright   :
-                                         DarkFantasyTheme.textPrimary
-                        )
-                        .strikethrough(isDefeated, color: DarkFantasyTheme.textTertiary)
-
-                    if isCurrent {
-                        // Gold "NEXT" pill
-                        Text("NEXT")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .padding(.horizontal, LayoutConstants.spaceXS)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(DarkFantasyTheme.gold))
-                    } else {
-                        Text("Lv. \(boss.level)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                            .padding(.horizontal, LayoutConstants.spaceXS)
-                            .padding(.vertical, 2)
-                            .background(
-                                Capsule()
-                                    .fill(DarkFantasyTheme.textPrimary.opacity(0.04))
-                                    .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
-                            )
-                    }
-
-                    Spacer()
-
-                    if !isDefeated && state != .locked {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    }
-                }
-
-                // Description
-                Text(boss.description)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).italic())
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .lineLimit(2)
-
-                // HP row
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(DarkFantasyTheme.danger)
-                    Text("\(boss.hp) HP")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .monospacedDigit()
-                    if isDefeated {
-                        Text("— Slain")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                            .foregroundStyle(DarkFantasyTheme.gold.opacity(0.55))
-                    }
-                }
-            }
-        }
-        .padding(LayoutConstants.spaceSM)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: isCurrent ? themeColor.opacity(0.10) : DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.3,
-                cornerRadius: LayoutConstants.panelRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-        .innerBorder(
-            cornerRadius: LayoutConstants.panelRadius - 2,
-            inset: 2,
-            color: cardAccent.opacity(isCurrent ? 0.14 : 0.07)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(
-                    isCurrent  ? themeColor.opacity(0.55) :
-                    isDefeated ? DarkFantasyTheme.gold.opacity(0.22) :
-                                 DarkFantasyTheme.borderSubtle,
-                    lineWidth: isCurrent ? 1.5 : 1
-                )
-        )
-        .cornerBrackets(
-            color: isCurrent ? themeColor.opacity(0.40) : DarkFantasyTheme.borderMedium.opacity(0.18),
-            length: 10,
-            thickness: 1
-        )
-        .compositingGroup()
-        .shadow(
-            color: isCurrent ? themeColor.opacity(0.14) : DarkFantasyTheme.bgAbyss.opacity(0.2),
-            radius: isCurrent ? 8 : 2,
-            y: 2
-        )
-    }
-
-    @ViewBuilder
-    private func bossAvatar(_ boss: BossInfo, state: BossState) -> some View {
-        let isDefeated = state == .defeated
-        let isCurrent  = state == .current
-        let isLocked   = state == .locked
-
-        ZStack {
-            // Portrait or emoji fallback
-            if UIImage(named: boss.portraitImage) != nil {
-                Image(boss.portraitImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
-            } else {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(themeColor.opacity(0.12))
-                    .frame(width: 52, height: 52)
-                    .overlay(Text(boss.emoji).font(.system(size: 22)))
-            }
-
-            // Defeated: dim + gold checkmark circle
-            if isDefeated {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.58))
-                    .frame(width: 52, height: 52)
-                ZStack {
-                    Circle()
-                        .fill(DarkFantasyTheme.gold)
-                        .frame(width: 22, height: 22)
-                        .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 4)
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
-                }
-            }
-
-            // Locked: dim + lock icon
-            if isLocked {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.50))
-                    .frame(width: 52, height: 52)
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(DarkFantasyTheme.textDisabled)
-            }
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .stroke(
-                    isCurrent  ? themeColor.opacity(0.85)         :
-                    isDefeated ? DarkFantasyTheme.gold.opacity(0.50) :
-                                 DarkFantasyTheme.borderSubtle,
-                    lineWidth: isCurrent ? 2 : 1
-                )
-        )
-        .shadow(color: isCurrent ? themeColor.opacity(0.35) : .clear, radius: 8)
-    }
+    // Boss list removed — FIX #6: bosses are shown on the main dungeon page, not here
 
     // MARK: - Enter CTA (sticky bottom)
 
@@ -708,8 +499,11 @@ struct DungeonInfoSheet: View {
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                     .foregroundStyle(themeColor)
                     .tracking(2)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 diamondMotif
             }
+            .fixedSize(horizontal: true, vertical: false)
 
             Rectangle()
                 .fill(

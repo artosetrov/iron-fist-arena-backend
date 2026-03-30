@@ -4,6 +4,8 @@ struct GuildHallDetailView: View {
     /// Deep-link: if set, auto-opens SCROLLS tab with this character's thread
     var openMessageTo: String?
     var messageName: String?
+    var messageAvatar: String?
+    var messageCharacterClass: String?
 
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
@@ -90,7 +92,7 @@ struct GuildHallDetailView: View {
             if let targetId = openMessageTo, let targetName = messageName {
                 viewModel.selectedTab = .scrolls
                 // Open thread immediately — don't wait for conversations to load
-                await viewModel.openThread(characterId: targetId, characterName: targetName)
+                await viewModel.openThread(characterId: targetId, characterName: targetName, avatar: messageAvatar, characterClass: messageCharacterClass)
             } else {
                 // Parallel prefetch all tabs for instant switching
                 async let friendsTask: () = viewModel.loadFriends()
@@ -736,7 +738,7 @@ struct GuildHallDetailView: View {
                     Button("Retry") {
                         if let targetId = vm.activeThreadCharacterId,
                            let name = vm.activeThreadCharacterName {
-                            Task { await vm.openThread(characterId: targetId, characterName: name) }
+                            Task { await vm.openThread(characterId: targetId, characterName: name, avatar: vm.activeThreadCharacterAvatar, characterClass: vm.activeThreadCharacterClass) }
                         }
                     }
                     .buttonStyle(.primary)
@@ -746,17 +748,21 @@ struct GuildHallDetailView: View {
                 Spacer()
                 threadEmptyState
                 Spacer()
+            } else if vm.activeThread.isEmpty && vm.isLoadingThreadMessages {
+                // Loading state — show centered spinner only when no messages yet
+                Spacer()
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    ProgressView()
+                        .tint(DarkFantasyTheme.gold)
+                    Text("Loading messages...")
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                Spacer()
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: LayoutConstants.spaceSM) {
-                            // Inline loading indicator while messages arrive
-                            if vm.isLoadingThreadMessages {
-                                ProgressView()
-                                    .tint(DarkFantasyTheme.gold)
-                                    .padding(.vertical, LayoutConstants.spaceLG)
-                            }
-
                             if !vm.activeThread.isEmpty {
                                 dateDivider("Today")
                             }

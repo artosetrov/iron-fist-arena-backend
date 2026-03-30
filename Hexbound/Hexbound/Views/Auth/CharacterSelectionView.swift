@@ -51,38 +51,38 @@ struct CharacterSelectionView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Section {
-                            Button(role: .destructive) {
-                                HapticManager.light()
-                                SFXManager.shared.play(.uiTap)
-                                appState.logout()
-                            } label: {
-                                Label("Log Out", systemImage: "rectangle.portrait.and.arrow.right")
+                // Back button — only when no heroes (prevents dead-end)
+                if !vm.isLoading && vm.characters.isEmpty {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            HapticManager.light()
+                            appState.logout()
+                        } label: {
+                            HStack(spacing: LayoutConstants.spaceXS) {
+                                Image(systemName: "chevron.left")
+                                    .font(.system(size: 16, weight: .semibold))
+                                Text("Back")
+                                    .font(DarkFantasyTheme.uiLabel)
                             }
+                            .foregroundStyle(DarkFantasyTheme.gold)
                         }
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                            .frame(width: 36, height: 36)
-                            .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .fill(DarkFantasyTheme.bgTertiary)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                                    )
-                            )
+                        .buttonStyle(.plain)
                     }
-                    .menuStyle(.automatic)
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { appState.authPath.append(AppRoute.settings) } label: {
+                        Image("icon-settings")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .onboarding: OnboardingDetailView()
                 case .register: RegisterDetailView()
+                case .settings: SettingsDetailView()
                 default: PlaceholderView()
                 }
             }

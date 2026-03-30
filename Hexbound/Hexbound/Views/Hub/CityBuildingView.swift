@@ -9,6 +9,7 @@ struct CityBuildingView: View {
     var badge: String? = nil
     /// When true, only render the sprite (no label). Used for z-order separation.
     var spriteOnly: Bool = false
+    var isLocked: Bool = false
 
     @State private var isPressed = false
     @State private var showLabel = false
@@ -28,18 +29,41 @@ struct CityBuildingView: View {
         VStack(spacing: LayoutConstants.spaceXS) {
             if !spriteOnly {
                 // Label above building (always visible, lowered 10px closer to building)
-                CityBuildingLabel(text: building.label, visible: true, badge: badge)
+                CityBuildingLabel(text: building.label, visible: true, badge: badge, isLocked: isLocked)
                     .offset(y: building.labelYOffset * terrainSize.height + 10)
             }
 
             // Building sprite
-            buildingImage
-                .frame(height: buildingHeight)
-                .shadow(
-                    color: building.glowColor.opacity(isPressed ? 0.6 : 0),
-                    radius: isPressed ? 16 : 0
-                )
-                .brightness(isPressed ? -0.06 : 0)
+            ZStack {
+                buildingImage
+                    .frame(height: buildingHeight)
+                    .shadow(
+                        color: isLocked
+                            ? Color.clear
+                            : building.glowColor.opacity(isPressed ? 0.6 : 0),
+                        radius: isPressed ? 16 : 0
+                    )
+                    .brightness(isPressed ? -0.06 : 0)
+                    .opacity(isLocked ? 0.6 : 1.0)
+                    .saturation(isLocked ? 0.3 : 1.0)
+
+                // Lock overlay
+                if isLocked {
+                    VStack(spacing: LayoutConstants.space2XS) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        Text("SOON")
+                            .font(DarkFantasyTheme.section(size: 10))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    }
+                    .padding(LayoutConstants.spaceSM)
+                    .background(
+                        Circle()
+                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.7))
+                    )
+                }
+            }
         }
         .position(x: posX, y: posY)
         .onTapGesture {
@@ -85,6 +109,12 @@ struct CityBuildingView: View {
     // MARK: - Tap Handler
 
     private func handleTap() {
+        guard !isLocked else {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.warning)
+            return
+        }
+
         HapticManager.medium()
         SFXManager.shared.play(.uiTap)
 

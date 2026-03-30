@@ -10,12 +10,16 @@ struct Opponent: Codable, Identifiable {
     let pvpWins: Int
     let pvpLosses: Int
     let maxHp: Int
+    let armor: Int?
     let avatar: String?
 
-    // Optional stats for preview
+    // Base stats for preview
     let strength: Int?
     let agility: Int?
     let vitality: Int?
+    let intelligence: Int?
+    let wisdom: Int?
+    let luck: Int?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -26,10 +30,14 @@ struct Opponent: Codable, Identifiable {
         case pvpWins
         case pvpLosses
         case maxHp
+        case armor
         case avatar
         case strength = "str"               // JSON: "str" (Prisma 3-letter field)
         case agility = "agi"
         case vitality = "vit"
+        case intelligence = "int"
+        case wisdom = "wis"
+        case luck = "luk"
     }
 
     var winRate: Double {
@@ -40,5 +48,19 @@ struct Opponent: Codable, Identifiable {
 
     var rank: PvPRank {
         PvPRank.fromRating(pvpRating)
+    }
+
+    /// Computed attack power — mirrors Character.attackPower formula per class
+    var attackPower: Int {
+        switch characterClass {
+        case .warrior:
+            return Int(Double(strength ?? 0) * 1.5 + Double(agility ?? 0) * 0.3) + level * 2
+        case .tank:
+            return Int(Double(strength ?? 0) * 1.3 + Double(vitality ?? 0) * 0.3) + level * 2
+        case .rogue:
+            return Int(Double(agility ?? 0) * 1.5 + Double(luck ?? 0) * 0.3) + level * 2
+        case .mage:
+            return Int(Double(intelligence ?? 0) * 1.2 + Double(wisdom ?? 0) * 0.5) + level * 2
+        }
     }
 }

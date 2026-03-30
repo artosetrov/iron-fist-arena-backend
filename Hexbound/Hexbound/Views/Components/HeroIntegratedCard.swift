@@ -158,18 +158,7 @@ struct HeroIntegratedCard: View {
                     )
                 }
 
-                // Heal (conditional: HP low + potion available)
-                if character.hpPercentage < 0.5 && healthPotionCount > 0 {
-                    WidgetPill(
-                        icon: "",
-                        text: "Heal",
-                        count: "×\(healthPotionCount)",
-                        imageAsset: "pot_health_small",
-                        style: character.hpPercentage < 0.25 ? .urgent : .heal,
-                        isInteractive: true,
-                        action: { onUseHealthPotion?() }
-                    )
-                }
+                // Heal pill removed — lowResourceBanner in HeroDetailView handles this
 
                 Spacer()
             }

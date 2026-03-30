@@ -20,6 +20,7 @@ struct ItemImageView: View {
             Image(uiImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
+                .clipped()
         } else if isLoading {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgTertiary)

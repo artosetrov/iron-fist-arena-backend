@@ -392,9 +392,20 @@ struct DailyQuestsDetailView: View {
             }
         }
         .padding(LayoutConstants.spaceSM)
+        // Ornamental card system (was flat RoundedRectangle — widget audit fix)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(quest.rewardClaimed ? DarkFantasyTheme.bgPrimary : DarkFantasyTheme.bgSecondary)
+            RadialGlowBackground(
+                baseColor: quest.rewardClaimed ? DarkFantasyTheme.bgPrimary : DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.bgTertiary,
+                glowIntensity: quest.rewardClaimed ? 0.2 : 0.4,
+                cornerRadius: LayoutConstants.cardRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.cardRadius - 2,
+            inset: 2,
+            color: quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.12) : DarkFantasyTheme.borderMedium.opacity(0.15)
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
@@ -402,10 +413,20 @@ struct DailyQuestsDetailView: View {
                     quest.rewardClaimed ? DarkFantasyTheme.success.opacity(0.2)
                     : quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.4)
                     : DarkFantasyTheme.borderSubtle,
-                    lineWidth: 1
+                    lineWidth: quest.canClaim ? 1.5 : 1
                 )
         )
-        .opacity(quest.rewardClaimed ? 0.7 : 1.0)
+        .cornerBrackets(
+            color: quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.4)
+                : quest.rewardClaimed ? DarkFantasyTheme.success.opacity(0.15)
+                : DarkFantasyTheme.borderMedium.opacity(0.25),
+            length: 14,
+            thickness: 1.5
+        )
+        .compositingGroup()
+        .shadow(color: quest.canClaim ? DarkFantasyTheme.cyan.opacity(0.15) : .clear, radius: 8)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
+        .brightness(quest.rewardClaimed ? -0.08 : 0)
         .contentShape(Rectangle())
     }
 }

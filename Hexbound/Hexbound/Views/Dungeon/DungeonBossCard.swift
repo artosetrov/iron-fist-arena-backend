@@ -61,7 +61,7 @@ struct DungeonBossCard: View {
             .overlay(shimmerOverlay)
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
             .compositingGroup()
-            .shadow(color: stateColor.opacity(isActive ? 0.25 : 0.1), radius: LayoutConstants.arenaGlowRadius, y: 3)
+            .shadow(color: stateColor.opacity(isActive ? 0.35 : 0.1), radius: isActive ? LayoutConstants.arenaGlowRadius + 4 : LayoutConstants.arenaGlowRadius, y: 3)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
         }
         .aspectRatio(1.0 / 1.4, contentMode: .fit)
@@ -171,20 +171,24 @@ struct DungeonBossCard: View {
             .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.success.opacity(0.08))
 
         case .current:
-            Text("READY")
-                .font(DarkFantasyTheme.body(size: 10).bold())
-                .foregroundStyle(DarkFantasyTheme.arenaRankGold)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.space2XS)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.arenaRankGold.opacity(0.12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(DarkFantasyTheme.arenaRankGold.opacity(0.25), lineWidth: 0.5)
-                        )
-                )
-                .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.arenaRankGold.opacity(0.08))
+            HStack(spacing: 4) {
+                Image(systemName: "bolt.fill")
+                    .font(.system(size: 8, weight: .bold))
+                Text("CURRENT")
+            }
+            .font(DarkFantasyTheme.body(size: 10).bold())
+            .foregroundStyle(DarkFantasyTheme.goldBright)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.arenaRankGold.opacity(0.18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(DarkFantasyTheme.arenaRankGold.opacity(0.45), lineWidth: 1)
+                    )
+            )
+            .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.arenaRankGold.opacity(0.12))
 
         case .locked:
             HStack(spacing: 4) {
@@ -215,7 +219,9 @@ struct DungeonBossCard: View {
             Text(boss.name.uppercased())
                 .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
                 .foregroundStyle(
-                    state == .locked ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textPrimary
+                    state == .locked ? DarkFantasyTheme.textDisabled :
+                    state == .current ? DarkFantasyTheme.goldBright :
+                    DarkFantasyTheme.textPrimary
                 )
                 .lineLimit(1)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)

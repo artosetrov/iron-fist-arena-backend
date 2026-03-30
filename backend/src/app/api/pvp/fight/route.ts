@@ -142,23 +142,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check minimum HP threshold (10% of maxHp) — block fights when near death
-    // Use calculateCurrentHp to account for HP regen (same as /pvp/prepare)
-    const { calculateCurrentHp } = await import('@/lib/game/hp-regen')
-    const hpResult = await calculateCurrentHp(
-      attacker.currentHp,
-      attacker.maxHp,
-      attacker.lastHpUpdate ?? new Date()
-    )
-    const currentHp = hpResult.hp
-    if (hpResult.updated) {
-      await prisma.character.update({
-        where: { id: character_id },
-        data: { currentHp, lastHpUpdate: new Date() },
-      })
-    }
+    // Check minimum HP threshold (30% of maxHp) — block fights when near death
+    // HP regen intentionally NOT used in Arena — players must use potions (consistent with /pvp/prepare)
+    const currentHp = attacker.currentHp
 
-    const minHpRequired = Math.ceil(attacker.maxHp * 0.1)
+    const minHpRequired = Math.ceil(attacker.maxHp * 0.3)
     if (currentHp < minHpRequired) {
       return NextResponse.json(
         {

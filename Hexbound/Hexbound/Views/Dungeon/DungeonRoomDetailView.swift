@@ -19,8 +19,6 @@ struct DungeonRoomDetailView: View {
     @State private var bossSlamBgOpacity: Double = 0
 
     // Modal states
-    @State private var selectedLootItem: LootPreview? = nil
-    @State private var showLootDetail = false
     @State private var showDungeonInfo = false
     // confirmation dialog removed — fight triggers directly
     @State private var selectedBossForDetail: BossInfo? = nil
@@ -170,27 +168,12 @@ struct DungeonRoomDetailView: View {
                             triggerBossFightSlam()
                         }
                     },
-                    onLootTap: { loot in
-                        selectedLootItem = loot
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            showLootDetail = true
-                        }
-                    },
+                    onLootTap: { _ in },
                     isNavigationMode: true
                 )
             }
         }
-        .overlay {
-            if showLootDetail, let loot = selectedLootItem {
-                LootPreviewSheet(loot: loot, onClose: {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        showLootDetail = false
-                    }
-                })
-                .transition(.opacity)
-                .zIndex(100)
-            }
-        }
+        // Loot modal removed — now handled inside BossDetailSheet (FIX #4)
         // confirmation dialog removed — fight triggers directly from boss detail sheet
     }
 

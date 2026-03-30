@@ -31,14 +31,24 @@ struct MailMessage: Codable, Identifiable {
     var battleData: BattleResultData? {
         guard isBattleResult else { return nil }
         guard let data = body.data(using: .utf8) else { return nil }
-        return try? JSONDecoder().decode(BattleResultData.self, from: data)
+        do {
+            return try JSONDecoder().decode(BattleResultData.self, from: data)
+        } catch {
+            print("⚠️ [MailMessage] Failed to decode BattleResultData: \(error)")
+            return nil
+        }
     }
 
     /// Parse battle invite data from body JSON (battle_invite mails only)
     var inviteData: BattleInviteData? {
         guard isBattleInvite else { return nil }
         guard let data = body.data(using: .utf8) else { return nil }
-        return try? JSONDecoder().decode(BattleInviteData.self, from: data)
+        do {
+            return try JSONDecoder().decode(BattleInviteData.self, from: data)
+        } catch {
+            print("⚠️ [MailMessage] Failed to decode BattleInviteData: \(error)")
+            return nil
+        }
     }
 
     /// Return a copy marked as read

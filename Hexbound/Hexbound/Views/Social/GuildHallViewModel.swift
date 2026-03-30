@@ -51,6 +51,8 @@ class GuildHallViewModel {
 
     // Thread polling
     private var isPollingActive = false
+    /// IDs of optimistic messages not yet confirmed by server — polling preserves these
+    private var pendingTempIds: Set<String> = []
 
     private let socialService = SocialService.shared
     private let challengeService = ChallengeService.shared
@@ -77,11 +79,18 @@ class GuildHallViewModel {
                     characterId: self.characterId,
                     withCharacterId: targetId
                 ) {
-                    // Only update if new messages arrived (avoid UI flicker)
-                    // Backend returns ASC order — last element is newest
-                    if messages.count != self.activeThread.count ||
-                       messages.last?.id != self.activeThread.last?.id {
-                        self.activeThread = messages
+                    // Merge: keep optimistic temp messages that server doesn't know about yet
+                    let tempMessages = self.activeThread.filter { self.pendingTempIds.contains($0.id) }
+                    let serverLastId = messages.last?.id
+                    let localLastConfirmed = self.activeThread.last(where: { !$0.id.hasPrefix("temp-") })?.id
+
+                    // Only update if server data actually changed
+                    if messages.count != self.activeThread.count - tempMessages.count ||
+                       serverLastId != localLastConfirmed {
+                        // Server messages + append any still-pending temp messages at the end
+                        var merged = messages
+                        merged.append(contentsOf: tempMessages)
+                        self.activeThread = merged
                     }
                 }
             }
@@ -316,7 +325,7 @@ class GuildHallViewModel {
         let content = composedMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty, content.count <= 200 else { return }
 
-        // Optimistic: show message immediately
+        // Optimistic: show message immediately — no waiting for server
         let tempId = "temp-\(UUID().uuidString)"
         let optimisticMsg = DirectMessageItem(
             id: tempId,
@@ -327,10 +336,12 @@ class GuildHallViewModel {
             isRead: false,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
+        pendingTempIds.insert(tempId)
         withAnimation(.easeOut(duration: 0.25)) {
             activeThread.append(optimisticMsg)
         }
         composedMessage = ""
+        isSendingMessage = true
         HapticManager.light()
 
         // Background: actual API call
@@ -342,6 +353,7 @@ class GuildHallViewModel {
                 content: content
             )
             // Replace temp message with real one (animated status change)
+            pendingTempIds.remove(tempId)
             withAnimation(.easeInOut(duration: 0.2)) {
                 if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
                     activeThread[idx] = DirectMessageItem(
@@ -357,17 +369,19 @@ class GuildHallViewModel {
             }
         } catch {
             // Remove optimistic message on failure
+            pendingTempIds.remove(tempId)
             withAnimation(.easeOut(duration: 0.2)) {
                 activeThread.removeAll(where: { $0.id == tempId })
             }
             sendMessageError = "Failed to send message"
         }
+        isSendingMessage = pendingTempIds.isEmpty ? false : true
     }
 
     func sendQuickMessage(_ quickId: String) async {
         guard let targetId = activeThreadCharacterId else { return }
 
-        // Optimistic: show quick message immediately
+        // Optimistic: show quick message immediately — no waiting for server
         let quick = QuickMessage(rawValue: quickId)
         let tempId = "temp-quick-\(UUID().uuidString)"
         let optimisticMsg = DirectMessageItem(
@@ -379,9 +393,11 @@ class GuildHallViewModel {
             isRead: false,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
+        pendingTempIds.insert(tempId)
         withAnimation(.easeOut(duration: 0.25)) {
             activeThread.append(optimisticMsg)
         }
+        isSendingMessage = true
         HapticManager.light()
 
         // Background: actual API call
@@ -392,6 +408,7 @@ class GuildHallViewModel {
                 quickId: quickId
             )
             // Replace temp with real message (animated status change)
+            pendingTempIds.remove(tempId)
             withAnimation(.easeInOut(duration: 0.2)) {
                 if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
                     activeThread[idx] = DirectMessageItem(
@@ -407,10 +424,12 @@ class GuildHallViewModel {
             }
         } catch {
             // Remove optimistic on failure
+            pendingTempIds.remove(tempId)
             withAnimation(.easeOut(duration: 0.2)) {
                 activeThread.removeAll(where: { $0.id == tempId })
             }
         }
+        isSendingMessage = pendingTempIds.isEmpty ? false : true
     }
 
     func closeThread() {
@@ -421,6 +440,8 @@ class GuildHallViewModel {
         activeThreadCharacterClass = nil
         activeThread = []
         threadLoadState = .idle
+        pendingTempIds.removeAll()
+        isSendingMessage = false
     }
 
     // MARK: - Duels

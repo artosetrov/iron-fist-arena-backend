@@ -19,11 +19,18 @@ struct InboxDetailView: View {
                 // Ornamental title — sticky above scroll
                 OrnamentalTitle("MESSAGES", subtitle: unreadSubtitle)
                     .padding(.top, LayoutConstants.spaceXS)
+                    .padding(.bottom, LayoutConstants.spaceXS)
 
-                // Filter pills — sticky
-                filterPills
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceSM)
+                // Tab switcher — matches Guild Hall style
+                TabSwitcher(
+                    tabs: InboxFilter.allCases.map(\.rawValue),
+                    selectedIndex: Binding(
+                        get: { InboxFilter.allCases.firstIndex(of: viewModel.selectedFilter) ?? 0 },
+                        set: { viewModel.selectedFilter = InboxFilter.allCases[$0] }
+                    )
+                )
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.spaceSM)
 
                 // Unified content
                 unifiedContent
@@ -43,78 +50,9 @@ struct InboxDetailView: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
             }
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    Image(systemName: "envelope.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(DarkFantasyTheme.gold)
-
-                    Text("MESSAGES")
-                        .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                    if viewModel.totalUnreadCount > 0 {
-                        UnreadBadge(count: viewModel.totalUnreadCount)
-                    }
-                }
-            }
         }
         .task {
             await viewModel.fetchAll(characterId: characterId)
-        }
-    }
-
-    // MARK: - Filter Pills
-
-    private var filterPills: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            ForEach(InboxFilter.allCases, id: \.self) { filter in
-                let isSelected = viewModel.selectedFilter == filter
-                let count = countForFilter(filter)
-
-                Button {
-                    viewModel.selectedFilter = filter
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Text(filter.rawValue)
-                            .font(DarkFantasyTheme.section(size: 12))
-
-                        if count > 0, filter != .all {
-                            Text("\(count)")
-                                .font(DarkFantasyTheme.badge)
-                                .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.gold)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(
-                                    Capsule()
-                                        .fill(isSelected ? DarkFantasyTheme.gold.opacity(0.3) : DarkFantasyTheme.bgTertiary)
-                                )
-                        }
-                    }
-                    .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                    .padding(.horizontal, LayoutConstants.spaceMS)
-                    .padding(.vertical, LayoutConstants.spaceXS + 2)
-                    .background(
-                        Capsule()
-                            .fill(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(isSelected ? DarkFantasyTheme.goldBright.opacity(0.4) : DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            Spacer()
-        }
-    }
-
-    private func countForFilter(_ filter: InboxFilter) -> Int {
-        switch filter {
-        case .all: return viewModel.totalUnreadCount
-        case .battles: return viewModel.unifiedItems.filter { $0.category == .battles && $0.isUnread }.count
-        case .messages: return viewModel.scrollsUnreadCount
-        case .system: return viewModel.unifiedItems.filter { $0.category == .system && $0.isUnread }.count
         }
     }
 
@@ -146,7 +84,9 @@ struct InboxDetailView: View {
                                         appState.mainPath.append(
                                             AppRoute.guildHallMessage(
                                                 characterId: conversation.otherCharacter.id,
-                                                characterName: conversation.otherCharacter.characterName
+                                                characterName: conversation.otherCharacter.characterName,
+                                                avatar: conversation.otherCharacter.avatar,
+                                                characterClass: conversation.otherCharacter.characterClass
                                             )
                                         )
                                     }
@@ -166,14 +106,66 @@ struct InboxDetailView: View {
 
     private var emptyState: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            Image(systemName: "tray")
-                .font(.system(size: 36))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-            Text("No messages")
-                .font(DarkFantasyTheme.section(size: 16))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                DarkFantasyTheme.bgTertiary,
+                                DarkFantasyTheme.bgSecondary,
+                            ]),
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 40
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+
+                Image(systemName: emptyStateIcon)
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundStyle(DarkFantasyTheme.goldDim)
+            }
+
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Text(emptyStateTitle)
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                Text(emptyStateSubtitle)
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, LayoutConstants.spaceLG)
+            }
         }
         .padding(.vertical, LayoutConstants.space2XL)
+    }
+
+    private var emptyStateIcon: String {
+        switch viewModel.selectedFilter {
+        case .all: return "tray"
+        case .battles: return "shield.slash"
+        case .messages: return "scroll"
+        case .system: return "bell.slash"
+        }
+    }
+
+    private var emptyStateTitle: String {
+        switch viewModel.selectedFilter {
+        case .all: return "NO MESSAGES"
+        case .battles: return "NO BATTLES"
+        case .messages: return "NO SCROLLS"
+        case .system: return "NO SYSTEM MAIL"
+        }
+    }
+
+    private var emptyStateSubtitle: String {
+        switch viewModel.selectedFilter {
+        case .all: return "Your inbox is empty.\nCheck back later for rewards and messages."
+        case .battles: return "No battle reports yet.\nFight in the Arena to receive them."
+        case .messages: return "No player messages yet.\nVisit the Guild Hall to find allies."
+        case .system: return "No system notifications.\nCheck back later."
+        }
     }
 
     // MARK: - Helpers
@@ -211,9 +203,20 @@ private struct InboxConversationRow: View {
         hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium
     }
 
+    /// Badge value: unread count if any, otherwise total message count
+    private var badgeCount: Int? {
+        if conversation.unreadCount > 0 {
+            return conversation.unreadCount
+        }
+        if let total = conversation.messageCount, total > 0 {
+            return total
+        }
+        return nil
+    }
+
     var body: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            // Avatar
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Avatar — real hero portrait via AvatarImageView
             avatarView
 
             // Name + last message + timestamp
@@ -221,7 +224,7 @@ private struct InboxConversationRow: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(conversation.otherCharacter.characterName)
                         .font(DarkFantasyTheme.section(
-                            size: hasUnread ? LayoutConstants.textCard : LayoutConstants.textBody
+                            size: hasUnread ? LayoutConstants.textCard : LayoutConstants.textLabel
                         ))
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textSecondary
@@ -232,7 +235,9 @@ private struct InboxConversationRow: View {
 
                     Text(formatDate(conversation.lastMessage.createdAt))
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .foregroundStyle(
+                            hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.textTertiary
+                        )
                 }
 
                 HStack(spacing: LayoutConstants.spaceSM) {
@@ -245,27 +250,31 @@ private struct InboxConversationRow: View {
 
                     Spacer(minLength: 4)
 
-                    if hasUnread {
-                        Text("\(conversation.unreadCount)")
-                            .font(DarkFantasyTheme.section(size: 11))
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                    // Badge: unread (gold) or total count (subtle)
+                    if let count = badgeCount {
+                        Text(count > 99 ? "99+" : "\(count)")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                            .foregroundStyle(hasUnread ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 2)
                             .background(
                                 Capsule()
-                                    .fill(DarkFantasyTheme.gold)
+                                    .fill(hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
                             )
-                            .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 4)
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        hasUnread ? DarkFantasyTheme.goldBright.opacity(0.4) : DarkFantasyTheme.borderSubtle,
+                                        lineWidth: hasUnread ? 0 : 0.5
+                                    )
+                            )
+                            .shadow(color: hasUnread ? DarkFantasyTheme.gold.opacity(0.4) : .clear, radius: 4)
                     }
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, 14)
+        .padding(.vertical, LayoutConstants.spaceMS)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -284,7 +293,7 @@ private struct InboxConversationRow: View {
         )
         .cornerBrackets(
             color: accentColor.opacity(0.3),
-            length: 12, thickness: 1.5)
+            length: 10, thickness: 1)
         .compositingGroup()
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
         .brightness(isPressed ? -0.06 : 0)
@@ -296,27 +305,44 @@ private struct InboxConversationRow: View {
     // MARK: - Avatar
 
     private var avatarView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(
-                    LinearGradient(
-                        colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 40, height: 40)
-
+        ZStack(alignment: .topTrailing) {
             if let avatar = conversation.otherCharacter.avatar, !avatar.isEmpty {
-                Image(avatar)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 36, height: 36)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM - 2))
+                AvatarImageView(
+                    skinKey: avatar,
+                    characterClass: conversation.otherCharacter.classEnum,
+                    size: 44
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(
+                            hasUnread ? DarkFantasyTheme.goldDim.opacity(0.5) : DarkFantasyTheme.borderSubtle,
+                            lineWidth: 1.5
+                        )
+                )
             } else {
-                Text(String(conversation.otherCharacter.characterName.prefix(1)).uppercased())
-                    .font(DarkFantasyTheme.section(size: 16))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                ZStack {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(
+                            LinearGradient(
+                                colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .stroke(
+                                    hasUnread ? DarkFantasyTheme.goldDim.opacity(0.5) : DarkFantasyTheme.borderSubtle,
+                                    lineWidth: 1.5
+                                )
+                        )
+
+                    Text(String(conversation.otherCharacter.characterName.prefix(1)).uppercased())
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                }
             }
 
             // Unread dot
@@ -329,9 +355,10 @@ private struct InboxConversationRow: View {
                             .stroke(DarkFantasyTheme.bgSecondary, lineWidth: 2)
                     )
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 4)
-                    .offset(x: 16, y: -16)
+                    .offset(x: 3, y: -3)
             }
         }
+        .frame(width: 44, height: 44)
     }
 
     // MARK: - Date Formatting

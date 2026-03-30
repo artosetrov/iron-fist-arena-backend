@@ -6,6 +6,7 @@ struct Conversation: Codable, Identifiable {
     let otherCharacter: ConversationCharacterInfo
     let lastMessage: ConversationLastMessage
     let unreadCount: Int
+    let messageCount: Int?  // total messages in conversation (API may omit)
 
     var id: String {
         otherCharacter.id
@@ -15,6 +16,7 @@ struct Conversation: Codable, Identifiable {
         case otherCharacter = "otherCharacter"
         case lastMessage = "lastMessage"
         case unreadCount = "unreadCount"
+        case messageCount = "messageCount"
     }
 }
 

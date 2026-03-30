@@ -60,6 +60,7 @@ struct CityMapView: View {
                         let layoutOverrides = cache.hubLayout
                         let buildings = applyOverrides(layoutOverrides)
                         ForEach(buildings) { building in
+                            let locked = isBuildinglocked(building)
                             CityBuildingView(
                                 building: building,
                                 terrainSize: terrainSize,
@@ -73,8 +74,9 @@ struct CityMapView: View {
                                         )
                                     }
                                 },
-                                badge: badgeFor(building),
-                                spriteOnly: true
+                                badge: locked ? nil : badgeFor(building),
+                                spriteOnly: true,
+                                isLocked: locked
                             )
                             .id(building.id)
                         }
@@ -84,10 +86,12 @@ struct CityMapView: View {
                             let posX = terrainSize.width * building.relativeX
                             let posY = terrainSize.height * building.relativeY
                             let bHeight = terrainSize.height * building.relativeSize
+                            let locked = isBuildinglocked(building)
                             CityBuildingLabel(
                                 text: building.label,
                                 visible: true,
-                                badge: badgeFor(building)
+                                badge: locked ? nil : badgeFor(building),
+                                isLocked: locked
                             )
                             .position(
                                 x: posX,
@@ -131,6 +135,13 @@ struct CityMapView: View {
                 // Position indicator pill — removed per UX decision (overlaps ADVENTURES button)
             }
         }
+    }
+
+    /// Buildings that are locked (not yet implemented / coming soon)
+    private let lockedBuildingIDs: Set<String> = ["black-market"]
+
+    private func isBuildinglocked(_ building: CityBuilding) -> Bool {
+        lockedBuildingIDs.contains(building.id)
     }
 
     private func applyOverrides(_ overrides: [String: GameDataCache.BuildingOverride]) -> [CityBuilding] {

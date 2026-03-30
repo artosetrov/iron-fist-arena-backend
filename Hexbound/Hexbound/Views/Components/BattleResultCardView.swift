@@ -39,6 +39,9 @@ struct BattleResultCardView: View {
     @State private var goldDisplay = 0
     @State private var xpDisplay = 0
 
+    // Hero XP counter roll-up
+    @State private var xpHeroDisplay: Int = 0
+
     // Victory stars
     @State private var revealedStars: Int = 0
 
@@ -96,37 +99,30 @@ struct BattleResultCardView: View {
                 .animation(.easeIn(duration: 0.6), value: showCard)
                 .allowsHitTesting(false)
 
-            // Main card
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    Spacer(minLength: LayoutConstants.space2XL)
-
-                    cardContent
-                        .background(
-                            RadialGlowBackground(
-                                baseColor: DarkFantasyTheme.bgSecondary,
-                                glowColor: DarkFantasyTheme.bgTertiary,
-                                glowIntensity: 0.4,
-                                cornerRadius: LayoutConstants.modalRadius
-                            )
-                        )
-                        .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-                        .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: accentColor.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
-                                .stroke(accentColor.opacity(0.5), lineWidth: 2)
-                        )
-                        .cornerBrackets(color: accentColor.opacity(0.4), length: 18, thickness: 2.0)
-                        .cornerDiamonds(color: accentColor.opacity(0.5), size: 6)
-                        .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
-                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .offset(x: shakeOffset)
-                        .opacity(showCard ? 1 : 0)
-
-                    Spacer(minLength: LayoutConstants.spaceLG)
-                }
-            }
+            // Main card — content-sized, vertically centered
+            cardContent
+                .background(
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.4,
+                        cornerRadius: LayoutConstants.modalRadius
+                    )
+                )
+                .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+                .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: accentColor.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
+                        .stroke(accentColor.opacity(0.5), lineWidth: 2)
+                )
+                .cornerBrackets(color: accentColor.opacity(0.4), length: 18, thickness: 2.0)
+                .cornerDiamonds(color: accentColor.opacity(0.5), size: 6)
+                .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .fixedSize(horizontal: false, vertical: true)
+                .offset(x: shakeOffset)
+                .opacity(showCard ? 1 : 0)
         }
         .onAppear {
             runAnimationSequence()
@@ -143,31 +139,15 @@ struct BattleResultCardView: View {
 
     @ViewBuilder
     private var cardContent: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
+        VStack(spacing: LayoutConstants.spaceSM) {
 
-            // Result illustration
-            if let imageName = config.illustrationImage {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .padding(.top, LayoutConstants.spaceLG)
-            } else {
-                // SF Symbol fallback
-                Image(systemName: config.isVictory ? "shield.checkered" : "flame.fill")
-                    .font(DarkFantasyTheme.title(size: 48))
-                    .foregroundStyle(accentColor)
-                    .padding(.top, LayoutConstants.spaceLG)
-            }
-
-            // Title
+            // Title — hero element, no illustration above
             titleView
-                .padding(.bottom, LayoutConstants.spaceXS)
+                .padding(.top, LayoutConstants.spaceLG)
 
             // Victory Stars (dungeon: 1-3 stars based on performance)
             if let starRating = config.starRating, config.isVictory {
                 victoryStarsView(earned: starRating, total: 3)
-                    .padding(.bottom, LayoutConstants.spaceXS)
             }
 
             // Subtitle (near-miss motivation or general)
@@ -197,9 +177,9 @@ struct BattleResultCardView: View {
                     .offset(y: showRewards ? 0 : 10)
             }
 
-            // XP Bar (optional)
+            // XP Bar — HERO SIZE with numbers
             if let xpBarConfig = config.xpBarConfig {
-                xpBarView(xpBarConfig)
+                heroXpBarView(xpBarConfig)
                     .padding(.horizontal, LayoutConstants.cardPadding)
                     .opacity(showRewards ? 1 : 0)
             }
@@ -217,14 +197,14 @@ struct BattleResultCardView: View {
                     .opacity(showLoot ? 1 : 0)
             }
 
-            // Buttons inside card
+            // Buttons inside card — tight to loot
             buttonsSection
-                .padding(.top, LayoutConstants.spaceMD)
+                .padding(.top, LayoutConstants.spaceXS)
                 .padding(.horizontal, LayoutConstants.cardPadding)
                 .opacity(showButtons ? 1 : 0)
                 .offset(y: showButtons ? 0 : 15)
 
-            Spacer().frame(height: LayoutConstants.spaceLG)
+            Spacer().frame(height: LayoutConstants.spaceMD)
         }
     }
 
@@ -333,15 +313,17 @@ struct BattleResultCardView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - XP Bar
+    // MARK: - Hero XP Bar (big numbers + thick bar)
 
     @ViewBuilder
-    private func xpBarView(_ xpConfig: XPBarConfig) -> some View {
+    private func heroXpBarView(_ xpConfig: XPBarConfig) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
+            // Header: Level + LEVEL UP badge
             HStack {
                 Text("Level \(xpConfig.displayLevel)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                     .foregroundStyle(DarkFantasyTheme.purple)
+                    .shadow(color: DarkFantasyTheme.purple.opacity(0.3), radius: 6)
 
                 Spacer()
 
@@ -360,23 +342,65 @@ struct BattleResultCardView: View {
                 }
             }
 
+            // Hero counter: big current XP / needed
+            if let xpNeeded = config.xpNeeded {
+                HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
+                    Text("\(xpHeroDisplay)")
+                        .font(DarkFantasyTheme.title(size: 36))
+                        .foregroundStyle(DarkFantasyTheme.purple)
+                        .shadow(color: DarkFantasyTheme.purple.opacity(0.4), radius: 10)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+
+                    Text("/")
+                        .font(DarkFantasyTheme.title(size: 22))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.4))
+
+                    Text("\(xpNeeded)")
+                        .font(DarkFantasyTheme.title(size: 22))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
+                        .monospacedDigit()
+
+                    // +XP gain badge
+                    if let xpReward = config.xpReward, xpReward > 0 {
+                        Text("+\(xpReward)")
+                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .foregroundStyle(DarkFantasyTheme.purple.opacity(0.9))
+                            .padding(.horizontal, LayoutConstants.spaceSM)
+                            .padding(.vertical, LayoutConstants.space2XS)
+                            .background(
+                                Capsule()
+                                    .fill(DarkFantasyTheme.purple.opacity(0.12))
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(DarkFantasyTheme.purple.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+
+            // Thick XP bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .fill(DarkFantasyTheme.bgTertiary)
                         .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .stroke(DarkFantasyTheme.purple.opacity(0.15), lineWidth: 1)
                         )
+                        .shadow(color: Color.black.opacity(0.3), radius: 2, y: 1)
 
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .fill(DarkFantasyTheme.xpGradient)
                         .frame(width: geo.size.width * min(xpConfig.progress, 1.0))
+                        .shadow(color: DarkFantasyTheme.purple.opacity(0.4), radius: 8, y: 0)
                 }
             }
-            .frame(height: 10)
+            .frame(height: 16)
         }
-        .padding(.top, LayoutConstants.spaceSM)
+        .padding(.top, LayoutConstants.spaceXS)
     }
 
     // MARK: - Dungeon Progress
@@ -691,6 +715,13 @@ struct BattleResultCardView: View {
             }
             rollUp(to: config.goldReward ?? 0, binding: $goldDisplay, duration: MotionConstants.tickUpDuration)
             rollUp(to: config.xpReward ?? 0, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
+
+            // Hero XP counter: roll from xpBefore → xpBefore + xpReward
+            if let xpBefore = config.xpBefore {
+                let xpAfter = xpBefore + (config.xpReward ?? 0)
+                xpHeroDisplay = xpBefore
+                rollUp(from: xpBefore, to: xpAfter, binding: $xpHeroDisplay, duration: 1.2)
+            }
         }
 
         // ── Loot section with RARITY-BASED reveal (Audit §7 #11) ──
@@ -774,13 +805,20 @@ struct BattleResultCardView: View {
     // MARK: - Counter Roll-Up
 
     private func rollUp(to target: Int, binding: Binding<Int>, duration: Double) {
-        guard target > 0 else { return }
-        let steps = 20
+        rollUp(from: 0, to: target, binding: binding, duration: duration)
+    }
+
+    private func rollUp(from start: Int, to target: Int, binding: Binding<Int>, duration: Double) {
+        guard target != start else { return }
+        let steps = 25
         let interval = duration / Double(steps)
         for i in 1...steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + interval * Double(i)) {
+                // Ease-out cubic for satisfying deceleration
+                let t = Double(i) / Double(steps)
+                let eased = 1.0 - pow(1.0 - t, 3)
                 withAnimation(.none) {
-                    binding.wrappedValue = Int(Double(target) * Double(i) / Double(steps))
+                    binding.wrappedValue = start + Int(Double(target - start) * eased)
                 }
             }
         }
@@ -794,7 +832,7 @@ struct BattleResultConfig {
     let isVictory: Bool
     let title: String
     let subtitle: String?
-    let illustrationImage: String?
+    let illustrationImage: String? // kept for DungeonVictoryView compatibility
 
     // Victory Stars (0-3, nil = don't show stars)
     var starRating: Int? = nil
@@ -804,6 +842,10 @@ struct BattleResultConfig {
     let xpReward: Int?
     let ratingChange: Int?
     let firstWinBonus: Bool
+
+    // XP hero counter data
+    var xpBefore: Int? = nil  // XP before this fight
+    var xpNeeded: Int? = nil  // Total XP needed for next level
 
     // XP bar (optional — arena/pvp show this)
     let xpBarConfig: XPBarConfig?

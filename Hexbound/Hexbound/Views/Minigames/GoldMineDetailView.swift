@@ -187,7 +187,6 @@ private struct MineSlotCard: View {
     let index: Int
     let vm: GoldMineViewModel
 
-    @State private var glowPulse = false
     @State private var showCollectBurst = false
     @State private var showCoinFly = false
     @State private var previousStatus: String = ""
@@ -233,7 +232,7 @@ private struct MineSlotCard: View {
                     cardBorderColor,
                     lineWidth: status == "ready" ? 2 : 1
                 )
-                .opacity(glowPulse && status != "idle" ? 1 : 0.6)
+                .opacity(status != "idle" ? 0.8 : 0.6)
         )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
         .shadow(color: cardShadowColor, radius: status != "idle" ? 8 : 3, y: 2)
@@ -264,16 +263,8 @@ private struct MineSlotCard: View {
                 }
             }
         }
-        .animation(
-            .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
-            value: glowPulse
-        )
         .onAppear {
             previousStatus = status
-            startGlowIfNeeded()
-        }
-        .onDisappear {
-            glowPulse = false
         }
         .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { now in
             if status == "mining" {
@@ -281,7 +272,6 @@ private struct MineSlotCard: View {
             }
         }
         .onChange(of: status) { oldVal, newVal in
-            startGlowIfNeeded()
             // Detect collect: was "ready" → now "idle" (gold collected)
             if previousStatus == "ready" && newVal == "idle" {
                 HapticManager.success()
@@ -333,13 +323,13 @@ private struct MineSlotCard: View {
                     endPoint: .bottomTrailing
                 )
 
-                // Coin sparkle in corner
+                // Coin sparkle in corner — subtle static glow
                 Image(systemName: "sparkles")
                     .font(.system(size: 24)) // SF Symbol — keep
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
                     .offset(x: 35, y: -20)
-                    .opacity(glowPulse ? 1.0 : 0.5)
+                    .opacity(0.8)
 
             case "idle":
                 DarkFantasyTheme.bgScrim
@@ -470,7 +460,6 @@ private struct MineSlotCard: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.compactPrimary)
-            .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: true)
 
         default:
             EmptyView()
@@ -495,11 +484,6 @@ private struct MineSlotCard: View {
         }
     }
 
-    // MARK: - Animation
-
-    private func startGlowIfNeeded() {
-        glowPulse = (status == "mining" || status == "ready")
-    }
 }
 
 // MARK: - Locked Mine Card

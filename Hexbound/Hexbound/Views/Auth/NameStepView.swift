@@ -10,8 +10,8 @@ struct NameStepView: View {
 
     /// Y-offset for gentle float (never scale — per project rules)
     @State private var floatOffset: CGFloat = 0
-    /// Opacity driver for the class-colored portrait aura
-    @State private var glowOpacity: Double = 0.35
+    /// Rotation phase for animated angular gradient border (0 → 360)
+    @State private var glowPhase: CGFloat = 0
     /// X-phase for shimmer sweep across the card (−0.5 → 1.5)
     @State private var shimmerPhase: CGFloat = -0.5
     /// Shadow radius for the level badge gold glow
@@ -53,11 +53,12 @@ struct NameStepView: View {
             if isVisible {
                 EmberParticlesView()
                     .frame(maxWidth: .infinity)
-                    .frame(height: 480)
+                    .frame(height: 340)
                     .allowsHitTesting(false)
             }
 
-            unifiedCharacterCard
+            creationHeroCard
+                .frame(maxWidth: 200)
                 .offset(y: floatOffset)
                 .opacity(cardOpacity)
         }
@@ -78,9 +79,9 @@ struct NameStepView: View {
             floatOffset = -6
         }
 
-        // Portrait aura: opacity pulse only — never scale
-        withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true).delay(0.5)) {
-            glowOpacity = 1.0
+        // Border glow: rotating angular gradient
+        withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+            glowPhase = 360
         }
 
         // Level badge: shadow radius pulse
@@ -93,7 +94,7 @@ struct NameStepView: View {
             shimmerPhase = 1.5
         }
 
-        // Stat cells: staggered opacity reveal
+        // Stat pills: staggered opacity reveal
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             withAnimation(.easeOut(duration: 0.4)) {
                 statCellsVisible = true
@@ -105,193 +106,259 @@ struct NameStepView: View {
         // Reset all drivers — SwiftUI stops associated repeatForever animations
         isVisible = false
         floatOffset = 0
-        glowOpacity = 0.35
+        glowPhase = 0
         levelGlowRadius = 6
         shimmerPhase = -0.5
     }
 
-    // MARK: - Unified Character Card
+    // MARK: - Arena-Style Hero Card
 
-    private var unifiedCharacterCard: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            portraitSection
-
-            originClassRow
-
-            Text(vm.selectedGender.displayName)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(1)
-
-            GoldDivider()
-                .padding(.horizontal, LayoutConstants.spaceLG)
-
-            buildSummarySection
-        }
-        .padding(LayoutConstants.cardPadding)
-        .frame(maxWidth: .infinity)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(
-            cornerRadius: LayoutConstants.cardRadius - 2,
-            inset: 2,
-            color: DarkFantasyTheme.gold.opacity(0.10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.45), lineWidth: 1.5)
-        )
-        .overlay(shimmerOverlay)
-        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.45), length: 16, thickness: 1.5)
-        .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.65), size: 7)
-        .compositingGroup()
-        // Dual shadow: gold glow + abyss depth
-        .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 16)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.55), radius: 10, y: 5)
+    private var cardClassColor: Color {
+        guard let cls = vm.selectedClass else { return DarkFantasyTheme.gold }
+        return DarkFantasyTheme.classColor(for: cls)
     }
 
-    // MARK: - Portrait Section
+    private var creationHeroCard: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let height = width * 1.4
 
-    @ViewBuilder
-    private var portraitSection: some View {
+            ZStack {
+                // 1. Full-bleed avatar
+                CachedAssetImage(
+                    key: vm.selectedSkin?.resolvedImageKey,
+                    url: vm.selectedSkin?.imageUrl,
+                    fallback: "🧑",
+                    contentMode: .fill
+                )
+                .frame(width: width, height: height)
+                .clipped()
+
+                // 2. Vignette overlays
+                creationVignette(width: width, height: height)
+
+                // 3. Content overlay
+                VStack {
+                    creationTopBadges
+                    Spacer()
+                    creationBottomInfo
+                }
+                .padding(LayoutConstants.arenaCardPadding)
+                .frame(width: width, height: height)
+            }
+            .frame(width: width, height: height)
+            .background(DarkFantasyTheme.bgAbyss)
+            .overlay(creationBorderGlow)
+            .overlay(shimmerOverlay)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
+            .shadow(color: cardClassColor.opacity(0.35), radius: 22, y: 3)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
+        }
+        .aspectRatio(1.0 / 1.4, contentMode: .fit)
+    }
+
+    // MARK: - Vignette
+
+    private func creationVignette(width: CGFloat, height: CGFloat) -> some View {
         ZStack {
-            // Class-colored radial aura — opacity pulse, never scale
-            if let cls = vm.selectedClass {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                DarkFantasyTheme.classColor(for: cls).opacity(0.30),
-                                DarkFantasyTheme.gold.opacity(0.06),
-                                Color.clear
-                            ],
-                            center: .center,
-                            startRadius: 30,
-                            endRadius: 120
-                        )
-                    )
-                    .frame(width: 240, height: 240)
-                    .opacity(glowOpacity)
-                    .allowsHitTesting(false)
-            }
+            RadialGradient(
+                gradient: Gradient(colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.5)]),
+                center: .init(x: 0.5, y: 0.35),
+                startRadius: width * 0.25,
+                endRadius: width * 0.85
+            )
 
-            // Soft gold ring — pulses with aura opacity
-            Circle()
-                .stroke(DarkFantasyTheme.gold.opacity(0.10 * glowOpacity), lineWidth: 1.5)
-                .frame(width: 210, height: 210)
-                .allowsHitTesting(false)
-
-            ZStack(alignment: .bottomTrailing) {
-                // Portrait image
-                portraitImage
-                    .frame(width: 180, height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
-                            .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
-                    )
-                    // Bottom vignette
-                    .overlay(
-                        LinearGradient(
-                            colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.45)],
-                            startPoint: .center,
-                            endPoint: .bottom
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
-                        .allowsHitTesting(false)
-                    )
-                    .shadow(color: DarkFantasyTheme.gold.opacity(0.28), radius: 16)
-
-                // Level badge with pulsing gold shadow
-                Text("1")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel).bold())
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-                    .frame(width: 30, height: 30)
-                    .background(
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.goldDim],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 15
-                                )
-                            )
-                    )
-                    .shadow(color: DarkFantasyTheme.goldBright.opacity(0.75), radius: levelGlowRadius)
-                    .offset(x: 4, y: 4)
-            }
+            LinearGradient(
+                colors: [
+                    .clear, .clear,
+                    DarkFantasyTheme.bgAbyss.opacity(0.4),
+                    DarkFantasyTheme.bgAbyss.opacity(0.8),
+                    DarkFantasyTheme.bgAbyss.opacity(0.95),
+                    DarkFantasyTheme.bgAbyss
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: height * 0.65)
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
     }
 
-    private var portraitImage: some View {
-        CachedAssetImage(
-            key: vm.selectedSkin?.resolvedImageKey,
-            url: vm.selectedSkin?.imageUrl,
-            fallback: "🧑"
-        )
-    }
+    // MARK: - Top Badges
 
-    // MARK: - Origin + Class Row
+    private var creationTopBadges: some View {
+        HStack {
+            // Level circle with pulsing glow
+            Text("1")
+                .font(DarkFantasyTheme.section(size: 14))
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
+                        .overlay(Circle().stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5))
+                )
+                .shadow(color: DarkFantasyTheme.goldBright.opacity(0.6), radius: levelGlowRadius)
 
-    @ViewBuilder
-    private var originClassRow: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
+            Spacer()
+
+            // Origin badge
             if let origin = vm.selectedOrigin {
-                Image(origin.iconAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 20, height: 20)
-                Text(origin.displayName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-            if let cls = vm.selectedClass {
-                Image(cls.iconAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 20, height: 20)
-                Text(cls.sfName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(DarkFantasyTheme.classColor(for: cls))
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(origin.iconAsset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 16, height: 16)
+                    Text(origin.displayName.uppercased())
+                        .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.space2XS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .stroke(DarkFantasyTheme.borderSubtle.opacity(0.3), lineWidth: 0.5)
+                        )
+                )
             }
         }
     }
 
-    // MARK: - Build Summary + Stat Grid
+    // MARK: - Bottom Info
 
-    @ViewBuilder
-    private var buildSummarySection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
+    private var creationBottomInfo: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            // Hero summary line (e.g. "Female Dogfolk Warrior")
             Text(vm.heroSummary)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
 
-            if !vm.combinedBonuses.isEmpty {
-                LazyVGrid(
-                    columns: [GridItem(.flexible()), GridItem(.flexible())],
-                    spacing: LayoutConstants.spaceXS
-                ) {
-                    ForEach(Array(vm.combinedBonuses.enumerated()), id: \.element.stat) { index, bonus in
-                        statBonusCell(name: bonus.stat, value: bonus.value)
-                            .opacity(statCellsVisible ? 1 : 0)
-                            .offset(y: statCellsVisible ? 0 : 8)
-                            .animation(
-                                .easeOut(duration: 0.4).delay(Double(index) * 0.07),
-                                value: statCellsVisible
+            // Class tag pill
+            if let cls = vm.selectedClass {
+                Text(cls.displayName.uppercased())
+                    .font(DarkFantasyTheme.body(size: 10).bold())
+                    .foregroundStyle(cardClassColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                            .fill(cardClassColor.opacity(0.12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                    .stroke(cardClassColor.opacity(0.25), lineWidth: 0.5)
                             )
+                    )
+            }
+
+            // "NEW" rating badge
+            HStack(spacing: 5) {
+                if UIImage(named: "icon-pvp-rating") != nil {
+                    Image("icon-pvp-rating")
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                        .opacity(0.7)
+                } else {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
+                }
+                Text("NEW")
+                    .font(DarkFantasyTheme.section(size: 20))
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .tracking(2)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
+            }
+
+            // Glass stat pills — top combined bonuses
+            if !vm.combinedBonuses.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(Array(vm.combinedBonuses.prefix(3).enumerated()), id: \.element.stat) { index, bonus in
+                        creationStatPill(
+                            value: "+\(bonus.value)",
+                            label: String(bonus.stat.prefix(3)).uppercased(),
+                            color: statPillColor(for: index)
+                        )
+                        .opacity(statCellsVisible ? 1 : 0)
+                        .animation(
+                            .easeOut(duration: 0.4).delay(Double(index) * 0.1),
+                            value: statCellsVisible
+                        )
                     }
                 }
-                .padding(.top, 2)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func statPillColor(for index: Int) -> Color {
+        switch index {
+        case 0:  return DarkFantasyTheme.danger
+        case 1:  return DarkFantasyTheme.info
+        default: return DarkFantasyTheme.gold
+        }
+    }
+
+    // MARK: - Glass Stat Pill (Arena-Style)
+
+    @ViewBuilder
+    private func creationStatPill(value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(DarkFantasyTheme.section(size: 13))
+                .foregroundStyle(color)
+            Text(label)
+                .font(DarkFantasyTheme.body(size: 9))
+                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(color.opacity(0.15), lineWidth: 0.5)
+                )
+        )
+    }
+
+    // MARK: - Animated Border Glow
+
+    private var creationBorderGlow: some View {
+        RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
+            .stroke(
+                AngularGradient(
+                    colors: [
+                        cardClassColor.opacity(0.4),
+                        DarkFantasyTheme.gold.opacity(0.15),
+                        cardClassColor.opacity(0.3),
+                        DarkFantasyTheme.gold.opacity(0.1),
+                        cardClassColor.opacity(0.4)
+                    ],
+                    center: .center,
+                    startAngle: .degrees(glowPhase),
+                    endAngle: .degrees(glowPhase + 360)
+                ),
+                lineWidth: 2
+            )
+            .overlay(
+                CornerBracketOverlay(
+                    color: DarkFantasyTheme.gold.opacity(0.5),
+                    length: 16,
+                    thickness: 1.5
+                )
+            )
+            .overlay(
+                CornerDiamondOverlay(
+                    color: DarkFantasyTheme.gold.opacity(0.5),
+                    size: 6
+                )
+            )
     }
 
     // MARK: - Shimmer Overlay
@@ -308,7 +375,7 @@ struct NameStepView: View {
             startPoint: UnitPoint(x: shimmerPhase - 0.4, y: 0.0),
             endPoint: UnitPoint(x: shimmerPhase + 0.4, y: 1.0)
         )
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
         .allowsHitTesting(false)
     }
 
@@ -397,32 +464,37 @@ struct NameStepView: View {
                     radius: 8
                 )
 
-                // Dice button
+                // Dice button — prominent when name is empty, subdued when filled
                 Button {
                     HapticManager.light()
                     SFXManager.shared.play(.uiTap)
                     vm.generateRandomName()
                     vm.checkNameAvailability()
                 } label: {
-                    VStack(spacing: 4) {
-                        Image("ui-dice")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 28, height: 28)
-                        Text("RND")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                            .foregroundStyle(DarkFantasyTheme.goldDim)
-                    }
-                    .frame(width: heroInputHeight, height: heroInputHeight)
+                    Image("ui-dice")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 30, height: 30)
+                        .frame(width: heroInputHeight, height: heroInputHeight)
                 }
                 .background(
                     RoundedRectangle(cornerRadius: heroInputRadius)
-                        .fill(DarkFantasyTheme.gold.opacity(0.06))
+                        .fill(
+                            vm.characterName.isEmpty
+                                ? DarkFantasyTheme.gold.opacity(0.15)
+                                : DarkFantasyTheme.gold.opacity(0.04)
+                        )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: heroInputRadius)
-                        .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1.5)
+                        .stroke(
+                            vm.characterName.isEmpty
+                                ? DarkFantasyTheme.gold.opacity(0.7)
+                                : DarkFantasyTheme.gold.opacity(0.25),
+                            lineWidth: vm.characterName.isEmpty ? 2 : 1
+                        )
                 )
+                .animation(.easeInOut(duration: 0.2), value: vm.characterName.isEmpty)
                 .buttonStyle(.scalePress(0.95))
             }
 
@@ -446,45 +518,6 @@ struct NameStepView: View {
             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
             .animation(.easeInOut(duration: 0.2), value: vm.nameAvailability)
         }
-    }
-
-    // MARK: - Stat Bonus Cell
-
-    @ViewBuilder
-    private func statBonusCell(name: String, value: Int) -> some View {
-        let statType = StatType.allCases.first(where: { $0.fullName == name })
-        let accentColor = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
-
-        HStack(spacing: LayoutConstants.spaceSM) {
-            if let statType {
-                Image(statType.iconAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 24, height: 24)
-            }
-
-            Text(name)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-
-            Spacer(minLength: 4)
-
-            Text("\(value > 0 ? "+" : "")\(value)")
-                .font(DarkFantasyTheme.section(size: 20).bold())
-                .foregroundStyle(value > 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textDanger)
-        }
-        .padding(.horizontal, LayoutConstants.spaceMS)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(accentColor.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .stroke(value > 0 ? DarkFantasyTheme.gold.opacity(0.5) : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
-        )
-        .shadow(color: accentColor.opacity(0.2), radius: 6, y: 2)
     }
 
     // MARK: - Helpers

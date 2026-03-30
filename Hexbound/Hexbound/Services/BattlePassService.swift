@@ -38,8 +38,12 @@ final class BattlePassService {
         }
     }
 
-    func claimReward(level: Int) async -> Bool {
-        guard let charId = appState.currentCharacter?.id else { return false }
+    /// Claims all eligible rewards at the given BP level.
+    /// Throws on failure so callers can show context-specific messages.
+    func claimReward(level: Int) async throws {
+        guard let charId = appState.currentCharacter?.id else {
+            throw BattlePassClaimError.noCharacter
+        }
         do {
             _ = try await APIClient.shared.postRaw(
                 APIEndpoints.battlePassClaim(level),
@@ -47,9 +51,25 @@ final class BattlePassService {
             )
             // Refresh character in background (don't block UI)
             Task { [weak self] in await self?.refreshCharacter() }
-            return true
-        } catch {
-            return false
+        } catch let error as APIError {
+            switch error {
+            case .clientError(let code, let msg):
+                if code == 400 && msg.contains("already claimed") {
+                    throw BattlePassClaimError.alreadyClaimed
+                } else if code == 400 && msg.contains("not yet reached") {
+                    throw BattlePassClaimError.levelNotReached
+                } else if code == 409 {
+                    throw BattlePassClaimError.inventoryFull
+                } else {
+                    throw BattlePassClaimError.serverError(msg)
+                }
+            case .rateLimited:
+                throw BattlePassClaimError.rateLimited
+            case .unauthorized:
+                throw BattlePassClaimError.unauthorized
+            default:
+                throw BattlePassClaimError.serverError(error.localizedDescription)
+            }
         }
     }
 
@@ -90,5 +110,42 @@ final class BattlePassService {
     private func refreshCharacter() async {
         let charService = CharacterService(appState: appState)
         await charService.loadCharacter()
+    }
+}
+
+// MARK: - Claim Errors
+
+enum BattlePassClaimError: LocalizedError {
+    case noCharacter
+    case alreadyClaimed
+    case levelNotReached
+    case inventoryFull
+    case rateLimited
+    case unauthorized
+    case serverError(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .noCharacter: "No active character"
+        case .alreadyClaimed: "Already claimed"
+        case .levelNotReached: "Level not reached yet"
+        case .inventoryFull: "Inventory full"
+        case .rateLimited: "Too many requests"
+        case .unauthorized: "Session expired"
+        case .serverError(let msg): msg
+        }
+    }
+
+    /// User-facing subtitle for the toast
+    var toastSubtitle: String {
+        switch self {
+        case .alreadyClaimed: "This reward was already collected"
+        case .levelNotReached: "Earn more XP to unlock this level"
+        case .inventoryFull: "Free up inventory space first"
+        case .rateLimited: "Wait a moment and try again"
+        case .unauthorized: "Please log in again"
+        case .noCharacter: "Select a character first"
+        case .serverError(let msg): msg
+        }
     }
 }

@@ -286,7 +286,11 @@
       "Bash(find '/Users/artosetrov/Documents/Cursor AI/PVP RPG' -type f -name *.swift -exec grep -l \"^struct Quest\\\\|^class Quest\" {})",
       "Bash(2)",
       "Bash(grep -i \"\\\\.swift$\")",
-      "Bash(grep -E \"\\\\.\\(swift|swift\\)$\")"
+      "Bash(grep -E \"\\\\.\\(swift|swift\\)$\")",
+      "Bash(grep -r \"battle\\\\|match.*result\\\\|createMailMessage\" '/Users/artosetrov/Documents/Cursor AI/PVP RPG/backend/src' --include=*.ts)",
+      "Bash(xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build)",
+      "Bash(xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build)",
+      "Bash(grep -r \"BattleInvite\\\\|ChallengeInvite\\\\|DuelInvite\" /Users/artosetrov/Documents/Cursor AI/PVP RPG/Hexbound/Hexbound --include=*.swift)"
     ]
   }
 }

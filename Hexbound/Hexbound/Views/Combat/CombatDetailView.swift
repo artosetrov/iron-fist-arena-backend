@@ -173,6 +173,25 @@ struct CombatDetailView: View {
         return nil
     }
 
+    // MARK: - Rush Enemy Portrait Lookup
+
+    /// Derive a rush enemy portrait asset from the fighter's name.
+    /// "Flame Sprite" → "rush-flame-sprite-portrait", with fallback to "-full" then nil.
+    private func rushEnemyPortrait(for name: String) -> String? {
+        let slug = name
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "of", with: "")
+            .replacingOccurrences(of: "--", with: "-")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        let portrait = "rush-\(slug)-portrait"
+        if UIImage(named: portrait) != nil { return portrait }
+        let full = "rush-\(slug)-full"
+        if UIImage(named: full) != nil { return full }
+        return nil
+    }
+
     // MARK: - Setup
 
     private func setupCombatIfReady() {
@@ -308,13 +327,23 @@ struct CombatDetailView: View {
 
                     if !isPlayer, let bossPortrait = bossPortraitImage(for: fighter.characterName),
                        UIImage(named: bossPortrait) != nil {
+                        // Dungeon boss portrait
                         Image(bossPortrait)
                             .resizable()
                             .scaledToFill()
                             .frame(width: side, height: side)
                             .scaleEffect(x: -1, y: 1)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                    } else if !isPlayer, let rushPortrait = rushEnemyPortrait(for: fighter.characterName) {
+                        // Rush enemy portrait (Flame Sprite, Cursed Bandit, etc.)
+                        Image(rushPortrait)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: side, height: side)
+                            .scaleEffect(x: -1, y: 1)
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     } else {
+                        // Player avatar or unknown enemy fallback
                         AvatarImageView(
                             skinKey: fighter.avatar,
                             characterClass: fighter.characterClass,

@@ -62,16 +62,25 @@ struct CelebrationBannerView: View {
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.vertical, LayoutConstants.spaceMS)
+        // Ornamental banner system (widget audit fix — was flat gradient)
         .background(
             ZStack {
-                // Gradient background: celebration color → transparent
-                Rectangle()
+                // Radial glow base
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgPrimary.opacity(0.95),
+                    glowColor: banner.type.color.opacity(0.12),
+                    glowIntensity: 0.5,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+
+                // Gradient overlay: celebration color → transparent
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                     .fill(
                         LinearGradient(
                             colors: [
                                 banner.type.color.opacity(0.18),
                                 banner.type.color.opacity(0.06),
-                                DarkFantasyTheme.bgPrimary.opacity(0.95)
+                                .clear
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
@@ -93,6 +102,18 @@ struct CelebrationBannerView: View {
                 }
             }
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.panelRadius - 2,
+            inset: 2,
+            color: banner.type.color.opacity(0.10)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(banner.type.color.opacity(0.3), lineWidth: 1)
+        )
+        .cornerBrackets(color: banner.type.color.opacity(0.35), length: 14, thickness: 1.5)
+        .compositingGroup()
         .shadow(color: banner.type.color.opacity(0.2), radius: 8, y: 2)
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .onTapGesture {

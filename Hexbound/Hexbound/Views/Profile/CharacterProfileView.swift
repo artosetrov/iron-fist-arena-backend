@@ -520,7 +520,9 @@ struct CharacterProfileView: View {
     private func navigateToMessage() {
         appState.mainPath.append(AppRoute.guildHallMessage(
             characterId: characterId,
-            characterName: characterName
+            characterName: characterName,
+            avatar: profile?.avatar,
+            characterClass: profile?.characterClass.rawValue
         ))
     }
 
