@@ -52,11 +52,28 @@ struct StatPointsBadge: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, LayoutConstants.spaceSM)
-        .background(DarkFantasyTheme.gold.opacity(0.1))
+        // Ornamental card system (was flat gold opacity — widget audit fix)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: DarkFantasyTheme.gold.opacity(0.08),
+                glowIntensity: 0.5,
+                cornerRadius: LayoutConstants.buttonRadius
+            )
+        )
+        .surfaceLighting(cornerRadius: LayoutConstants.buttonRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(
+            cornerRadius: LayoutConstants.buttonRadius - 2,
+            inset: 2,
+            color: DarkFantasyTheme.gold.opacity(0.10)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
         )
+        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 12, thickness: 1.5)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .accessibilityLabel("Stat Points available: \(points)")
     }
 

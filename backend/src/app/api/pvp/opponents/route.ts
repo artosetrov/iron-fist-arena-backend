@@ -63,6 +63,12 @@ export async function GET(req: NextRequest) {
       gender: true,
       avatar: true,
       gearScore: true,
+      str: true,
+      agi: true,
+      vit: true,
+      int: true,
+      wis: true,
+      luk: true,
     } as const
 
     // Run all 4 matchmaking phases in parallel (was: sequential, each waiting on the previous).

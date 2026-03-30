@@ -41,7 +41,7 @@ struct LowHPPotionBanner: View {
 
             Spacer()
 
-            // Action button
+            // Action button — design system ButtonStyle
             Button {
                 if hasHealthPotion {
                     onDrinkPotion()
@@ -50,29 +50,27 @@ struct LowHPPotionBanner: View {
                 }
             } label: {
                 Text(hasHealthPotion ? "HEAL" : "SHOP")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(hasHealthPotion ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.goldBright)
-                    .padding(.horizontal, LayoutConstants.spaceMD)
-                    .padding(.vertical, LayoutConstants.spaceSM)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                            .fill(hasHealthPotion ? DarkFantasyTheme.gold : Color.clear)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                            .stroke(hasHealthPotion ? Color.clear : DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1.5)
-                    )
             }
-            .buttonStyle(.scalePress(0.9))
+            .buttonStyle(.compactPrimary)
         }
         .padding(LayoutConstants.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.danger.opacity(0.08))
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.danger.opacity(0.08),
+                glowColor: DarkFantasyTheme.danger.opacity(0.04),
+                glowIntensity: 0.3,
+                cornerRadius: LayoutConstants.cardRadius
+            )
         )
+        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.06, bottomShadow: 0.10)
+        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.10))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .stroke(DarkFantasyTheme.danger.opacity(0.35), lineWidth: 1.5)
         )
+        .cornerBrackets(color: DarkFantasyTheme.danger.opacity(0.4), length: 10, thickness: 1.2)
+        .compositingGroup()
+        .shadow(color: DarkFantasyTheme.danger.opacity(0.1), radius: 4, y: 1)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
     }
 }

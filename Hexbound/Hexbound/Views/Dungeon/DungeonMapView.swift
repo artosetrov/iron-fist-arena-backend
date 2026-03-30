@@ -86,13 +86,13 @@ struct DungeonMapView: View {
                             Image("ui-arrow-up")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 22, height: 22)
+                                .frame(width: 18, height: 18)
                             Text("CASTLE")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                                .tracking(1)
+                                .font(DarkFantasyTheme.section)
                         }
-                        .padding(.horizontal, LayoutConstants.buttonPaddingH)
-                        .padding(.vertical, LayoutConstants.spaceMD)
+                        .frame(width: 200)
+                        .padding(.horizontal, LayoutConstants.spaceMS)
+                        .padding(.vertical, LayoutConstants.spaceSM)
                     }
                     .buttonStyle(.compactPrimary)
                     .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)

@@ -177,6 +177,8 @@ struct CombatResultDetailView: View {
                 buttons.append(ResultButton(title: "SEND MESSAGE", icon: "envelope.fill", style: .secondary, action: {
                     let enemyId = enemy.id
                     let enemyName = enemy.characterName
+                    let enemyAvatar = enemy.avatar
+                    let enemyClass = enemy.characterClass.rawValue
                     appState.combatData = nil
                     appState.combatResult = nil
                     appState.invalidateCache("quests")
@@ -186,15 +188,17 @@ struct CombatResultDetailView: View {
                         appState.mainPath.append(
                             AppRoute.guildHallMessage(
                                 characterId: enemyId,
-                                characterName: enemyName
+                                characterName: enemyName,
+                                avatar: enemyAvatar,
+                                characterClass: enemyClass
                             )
                         )
                     }
                 }))
             }
-            // Session stats button
+            // Session stats button (ghost — saves space)
             if let charId = appState.currentCharacter?.id {
-                buttons.append(ResultButton(title: "SESSION STATS", icon: "chart.bar.fill", style: .secondary, action: {
+                buttons.append(ResultButton(title: "SESSION STATS", icon: "chart.bar.fill", style: .ghost, action: {
                     appState.combatData = nil
                     appState.combatResult = nil
                     appState.invalidateCache("quests")
@@ -220,15 +224,24 @@ struct CombatResultDetailView: View {
             }))
         }
 
+        // Calculate XP numbers for hero counter
+        let xpReward = res.xpReward ?? 0
+        let currentExp = appState.currentCharacter?.experience ?? 0
+        let xpBeforeValue = max(0, currentExp - xpReward)
+        let charLevel = displayLevel
+        let xpNeededValue = xpNeededForLevel(charLevel)
+
         return BattleResultConfig(
             isVictory: isWin,
             title: isWin ? "VICTORY!" : "DEFEAT",
             subtitle: nearMissSubtitle,
-            illustrationImage: isWin ? "result-victory" : "result-defeat",
+            illustrationImage: nil,
             goldReward: res.goldReward,
             xpReward: res.xpReward,
             ratingChange: res.ratingChange,
             firstWinBonus: res.firstWinBonus == true,
+            xpBefore: xpBeforeValue,
+            xpNeeded: xpNeededValue,
             xpBarConfig: XPBarConfig(
                 displayLevel: displayLevel,
                 progress: xpBarProgress,

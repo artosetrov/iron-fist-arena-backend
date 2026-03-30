@@ -175,8 +175,8 @@ struct ArenaOpponentCard: View {
 
             // Glass stat pills
             HStack(spacing: 4) {
-                glassStatPill(value: "\(opponent.strength ?? 0)", label: "Attack", color: DarkFantasyTheme.danger)
-                glassStatPill(value: "\(opponent.vitality ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
+                glassStatPill(value: "\(opponent.attackPower)", label: "Attack", color: DarkFantasyTheme.danger)
+                glassStatPill(value: "\(opponent.armor ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
                 glassStatPill(value: "\(Int(opponent.winRate))%", label: "Winrate", color: DarkFantasyTheme.success)
             }
         }

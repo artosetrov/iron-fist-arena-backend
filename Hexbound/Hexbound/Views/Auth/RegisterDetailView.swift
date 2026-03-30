@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct RegisterDetailView: View {
     @Environment(AppState.self) private var appState
@@ -56,6 +57,80 @@ struct RegisterDetailView: View {
                     .buttonStyle(.primary(enabled: !vm.isLoading))
                     .disabled(vm.isLoading)
                     .accessibilityLabel("Create account")
+
+                    // Social divider
+                    HStack(spacing: LayoutConstants.spaceMD) {
+                        Rectangle()
+                            .fill(DarkFantasyTheme.borderSubtle)
+                            .frame(height: 1)
+                        Text("OR")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .tracking(1)
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            .fixedSize()
+                        Rectangle()
+                            .fill(DarkFantasyTheme.borderSubtle)
+                            .frame(height: 1)
+                    }
+
+                    // Social auth row — matching WelcomeView
+                    HStack(spacing: LayoutConstants.spaceMD) {
+                        // Apple
+                        Button {
+                            vm.triggerAppleSignIn(appState: appState)
+                        } label: {
+                            HStack(spacing: LayoutConstants.spaceSM) {
+                                Image(systemName: "apple.logo")
+                                    .font(.system(size: 18, weight: .medium))
+                                Text("Apple")
+                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            }
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LayoutConstants.buttonHeightLG)
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .fill(DarkFantasyTheme.bgSecondary)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
+                        }
+                        .accessibilityLabel("Sign up with Apple")
+
+                        // Google
+                        ZStack {
+                            Button {
+                                Task { await vm.handleGoogleSignIn(appState: appState) }
+                            } label: {
+                                Color.clear
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                            HStack(spacing: LayoutConstants.spaceSM) {
+                                Text("G")
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                Text("Google")
+                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            }
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                            .allowsHitTesting(false)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: LayoutConstants.buttonHeightLG)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                .fill(DarkFantasyTheme.bgSecondary)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Sign up with Google")
+                    }
 
                     // Back to login
                     Button("Already have an account? LOG IN") {

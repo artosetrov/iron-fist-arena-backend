@@ -1,5 +1,15 @@
 import SwiftUI
 
+// MARK: - Map Transition Phase
+
+/// Phases for the parallax + fade transition between Hub and Dungeon maps
+enum MapTransitionPhase {
+    case idle       // No transition in progress
+    case fadingOut  // Current map fading out + parallax shifting away
+    case switching  // Content swap (instant, hidden behind black)
+    case fadingIn   // New map fading in + parallax settling into place
+}
+
 // MARK: - Hub View
 
 struct HubView: View {
@@ -7,6 +17,9 @@ struct HubView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var showDungeonMap = false
     @State private var showDailyLoginSheet = false
+
+    // Parallax + Fade transition state
+    @State private var mapTransitionPhase: MapTransitionPhase = .idle
 
     // Onboarding flow state
     @State private var currentOnboardingStep = 0
@@ -56,28 +69,28 @@ struct HubView: View {
             .background(DarkFantasyTheme.bgPrimary)
             .zIndex(10) // Keep HUD above map transitions
 
-            // Map area — CityMap and DungeonMap with crossfade transition
+            // Map area — CityMap and DungeonMap with parallax + fade transition
             ZStack {
                 // Black base to avoid any white flashes
                 DarkFantasyTheme.bgPrimary
 
-                // Hub city map
+                // Hub city map — parallax shifts up when going to dungeons
                 CityMapView()
                     .tutorialAnchor(.hubCityMap)
-                    .opacity(showDungeonMap ? 0 : 1)
+                    .offset(y: cityMapOffset)
+                    .opacity(cityMapOpacity)
 
-                // Dungeon map — navigates via mainPath so DungeonRoom/Combat share one stack
+                // Dungeon map — parallax shifts up from below when appearing
                 DungeonMapView(
                     onBack: {
-                        withAnimation(.easeInOut(duration: 0.45)) {
-                            showDungeonMap = false
-                        }
+                        triggerMapTransition(toDungeon: false)
                     },
                     onNavigate: { route in
                         appState.mainPath.append(route)
                     }
                 )
-                .opacity(showDungeonMap ? 1 : 0)
+                .offset(y: dungeonMapOffset)
+                .opacity(dungeonMapOpacity)
             }
             .clipped()
             .overlay(alignment: .top) {
@@ -145,24 +158,24 @@ struct HubView: View {
                 Button {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
-                    withAnimation(.easeInOut(duration: 0.45)) {
-                        showDungeonMap.toggle()
-                    }
+                    triggerMapTransition(toDungeon: !showDungeonMap)
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(showDungeonMap ? "ui-arrow-up" : "ui-arrow-down")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 22, height: 22)
+                            .frame(width: 18, height: 18)
                         Text(showDungeonMap ? "CASTLE" : "ADVENTURES")
                             .font(DarkFantasyTheme.section)
                     }
-                    .frame(minWidth: 220)
-                    .padding(.horizontal, LayoutConstants.buttonPaddingH)
-                    .padding(.vertical, LayoutConstants.spaceMD)
+                    // Fixed width so button doesn't resize between CASTLE / ADVENTURES
+                    .frame(width: 200)
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+                    .padding(.vertical, LayoutConstants.spaceSM)
                 }
                 .buttonStyle(.compactPrimary)
                 .animation(nil, value: showDungeonMap)
+                .disabled(mapTransitionPhase != .idle)
                 .accessibilityLabel(showDungeonMap ? "Go to Adventures" : "Go to Castle")
                 .padding(.bottom, LayoutConstants.safeAreaBottom + LayoutConstants.spaceSM)
             }
@@ -233,6 +246,73 @@ struct HubView: View {
             // Background-prefetch incoming challenges for battle invite banner
             if cache.cachedIncomingChallenges() == nil {
                 Task { await prefetchIncomingChallenges() }
+            }
+        }
+    }
+
+    // MARK: - Parallax + Fade Transition
+
+    /// Parallax offset for the city map (hub)
+    private var cityMapOffset: CGFloat {
+        switch mapTransitionPhase {
+        case .idle: return showDungeonMap ? -30 : 0
+        case .fadingOut: return showDungeonMap ? 0 : -30  // moving up (going to dungeons)
+        case .switching: return showDungeonMap ? 30 : -30
+        case .fadingIn: return showDungeonMap ? -30 : 0
+        }
+    }
+
+    private var cityMapOpacity: Double {
+        switch mapTransitionPhase {
+        case .idle: return showDungeonMap ? 0 : 1
+        case .fadingOut: return 0
+        case .switching: return 0
+        case .fadingIn: return showDungeonMap ? 0 : 1
+        }
+    }
+
+    /// Parallax offset for the dungeon map
+    private var dungeonMapOffset: CGFloat {
+        switch mapTransitionPhase {
+        case .idle: return showDungeonMap ? 0 : 30
+        case .fadingOut: return showDungeonMap ? 30 : 0  // moving down (going back to castle)
+        case .switching: return showDungeonMap ? 30 : -30
+        case .fadingIn: return showDungeonMap ? 0 : 30
+        }
+    }
+
+    private var dungeonMapOpacity: Double {
+        switch mapTransitionPhase {
+        case .idle: return showDungeonMap ? 1 : 0
+        case .fadingOut: return 0
+        case .switching: return 0
+        case .fadingIn: return showDungeonMap ? 1 : 0
+        }
+    }
+
+    private func triggerMapTransition(toDungeon: Bool) {
+        guard mapTransitionPhase == .idle else { return }
+
+        // Phase 1: fade out current + parallax shift
+        withAnimation(.easeIn(duration: 0.3)) {
+            mapTransitionPhase = .fadingOut
+        }
+
+        // Phase 2: switch content (instantaneous, hidden by black)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            mapTransitionPhase = .switching
+            showDungeonMap = toDungeon
+
+            // Phase 3: fade in new + parallax settle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                withAnimation(.easeOut(duration: 0.35)) {
+                    mapTransitionPhase = .fadingIn
+                }
+
+                // Phase 4: back to idle
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    mapTransitionPhase = .idle
+                }
             }
         }
     }

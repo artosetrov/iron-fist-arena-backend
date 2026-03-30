@@ -4,6 +4,7 @@ import SwiftUI
 
 struct HubLogoButton: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
     /// Optional custom action. When nil, pops `mainPath` by default.
     var action: (() -> Void)?
 
@@ -14,6 +15,8 @@ struct HubLogoButton: View {
                 action()
             } else if !appState.mainPath.isEmpty {
                 appState.mainPath.removeLast(1)
+            } else {
+                dismiss()
             }
         } label: {
             Image("ui-arrow-left")

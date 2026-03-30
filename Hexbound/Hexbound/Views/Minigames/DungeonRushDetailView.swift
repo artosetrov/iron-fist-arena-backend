@@ -64,9 +64,10 @@ struct DungeonRushDetailView: View {
             Image("bg-dungeon")
                 .resizable()
                 .scaledToFill()
+                .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: UIScreen.main.bounds.height)
+                .clipped()
                 .ignoresSafeArea()
                 .opacity(0.45)
-                .clipped()
 
             // Vignette — radial center clarity + edge darkening
             RadialGradient(
@@ -423,6 +424,7 @@ struct DungeonRushDetailView: View {
                     .padding(.bottom, LayoutConstants.spaceLG)
             }
         }
+        .clipped()
     }
 
     // MARK: - Per-Room Background
@@ -435,9 +437,10 @@ struct DungeonRushDetailView: View {
                 Image("bg-rush-combat")
                     .resizable()
                     .scaledToFill()
+                    .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: UIScreen.main.bounds.height)
+                    .clipped()
                     .ignoresSafeArea()
                     .opacity(0.22)
-                    .clipped()
                 // Red edge vignette
                 RadialGradient(
                     gradient: Gradient(colors: [
@@ -477,9 +480,10 @@ struct DungeonRushDetailView: View {
                 Image("bg-rush-treasure")
                     .resizable()
                     .scaledToFill()
+                    .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: UIScreen.main.bounds.height)
+                    .clipped()
                     .ignoresSafeArea()
                     .opacity(0.18)
-                    .clipped()
                 RadialGradient(
                     gradient: Gradient(colors: [
                         DarkFantasyTheme.gold.opacity(0.08),
@@ -738,11 +742,12 @@ struct DungeonRushDetailView: View {
                 .tracking(2)
                 .padding(.bottom, LayoutConstants.spaceSM)
 
-            // Full-art enemy image
+            // Full-art enemy image — constrained to screen width
             Image(enemyAssetName(for: vm.enemyName))
                 .resizable()
                 .scaledToFit()
-                .frame(maxHeight: 320)
+                .frame(maxWidth: UIScreen.main.bounds.width - LayoutConstants.screenPadding * 2, maxHeight: 320)
+                .clipped()
                 .shadow(color: accentColor.opacity(0.4), radius: 24)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 12, y: 8)
                 // Ground glow ellipse

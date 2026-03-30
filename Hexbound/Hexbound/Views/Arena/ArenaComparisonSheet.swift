@@ -302,8 +302,8 @@ struct ArenaComparisonSheet: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             sectionHeader("Combat Stats")
 
-            statRow(label: "Attack", myValue: character.attackPower, theirValue: opponent.strength ?? 0)
-            statRow(label: "Defense", myValue: character.armor ?? 0, theirValue: opponent.vitality ?? 0)
+            statRow(label: "Attack", myValue: character.attackPower, theirValue: opponent.attackPower)
+            statRow(label: "Defense", myValue: character.armor ?? 0, theirValue: opponent.armor ?? 0)
             statRow(label: "HP", myValue: character.maxHp, theirValue: opponent.maxHp)
             statRow(label: "Speed", myValue: character.agility ?? 0, theirValue: opponent.agility ?? 0)
         }
@@ -466,8 +466,8 @@ struct ArenaComparisonSheet: View {
         let myHp = Double(char.maxHp)
         let mySpd = Double(char.agility ?? 0)
 
-        let theirAtk = Double(opponent.strength ?? 0)
-        let theirDef = Double(opponent.vitality ?? 0)
+        let theirAtk = Double(opponent.attackPower)
+        let theirDef = Double(opponent.armor ?? 0)
         let theirHp = Double(opponent.maxHp)
         let theirSpd = Double(opponent.agility ?? 0)
 

@@ -10,6 +10,8 @@ final class BattlePassViewModel {
     var errorMessage: String?
     var isBuyingPremium = false
 
+    /// Levels currently being claimed — prevents duplicate requests
+    private var claimingLevels: Set<Int> = []
     private let cache: GameDataCache
 
     init(appState: AppState, cache: GameDataCache) {
@@ -55,18 +57,29 @@ final class BattlePassViewModel {
         isLoading = false
     }
 
+    /// Whether a specific level is currently mid-claim (for UI disabling)
+    func isClaimingLevel(_ level: Int) -> Bool {
+        claimingLevels.contains(level)
+    }
+
     func claimReward(_ reward: BPReward) async {
+        let level = reward.level
+
+        // ── Guards: state + duplicate-request lock ──
         guard rewardState(reward) == .claimable else { return }
+        guard !claimingLevels.contains(level) else { return }
+        claimingLevels.insert(level)
+        defer { claimingLevels.remove(level) }
 
         // ── Optimistic UI: mark claimed instantly ──
         if var bp = data {
             if reward.track == "premium" {
-                if let idx = bp.premiumRewards.firstIndex(where: { $0.level == reward.level }) {
-                    bp.premiumRewards[idx].claimed = true
+                for i in bp.premiumRewards.indices where bp.premiumRewards[i].level == level {
+                    bp.premiumRewards[i].claimed = true
                 }
             } else {
-                if let idx = bp.freeRewards.firstIndex(where: { $0.level == reward.level }) {
-                    bp.freeRewards[idx].claimed = true
+                for i in bp.freeRewards.indices where bp.freeRewards[i].level == level {
+                    bp.freeRewards[i].claimed = true
                 }
             }
             data = bp
@@ -74,20 +87,24 @@ final class BattlePassViewModel {
         }
         HapticManager.success()
 
-        // ── Fire API in background, refresh for server-true state ──
-        Task { [weak self] in
-            guard let self else { return }
-            let success = await service.claimReward(level: reward.level)
-            // Refresh to get accurate server state regardless of outcome
-            if let freshData = await service.loadBattlePass() {
-                data = freshData
-                cache.cacheBattlePass(freshData)
+        // ── Await API call (not fire-and-forget) ──
+        do {
+            try await service.claimReward(level: level)
+        } catch let error as BattlePassClaimError {
+            // Silently ignore "already claimed" — the reward IS claimed on server
+            if case .alreadyClaimed = error {
+                // Optimistic state is correct, just refresh
+            } else {
+                appState.showToast("Claim failed", subtitle: error.toastSubtitle, type: .error)
             }
-            if !success {
-                appState.showToast("Claim failed", subtitle: "Try again", type: .error, actionLabel: "Retry") {
-                    Task { [weak self] in await self?.claimReward(reward) }
-                }
-            }
+        } catch {
+            appState.showToast("Claim failed", subtitle: "Check connection and try again", type: .error)
+        }
+
+        // ── Always refresh to sync with server truth ──
+        if let freshData = await service.loadBattlePass() {
+            data = freshData
+            cache.cacheBattlePass(freshData)
         }
     }
 
