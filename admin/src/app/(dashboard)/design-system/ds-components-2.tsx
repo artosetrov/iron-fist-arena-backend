@@ -8,7 +8,20 @@
 
 import tokens from '@/lib/design-tokens.json'
 
-const c = tokens.colors
+// Compatibility alias: old code used c.accent.* — map to real token groups
+const accent = {
+  gold: tokens.colors.gold.gold,
+  goldBright: tokens.colors.gold.goldBright,
+  goldDim: tokens.colors.gold.goldDim,
+  goldGlow: tokens.colors.gold.goldGlow,
+  danger: tokens.colors.feedback.danger,
+  success: tokens.colors.feedback.success,
+  info: tokens.colors.feedback.info,
+  purple: tokens.colors.feedback.purple,
+  cyan: tokens.colors.feedback.cyan,
+  stamina: tokens.colors.stamina.stamina,
+}
+const c = { ...tokens.colors, accent }
 const t = tokens.typography
 const s = tokens.spacing
 const r = tokens.radius
@@ -83,34 +96,34 @@ export function StanceDisplayPreviews() {
       {/* Attack zone */}
       <div style={{
         flex: 1, padding: s.spaceMS, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        background: `${c.stance.head}10`,
+        background: `${c.stance.zoneHead}10`,
       }}>
         <span style={{ color: c.text.textTertiary, fontFamily: '"Inter", sans-serif', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Attack</span>
         <div style={{
           width: 40, height: 40, borderRadius: 20,
-          background: `${c.stance.head}20`, border: `2px solid ${c.stance.head}`,
+          background: `${c.stance.zoneHead}20`, border: `2px solid ${c.stance.zoneHead}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{ fontSize: 16 }}>🎯</span>
         </div>
-        <span style={{ color: c.stance.head, fontFamily: '"Oswald", sans-serif', fontSize: 14 }}>Head</span>
+        <span style={{ color: c.stance.zoneHead, fontFamily: '"Oswald", sans-serif', fontSize: 14 }}>Head</span>
       </div>
       {/* Gold divider */}
       <div style={{ width: 2, background: `linear-gradient(180deg, transparent, ${c.accent.gold}, transparent)` }} />
       {/* Defense zone */}
       <div style={{
         flex: 1, padding: s.spaceMS, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        background: `${c.stance.chest}10`,
+        background: `${c.stance.zoneChest}10`,
       }}>
         <span style={{ color: c.text.textTertiary, fontFamily: '"Inter", sans-serif', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Defense</span>
         <div style={{
           width: 40, height: 40, borderRadius: 20,
-          background: `${c.stance.chest}20`, border: `2px solid ${c.stance.chest}`,
+          background: `${c.stance.zoneChest}20`, border: `2px solid ${c.stance.zoneChest}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <span style={{ fontSize: 16 }}>🛡️</span>
         </div>
-        <span style={{ color: c.stance.chest, fontFamily: '"Oswald", sans-serif', fontSize: 14 }}>Chest</span>
+        <span style={{ color: c.stance.zoneChest, fontFamily: '"Oswald", sans-serif', fontSize: 14 }}>Chest</span>
       </div>
     </div>
   )
@@ -191,7 +204,7 @@ export function BattleResultCardPreviews() {
         }}>
           <span style={{ fontSize: 24 }}>{res.icon}</span>
           <p style={{
-            color: res.accent, fontFamily: '"Oswald", sans-serif', fontSize: t.section.size,
+            color: res.accent, fontFamily: '"Oswald", sans-serif', fontSize: t.section.fontSize,
             letterSpacing: 2, marginTop: 4,
           }}>{res.title}</p>
           <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -588,7 +601,7 @@ export function GuestGatePreviews() {
     }}>
       <span style={{ fontSize: 32 }}>🏰</span>
       <p style={{
-        color: c.accent.goldBright, fontFamily: '"Oswald", sans-serif', fontSize: t.cardTitle.size,
+        color: c.accent.goldBright, fontFamily: '"Oswald", sans-serif', fontSize: t.cardTitle.fontSize,
         marginTop: s.spaceSM, letterSpacing: 0.5,
       }}>Create Account</p>
       <p style={{
@@ -626,7 +639,7 @@ export function SessionExpiredPreviews() {
     }}>
       <span style={{ fontSize: 28 }}>⚠️</span>
       <p style={{
-        color: c.text.textPrimary, fontFamily: '"Oswald", sans-serif', fontSize: t.cardTitle.size,
+        color: c.text.textPrimary, fontFamily: '"Oswald", sans-serif', fontSize: t.cardTitle.fontSize,
         marginTop: s.spaceSM,
       }}>Session Expired</p>
       <p style={{
@@ -715,7 +728,7 @@ export function LevelUpModalPreviews() {
     }}>
       <span style={{ fontSize: 36 }}>⬆️</span>
       <p style={{
-        color: c.accent.goldBright, fontFamily: '"Oswald", sans-serif', fontSize: t.title.size,
+        color: c.accent.goldBright, fontFamily: '"Oswald", sans-serif', fontSize: t.title.fontSize,
         letterSpacing: 2, marginTop: s.spaceSM,
       }}>LEVEL UP!</p>
       {/* Level transition */}
