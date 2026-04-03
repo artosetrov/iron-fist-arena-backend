@@ -4,7 +4,7 @@
 > **Canonical rules**: See `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md` for the extended version.
 > **iOS/SwiftUI rules**: See `Hexbound/CLAUDE.md`
 > **Backend/TypeScript rules**: See `backend/CLAUDE.md`
-> **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 359 tokens, 33 components, 130+ variants, 21 pages
+> **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 359 tokens, 37 components, 137+ variants, 21 pages
 > **DS Audit**: See `docs/07_ui_ux/DESIGN_SYSTEM_AUDIT.md` for compliance status
 
 ## Architecture
@@ -106,7 +106,7 @@ All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutCon
 - **9 Text Styles:** Heading/ (Cinematic Title 40, Title 28, Section 22, Card Title 18, Button Label 18) + Body/ (Body 16, UI Label 14, Caption 12, Badge 11)
 - **4 Effect Styles:** Shadow/Card, Shadow/Modal, Shadow/Gold Glow, Shadow/Danger Glow
 
-### Component Pages (21 pages, 33 sets, 130+ variants)
+### Component Pages (21 pages, 37 sets, 137+ variants)
 
 **Foundational (standalone pages):**
 
@@ -118,9 +118,9 @@ All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutCon
 | **Dividers** | Divider — 3 (Gold/Ornamental/EtchedGroove) | OrnamentalStyles.swift |
 | **Tab Switcher** | Tab Switcher — 2 (2-tab/3-tab) | TabSwitcher.swift |
 | **Progress Bars** | Progress Bar — 15 (HP/XP/Stamina × compact/widget/large) | HPBarView, XPBarView, StaminaBarView |
-| **Badges & Pills** | Widget Pill (10), Card Level Badge (2), Payout Pill, Wager Button | WidgetPill.swift, CardLevelBadge.swift |
+| **Badges & Pills** | Widget Pill (10), Card Level Badge (2), Payout Pill, Wager Button, Stat Points Badge (3) | WidgetPill.swift, CardLevelBadge.swift, StatPointsBadge.swift |
 | **Currency Display** | Currency Display — 3 (Standard/Compact/Mini) | CurrencyDisplay.swift |
-| **Empty & Error States** | State View — 4 (EmptyInventory/NoQuests/NetworkError/ServerError) | EmptyStateView, ErrorStateView |
+| **Empty & Error States** | State View — 4 (EmptyInventory/NoQuests/NetworkError/ServerError), Asset Placeholder (1) | EmptyStateView, ErrorStateView, AssetPlaceholderView.swift |
 | **Loading** | Loading Overlay — 1 | LoadingOverlay.swift |
 | **Navigation** | Navigation — 3 (NavGrid/BackButton/ScreenHeader) | ScreenLayout.swift |
 | **Ornamental Title** | Ornamental Title — 2 (ScreenTitle/SectionHeader) | OrnamentalTitle.swift |
@@ -133,10 +133,10 @@ All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutCon
 | Page | Components | Swift Source |
 |---|---|---|
 | **Hero & Character** | Hero Widget (1), Hero Integrated Card (1), Stance Display (1), Avatar (3) | UnifiedHeroWidget, HeroIntegratedCard, StanceDisplayView, AvatarImageView |
-| **Arena & PvP** | Arena Card (1), Battle Result Card (2), Leaderboard Row (2), PvP Stats Widget (2+1) | ArenaOpponentCard, BattleResultCardView, LeaderboardRowView, PvPStatsWidget |
+| **Arena & PvP** | Arena Card (1), Battle Result Card (2), Leaderboard Row (2), PvP Stats Widget (2+1), Opponent Integrated Card (1) | ArenaOpponentCard, BattleResultCardView, LeaderboardRowView, PvPStatsWidget, OpponentIntegratedCard |
 | **Dungeon & Progression** | Dungeon Boss Card (3), Achievement Card (4), Active Quest Banner (2), BP Reward Node (4) | DungeonBossCard, AchievementCardView, ActiveQuestBanner, BPRewardNodeView |
 | **Social & Messaging** | Inbox Row (2), NPC Guide Widget (2+1) | InboxRowView, NPCGuideWidget |
-| **Toast & Banners** | Toast (7), Event Banner (2), Celebration Banner (5), Guest Nudge Banner (1), Offline Banner (1) | ToastOverlayView, EventBannerView, CelebrationBannerView, GuestNudgeBanner, OfflineBannerView |
+| **Toast & Banners** | Toast (7), Event Banner (2), Celebration Banner (5), Guest Nudge Banner (1), Offline Banner (1), Low HP Potion Banner (2) | ToastOverlayView, EventBannerView, CelebrationBannerView, GuestNudgeBanner, OfflineBannerView, LowHPPotionBanner |
 | **Modals & Sheets** | Guest Gate (1), Session Expired Modal (1), Item Detail Sheet (1), Level Up Modal (1) | GuestGateView, SessionExpiredModalView, ItemDetailSheet, LevelUpModalView |
 
 ### Figma ↔ Code Sync Rules
