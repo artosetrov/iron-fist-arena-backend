@@ -29,7 +29,7 @@ struct ErrorStateView: View {
 
             // Error icon
             Image(systemName: icon)
-                .font(.system(size: 44, weight: .thin))
+                .font(DarkFantasyTheme.cinematicTitle.weight(.thin))
                 .foregroundStyle(DarkFantasyTheme.danger)
                 .padding(.bottom, LayoutConstants.spaceSM)
 

@@ -61,7 +61,7 @@ struct CharacterProfileView: View {
             ProgressView()
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.3)
-            Text("Загрузка профиля...")
+            Text("Loading profile...")
                 .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
@@ -70,7 +70,7 @@ struct CharacterProfileView: View {
     private func errorView(_ message: String) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 44))
+                .font(Font.custom("Oswald-Regular", size: LayoutConstants.textCelebration))
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
@@ -78,7 +78,7 @@ struct CharacterProfileView: View {
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
 
-            Button("Повторить") { Task { await loadProfile() } }
+            Button("Retry") { Task { await loadProfile() } }
                 .buttonStyle(.primary)
         }
         .padding(LayoutConstants.screenPadding)
@@ -98,8 +98,8 @@ struct CharacterProfileView: View {
                 // Action buttons
                 actionButtons
 
-                // PvP stats
-                pvpSection(profile)
+                // PvP stats — unified full widget
+                PvPStatsWidget(.full, data: profile)
 
                 GoldDivider()
 
@@ -127,8 +127,8 @@ struct CharacterProfileView: View {
         case .requestSent:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "envelope.fill")
-                    .font(.system(size: 11))
-                Text("Запрос отправлен")
+                    .font(DarkFantasyTheme.badge)
+                Text("Request Sent")
                     .font(DarkFantasyTheme.badge.bold())
             }
             .foregroundStyle(DarkFantasyTheme.gold)
@@ -147,8 +147,8 @@ struct CharacterProfileView: View {
         case .requestReceived:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "envelope.badge.fill")
-                    .font(.system(size: 11))
-                Text("Хочет стать союзником")
+                    .font(DarkFantasyTheme.badge)
+                Text("Wants to be an ally")
                     .font(DarkFantasyTheme.badge.bold())
             }
             .foregroundStyle(DarkFantasyTheme.success)
@@ -164,8 +164,8 @@ struct CharacterProfileView: View {
         case .friends:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "person.2.fill")
-                    .font(.system(size: 11))
-                Text("Союзник")
+                    .font(DarkFantasyTheme.badge)
+                Text("Ally")
                     .font(DarkFantasyTheme.badge.bold())
             }
             .foregroundStyle(DarkFantasyTheme.success)
@@ -192,10 +192,10 @@ struct CharacterProfileView: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     if challengeSent {
                         Image(systemName: "checkmark.circle.fill")
-                        Text("Вызов отправлен")
+                        Text("Challenge Sent")
                     } else {
                         Image(systemName: "flame.fill")
-                        Text("Вызвать")
+                        Text("Challenge")
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -209,7 +209,7 @@ struct CharacterProfileView: View {
                 Button(action: navigateToMessage) {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "bubble.left.fill")
-                        Text("Сообщение")
+                        Text("Message")
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -228,7 +228,7 @@ struct CharacterProfileView: View {
             Button { sendFriendRequest() } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "person.badge.plus")
-                    Text("Союзник")
+                    Text("Add Ally")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -242,7 +242,7 @@ struct CharacterProfileView: View {
             Button { acceptFriendRequest() } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "checkmark")
-                    Text("Принять")
+                    Text("Accept")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -254,11 +254,11 @@ struct CharacterProfileView: View {
                 Button(role: .destructive) {
                     removeFriend()
                 } label: {
-                    Label("Удалить из союзников", systemImage: "person.badge.minus")
+                    Label("Remove Ally", systemImage: "person.badge.minus")
                 }
             } label: {
                 Text("···")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(DarkFantasyTheme.section.bold())
                     .frame(width: 52, height: 44)
             }
             .buttonStyle(.neutral)
@@ -267,7 +267,7 @@ struct CharacterProfileView: View {
             Button {} label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "hand.raised.fill")
-                    Text("Блок")
+                    Text("Blocked")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -278,7 +278,7 @@ struct CharacterProfileView: View {
             Button {} label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "person.crop.circle.badge.exclamationmark")
-                    Text("Список полон")
+                    Text("List Full")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -287,57 +287,7 @@ struct CharacterProfileView: View {
         }
     }
 
-    // MARK: - PvP Section
-
-    private func pvpSection(_ profile: OpponentProfile) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            sectionHeader("PVP СТАТИСТИКА")
-
-            HStack(spacing: 0) {
-                pvpStatCell(label: "Рейтинг", value: "\(profile.pvpRating)", color: DarkFantasyTheme.gold)
-                pvpDivider
-                pvpStatCell(label: "Статистика", value: "\(profile.pvpWins)П / \(profile.pvpLosses)П", color: DarkFantasyTheme.textPrimary)
-                pvpDivider
-                pvpStatCell(
-                    label: "Победы",
-                    value: profile.pvpWins + profile.pvpLosses > 0
-                        ? String(format: "%.0f%%", profile.winRate * 100) : "—",
-                    color: profile.winRate >= 0.5 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
-                )
-            }
-            .padding(LayoutConstants.spaceSM)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary.opacity(0.5),
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.2,
-                    cornerRadius: LayoutConstants.panelRadius
-                )
-            )
-            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 1, inset: 1, color: DarkFantasyTheme.borderMedium.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
-        }
-    }
-
-    private func pvpStatCell(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-            Text(value)
-                .font(DarkFantasyTheme.section(size: 15))
-                .foregroundStyle(color)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var pvpDivider: some View {
-        Rectangle()
-            .fill(DarkFantasyTheme.borderSubtle)
-            .frame(width: 1, height: 36)
-    }
+    // MARK: - PvP Section (moved to PvPStatsWidget)
 
     // MARK: - Base Stats
 
@@ -467,14 +417,14 @@ struct CharacterProfileView: View {
 
     private func derivedStatsSection(_ profile: OpponentProfile) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            sectionHeader("ПРОИЗВОДНЫЕ СТАТЫ")
+            sectionHeader("DERIVED STATS")
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: LayoutConstants.spaceSM) {
-                derivedRow("Атака", value: "\(profile.attackPower) \(profile.damageTypeName)", color: DarkFantasyTheme.statBarFill)
-                derivedRow("Броня", value: "\(profile.armor ?? 0)", color: DarkFantasyTheme.statBarFill)
-                derivedRow("Маг. защита", value: "\(profile.magicResist ?? 0)", color: DarkFantasyTheme.statBarFill)
-                derivedRow("Крит", value: String(format: "%.1f%%", profile.critChance), color: DarkFantasyTheme.statBarFill)
-                derivedRow("Уклонение", value: String(format: "%.1f%%", profile.dodgeChance), color: DarkFantasyTheme.statBarFill)
+                derivedRow("Attack", value: "\(profile.attackPower) \(profile.damageTypeName)", color: DarkFantasyTheme.statBarFill)
+                derivedRow("Armor", value: "\(profile.armor ?? 0)", color: DarkFantasyTheme.statBarFill)
+                derivedRow("Magic Resist", value: "\(profile.magicResist ?? 0)", color: DarkFantasyTheme.statBarFill)
+                derivedRow("Crit", value: String(format: "%.1f%%", profile.critChance), color: DarkFantasyTheme.statBarFill)
+                derivedRow("Dodge", value: String(format: "%.1f%%", profile.dodgeChance), color: DarkFantasyTheme.statBarFill)
             }
         }
     }
@@ -541,7 +491,7 @@ struct CharacterProfileView: View {
         }
         SFXManager.shared.play(.uiConfirm)
         HapticManager.success()
-        appState.showToast("Запрос отправлен", subtitle: "\(characterName) получит уведомление", type: .info)
+        appState.showToast("Request Sent", subtitle: "\(characterName) will be notified", type: .info)
 
         // Fire API in background
         let targetId = characterId
@@ -558,22 +508,22 @@ struct CharacterProfileView: View {
                 let reason: String
                 switch errorMsg {
                 case "Already friends or request pending":
-                    reason = "Запрос уже отправлен"
+                    reason = "Request already sent"
                     self.friendshipState = .requestSent
                     self.showFriendChip = true
                 case "Friend list full":
-                    reason = "Список союзников полон (макс. 50)"
+                    reason = "Ally list full (max 50)"
                     self.friendshipState = .maxReached
                 case "Cannot send request":
-                    reason = "Этот игрок недоступен"
+                    reason = "This player is unavailable"
                 case "Too many requests today":
-                    reason = "Лимит запросов на сегодня (20/день)"
+                    reason = "Request limit reached today (20/day)"
                 case "Cooldown active":
-                    reason = "Подождите 24ч перед повторной отправкой"
+                    reason = "Wait 24h before resending"
                 default:
                     reason = errorMsg
                 }
-                self.appState.showToast("Не удалось отправить запрос", subtitle: reason, type: .error)
+                self.appState.showToast("Failed to send request", subtitle: reason, type: .error)
             }
         }
     }
@@ -596,7 +546,7 @@ struct CharacterProfileView: View {
             if !success {
                 withAnimation { self.friendshipState = .requestReceived }
                 self.showFriendChip = false
-                self.appState.showToast("Не удалось принять запрос", type: .error)
+                self.appState.showToast("Failed to accept request", type: .error)
             }
         }
     }
@@ -616,7 +566,7 @@ struct CharacterProfileView: View {
             if !success {
                 withAnimation { self.friendshipState = .friends }
                 self.showFriendChip = true
-                self.appState.showToast("Не удалось удалить союзника", type: .error)
+                self.appState.showToast("Failed to remove ally", type: .error)
             }
         }
     }
@@ -628,7 +578,7 @@ struct CharacterProfileView: View {
         challengeSent = true
         SFXManager.shared.play(.uiConfirm)
         HapticManager.light()
-        appState.showToast("Вызов отправлен", subtitle: "\(characterName) — 24ч на ответ", type: .info)
+        appState.showToast("Challenge Sent", subtitle: "\(characterName) — 24h to respond", type: .info)
 
         // Fire API in background
         let targetId = characterId
@@ -642,10 +592,10 @@ struct CharacterProfileView: View {
             } catch {
                 self.challengeSent = false
                 self.appState.showToast(
-                    "Не удалось отправить вызов",
-                    subtitle: "Попробуйте позже",
+                    "Failed to send challenge",
+                    subtitle: "Try again later",
                     type: .error,
-                    actionLabel: "Повторить",
+                    actionLabel: "Retry",
                     action: { self.sendChallenge() }
                 )
             }
@@ -664,7 +614,7 @@ struct CharacterProfileView: View {
             )
             profile = response.profile
         } catch {
-            errorMessage = "Не удалось загрузить профиль"
+            errorMessage = "Failed to load profile"
         }
 
         isLoading = false

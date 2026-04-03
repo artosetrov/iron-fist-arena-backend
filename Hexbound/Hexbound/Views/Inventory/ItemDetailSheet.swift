@@ -363,7 +363,7 @@ struct ItemDetailSheet: View {
     private var repairButtonLabel: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: "wrench.and.screwdriver.fill")
-                .font(.system(size: 13))
+                .font(DarkFantasyTheme.caption)
             Text("REPAIR")
             Text("·")
             CurrencyDisplay(gold: repairCost, size: .compact, currencyType: .gold, animated: false)
@@ -481,7 +481,7 @@ struct ItemDetailSheet: View {
                 if isTwoHanded {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "arrow.left.arrow.right")
-                            .font(.system(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.stamina)
                         Text("Two-Handed — occupies weapon + off-hand slot")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -492,7 +492,7 @@ struct ItemDetailSheet: View {
                 if let special = item.specialEffect, !special.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 12)) // SF Symbol icon — keep as is
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(special)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -502,7 +502,7 @@ struct ItemDetailSheet: View {
                 if let passive = item.uniquePassive, !passive.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "bolt.fill")
-                            .font(.system(size: 12)) // SF Symbol icon — keep as is
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.cyan)
                         Text(passive)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -794,7 +794,7 @@ struct ItemDetailSheet: View {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "shield")
-                                .font(.system(size: 10))
+                                .font(DarkFantasyTheme.badge)
                             Text("Protection Scroll")
                         }
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
@@ -883,7 +883,7 @@ struct ItemDetailSheet: View {
     private func sectionHeader(icon: String, title: String) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
-                .font(.system(size: 12)) // SF Symbol icon — keep as is
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(title)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -923,7 +923,7 @@ struct ItemDetailSheet: View {
         return HStack(spacing: LayoutConstants.space2XS) {
             if style == .twoHanded {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 9))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(textColor)
             }
             Text(text)

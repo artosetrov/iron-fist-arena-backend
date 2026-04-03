@@ -18,7 +18,7 @@ struct GuestGateView: View {
             VStack(spacing: LayoutConstants.spaceLG) {
                 // Lock icon
                 Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 48)) // SF Symbol icon — keep as is
+                    .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .padding(.top, LayoutConstants.spaceMD)
 
@@ -87,7 +87,7 @@ struct GuestGateView: View {
     private func benefitRow(icon: String, text: String) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: icon)
-                .font(.system(size: 14)) // SF Symbol icon — keep as is
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .frame(width: 24)
             Text(text)

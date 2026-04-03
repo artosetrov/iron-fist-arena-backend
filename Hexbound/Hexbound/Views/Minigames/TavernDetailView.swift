@@ -111,7 +111,7 @@ private struct TavernGameCard: View {
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
                     } else {
                         Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 32))
+                            .font(DarkFantasyTheme.title)
                             .foregroundStyle(game.accentColor.opacity(0.6))
                     }
                 }
@@ -141,7 +141,7 @@ private struct TavernGameCard: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(game.accentColor.opacity(0.6))
                     .padding(.trailing, LayoutConstants.spaceSM)
             }
@@ -162,7 +162,7 @@ private struct TavernGameCard: View {
             )
             .cornerBrackets(color: game.accentColor.opacity(0.3), length: 14, thickness: 1.5)
             .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .cardShadow()
             .contentShape(Rectangle())
         }
         .buttonStyle(.scalePress(0.97))

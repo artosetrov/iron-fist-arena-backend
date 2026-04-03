@@ -76,7 +76,7 @@ struct BossDetailSheet: View {
                     VStack(spacing: LayoutConstants.spaceMD) {
                         // Pulsing boss icon
                         Image(systemName: "bolt.shield.fill")
-                            .font(.system(size: 40, weight: .bold))
+                            .font(DarkFantasyTheme.cinematicTitle.bold())
                             .foregroundStyle(DarkFantasyTheme.gold)
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
 
@@ -146,7 +146,7 @@ struct BossDetailSheet: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                             Text("Bosses")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         }
@@ -221,7 +221,7 @@ struct BossDetailSheet: View {
                     // Boss tag
                     HStack(spacing: 4) {
                         Text("\u{2620}")
-                            .font(.system(size: 12))
+                            .font(DarkFantasyTheme.caption)
                         Text("BOSS")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                             .tracking(2)
@@ -254,7 +254,7 @@ struct BossDetailSheet: View {
         case .defeated:
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12))
+                    .font(DarkFantasyTheme.caption)
                 Text("DEFEATED")
             }
             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
@@ -274,7 +274,7 @@ struct BossDetailSheet: View {
         case .locked:
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 10))
+                    .font(DarkFantasyTheme.badge)
                 Text("LOCKED")
             }
             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
@@ -413,7 +413,7 @@ struct BossDetailSheet: View {
             HStack {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "gift.fill")
-                        .font(.system(size: 12))
+                        .font(DarkFantasyTheme.caption)
                     Text("POSSIBLE LOOT")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         .tracking(1)
@@ -464,13 +464,13 @@ struct BossDetailSheet: View {
                         VStack(spacing: LayoutConstants.space2XS) {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "bolt.shield.fill")
-                                    .font(.system(size: 18, weight: .bold))
+                                    .font(DarkFantasyTheme.cardTitle.bold())
                                 Text("FIGHT BOSS")
                             }
 
                             HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "bolt.fill")
-                                    .font(.system(size: 11))
+                                    .font(DarkFantasyTheme.badge)
                                 Text("\(energyCost) Energy")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1))
                             }

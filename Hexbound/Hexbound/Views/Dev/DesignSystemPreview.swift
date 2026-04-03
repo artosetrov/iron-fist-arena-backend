@@ -238,7 +238,7 @@ struct DesignSystemPreview: View {
                         .buttonStyle(.combatControl)
                     Button {
                     } label: {
-                        Image(systemName: "flag.fill").font(.system(size: 14))
+                        Image(systemName: "flag.fill").font(DarkFantasyTheme.uiLabel)
                     }
                     .buttonStyle(.combatForfeit)
                 }
@@ -293,7 +293,7 @@ struct DesignSystemPreview: View {
                 ForEach([DamageTypeStyle.physical, .magical, .poison, .trueDamage, .unknown], id: \.label) { style in
                     HStack(spacing: 2) {
                         Image(systemName: style.icon)
-                            .font(.system(size: 7))
+                            .font(DarkFantasyTheme.badge)
                         Text(style.label)
                             .font(DarkFantasyTheme.body(size: 8).bold())
                     }
@@ -316,7 +316,7 @@ struct DesignSystemPreview: View {
                     let effect = StatusEffect(name: name)
                     HStack(spacing: 3) {
                         Image(systemName: effect.icon)
-                            .font(.system(size: 8))
+                            .font(DarkFantasyTheme.badge)
                         Text(effect.abbreviation)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                     }

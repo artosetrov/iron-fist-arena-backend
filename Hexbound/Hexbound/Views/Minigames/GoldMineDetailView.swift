@@ -103,7 +103,7 @@ struct GoldMineDetailView: View {
         )
         .cornerBrackets(color: DarkFantasyTheme.goldBright.opacity(0.4), length: 16, thickness: 2.0)
         .shadow(color: DarkFantasyTheme.gold.opacity(0.1), radius: 8)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Slots Grid
@@ -325,7 +325,7 @@ private struct MineSlotCard: View {
 
                 // Coin sparkle in corner — subtle static glow
                 Image(systemName: "sparkles")
-                    .font(.system(size: 24)) // SF Symbol — keep
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
                     .offset(x: 35, y: -20)
@@ -504,7 +504,7 @@ private struct LockedMineCard: View {
                 DarkFantasyTheme.bgScrim
 
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 28)) // SF Symbol icon — keep
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.6))
             }
             .frame(height: 110)

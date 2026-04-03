@@ -9,7 +9,6 @@ struct HeroIntegratedCard: View {
 
     var onTapPortrait: (() -> Void)? = nil
     var onTapSlot: ((Item) -> Void)? = nil
-    var onRepairAll: (() -> Void)? = nil
     var onUseHealthPotion: (() -> Void)? = nil
     var onRefillStamina: (() -> Void)? = nil
 
@@ -22,19 +21,6 @@ struct HeroIntegratedCard: View {
         return items.filter { $0.consumableType?.contains("health_potion") == true }.reduce(0) { $0 + ($1.quantity ?? 0) }
     }
 
-    private var brokenItems: [Item] {
-        equippedItems.filter { ($0.durability ?? 1) <= 0 }
-    }
-
-    private var totalRepairCost: Int {
-        brokenItems.reduce(0) { $0 + (($1.maxDurability ?? 0) - ($1.durability ?? 0)) * 2 }
-    }
-
-    private func formatGold(_ n: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
-    }
 
     // MARK: - Body
 
@@ -144,24 +130,6 @@ struct HeroIntegratedCard: View {
                 size: .large
             )
 
-            // Action pills
-            HStack(spacing: LayoutConstants.spaceSM) {
-                // Repair All (conditional: broken items exist)
-                if !brokenItems.isEmpty {
-                    WidgetPill(
-                        icon: "",
-                        text: "Repair All(\(brokenItems.count))",
-                        imageAsset: "icon-strength",
-                        style: .warn,
-                        isInteractive: true,
-                        action: { onRepairAll?() }
-                    )
-                }
-
-                // Heal pill removed — lowResourceBanner in HeroDetailView handles this
-
-                Spacer()
-            }
         }
     }
 

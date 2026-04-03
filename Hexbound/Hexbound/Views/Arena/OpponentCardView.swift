@@ -77,7 +77,7 @@ struct OpponentCardView: View {
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                         .foregroundStyle(DarkFantasyTheme.rankColor(for: opponent.pvpRating))
                     Image(systemName: opponent.rank.icon)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(opponent.rank.color)
                 }
             }
@@ -101,7 +101,7 @@ struct OpponentCardView: View {
                     } else {
                         HStack(spacing: 4) {
                             Image(systemName: "swords")
-                                .font(.system(size: 12))
+                                .font(DarkFantasyTheme.caption)
                             Text("FIGHT")
                         }
                         if staminaCost > 0 {

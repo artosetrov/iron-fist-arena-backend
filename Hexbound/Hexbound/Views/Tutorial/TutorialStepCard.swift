@@ -40,7 +40,7 @@ struct TutorialStepCard: View {
             // Reward
             HStack(spacing: 4) {
                 Image(systemName: "gift.fill")
-                    .font(.system(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                 Text(objective.rewardText)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
             }
@@ -109,7 +109,7 @@ struct TutorialStepCard: View {
                     .frame(width: 36, height: 36)
             } else {
                 Image(systemName: objective.fallbackIcon)
-                    .font(.system(size: 28))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(accentColor)
             }
         }
@@ -152,11 +152,11 @@ struct TutorialStepCard: View {
         Group {
             if state == .completed {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 20))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.success)
             } else if state == .locked {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 16))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textDisabled)
             }
         }

@@ -393,7 +393,7 @@ private extension ItemCardView {
         case .inventory:
             if let delta = comparisonDelta {
                 Image(systemName: delta > 0 ? "arrow.up" : "arrow.down")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(DarkFantasyTheme.badge.bold())
                     .foregroundStyle(delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
                     .padding(LayoutConstants.spaceXS)
                     .background(
@@ -416,7 +416,7 @@ private extension ItemCardView {
     /// Compact "2H" badge for two-handed weapons on the card grid
     private var twoHandedBadge: some View {
         Text("2H")
-            .font(.system(size: 9, weight: .heavy))
+            .font(DarkFantasyTheme.badge.weight(.heavy))
             .foregroundStyle(DarkFantasyTheme.stamina)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
@@ -448,7 +448,7 @@ private extension ItemCardView {
         } else if isBroken {
             // Broken indicator — equipment context
             Text("!")
-                .font(.system(size: 10, weight: .bold))
+                .font(DarkFantasyTheme.badge.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .frame(width: 16, height: 16)
                 .background(Circle().fill(DarkFantasyTheme.danger))
@@ -470,7 +470,7 @@ private extension ItemCardView {
             HStack(spacing: 2) {
                 ForEach(0..<starCount, id: \.self) { _ in
                     Image(systemName: "star.fill")
-                        .font(.system(size: 8))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
                 }

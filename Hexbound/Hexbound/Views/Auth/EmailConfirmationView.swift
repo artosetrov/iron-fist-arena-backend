@@ -28,7 +28,7 @@ struct EmailConfirmationView: View {
                         .blur(radius: 40)
 
                     Image(systemName: "envelope.badge.shield.half.filled")
-                        .font(.system(size: 72, weight: .light))
+                        .font(Font.custom("Oswald-Regular", size: 72).weight(.light))
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .symbolEffect(.pulse, options: .repeating)
                 }
@@ -62,6 +62,7 @@ struct EmailConfirmationView: View {
                 // Resend button
                 VStack(spacing: LayoutConstants.spaceSM) {
                     Button {
+                        SFXManager.shared.play(.uiTap)
                         Task { await resendEmail() }
                     } label: {
                         HStack(spacing: LayoutConstants.spaceSM) {
@@ -93,6 +94,7 @@ struct EmailConfirmationView: View {
 
                 // Back to login
                 Button("BACK TO LOGIN") {
+                    SFXManager.shared.play(.uiBack)
                     appState.pendingConfirmationEmail = nil
                     appState.authPath = NavigationPath()
                     appState.authPath.append(AppRoute.login)

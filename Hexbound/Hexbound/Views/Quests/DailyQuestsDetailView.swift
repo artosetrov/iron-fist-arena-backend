@@ -239,7 +239,7 @@ struct DailyQuestsDetailView: View {
                 .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
         )
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Quest Type → Destination Mapping
@@ -317,7 +317,7 @@ struct DailyQuestsDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Icon
             Text(quest.icon)
-                .font(.system(size: 28)) // emoji text — keep as is
+                .font(DarkFantasyTheme.title) // emoji text
                 .frame(width: 44)
 
             // Info
@@ -386,7 +386,7 @@ struct DailyQuestsDetailView: View {
                 // Navigation chevron — shows destination is tappable
                 if destination != nil && !quest.rewardClaimed && !quest.canClaim {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold)) // SF Symbol icon — keep as is
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.goldDim)
                 }
             }

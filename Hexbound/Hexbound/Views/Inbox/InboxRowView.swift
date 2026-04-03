@@ -83,7 +83,7 @@ struct InboxRowView: View {
             color: (message.isRead ? DarkFantasyTheme.borderMedium : accentColor).opacity(0.3),
             length: 12, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .brightness(isPressed ? -0.06 : 0)
     }
 
@@ -174,7 +174,7 @@ struct InboxRowView: View {
 
             // Expand chevron
             Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                .font(.system(size: 11, weight: .bold))
+                .font(DarkFantasyTheme.badge.bold())
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
@@ -206,7 +206,7 @@ struct InboxRowView: View {
 
             // Icon
             Image(systemName: senderSFSymbol)
-                .font(.system(size: 16, weight: .semibold))
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(isSystem ? accentColor : DarkFantasyTheme.textSecondary)
 
             // Unread dot
@@ -324,7 +324,7 @@ struct InboxRowView: View {
             // Fight type label
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "swords")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(DarkFantasyTheme.caption.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 Text(battle.label)
@@ -341,7 +341,7 @@ struct InboxRowView: View {
             // Rating change row
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .frame(width: 20)
 
@@ -381,7 +381,7 @@ struct InboxRowView: View {
             // XP reward row
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "sparkles")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.cyan)
                     .frame(width: 20)
 
@@ -508,7 +508,7 @@ struct InboxRowView: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "swords")
-                                .font(.system(size: 13))
+                                .font(DarkFantasyTheme.caption)
                             Text("FIGHT")
                                 .font(DarkFantasyTheme.section(size: 14))
                         }
@@ -521,7 +521,7 @@ struct InboxRowView: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DarkFantasyTheme.caption.bold())
                             Text("DECLINE")
                                 .font(DarkFantasyTheme.section(size: 14))
                         }
@@ -624,7 +624,7 @@ struct InboxRowView: View {
                 Button(action: claimAttachments) {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "gift.fill")
-                            .font(.system(size: 14))
+                            .font(DarkFantasyTheme.uiLabel)
                         Text("Claim Rewards")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                     }
@@ -635,7 +635,7 @@ struct InboxRowView: View {
             } else if message.isClaimed {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.goldDim)
                     Text("Claimed")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
@@ -648,7 +648,7 @@ struct InboxRowView: View {
             Button(action: deleteMail) {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "trash.fill")
-                        .font(.system(size: 13))
+                        .font(DarkFantasyTheme.caption)
                     Text("Delete")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
                 }
@@ -674,15 +674,15 @@ struct InboxRowView: View {
                 .scaledToFit()
         case "xp":
             Image(systemName: "star.fill")
-                .font(.system(size: 12, weight: .semibold))
+                .font(DarkFantasyTheme.caption.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.gold)
         case "item":
             Image(systemName: "bag.fill")
-                .font(.system(size: 12, weight: .semibold))
+                .font(DarkFantasyTheme.caption.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.gold)
         default:
             Image(systemName: "gift.fill")
-                .font(.system(size: 12, weight: .semibold))
+                .font(DarkFantasyTheme.caption.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.gold)
         }
     }

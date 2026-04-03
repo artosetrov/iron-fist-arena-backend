@@ -71,7 +71,7 @@ struct OpponentIntegratedCard: View {
         .innerBorder(cornerRadius: LayoutConstants.heroCardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Equipment Grid
@@ -136,7 +136,7 @@ struct OpponentIntegratedCard: View {
                 let rank = profile.pvpRank
                 HStack(spacing: 4) {
                     Image(systemName: rank.icon)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(DarkFantasyTheme.badge.weight(.semibold))
                         .foregroundStyle(rank.color)
                     Text(rank.rawValue)
                         .font(DarkFantasyTheme.section(size: 13))
@@ -152,7 +152,7 @@ struct OpponentIntegratedCard: View {
 
                 HStack(spacing: 4) {
                     Image(systemName: "swords")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(DarkFantasyTheme.badge.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Text("\(profile.pvpRating)")
                         .font(DarkFantasyTheme.section(size: 13))

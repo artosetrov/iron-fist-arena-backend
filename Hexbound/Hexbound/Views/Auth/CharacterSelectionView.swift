@@ -60,7 +60,7 @@ struct CharacterSelectionView: View {
                         } label: {
                             HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                 Text("Back")
                                     .font(DarkFantasyTheme.uiLabel)
                             }
@@ -86,6 +86,9 @@ struct CharacterSelectionView: View {
                 default: PlaceholderView()
                 }
             }
+        }
+        .onAppear {
+            AudioManager.shared.playBGM("main-theme.mp3")
         }
         .task {
             // Load skins and characters in parallel (no @MainActor on skins task — runs on background thread)
@@ -171,26 +174,13 @@ struct CharacterSelectionView: View {
 
                         // Edit/delete button — appears on active card, outside Button to avoid gesture conflict
                         if isSelected {
-                            Button {
+                            CardActionButton(icon: "trash", color: DarkFantasyTheme.danger) {
                                 HapticManager.light()
                                 SFXManager.shared.play(.uiTap)
                                 heroToDelete = character
-                            } label: {
-                                Image(systemName: "pencil")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(DarkFantasyTheme.gold)
-                                    .frame(width: 28, height: 28)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                                    .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1)
-                                            )
-                                    )
                             }
-                            .padding(LayoutConstants.spaceSM)
-                            .transition(.opacity.combined(with: .scale(scale: 0.7, anchor: .topTrailing)))
+                            .padding(LayoutConstants.arenaCardPadding - 4)
+                            .transition(.opacity)
                             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isSelected)
                         }
                     }
@@ -255,7 +245,7 @@ struct CharacterSelectionView: View {
                             )
 
                         Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .light))
+                            .font(DarkFantasyTheme.section.weight(.light))
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
 
@@ -338,7 +328,7 @@ struct CharacterSelectionView: View {
     private var guestBanner: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 16))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .frame(width: 32, height: 32)
                 .background(
@@ -388,7 +378,7 @@ struct CharacterSelectionView: View {
             Spacer()
 
             Image(systemName: "person.badge.plus")
-                .font(.system(size: 48))
+                .font(Font.custom("Oswald-Regular", size: LayoutConstants.textCelebration))
                 .foregroundStyle(DarkFantasyTheme.gold.opacity(0.4))
 
             Text("No Heroes Yet")
@@ -450,7 +440,7 @@ struct CharacterSelectionView: View {
             Spacer()
 
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
@@ -584,18 +574,10 @@ struct HeroSelectionCard: View {
                         .allowsHitTesting(false)
                 }
 
-                // 4. Content overlay
-                VStack {
-                    topBadges
-                    Spacer()
-                    bottomInfoStack
-                }
-                .padding(LayoutConstants.arenaCardPadding - 4)
-                .frame(width: width, height: height)
-
-                // 5. "ACTIVE HERO" ribbon at top when selected
+                // 4. "ACTIVE HERO" ribbon at bottom when selected
                 if isSelected {
-                    VStack {
+                    VStack(spacing: 0) {
+                        Spacer()
                         Text("◆  ACTIVE  ◆")
                             .font(DarkFantasyTheme.body(size: 9).bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
@@ -614,12 +596,20 @@ struct HeroSelectionCard: View {
                                 )
                             )
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 8)
-                        Spacer()
                     }
                     .frame(width: width, height: height)
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
                     .allowsHitTesting(false)
                 }
+
+                // 5. Content overlay (level badge + bottom info) — above ACTIVE strip
+                VStack {
+                    topBadges
+                    Spacer()
+                    bottomInfoStack
+                }
+                .padding(LayoutConstants.arenaCardPadding - 4)
+                .frame(width: width, height: height)
             }
             .frame(width: width, height: height)
             .background(DarkFantasyTheme.bgAbyss)
@@ -663,23 +653,14 @@ struct HeroSelectionCard: View {
     // MARK: - Top Badges
 
     private var topBadges: some View {
-        HStack {
-            // Level circle
-            Text("\(character.level)")
-                .font(DarkFantasyTheme.section(size: 12))
-                .foregroundStyle(classColor)
-                .frame(width: 28, height: 28)
-                .background(
-                    Circle()
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
-                        .overlay(Circle().stroke(classColor.opacity(0.5), lineWidth: 1.5))
-                )
+        HStack(alignment: .top) {
+            // Level circle — reusable component, always above ACTIVE strip (zIndex in parent)
+            CardLevelBadge(level: character.level, accentColor: classColor)
 
             Spacer()
 
             // Low HP badge (selection state shown by ACTIVE ribbon + edit button overlay)
             if hpPercent < 0.5 && !isSelected {
-                // Low HP badge (like difficulty badge)
                 Text("LOW HP")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
                     .foregroundStyle(DarkFantasyTheme.danger)
@@ -736,7 +717,7 @@ struct HeroSelectionCard: View {
                         .opacity(0.7)
                 } else {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 }
 

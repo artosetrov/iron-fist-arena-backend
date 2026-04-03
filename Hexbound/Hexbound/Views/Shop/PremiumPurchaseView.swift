@@ -9,7 +9,7 @@ struct PremiumFeature: Identifiable {
     let title: String
     let description: String
     let highlight: Bool    // gold accent for key features
-    let assetIcon: Bool = false  // whether icon is from asset catalog
+    var assetIcon: Bool = false  // whether icon is from asset catalog
 }
 
 // MARK: - PremiumPurchaseView
@@ -120,7 +120,7 @@ struct PremiumPurchaseView: View {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "crown.fill")
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
-                        .font(.system(size: 16))
+                        .font(DarkFantasyTheme.body)
                     Text("PREMIUM")
                         .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
@@ -141,7 +141,7 @@ struct PremiumPurchaseView: View {
                     .frame(width: 100, height: 100)
                     .blur(radius: 20)
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 56))
+                    .font(Font.custom("Oswald-Regular", size: LayoutConstants.textHero))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [DarkFantasyTheme.premiumPink, DarkFantasyTheme.goldBright],
@@ -243,7 +243,7 @@ struct PremiumPurchaseView: View {
                 } else {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "crown.fill")
-                            .font(.system(size: 18))
+                            .font(DarkFantasyTheme.cardTitle)
                         Text("UNLOCK PREMIUM — \(price)")
                     }
                     .frame(maxWidth: .infinity)
@@ -300,7 +300,7 @@ struct PremiumPurchaseView: View {
                         .frame(width: 120, height: 120)
                         .blur(radius: 25)
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 72))
+                        .font(Font.custom("Oswald-Regular", size: 72))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [DarkFantasyTheme.premiumPink, DarkFantasyTheme.goldBright],
@@ -388,7 +388,7 @@ struct PremiumFeatureRow: View {
                     Image(systemName: feature.icon)
                 }
             }
-            .font(.system(size: 20))
+            .font(DarkFantasyTheme.section)
             .foregroundStyle(feature.highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.premiumPink)
                 .frame(width: 36, height: 36)
                 .background(

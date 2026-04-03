@@ -10,7 +10,7 @@ struct HubLogoButton: View {
 
     var body: some View {
         Button {
-            SFXManager.shared.play(.uiBack)
+            SFXManager.shared.play(.uiTap)
             if let action {
                 action()
             } else if !appState.mainPath.isEmpty {

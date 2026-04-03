@@ -109,7 +109,7 @@ struct AchievementCardView: View {
         .brightness(isPressed ? -0.06 : 0) // M5 fix: press state
         // Dual shadow (design system rule)
         .shadow(color: achievement.canClaim ? DarkFantasyTheme.goldGlow : Color.clear, radius: 8)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .overlay {
             if showClaimBurst {
                 GeometryReader { geo in
@@ -135,7 +135,7 @@ struct AchievementCardView: View {
             Circle()
                 .fill(iconColor.opacity(0.15))
             Image(systemName: iconName)
-                .font(.system(size: 18, weight: .semibold))
+                .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                 .foregroundStyle(iconColor)
         }
     }
@@ -147,7 +147,7 @@ struct AchievementCardView: View {
         if achievement.rewardClaimed {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.success)
                 Text("Claimed")
                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))

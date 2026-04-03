@@ -97,7 +97,7 @@ struct AppearanceEditorDetailView: View {
                     appState.currentScreen = .characterSelect
                 } label: {
                     Image(systemName: "person.2.fill")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(DarkFantasyTheme.uiLabel.weight(.medium))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -173,7 +173,7 @@ struct AppearanceEditorDetailView: View {
         } label: {
             HStack(spacing: LayoutConstants.spaceMS) {
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 16)) // SF Symbol icon — keep as is
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
 
                 Text("PREMIUM AVATARS")
@@ -183,7 +183,7 @@ struct AppearanceEditorDetailView: View {
                 Spacer()
 
                 Image(systemName: vm.showPremiumSkins ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 12, weight: .bold)) // SF Symbol icon — keep as is
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(DarkFantasyTheme.premiumPink.opacity(0.6))
             }
             .padding(.horizontal, LayoutConstants.spaceMD)

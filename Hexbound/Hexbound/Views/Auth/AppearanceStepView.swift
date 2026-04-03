@@ -56,6 +56,7 @@ struct AppearanceStepView: View {
         let isSelected = vm.selectedOrigin == origin
 
         Button {
+            SFXManager.shared.play(.uiTap)
             withAnimation(.easeInOut(duration: 0.2)) {
                 vm.selectedOrigin = origin
                 vm.onOriginChanged()
@@ -186,6 +187,7 @@ struct AppearanceStepView: View {
                             .frame(width: sideSize * 0.6, height: sideSize * 0.6)
                     ), size: sideSize, bg: DarkFantasyTheme.xpRing.opacity(0.1),
                        border: DarkFantasyTheme.xpRing, shadow: DarkFantasyTheme.xpRing.opacity(0.2)) {
+                        SFXManager.shared.play(.uiTap)
                         withAnimation(.easeInOut(duration: 0.2)) { vm.toggleGender() }
                     }
                     Spacer()
@@ -196,6 +198,7 @@ struct AppearanceStepView: View {
                             .frame(width: sideSize * 0.5, height: sideSize * 0.5)
                     ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
                        border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
+                        SFXManager.shared.play(.uiTap)
                         withAnimation(.easeInOut(duration: 0.25)) { vm.prevAvatar() }
                     }
                 }
@@ -213,6 +216,7 @@ struct AppearanceStepView: View {
                             .rotationEffect(.degrees(vm.diceRotation))
                     ), size: sideSize, bg: DarkFantasyTheme.gold.opacity(0.1),
                        border: DarkFantasyTheme.gold.opacity(0.3), shadow: .clear) {
+                        SFXManager.shared.play(.uiTap)
                         withAnimation(.easeInOut(duration: 0.3)) {
                             vm.diceRotation += 360
                             vm.randomize()
@@ -226,6 +230,7 @@ struct AppearanceStepView: View {
                             .frame(width: sideSize * 0.5, height: sideSize * 0.5)
                     ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
                        border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
+                        SFXManager.shared.play(.uiTap)
                         withAnimation(.easeInOut(duration: 0.25)) { vm.nextAvatar() }
                     }
                 }
@@ -310,6 +315,7 @@ struct AppearanceStepView: View {
                 let isSelected = vm.avatarIndex == index
 
                 Button {
+                    SFXManager.shared.play(.uiTap)
                     withAnimation(.easeInOut(duration: 0.2)) {
                         vm.selectAvatar(at: index)
                     }

@@ -122,7 +122,7 @@ struct DungeonRoomDetailView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button { showDungeonInfo = true } label: {
                     Image(systemName: "info.circle")
-                        .font(.system(size: 18))
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .buttonStyle(.plain)
@@ -235,7 +235,7 @@ struct DungeonRoomDetailView: View {
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 14)) // SF Symbol icon — keep
+                        .font(DarkFantasyTheme.uiLabel)
                     Text("Cost \(vm.dungeon?.energyCost ?? 10)")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
                 }
@@ -301,7 +301,7 @@ struct DungeonRoomDetailView: View {
                 switch state {
                 case .defeated:
                     Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(completedGreen)
                 case .current:
                     Text("\(boss.id)")

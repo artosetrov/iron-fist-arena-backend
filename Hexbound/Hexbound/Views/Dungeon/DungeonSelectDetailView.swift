@@ -139,7 +139,7 @@ struct DungeonSelectDetailView: View {
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.stamina)
                     .accessibilityLabel("Stamina icon")
                     .accessibilityElement(children: .ignore)
@@ -164,7 +164,7 @@ struct DungeonSelectDetailView: View {
                     .accessibilityElement(children: .ignore)
 
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .accessibilityLabel("Tap to purchase stamina")
                     .accessibilityElement(children: .ignore)
@@ -186,7 +186,7 @@ struct DungeonSelectDetailView: View {
                     .stroke(DarkFantasyTheme.stamina.opacity(0.3), lineWidth: 1)
             )
             .cornerBrackets(color: DarkFantasyTheme.stamina.opacity(0.3), length: 12, thickness: 1.5)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .cardShadow()
         }
         .buttonStyle(.scalePress(0.97))
         .contentShape(Rectangle())
@@ -251,7 +251,7 @@ struct DungeonSelectDetailView: View {
                             if isCompleted {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 14))
+                                        .font(DarkFantasyTheme.uiLabel)
                                     Text("COMPLETED")
                                         .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                                 }
@@ -270,7 +270,7 @@ struct DungeonSelectDetailView: View {
                     if !isLocked {
                         HStack(spacing: 4) {
                             Image(systemName: "bolt.fill")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DarkFantasyTheme.caption.bold())
                             Text("\(dungeon.energyCost)")
                                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         }
@@ -292,7 +292,7 @@ struct DungeonSelectDetailView: View {
                             .overlay {
                                 VStack(spacing: LayoutConstants.spaceSM) {
                                     Image(systemName: "lock.fill")
-                                        .font(.system(size: 28))
+                                        .font(DarkFantasyTheme.title)
                                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                                     if case .locked(let req) = state {
                                         Text(req)

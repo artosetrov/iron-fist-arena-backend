@@ -153,7 +153,7 @@ struct DungeonBossCard: View {
         case .defeated:
             HStack(spacing: 4) {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(DarkFantasyTheme.badge.bold())
                 Text("DEFEATED")
             }
             .font(DarkFantasyTheme.body(size: 10).bold())
@@ -173,7 +173,7 @@ struct DungeonBossCard: View {
         case .current:
             HStack(spacing: 4) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(DarkFantasyTheme.badge.bold())
                 Text("CURRENT")
             }
             .font(DarkFantasyTheme.body(size: 10).bold())
@@ -193,7 +193,7 @@ struct DungeonBossCard: View {
         case .locked:
             HStack(spacing: 4) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 9))
+                    .font(DarkFantasyTheme.badge)
                 Text("LOCKED")
             }
             .font(DarkFantasyTheme.body(size: 10).bold())

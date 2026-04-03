@@ -40,7 +40,7 @@ struct CelebrationBannerView: View {
                     .frame(width: 44, height: 44)
 
                 Image(systemName: banner.type.icon)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(DarkFantasyTheme.cardTitle.bold())
                     .foregroundStyle(banner.type.color)
             }
 

@@ -196,9 +196,9 @@ extension View {
 #if DEBUG
 #Preview {
     VStack(spacing: 16) {
-        WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "pot_health_small", style: .heal, isInteractive: true, action: {})
-        WidgetPill(icon: "", text: "Heal", count: "×1", imageAsset: "pot_health_small", style: .urgent, isInteractive: true, action: {})
-        WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "pot_stamina_small", style: .energy, isInteractive: true, action: {})
+        WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "health_potion_small", style: .heal, isInteractive: true, action: {})
+        WidgetPill(icon: "", text: "Heal", count: "×1", imageAsset: "health_potion_small", style: .urgent, isInteractive: true, action: {})
+        WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "stamina_potion_small", style: .energy, isInteractive: true, action: {})
         WidgetPill(icon: "", text: "Repair Gear", imageAsset: "icon-strength", style: .warn)
         WidgetPill(icon: "", text: "1750 Rating", imageAsset: "icon-pvp-rating", style: .pvp)
         WidgetPill(icon: "", text: "Streak: 3", imageAsset: "icon-wins", style: .streak)
@@ -206,8 +206,8 @@ extension View {
 
         // Two pills side by side
         HStack(spacing: LayoutConstants.pillSpacing) {
-            WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "pot_health_small", style: .heal, isInteractive: true, action: {})
-            WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "pot_stamina_small", style: .energy, isInteractive: true, action: {})
+            WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "health_potion_small", style: .heal, isInteractive: true, action: {})
+            WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "stamina_potion_small", style: .energy, isInteractive: true, action: {})
         }
     }
     .padding()

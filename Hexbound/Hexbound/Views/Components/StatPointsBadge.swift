@@ -44,7 +44,7 @@ struct StatPointsBadge: View {
         HStack {
             HStack(spacing: 4) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 12))
+                    .font(DarkFantasyTheme.caption)
                 Text("Stat Points: \(points)")
             }
             .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))

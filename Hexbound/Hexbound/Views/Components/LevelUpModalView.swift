@@ -289,7 +289,7 @@ struct LevelUpModalView: View {
                     .fill(iconColor.opacity(0.15))
                     .frame(width: 36, height: 36)
                 Image(systemName: iconName)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(iconColor)
             }
 
@@ -347,7 +347,7 @@ struct LevelUpModalView: View {
     private func unlockPill(name: String) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: "lock.open.fill")
-                .font(.system(size: 12))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.success)
             Text(name)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
@@ -373,7 +373,7 @@ struct LevelUpModalView: View {
         HapticManager.heavy()
 
         // Phase 1: Backdrop + rays
-        withAnimation(.easeOut(duration: 0.3)) {
+        withAnimation(.easeOut(duration: MotionConstants.ceremonyPhase1)) {
             showBackdrop = true
         }
 
@@ -383,14 +383,14 @@ struct LevelUpModalView: View {
         }
 
         // Phase 2: Rays + shield appear
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
             withAnimation(.easeOut(duration: 0.4)) {
                 showRays = true
             }
         }
 
         // Phase 3: Title scale-in 2.5→1 with blur dissolve
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase1) {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.65)) {
                 showTitle = true
                 titleScale = 1.0
@@ -402,21 +402,21 @@ struct LevelUpModalView: View {
         }
 
         // Phase 4: Level number
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            withAnimation(.easeOut(duration: 0.3)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase2) {
+            withAnimation(.easeOut(duration: MotionConstants.ceremonyPhase1)) {
                 showLevel = true
             }
         }
 
         // Phase 5: Divider
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase3) {
             withAnimation(.easeOut(duration: 0.25)) {
                 showDivider = true
             }
         }
 
         // Phase 6: Reward cards + tick-up
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase4) {
             withAnimation(.easeOut(duration: 0.35)) {
                 showRewards = true
             }
@@ -427,14 +427,14 @@ struct LevelUpModalView: View {
         }
 
         // Phase 7: Unlocks
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            withAnimation(.easeOut(duration: 0.3)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase5) {
+            withAnimation(.easeOut(duration: MotionConstants.ceremonyPhase1)) {
                 showUnlocks = true
             }
         }
 
         // Phase 8: Continue button
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyButton) {
             withAnimation(MotionConstants.spring) {
                 showButton = true
             }

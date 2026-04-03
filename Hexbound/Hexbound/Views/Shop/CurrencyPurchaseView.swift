@@ -28,6 +28,18 @@ struct CurrencyPackage: Identifiable {
         self.isSubscription = isSubscription
     }
 
+    /// Per-tier illustration asset (gold only — gems use icon-gems for all tiers)
+    var tierAsset: String? {
+        switch id {
+        case "gold_500":   return "shop-gold-tier1"
+        case "gold_1200":  return "shop-gold-tier2"
+        case "gold_3500":  return "shop-gold-tier3"
+        case "gold_8000":  return "shop-gold-tier4"
+        case "gold_20000": return "shop-gold-tier5"
+        default:           return nil
+        }
+    }
+
     var totalAmount: Int { amount + bonusAmount }
     var displayAmount: String {
         if totalAmount >= 1000 {
@@ -415,11 +427,12 @@ struct CurrencyPackageCard: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMD) {
-            // Currency icon — themed container (2x size, no badge)
+            // Currency icon — per-tier illustration for gold, generic for gems
             VStack {
-                Image(package.currencyType.assetIcon)
+                Image(package.tierAsset ?? package.currencyType.assetIcon)
                     .resizable()
-                    .frame(width: 64, height: 64)
+                    .scaledToFit()
+                    .frame(width: 72, height: 72)
             }
             .frame(width: 88, height: 88)
             .background(
@@ -538,7 +551,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "gift.fill")
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(.system(size: 16))
+                        .font(DarkFantasyTheme.body)
                     Text("50 gems instantly upon purchase")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -546,7 +559,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "calendar")
                         .foregroundStyle(DarkFantasyTheme.cyan)
-                        .font(.system(size: 16))
+                        .font(DarkFantasyTheme.body)
                     Text("10 gems daily for 30 days (300 total)")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -554,7 +567,7 @@ struct MonthlyGemCardOffer: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "sparkles")
                         .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .font(.system(size: 16))
+                        .font(DarkFantasyTheme.body)
                     Text("7x more value than buying gems directly!")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
@@ -601,7 +614,7 @@ struct PremiumUnlockCard: View {
             // Header
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 28))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("UPGRADE TO PREMIUM")
@@ -625,7 +638,7 @@ struct PremiumUnlockCard: View {
             Button(action: onBuy) {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 16))
+                        .font(DarkFantasyTheme.body)
                     Text("VIEW DETAILS")
                 }
                 .frame(maxWidth: .infinity)
@@ -651,7 +664,7 @@ struct PremiumUnlockCard: View {
 struct PremiumBenefitChip: View {
     let icon: String
     let text: String
-    let assetIcon: Bool = false
+    var assetIcon: Bool = false
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
@@ -662,7 +675,7 @@ struct PremiumBenefitChip: View {
                     .frame(width: 16, height: 16)
             } else {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(DarkFantasyTheme.body)
             }
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))

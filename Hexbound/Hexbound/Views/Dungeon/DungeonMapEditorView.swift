@@ -159,7 +159,7 @@ struct DungeonMapEditorView: View {
                         sizeOverrides[sel] = max(0.05, currentSize - 0.02)
                     } label: {
                         Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 24))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .buttonStyle(.scalePress)
@@ -178,7 +178,7 @@ struct DungeonMapEditorView: View {
                         sizeOverrides[sel] = min(0.40, currentSize + 0.02)
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .buttonStyle(.scalePress)
@@ -343,10 +343,10 @@ struct DraggableEditorDungeonBuilding: View {
                     .overlay(
                         VStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: building.fallbackIcon)
-                                .font(.system(size: 24))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                             Text(building.label)
-                                .font(.system(size: 10, weight: .bold))
+                                .font(DarkFantasyTheme.badge.bold())
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                     )

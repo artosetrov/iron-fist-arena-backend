@@ -152,8 +152,8 @@ struct GuildHallDetailView: View {
             alliesSkeletons
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
-        case .error:
-            errorPanel(vm)
+        case .error(let msg):
+            errorPanel(vm, message: msg)
                 .padding(.horizontal, LayoutConstants.screenPadding)
 
         case .loaded where vm.friends.isEmpty:
@@ -190,7 +190,7 @@ struct GuildHallDetailView: View {
     private func friendCountHeader(_ vm: GuildHallViewModel) -> some View {
         HStack {
             Image(systemName: "person.2.fill")
-                .font(.system(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             Text("Allies")
@@ -215,7 +215,7 @@ struct GuildHallDetailView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.panelRadius)
         .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Incoming Requests
@@ -270,7 +270,7 @@ struct GuildHallDetailView: View {
                         _ = vm.acceptRequest(request)
                     } label: {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(DarkFantasyTheme.uiLabel.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .frame(width: 36, height: 36)
                             .background(DarkFantasyTheme.success)
@@ -282,7 +282,7 @@ struct GuildHallDetailView: View {
                         _ = vm.declineRequest(request)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(DarkFantasyTheme.uiLabel.bold())
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .frame(width: 36, height: 36)
                             .background(DarkFantasyTheme.bgTertiary)
@@ -303,7 +303,7 @@ struct GuildHallDetailView: View {
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Outgoing Requests
@@ -330,7 +330,7 @@ struct GuildHallDetailView: View {
                     Spacer()
 
                     Image(systemName: "hourglass")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .padding(LayoutConstants.spaceSM)
@@ -450,7 +450,7 @@ struct GuildHallDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DarkFantasyTheme.body.weight(.medium))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 36, height: 36)
                         .background(DarkFantasyTheme.bgTertiary.opacity(0.5))
@@ -471,7 +471,7 @@ struct GuildHallDetailView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Empty & Error States
@@ -479,7 +479,7 @@ struct GuildHallDetailView: View {
     private var emptyAlliesPanel: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "person.2.slash")
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("No Allies Yet")
@@ -516,16 +516,16 @@ struct GuildHallDetailView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 14, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
-    private func errorPanel(_ vm: GuildHallViewModel) -> some View {
+    private func errorPanel(_ vm: GuildHallViewModel, message: String = "Failed to load allies") -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 36))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(DarkFantasyTheme.danger)
 
-            Text("Failed to load allies")
+            Text(message)
                 .font(DarkFantasyTheme.section(size: 14))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
@@ -552,7 +552,7 @@ struct GuildHallDetailView: View {
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.08))
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Skeletons
@@ -607,7 +607,7 @@ struct GuildHallDetailView: View {
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-        } else if vm.conversations.isEmpty && vm.scrollsLoadState == .error {
+        } else if vm.conversations.isEmpty, case .error = vm.scrollsLoadState {
             VStack(spacing: LayoutConstants.spaceMD) {
                 ErrorStateView(
                     message: "Failed to load scrolls",
@@ -692,7 +692,7 @@ struct GuildHallDetailView: View {
             .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
             .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: (hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium).opacity(hasUnread ? 0.1 : 0.15))
             .cornerBrackets(color: (hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.borderMedium).opacity(0.3), length: 10, thickness: 1)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .cardShadow()
         }
         .buttonStyle(.plain)
     }
@@ -700,7 +700,7 @@ struct GuildHallDetailView: View {
     private var scrollsEmptyState: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "scroll.fill")
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("No Scrolls Yet")
@@ -726,11 +726,11 @@ struct GuildHallDetailView: View {
             threadHeader(vm)
 
             // Messages area — opens instantly, messages load in background
-            if vm.threadLoadState == .error {
+            if case .error = vm.threadLoadState {
                 Spacer()
                 VStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 32))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text("Failed to load messages")
                         .font(DarkFantasyTheme.body(size: 14))
@@ -902,7 +902,7 @@ struct GuildHallDetailView: View {
     private var threadEmptyState: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 36))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
 
             Text("Start the conversation")
@@ -929,7 +929,7 @@ struct GuildHallDetailView: View {
                 if let quick = quickMsg {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: quick.icon)
-                            .font(.system(size: 20))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.gold)
                         Text(msg.content)
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
@@ -1102,7 +1102,7 @@ struct GuildHallDetailView: View {
             } label: {
                 ZStack {
                     Image(systemName: "arrow.up")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(DarkFantasyTheme.section.bold())
                         .foregroundStyle(
                             isEmpty ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textOnGold
                         )
@@ -1155,7 +1155,7 @@ struct GuildHallDetailView: View {
             if isSending {
                 // Sending… — animated clock icon
                 Image(systemName: "clock")
-                    .font(.system(size: 9))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.5))
                     .symbolEffect(.pulse.byLayer)
                 Text("Sending…")
@@ -1169,16 +1169,16 @@ struct GuildHallDetailView: View {
                 if msg.isRead {
                     // Read — double checkmark
                     Image(systemName: "checkmark")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
                     Image(systemName: "checkmark")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
                         .offset(x: -4)
                 } else {
                     // Sent — single checkmark
                     Image(systemName: "checkmark")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.4))
                 }
             }
@@ -1214,10 +1214,10 @@ struct GuildHallDetailView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 
-        case .error:
+        case .error(let msg):
             VStack(spacing: LayoutConstants.spaceMD) {
                 ErrorStateView(
-                    message: "Failed to load duels",
+                    message: msg,
                     retryAction: { Task { await vm.loadChallenges() } }
                 )
             }
@@ -1324,7 +1324,7 @@ struct GuildHallDetailView: View {
 
                         let rank = PvPRank.fromRating(challenge.challenger.pvpRating)
                         Image(systemName: rank.icon)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(DarkFantasyTheme.badge.weight(.semibold))
                             .foregroundStyle(rank.color)
                         Text("\(challenge.challenger.pvpRating)")
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
@@ -1426,7 +1426,7 @@ struct GuildHallDetailView: View {
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.danger.opacity(0.08))
         .cornerBrackets(color: DarkFantasyTheme.danger.opacity(0.3), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Outgoing Challenge Card (cancel button + status pill + expiry timer)
@@ -1470,7 +1470,7 @@ struct GuildHallDetailView: View {
                     if !expiryText.isEmpty {
                         HStack(spacing: 4) {
                             Image(systemName: "clock")
-                                .font(.system(size: 11))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                             Text("Expires in \(expiryText)")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -1491,7 +1491,7 @@ struct GuildHallDetailView: View {
                                     .scaleEffect(0.6)
                             } else {
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 10, weight: .semibold))
+                                    .font(DarkFantasyTheme.badge.weight(.semibold))
                                 Text("CANCEL")
                                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                                     .tracking(0.5)
@@ -1538,7 +1538,7 @@ struct GuildHallDetailView: View {
 
         return HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(DarkFantasyTheme.badge.weight(.semibold))
             Text(label)
                 .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
                 .tracking(0.5)
@@ -1577,7 +1577,7 @@ struct GuildHallDetailView: View {
                             .stroke(accentColor.opacity(0.2), lineWidth: 1)
                     )
                 Image(systemName: didWin ? "trophy.fill" : "xmark.shield.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(accentColor)
             }
 
@@ -1631,7 +1631,7 @@ struct GuildHallDetailView: View {
     private var duelsEmptyState: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "swords")
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("No Duels Yet")
@@ -1724,7 +1724,7 @@ struct GuildHallDetailView: View {
     private func comingSoonPlaceholder(_ feature: String) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "scroll.fill")
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("\(feature) — Coming Soon")

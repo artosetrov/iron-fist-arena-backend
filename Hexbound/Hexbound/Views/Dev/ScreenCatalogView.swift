@@ -49,7 +49,7 @@ struct ScreenCatalogView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: item.icon)
-                            .font(.system(size: 14))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
                             .frame(width: 24)
 
@@ -72,7 +72,7 @@ struct ScreenCatalogView: View {
                         }
 
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .padding(.vertical, LayoutConstants.spaceXS)

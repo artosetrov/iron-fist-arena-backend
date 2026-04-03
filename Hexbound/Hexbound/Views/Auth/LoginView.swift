@@ -43,6 +43,7 @@ struct LoginView: View {
 
                     // 3. Primary action
                     Button {
+                        SFXManager.shared.play(.uiConfirm)
                         Task { await vm.login(appState: appState) }
                     } label: {
                         Text("LOG IN")
@@ -79,13 +80,14 @@ struct LoginView: View {
                         HStack(spacing: LayoutConstants.spaceMD) {
                             // Apple — programmatic sign in via regular Button
                             Button {
+                                SFXManager.shared.play(.uiTap)
                                 vm.triggerAppleSignIn(appState: appState)
                             } label: {
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Image(systemName: "apple.logo")
-                                        .font(.system(size: 22, weight: .medium))
+                                        .font(DarkFantasyTheme.section.weight(.medium))
                                     Text("Apple")
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                                 }
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .frame(maxWidth: .infinity)
@@ -105,6 +107,7 @@ struct LoginView: View {
                             // Google — same bgSecondary background
                             ZStack {
                                 Button {
+                                    SFXManager.shared.play(.uiTap)
                                     Task { await vm.handleGoogleSignIn(appState: appState) }
                                 } label: {
                                     Color.clear
@@ -115,7 +118,7 @@ struct LoginView: View {
                                     Text("G")
                                         .font(.system(size: 22, weight: .bold, design: .rounded))
                                     Text("Google")
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                                 }
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .allowsHitTesting(false)
@@ -138,6 +141,7 @@ struct LoginView: View {
                     // 5. Secondary actions
                     HStack(spacing: LayoutConstants.spaceLG) {
                         Button("Forgot Password?") {
+                            SFXManager.shared.play(.uiTap)
                             vm.showForgotPassword = true
                         }
                         .buttonStyle(.ghost)
@@ -147,6 +151,7 @@ struct LoginView: View {
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         Button("Sign Up") {
+                            SFXManager.shared.play(.uiTap)
                             appState.authPath.append(AppRoute.register)
                         }
                         .buttonStyle(.ghost)

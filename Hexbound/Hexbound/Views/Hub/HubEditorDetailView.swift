@@ -192,7 +192,7 @@ struct HubEditorDetailView: View {
                         sizeOverrides[sel] = max(0.05, currentSize - 0.02)
                     } label: {
                         Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 24))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .buttonStyle(.scalePress)
@@ -211,7 +211,7 @@ struct HubEditorDetailView: View {
                         sizeOverrides[sel] = min(0.60, currentSize + 0.02)
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .buttonStyle(.scalePress)
@@ -380,7 +380,7 @@ struct DraggableEditorBuilding: View {
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
-                .background(isSelected ? Color.red.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
+                .background(isSelected ? DarkFantasyTheme.danger.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
                 .cornerRadius(LayoutConstants.radiusXS)
 
             if UIImage(named: building.imageName) != nil {
@@ -390,18 +390,18 @@ struct DraggableEditorBuilding: View {
                     .frame(height: buildingHeight)
             } else {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .fill(isSelected ? Color.red.opacity(0.4) : Color.orange.opacity(0.3))
+                    .fill(isSelected ? DarkFantasyTheme.danger.opacity(0.4) : DarkFantasyTheme.stamina.opacity(0.3))
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                            .stroke(isSelected ? Color.red : Color.orange, lineWidth: 2)
+                            .stroke(isSelected ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina, lineWidth: 2)
                     )
                     .overlay(
                         VStack(spacing: 4) {
                             Image(systemName: building.fallbackIcon)
-                                .font(.system(size: 24))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                             Text(building.label)
-                                .font(.system(size: 10, weight: .bold))
+                                .font(DarkFantasyTheme.badge.bold())
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                     )
@@ -411,7 +411,7 @@ struct DraggableEditorBuilding: View {
         .overlay(
             isSelected ?
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(Color.red, lineWidth: 2)
+                    .stroke(DarkFantasyTheme.danger, lineWidth: 2)
                     .padding(-4)
             : nil
         )

@@ -75,7 +75,7 @@ struct UnifiedHeroWidget: View {
         .innerBorder(cornerRadius: LayoutConstants.widgetRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .contentShape(Rectangle())
         .onTapGesture {
             onTap?()

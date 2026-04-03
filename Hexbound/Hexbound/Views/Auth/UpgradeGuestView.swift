@@ -35,11 +35,12 @@ struct UpgradeGuestView: View {
                     VStack(spacing: LayoutConstants.spaceMD) {
                         // Apple Sign In — programmatic
                         Button {
+                            SFXManager.shared.play(.uiTap)
                             vm.triggerAppleSignIn(appState: appState)
                         } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
-                                    .font(.system(size: 22, weight: .medium))
+                                    .font(DarkFantasyTheme.section.weight(.medium))
                                 Text("CONTINUE WITH APPLE")
                                     .font(DarkFantasyTheme.title(size: LayoutConstants.textBody))
                             }
@@ -61,6 +62,7 @@ struct UpgradeGuestView: View {
 
                         // Google Sign In
                         Button {
+                            SFXManager.shared.play(.uiTap)
                             Task { await vm.handleGoogleSignIn(appState: appState) }
                         } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
@@ -194,6 +196,7 @@ struct UpgradeGuestView: View {
 
                     // Register button (email/password)
                     Button {
+                        SFXManager.shared.play(.uiConfirm)
                         Task { await vm.upgrade(appState: appState) }
                     } label: {
                         if vm.isLoading {

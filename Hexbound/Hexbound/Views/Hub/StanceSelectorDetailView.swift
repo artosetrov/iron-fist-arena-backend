@@ -148,7 +148,7 @@ struct StanceSelectorDetailView: View {
             // Section header
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: roleIcon)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(DarkFantasyTheme.caption.weight(.semibold))
                     .foregroundStyle(roleColor)
                 Text(title)
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -211,7 +211,7 @@ struct StanceSelectorDetailView: View {
     private func inlineBonusPill(icon: String, label: String, value: Int, color: Color) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(DarkFantasyTheme.badge.weight(.semibold))
                 .foregroundStyle(color)
             Text(label)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -236,7 +236,7 @@ struct StanceSelectorDetailView: View {
             // Header
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "target")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(DarkFantasyTheme.caption.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
                 Text("ZONE MATCHING")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
@@ -248,7 +248,7 @@ struct StanceSelectorDetailView: View {
                 // Match bonus
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.success)
                     Text("Match:")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -261,7 +261,7 @@ struct StanceSelectorDetailView: View {
                 // Miss bonus
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text("Miss:")
                         .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -284,7 +284,7 @@ struct StanceSelectorDetailView: View {
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 

@@ -118,7 +118,7 @@ struct DailyLoginDetailView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 26))
+                    .font(DarkFantasyTheme.title)
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
@@ -263,7 +263,7 @@ struct DailyLoginDetailView: View {
                         rewardIcon(reward, size: isBonus ? 28 : 24)
                             .opacity(0.4)
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 18))
+                            .font(DarkFantasyTheme.cardTitle)
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 } else {
@@ -322,7 +322,7 @@ struct DailyLoginDetailView: View {
 
                     if vm.hasClaimed {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(DarkFantasyTheme.section.bold())
                             .foregroundStyle(DarkFantasyTheme.success)
                     } else {
                         rewardIcon(reward, size: 28)
@@ -378,7 +378,7 @@ struct DailyLoginDetailView: View {
             } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(DarkFantasyTheme.uiLabel.bold())
                     Text("REWARD CLAIMED")
                 }
             }

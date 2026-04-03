@@ -29,6 +29,18 @@ struct WheelSector: Identifiable {
         default:  return "star"
         }
     }
+
+    /// Asset catalog image name for sector icon
+    var sectorAsset: String {
+        switch multiplier {
+        case 0:   return "icon-fortune-lose"
+        case 1.5: return "icon-fortune-x15"
+        case 2:   return "icon-fortune-x2"
+        case 3:   return "icon-fortune-x3"
+        case 5:   return "icon-fortune-x5"
+        default:  return "icon-fortune-x15"
+        }
+    }
 }
 
 @MainActor @Observable
@@ -38,6 +50,14 @@ final class FortuneWheelViewModel {
     var selectedBet = 100
     var isSpinning = false
     var result: SpinResult?
+
+    // Daily limit
+    var spinsRemaining: Int = 10
+    var spinsLimit: Int = 10
+    var isLoading = true
+
+    // NPC speech lines
+    var npcSpeech: String = "Spin the wheel, brave soul! Fortune favors the bold."
 
     // Wheel layout — 12 sectors, matching backend
     let sectors: [WheelSector] = [
@@ -57,6 +77,29 @@ final class FortuneWheelViewModel {
 
     static let bets = [50, 100, 200, 500, 1000]
 
+    private let speechLines = [
+        "Spin the wheel, brave soul! Fortune favors the bold.",
+        "Feeling lucky? The wheel knows no mercy.",
+        "Gold in, glory out. Or... nothing. Let's see!",
+        "Lady Fortuna smiles upon the daring.",
+        "Every spin tells a story. What will yours be?",
+        "The wheel turns. Destinies are forged.",
+    ]
+
+    private let winSpeechLines = [
+        "The wheel rewards the worthy!",
+        "Gold flows to those who dare!",
+        "Fortune smiles upon you, champion!",
+        "A splendid spin! Try your luck again?",
+    ]
+
+    private let loseSpeechLines = [
+        "The wheel is cruel... but persistence pays.",
+        "Not this time. But the next spin could change everything.",
+        "Even heroes stumble. Spin again!",
+        "The wheel giveth and taketh. Such is fate.",
+    ]
+
     init(appState: AppState) {
         self.appState = appState
     }
@@ -64,14 +107,36 @@ final class FortuneWheelViewModel {
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
 
     var canSpin: Bool {
-        gold >= selectedBet && !isSpinning
+        gold >= selectedBet && !isSpinning && spinsRemaining > 0
     }
+
+    var spinsUsed: Int { spinsLimit - spinsRemaining }
 
     struct SpinResult {
         let won: Bool
         let sectorIndex: Int
         let multiplier: Double
         let winAmount: Int
+    }
+
+    // MARK: - Load Status
+
+    func loadStatus() async {
+        guard let charId = appState.currentCharacter?.id else {
+            isLoading = false
+            return
+        }
+
+        do {
+            let data = try await APIClient.shared.getRaw(
+                APIEndpoints.fortuneWheelStatus + "?character_id=\(charId)"
+            )
+            spinsRemaining = data["spins_remaining"] as? Int ?? 10
+            spinsLimit = data["spins_limit"] as? Int ?? 10
+        } catch {
+            // Default to showing wheel, backend will enforce limits
+        }
+        isLoading = false
     }
 
     // MARK: - Spin
@@ -112,6 +177,14 @@ final class FortuneWheelViewModel {
                 appState.currentCharacter?.gold = newGold
             }
 
+            // Update daily limit from server
+            if let remaining = data["spins_remaining"] as? Int {
+                spinsRemaining = remaining
+            }
+            if let limit = data["spins_limit"] as? Int {
+                spinsLimit = limit
+            }
+
             result = spinResult
             appState.invalidateCache("quests")
             return spinResult
@@ -122,6 +195,9 @@ final class FortuneWheelViewModel {
             isSpinning = false
 
             switch error {
+            case .rateLimited:
+                npcSpeech = "The wheel needs rest... come back tomorrow."
+                spinsRemaining = 0
             case .clientError(_, let message):
                 appState.showToast(message, type: .error)
             default:
@@ -136,7 +212,7 @@ final class FortuneWheelViewModel {
         }
     }
 
-    /// Called after wheel animation completes — show toast and reset state
+    /// Called after wheel animation completes — update NPC speech and reset state
     func onAnimationComplete() {
         guard let result else {
             isSpinning = false
@@ -146,9 +222,11 @@ final class FortuneWheelViewModel {
         if result.won {
             SFXManager.shared.play(.uiRewardClaim)
             HapticManager.victory()
+            npcSpeech = winSpeechLines.randomElement() ?? winSpeechLines[0]
         } else {
             SFXManager.shared.play(.uiError)
             HapticManager.shake()
+            npcSpeech = loseSpeechLines.randomElement() ?? loseSpeechLines[0]
         }
 
         isSpinning = false
@@ -157,5 +235,9 @@ final class FortuneWheelViewModel {
     func reset() {
         result = nil
         isSpinning = false
+    }
+
+    func randomizeSpeech() {
+        npcSpeech = speechLines.randomElement() ?? speechLines[0]
     }
 }

@@ -139,7 +139,7 @@ struct SessionSummaryView: View {
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     private func rewardsCard(summary: SessionSummaryData) -> some View {
@@ -154,7 +154,7 @@ struct SessionSummaryView: View {
             if summary.itemsGained > 0 {
                 HStack {
                     Image(systemName: "bag.fill")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Text("\(summary.itemsGained) items obtained")
                         .font(DarkFantasyTheme.caption)
@@ -176,7 +176,7 @@ struct SessionSummaryView: View {
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     private func questCard(summary: SessionSummaryData) -> some View {
@@ -222,13 +222,13 @@ struct SessionSummaryView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     private func ratingCard(summary: SessionSummaryData) -> some View {
         HStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: summary.ratingChange >= 0 ? "arrow.up.right" : "arrow.down.right")
-                .font(.system(size: 20, weight: .bold))
+                .font(DarkFantasyTheme.section.bold())
                 .foregroundStyle(summary.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -254,7 +254,7 @@ struct SessionSummaryView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     // MARK: - Helpers

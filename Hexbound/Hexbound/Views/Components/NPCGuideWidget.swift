@@ -49,6 +49,11 @@ struct NPCGuideWidget: View {
     /// Custom CTA action
     var onCTA: (() -> Void)? = nil
 
+    // MARK: - Wheel Mode (Fortune Wheel custom content)
+    /// Custom content builder replacing message + actions (e.g. wager section)
+    /// When provided, plainMessage/attributedMessage/actions are ignored.
+    var wheelContent: AnyView? = nil
+
     // MARK: - Customization
     /// SF Symbol fallback when NPC image asset is missing
     var npcFallbackIcon: String = "person.crop.circle.fill"
@@ -84,7 +89,7 @@ struct NPCGuideWidget: View {
             )
             .allowsHitTesting(false)
 
-            // Layer 1 (back): NPC/player image, bottom-left, peeks out behind card
+            // Layer 1 (back): NPC/player image, bottom-left, peeks above card
             HStack(alignment: .bottom) {
                 npcAvatar
                     .offset(y: LayoutConstants.npcAvatarOffset)
@@ -100,13 +105,38 @@ struct NPCGuideWidget: View {
 
     @ViewBuilder
     private var speechCard: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: 4) {
-                // NPC title (gold)
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            // Header row: NPC title + dismiss button
+            // Figma: Header Row (HORIZONTAL, SPACE_BETWEEN)
+            HStack {
                 Text(npcTitle.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .padding(.trailing, 32) // space for X button
+                    .tracking(2)
+
+                Spacer()
+
+                // Dismiss ✕ — Figma: Inter Bold 12, textTertiary
+                // Hidden in Wheel state (per Figma State=Wheel has no dismiss)
+                if wheelContent == nil {
+                    Button {
+                        onDismiss()
+                    } label: {
+                        Text("✕")
+                            .font(DarkFantasyTheme.caption.bold())
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if let wheel = wheelContent {
+                // Wheel mode: custom content replaces message + actions
+                // Figma: State=Wheel → Wager Section
+                wheel
+            } else {
+                // Standard mode: message + optional CTA + optional actions
+                // Figma: State=Full → Message + Actions
 
                 // Message text (with optional typewriter animation)
                 Group {
@@ -118,7 +148,7 @@ struct NPCGuideWidget: View {
                         Text(plain)
                     }
                 }
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .lineLimit(3)
                 .id(messageId)
@@ -139,62 +169,39 @@ struct NPCGuideWidget: View {
                         HapticManager.light()
                         action()
                     } label: {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Text(label)
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        }
-                        .padding(.horizontal, LayoutConstants.spaceLG)
-                        .padding(.vertical, LayoutConstants.spaceSM)
-                        .background(Capsule().fill(DarkFantasyTheme.gold))
+                        Text(label)
+                            .font(DarkFantasyTheme.cardTitle)
+                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                            .tracking(2)
+                            .padding(.horizontal, LayoutConstants.spaceLG)
+                            .padding(.vertical, LayoutConstants.spaceSM)
+                            .background(Capsule().fill(DarkFantasyTheme.gold))
                     }
                     .buttonStyle(.scalePress(0.9))
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
 
                 // Optional action row (tutorial mode)
+                // Figma: Actions → "Skip all" (textTertiary) + Continue (Wager Button/Selected)
                 if onSkipAll != nil || onContinue != nil {
                     actionRow
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Dismiss X button — top-right corner
-            Button {
-                onDismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        Circle()
-                            .fill(DarkFantasyTheme.bgTertiary.opacity(0.6))
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(DarkFantasyTheme.borderSubtle.opacity(0.4), lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Figma: Speech Card — padding 12-16, cornerRadius 8, bgSecondary fill, borderMedium stroke w:1
         .padding(.horizontal, LayoutConstants.npcBarPaddingH)
         .padding(.vertical, LayoutConstants.npcBarPaddingV)
         .frame(maxWidth: .infinity)
         .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.npcBarRadius
-            )
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
         )
-        .surfaceLighting(cornerRadius: LayoutConstants.npcBarRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(cornerRadius: LayoutConstants.npcBarRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
-        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
-        .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
-        .contentShape(RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
         .onTapGesture {
             onTapCard?()
         }
@@ -301,7 +308,7 @@ struct NPCGuideWidget: View {
                                     .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 2)
                             )
                         Image(systemName: npcFallbackIcon)
-                            .font(.system(size: 28))
+                            .font(DarkFantasyTheme.title)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .frame(width: 60, height: 60)
@@ -351,7 +358,7 @@ struct NPCMiniButton: View {
                         .scaledToFill()
                 } else {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 28))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }

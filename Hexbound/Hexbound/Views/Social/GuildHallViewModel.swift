@@ -9,8 +9,9 @@ class GuildHallViewModel {
         case duels = "DUELS"
     }
 
-    enum LoadState {
-        case idle, loading, loaded, error
+    enum LoadState: Equatable {
+        case idle, loading, loaded
+        case error(String = "Something went wrong")
     }
 
     var selectedTab: Tab = .allies
@@ -71,26 +72,40 @@ class GuildHallViewModel {
         guard !isPollingActive else { return }
         isPollingActive = true
         Task { [weak self] in
-            while let self, self.isPollingActive, self.activeThreadCharacterId != nil {
+            var consecutiveFailures = 0
+            while let self, self.isPollingActive {
                 try? await Task.sleep(for: .seconds(5))
                 guard self.isPollingActive, let targetId = self.activeThreadCharacterId else { break }
-                // Silent refresh — don't reset loading state
-                if let messages = try? await self.messageService.getThread(
-                    characterId: self.characterId,
-                    withCharacterId: targetId
-                ) {
-                    // Merge: keep optimistic temp messages that server doesn't know about yet
-                    let tempMessages = self.activeThread.filter { self.pendingTempIds.contains($0.id) }
-                    let serverLastId = messages.last?.id
-                    let localLastConfirmed = self.activeThread.last(where: { !$0.id.hasPrefix("temp-") })?.id
+
+                do {
+                    let messages = try await self.messageService.getThread(
+                        characterId: self.characterId,
+                        withCharacterId: targetId
+                    )
+                    consecutiveFailures = 0
+
+                    // Snapshot pending temp IDs to avoid race with sendMessage()
+                    let currentPendingIds = self.pendingTempIds
+                    let tempMessages = self.activeThread.filter { currentPendingIds.contains($0.id) }
 
                     // Only update if server data actually changed
-                    if messages.count != self.activeThread.count - tempMessages.count ||
-                       serverLastId != localLastConfirmed {
-                        // Server messages + append any still-pending temp messages at the end
+                    let confirmedCount = self.activeThread.count - tempMessages.count
+                    let serverLastId = messages.last?.id
+                    let localLastConfirmed = self.activeThread.last(where: { !currentPendingIds.contains($0.id) })?.id
+
+                    if messages.count != confirmedCount || serverLastId != localLastConfirmed {
                         var merged = messages
                         merged.append(contentsOf: tempMessages)
                         self.activeThread = merged
+                    }
+                } catch {
+                    consecutiveFailures += 1
+                    #if DEBUG
+                    print("[GuildHallVM] poll failure #\(consecutiveFailures): \(error)")
+                    #endif
+                    if consecutiveFailures >= 3 {
+                        self.sendMessageError = "Lost connection to chat"
+                        break
                     }
                 }
             }
@@ -105,25 +120,40 @@ class GuildHallViewModel {
 
     func loadFriends() async {
         loadState = .loading
-        guard let response = await socialService.getFriends(characterId: characterId) else {
-            loadState = .error
-            return
-        }
-
-        friends = response.friends.sorted { f1, f2 in
-            // Online first, then by name
-            let s1 = f1.onlineStatus
-            let s2 = f2.onlineStatus
-            if s1 != s2 {
-                return onlineOrder(s1) < onlineOrder(s2)
+        do {
+            let response = try await socialService.getFriends(characterId: characterId)
+            friends = response.friends.sorted { f1, f2 in
+                // Online first, then by name
+                let s1 = f1.onlineStatus
+                let s2 = f2.onlineStatus
+                if s1 != s2 {
+                    return onlineOrder(s1) < onlineOrder(s2)
+                }
+                return f1.characterName < f2.characterName
             }
-            return f1.characterName < f2.characterName
+            incomingRequests = response.incomingRequests
+            outgoingRequests = response.outgoingRequests
+            friendCount = response.count
+            maxFriends = response.maxFriends
+            loadState = .loaded
+        } catch let apiError as APIError {
+            switch apiError {
+            case .serverError(_, let msg):
+                loadState = .error(msg)
+            case .networkError:
+                loadState = .error("No connection")
+            default:
+                loadState = .error("Failed to load allies")
+            }
+            #if DEBUG
+            print("[GuildHallVM] loadFriends error: \(apiError)")
+            #endif
+        } catch {
+            loadState = .error("Failed to load allies")
+            #if DEBUG
+            print("[GuildHallVM] loadFriends unexpected: \(error)")
+            #endif
         }
-        incomingRequests = response.incomingRequests
-        outgoingRequests = response.outgoingRequests
-        friendCount = response.count
-        maxFriends = response.maxFriends
-        loadState = .loaded
     }
 
     private func onlineOrder(_ status: OnlineStatus) -> Int {
@@ -284,7 +314,7 @@ class GuildHallViewModel {
             scrollsLoadState = .loaded
         } catch {
             if conversations.isEmpty {
-                scrollsLoadState = .error
+                scrollsLoadState = .error("Failed to load scrolls")
             }
         }
     }
@@ -315,7 +345,7 @@ class GuildHallViewModel {
         } catch {
             isLoadingThreadMessages = false
             if activeThread.isEmpty {
-                threadLoadState = .error
+                threadLoadState = .error("Failed to load messages")
             }
         }
     }
@@ -455,7 +485,7 @@ class GuildHallViewModel {
             completedChallenges = response.completed
             duelsLoadState = .loaded
         } catch {
-            duelsLoadState = .error
+            duelsLoadState = .error("Failed to load duels")
         }
     }
 
@@ -463,6 +493,11 @@ class GuildHallViewModel {
     /// Returns error message on failure (nil on success) so the View can show a toast.
     func acceptChallenge(_ challenge: IncomingChallenge) async -> String? {
         guard processingChallengeId == nil else { return nil } // prevent double-tap
+        // Client-side expiry check — don't waste API call on expired challenges
+        if challenge.isExpired {
+            incomingChallenges.removeAll { $0.id == challenge.id }
+            return "This challenge has expired"
+        }
         processingChallengeId = challenge.id
         defer { processingChallengeId = nil }
         do {
@@ -591,12 +626,15 @@ class GuildHallViewModel {
     }
 
     func cancelOutgoingChallenge(_ challenge: OutgoingChallenge) -> ActionResult {
+        guard processingChallengeId == nil else { return .success } // prevent double-tap
+        processingChallengeId = challenge.id
         let savedChallenges = outgoingChallenges
         outgoingChallenges.removeAll { $0.id == challenge.id }
         HapticManager.light()
 
         Task { [weak self] in
             guard let self else { return }
+            defer { self.processingChallengeId = nil }
             do {
                 try await self.challengeService.cancelChallenge(
                     characterId: self.characterId,

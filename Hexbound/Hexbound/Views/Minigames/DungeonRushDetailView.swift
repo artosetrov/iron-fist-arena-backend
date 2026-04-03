@@ -364,7 +364,7 @@ struct DungeonRushDetailView: View {
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.25), length: 12, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 
     @ViewBuilder
@@ -640,7 +640,7 @@ struct DungeonRushDetailView: View {
 
                             if isResolved {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 6, weight: .bold))
+                                    .font(DarkFantasyTheme.badge.bold())
                                     .foregroundStyle(DarkFantasyTheme.success)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                                     .padding(LayoutConstants.space2XS)
@@ -920,7 +920,7 @@ struct DungeonRushDetailView: View {
                     .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.cyan.opacity(0.1))
                     .cornerBrackets(color: DarkFantasyTheme.cyan.opacity(0.3), length: 12, thickness: 1.5)
                     .compositingGroup()
-                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+                    .cardShadow()
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.top, LayoutConstants.spaceMD)
@@ -1100,66 +1100,12 @@ struct DungeonRushDetailView: View {
 
     @ViewBuilder
     private func treasureOverlay(vm: DungeonRushViewModel) -> some View {
-        ZStack {
-            DarkFantasyTheme.bgBackdrop.ignoresSafeArea()
-
-            VStack(spacing: LayoutConstants.spaceLG) {
-                Image("rush-ui-treasure-chest")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 24)
-
-                Text("TREASURE!")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                VStack(spacing: LayoutConstants.spaceSM) {
-                    if vm.treasureGold > 0 {
-                        CurrencyDisplay(
-                            gold: vm.treasureGold,
-                            size: .compact,
-                            currencyType: .gold,
-                            animated: false
-                        )
-                    }
-                    if let buff = vm.treasureBuff {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(buffAssetName(for: buff.stat))
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 20, height: 20)
-                            Text(buff.name)
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                                .foregroundStyle(DarkFantasyTheme.purple)
-                        }
-                    }
-                }
-
-                GoldDivider()
-                    .padding(.horizontal, LayoutConstants.spaceLG)
-
-                Button { vm.dismissTreasureResult() } label: { Text("CONTINUE") }
-                    .buttonStyle(.primary)
-            }
-            .padding(LayoutConstants.spaceXL)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
-            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.goldGlow, radius: 10)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-            .padding(.horizontal, LayoutConstants.screenPadding)
-        }
+        TreasureRewardOverlay(
+            gold: vm.treasureGold,
+            buff: vm.treasureBuff,
+            buffAssetName: vm.treasureBuff.map { buffAssetName(for: $0.stat) },
+            onDismiss: { vm.dismissTreasureResult() }
+        )
     }
 
     // MARK: - Abandon Overlay
@@ -1388,7 +1334,7 @@ struct DungeonRushDetailView: View {
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
         .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 

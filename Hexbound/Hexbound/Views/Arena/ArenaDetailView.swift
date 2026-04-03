@@ -71,8 +71,8 @@ struct ArenaDetailView: View {
                                     )
                                     .padding(.horizontal, LayoutConstants.screenPadding)
 
-                                    // PvP Stats Bar — rating, streak, first win
-                                    arenaPvpStatsBar(char)
+                                    // PvP Stats Bar — unified compact widget
+                                    PvPStatsWidget(.compact, data: char)
                                         .padding(.horizontal, LayoutConstants.screenPadding)
                                 }
 
@@ -94,12 +94,6 @@ struct ArenaDetailView: View {
                                     .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
 
-                                // Current stance indicator
-                                if let stance = appState.currentCharacter?.combatStance {
-                                    stancePreview(stance)
-                                        .tutorialAnchor(.arenaStance)
-                                }
-
                                 // Tab Content
                                 switch vm.selectedTab {
                                 case 0: opponentsTab(vm)
@@ -107,6 +101,10 @@ struct ArenaDetailView: View {
                                 case 2: historyTab(vm)
                                 default: EmptyView()
                                 }
+
+                                // Current stance indicator — below opponent cards
+                                stancePreview(appState.currentCharacter?.combatStance ?? .default)
+                                    .tutorialAnchor(.arenaStance)
 
                                 Spacer().frame(height: LayoutConstants.spaceLG)
                             }
@@ -360,79 +358,7 @@ struct ArenaDetailView: View {
 
     // MARK: - PvP Stats Bar
 
-    @ViewBuilder
-    private func arenaPvpStatsBar(_ char: Character) -> some View {
-        HStack(spacing: 0) {
-            // Rating
-            pvpStatItem(
-                imageAsset: "icon-pvp-rating",
-                value: "\(char.pvpRating)",
-                label: "Rating",
-                accentColor: DarkFantasyTheme.gold
-            )
-
-            // Divider
-            Rectangle()
-                .fill(DarkFantasyTheme.borderMedium.opacity(0.3))
-                .frame(width: 1, height: 28)
-
-            // Win Streak
-            pvpStatItem(
-                imageAsset: "icon-wins",
-                value: "\(char.pvpWinStreak ?? 0)",
-                label: "Streak",
-                accentColor: DarkFantasyTheme.danger
-            )
-
-            // First Win bonus
-            if char.firstWinToday == true {
-                Rectangle()
-                    .fill(DarkFantasyTheme.borderMedium.opacity(0.3))
-                    .frame(width: 1, height: 28)
-
-                pvpStatItem(
-                    imageAsset: "reward-first-win",
-                    value: "2×",
-                    label: "First Win",
-                    accentColor: DarkFantasyTheme.success
-                )
-            }
-        }
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.08))
-        .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
-    }
-
-    @ViewBuilder
-    private func pvpStatItem(imageAsset: String, value: String, label: String, accentColor: Color) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(imageAsset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 20, height: 20)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                    .foregroundStyle(accentColor)
-                Text(label)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
+    // MARK: - PvP Stats (moved to PvPStatsWidget)
 
     // MARK: - Stance Preview
 
@@ -618,7 +544,7 @@ struct ArenaDetailView: View {
                     } else {
                         HStack(spacing: 4) {
                             Image(systemName: "swords")
-                                .font(.system(size: 12))
+                                .font(DarkFantasyTheme.caption)
                             Text("REVENGE")
                         }
                     }

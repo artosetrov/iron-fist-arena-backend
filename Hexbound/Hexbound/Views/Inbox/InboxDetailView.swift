@@ -122,7 +122,7 @@ struct InboxDetailView: View {
                     .frame(width: 80, height: 80)
 
                 Image(systemName: emptyStateIcon)
-                    .font(.system(size: 32, weight: .light))
+                    .font(DarkFantasyTheme.title.weight(.light))
                     .foregroundStyle(DarkFantasyTheme.goldDim)
             }
 
@@ -295,7 +295,7 @@ private struct InboxConversationRow: View {
             color: accentColor.opacity(0.3),
             length: 10, thickness: 1)
         .compositingGroup()
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .brightness(isPressed ? -0.06 : 0)
         .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
             isPressed = pressing
@@ -459,7 +459,7 @@ private struct EmptyMailState: View {
                     .frame(width: 80, height: 80)
 
                 Image(systemName: "envelope.open")
-                    .font(.system(size: 32, weight: .light))
+                    .font(DarkFantasyTheme.title.weight(.light))
                     .foregroundStyle(DarkFantasyTheme.goldDim)
             }
 
@@ -500,7 +500,7 @@ private struct EmptyScrollsState: View {
                     .frame(width: 80, height: 80)
 
                 Image(systemName: "scroll")
-                    .font(.system(size: 32, weight: .light))
+                    .font(DarkFantasyTheme.title.weight(.light))
                     .foregroundStyle(DarkFantasyTheme.goldDim)
             }
 
@@ -548,7 +548,7 @@ private struct ErrorBanner: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)

@@ -52,6 +52,10 @@ struct OnboardingDetailView: View {
             if vm.selectedClass == nil {
                 vm.selectedClass = .warrior
             }
+            AudioManager.shared.playBGM("main-theme.mp3")
+        }
+        .onDisappear {
+            AudioManager.shared.stopBGM()
         }
         .task {
             if vm.allSkins.isEmpty {
@@ -74,12 +78,12 @@ struct OnboardingDetailView: View {
                 )
                 .onTapGesture {
                     if i < vm.step {
-                        // Go back to a completed step
+                        SFXManager.shared.play(.uiTap)
                         withAnimation(.easeInOut(duration: 0.3)) {
                             vm.step = i
                         }
                     } else if i == vm.step + 1 && vm.canProceed {
-                        // Advance forward if current step is valid
+                        SFXManager.shared.play(.uiTap)
                         withAnimation(.easeInOut(duration: 0.3)) {
                             vm.step = i
                         }
@@ -143,6 +147,7 @@ struct OnboardingDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack(spacing: LayoutConstants.spaceMD) {
                 Button {
+                    SFXManager.shared.play(.uiBack)
                     if vm.step == 0 {
                         if !appState.authPath.isEmpty {
                             appState.authPath.removeLast()
@@ -163,8 +168,10 @@ struct OnboardingDetailView: View {
 
                 Button {
                     if vm.step == OnboardingViewModel.totalSteps - 1 {
+                        SFXManager.shared.play(.uiConfirm)
                         Task { await vm.createCharacter(appState: appState, cache: cache) }
                     } else {
+                        SFXManager.shared.play(.uiTap)
                         vm.nextStep()
                     }
                 } label: {
@@ -191,7 +198,7 @@ struct OnboardingDetailView: View {
 
             VStack(spacing: LayoutConstants.spaceMD) {
                 Image(systemName: "shield.lefthalf.filled")
-                    .font(.system(size: 48))
+                    .font(Font.custom("Oswald-Regular", size: LayoutConstants.textCelebration))
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .opacity(forgeGlow ? 1.0 : 0.4)
                     .shadow(color: DarkFantasyTheme.gold.opacity(forgeGlow ? 0.6 : 0.1), radius: forgeGlow ? 16 : 4)
@@ -223,6 +230,7 @@ struct OnboardingDetailView: View {
         }
         .transition(.opacity)
         .onAppear {
+            SFXManager.shared.play(.uiUpgradeSuccess)
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
                 forgeGlow = true
             }

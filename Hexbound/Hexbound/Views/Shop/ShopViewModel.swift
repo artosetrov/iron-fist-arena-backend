@@ -290,6 +290,7 @@ final class ShopViewModel {
         }
 
         HapticManager.success()
+        SFXManager.shared.play(.uiSell)
         showItemDetail = false
         selectedItem = nil
         lastPurchasedItemId = item.id

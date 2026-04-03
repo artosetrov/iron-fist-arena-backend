@@ -95,7 +95,7 @@ struct LeaderboardPlayerDetailSheet: View {
     private func errorState(_ message: String) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
@@ -404,118 +404,104 @@ struct LeaderboardPlayerDetailSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
     }
 
-    // MARK: - Action Buttons
+    // MARK: - Action Buttons (Horizontal Cards — Equal Weight)
 
     private var actionButtons: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Button {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Challenge card
+            actionCard(
+                icon: challengeSent ? "checkmark.circle.fill" : "flame.fill",
+                label: challengeSent ? "Sent" : "Challenge",
+                disabled: challengeSent
+            ) {
                 Task { await sendChallenge() }
-            } label: {
-                HStack(spacing: LayoutConstants.spaceSM) {
-                    if challengeSent {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Challenge Sent")
-                    } else {
-                        Image(systemName: "flame.fill")
-                        Text("Challenge")
-                    }
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.primary)
-            .disabled(challengeSent)
             .accessibilityLabel(challengeSent ? "Challenge already sent" : "Challenge opponent to battle")
 
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Button(action: onMessage) {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Image(systemName: "bubble.left.fill")
-                        Text("Message")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.secondary)
-                .accessibilityLabel("Send message to opponent")
-
-                friendshipButton
+            // Message card
+            actionCard(
+                icon: "bubble.left.fill",
+                label: "Message",
+                disabled: false
+            ) {
+                onMessage()
             }
+            .accessibilityLabel("Send message to opponent")
+
+            // Friendship card (dynamic state)
+            friendshipCard
         }
     }
 
+    /// Single action card with icon on top, label on bottom — dark style with ornamental frame.
+    private func actionCard(
+        icon: String,
+        label: String,
+        disabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: icon)
+                    .font(DarkFantasyTheme.section.weight(.semibold))
+                Text(label)
+                    .font(DarkFantasyTheme.badge)
+                    .textCase(.uppercase)
+                    .tracking(1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(disabled ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.gold)
+            .frame(maxWidth: .infinity)
+            .frame(height: 72)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgCard)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(disabled ? DarkFantasyTheme.borderSubtle : DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+            )
+            .innerBorder(
+                cornerRadius: LayoutConstants.radiusSM - 2,
+                inset: 2,
+                color: DarkFantasyTheme.gold.opacity(disabled ? 0 : 0.08)
+            )
+            .cornerBrackets(color: disabled ? DarkFantasyTheme.borderSubtle : DarkFantasyTheme.gold)
+            .cornerDiamonds(color: disabled ? DarkFantasyTheme.borderSubtle : DarkFantasyTheme.gold)
+        }
+        .disabled(disabled)
+        .buttonStyle(.plain)
+    }
+
     @ViewBuilder
-    private var friendshipButton: some View {
+    private var friendshipCard: some View {
         switch friendshipState {
         case .none:
-            Button {
+            actionCard(icon: "person.badge.plus", label: "Add Ally", disabled: false) {
                 Task { await sendFriendRequest() }
-            } label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "person.badge.plus")
-                    Text("Add Ally")
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.secondary)
             .accessibilityLabel("Send ally request")
 
         case .requestSent:
-            Button {} label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "hourglass")
-                    Text("Pending")
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.neutral)
-            .disabled(true)
-            .accessibilityLabel("Ally request pending")
+            actionCard(icon: "hourglass", label: "Pending", disabled: true) {}
+                .accessibilityLabel("Ally request pending")
 
         case .requestReceived:
-            Button {
+            actionCard(icon: "checkmark", label: "Accept", disabled: false) {
                 acceptFriendRequest()
-            } label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "checkmark")
-                    Text("Accept")
-                }
-                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.primary)
             .accessibilityLabel("Accept ally request")
 
         case .friends:
-            Button {} label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "person.2.fill")
-                    Text("Allies")
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.neutral)
-            .disabled(true)
-            .accessibilityLabel("Already allies")
+            actionCard(icon: "person.2.fill", label: "Allies", disabled: true) {}
+                .accessibilityLabel("Already allies")
 
         case .blocked, .blockedBy:
-            Button {} label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "hand.raised.fill")
-                    Text("Blocked")
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.neutral)
-            .disabled(true)
+            actionCard(icon: "hand.raised.fill", label: "Blocked", disabled: true) {}
 
         case .maxReached:
-            Button {} label: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(systemName: "person.crop.circle.badge.exclamationmark")
-                    Text("List Full")
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.neutral)
-            .disabled(true)
+            actionCard(icon: "person.crop.circle.badge.exclamationmark", label: "Full", disabled: true) {}
         }
     }
 

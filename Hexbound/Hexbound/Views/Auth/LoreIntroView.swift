@@ -149,6 +149,7 @@ struct LoreIntroView: View {
         .ignoresSafeArea()
         .gesture(swipeGesture)
         .onAppear {
+            AudioManager.shared.playBGM("main-theme.mp3")
             animateSlideIn()
             // Fade curtain out
             withAnimation(.easeOut(duration: 1.2)) {
@@ -406,7 +407,7 @@ struct LoreIntroView: View {
                             .font(DarkFantasyTheme.section(size: 15))
                             .tracking(1)
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(DarkFantasyTheme.caption.weight(.semibold))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)

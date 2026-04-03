@@ -50,6 +50,7 @@ struct RegisterDetailView: View {
 
                     // Register Button
                     Button {
+                        SFXManager.shared.play(.uiConfirm)
                         Task { await vm.register(appState: appState) }
                     } label: {
                         Text("CREATE ACCOUNT")
@@ -77,11 +78,12 @@ struct RegisterDetailView: View {
                     HStack(spacing: LayoutConstants.spaceMD) {
                         // Apple
                         Button {
+                            SFXManager.shared.play(.uiTap)
                             vm.triggerAppleSignIn(appState: appState)
                         } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
-                                    .font(.system(size: 18, weight: .medium))
+                                    .font(DarkFantasyTheme.cardTitle.weight(.medium))
                                 Text("Apple")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
@@ -103,6 +105,7 @@ struct RegisterDetailView: View {
                         // Google
                         ZStack {
                             Button {
+                                SFXManager.shared.play(.uiTap)
                                 Task { await vm.handleGoogleSignIn(appState: appState) }
                             } label: {
                                 Color.clear
@@ -134,6 +137,7 @@ struct RegisterDetailView: View {
 
                     // Back to login
                     Button("Already have an account? LOG IN") {
+                        SFXManager.shared.play(.uiTap)
                         if !appState.authPath.isEmpty { appState.authPath.removeLast() }
                     }
                     .buttonStyle(.ghost)

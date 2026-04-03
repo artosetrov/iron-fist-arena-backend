@@ -142,7 +142,7 @@ struct ShopDetailView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(DarkFantasyTheme.body.bold())
                     Text("GET MORE")
                 }
             }

@@ -18,7 +18,7 @@ struct LowHPPotionBanner: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMD) {
             // Potion icon
-            Image("pot_health_small")
+            Image("health_potion_small")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 40, height: 40)

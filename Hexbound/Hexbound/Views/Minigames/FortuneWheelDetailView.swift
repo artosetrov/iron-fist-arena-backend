@@ -6,11 +6,10 @@ struct FortuneWheelDetailView: View {
 
     // Wheel animation
     @State private var wheelRotation: Double = 0
-    @State private var targetRotation: Double = 0
     @State private var isAnimating = false
 
-    // Result flash
-    @State private var showResultFlash = false
+    // Result modal
+    @State private var showResultModal = false
     @State private var resultScale: CGFloat = 0.5
 
     var body: some View {
@@ -23,7 +22,7 @@ struct FortuneWheelDetailView: View {
                     .tint(DarkFantasyTheme.gold)
             }
         }
-        .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea())
+        .background(backgroundLayer.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
@@ -32,14 +31,39 @@ struct FortuneWheelDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("FORTUNE WHEEL")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
         .task {
             if vm == nil {
-                vm = FortuneWheelViewModel(appState: appState)
+                let newVM = FortuneWheelViewModel(appState: appState)
+                vm = newVM
+                await newVM.loadStatus()
             }
+        }
+    }
+
+    // MARK: - Background
+
+    private var backgroundLayer: some View {
+        ZStack {
+            DarkFantasyTheme.bgPrimary
+
+            Image("bg-fortune-wheel")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .opacity(DarkFantasyTheme.opacityHeavy)
+
+            LinearGradient(
+                colors: [
+                    DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityMedium),
+                    Color.clear,
+                    DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityDense)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         }
     }
 
@@ -47,128 +71,226 @@ struct FortuneWheelDetailView: View {
 
     @ViewBuilder
     private func mainContent(_ vm: FortuneWheelViewModel) -> some View {
-        VStack(spacing: 0) {
-            // Gold balance
-            goldHeader(vm)
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                // Scrollable content: payouts + divider + wheel
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: LayoutConstants.spaceMD) {
+                        // Payouts — ABOVE wheel (per Figma)
+                        payoutSection(vm)
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: LayoutConstants.spaceLG) {
-                    // The Wheel
-                    wheelSection(vm)
+                        // Gold divider between payouts and wheel (per Figma)
+                        GoldDivider()
+                            .padding(.horizontal, LayoutConstants.screenPadding)
 
-                    // Bet selector
-                    betSelector(vm)
+                        // The Wheel
+                        wheelSection(vm)
 
-                    // Spin button
-                    spinButton(vm)
-
-                    // Payout table
-                    payoutTable(vm)
-
-                    Spacer().frame(height: LayoutConstants.spaceLG)
+                        // Spacer for NPC widget clearance
+                        Spacer().frame(height: 240)
+                    }
                 }
+            }
+
+            // NPC Widget — fixed at bottom
+            npcWidget(vm)
+
+            // Result Modal overlay
+            if showResultModal, let result = vm.result {
+                resultModal(vm, result: result)
             }
         }
     }
 
-    // MARK: - Gold Header
+    // MARK: - Payout Section (above wheel)
 
-    private func goldHeader(_ vm: FortuneWheelViewModel) -> some View {
-        HStack {
-            Spacer()
-            CurrencyDisplay(
-                gold: vm.gold,
-                gems: appState.currentCharacter?.gems ?? 0,
-                size: .compact,
-                animated: true
-            )
-            .padding(.trailing, LayoutConstants.screenPadding)
+    private func payoutSection(_ vm: FortuneWheelViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            Text("PAYOUTS")
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(2)
+
+            HStack(spacing: LayoutConstants.spaceSM) {
+                payoutPill(asset: "icon-fortune-x15", label: "x1.5", count: 3, color: DarkFantasyTheme.gold)
+                payoutPill(asset: "icon-fortune-x2", label: "x2", count: 1, color: DarkFantasyTheme.goldBright)
+                payoutPill(asset: "icon-fortune-x3", label: "x3", count: 1, color: DarkFantasyTheme.purple)
+                payoutPill(asset: "icon-fortune-x5", label: "x5", count: 1, color: DarkFantasyTheme.info)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
         }
-        .padding(.vertical, LayoutConstants.spaceXS)
+        .padding(.top, LayoutConstants.spaceXS)
+    }
+
+    private func payoutPill(asset: String, label: String, count: Int, color: Color) -> some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Image(asset)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+
+            Text(label)
+                .font(DarkFantasyTheme.uiLabel)
+                .foregroundStyle(color)
+
+            Text("\(count) sector\(count > 1 ? "s" : "")")
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(
+            RadialGlowBackground(
+                baseColor: DarkFantasyTheme.bgSecondary,
+                glowColor: color,
+                glowIntensity: DarkFantasyTheme.opacityLight,
+                cornerRadius: LayoutConstants.panelRadius
+            )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(color.opacity(DarkFantasyTheme.opacityMild), lineWidth: 1)
+        )
+        .compositingGroup()
     }
 
     // MARK: - Wheel Section
 
     private func wheelSection(_ vm: FortuneWheelViewModel) -> some View {
         ZStack {
-            // Wheel glow
+            // Outer glow
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            DarkFantasyTheme.gold.opacity(0.15),
-                            DarkFantasyTheme.gold.opacity(0.02),
+                            DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild),
+                            DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMicro),
                             Color.clear
                         ],
                         center: .center,
-                        startRadius: 60,
-                        endRadius: 180
+                        startRadius: 80,
+                        endRadius: 220
                     )
                 )
-                .frame(width: 340, height: 340)
+                .frame(width: 420, height: 420)
 
-            // Wheel
+            // Wheel with sectors + asset icons
             FortuneWheelView(
                 sectors: vm.sectors,
                 rotation: wheelRotation
             )
-            .frame(width: 280, height: 280)
+            .frame(width: 350, height: 350)
 
             // Center ornament
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [DarkFantasyTheme.bgSecondary, DarkFantasyTheme.bgAbyss],
-                            center: .center,
-                            startRadius: 5,
-                            endRadius: 24
-                        )
-                    )
-                    .frame(width: 48, height: 48)
-                Circle()
-                    .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
-                    .frame(width: 48, height: 48)
-                Circle()
-                    .stroke(DarkFantasyTheme.goldBright.opacity(0.5), lineWidth: 1)
-                    .frame(width: 42, height: 42)
+            wheelCenter(vm)
 
-                // Show result multiplier or default icon
-                if let result = vm.result, !isAnimating {
-                    Text(result.won ? "x\(String(format: "%.1f", result.multiplier))" : "💀")
-                        .font(DarkFantasyTheme.section(size: result.won ? 14 : 20))
-                        .foregroundStyle(result.won ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
-                        .scaleEffect(resultScale)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: resultScale)
-                } else {
-                    Image("icon-gems")
-                        .resizable()
-                        .frame(width: 12, height: 12)
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                }
-            }
-
-            // Pointer (top)
+            // Pointer (top) — asset-based dagger
             VStack {
-                WheelPointer()
-                    .frame(width: 28, height: 36)
-                    .offset(y: -2)
+                Image("fortune-pointer")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 44, height: 56)
+                    .rotationEffect(.degrees(135))
+                    .shadow(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), radius: 6)
+                    .offset(y: -4)
                 Spacer()
             }
-            .frame(height: 280)
+            .frame(height: 350)
         }
-        .padding(.top, LayoutConstants.spaceMD)
     }
 
-    // MARK: - Bet Selector
+    // MARK: - Wheel Center
 
-    private func betSelector(_ vm: FortuneWheelViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text("WAGER")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(2)
+    private func wheelCenter(_ vm: FortuneWheelViewModel) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [DarkFantasyTheme.bgSecondary, DarkFantasyTheme.bgAbyss],
+                        center: .center,
+                        startRadius: 5,
+                        endRadius: 26
+                    )
+                )
+                .frame(width: 52, height: 52)
+            Circle()
+                .stroke(DarkFantasyTheme.gold, lineWidth: 2.5)
+                .frame(width: 52, height: 52)
+            Circle()
+                .stroke(DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+                .frame(width: 44, height: 44)
 
+            // Show result multiplier or default icon
+            if let result = vm.result, !isAnimating {
+                Image(vm.sectors[result.sectorIndex].sectorAsset)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(
+                        width: result.won ? LayoutConstants.iconXL : LayoutConstants.iconLG,
+                        height: result.won ? LayoutConstants.iconXL : LayoutConstants.iconLG
+                    )
+                    .opacity(resultScale < 1 ? 0 : 1)
+                    .animation(.easeOut(duration: 0.3), value: resultScale)
+            } else {
+                Image("icon-gems")
+                    .resizable()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+            }
+        }
+    }
+
+    // MARK: - NPC Widget (fixed bottom) — uses NPCGuideWidget State=Wheel
+
+    private func npcWidget(_ vm: FortuneWheelViewModel) -> some View {
+        NPCGuideWidget(
+            npcTitle: "LADY FORTUNA",
+            onDismiss: { /* no dismiss on fortune wheel */ },
+            npcImageName: "lady-fortuna",
+            plainMessage: vm.npcSpeech,
+            wheelContent: AnyView(wheelWagerSection(vm))
+        )
+    }
+
+    // MARK: - Wager Section (inside NPC Widget wheelContent)
+
+    /// Figma: State=Wheel → Wager Section
+    /// Spins badge + bet buttons + SPIN CTA
+    @ViewBuilder
+    private func wheelWagerSection(_ vm: FortuneWheelViewModel) -> some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            // Spins row — Figma: Spins Badge + Currency Display
+            HStack {
+                // Spins badge — Figma: capsule, bgTertiary fill, borderSubtle stroke, Inter Bold 11
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: "arrow.trianglehead.2.counterclockwise.rotate.90")
+                        .font(DarkFantasyTheme.badge)
+                    Text("\(vm.spinsRemaining)/\(vm.spinsLimit)")
+                        .font(DarkFantasyTheme.badge)
+                }
+                .foregroundStyle(vm.spinsRemaining > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.spaceXS)
+                .background(
+                    Capsule()
+                        .fill(DarkFantasyTheme.bgTertiary)
+                        .overlay(
+                            Capsule()
+                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        )
+                )
+
+                Spacer()
+
+                // Currency Display — Figma: Gold + Gems (Standard size)
+                CurrencyDisplay(
+                    gold: vm.gold,
+                    gems: appState.currentCharacter?.gems ?? 0,
+                    size: .standard,
+                    animated: true
+                )
+            }
+
+            // Bet buttons — Figma: 5× Wager Button (Oswald 18, letterSpacing 2)
             HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(FortuneWheelViewModel.bets, id: \.self) { bet in
                     let isSelected = vm.selectedBet == bet
@@ -181,7 +303,8 @@ struct FortuneWheelDetailView: View {
                         vm.selectedBet = bet
                     } label: {
                         Text("\(bet)")
-                            .font(DarkFantasyTheme.section(size: 13))
+                            .font(DarkFantasyTheme.cardTitle)
+                            .tracking(2)
                             .foregroundStyle(
                                 isSelected
                                     ? DarkFantasyTheme.textOnGold
@@ -190,9 +313,9 @@ struct FortuneWheelDetailView: View {
                                         : DarkFantasyTheme.textTertiary
                             )
                             .frame(maxWidth: .infinity)
-                            .frame(height: 40)
+                            .frame(height: 34)
                             .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                     .fill(
                                         isSelected
                                             ? DarkFantasyTheme.goldGradient
@@ -200,90 +323,146 @@ struct FortuneWheelDetailView: View {
                                     )
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                     .stroke(
                                         isSelected
-                                            ? DarkFantasyTheme.goldBright.opacity(0.6)
+                                            ? DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityHeavy)
                                             : DarkFantasyTheme.borderSubtle,
                                         lineWidth: isSelected ? 1.5 : 1
                                     )
                             )
                     }
                     .disabled(vm.isSpinning || !canAfford)
-                    .opacity(canAfford ? 1 : 0.4)
+                    .opacity(canAfford ? 1 : DarkFantasyTheme.opacityStrong)
                 }
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
-        }
-    }
 
-    // MARK: - Spin Button
-
-    private func spinButton(_ vm: FortuneWheelViewModel) -> some View {
-        Button {
-            guard vm.canSpin else { return }
-            HapticManager.heavy()
-            SFXManager.shared.play(.uiConfirm)
-            Task {
-                await performSpin(vm)
-            }
-        } label: {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Image(systemName: "hurricane")
-                    .font(.system(size: 18, weight: .bold))
-                Text(vm.isSpinning ? "SPINNING..." : "SPIN — \(vm.selectedBet) GOLD")
-            }
-            .font(DarkFantasyTheme.section(size: 16))
-            .tracking(1)
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-        }
-        .buttonStyle(.primary)
-        .disabled(!vm.canSpin)
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
-    // MARK: - Payout Table
-
-    private func payoutTable(_ vm: FortuneWheelViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
+            // Gold Divider before SPIN button (per Figma State=Wheel)
             GoldDivider()
-                .padding(.horizontal, LayoutConstants.screenPadding)
 
-            Text("PAYOUTS")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(2)
-
-            HStack(spacing: LayoutConstants.spaceMD) {
-                payoutPill(label: "x1.5", count: 3, color: DarkFantasyTheme.gold)
-                payoutPill(label: "x2", count: 1, color: DarkFantasyTheme.goldBright)
-                payoutPill(label: "x3", count: 1, color: DarkFantasyTheme.purple)
-                payoutPill(label: "x5", count: 1, color: DarkFantasyTheme.info)
+            // SPIN CTA — Figma: Button/Primary instance, Oswald 18, textOnGold, borderOrnament stroke
+            Button {
+                guard vm.canSpin else { return }
+                HapticManager.heavy()
+                SFXManager.shared.play(.uiConfirm)
+                Task {
+                    await performSpin(vm)
+                }
+            } label: {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "hurricane")
+                        .font(DarkFantasyTheme.cardTitle.bold())
+                    Text(vm.isSpinning ? "SPINNING..." : "SPIN — \(vm.selectedBet) GOLD")
+                }
+                .font(DarkFantasyTheme.cardTitle)
+                .tracking(1)
+                .frame(maxWidth: .infinity)
+                .frame(height: LayoutConstants.buttonHeightMD)
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
+            .buttonStyle(.primary)
+            .disabled(!vm.canSpin)
         }
     }
 
-    private func payoutPill(label: String, count: Int, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(DarkFantasyTheme.section(size: 16))
-                .foregroundStyle(color)
-            Text("\(count) sector\(count > 1 ? "s" : "")")
-                .font(DarkFantasyTheme.body(size: 10))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .fill(color.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(color.opacity(0.2), lineWidth: 1)
+    // MARK: - Result Modal
+
+    @ViewBuilder
+    private func resultModal(_ vm: FortuneWheelViewModel, result: FortuneWheelViewModel.SpinResult) -> some View {
+        let accentColor = result.won ? DarkFantasyTheme.gold : DarkFantasyTheme.danger
+
+        ZStack {
+            // Dimmed background
+            DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque)
+                .ignoresSafeArea()
+                .onTapGesture { dismissModal(vm) }
+
+            // Modal card
+            VStack(spacing: 0) {
+                // Result icon
+                Image(vm.sectors[result.sectorIndex].sectorAsset)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                    .shadow(color: accentColor.opacity(DarkFantasyTheme.opacityStrong), radius: 8)
+                    .padding(.bottom, LayoutConstants.spaceMD)
+
+                // Title
+                Text(resultTitle(result))
+                    .font(DarkFantasyTheme.title)
+                    .foregroundStyle(result.won ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
+                    .padding(.bottom, LayoutConstants.spaceXS)
+
+                // Amount
+                Text(resultAmountText(vm, result: result))
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .padding(.bottom, LayoutConstants.spaceLG)
+
+                // Dismiss button
+                if result.won {
+                    Button {
+                        dismissModal(vm)
+                    } label: {
+                        Text("CONTINUE")
+                            .font(DarkFantasyTheme.cardTitle)
+                            .tracking(2)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LayoutConstants.buttonHeightMD)
+                    }
+                    .buttonStyle(.primary)
+                } else {
+                    Button {
+                        dismissModal(vm)
+                    } label: {
+                        Text("CONTINUE")
+                            .font(DarkFantasyTheme.cardTitle)
+                            .tracking(2)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LayoutConstants.buttonHeightMD)
+                    }
+                    .buttonStyle(.danger)
+                }
+            }
+            .padding(LayoutConstants.spaceLG)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: DarkFantasyTheme.opacityStrong,
+                    cornerRadius: LayoutConstants.modalRadius
                 )
-        )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityMild))
+            .cornerBrackets(color: accentColor.opacity(DarkFantasyTheme.opacityMedium), length: 18, thickness: 1.5)
+            .cornerDiamonds(color: accentColor.opacity(DarkFantasyTheme.opacityStrong), size: 5)
+            .compositingGroup()
+            .dualShadow(glowColor: accentColor, glowRadius: 12, depth: .modal)
+            .frame(maxWidth: 300)
+            .opacity(showResultModal ? 1 : 0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: showResultModal)
+        }
+        .transition(.opacity)
+    }
+
+    private func resultTitle(_ result: FortuneWheelViewModel.SpinResult) -> String {
+        if !result.won { return "LOST" }
+        if result.multiplier >= 5 { return "JACKPOT!" }
+        if result.multiplier >= 3 { return "BIG WIN!" }
+        return "YOU WON!"
+    }
+
+    private func resultAmountText(_ vm: FortuneWheelViewModel, result: FortuneWheelViewModel.SpinResult) -> String {
+        if result.won {
+            return "+\(result.winAmount.formatted()) Gold (\(vm.sectors[result.sectorIndex].label))"
+        } else {
+            return "-\(vm.selectedBet.formatted()) Gold"
+        }
+    }
+
+    private func dismissModal(_ vm: FortuneWheelViewModel) {
+        showResultModal = false
+        vm.reset()
     }
 
     // MARK: - Spin Animation
@@ -291,42 +470,34 @@ struct FortuneWheelDetailView: View {
     private func performSpin(_ vm: FortuneWheelViewModel) async {
         guard let spinResult = await vm.spin() else { return }
 
-        // Calculate target rotation:
-        // Each sector = 360/12 = 30 degrees
-        // We want the pointer (at top / 0°) to land on the winning sector
-        // Sector 0 is at the top, going clockwise
         let sectorAngle = 360.0 / Double(vm.sectors.count)
         let sectorCenter = Double(spinResult.sectorIndex) * sectorAngle + sectorAngle / 2.0
 
-        // Spin multiple full rotations + land on target sector
-        // The wheel rotates clockwise, so to land pointer on sector N,
-        // we rotate the wheel so sector N is at the top (0°)
         let fullSpins = Double(Int.random(in: 5...8)) * 360.0
         let finalAngle = fullSpins + (360.0 - sectorCenter)
 
         isAnimating = true
-        showResultFlash = false
+        showResultModal = false
         resultScale = 0.5
 
-        // Direct state change — animation is handled by explicit
-        // .animation(.timingCurve(...), value: rotation) on FortuneWheelView.
-        // Using withAnimation() here would be overridden by
-        // .transaction { $0.animation = nil } on the parent view.
         wheelRotation += finalAngle
 
         // Wait for animation to complete
         try? await Task.sleep(for: .seconds(4.2))
 
-        // Show result — animation driven by explicit .animation(value:) on resultScale
+        // Show result in center
         isAnimating = false
-        showResultFlash = true
         resultScale = 1.0
 
         vm.onAnimationComplete()
+
+        // Small delay then show modal
+        try? await Task.sleep(for: .seconds(0.5))
+        showResultModal = true
     }
 }
 
-// MARK: - Fortune Wheel View (the actual pie chart wheel)
+// MARK: - Fortune Wheel View (the actual pie chart wheel with asset icons)
 
 struct FortuneWheelView: View {
     let sectors: [WheelSector]
@@ -339,7 +510,28 @@ struct FortuneWheelView: View {
             let radius = size / 2
 
             ZStack {
-                // Outer ring
+                // Wheel face texture (background)
+                Image("fortune-wheel-face")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(Circle())
+
+                // Semi-transparent sector overlays for color tinting
+                ForEach(sectors) { sector in
+                    sectorSlice(sector, center: center, radius: radius - 6)
+                }
+
+                // Inner divider lines
+                ForEach(sectors) { sector in
+                    dividerLine(index: sector.id, center: center, radius: radius - 6)
+                }
+
+                // Sector asset icons + labels
+                ForEach(sectors) { sector in
+                    sectorContent(sector, radius: radius - 6)
+                }
+
+                // Outer metallic ring
                 Circle()
                     .stroke(
                         AngularGradient(
@@ -355,37 +547,22 @@ struct FortuneWheelView: View {
                         lineWidth: 4
                     )
 
-                // Sectors
-                ForEach(sectors) { sector in
-                    sectorSlice(sector, center: center, radius: radius - 6)
-                }
-
-                // Inner divider lines
-                ForEach(sectors) { sector in
-                    dividerLine(index: sector.id, center: center, radius: radius - 6)
-                }
-
-                // Sector labels
-                ForEach(sectors) { sector in
-                    sectorLabel(sector, radius: radius - 6)
-                }
-
                 // Inner circle border
                 Circle()
-                    .stroke(DarkFantasyTheme.goldDim.opacity(0.5), lineWidth: 1)
+                    .stroke(DarkFantasyTheme.goldDim.opacity(DarkFantasyTheme.opacityHeavy), lineWidth: 1)
                     .frame(width: 56, height: 56)
             }
             .rotationEffect(.degrees(rotation))
-        .animation(.timingCurve(0.2, 0.8, 0.2, 1.0, duration: 4.0), value: rotation)
+            .animation(.timingCurve(0.2, 0.8, 0.2, 1.0, duration: 4.0), value: rotation)
         }
         .aspectRatio(1, contentMode: .fit)
-        .drawingGroup() // Flatten wheel sectors to Metal texture for smooth spin
+        .drawingGroup()
     }
 
     @ViewBuilder
     private func sectorSlice(_ sector: WheelSector, center: CGPoint, radius: CGFloat) -> some View {
         let sectorAngle = 360.0 / Double(sectors.count)
-        let startAngle = Double(sector.id) * sectorAngle - 90 // -90 to start from top
+        let startAngle = Double(sector.id) * sectorAngle - 90
         let endAngle = startAngle + sectorAngle
 
         Path { path in
@@ -407,8 +584,8 @@ struct FortuneWheelView: View {
             return AnyShapeStyle(
                 LinearGradient(
                     colors: [
-                        DarkFantasyTheme.bgAbyss,
-                        DarkFantasyTheme.bgSecondary.opacity(0.7)
+                        DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityHeavy),
+                        DarkFantasyTheme.bgSecondary.opacity(DarkFantasyTheme.opacityMedium)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -418,8 +595,8 @@ struct FortuneWheelView: View {
             return AnyShapeStyle(
                 LinearGradient(
                     colors: [
-                        sector.color.opacity(0.35),
-                        sector.color.opacity(0.15)
+                        sector.color.opacity(DarkFantasyTheme.opacityMedium),
+                        sector.color.opacity(DarkFantasyTheme.opacitySoft)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -439,68 +616,44 @@ struct FortuneWheelView: View {
             let endY = center.y + radius * sin(angle * .pi / 180)
             path.addLine(to: CGPoint(x: endX, y: endY))
         }
-        .stroke(DarkFantasyTheme.goldDim.opacity(0.4), lineWidth: 1)
+        .stroke(DarkFantasyTheme.goldDim.opacity(DarkFantasyTheme.opacityMedium), lineWidth: 1)
     }
 
     @ViewBuilder
-    private func sectorLabel(_ sector: WheelSector, radius: CGFloat) -> some View {
+    private func sectorContent(_ sector: WheelSector, radius: CGFloat) -> some View {
         let sectorAngle = 360.0 / Double(sectors.count)
         let midAngle = (Double(sector.id) * sectorAngle + sectorAngle / 2.0 - 90) * .pi / 180
-        let labelRadius = radius * 0.65
-        let x = labelRadius * cos(midAngle)
-        let y = labelRadius * sin(midAngle)
 
-        VStack(spacing: 1) {
-            if sector.isLose {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(DarkFantasyTheme.danger.opacity(0.7))
-            } else {
-                Text(sector.label)
-                    .font(DarkFantasyTheme.section(size: sector.multiplier >= 5 ? 14 : 12))
-                    .foregroundStyle(sector.color)
-                    .shadow(color: sector.color.opacity(0.5), radius: 4)
-            }
-        }
-        .offset(x: x, y: y)
-        .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))
-    }
-}
+        // Icon position (closer to outer edge)
+        let iconRadius = radius * 0.7
+        let iconX = iconRadius * cos(midAngle)
+        let iconY = iconRadius * sin(midAngle)
 
-// MARK: - Wheel Pointer
-
-struct WheelPointer: View {
-    var body: some View {
-        ZStack {
-            // Pointer triangle
-            Path { path in
-                path.move(to: CGPoint(x: 14, y: 0))   // tip
-                path.addLine(to: CGPoint(x: 4, y: 28))
-                path.addLine(to: CGPoint(x: 24, y: 28))
-                path.closeSubpath()
-            }
-            .fill(
-                LinearGradient(
-                    colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+        // Sector asset icon
+        Image(sector.sectorAsset)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(
+                width: sector.isLose ? LayoutConstants.iconMD : LayoutConstants.iconLG,
+                height: sector.isLose ? LayoutConstants.iconMD : LayoutConstants.iconLG
             )
+            .opacity(sector.isLose ? DarkFantasyTheme.opacityHeavy : 0.9)
+            .shadow(color: sector.color.opacity(sector.isLose ? 0 : DarkFantasyTheme.opacityHeavy), radius: 3)
+            .offset(x: iconX, y: iconY)
+            .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))
 
-            // Pointer outline
-            Path { path in
-                path.move(to: CGPoint(x: 14, y: 0))
-                path.addLine(to: CGPoint(x: 4, y: 28))
-                path.addLine(to: CGPoint(x: 24, y: 28))
-                path.closeSubpath()
-            }
-            .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 2)
+        // Multiplier label (closer to center)
+        if !sector.isLose {
+            let labelRadius = radius * 0.42
+            let labelX = labelRadius * cos(midAngle)
+            let labelY = labelRadius * sin(midAngle)
 
-            // Tiny diamond at tip
-            Circle()
-                .fill(DarkFantasyTheme.goldBright)
-                .frame(width: 6, height: 6)
-                .offset(y: 2)
+            Text(sector.label)
+                .font(sector.multiplier >= 5 ? DarkFantasyTheme.uiLabel : DarkFantasyTheme.badge)
+                .foregroundStyle(sector.color)
+                .shadow(color: sector.color.opacity(DarkFantasyTheme.opacityHeavy), radius: 4)
+                .offset(x: labelX, y: labelY)
+                .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))
         }
     }
 }

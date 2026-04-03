@@ -212,7 +212,7 @@ struct DailyLoginPopupView: View {
     private func dayBadge(day: Int) -> some View {
         HStack(spacing: 5) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 10))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.gold)
             Text("ДЕНЬ \(day) ИЗ 7")
                 .font(DarkFantasyTheme.badge)
@@ -542,7 +542,7 @@ struct DailyLoginPopupView: View {
                 .frame(width: 140, height: 36)
 
             // Streak dots placeholder
-            RoundedRectangle(cornerRadius: 2)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                 .fill(DarkFantasyTheme.bgTertiary.opacity(0.4))
                 .frame(width: 200, height: 4)
 

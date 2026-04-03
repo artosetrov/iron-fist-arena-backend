@@ -61,7 +61,7 @@ struct EventBannerView: View {
                         .animation(.easeOut(duration: MotionConstants.tickUpShort), value: timeRemaining)
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(DarkFantasyTheme.badge.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -108,7 +108,7 @@ struct EventBannerView: View {
                     .frame(width: 36, height: 36)
 
                 Image(systemName: "sparkles")
-                    .font(.system(size: 16))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(event.themeColor)
             }
         }

@@ -136,27 +136,29 @@ struct HeroDetailView: View {
 
     // MARK: - Actions
 
-    private func repairAllBrokenItems() async {
+    private func repairAllDamagedItems() async {
         guard let vm = inventoryVM else { return }
-        let brokenItems = vm.items.filter { ($0.durability ?? 1) <= 0 && ($0.isEquipped ?? false) }
-        guard !brokenItems.isEmpty else { return }
+        let damagedItems = vm.items.filter { item in
+            guard let dur = item.durability, let maxDur = item.maxDurability else { return false }
+            return dur < maxDur && (item.isEquipped ?? false)
+        }
+        guard !damagedItems.isEmpty else { return }
 
-        // Optimistic update: mark all broken items as repaired immediately
-        var totalCost = 0
+        // Optimistic update: mark all damaged items as fully repaired
         vm.items = vm.items.map { existing in
-            guard brokenItems.contains(where: { $0.id == existing.id }) else { return existing }
+            guard damagedItems.contains(where: { $0.id == existing.id }) else { return existing }
             var updated = existing
             updated.durability = existing.maxDurability ?? 100
             return updated
         }
         appState.cachedInventory = vm.items
+        HapticManager.success()
         appState.showToast("All gear repaired!", type: .reward)
 
         // Fire repair calls in background — update gold from responses
         let service = ShopService(appState: appState)
-        for item in brokenItems {
+        for item in damagedItems {
             if let result = await service.repair(inventoryId: item.id) {
-                totalCost += result.repairCost
                 // Update with actual server values
                 vm.items = vm.items.map { existing in
                     guard existing.id == item.id else { return existing }
@@ -225,77 +227,50 @@ struct HeroDetailView: View {
     private func tabSelector() -> some View {
         let statPoints = appState.currentCharacter?.statPoints ?? 0
 
-        HStack(spacing: 0) {
-            ForEach(HeroTab.allCases, id: \.rawValue) { tab in
-                Button {
-                    selectedTab = tab
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Text(tab.label)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
-                            .foregroundStyle(selectedTab == tab ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary)
-
-                        // Stat points badge on STATUS tab (gold capsule, pulsing glow)
-                        if tab == .stats && statPoints > 0 {
-                            Text("+\(statPoints)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                                .padding(.horizontal, LayoutConstants.spaceXS)
-                                .padding(.vertical, 2)
-                                .background(
-                                    Capsule()
-                                        .fill(DarkFantasyTheme.goldBright)
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5)
-                                )
-                                .shadow(
-                                    color: DarkFantasyTheme.goldBright.opacity(statsBadgePulse ? 0.8 : 0.2),
-                                    radius: statsBadgePulse ? 10 : 4
-                                )
-                                .onAppear {
-                                    withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                                        statsBadgePulse = true
-                                    }
-                                }
-                                .onDisappear {
-                                    statsBadgePulse = false
-                                }
-                                .accessibilityLabel("\(statPoints) stat points available")
+        TabSwitcher(
+            tabs: HeroTab.allCases.map(\.label),
+            selectedIndex: Binding(
+                get: { selectedTab.rawValue },
+                set: { newValue in
+                    if let tab = HeroTab(rawValue: newValue) {
+                        selectedTab = tab
+                    }
+                }
+            )
+        )
+        .overlay(alignment: .trailing) {
+            // Stat points badge floating over STATUS tab area
+            if statPoints > 0 {
+                Text("+\(statPoints)")
+                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                    .foregroundStyle(DarkFantasyTheme.textOnGold)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, 2)
+                    .background(
+                        Capsule()
+                            .fill(DarkFantasyTheme.goldBright)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(DarkFantasyTheme.bgAbyss, lineWidth: 1.5)
+                    )
+                    .shadow(
+                        color: DarkFantasyTheme.goldBright.opacity(statsBadgePulse ? 0.8 : 0.2),
+                        radius: statsBadgePulse ? 10 : 4
+                    )
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                            statsBadgePulse = true
                         }
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, LayoutConstants.spaceSM + 4)
-                    .background(
-                        selectedTab == tab
-                            ? DarkFantasyTheme.bgSecondary
-                            : tab == .stats && hasStatPoints && selectedTab != .stats
-                                ? DarkFantasyTheme.purple.opacity(0.06)
-                                : Color.clear
-                    )
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .fill(
-                                selectedTab == tab
-                                    ? DarkFantasyTheme.gold
-                                    : tab == .stats && hasStatPoints && selectedTab != .stats
-                                        ? DarkFantasyTheme.purple.opacity(0.5)
-                                        : Color.clear
-                            )
-                            .frame(height: 3)
+                    .onDisappear {
+                        statsBadgePulse = false
                     }
-                    // Subtle tint instead of shimmer — no infinite GPU loop
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                    .accessibilityLabel("\(statPoints) stat points available")
+                    // Position badge at top-trailing of the STATUS tab half
+                    .offset(x: -LayoutConstants.spaceMD, y: -LayoutConstants.spaceSM)
             }
         }
-        .background(DarkFantasyTheme.bgPrimary)
-        .overlay(alignment: .bottom) {
-            EtchedGroove()
-        }
-        .animation(.none, value: selectedTab)
     }
 
     // MARK: - Tab Content Router
@@ -307,6 +282,8 @@ struct HeroDetailView: View {
         VStack(spacing: 0) {
             // ── Sticky tab selector (pinned at top, does NOT scroll) ──
             tabSelector()
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .padding(.bottom, LayoutConstants.spaceSM)
 
             ScrollView {
                 VStack(spacing: LayoutConstants.spaceMD) {
@@ -319,20 +296,20 @@ struct HeroDetailView: View {
                             equippedItems: equippedItems,
                             onTapPortrait: { appState.mainPath.append(AppRoute.appearanceEditor) },
                             onTapSlot: { item in inventoryVM?.selectItem(item) },
-                            onRepairAll: { let _ = Task { await repairAllBrokenItems() } },
                             onUseHealthPotion: { let _ = Task { await useHealthPotion() } },
                             onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
                         )
 
+                        // ── Repair Equipment widget ──
+                        repairEquipmentWidget(equippedItems, char: char)
+
                         // ── Stance widget (separate from equipment card) ──
-                        if let stance = char.combatStance {
-                            StanceDisplayView(
-                                stance: stance,
-                                isInteractive: true,
-                                onTap: { appState.mainPath.append(AppRoute.stanceSelector) }
-                            )
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                        }
+                        StanceDisplayView(
+                            stance: char.combatStance ?? .default,
+                            isInteractive: true,
+                            onTap: { appState.mainPath.append(AppRoute.stanceSelector) }
+                        )
+                        .padding(.horizontal, LayoutConstants.screenPadding)
 
                         lowResourcesWidget(char)
 
@@ -451,6 +428,10 @@ struct HeroDetailView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 
+            // PvP Stats — unified full widget
+            PvPStatsWidget(.full, data: char)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
             // Equipment bonuses
             equipmentBonusesCard(inventoryVM?.items.filter { $0.isEquipped == true } ?? [])
 
@@ -490,7 +471,7 @@ struct HeroDetailView: View {
                         }
                     } label: {
                         Image(systemName: "info.circle")
-                            .font(.system(size: 14)) // SF Symbol
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.plain)
@@ -509,7 +490,7 @@ struct HeroDetailView: View {
                     // Minus button — always reserves space to prevent layout shift
                     Button { HapticManager.light(); vm.decrement(stat) } label: {
                         Image(systemName: "minus")
-                            .font(.system(size: 15, weight: .bold)) // SF Symbol
+                            .font(DarkFantasyTheme.uiLabel.bold())
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .frame(width: 40, height: 40)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
@@ -535,7 +516,7 @@ struct HeroDetailView: View {
                     // Plus button — always reserves space when stat points exist
                     Button { HapticManager.selection(); vm.increment(stat) } label: {
                         Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .bold)) // SF Symbol
+                            .font(DarkFantasyTheme.uiLabel.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .frame(width: 40, height: 40)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
@@ -829,7 +810,7 @@ struct HeroDetailView: View {
                                 HStack(spacing: LayoutConstants.spaceXS) {
                                     Text("CONFIRM")
                                     Text("(\(gemCost)")
-                                    Image("icon-gem")
+                                    Image("icon-gems")
                                         .resizable()
                                         .frame(width: 14, height: 14)
                                     Text(")")
@@ -854,14 +835,14 @@ struct HeroDetailView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 14, weight: .bold)) // SF Symbol icon — keep as is
+                            .font(DarkFantasyTheme.uiLabel.bold())
                         Text("RESPEC STATS")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
                         Spacer()
                         HStack(spacing: LayoutConstants.space2XS) {
                             Text("\(gemCost)")
                                 .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                            Image("icon-gem")
+                            Image("icon-gems")
                                 .resizable()
                                 .frame(width: 14, height: 14)
                         }
@@ -893,58 +874,7 @@ struct HeroDetailView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
-    // MARK: - PvP Section
-
-    @ViewBuilder
-    private func pvpSection(_ char: Character) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
-            Text("PVP")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack(spacing: 0) {
-                pvpStat("Rating", value: "\(char.pvpRating)", color: DarkFantasyTheme.rankColor(for: char.pvpRating))
-                pvpStat("Record", value: "\(char.pvpWins)W / \(char.pvpLosses)L", color: DarkFantasyTheme.textPrimary)
-                pvpStat("Rank", value: char.rankName, color: DarkFantasyTheme.rankColor(for: char.pvpRating))
-            }
-            .padding(LayoutConstants.cardPadding)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.4,
-                    cornerRadius: LayoutConstants.panelRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
-            .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.4), length: 12, thickness: 1.5)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
-        }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
-
-    @ViewBuilder
-    private func pvpStat(_ label: String, value: String, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-            Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(color)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .animation(.easeOut(duration: MotionConstants.tickUpShort), value: value)
-        }
-        .frame(maxWidth: .infinity)
-    }
+    // MARK: - PvP Section (moved to PvPStatsWidget)
 
 
     // MARK: - Low Resources Widget
@@ -963,7 +893,7 @@ struct HeroDetailView: View {
         if lowHP {
             if hasHealthPotion {
                 lowResourceBanner(
-                    icon: "pot_health_small",
+                    icon: "health_potion_small",
                     sfFallback: "heart.fill",
                     title: "Health is low",
                     subtitle: "You have a health potion — use it!",
@@ -974,7 +904,7 @@ struct HeroDetailView: View {
                 }
             } else {
                 lowResourceBanner(
-                    icon: "pot_health_small",
+                    icon: "health_potion_small",
                     sfFallback: "heart.fill",
                     title: "Health is low",
                     subtitle: "Buy a health potion to restore HP",
@@ -1020,7 +950,7 @@ struct HeroDetailView: View {
                         .frame(width: 40, height: 40)
                 } else {
                     Image(systemName: sfFallback)
-                        .font(.system(size: 28))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(accentColor)
                         .frame(width: 40, height: 40)
                 }
@@ -1064,6 +994,103 @@ struct HeroDetailView: View {
         .shadow(color: accentColor.opacity(0.1), radius: 4, y: 1)
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    // MARK: - Repair Equipment Widget
+
+    @ViewBuilder
+    private func repairEquipmentWidget(_ equippedItems: [Item], char: Character) -> some View {
+        let damagedItems = equippedItems.filter { item in
+            guard let dur = item.durability, let maxDur = item.maxDurability else { return false }
+            return dur < maxDur
+        }
+
+        if !damagedItems.isEmpty {
+            let totalCost = damagedItems.reduce(0) { $0 + (($1.maxDurability ?? 0) - ($1.durability ?? 0)) * 2 }
+            let playerGold = char.gold
+            let canAfford = playerGold >= totalCost
+
+            VStack(spacing: LayoutConstants.spaceMS) {
+                // Header row
+                HStack {
+                    Image("icon-strength")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+
+                    Text("REPAIR EQUIPMENT")
+                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                    Spacer()
+                }
+
+                // Info row: count + cost
+                HStack(spacing: LayoutConstants.spaceMD) {
+                    // Damaged count
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.stamina)
+                        Text("\(damagedItems.count) damaged")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    }
+
+                    Spacer()
+
+                    // Total cost
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Text("Cost:")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        CurrencyDisplay(gold: totalCost, size: .compact)
+                    }
+                }
+
+                // Not enough gold warning
+                if !canAfford {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.danger)
+                        Text("Not enough gold")
+                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .foregroundStyle(DarkFantasyTheme.danger)
+                        Spacer()
+                    }
+                }
+
+                // Repair All button
+                Button {
+                    let _ = Task { await repairAllDamagedItems() }
+                } label: {
+                    Text("Repair All")
+                }
+                .buttonStyle(.secondary)
+                .disabled(!canAfford)
+                .opacity(canAfford ? 1.0 : 0.5)
+            }
+            .padding(LayoutConstants.cardPadding)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 12, thickness: 1.5)
+            .compositingGroup()
+            .cardShadow()
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
     }
 
     // ========================================
@@ -1168,7 +1195,7 @@ struct HeroDetailView: View {
             // Search field
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 TextField("", text: Binding(
@@ -1186,7 +1213,7 @@ struct HeroDetailView: View {
                 if !vm.searchText.isEmpty {
                     Button { vm.searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.scalePress)
@@ -1203,7 +1230,7 @@ struct HeroDetailView: View {
                     }
                 } label: {
                     Image(systemName: "arrow.up.arrow.down")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .frame(width: 32, height: 32)
                 }

@@ -34,7 +34,7 @@ struct ToastView: View {
                     .frame(width: 28, height: 28)
 
                 Image(systemName: toast.type.icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(toast.type.color)
             }
 

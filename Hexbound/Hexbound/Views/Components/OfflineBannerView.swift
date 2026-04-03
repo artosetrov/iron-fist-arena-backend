@@ -9,7 +9,7 @@ struct OfflineBannerView: View {
         if !NetworkMonitor.shared.isConnected {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "wifi.slash")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(DarkFantasyTheme.uiLabel.bold())
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
 
                 Text("NO CONNECTION")

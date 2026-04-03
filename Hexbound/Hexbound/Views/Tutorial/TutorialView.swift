@@ -97,18 +97,18 @@ struct TutorialView: View {
 
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                                 .fill(DarkFantasyTheme.bgTertiary)
 
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                                 .fill(DarkFantasyTheme.xpGradient)
                                 .frame(width: geo.size.width * xpFraction(character))
-                                .overlay(BarFillHighlight(cornerRadius: 8))
+                                .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusMD))
                         }
                     }
                     .frame(height: 16)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                             .stroke(DarkFantasyTheme.gold.opacity(0.2), lineWidth: 1)
                     )
                 }
@@ -173,7 +173,7 @@ struct TutorialView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "arrow.right")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(DarkFantasyTheme.body.bold())
                         Text(displayedObjective.ctaLabel)
                     }
                 }

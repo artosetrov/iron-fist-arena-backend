@@ -24,6 +24,7 @@ struct WelcomeView: View {
                 VStack(spacing: LayoutConstants.spaceMD) {
                     // Play as Guest — primary CTA
                     Button {
+                        SFXManager.shared.play(.uiConfirm)
                         Task { await vm.guestLogin(appState: appState) }
                     } label: {
                         Text("PLAY AS GUEST")
@@ -34,6 +35,7 @@ struct WelcomeView: View {
 
                     // Log In — secondary
                     Button {
+                        SFXManager.shared.play(.uiTap)
                         appState.authPath.append(AppRoute.login)
                     } label: {
                         Text("LOG IN")
@@ -60,11 +62,12 @@ struct WelcomeView: View {
                     HStack(spacing: LayoutConstants.spaceMD) {
                         // Apple — programmatic sign in via regular Button
                         Button {
+                            SFXManager.shared.play(.uiTap)
                             vm.triggerAppleSignIn(appState: appState)
                         } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
-                                    .font(.system(size: 18, weight: .medium))
+                                    .font(DarkFantasyTheme.cardTitle.weight(.medium))
                                 Text("Apple")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
                             }
@@ -86,6 +89,7 @@ struct WelcomeView: View {
                         // Google
                         ZStack {
                             Button {
+                                SFXManager.shared.play(.uiTap)
                                 Task { await vm.handleGoogleSignIn(appState: appState) }
                             } label: {
                                 Color.clear
@@ -117,6 +121,7 @@ struct WelcomeView: View {
 
                     // Create Account — text link
                     Button("Create Account") {
+                        SFXManager.shared.play(.uiTap)
                         appState.authPath.append(AppRoute.register)
                     }
                     .buttonStyle(.ghost)
@@ -151,6 +156,7 @@ struct WelcomeView: View {
         .navigationBarHidden(true)
         .onAppear {
             vm.setup(appState: appState)
+            AudioManager.shared.playBGM("main-theme.mp3")
         }
     }
 }

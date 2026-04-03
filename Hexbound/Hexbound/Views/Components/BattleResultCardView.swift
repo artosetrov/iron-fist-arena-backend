@@ -468,7 +468,7 @@ struct BattleResultCardView: View {
                     }
 
                     Image(systemName: isEarned ? "star.fill" : "star")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(DarkFantasyTheme.title.bold())
                         .foregroundStyle(
                             isEarned
                                 ? DarkFantasyTheme.goldBright
@@ -628,7 +628,7 @@ struct BattleResultCardView: View {
             if let icon = button.icon {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(DarkFantasyTheme.body.bold())
                     Text(button.title)
                 }
             } else {

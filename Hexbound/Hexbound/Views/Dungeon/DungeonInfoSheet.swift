@@ -124,7 +124,7 @@ struct DungeonInfoSheet: View {
             .overlay(alignment: .topTrailing) {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .frame(width: 30, height: 30)
                         .background(
@@ -166,7 +166,7 @@ struct DungeonInfoSheet: View {
     private func metaChip(icon: String, text: String, color: Color) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+                .font(DarkFantasyTheme.badge.weight(.semibold))
             Text(text)
                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                 .fontWeight(.semibold)
@@ -325,7 +325,7 @@ struct DungeonInfoSheet: View {
     private func statTile(value: String, label: String, icon: String, color: Color) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                 .foregroundStyle(color)
 
             Text(value)
@@ -419,7 +419,7 @@ struct DungeonInfoSheet: View {
             // Energy badge
             VStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "bolt.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.stamina)
                 Text("\(dungeon.energyCost)")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
@@ -459,7 +459,7 @@ struct DungeonInfoSheet: View {
             } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "figure.fencing")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                     Text("ENTER DUNGEON")
                         .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
                 }

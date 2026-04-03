@@ -52,7 +52,7 @@ struct MerchantStripView: View {
                 onDismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .frame(width: 36, height: 36)
             }
@@ -94,7 +94,7 @@ struct MerchantStripView: View {
                         .scaledToFit()
                 } else {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 40))
+                        .font(DarkFantasyTheme.cinematicTitle)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -131,7 +131,7 @@ struct MerchantStripView: View {
                 onDismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .frame(width: 36, height: 36)
             }
@@ -168,7 +168,7 @@ struct MerchantMiniButton: View {
                         .scaledToFill()
                 } else {
                     Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 28))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }

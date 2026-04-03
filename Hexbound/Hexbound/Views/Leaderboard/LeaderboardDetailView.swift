@@ -224,7 +224,7 @@ struct LeaderboardDetailView: View {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
                 Image(systemName: "wifi.exclamationmark")
-                    .font(.system(size: 40))
+                    .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.danger)
                 Text("Search failed")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
@@ -249,7 +249,7 @@ struct LeaderboardDetailView: View {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
                 Image(systemName: "person.slash")
-                    .font(.system(size: 40))
+                    .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("No warriors found")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
@@ -351,7 +351,7 @@ struct LeaderboardDetailView: View {
                 inset: 1,
                 color: isMe ? DarkFantasyTheme.gold.opacity(0.2) : DarkFantasyTheme.borderSubtle.opacity(0.3)
             )
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .cardShadow()
         }
         .buttonStyle(.plain)
         .disabled(isMe)

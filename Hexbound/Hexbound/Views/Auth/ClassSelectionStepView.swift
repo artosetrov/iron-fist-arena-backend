@@ -19,10 +19,12 @@ struct ClassSelectionStepView: View {
                         DragGesture(minimumDistance: 40)
                             .onEnded { value in
                                 if value.translation.width < -40 {
+                                    SFXManager.shared.play(.uiTap)
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         vm.selectNextClass()
                                     }
                                 } else if value.translation.width > 40 {
+                                    SFXManager.shared.play(.uiTap)
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         vm.selectPreviousClass()
                                     }
@@ -108,7 +110,7 @@ struct ClassSelectionStepView: View {
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
         .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: accentColor.opacity(0.08))
         .cornerBrackets(color: accentColor.opacity(0.3), length: 14, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
@@ -116,7 +118,7 @@ struct ClassSelectionStepView: View {
 
     private var classCarousel: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            Button { vm.selectPreviousClass() } label: {
+            Button { SFXManager.shared.play(.uiTap); vm.selectPreviousClass() } label: {
                 Image("ui-arrow-left")
                     .resizable()
                     .scaledToFit()
@@ -130,12 +132,13 @@ struct ClassSelectionStepView: View {
                 ForEach(Array(CharacterClass.allCases.enumerated()), id: \.element.id) { index, charClass in
                     classMedallion(charClass, isSelected: vm.selectedClass == charClass)
                         .onTapGesture {
+                            SFXManager.shared.play(.uiTap)
                             vm.selectClass(at: index)
                         }
                 }
             }
 
-            Button { vm.selectNextClass() } label: {
+            Button { SFXManager.shared.play(.uiTap); vm.selectNextClass() } label: {
                 Image("ui-arrow-right")
                     .resizable()
                     .scaledToFit()

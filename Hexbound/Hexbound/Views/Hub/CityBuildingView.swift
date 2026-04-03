@@ -51,7 +51,7 @@ struct CityBuildingView: View {
                 if isLocked {
                     VStack(spacing: LayoutConstants.space2XS) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(DarkFantasyTheme.section.bold())
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Text("SOON")
                             .font(DarkFantasyTheme.section(size: 10))
@@ -95,7 +95,7 @@ struct CityBuildingView: View {
 
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: building.fallbackIcon)
-                        .font(.system(size: 28))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(building.glowColor)
                     Text(building.label)
                         .font(DarkFantasyTheme.section(size: 10))

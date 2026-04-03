@@ -31,7 +31,7 @@ struct ItemImageView: View {
                 }
         } else if let sfIcon = systemIcon {
             Image(systemName: sfIcon)
-                .font(.system(size: 32))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(systemIconColor ?? DarkFantasyTheme.gold)
         } else {
             Text(fallbackIcon)

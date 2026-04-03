@@ -211,7 +211,7 @@ struct CombatDetailView: View {
 
             // Pulsing swords icon
             Image(systemName: "swords")
-                .font(.system(size: 72))
+                .font(Font.custom("Inter-Regular", size: 72))
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: animatePulse ? 20 : 8)
                 .animation(
                     .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
@@ -392,7 +392,7 @@ struct CombatDetailView: View {
                     ForEach(statuses) { status in
                         HStack(spacing: LayoutConstants.space2XS) {
                             Image(systemName: status.icon)
-                                .font(.system(size: 11))
+                                .font(DarkFantasyTheme.badge)
                             Text(status.abbreviation)
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
                         }
@@ -499,7 +499,7 @@ struct CombatDetailView: View {
                                         HStack(spacing: LayoutConstants.space2XS) {
                                             if let icon = entry.damageTypeIcon {
                                                 Image(systemName: icon)
-                                                    .font(.system(size: 11))
+                                                    .font(DarkFantasyTheme.badge)
                                             }
                                             Text(label)
                                                 .font(DarkFantasyTheme.body(size: 11).bold())
@@ -548,7 +548,7 @@ struct CombatDetailView: View {
                 .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
         )
         .cornerBrackets(color: DarkFantasyTheme.danger.opacity(0.3), length: 12, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceSM)
         .frame(maxHeight: .infinity)
@@ -610,7 +610,7 @@ struct CombatDetailView: View {
                     showForfeitConfirmation = true
                 } label: {
                     Image(systemName: "flag.fill")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                 }
                 .buttonStyle(.combatForfeit)
                 .accessibilityLabel("Forfeit battle")

@@ -197,7 +197,7 @@ struct LootDetailView: View {
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "shield.fill")
-                                .font(.system(size: 12))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                             Text("STATS")
                                 .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
@@ -231,7 +231,7 @@ struct LootDetailView: View {
                 if let effect = specialEffect, !effect.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(effect)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
@@ -264,7 +264,7 @@ struct LootDetailView: View {
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                             HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "arrow.left.arrow.right")
-                                    .font(.system(size: 12))
+                                    .font(DarkFantasyTheme.caption)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 Text(equipped != nil ? "VS. EQUIPPED" : "STAT BONUS")
                                     .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))

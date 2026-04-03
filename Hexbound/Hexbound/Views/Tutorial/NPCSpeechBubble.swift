@@ -69,7 +69,7 @@ struct NPCSpeechBubble: View {
                     .clipShape(Circle())
             } else {
                 Image(systemName: npcFallbackIcon)
-                    .font(.system(size: 22))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }

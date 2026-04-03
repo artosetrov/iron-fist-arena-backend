@@ -118,20 +118,9 @@ struct ArenaOpponentCard: View {
     // MARK: - Top Badges
 
     private var topBadges: some View {
-        HStack {
-            // Level circle
-            Text("\(opponent.level)")
-                .font(DarkFantasyTheme.section(size: 12))
-                .foregroundStyle(classColor)
-                .frame(width: 28, height: 28)
-                .background(
-                    Circle()
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
-                        .overlay(
-                            Circle()
-                                .stroke(classColor.opacity(0.5), lineWidth: 1.5)
-                        )
-                )
+        HStack(alignment: .top) {
+            // Level circle — reusable component, consistent with HeroSelectionCard
+            CardLevelBadge(level: opponent.level, accentColor: classColor)
 
             Spacer()
 

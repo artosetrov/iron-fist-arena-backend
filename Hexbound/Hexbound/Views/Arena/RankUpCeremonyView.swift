@@ -42,7 +42,7 @@ struct RankUpCeremonyView: View {
                 // Arrow transition
                 if showTransition {
                     Image(systemName: "chevron.down.2")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(DarkFantasyTheme.title.bold())
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
 
@@ -101,7 +101,7 @@ struct RankUpCeremonyView: View {
     private func rankBadge(rank: String, isOld: Bool) -> some View {
         VStack(spacing: 8) {
             Image(systemName: isOld ? "shield" : "shield.fill")
-                .font(.system(size: isOld ? 48 : 64, weight: .bold))
+                .font(Font.custom("Oswald-Regular", size: isOld ? LayoutConstants.textCelebration : LayoutConstants.textHero).bold())
                 .foregroundStyle(
                     isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
                 )
@@ -149,18 +149,20 @@ struct RankUpCeremonyView: View {
     // MARK: - Animation
 
     private func startCeremony() {
-        // Staggered reveal
+        // Staggered reveal — evenly spaced ~0.6s apart
         withAnimation(.easeOut(duration: 0.5)) {
             showOldRank = true
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        // Phase 1: Transition arrow
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase3) {
             withAnimation(.easeInOut(duration: 0.4)) {
                 showTransition = true
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+        // Phase 2: New rank reveal (0.8 + 0.6 = 1.4s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase3 + MotionConstants.reward) {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 showNewRank = true
             }
@@ -168,20 +170,23 @@ struct RankUpCeremonyView: View {
             SFXManager.shared.play(.uiLevelUp)
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+        // Phase 3: Glow pulse
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyButton) {
             withAnimation(.easeIn(duration: 0.8).repeatForever(autoreverses: true)) {
                 glowOpacity = 0.6
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+        // Phase 4: Rewards (ceremonyButton + 0.4s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyButton + MotionConstants.normal) {
             withAnimation(.easeOut(duration: 0.4)) {
                 showRewards = true
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8) {
-            withAnimation(.easeOut(duration: 0.3)) {
+        // Phase 5: Dismiss button (ceremonySlow + ceremonyPhase1)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonySlow + MotionConstants.ceremonyPhase1) {
+            withAnimation(.easeOut(duration: MotionConstants.ceremonyPhase1)) {
                 showButton = true
             }
         }

@@ -12,7 +12,7 @@ struct GuestNudgeBanner: View {
            (appState.currentCharacter?.level ?? 0) >= 3 {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "exclamationmark.shield.fill")
-                    .font(.system(size: 18)) // SF Symbol icon — keep as is
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.gold)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -42,7 +42,7 @@ struct GuestNudgeBanner: View {
                     withAnimation { dismissed = true }
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 12, weight: .bold)) // SF Symbol icon — keep as is
+                        .font(DarkFantasyTheme.caption.bold())
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }

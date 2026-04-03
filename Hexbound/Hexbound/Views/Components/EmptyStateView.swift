@@ -32,7 +32,7 @@ struct EmptyStateView: View {
             VStack(spacing: LayoutConstants.spaceMS) {
                 // Icon with subtle glow
                 Image(systemName: icon)
-                    .font(.system(size: 48, weight: .thin))
+                    .font(DarkFantasyTheme.cinematicTitle.weight(.thin))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .shadow(color: DarkFantasyTheme.goldDim.opacity(0.2), radius: 8)
                     .padding(.bottom, LayoutConstants.spaceSM)
@@ -86,7 +86,7 @@ struct EmptyStateView: View {
             .cornerBrackets(color: DarkFantasyTheme.borderMedium, length: 14, thickness: 1.5)
             .cornerDiamonds(color: DarkFantasyTheme.goldDim, size: 4)
             .compositingGroup()
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+            .cardShadow()
             .padding(.horizontal, LayoutConstants.screenPadding)
 
             Spacer()

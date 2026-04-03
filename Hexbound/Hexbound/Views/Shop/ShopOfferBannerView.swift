@@ -11,7 +11,7 @@ struct ShopOfferBannerView: View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "flame")
-                    .font(.system(size: 12))
+                    .font(DarkFantasyTheme.caption)
                 Text("SPECIAL OFFERS")
                     .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -67,7 +67,7 @@ private struct OfferCard: View {
                 if let remaining = offer.timeRemaining {
                     HStack(spacing: LayoutConstants.space2XS) {
                         Image(systemName: "clock")
-                            .font(.system(size: 16))
+                            .font(DarkFantasyTheme.body)
                         Text(remaining)
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
                     }
@@ -174,6 +174,6 @@ private struct OfferCard: View {
             length: 12,
             thickness: 1.5
         )
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 6, y: 3)
+        .cardShadow()
     }
 }

@@ -264,7 +264,7 @@ struct NameStepView: View {
                         .opacity(0.7)
                 } else {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 }
                 Text("NEW")
@@ -428,11 +428,11 @@ struct NameStepView: View {
                                         .scaleEffect(0.85)
                                 case .available:
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 22))
+                                        .font(DarkFantasyTheme.section)
                                         .foregroundStyle(DarkFantasyTheme.success)
                                 case .taken:
                                     Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 22))
+                                        .font(DarkFantasyTheme.section)
                                         .foregroundStyle(DarkFantasyTheme.danger)
                                 default:
                                     EmptyView()

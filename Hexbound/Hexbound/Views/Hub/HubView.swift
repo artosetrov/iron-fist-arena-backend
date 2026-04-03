@@ -810,7 +810,7 @@ struct FirstWinBonusCard: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: LayoutConstants.textLabel, weight: .semibold))
+                        .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
                 }
 
@@ -911,7 +911,7 @@ struct BattleInviteBanner: View {
             // Header row
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "swords")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(DarkFantasyTheme.uiLabel.bold())
                     .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Text("BATTLE CHALLENGE")
@@ -979,7 +979,7 @@ struct BattleInviteBanner: View {
                                 .scaleEffect(0.7)
                         } else {
                             Image(systemName: "swords")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(DarkFantasyTheme.caption.bold())
                         }
                         Text("FIGHT")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -999,7 +999,7 @@ struct BattleInviteBanner: View {
                                 .scaleEffect(0.7)
                         } else {
                             Image(systemName: "xmark")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(DarkFantasyTheme.badge.bold())
                         }
                         Text("DECLINE")
                             .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
@@ -1016,7 +1016,7 @@ struct BattleInviteBanner: View {
                         appState.mainPath.append(AppRoute.guildHall)
                     } label: {
                         Image(systemName: "list.bullet")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     }
                     .buttonStyle(.secondary)
                     .disabled(isAccepting || isDeclining)
@@ -1274,7 +1274,7 @@ struct QuestRewardWidget: View {
                 Spacer(minLength: 4)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: LayoutConstants.textLabel, weight: .semibold))
+                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
             }
         }
@@ -1422,7 +1422,7 @@ struct DailyLoginCard: View {
                     .shadow(color: DarkFantasyTheme.goldBright.opacity(0.6), radius: 4)
             } else {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }

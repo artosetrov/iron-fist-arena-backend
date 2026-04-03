@@ -32,7 +32,7 @@ struct SessionExpiredModalView: View {
                         .frame(width: 80, height: 80)
 
                     Image(systemName: "lock.shield.fill")
-                        .font(.system(size: 32, weight: .medium))
+                        .font(DarkFantasyTheme.title.weight(.medium))
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
 

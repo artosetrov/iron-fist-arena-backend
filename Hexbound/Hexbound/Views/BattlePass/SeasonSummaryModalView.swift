@@ -190,15 +190,15 @@ struct SeasonSummaryModalView: View {
         }
         HapticManager.medium()
 
-        // Phase 2: Stats grid (0.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        // Phase 2: Stats grid (phase1 + fast = 0.55s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase1 + MotionConstants.fast) {
             withAnimation(MotionConstants.spring) {
                 showStats = true
             }
         }
 
-        // Phase 3: "NEW SEASON BEGINS" slam (2.5s — after stats have animated)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+        // Phase 3: "NEW SEASON BEGINS" slam (after stats have animated)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonySlow) {
             showNewSeason = true
             HapticManager.heavy()
 
@@ -213,8 +213,8 @@ struct SeasonSummaryModalView: View {
             }
         }
 
-        // Phase 4: Continue button (3.5s)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+        // Phase 4: Continue button (ceremonySlow + ceremonyPhase4 = 3.5s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonySlow + MotionConstants.ceremonyPhase4) {
             withAnimation(MotionConstants.spring) {
                 showContinue = true
             }

@@ -54,11 +54,11 @@ struct DungeonMapBuildingView: View {
 
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 11))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             } else if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 11))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }
@@ -100,7 +100,7 @@ struct DungeonMapBuildingView: View {
 
                     VStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: building.fallbackIcon)
-                            .font(.system(size: 28))
+                            .font(DarkFantasyTheme.title)
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : building.glowColor)
                         Text(building.label)
                             .font(DarkFantasyTheme.section(size: 10))
@@ -114,7 +114,7 @@ struct DungeonMapBuildingView: View {
             if isLocked {
                 VStack(spacing: LayoutConstants.space2XS) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 20, weight: .bold))
+                        .font(DarkFantasyTheme.section.bold())
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text("Lvl \(building.minLevel)")
                         .font(DarkFantasyTheme.section(size: 10))
