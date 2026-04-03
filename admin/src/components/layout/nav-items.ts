@@ -4,7 +4,7 @@ import {
   Calendar, Sliders, Scroll, ImageIcon, Settings, Shield, Dice3,
   Coins, ScrollText, Castle, Zap, GitBranch, Scale, Gauge, Palette,
   FlaskConical, Archive, Gift, Award, Mail, Flag, ShoppingBag, Bell,
-  Map, MessageSquare,
+  Map, MessageSquare, Paintbrush,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -109,6 +109,12 @@ export const navGroups: NavGroup[] = [
       { label: 'Live Config', href: '/config', icon: Sliders },
       { label: 'Feature Flags', href: '/flags', icon: Flag },
       { label: 'Config Snapshots', href: '/snapshots', icon: Archive },
+    ],
+  },
+  {
+    label: 'Design',
+    items: [
+      { label: 'Design System', href: '/design-system', icon: Paintbrush },
     ],
   },
   {

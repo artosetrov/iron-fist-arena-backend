@@ -1,0 +1,110 @@
+{
+  "colors": {
+    "background": {
+      "bgAbyss": "#08080C",
+      "bgPrimary": "#0D0D12",
+      "bgSecondary": "#1A1A2E",
+      "bgTertiary": "#16213E",
+      "bgElevated": "#1E2240",
+      "bgDarkPanel": "#141428"
+    },
+    "text": {
+      "textPrimary": "#F5F5F5",
+      "textSecondary": "#A0A0B0",
+      "textTertiary": "#6B6B80",
+      "textDisabled": "#555566",
+      "textOnGold": "#1A1A2E"
+    },
+    "accent": {
+      "gold": "#D4A537",
+      "goldBright": "#FFD700",
+      "goldDim": "#8B6914",
+      "danger": "#E63946",
+      "success": "#2ECC71",
+      "info": "#3498DB",
+      "cyan": "#00D4FF",
+      "purple": "#9B59B6",
+      "stamina": "#E67E22"
+    },
+    "border": {
+      "borderSubtle": "#2A2A3E",
+      "borderMedium": "#3A3A50",
+      "borderStrong": "#4A4A60",
+      "borderGold": "#D4A537",
+      "borderOrnament": "#B8860B"
+    },
+    "rarity": {
+      "common": "#999999",
+      "uncommon": "#4DCC4D",
+      "rare": "#4D80FF",
+      "epic": "#A64DE6",
+      "legendary": "#FFBF1A"
+    },
+    "toast": {
+      "achievement": "#FFD700",
+      "levelUp": "#66FF66",
+      "rankUp": "#9966FF",
+      "quest": "#00D4FF",
+      "reward": "#E67E22",
+      "info": "#CCCCDA",
+      "error": "#FF6B6B"
+    },
+    "stance": {
+      "head": "#E66666",
+      "chest": "#6699E6",
+      "legs": "#66E666"
+    }
+  },
+  "typography": {
+    "cinematicTitle": { "family": "Oswald", "size": 40, "weight": 400 },
+    "title": { "family": "Oswald", "size": 28, "weight": 400 },
+    "section": { "family": "Oswald", "size": 22, "weight": 400 },
+    "cardTitle": { "family": "Oswald", "size": 18, "weight": 400 },
+    "buttonLabel": { "family": "Oswald", "size": 18, "weight": 400 },
+    "body": { "family": "Inter", "size": 16, "weight": 400 },
+    "uiLabel": { "family": "Inter", "size": 14, "weight": 400 },
+    "caption": { "family": "Inter", "size": 12, "weight": 400 },
+    "badge": { "family": "Inter", "size": 11, "weight": 700 }
+  },
+  "spacing": {
+    "space2XS": 2,
+    "spaceXS": 4,
+    "spaceSM": 8,
+    "spaceMS": 12,
+    "spaceMD": 16,
+    "spaceLG": 24,
+    "spaceXL": 32,
+    "space2XL": 48
+  },
+  "radius": {
+    "radiusXS": 3,
+    "radiusSM": 6,
+    "radiusMD": 8,
+    "radiusLG": 12,
+    "radiusXL": 16,
+    "radius2XL": 22
+  },
+  "opacity": {
+    "micro": 0.04,
+    "soft": 0.08,
+    "light": 0.12,
+    "mild": 0.15,
+    "medium": 0.25,
+    "strong": 0.40,
+    "heavy": 0.60,
+    "dense": 0.75,
+    "opaque": 0.85
+  },
+  "sizing": {
+    "buttonHeightLG": 56,
+    "buttonHeightMD": 48,
+    "buttonHeightSM": 36,
+    "touchMin": 48,
+    "iconXS": 12,
+    "iconSM": 16,
+    "iconMD": 20,
+    "iconLG": 24,
+    "iconXL": 32,
+    "icon2XL": 48
+  }
+}

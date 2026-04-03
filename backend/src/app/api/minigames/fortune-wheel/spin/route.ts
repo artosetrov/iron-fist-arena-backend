@@ -6,6 +6,7 @@ import { rateLimit } from '@/lib/rate-limit'
 
 const MIN_BET = 50
 const MAX_BET = 1000
+const DAILY_SPIN_LIMIT = 10
 
 // Fortune Wheel sectors — server-authoritative
 // Each sector: { multiplier, weight }
@@ -66,6 +67,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: `Bet must be between ${MIN_BET} and ${MAX_BET} gold` },
         { status: 400 }
+      )
+    }
+
+    // Daily spin limit — calendar day (UTC)
+    const today = new Date().toISOString().split('T')[0]
+    const todaySpins = await prisma.minigameSession.count({
+      where: {
+        characterId: character_id,
+        gameType: 'fortune_wheel',
+        createdAt: { gte: new Date(today) },
+      },
+    })
+    if (todaySpins >= DAILY_SPIN_LIMIT) {
+      return NextResponse.json(
+        { error: 'Daily spin limit reached', spins_today: todaySpins, spins_limit: DAILY_SPIN_LIMIT },
+        { status: 429 }
       )
     }
 
@@ -131,6 +148,9 @@ export async function POST(req: NextRequest) {
       multiplier: winningSector.multiplier,
       win_amount: winAmount,
       gold: result.finalGold,
+      spins_today: todaySpins + 1,
+      spins_limit: DAILY_SPIN_LIMIT,
+      spins_remaining: DAILY_SPIN_LIMIT - todaySpins - 1,
       // Send full sector layout so client can render the wheel
       sectors: WHEEL_SECTORS.map(s => ({
         index: s.index,

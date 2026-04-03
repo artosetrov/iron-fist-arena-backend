@@ -240,17 +240,24 @@ async function handleSend(senderId: string, body: any) {
     return NextResponse.json({ error: 'Target not found' }, { status: 404 })
   }
 
-  // Check if either party has blocked the other (blocked users can't message)
-  const blocked = await prisma.friendship.findFirst({
+  // Check friendship exists (must be friends to message)
+  const friendship = await prisma.friendship.findFirst({
     where: {
       OR: [
-        { userId: senderId, friendId: target_id, status: 'blocked' },
-        { userId: target_id, friendId: senderId, status: 'blocked' },
+        { userId: senderId, friendId: target_id },
+        { userId: target_id, friendId: senderId },
       ],
     },
   })
-  if (blocked) {
+
+  // Block check: blocked users can't message
+  if (friendship?.status === 'blocked') {
     return NextResponse.json({ error: 'Cannot send message to this player' }, { status: 403 })
+  }
+
+  // Friendship check: must be accepted friends
+  if (!friendship || friendship.status !== 'accepted') {
+    return NextResponse.json({ error: 'Must be allies to send messages' }, { status: 403 })
   }
 
   const now = new Date()
@@ -339,17 +346,21 @@ async function handleSendQuick(senderId: string, body: any) {
     return NextResponse.json({ error: 'Target not found' }, { status: 404 })
   }
 
-  // Check if either party has blocked the other
-  const blocked = await prisma.friendship.findFirst({
+  // Check friendship exists (must be friends to message)
+  const friendship = await prisma.friendship.findFirst({
     where: {
       OR: [
-        { userId: senderId, friendId: target_id, status: 'blocked' },
-        { userId: target_id, friendId: senderId, status: 'blocked' },
+        { userId: senderId, friendId: target_id },
+        { userId: target_id, friendId: senderId },
       ],
     },
   })
-  if (blocked) {
+
+  if (friendship?.status === 'blocked') {
     return NextResponse.json({ error: 'Cannot send message to this player' }, { status: 403 })
+  }
+  if (!friendship || friendship.status !== 'accepted') {
+    return NextResponse.json({ error: 'Must be allies to send messages' }, { status: 403 })
   }
 
   const now = new Date()
