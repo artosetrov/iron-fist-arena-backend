@@ -84,7 +84,7 @@ struct LootPreview: Identifiable, Hashable {
         case "ring":       return "ring_copper"
         case "relic":      return "relic_old_coin"
         case "accessory":  return "acc_wooden_shield"
-        case "consumable": return "pot_health_small"
+        case "consumable": return "health_potion_small"
         default:           return nil
         }
     }

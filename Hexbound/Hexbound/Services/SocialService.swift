@@ -6,19 +6,13 @@ class SocialService {
 
     // MARK: - Friends List
 
-    func getFriends(characterId: String) async -> FriendsListResponse? {
-        do {
-            let response: FriendsListResponse = try await APIClient.shared.get(
-                APIEndpoints.socialFriends,
-                params: ["character_id": characterId]
-            )
-            return response
-        } catch {
-            #if DEBUG
-            print("[SocialService] getFriends error: \(error)")
-            #endif
-            return nil
-        }
+    /// Fetches friends list. Throws on failure so caller can distinguish error types.
+    func getFriends(characterId: String) async throws -> FriendsListResponse {
+        let response: FriendsListResponse = try await APIClient.shared.get(
+            APIEndpoints.socialFriends,
+            params: ["character_id": characterId]
+        )
+        return response
     }
 
     // MARK: - Friend Actions

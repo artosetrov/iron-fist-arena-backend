@@ -313,3 +313,7 @@ enum StatGroup: String, CaseIterable {
         }
     }
 }
+
+// MARK: - PvPStatsProvider Conformance
+
+extension Character: PvPStatsProvider {}

@@ -317,12 +317,12 @@ final class InventoryService {
 
     /// Maps consumableType → local asset key in Assets.xcassets/Items/
     private static let consumableImageKeys: [String: String] = [
-        "stamina_potion_small": "pot_stamina_small",
-        "stamina_potion_medium": "pot_stamina_medium",
-        "stamina_potion_large": "pot_stamina_large",
-        "health_potion_small": "pot_health_small",
-        "health_potion_medium": "pot_health_medium",
-        "health_potion_large": "pot_health_large",
+        "stamina_potion_small": "stamina_potion_small",
+        "stamina_potion_medium": "stamina_potion_medium",
+        "stamina_potion_large": "stamina_potion_large",
+        "health_potion_small": "health_potion_small",
+        "health_potion_medium": "health_potion_medium",
+        "health_potion_large": "health_potion_large",
         "gem_pack_small": "gem_pack_small",
         "gem_pack_medium": "gem_pack_medium",
         "gem_pack_large": "gem_pack_large",

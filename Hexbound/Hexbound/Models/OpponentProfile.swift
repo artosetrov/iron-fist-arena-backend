@@ -141,6 +141,13 @@ struct OpponentProfile: Codable, Identifiable {
     }
 }
 
+// MARK: - PvPStatsProvider Conformance
+
+extension OpponentProfile: PvPStatsProvider {
+    /// OpponentProfile doesn't track loss streaks — default to nil.
+    var pvpLossStreak: Int? { nil }
+}
+
 /// Response wrapper for the profile endpoint
 struct OpponentProfileResponse: Codable {
     let profile: OpponentProfile

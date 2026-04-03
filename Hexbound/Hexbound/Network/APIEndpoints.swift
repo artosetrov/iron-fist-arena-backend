@@ -93,6 +93,7 @@ enum APIEndpoints {
 
     // MARK: - Fortune Wheel
     static let fortuneWheelSpin = "/api/minigames/fortune-wheel/spin"
+    static let fortuneWheelStatus = "/api/minigames/fortune-wheel/status"
 
     // MARK: - Gold Mine
     static let goldMineStatus = "/api/minigames/gold-mine/status"

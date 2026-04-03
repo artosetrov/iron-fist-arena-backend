@@ -37,6 +37,23 @@ struct IncomingChallenge: Codable, Identifiable {
     let createdAt: String  // ISO date string
     let expiresAt: String  // ISO date string
     // No CodingKeys — all keys are camelCase from backend, matching Swift property names.
+
+    /// Whether this challenge has expired (client-side check before hitting API)
+    var isExpired: Bool {
+        guard let date = ISO8601DateFormatter().date(from: expiresAt) else { return false }
+        return date < Date()
+    }
+
+    /// Time remaining until expiry, e.g. "17h", "2h 30m", "Expired"
+    var timeRemaining: String {
+        guard let date = ISO8601DateFormatter().date(from: expiresAt) else { return "—" }
+        let remaining = date.timeIntervalSinceNow
+        if remaining <= 0 { return "Expired" }
+        let hours = Int(remaining) / 3600
+        let minutes = (Int(remaining) % 3600) / 60
+        if hours > 0 { return "\(hours)h" }
+        return "\(minutes)m"
+    }
 }
 
 // MARK: - Outgoing Challenge
@@ -48,8 +65,28 @@ struct OutgoingChallenge: Codable, Identifiable {
     let message: String?
     let goldWager: Int
     let createdAt: String  // ISO date string
+    let expiresAt: String?  // ISO date string
     let respondedAt: String?  // ISO date string, nil if not yet responded
     // No CodingKeys — all keys are camelCase from backend.
+
+    /// Whether this challenge has expired
+    var isExpired: Bool {
+        guard let expires = expiresAt,
+              let date = ISO8601DateFormatter().date(from: expires) else { return false }
+        return date < Date()
+    }
+
+    /// Time remaining until expiry
+    var timeRemaining: String {
+        guard let expires = expiresAt,
+              let date = ISO8601DateFormatter().date(from: expires) else { return "—" }
+        let remaining = date.timeIntervalSinceNow
+        if remaining <= 0 { return "Expired" }
+        let hours = Int(remaining) / 3600
+        let minutes = (Int(remaining) % 3600) / 60
+        if hours > 0 { return "\(hours)h" }
+        return "\(minutes)m"
+    }
 }
 
 // MARK: - Completed Challenge
