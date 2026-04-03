@@ -35,8 +35,7 @@ struct AvatarImageView: View {
     }
 
     private var fallbackIcon: some View {
-        Text(characterClass.icon)
-            .font(.system(size: size * 0.5))
+        AssetPlaceholderView(systemIcon: "shield.fill")
             .frame(width: size, height: size)
             .task {
                 // Try to fetch from network in background

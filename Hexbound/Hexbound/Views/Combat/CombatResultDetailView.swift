@@ -304,7 +304,7 @@ struct CombatResultDetailView: View {
                             imageUrl: lootImageUrl,
                             systemIcon: sfIcon,
                             systemIconColor: sfColor,
-                            fallbackIcon: type?.icon ?? "shippingbox"
+                            placeholderIcon: type?.icon ?? "shippingbox"
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
                     }

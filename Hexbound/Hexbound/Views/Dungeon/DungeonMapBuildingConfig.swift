@@ -29,7 +29,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.08,
         relativeY: 0.70,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "shield.lefthalf.filled",
         sortOrder: 0
     ),
@@ -41,7 +41,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.20,
         relativeY: 0.45,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "building.columns.fill",
         sortOrder: 1
     ),
@@ -53,7 +53,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.32,
         relativeY: 0.65,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "flame.fill",
         sortOrder: 2
     ),
@@ -65,7 +65,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.42,
         relativeY: 0.35,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "leaf.fill",
         sortOrder: 3
     ),
@@ -77,7 +77,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.52,
         relativeY: 0.60,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "hammer.fill",
         sortOrder: 4
     ),
@@ -89,7 +89,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.62,
         relativeY: 0.30,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "snowflake",
         sortOrder: 5
     ),
@@ -101,7 +101,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.72,
         relativeY: 0.55,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "sun.max.fill",
         sortOrder: 6
     ),
@@ -113,7 +113,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.80,
         relativeY: 0.40,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "moon.fill",
         sortOrder: 7
     ),
@@ -125,7 +125,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.88,
         relativeY: 0.60,
         relativeSize: 0.18,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "gearshape.2.fill",
         sortOrder: 8
     ),
@@ -137,7 +137,7 @@ let defaultDungeonMapBuildings: [DungeonMapBuilding] = [
         relativeX: 0.94,
         relativeY: 0.35,
         relativeSize: 0.20,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "crown.fill",
         sortOrder: 9
     ),

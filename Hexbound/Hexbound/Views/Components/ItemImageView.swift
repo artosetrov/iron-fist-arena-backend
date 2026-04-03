@@ -4,13 +4,13 @@ import SwiftUI
 /// 1. `imageKey` → bundle asset OR disk cache (instant, offline)
 /// 2. `imageUrl` → network download via AssetManager (cached to disk for next time)
 /// 3. `systemIcon` + `systemIconColor` → SF Symbol (e.g. consumable icons)
-/// 4. `fallbackIcon` → emoji/text icon
+/// 4. `placeholderIcon` → DS-compliant placeholder
 struct ItemImageView: View {
     let imageKey: String?
     let imageUrl: String?
     var systemIcon: String? = nil
     var systemIconColor: Color? = nil
-    let fallbackIcon: String
+    var placeholderIcon: String = "questionmark"
 
     @State private var resolvedImage: UIImage?
     @State private var isLoading = false
@@ -34,8 +34,7 @@ struct ItemImageView: View {
                 .font(DarkFantasyTheme.title)
                 .foregroundStyle(systemIconColor ?? DarkFantasyTheme.gold)
         } else {
-            Text(fallbackIcon)
-                .font(.system(size: 32))
+            AssetPlaceholderView(systemIcon: placeholderIcon)
         }
     }
 

@@ -138,8 +138,8 @@ struct SeasonSummaryModalView: View {
                     .scaledToFit()
                     .frame(width: 24, height: 24)
             } else {
-                Text(icon)
-                    .font(.system(size: 24))
+                AssetPlaceholderView(systemIcon: "star.fill")
+                    .frame(width: 24, height: 24)
             }
 
             HStack(spacing: 0) {

@@ -182,8 +182,8 @@ struct BossDetailSheet: View {
                 } else {
                     ZStack {
                         DarkFantasyTheme.bgSecondary
-                        Text(boss.emoji)
-                            .font(.system(size: 80))
+                        AssetPlaceholderView(systemIcon: "flame.fill")
+                            .frame(width: 80, height: 80)
                     }
                 }
             }

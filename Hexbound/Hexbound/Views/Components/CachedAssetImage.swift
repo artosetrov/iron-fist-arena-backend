@@ -8,14 +8,14 @@ import SwiftUI
 ///
 /// Usage:
 /// ```swift
-/// CachedAssetImage(key: item.imageKey, url: item.imageUrl, fallback: "⚔️")
+/// CachedAssetImage(key: item.imageKey, url: item.imageUrl, systemIcon: "shield.fill")
 ///     .frame(width: 64, height: 64)
 ///     .clipShape(RoundedRectangle(cornerRadius: 8))
 /// ```
 struct CachedAssetImage: View {
     let key: String?
     let url: String?
-    let fallback: String
+    var systemIcon: String = "questionmark"
     var contentMode: ContentMode = .fill
 
     @State private var loadedImage: UIImage?
@@ -37,9 +37,8 @@ struct CachedAssetImage: View {
                             .scaleEffect(0.7)
                     }
             } else {
-                // Fallback emoji/text
-                Text(fallback)
-                    .font(.system(size: 32))
+                // Fallback asset placeholder
+                AssetPlaceholderView(systemIcon: systemIcon)
             }
         }
         .task(id: key) {
@@ -71,7 +70,7 @@ struct CachedAvatarImage: View {
         CachedAssetImage(
             key: resolvedKey,
             url: resolvedURL,
-            fallback: characterClass.icon
+            systemIcon: "shield.fill"
         )
         .frame(width: size, height: size)
         .clipped()

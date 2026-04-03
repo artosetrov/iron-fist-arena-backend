@@ -325,7 +325,7 @@ struct DraggableEditorDungeonBuilding: View {
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
-                .background(isSelected ? Color.red.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
+                .background(isSelected ? DarkFantasyTheme.danger.opacity(0.8) : DarkFantasyTheme.bgAbyss.opacity(0.7))
                 .cornerRadius(LayoutConstants.radiusXS)
 
             if UIImage(named: building.imageName) != nil {
@@ -335,10 +335,10 @@ struct DraggableEditorDungeonBuilding: View {
                     .frame(height: buildingHeight)
             } else {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .fill(isSelected ? Color.red.opacity(0.4) : building.glowColor.opacity(0.3))
+                    .fill(isSelected ? DarkFantasyTheme.danger.opacity(0.4) : building.glowColor.opacity(0.3))
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                            .stroke(isSelected ? Color.red : building.glowColor, lineWidth: 2)
+                            .stroke(isSelected ? DarkFantasyTheme.danger : building.glowColor, lineWidth: 2)
                     )
                     .overlay(
                         VStack(spacing: LayoutConstants.spaceXS) {
@@ -356,7 +356,7 @@ struct DraggableEditorDungeonBuilding: View {
         .overlay(
             isSelected ?
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(Color.red, lineWidth: 2)
+                    .stroke(DarkFantasyTheme.danger, lineWidth: 2)
                     .padding(-LayoutConstants.spaceXS)
             : nil
         )

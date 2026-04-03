@@ -312,8 +312,8 @@ struct DailyLoginPopupView: View {
                     .scaledToFit()
                     .frame(width: 52, height: 52)
             } else {
-                Text(reward.icon)
-                    .font(.system(size: 46))
+                AssetPlaceholderView(systemIcon: "gift.fill")
+                    .frame(width: 46, height: 46)
             }
         }
         .offset(y: iconFloat ? -5 : 0)
@@ -377,8 +377,8 @@ struct DailyLoginPopupView: View {
                         .scaledToFit()
                         .frame(width: 30, height: 30)
                 } else {
-                    Text(reward.icon)
-                        .font(.system(size: 26))
+                    AssetPlaceholderView(systemIcon: "gift.fill")
+                        .frame(width: 26, height: 26)
                 }
             }
 

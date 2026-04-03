@@ -242,8 +242,8 @@ struct DungeonSelectDetailView: View {
                         .frame(height: 140)
                         .overlay {
                             // Dungeon icon large
-                            Text(dungeon.icon)
-                                .font(.system(size: 56))
+                            AssetPlaceholderView(systemIcon: "map.fill")
+                                .frame(width: 56, height: 56)
                                 .opacity(isLocked ? 0.3 : 0.8)
                         }
                         .overlay(alignment: .topTrailing) {
@@ -336,8 +336,8 @@ struct DungeonSelectDetailView: View {
                             .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         ForEach(dungeon.rewardIcons, id: \.self) { icon in
-                            Text(icon)
-                                .font(.system(size: 16))
+                            AssetPlaceholderView(systemIcon: "cube.fill")
+                                .frame(width: 16, height: 16)
                                 .opacity(isLocked ? 0.4 : 1.0)
                         }
                     }

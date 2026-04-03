@@ -4,7 +4,7 @@
 > **Canonical rules**: See `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md` for the extended version.
 > **iOS/SwiftUI rules**: See `Hexbound/CLAUDE.md`
 > **Backend/TypeScript rules**: See `backend/CLAUDE.md`
-> **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 198 tokens, 33 components, 130+ variants, 21 pages
+> **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 359 tokens, 33 components, 130+ variants, 21 pages
 > **DS Audit**: See `docs/07_ui_ux/DESIGN_SYSTEM_AUDIT.md` for compliance status
 
 ## Architecture
@@ -91,15 +91,15 @@ Generate unique 24-character hex IDs. Keep entries alphabetically sorted. **If y
 
 Figma DS is the **visual single source of truth** for all Hexbound UI. It mirrors Swift code tokens 1:1.
 
-### Token Collections (198 total)
+### Token Collections (359 total)
 
 | Collection | Variables | Modes | Scopes |
 |---|---|---|---|
-| **Primitives** | 104 raw hex colors | Value | Hidden (`[]`) — never use directly in components |
-| **Color** (semantic) | 80 aliased to Primitives | Dark | FILL / TEXT / STROKE per role |
-| **Spacing** | 8 spacing + 6 radius | Value | GAP / CORNER_RADIUS |
+| **Primitives** | 187 raw hex colors | Value | Hidden (`[]`) — never use directly in components |
+| **Color** (semantic) | 158 aliased to Primitives | Dark | FILL / TEXT / STROKE per role |
+| **Spacing** | 14 (8 spacing + 6 radius) | Value | GAP / CORNER_RADIUS |
 
-All 198 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutConstants.*`).
+All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutConstants.*`).
 
 ### Styles
 

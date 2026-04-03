@@ -386,7 +386,7 @@ struct AppearanceStepView: View {
         CachedAssetImage(
             key: skin.resolvedImageKey,
             url: skin.imageUrl,
-            fallback: "🧑"
+            systemIcon: "person.fill"
         )
     }
 }

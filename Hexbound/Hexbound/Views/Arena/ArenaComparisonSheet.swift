@@ -222,7 +222,7 @@ struct ArenaComparisonSheet: View {
                 ItemImageView(
                     imageKey: item.resolvedImageKey,
                     imageUrl: item.imageUrl,
-                    fallbackIcon: "📦"
+                    placeholderIcon: "shippingbox"
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
@@ -264,8 +264,8 @@ struct ArenaComparisonSheet: View {
         VStack(spacing: LayoutConstants.spaceXS) {
             HStack(spacing: LayoutConstants.spaceSM) {
                 // Class icon
-                Text(opponent.characterClass.icon)
-                    .font(.system(size: 32))
+                AssetPlaceholderView(systemIcon: "shield.fill")
+                    .frame(width: 32, height: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(opponent.characterClass.displayName)

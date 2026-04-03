@@ -26,7 +26,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.42,
         relativeY: 0.48,
         relativeSize: 0.24,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "bag.fill"
     ),
     CityBuilding(
@@ -37,7 +37,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.50,
         relativeY: 0.82,
         relativeSize: 0.24,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "star.circle.fill"
     ),
     CityBuilding(
@@ -48,7 +48,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.53,
         relativeY: 0.17,
         relativeSize: 0.22,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "medal.fill"
     ),
     CityBuilding(
@@ -59,7 +59,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.22,
         relativeY: 0.52,
         relativeSize: 0.22,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "hammer.fill"
     ),
     CityBuilding(
@@ -70,7 +70,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.65,
         relativeY: 0.56,
         relativeSize: 0.26,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "mug.fill"
     ),
     CityBuilding(
@@ -81,7 +81,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.71,
         relativeY: 0.27,
         relativeSize: 0.30,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "shield.lefthalf.filled"
     ),
     CityBuilding(
@@ -92,7 +92,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.88,
         relativeY: 0.50,
         relativeSize: 0.21,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "door.left.hand.open"
     ),
     CityBuilding(
@@ -103,7 +103,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.90,
         relativeY: 0.17,
         relativeSize: 0.32,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "trophy.fill",
         labelYOffset: -0.04
     ),
@@ -115,7 +115,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.12,
         relativeY: 0.38,
         relativeSize: 0.24,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "person.3.fill"
     ),
     CityBuilding(
@@ -126,7 +126,7 @@ let defaultCityBuildings: [CityBuilding] = [
         relativeX: 0.78,
         relativeY: 0.75,
         relativeSize: 0.24,
-        glowColor: Color.orange,
+        glowColor: DarkFantasyTheme.glowFire,
         fallbackIcon: "bag.circle.fill"
     ),
 ]

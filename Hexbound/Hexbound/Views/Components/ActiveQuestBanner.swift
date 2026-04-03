@@ -54,8 +54,8 @@ struct ActiveQuestBanner: View {
     private func questBanner(_ quest: Quest) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Icon
-            Text(quest.icon)
-                .font(.system(size: 22))
+            AssetPlaceholderView(systemIcon: "scroll.fill")
+                .frame(width: 22, height: 22)
 
             // Info
             VStack(alignment: .leading, spacing: 2) {

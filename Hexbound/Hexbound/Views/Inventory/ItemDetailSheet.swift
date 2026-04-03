@@ -165,7 +165,7 @@ struct ItemDetailSheet: View {
                 imageUrl: item.imageUrl,
                 systemIcon: item.consumableIcon,
                 systemIconColor: item.consumableIconColor,
-                fallbackIcon: item.itemType.icon
+                placeholderIcon: item.itemType.icon
             )
             .frame(width: 104, height: 104)
             .accessibilityLabel("Item icon for \(item.displayName)")

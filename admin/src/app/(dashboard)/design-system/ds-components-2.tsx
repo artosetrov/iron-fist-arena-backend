@@ -561,11 +561,11 @@ export function EventBannerPreviews() {
 
 export function CelebrationBannerPreviews() {
   const celebrations = [
-    { type: 'LevelUp', color: c.toast.levelUp, icon: '⬆️', title: 'LEVEL UP!', sub: 'You reached level 25' },
-    { type: 'Achievement', color: c.toast.achievement, icon: '🏆', title: 'ACHIEVEMENT UNLOCKED', sub: 'Arena Veteran' },
-    { type: 'RankUp', color: c.toast.rankUp, icon: '👑', title: 'RANK UP!', sub: 'Gold III → Platinum I' },
+    { type: 'LevelUp', color: c.toast.toastLevelUp, icon: '⬆️', title: 'LEVEL UP!', sub: 'You reached level 25' },
+    { type: 'Achievement', color: c.accent.gold, icon: '🏆', title: 'ACHIEVEMENT UNLOCKED', sub: 'Arena Veteran' },
+    { type: 'RankUp', color: c.toast.toastRankUp, icon: '👑', title: 'RANK UP!', sub: 'Gold III → Platinum I' },
     { type: 'Quest', color: c.accent.cyan, icon: '📜', title: 'QUEST COMPLETE', sub: 'Daily Warrior' },
-    { type: 'RareDrop', color: c.rarity.legendary, icon: '✨', title: 'LEGENDARY DROP!', sub: 'Excalibur obtained' },
+    { type: 'RareDrop', color: c.rarity.rarityLegendary, icon: '✨', title: 'LEGENDARY DROP!', sub: 'Excalibur obtained' },
   ]
 
   return (
@@ -670,26 +670,26 @@ export function ItemDetailSheetPreviews() {
   return (
     <div style={{
       background: c.background.bgSecondary,
-      border: `1px solid ${c.rarity.legendary}40`,
+      border: `1px solid ${c.rarity.rarityLegendary}40`,
       borderRadius: r.radiusLG, padding: s.spaceMD,
-      maxWidth: 220, boxShadow: `0 0 20px ${c.rarity.legendary}15`,
+      maxWidth: 220, boxShadow: `0 0 20px ${c.rarity.rarityLegendary}15`,
     }}>
       {/* Item image placeholder */}
       <div style={{
         height: 80, borderRadius: r.radiusMD,
         background: c.background.bgTertiary,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `inset 0 0 30px ${c.rarity.legendary}15`,
+        boxShadow: `inset 0 0 30px ${c.rarity.rarityLegendary}15`,
         marginBottom: s.spaceMS,
       }}>
-        <div style={{ width: 40, height: 40, borderRadius: 6, background: `${c.rarity.legendary}30` }} />
+        <div style={{ width: 40, height: 40, borderRadius: 6, background: `${c.rarity.rarityLegendary}30` }} />
       </div>
       {/* Name + rarity */}
-      <p style={{ color: c.rarity.legendary, fontFamily: '"Oswald", sans-serif', fontSize: 16 }}>Excalibur</p>
+      <p style={{ color: c.rarity.rarityLegendary, fontFamily: '"Oswald", sans-serif', fontSize: 16 }}>Excalibur</p>
       <span style={{
         display: 'inline-block', marginTop: 4,
-        color: c.rarity.legendary, fontFamily: '"Inter", sans-serif', fontSize: 10, fontWeight: 700,
-        background: `${c.rarity.legendary}15`, padding: '2px 8px', borderRadius: r.radiusXS,
+        color: c.rarity.rarityLegendary, fontFamily: '"Inter", sans-serif', fontSize: 10, fontWeight: 700,
+        background: `${c.rarity.rarityLegendary}15`, padding: '2px 8px', borderRadius: r.radiusXS,
         textTransform: 'uppercase', letterSpacing: 0.5,
       }}>Legendary</span>
       {/* Stats */}

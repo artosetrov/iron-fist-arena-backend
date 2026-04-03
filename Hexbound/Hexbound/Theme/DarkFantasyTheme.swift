@@ -2,77 +2,70 @@ import SwiftUI
 
 enum DarkFantasyTheme {
 
-    // MARK: - Background & Surface Colors (see docs/07_ui_ux/DESIGN_SYSTEM.md)
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  CORE PALETTE — unique hex values. Every color in the   ║
+    // ║  system is either defined here or aliases one of these. ║
+    // ╚══════════════════════════════════════════════════════════╝
+
+    // MARK: - Background & Surface Colors
 
     static let bgAbyss = Color(hex: 0x08080C)       // Deepest black — behind modals
     static let bgPrimary = Color(hex: 0x0D0D12)     // Main screen background
     static let bgSecondary = Color(hex: 0x1A1A2E)   // Panel backgrounds, cards
     static let bgTertiary = Color(hex: 0x16213E)    // Card interiors, form fields
     static let bgElevated = Color(hex: 0x1E2240)    // Active cards, selected items
+    static let bgDisabled = Color(hex: 0x333340)    // Disabled button background
     static let bgModal = Color.black.opacity(0.75)   // Modal overlay
-    static let bgBackdrop = Color.black.opacity(0.85) // Heavy backdrop for sheets/overlays
+    static let bgBackdrop = Color.black.opacity(0.85) // Heavy backdrop for sheets
     static let bgBackdropLight = Color.black.opacity(0.7) // Lighter backdrop for popups
-    static let bgScrim = Color.black.opacity(0.5)       // Semi-transparent scrim fill
-
-    // Legacy aliases (used in existing code)
-    static let bgDark = bgPrimary
-    static let bgCard = bgSecondary
+    static let bgScrim = Color.black.opacity(0.5)   // Semi-transparent scrim fill
 
     // MARK: - Gold Accent System
 
     static let gold = Color(hex: 0xD4A537)           // Primary CTA, gold buttons
-    static let goldBright = Color(hex: 0xFFD700)      // Highlighted text, important values
-    static let goldDim = Color(hex: 0x8B6914)         // Disabled gold, inactive
-    static let goldGlow = Color(hex: 0xF39C12).opacity(0.4) // Orange glow for shadows (unified)
-    static let glowOrange = Color(hex: 0xF39C12)         // Unified orange glow color
-
-    // Legacy aliases
-    static let goldLight = goldBright
+    static let goldBright = Color(hex: 0xFFD700)     // Highlighted text, important values
+    static let goldDim = Color(hex: 0x8B6914)        // Disabled gold, inactive
+    static let goldGlow = Color(hex: 0xF39C12).opacity(0.4) // Orange glow for shadows
 
     // MARK: - Feedback Colors
 
     static let danger = Color(hex: 0xE63946)          // Danger, defeat, HP critical
-    static let dangerGlow = Color(hex: 0xE63946).opacity(0.25)
-    static let success = Color(hex: 0x2ECC71)         // Victory, HP high
-    static let successGlow = Color(hex: 0x2ECC71).opacity(0.25)
+    static let dangerGlow = danger.opacity(0.25)
+    static let success = Color(hex: 0x2ECC71)         // Victory, HP high, heal
+    static let successGlow = success.opacity(0.25)
     static let info = Color(hex: 0x3498DB)            // Info, links, mana
     static let cyan = Color(hex: 0x00D4FF)            // Enchanted/premium accents
     static let purple = Color(hex: 0x9B59B6)          // XP, magic, epic
+    static let stamina = Color(hex: 0xE67E22)         // Orange stamina
 
-    // Legacy aliases — DEPRECATED: use canonical names instead
-    static let hpRed = danger
-    @available(*, deprecated, message: "Misleading name: was blood-red, not green. Use danger instead.")
-    static let hpGreen = Color(hex: 0xC41E3A)
-    static let hpBlood = Color(hex: 0xC41E3A)          // Blood-red HP text color
-    static let stamina = Color(hex: 0xE67E22)          // Orange stamina
-    @available(*, deprecated, message: "Use purple instead — xpBlue is misleading.")
-    static let xpBlue = purple
+    // Semantic aliases
     static let gems = cyan
+    static let healFlash = success
 
     // MARK: - Text Colors
 
     static let textPrimary = Color(hex: 0xF5F5F5)     // Main readable text (WCAG AAA)
-    static let textSecondary = Color(hex: 0xA0A0B0)    // Subtitles, labels (WCAG AA)
-    static let textTertiary = Color(hex: 0x6B6B80)     // Hints, placeholders
+    static let textSecondary = Color(hex: 0xA0A0B0)   // Subtitles, labels (WCAG AA)
+    static let textTertiary = Color(hex: 0x6B6B80)    // Hints, placeholders
+    static let textTertiaryAA = Color(hex: 0x8A8AA0)  // WCAG AA compliant tertiary (≥4.5:1)
     static let textDisabled = Color(hex: 0x555566)     // Disabled states
-    static let textGold = Color(hex: 0xFFD700)         // Currency, highlighted values
-    static let textOnGold = Color(hex: 0x1A1A2E)       // Dark text ON gold backgrounds
+    static let textGold = goldBright                   // Currency, highlighted values (= 0xFFD700)
+    static let textOnGold = Color(hex: 0x1A1A2E)      // Dark text ON gold backgrounds
     static let textDanger = Color(hex: 0xFF6B6B)       // Error messages
     static let textSuccess = Color(hex: 0x5DECA5)      // Positive changes, buffs
-
-    // Legacy alias
-    static let textMuted = textTertiary
+    static let textWarning = Color(hex: 0xFFA502)      // Warning/amber status text
+    static let textStatusGood = Color(hex: 0x7BED9F)   // "Battle Ready" status
+    static let textDimLabel = Color(hex: 0x4A4A6A)     // Dim labels (arena, loadout)
+    static let textBossDesc = Color(hex: 0x8A8AAA)     // Boss description text
+    static let textLocked = Color(hex: 0x3A3A5A)       // Locked button text
 
     // MARK: - Border & Frame Colors
 
     static let borderSubtle = Color(hex: 0x2A2A3E)    // Panel borders, dividers
     static let borderMedium = Color(hex: 0x3A3A50)    // Metallic highlight
     static let borderStrong = Color(hex: 0x4A4A60)    // Active element borders
-    static let borderGold = gold                        // Selected items, active tabs
+    static let borderGold = gold                       // Selected items, active tabs
     static let borderOrnament = Color(hex: 0xB8860B)   // Ornamental engravings
-
-    // Legacy alias
-    static let borderDefault = borderSubtle
 
     // MARK: - Rarity Colors
 
@@ -82,56 +75,29 @@ enum DarkFantasyTheme {
     static let rarityEpic = Color(hex: 0xA64DE6)
     static let rarityLegendary = Color(hex: 0xFFBF1A)
 
-    // Rarity Glows
-    static let rarityCommonGlow = Color(hex: 0x999999).opacity(0.13)
-    static let rarityUncommonGlow = Color(hex: 0x4DCC4D).opacity(0.19)
-    static let rarityRareGlow = Color(hex: 0x4D80FF).opacity(0.25)
-    static let rarityEpicGlow = Color(hex: 0xA64DE6).opacity(0.31)
-    static let rarityLegendaryGlow = Color(hex: 0xFFBF1A).opacity(0.38)
+    static let rarityCommonGlow = rarityCommon.opacity(0.13)
+    static let rarityUncommonGlow = rarityUncommon.opacity(0.19)
+    static let rarityRareGlow = rarityRare.opacity(0.25)
+    static let rarityEpicGlow = rarityEpic.opacity(0.31)
+    static let rarityLegendaryGlow = rarityLegendary.opacity(0.38)
 
     // MARK: - Stat Colors (Unified Gold Palette)
-    //
-    // All stats use gold shades for visual cohesion.
-    // Boosted stats (above base 5) render with statBoosted (bright gold).
-    // Base stats render with statBase (dim gold).
-    // Use statBarColor(value:base:) helper for automatic selection.
 
-    static let statBoosted = Color(hex: 0xFFD700)     // goldBright — for stats above base
-    static let statBase = Color(hex: 0x8B6914)         // goldDim — for base-level stats
-    static let statBarFill = Color(hex: 0xD4A537)      // gold — standard bar fill
+    static let statBoosted = goldBright                // Bright gold — stats above base (= 0xFFD700)
+    static let statBase = goldDim                      // Dim gold — base-level stats (= 0x8B6914)
+    static let statBarFill = gold                      // Standard bar fill (= 0xD4A537)
 
-    /// Returns bright gold for boosted stats, dim gold for base stats.
     static func statBarColor(value: Int, base: Int = 5) -> Color {
         value > base ? statBoosted : statBase
     }
 
-    /// Gradient for stat bar fill — brighter for higher values.
     static func statBarGradient(value: Int, base: Int = 5) -> LinearGradient {
         let color = value > base ? statBoosted : statBarFill
         return LinearGradient(
             colors: [color.opacity(0.7), color],
-            startPoint: .leading,
-            endPoint: .trailing
+            startPoint: .leading, endPoint: .trailing
         )
     }
-
-    // Legacy stat colors — DEPRECATED: use statBarColor(value:base:) instead
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statSTR = Color(hex: 0xE6594D)   // Crimson
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statAGI = Color(hex: 0x4DE666)   // Emerald
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statVIT = Color(hex: 0xE68080)   // Rose
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statEND = Color(hex: 0xB3B34D)   // Amber
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statINT = Color(hex: 0x6680FF)   // Sapphire
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statWIS = Color(hex: 0x9966E6)   // Violet
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statLUK = Color(hex: 0xE6D94D)   // Gold
-    @available(*, deprecated, message: "Use statBarColor(value:base:) or statBoosted/statBase instead")
-    static let statCHA = Color(hex: 0xE699CC)   // Blush
 
     // MARK: - Class Colors
 
@@ -151,41 +117,36 @@ enum DarkFantasyTheme {
 
     // MARK: - Hub Character Card Colors
 
-    static let xpRing = Color(hex: 0x5DADE2)           // XP ring on avatar
-    static let xpRingTrack = Color(hex: 0x2A2A4A)      // XP ring background track
-    static let textWarning = Color(hex: 0xFFA502)       // Warning/amber status text
-    static let textStatusGood = Color(hex: 0x7BED9F)    // "Battle Ready" status
-    static let bgCardGradientStart = Color(hex: 0x1C1C30)  // Character card gradient start
-    static let bgCardGradientEnd = Color(hex: 0x2A2A40)    // Character card gradient end
-    static let bgCardBorder = Color(hex: 0x3A3A55)         // Character card border
-    static let bgDarkPanel = Color(hex: 0x141428)          // Dark panel bg (arena header)
-    static let bgDarkPanelBorder = Color(hex: 0x252545)    // Dark panel border
-    static let textDimLabel = Color(hex: 0x4A4A6A)         // Dim labels (arena, loadout)
+    static let xpRing = Color(hex: 0x5DADE2)
+    static let xpRingTrack = Color(hex: 0x2A2A4A)
+    static let bgCardGradientStart = Color(hex: 0x1C1C30)
+    static let bgCardGradientEnd = Color(hex: 0x2A2A40)
+    static let bgCardBorder = Color(hex: 0x3A3A55)
+    static let bgDarkPanel = Color(hex: 0x141428)
+    static let bgDarkPanelBorder = Color(hex: 0x252545)
 
     static let bgCardGradient = LinearGradient(
         colors: [bgCardGradientStart, bgCardGradientEnd],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
+        startPoint: .topLeading, endPoint: .bottomTrailing
     )
 
     static let bgCardGradientVertical = LinearGradient(
         colors: [bgCardGradientStart, bgCardGradientEnd],
-        startPoint: .top,
-        endPoint: .bottom
+        startPoint: .top, endPoint: .bottom
     )
 
     // MARK: - HP Bar Gradients (Canonical: green → amber → red)
 
     static let hpFullGradient = LinearGradient(
-        colors: [Color(hex: 0x2ECC71), Color(hex: 0x55EFC4)],
+        colors: [success, Color(hex: 0x55EFC4)],
         startPoint: .leading, endPoint: .trailing
     )
     static let hpGoodGradient = LinearGradient(
-        colors: [Color(hex: 0x2ECC71), Color(hex: 0x7BED9F)],
+        colors: [success, textStatusGood],
         startPoint: .leading, endPoint: .trailing
     )
     static let hpMediumGradient = LinearGradient(
-        colors: [Color(hex: 0xE67E22), Color(hex: 0xF1C40F)],
+        colors: [stamina, Color(hex: 0xF1C40F)],
         startPoint: .leading, endPoint: .trailing
     )
     static let hpCriticalGradient = LinearGradient(
@@ -193,7 +154,6 @@ enum DarkFantasyTheme {
         startPoint: .leading, endPoint: .trailing
     )
 
-    /// Canonical HP gradient — use this everywhere instead of blood-red variants
     static func canonicalHpGradient(percentage: Double) -> LinearGradient {
         if percentage >= 1.0 { return hpFullGradient }
         if percentage >= 0.75 { return hpGoodGradient }
@@ -201,11 +161,11 @@ enum DarkFantasyTheme {
         return hpCriticalGradient
     }
 
-    // MARK: - Durability Colors
+    // MARK: - Durability Colors (aliases to feedback)
 
-    static let durabilityGood = Color(hex: 0x2ECC71)    // >60%
-    static let durabilityMedium = Color(hex: 0xE67E22)   // 30-60%
-    static let durabilityLow = Color(hex: 0xE63946)      // <30%
+    static let durabilityGood = success          // >60%  (= 0x2ECC71)
+    static let durabilityMedium = stamina         // 30-60% (= 0xE67E22)
+    static let durabilityLow = danger             // <30%  (= 0xE63946)
 
     static func durabilityColor(fraction: Double) -> Color {
         if fraction > 0.6 { return durabilityGood }
@@ -213,56 +173,42 @@ enum DarkFantasyTheme {
         return durabilityLow
     }
 
-    // MARK: - Button Disabled Background
+    // MARK: - Stance Zone Colors
 
-    static let bgDisabled = Color(hex: 0x333340)
-
-    // MARK: - Refresh / Stamina Button Gradient
-
-    static let staminaButtonGradient = LinearGradient(
-        colors: [Color(hex: 0xD35400), Color(hex: 0xF39C12)],
-        startPoint: .leading,
-        endPoint: .trailing
-    )
-
-    // MARK: - Arena Rank Display Color
-
-    static let arenaRankGold = Color(hex: 0xF39C12)
-
-    // MARK: - Heal Flash
-
-    static let healFlash = Color(hex: 0x2ECC71)
+    static let zoneHead = Color(hex: 0xE66666)
+    static let zoneChest = Color(hex: 0x6699E6)
+    static let zoneLegs = Color(hex: 0x66E666)
 
     // MARK: - Dungeon Colors
 
-    static let bgDungeonDeep = Color(hex: 0x0C0C18)       // Darkest dungeon background
-    static let bgDungeonPurple = Color(hex: 0x120E24)      // Deep purple dungeon overlay
-    static let bgDungeonCard = Color(hex: 0x1A1A30)        // Dungeon node/card background
-    static let bossBorderPurple = Color(hex: 0x6C3483)     // Boss card border
-    static let lootGold = Color(hex: 0xF1C40F)             // Loot/reward gold highlight
-    static let textBossDesc = Color(hex: 0x8A8AAA)         // Boss description text
-    static let lockedGray = Color(hex: 0x2A2A45)           // Locked node fill
-    static let textLocked = Color(hex: 0x3A3A5A)           // Locked button text
-    static let defeatedGreen = Color(hex: 0x1A9C54)        // Defeated boss border
+    static let bgDungeonDeep = Color(hex: 0x0C0C18)
+    static let bgDungeonPurple = Color(hex: 0x120E24)
+    static let bgDungeonCard = Color(hex: 0x1A1A30)
+    static let bossBorderPurple = Color(hex: 0x6C3483)
+    static let lootGold = Color(hex: 0xF1C40F)
+    static let lockedGray = Color(hex: 0x2A2A45)
+    static let defeatedGreen = Color(hex: 0x1A9C54)
 
     static let bgDungeonGradient = LinearGradient(
         colors: [bgDungeonDeep, bgDungeonPurple, bgDungeonDeep],
         startPoint: .top, endPoint: .bottom
     )
 
-    // Boss card gradient
     static let bossCardGradient = LinearGradient(
         colors: [Color(hex: 0x1A1230), bgDungeonPurple, bgDungeonDeep],
         startPoint: .top, endPoint: .bottom
     )
 
-    // Dungeon HP bar (blood-red, intentionally different from canonical green→red)
     static let dungeonHpGradient = LinearGradient(
-        colors: [Color(hex: 0xC0392B), Color(hex: 0xE74C3C), Color(hex: 0xFF6B6B)],
+        colors: [Color(hex: 0xC0392B), Color(hex: 0xE74C3C), textDanger],
         startPoint: .leading, endPoint: .trailing
     )
 
     // MARK: - Arena Colors
+
+    static let arenaRankGold = Color(hex: 0xF39C12) // Also used as difficultyMedium
+    static let arenaCardInnerGlow = Color(hex: 0x2A2A50)
+    static let arenaShimmerColor = Color.white.opacity(0.07)
 
     static let bgArenaSheet = LinearGradient(
         colors: [Color(hex: 0x1A1A35), Color(hex: 0x111128)],
@@ -274,167 +220,184 @@ enum DarkFantasyTheme {
         startPoint: .top, endPoint: .bottom
     )
 
-    // Fight button gradient (same colors as staminaButtonGradient)
-    static let fightButtonGradient = staminaButtonGradient
-
-    // Arena Premium Card
     static let bgArenaCardPremium = LinearGradient(
         colors: [Color(hex: 0x1A1A38), Color(hex: 0x12122A), Color(hex: 0x0E0E20)],
         startPoint: .top, endPoint: .bottom
     )
-    static let arenaCardInnerGlow = Color(hex: 0x2A2A50)  // Subtle inner lighting
-    static let arenaShimmerColor = Color.white.opacity(0.07) // Moving shine
 
     // Difficulty colors — semantic aliases
-    static let difficultyEasy = success               // 0x2ECC71
-    static let difficultyMedium = arenaRankGold        // 0xF39C12
-    static let difficultyHard = Color(hex: 0xE74C3C)  // Slightly different from danger
+    static let difficultyEasy = success
+    static let difficultyMedium = arenaRankGold
+    static let difficultyHard = Color(hex: 0xE74C3C)
 
     // MARK: - Premium / Shop Colors
 
-    static let premiumPink = Color(hex: 0xE5A0FF)         // Premium icon, text, border
-    static let bgPremium = Color(hex: 0x2A1040)            // Premium button background
-    static let bgPremiumDeep = Color(hex: 0x1A0A2E)        // Premium skin cell background
-    static let borderPremium = Color(hex: 0x352050)         // Unselected premium border
+    static let premiumPink = Color(hex: 0xE5A0FF)
+    static let bgPremium = Color(hex: 0x2A1040)
+    static let bgPremiumDeep = Color(hex: 0x1A0A2E)
+    static let borderPremium = Color(hex: 0x352050)
 
     // MARK: - VFX Glow Colors
 
-    static let vfxPoisonGlow = Color(hex: 0x7CFC00)       // Poison glow (brighter green)
-    static let vfxBurnGlow = Color(hex: 0xFF6B35)          // Burn glow (orange-red)
-    static let vfxStunGlow = Color(hex: 0xFFF8DC)          // Stun glow (cornsilk/cream)
+    static let vfxPoisonGlow = Color(hex: 0x7CFC00)
+    static let vfxBurnGlow = Color(hex: 0xFF6B35)
+    static let vfxStunGlow = Color(hex: 0xFFF8DC)
 
     // MARK: - Toast Indicator Colors
 
-    static let toastAchievement = goldBright                     // Gold dot for achievements
-    static let toastLevelUp     = Color(hex: 0x66FF66)           // Bright green for level-up
-    static let toastRankUp      = Color(hex: 0x9966FF)           // Bright purple for rank-up
-    static let toastQuest       = cyan                           // Cyan dot for quest completion
-    static let toastReward      = stamina                        // Orange dot for rewards
-    static let toastInfo        = Color(hex: 0xCCCCDA)           // Neutral light for info
-    static let toastError       = textDanger                     // Red dot for errors
+    static let toastAchievement = goldBright
+    static let toastLevelUp     = Color(hex: 0x66FF66)
+    static let toastRankUp      = Color(hex: 0x9966FF)
+    static let toastQuest       = cyan
+    static let toastReward      = stamina
+    static let toastInfo        = Color(hex: 0xCCCCDA)
+    static let toastError       = textDanger
 
-    // MARK: - Unified Hero Widget Pill Colors
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  PILL COLOR FACTORY — replaces 20 individual tokens     ║
+    // ║  Usage: DarkFantasyTheme.pill(.heal, .bg)               ║
+    // ╚══════════════════════════════════════════════════════════╝
 
-    /// WCAG AA compliant tertiary text (≥4.5:1 on dark bg). Use in widget + pills.
-    static let textTertiaryAA = Color(hex: 0x8A8AA0)
+    // MARK: - Pill System
 
-    // Pill: Heal (green, for health potion action)
-    static let pillHealBg = Color(hex: 0x2ECC71, opacity: 0.12)
-    static let pillHealBorder = Color(hex: 0x2ECC71, opacity: 0.25)
-    static let pillHealText = textStatusGood
+    enum PillVariant { case heal, urgent, energy, stat, warn, pvp, streak, bonus, error, offline }
+    enum PillLayer { case bg, border, text }
 
-    // Pill: Urgent Heal (red, critical HP + potion available)
-    static let pillUrgentBg = Color(hex: 0xE63946, opacity: 0.12)
-    static let pillUrgentBorder = Color(hex: 0xE63946, opacity: 0.30)
-    static let pillUrgentText = textDanger
+    /// Pill backgrounds, borders, and text — all derived from 4 base feedback colors.
+    static func pill(_ variant: PillVariant, _ layer: PillLayer) -> Color {
+        switch (variant, layer) {
+        // Heal (green)
+        case (.heal, .bg):     return success.opacity(0.12)
+        case (.heal, .border): return success.opacity(0.25)
+        case (.heal, .text):   return textStatusGood
+        // Urgent (red, critical HP)
+        case (.urgent, .bg):     return danger.opacity(0.12)
+        case (.urgent, .border): return danger.opacity(0.30)
+        case (.urgent, .text):   return textDanger
+        // Energy (orange, stamina)
+        case (.energy, .bg):     return stamina.opacity(0.12)
+        case (.energy, .border): return stamina.opacity(0.25)
+        case (.energy, .text):   return stamina
+        // Stat Points (gold)
+        case (.stat, .bg):     return gold.opacity(0.12)
+        case (.stat, .border): return gold.opacity(0.30)
+        case (.stat, .text):   return goldBright
+        // Warning (red, broken gear)
+        case (.warn, .bg):     return danger.opacity(0.10)
+        case (.warn, .border): return danger.opacity(0.20)
+        case (.warn, .text):   return textDanger
+        // PvP (gold tint)
+        case (.pvp, .bg):     return gold.opacity(0.08)
+        case (.pvp, .border): return gold.opacity(0.15)
+        case (.pvp, .text):   return goldBright
+        // Win Streak (red tint)
+        case (.streak, .bg):     return danger.opacity(0.08)
+        case (.streak, .border): return danger.opacity(0.15)
+        case (.streak, .text):   return textDanger
+        // Bonus (green tint, first win)
+        case (.bonus, .bg):     return success.opacity(0.10)
+        case (.bonus, .border): return success.opacity(0.20)
+        case (.bonus, .text):   return textSuccess
+        // Error (red, API failure)
+        case (.error, .bg):     return danger.opacity(0.10)
+        case (.error, .border): return danger.opacity(0.20)
+        case (.error, .text):   return textDanger
+        // Offline (neutral)
+        case (.offline, .bg):     return Color.white.opacity(0.04)
+        case (.offline, .border): return Color.white.opacity(0.08)
+        case (.offline, .text):   return textSecondary
+        }
+    }
 
-    // Pill: Energy (orange, stamina potion action)
-    static let pillEnergyBg = Color(hex: 0xE67E22, opacity: 0.12)
-    static let pillEnergyBorder = Color(hex: 0xE67E22, opacity: 0.25)
-    static let pillEnergyText = stamina
+    // Legacy pill tokens — kept for backward compat during migration
+    static let pillHealBg = pill(.heal, .bg)
+    static let pillHealBorder = pill(.heal, .border)
+    static let pillHealText = pill(.heal, .text)
+    static let pillUrgentBg = pill(.urgent, .bg)
+    static let pillUrgentBorder = pill(.urgent, .border)
+    static let pillUrgentText = pill(.urgent, .text)
+    static let pillEnergyBg = pill(.energy, .bg)
+    static let pillEnergyBorder = pill(.energy, .border)
+    static let pillEnergyText = pill(.energy, .text)
+    static let pillStatBg = pill(.stat, .bg)
+    static let pillStatBorder = pill(.stat, .border)
+    static let pillStatText = pill(.stat, .text)
+    static let pillWarnBg = pill(.warn, .bg)
+    static let pillWarnBorder = pill(.warn, .border)
+    static let pillWarnText = pill(.warn, .text)
+    static let pillPvpBg = pill(.pvp, .bg)
+    static let pillPvpBorder = pill(.pvp, .border)
+    static let pillStreakBg = pill(.streak, .bg)
+    static let pillStreakBorder = pill(.streak, .border)
+    static let pillBonusBg = pill(.bonus, .bg)
+    static let pillBonusBorder = pill(.bonus, .border)
+    static let pillErrorBg = pill(.error, .bg)
+    static let pillErrorBorder = pill(.error, .border)
+    static let pillOfflineBg = pill(.offline, .bg)
+    static let pillOfflineBorder = pill(.offline, .border)
+    static let pillOfflineText = pill(.offline, .text)
 
-    // Pill: Stat Points (gold, level up → allocate)
-    static let pillStatBg = Color(hex: 0xD4A537, opacity: 0.12)
-    static let pillStatBorder = Color(hex: 0xD4A537, opacity: 0.30)
-    static let pillStatText = goldBright
-
-    // Pill: Warning (red, broken gear / critical / no potions)
-    static let pillWarnBg = Color(hex: 0xE63946, opacity: 0.10)
-    static let pillWarnBorder = Color(hex: 0xE63946, opacity: 0.20)
-    static let pillWarnText = textDanger
-
-    // Pill: PvP (gold tint, arena rating)
-    static let pillPvpBg = Color(hex: 0xD4A537, opacity: 0.08)
-    static let pillPvpBorder = Color(hex: 0xD4A537, opacity: 0.15)
-
-    // Pill: Win Streak (red tint)
-    static let pillStreakBg = Color(hex: 0xE63946, opacity: 0.08)
-    static let pillStreakBorder = Color(hex: 0xE63946, opacity: 0.15)
-
-    // Pill: Bonus (green tint, first win)
-    static let pillBonusBg = Color(hex: 0x2ECC71, opacity: 0.10)
-    static let pillBonusBorder = Color(hex: 0x2ECC71, opacity: 0.20)
-
-    // Pill: Error (red, API failure)
-    static let pillErrorBg = Color(hex: 0xE63946, opacity: 0.10)
-    static let pillErrorBorder = Color(hex: 0xE63946, opacity: 0.20)
-
-    // Pill: Offline (neutral, cached data indicator)
-    static let pillOfflineBg = Color.white.opacity(0.04)
-    static let pillOfflineBorder = Color.white.opacity(0.08)
-    static let pillOfflineText = textSecondary
-
-    // XP bar golden variant (for level-up imminent state)
+    // XP bar golden variant
     static let xpGoldenGradient = LinearGradient(
         colors: [gold, goldBright],
         startPoint: .leading, endPoint: .trailing
     )
 
     // MARK: - Button Chrome Colors
-    //
-    // Used by ButtonStyles.swift for danger, orange (fight/stamina),
-    // and purple (premium) button styles. Never hardcode Color(hex:) in ButtonStyles.
 
-    // Danger button chrome (dark crimson)
-    static let btnDangerFill = Color(hex: 0x8B1A22)         // Danger button base fill
-    static let btnDangerStroke = Color(hex: 0x5A0A10)       // Danger button outer stroke
-    static let btnDangerAccent = Color(hex: 0xFF6B6B)       // Danger button corner diamonds
+    // Danger button chrome
+    static let btnDangerFill = Color(hex: 0x8B1A22)
+    static let btnDangerStroke = Color(hex: 0x5A0A10)
+    static let btnDangerAccent = textDanger             // = 0xFF6B6B (was duplicate)
 
     // Orange button chrome (fight, stamina)
-    static let btnOrangePrimary = Color(hex: 0xFF6600)      // Orange buttons primary — same as glowFire
-    static let btnOrangeBright = Color(hex: 0xFF8833)        // Orange bright accent — same as glowEmber
-    static let btnOrangeGlow = Color(hex: 0xFF5000)          // Orange shadow glow
-    static let btnOrangeShine = Color(hex: 0xFF7832)         // Orange shimmer highlight
-    static let btnOrangeStroke = Color(hex: 0x4A1500)        // Orange button dark stroke
-    static let btnOrangeDark = Color(hex: 0x8B1A00)          // Orange gradient dark end
-    static let btnOrangeMid = Color(hex: 0xC44200)           // Orange gradient mid
-    static let btnOrangeBase = Color(hex: 0xD35400)          // Orange gradient base
+    static let btnOrangePrimary = Color(hex: 0xFF6600)
+    static let btnOrangeBright = Color(hex: 0xFF8833)
+    static let btnOrangeGlow = Color(hex: 0xFF5000)
+    static let btnOrangeShine = Color(hex: 0xFF7832)
+    static let btnOrangeStroke = Color(hex: 0x4A1500)
+    static let btnOrangeDark = Color(hex: 0x8B1A00)
+    static let btnOrangeMid = Color(hex: 0xC44200)
+    static let btnOrangeBase = Color(hex: 0xD35400)
 
     // Purple button chrome (premium)
-    static let btnPurpleDark = Color(hex: 0x7B2D8E)         // Purple gradient dark end
-    static let btnPurpleBright = Color(hex: 0xC77DDF)        // Purple gradient bright end
-    static let btnPurpleStroke = Color(hex: 0x6C3483)        // Purple button stroke — same as bossBorderPurple
+    static let btnPurpleDark = Color(hex: 0x7B2D8E)
+    static let btnPurpleBright = Color(hex: 0xC77DDF)
+    static let btnPurpleStroke = bossBorderPurple       // = 0x6C3483 (was duplicate)
 
     // MARK: - Misc UI Colors
 
-    static let upgradeBlue = Color(hex: 0x60A5FA)          // Max upgrade level highlight
-
-    // MARK: - Stance Zone Colors
-
-    static let zoneHead = Color(hex: 0xE66666)
-    static let zoneChest = Color(hex: 0x6699E6)
-    static let zoneLegs = Color(hex: 0x66E666)
+    static let upgradeBlue = Color(hex: 0x60A5FA)
 
     // MARK: - City Map Sky & Atmosphere
 
-    static let skyNight = Color(hex: 0x0A0A12)             // Night sky background
-    static let moonGlowOuter1 = Color(hex: 0xE8E0D0)       // Moon halo — warm outer
-    static let moonGlowOuter2 = Color(hex: 0xCCBBAA)       // Moon halo — mid ring
-    static let moonGlowOuter3 = Color(hex: 0x8888AA)       // Moon halo — cool fringe
-    static let moonGlowInner1 = Color(hex: 0xFFF8E8)       // Moon core — bright
-    static let moonGlowInner2 = Color(hex: 0xDDCCAA)       // Moon core — warm falloff
-    static let fogLight = Color(hex: 0x2A2A3A)             // Fog strip — lightest
-    static let fogMid = Color(hex: 0x1A1A2A)               // Fog strip — mid
-    static let fogDark = Color(hex: 0x0A0A15)              // Fog strip — darkest
+    static let skyNight = Color(hex: 0x0A0A12)
+    static let moonGlowOuter1 = Color(hex: 0xE8E0D0)
+    static let moonGlowOuter2 = Color(hex: 0xCCBBAA)
+    static let moonGlowOuter3 = Color(hex: 0x8888AA)
+    static let moonGlowInner1 = Color(hex: 0xFFF8E8)
+    static let moonGlowInner2 = Color(hex: 0xDDCCAA)
+    static let fogLight = Color(hex: 0x2A2A3A)
+    static let fogMid = Color(hex: 0x1A1A2A)
+    static let fogDark = Color(hex: 0x0A0A15)
 
     // MARK: - City Map Glow Effects
 
-    static let glowFire = Color(hex: 0xFF6600)            // Firepit / torch glow
-    static let glowWarm = Color(hex: 0xFFAA33)            // Warm ambient light
-    static let glowEmber = Color(hex: 0xFF8833)            // Ember glow
+    static let glowFire = btnOrangePrimary              // = 0xFF6600 (was duplicate)
+    static let glowWarm = Color(hex: 0xFFAA33)
+    static let glowEmber = btnOrangeBright               // = 0xFF8833 (was duplicate)
 
-    // MARK: - Dungeon Building Glow Colors
-
-    static let glowArena = Color(hex: 0xE68C33)           // Arena building
-    static let glowMystic = Color(hex: 0x8040B0)          // Mystic / magic building
-    static let glowForge = Color(hex: 0xFF6626)           // Forge / smithing
-    static let glowNature = Color(hex: 0x4CAF50)          // Nature / healing
-    static let glowVolcanic = Color(hex: 0xE65100)        // Volcanic / fire
-    static let glowIce = Color(hex: 0x42A5F5)             // Ice / water
-    static let glowTreasure = Color(hex: 0xFFD54F)        // Treasure / gold
-    static let glowShadow = Color(hex: 0x424242)          // Shadow / dark
-    static let glowStone = Color(hex: 0x78909C)           // Stone / neutral
-    static let glowBlood = Color(hex: 0xB71C1C)           // Blood / boss
+    // Dungeon Building Glows
+    static let glowArena = classWarrior                  // = 0xE68C33 (was duplicate)
+    static let glowMystic = Color(hex: 0x8040B0)
+    static let glowForge = Color(hex: 0xFF6626)
+    static let glowNature = Color(hex: 0x4CAF50)
+    static let glowVolcanic = Color(hex: 0xE65100)
+    static let glowIce = Color(hex: 0x42A5F5)
+    static let glowTreasure = Color(hex: 0xFFD54F)
+    static let glowShadow = Color(hex: 0x424242)
+    static let glowStone = Color(hex: 0x78909C)
+    static let glowBlood = Color(hex: 0xB71C1C)
 
     // MARK: - Daily Login Gradients
 
@@ -443,13 +406,24 @@ enum DarkFantasyTheme {
     static let dailyGradientTopGreen = Color(hex: 0x1A3A1A)
     static let dailyGradientBottomGreen = Color(hex: 0x0A2A0A)
 
+    // MARK: - Stamin Button Gradient
+
+    static let staminaButtonGradient = LinearGradient(
+        colors: [btnOrangeBase, arenaRankGold],
+        startPoint: .leading, endPoint: .trailing
+    )
+
+    static let fightButtonGradient = staminaButtonGradient
+
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  FONTS                                                   ║
+    // ╚══════════════════════════════════════════════════════════╝
+
     // MARK: - Fonts (AAA Typography Scale)
 
     // Oswald — titles, hero names, cinematic text, section headers, button labels
-    static let title = Font.custom("Oswald-Regular", size: 28)
     static let cinematicTitle = Font.custom("Oswald-Regular", size: 40)
-
-    // Oswald — section headers, button labels, card titles
+    static let title = Font.custom("Oswald-Regular", size: 28)
     static let section = Font.custom("Oswald-Regular", size: 22)
     static let cardTitle = Font.custom("Oswald-Regular", size: 18)
     static let buttonLabel = Font.custom("Oswald-Regular", size: 18)
@@ -467,64 +441,50 @@ enum DarkFantasyTheme {
 
     // MARK: - Opacity Scale
 
-    static let opacityMicro: Double = 0.04     // Very subtle backgrounds (pill offline)
-    static let opacitySoft: Double = 0.08      // Subtle glows, highlights, shimmer
-    static let opacityLight: Double = 0.12     // Pill backgrounds, radial glow
-    static let opacityMild: Double = 0.15      // Border accents, pill borders
-    static let opacityMedium: Double = 0.25    // Rarity glows, moderate accents
-    static let opacityStrong: Double = 0.40    // Glow shadows, accent fills
-    static let opacityHeavy: Double = 0.60     // Strong overlays, fog
-    static let opacityDense: Double = 0.75     // Modal backgrounds
-    static let opacityOpaque: Double = 0.85    // Heavy backdrops
+    static let opacityMicro: Double = 0.04
+    static let opacitySoft: Double = 0.08
+    static let opacityLight: Double = 0.12
+    static let opacityMild: Double = 0.15
+    static let opacityMedium: Double = 0.25
+    static let opacityStrong: Double = 0.40
+    static let opacityHeavy: Double = 0.60
+    static let opacityDense: Double = 0.75
+    static let opacityOpaque: Double = 0.85
+
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  GRADIENTS                                               ║
+    // ╚══════════════════════════════════════════════════════════╝
 
     // MARK: - Gradients
 
-    // Gold button gradient
     static let goldGradient = LinearGradient(
-        colors: [gold, Color(hex: 0xB8860B)],
-        startPoint: .top,
-        endPoint: .bottom
+        colors: [gold, borderOrnament],
+        startPoint: .top, endPoint: .bottom
     )
 
-    // HP bar gradients — DEPRECATED: use canonicalHpGradient(percentage:) instead
-    // These blood-red variants reduce information density. Kept for backward compatibility.
-    @available(*, deprecated, message: "Use canonicalHpGradient(percentage:) instead")
-    static let hpHighGradient = LinearGradient(
-        colors: [Color(hex: 0xC41E3A), Color(hex: 0x9B1B30)],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let hpMidGradient = LinearGradient(
-        colors: [Color(hex: 0xA01830), Color(hex: 0x801525)],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let hpLowGradient = LinearGradient(
-        colors: [Color(hex: 0x80101E), Color(hex: 0x600C18)],
-        startPoint: .leading, endPoint: .trailing
-    )
-
-    // XP bar gradient (purple)
     static let xpGradient = LinearGradient(
-        colors: [Color(hex: 0x9B59B6), Color(hex: 0x8E44AD)],
+        colors: [purple, Color(hex: 0x8E44AD)],
         startPoint: .leading, endPoint: .trailing
     )
 
-    // Stamina bar gradient (orange)
     static let staminaGradient = LinearGradient(
-        colors: [Color(hex: 0xE67E22), Color(hex: 0xD35400)],
+        colors: [stamina, btnOrangeBase],
         startPoint: .leading, endPoint: .trailing
     )
 
-    // Progress bar gradient (gold)
     static let progressGradient = LinearGradient(
-        colors: [Color(hex: 0xD4A537), Color(hex: 0xB8860B)],
+        colors: [gold, borderOrnament],
         startPoint: .leading, endPoint: .trailing
     )
 
-    // Background gradient
     static let bgGradient = LinearGradient(
         colors: [bgPrimary, Color(hex: 0x0D0D18)],
         startPoint: .top, endPoint: .bottom
     )
+
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  HELPERS                                                 ║
+    // ╚══════════════════════════════════════════════════════════╝
 
     // MARK: - Helpers
 
@@ -568,15 +528,32 @@ enum DarkFantasyTheme {
         }
     }
 
-    @available(*, deprecated, message: "Use canonicalHpGradient(percentage:) instead")
-    static func hpGradient(percentage: Double) -> LinearGradient {
-        canonicalHpGradient(percentage: percentage)
-    }
+    static func statColor(for stat: String) -> Color { statBarFill }
 
-    /// Unified stat color — always gold. Use statBarColor(value:base:) for boosted/base distinction.
-    static func statColor(for stat: String) -> Color {
-        statBarFill
-    }
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  LEGACY ALIASES — backward compat, will be removed      ║
+    // ╚══════════════════════════════════════════════════════════╝
+
+    // MARK: - Legacy Aliases
+
+    static let bgDark = bgPrimary
+    static let bgCard = bgSecondary
+    static let goldLight = goldBright
+    static let textMuted = textTertiary
+    static let borderDefault = borderSubtle
+    static let hpRed = danger
+    static let hpBlood = Color(hex: 0xC41E3A)
+    static let glowOrange = Color(hex: 0xF39C12)
+
+    // Deprecated HP gradients — use canonicalHpGradient(percentage:) instead
+    static let hpMidGradient = LinearGradient(
+        colors: [Color(hex: 0xA01830), Color(hex: 0x801525)],
+        startPoint: .leading, endPoint: .trailing
+    )
+    static let hpLowGradient = LinearGradient(
+        colors: [Color(hex: 0x80101E), Color(hex: 0x600C18)],
+        startPoint: .leading, endPoint: .trailing
+    )
 }
 
 // MARK: - Color hex initializer
@@ -592,7 +569,7 @@ extension Color {
     }
 }
 
-// MARK: - Color convenience accessors (enables .bgAbyss / .textPrimary shorthand)
+// MARK: - Color convenience accessors
 
 extension Color {
     static var bgAbyss: Color { DarkFantasyTheme.bgAbyss }

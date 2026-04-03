@@ -92,8 +92,8 @@ struct BPRewardNodeView: View {
                 .scaledToFit()
                 .frame(width: size, height: size)
         } else {
-            Text(reward.icon)
-                .font(.system(size: size * 0.875))
+            AssetPlaceholderView(systemIcon: "gift.fill")
+                .frame(width: size * 0.875, height: size * 0.875)
         }
     }
 

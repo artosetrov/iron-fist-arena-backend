@@ -101,8 +101,8 @@ struct DungeonInfoSheet: View {
                     endRadius: 180
                 )
 
-                Text(dungeon.icon)
-                    .font(.system(size: 88))
+                AssetPlaceholderView(systemIcon: "map.fill")
+                    .frame(width: 88, height: 88)
                     .opacity(0.30)
                     .offset(y: -8)
             }
@@ -271,8 +271,8 @@ struct DungeonInfoSheet: View {
                         .scaledToFit()
                         .frame(width: 38, height: 38)
                 } else {
-                    Text(loot.icon)
-                        .font(.system(size: 26))
+                    AssetPlaceholderView(systemIcon: "cube.fill")
+                        .frame(width: 26, height: 26)
                 }
             }
             .overlay(

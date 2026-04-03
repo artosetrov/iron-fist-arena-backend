@@ -441,8 +441,8 @@ struct DailyLoginDetailView: View {
                 .scaledToFit()
                 .frame(width: size, height: size)
         } else {
-            Text(reward.icon)
-                .font(.system(size: size))
+            AssetPlaceholderView(systemIcon: "gift.fill")
+                .frame(width: size, height: size)
         }
     }
 }

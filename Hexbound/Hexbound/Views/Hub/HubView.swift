@@ -738,7 +738,9 @@ struct BattlePassCard: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
-            Text("🎖️").font(.system(size: 30))
+            Image(systemName: "medal.fill")
+                .font(.system(size: 24, design: .rounded))
+                .foregroundStyle(DarkFantasyTheme.gold)
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("BATTLE PASS")
@@ -1211,8 +1213,8 @@ struct QuestRewardWidget: View {
     private func singleQuestCard(_ quest: Quest) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Quest icon
-            Text(quest.icon)
-                .font(.system(size: 24))
+            AssetPlaceholderView(systemIcon: "scroll.fill")
+                .frame(width: 24, height: 24)
 
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
@@ -1815,8 +1817,8 @@ struct NavTile: View {
                         .scaledToFit()
                         .frame(width: 28, height: 28)
                 } else {
-                    Text(icon)
-                        .font(.system(size: 24))
+                    AssetPlaceholderView(systemIcon: "scroll.fill")
+                        .frame(width: 24, height: 24)
                 }
                 Text(label)
             }

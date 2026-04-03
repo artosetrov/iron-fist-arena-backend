@@ -25,7 +25,7 @@ enum ItemCardContext {
 /// ```
 /// ItemCardView(item: myItem, context: .inventory(equippedItem: equipped)) { handleTap() }
 /// ItemCardView(shopItem: shopItem, context: .shop(...)) { handleBuy() }
-/// ItemCardView(rarity: .epic, imageKey: "sword-01", fallbackIcon: "⚔️", context: .loot) { }
+/// ItemCardView(rarity: .epic, imageKey: "sword-01", fallbackIcon: "shippingbox", context: .loot) { }
 /// ```
 struct ItemCardView: View {
 
@@ -256,7 +256,7 @@ struct ItemCardView: View {
                     imageUrl: imageUrl,
                     systemIcon: systemIcon,
                     systemIconColor: systemIconColor,
-                    fallbackIcon: fallbackIcon
+                    placeholderIcon: fallbackIcon
                 )
                 .autoLoad()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

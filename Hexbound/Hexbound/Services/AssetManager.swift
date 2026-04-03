@@ -13,7 +13,7 @@ import SwiftUI
 /// Usage:
 /// ```swift
 /// // In SwiftUI view:
-/// CachedAssetImage(key: "chest_chain_mail", url: item.imageUrl, fallback: "⚔️")
+/// CachedAssetImage(key: "chest_chain_mail", url: item.imageUrl, systemIcon: "shieldshape.fill")
 ///
 /// // Programmatic:
 /// if let image = AssetManager.shared.image(forKey: "chest_chain_mail") { ... }

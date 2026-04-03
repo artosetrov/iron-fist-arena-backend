@@ -81,8 +81,7 @@ struct DungeonBossCard: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Text(boss.emoji)
-                    .font(.system(size: 60))
+                AssetPlaceholderView(systemIcon: "flame.fill")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }

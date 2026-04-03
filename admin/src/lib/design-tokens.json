@@ -6,65 +6,188 @@
       "bgSecondary": "#1A1A2E",
       "bgTertiary": "#16213E",
       "bgElevated": "#1E2240",
-      "bgDarkPanel": "#141428"
+      "bgDisabled": "#333340",
+      "bgModal": "rgba(0,0,0,0.75)",
+      "bgBackdrop": "rgba(0,0,0,0.85)",
+      "bgBackdropLight": "rgba(0,0,0,0.70)",
+      "bgScrim": "rgba(0,0,0,0.50)",
+      "bgDarkPanel": "#141428",
+      "bgDarkPanelBorder": "#252545",
+      "bgCardGradientStart": "#1C1C30",
+      "bgCardGradientEnd": "#2A2A40",
+      "bgCardBorder": "#3A3A55",
+      "bgDungeonDeep": "#0C0C18",
+      "bgDungeonPurple": "#120E24",
+      "bgDungeonCard": "#1A1A30",
+      "bgPremium": "#2A1040",
+      "bgPremiumDeep": "#1A0A2E"
     },
-    "text": {
-      "textPrimary": "#F5F5F5",
-      "textSecondary": "#A0A0B0",
-      "textTertiary": "#6B6B80",
-      "textDisabled": "#555566",
-      "textOnGold": "#1A1A2E"
-    },
-    "accent": {
+    "gold": {
       "gold": "#D4A537",
       "goldBright": "#FFD700",
       "goldDim": "#8B6914",
+      "goldGlow": "rgba(243,156,18,0.40)"
+    },
+    "feedback": {
       "danger": "#E63946",
+      "dangerGlow": "rgba(230,57,70,0.25)",
       "success": "#2ECC71",
+      "successGlow": "rgba(46,204,113,0.25)",
       "info": "#3498DB",
       "cyan": "#00D4FF",
       "purple": "#9B59B6",
       "stamina": "#E67E22"
     },
+    "text": {
+      "textPrimary": "#F5F5F5",
+      "textSecondary": "#A0A0B0",
+      "textTertiary": "#6B6B80",
+      "textTertiaryAA": "#8A8AA0",
+      "textDisabled": "#555566",
+      "textOnGold": "#1A1A2E",
+      "textDanger": "#FF6B6B",
+      "textSuccess": "#5DECA5",
+      "textWarning": "#FFA502",
+      "textStatusGood": "#7BED9F",
+      "textDimLabel": "#4A4A6A",
+      "textBossDesc": "#8A8AAA",
+      "textLocked": "#3A3A5A"
+    },
     "border": {
       "borderSubtle": "#2A2A3E",
       "borderMedium": "#3A3A50",
       "borderStrong": "#4A4A60",
-      "borderGold": "#D4A537",
-      "borderOrnament": "#B8860B"
+      "borderOrnament": "#B8860B",
+      "borderPremium": "#352050"
     },
     "rarity": {
-      "common": "#999999",
-      "uncommon": "#4DCC4D",
-      "rare": "#4D80FF",
-      "epic": "#A64DE6",
-      "legendary": "#FFBF1A"
+      "rarityCommon": "#999999",
+      "rarityUncommon": "#4DCC4D",
+      "rarityRare": "#4D80FF",
+      "rarityEpic": "#A64DE6",
+      "rarityLegendary": "#FFBF1A",
+      "rarityCommonGlow": "rgba(153,153,153,0.13)",
+      "rarityUncommonGlow": "rgba(77,204,77,0.19)",
+      "rarityRareGlow": "rgba(77,128,255,0.25)",
+      "rarityEpicGlow": "rgba(166,77,230,0.31)",
+      "rarityLegendaryGlow": "rgba(255,191,26,0.38)"
     },
-    "toast": {
-      "achievement": "#FFD700",
-      "levelUp": "#66FF66",
-      "rankUp": "#9966FF",
-      "quest": "#00D4FF",
-      "reward": "#E67E22",
-      "info": "#CCCCDA",
-      "error": "#FF6B6B"
+    "classes": {
+      "classWarrior": "#E68C33",
+      "classRogue": "#4DD958",
+      "classMage": "#6680FF",
+      "classTank": "#9999B2"
+    },
+    "ranks": {
+      "rankBronze": "#B38040",
+      "rankSilver": "#BFBFCC",
+      "rankGold": "#FFD600",
+      "rankPlatinum": "#66CCCC",
+      "rankDiamond": "#99CCFF",
+      "rankGrandmaster": "#FF4D4D"
+    },
+    "stats": {
+      "_comment": "statBoosted=goldBright, statBase=goldDim, statBarFill=gold (aliases)",
+      "statBoosted": "#FFD700",
+      "statBase": "#8B6914",
+      "statBarFill": "#D4A537"
+    },
+    "dungeon": {
+      "bossBorderPurple": "#6C3483",
+      "lootGold": "#F1C40F",
+      "lockedGray": "#2A2A45",
+      "defeatedGreen": "#1A9C54"
+    },
+    "arena": {
+      "arenaRankGold": "#F39C12",
+      "arenaCardInnerGlow": "#2A2A50",
+      "arenaShimmerColor": "rgba(255,255,255,0.07)",
+      "difficultyHard": "#E74C3C"
+    },
+    "button": {
+      "btnDangerFill": "#8B1A22",
+      "btnDangerStroke": "#5A0A10",
+      "btnOrangePrimary": "#FF6600",
+      "btnOrangeBright": "#FF8833",
+      "btnOrangeGlow": "#FF5000",
+      "btnOrangeShine": "#FF7832",
+      "btnOrangeStroke": "#4A1500",
+      "btnOrangeDark": "#8B1A00",
+      "btnOrangeMid": "#C44200",
+      "btnOrangeBase": "#D35400",
+      "btnPurpleDark": "#7B2D8E",
+      "btnPurpleBright": "#C77DDF"
     },
     "stance": {
-      "head": "#E66666",
-      "chest": "#6699E6",
-      "legs": "#66E666"
+      "zoneHead": "#E66666",
+      "zoneChest": "#6699E6",
+      "zoneLegs": "#66E666"
+    },
+    "hub": {
+      "xpRing": "#5DADE2",
+      "xpRingTrack": "#2A2A4A"
+    },
+    "premium": {
+      "premiumPink": "#E5A0FF"
+    },
+    "vfx": {
+      "vfxPoisonGlow": "#7CFC00",
+      "vfxBurnGlow": "#FF6B35",
+      "vfxStunGlow": "#FFF8DC"
+    },
+    "toast": {
+      "toastLevelUp": "#66FF66",
+      "toastRankUp": "#9966FF",
+      "toastInfo": "#CCCCDA"
+    },
+    "atmosphere": {
+      "skyNight": "#0A0A12",
+      "moonGlowOuter1": "#E8E0D0",
+      "moonGlowOuter2": "#CCBBAA",
+      "moonGlowOuter3": "#8888AA",
+      "moonGlowInner1": "#FFF8E8",
+      "moonGlowInner2": "#DDCCAA",
+      "fogLight": "#2A2A3A",
+      "fogMid": "#1A1A2A",
+      "fogDark": "#0A0A15"
+    },
+    "glow": {
+      "glowWarm": "#FFAA33",
+      "glowMystic": "#8040B0",
+      "glowForge": "#FF6626",
+      "glowNature": "#4CAF50",
+      "glowVolcanic": "#E65100",
+      "glowIce": "#42A5F5",
+      "glowTreasure": "#FFD54F",
+      "glowShadow": "#424242",
+      "glowStone": "#78909C",
+      "glowBlood": "#B71C1C"
+    },
+    "daily": {
+      "dailyGradientTopGold": "#3D2E0A",
+      "dailyGradientBottomGold": "#2A1F05",
+      "dailyGradientTopGreen": "#1A3A1A",
+      "dailyGradientBottomGreen": "#0A2A0A"
+    },
+    "special": {
+      "upgradeBlue": "#60A5FA"
+    },
+    "legacy": {
+      "_comment": "Aliases kept for backward compat — will be removed",
+      "hpBlood": "#C41E3A",
+      "glowOrange": "#F39C12"
     }
   },
   "typography": {
-    "cinematicTitle": { "family": "Oswald", "size": 40, "weight": 400 },
-    "title": { "family": "Oswald", "size": 28, "weight": 400 },
-    "section": { "family": "Oswald", "size": 22, "weight": 400 },
-    "cardTitle": { "family": "Oswald", "size": 18, "weight": 400 },
-    "buttonLabel": { "family": "Oswald", "size": 18, "weight": 400 },
-    "body": { "family": "Inter", "size": 16, "weight": 400 },
-    "uiLabel": { "family": "Inter", "size": 14, "weight": 400 },
-    "caption": { "family": "Inter", "size": 12, "weight": 400 },
-    "badge": { "family": "Inter", "size": 11, "weight": 700 }
+    "cinematicTitle": { "fontFamily": "Oswald", "fontSize": 40, "fontWeight": "regular" },
+    "title": { "fontFamily": "Oswald", "fontSize": 28, "fontWeight": "regular" },
+    "section": { "fontFamily": "Oswald", "fontSize": 22, "fontWeight": "regular" },
+    "cardTitle": { "fontFamily": "Oswald", "fontSize": 18, "fontWeight": "regular" },
+    "buttonLabel": { "fontFamily": "Oswald", "fontSize": 18, "fontWeight": "regular" },
+    "body": { "fontFamily": "Inter", "fontSize": 16, "fontWeight": "regular" },
+    "uiLabel": { "fontFamily": "Inter", "fontSize": 14, "fontWeight": "regular" },
+    "caption": { "fontFamily": "Inter", "fontSize": 12, "fontWeight": "regular" },
+    "badge": { "fontFamily": "Inter", "fontSize": 11, "fontWeight": "bold" }
   },
   "spacing": {
     "space2XS": 2,
@@ -85,26 +208,147 @@
     "radius2XL": 22
   },
   "opacity": {
-    "micro": 0.04,
-    "soft": 0.08,
-    "light": 0.12,
-    "mild": 0.15,
-    "medium": 0.25,
-    "strong": 0.40,
-    "heavy": 0.60,
-    "dense": 0.75,
-    "opaque": 0.85
+    "opacityMicro": 0.04,
+    "opacitySoft": 0.08,
+    "opacityLight": 0.12,
+    "opacityMild": 0.15,
+    "opacityMedium": 0.25,
+    "opacityStrong": 0.40,
+    "opacityHeavy": 0.60,
+    "opacityDense": 0.75,
+    "opacityOpaque": 0.85
   },
   "sizing": {
-    "buttonHeightLG": 56,
-    "buttonHeightMD": 48,
-    "buttonHeightSM": 36,
-    "touchMin": 48,
-    "iconXS": 12,
-    "iconSM": 16,
-    "iconMD": 20,
-    "iconLG": 24,
-    "iconXL": 32,
-    "icon2XL": 48
+    "touchTargets": {
+      "touchMin": 48,
+      "touchComfortable": 56
+    },
+    "icons": {
+      "iconXS": 12,
+      "iconSM": 16,
+      "iconMD": 20,
+      "iconLG": 24,
+      "iconXL": 32,
+      "icon2XL": 48
+    },
+    "typography": {
+      "textHero": 64,
+      "textCelebration": 44,
+      "textCinematic": 40,
+      "textScreen": 28,
+      "textSection": 22,
+      "textCard": 18,
+      "textButton": 18,
+      "textBody": 16,
+      "textLabel": 16,
+      "textCaption": 16,
+      "textBadge": 16
+    },
+    "screen": {
+      "screenPadding": 16,
+      "screenTopGap": 16,
+      "safeAreaTop": 59,
+      "safeAreaBottom": 34,
+      "sectionGap": 16
+    },
+    "buttons": {
+      "buttonHeightLG": 56,
+      "buttonHeightMD": 48,
+      "buttonHeightSM": 36,
+      "buttonPaddingH": 24,
+      "buttonRadius": 8,
+      "buttonRadiusLG": 14
+    },
+    "cards": {
+      "cardPadding": 16,
+      "cardRadius": 12,
+      "panelRadius": 8,
+      "modalRadius": 16
+    },
+    "inputs": {
+      "inputHeight": 52,
+      "inputRadius": 8
+    },
+    "navigation": {
+      "bottomNavHeight": 64,
+      "navButtonHeight": 72,
+      "tabSwitcherPaddingV": 8
+    },
+    "grids": {
+      "inventoryCols": 4,
+      "inventoryGap": 8,
+      "shopCols": 4,
+      "shopGap": 10,
+      "equipmentCols": 3,
+      "equipmentGap": 12,
+      "classGridCols": 2,
+      "classGridGap": 12,
+      "navGridCols": 2,
+      "navGridGap": 12
+    },
+    "hero": {
+      "heroCardRadius": 12,
+      "heroCardPadding": 12,
+      "heroSlotGap": 8,
+      "heroSlotRadius": 12,
+      "heroBarHeight": 28,
+      "heroBarXpHeight": 24,
+      "heroBarRadius": 4,
+      "heroBarFont": 13,
+      "heroPortraitNameFont": 16
+    },
+    "arena": {
+      "arenaCardRadius": 16,
+      "arenaCardPadding": 14,
+      "arenaCardGap": 16,
+      "arenaNameFont": 16,
+      "arenaDifficultyFont": 11,
+      "arenaGlowRadius": 12
+    },
+    "pill": {
+      "pillHeight": 44,
+      "pillRadius": 12,
+      "pillPaddingH": 16,
+      "pillIconSize": 16,
+      "pillGap": 8,
+      "pillFont": 14,
+      "pillCountFont": 12,
+      "pillSpacing": 8
+    },
+    "widget": {
+      "widgetPadding": 12,
+      "widgetPaddingH": 16,
+      "widgetRadius": 12,
+      "widgetMinHeight": 80,
+      "widgetGap": 12,
+      "widgetRowGap": 4,
+      "widgetAvatarFullSize": 72,
+      "widgetXpRingInset": 4,
+      "widgetLevelBadgeFont": 11,
+      "widgetBarHeight": 26,
+      "widgetBarRadius": 6,
+      "widgetBarFont": 13,
+      "widgetAvatarRadius": 8,
+      "widgetXpRingWidth": 3
+    },
+    "npc": {
+      "npcAvatarSize": 256,
+      "npcAvatarOffset": -80,
+      "npcBarHeight": 90,
+      "npcBarRadius": 12,
+      "npcBarPaddingH": 16,
+      "npcBarPaddingV": 12,
+      "npcOuterPadding": 16,
+      "merchantAvatarSize": 256,
+      "merchantMiniSize": 56,
+      "merchantBubbleRadius": 12
+    },
+    "misc": {
+      "avatarInnerSize": 64,
+      "bannerPadding": 14,
+      "packageCardMinHeight": 96,
+      "packageAmountFont": 22,
+      "packageBestValueAmountFont": 26
+    }
   }
 }

@@ -128,7 +128,7 @@ struct NameStepView: View {
                 CachedAssetImage(
                     key: vm.selectedSkin?.resolvedImageKey,
                     url: vm.selectedSkin?.imageUrl,
-                    fallback: "🧑",
+                    systemIcon: "person.fill",
                     contentMode: .fill
                 )
                 .frame(width: width, height: height)

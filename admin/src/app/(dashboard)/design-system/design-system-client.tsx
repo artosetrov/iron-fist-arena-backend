@@ -79,13 +79,51 @@ export function DesignSystemClient() {
 
 /* ─── Colors Tab ────────────────────────────────────────────────── */
 
+function formatGroupName(name: string): string {
+  // Convert camelCase to Title Case
+  // e.g. "bgDungeonDeep" → "BG Dungeon Deep"
+  // "hp" → "HP", "vfx" → "VFX", "xp" → "XP"
+
+  const acronyms: { [key: string]: string } = {
+    hp: 'HP',
+    xp: 'XP',
+    vfx: 'VFX',
+    pvp: 'PvP',
+    bg: 'BG',
+    btn: 'Button',
+    npc: 'NPC',
+  }
+
+  // Check if entire name is an acronym
+  if (acronyms[name]) return acronyms[name]
+
+  // Split camelCase and replace known prefixes
+  let result = name.replace(/([A-Z])/g, ' $1').trim()
+
+  // Replace common prefixes with acronyms
+  result = result.replace(/^Bg /, 'BG ')
+  result = result.replace(/^Btn /, 'Button ')
+  result = result.replace(/^Hp /, 'HP ')
+  result = result.replace(/^Xp /, 'XP ')
+  result = result.replace(/^Vfx /, 'VFX ')
+  result = result.replace(/^Pvp /, 'PvP ')
+  result = result.replace(/^Npc /, 'NPC ')
+
+  // Capitalize first letter of each word
+  result = result.replace(/\b\w/g, (char) => char.toUpperCase())
+
+  return result
+}
+
 function ColorsTab() {
   const colorGroups = tokens.colors
   return (
     <div className="space-y-8">
       {Object.entries(colorGroups).map(([groupName, group]) => (
         <div key={groupName}>
-          <h3 className="text-lg font-semibold mb-3 capitalize">{groupName}</h3>
+          <h3 className="text-lg font-semibold mb-3 text-[#F5F5F5]">
+            {formatGroupName(groupName)}
+          </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {Object.entries(group).map(([name, hex]) => (
               <ColorSwatch key={name} name={name} hex={hex} />
@@ -132,14 +170,14 @@ function TypographyTab() {
           <div className="w-40 shrink-0">
             <p className="text-xs text-[#D4A537] font-mono">.{token}</p>
             <p className="text-[10px] text-[#6B6B80]">
-              {def.family} {def.size}px {def.weight === 700 ? 'Bold' : ''}
+              {def.fontFamily} {def.fontSize}px {def.fontWeight === 'bold' ? 'Bold' : ''}
             </p>
           </div>
           <p
             style={{
-              fontFamily: def.family === 'Oswald' ? '"Oswald", sans-serif' : '"Inter", sans-serif',
-              fontSize: `${def.size}px`,
-              fontWeight: def.weight,
+              fontFamily: def.fontFamily === 'Oswald' ? '"Oswald", sans-serif' : '"Inter", sans-serif',
+              fontSize: `${def.fontSize}px`,
+              fontWeight: def.fontWeight === 'bold' ? 700 : 400,
               color: '#F5F5F5',
             }}
           >

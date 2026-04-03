@@ -8,7 +8,20 @@
 
 import tokens from '@/lib/design-tokens.json'
 
-const c = tokens.colors
+// Compatibility alias: old code used c.accent.* — map to real token groups
+const accent = {
+  gold: tokens.colors.gold.gold,
+  goldBright: tokens.colors.gold.goldBright,
+  goldDim: tokens.colors.gold.goldDim,
+  goldGlow: tokens.colors.gold.goldGlow,
+  danger: tokens.colors.feedback.danger,
+  success: tokens.colors.feedback.success,
+  info: tokens.colors.feedback.info,
+  purple: tokens.colors.feedback.purple,
+  cyan: tokens.colors.feedback.cyan,
+  stamina: tokens.colors.stamina.stamina,
+}
+const c = { ...tokens.colors, accent }
 const t = tokens.typography
 const s = tokens.spacing
 const r = tokens.radius
@@ -35,7 +48,7 @@ function DSButton({ variant, label, disabled }: { variant: keyof typeof buttonSt
         borderRadius: r.radiusMD,
         padding: `${s.spaceMS}px ${s.spaceLG}px`,
         fontFamily: '"Oswald", sans-serif',
-        fontSize: t.buttonLabel.size,
+        fontSize: t.buttonLabel.fontSize,
         letterSpacing: 1,
         textAlign: 'center',
         opacity: disabled ? 0.5 : 1,
@@ -77,11 +90,11 @@ const cardVariants = [
 ]
 
 const rarityCards = [
-  { name: 'Common', color: c.rarity.common },
-  { name: 'Uncommon', color: c.rarity.uncommon },
-  { name: 'Rare', color: c.rarity.rare },
-  { name: 'Epic', color: c.rarity.epic },
-  { name: 'Legendary', color: c.rarity.legendary },
+  { name: 'Common', color: c.rarity.rarityCommon },
+  { name: 'Uncommon', color: c.rarity.rarityUncommon },
+  { name: 'Rare', color: c.rarity.rarityRare },
+  { name: 'Epic', color: c.rarity.rarityEpic },
+  { name: 'Legendary', color: c.rarity.rarityLegendary },
 ]
 
 export function CardPreviews() {
@@ -237,13 +250,13 @@ export function DividerPreviews() {
 // ─── Toast Previews ──────────────────────────────────────────────
 
 const toastTypes = [
-  { type: 'Achievement', color: c.toast.achievement, icon: '🏆' },
-  { type: 'Level Up', color: c.toast.levelUp, icon: '⬆️' },
-  { type: 'Rank Up', color: c.toast.rankUp, icon: '👑' },
-  { type: 'Quest', color: c.toast.quest, icon: '📜' },
-  { type: 'Reward', color: c.toast.reward, icon: '🎁' },
-  { type: 'Info', color: c.toast.info, icon: 'ℹ️' },
-  { type: 'Error', color: c.toast.error, icon: '❌' },
+  { type: 'Achievement', color: c.accent.gold, icon: '🏆' },
+  { type: 'Level Up', color: c.toast.toastLevelUp, icon: '⬆️' },
+  { type: 'Rank Up', color: c.toast.toastRankUp, icon: '👑' },
+  { type: 'Quest', color: c.accent.cyan, icon: '📜' },
+  { type: 'Reward', color: c.accent.goldBright, icon: '🎁' },
+  { type: 'Info', color: c.toast.toastInfo, icon: 'ℹ️' },
+  { type: 'Error', color: c.accent.danger, icon: '❌' },
 ]
 
 export function ToastPreviews() {

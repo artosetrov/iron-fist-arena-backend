@@ -388,8 +388,9 @@ struct PvPStatsWidget: View {
                 Text("\(abs)")
                     .font(DarkFantasyTheme.section(size: compact ? 12 : LayoutConstants.textLabel))
                 if isHot {
-                    Text("🔥")
-                        .font(.system(size: compact ? 8 : 10))
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: compact ? 8 : 10, design: .rounded))
+                        .foregroundStyle(DarkFantasyTheme.danger)
                 }
             }
             .foregroundStyle(color)
