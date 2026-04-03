@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hexbound — Fortune Wheel v2 (2x)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg-abyss: #08080C;
+    --bg-primary: #0D0D12;
+    --bg-secondary: #1A1A2E;
+    --bg-tertiary: #16213E;
+    --bg-elevated: #1E2240;
+    --gold: #D4A537;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B6914;
+    --danger: #E63946;
+    --success: #2ECC71;
+    --info: #3498DB;
+    --purple: #9B59B6;
+    --cyan: #00D4FF;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6B6B80;
+    --text-on-gold: #1A1A2E;
+    --border-subtle: #2A2A3E;
+    --border-medium: #3A3A50;
+    --border-ornament: #B8860B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 200px;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 720px;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* === Header === */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 4px;
+    width: 100%;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .header-balance {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    color: var(--gold-bright);
+  }
+
+  /* === Divider === */
+  .ornament-divider {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 8px 0;
+  }
+  .divider-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border-medium), transparent); }
+  .divider-diamond { width: 6px; height: 6px; background: var(--gold-dim); transform: rotate(45deg); }
+
+  /* === Wheel — 2X SIZE (680px) === */
+  .wheel-container {
+    position: relative;
+    width: 680px;
+    height: 680px;
+    margin: 8px auto 16px;
+  }
+  .wheel-glow {
+    position: absolute;
+    top: -48px; left: -48px; right: -48px; bottom: -48px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,165,55,0.15) 0%, rgba(212,165,55,0.05) 40%, transparent 70%);
+    pointer-events: none;
+  }
+  .wheel-spin-container {
+    position: absolute;
+    top: 16px; left: 16px; right: 16px; bottom: 16px;
+    border-radius: 50%;
+    transition: transform 4s cubic-bezier(0.2, 0.8, 0.2, 1.0);
+  }
+  .wheel-canvas {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+  }
+  .wheel-ring {
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border-radius: 50%;
+    border: 8px solid transparent;
+    background-image: conic-gradient(from 0deg, var(--gold-bright), var(--gold), var(--gold-dim), var(--gold), var(--gold-bright), var(--gold), var(--gold-dim), var(--gold), var(--gold-bright));
+    background-origin: border-box;
+    background-clip: border-box;
+    pointer-events: none;
+    z-index: 2;
+    mask: radial-gradient(transparent calc(100% - 9px), black calc(100% - 9px));
+    -webkit-mask: radial-gradient(transparent calc(100% - 9px), black calc(100% - 9px));
+  }
+  .pointer {
+    position: absolute;
+    top: -12px; left: 50%; transform: translateX(-50%);
+    z-index: 20;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
+  }
+  .pointer-arrow {
+    width: 0; height: 0;
+    border-left: 24px solid transparent;
+    border-right: 24px solid transparent;
+    border-top: 56px solid var(--gold);
+    position: relative;
+  }
+  .pointer-arrow::after {
+    content: '';
+    position: absolute;
+    top: -56px; left: -16px;
+    width: 0; height: 0;
+    border-left: 16px solid transparent;
+    border-right: 16px solid transparent;
+    border-top: 42px solid var(--gold-bright);
+  }
+
+  .wheel-center {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 112px; height: 112px; z-index: 10;
+  }
+  .center-outer {
+    width: 112px; height: 112px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--bg-elevated), var(--bg-abyss));
+    border: 5px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 40px rgba(212,165,55,0.2), inset 0 0 24px rgba(0,0,0,0.5);
+  }
+  .center-inner-ring {
+    position: absolute; width: 92px; height: 92px;
+    border-radius: 50%; border: 2px solid rgba(255,215,0,0.3);
+  }
+  .center-icon { font-size: 40px; filter: drop-shadow(0 0 12px rgba(155,89,182,0.5)); }
+
+  /* === Payout Table === */
+  .payout-section {
+    padding: 0 16px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 24px;
+  }
+  .payout-row { display: flex; gap: 8px; margin-top: 8px; }
+  .payout-card {
+    flex: 1;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 10px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  .payout-card.legendary { border-color: var(--gold-dim); }
+  .payout-card.epic { border-color: var(--purple); }
+  .payout-card.rare { border-color: var(--info); }
+  .payout-card.uncommon { border-color: var(--success); }
+  .payout-card .rarity-glow {
+    position: absolute; top: 0; left: 0; right: 0; height: 40px;
+    pointer-events: none; opacity: 0.15;
+  }
+  .payout-card.legendary .rarity-glow { background: linear-gradient(to bottom, var(--gold), transparent); }
+  .payout-card.epic .rarity-glow { background: linear-gradient(to bottom, var(--purple), transparent); }
+  .payout-card.rare .rarity-glow { background: linear-gradient(to bottom, var(--info), transparent); }
+  .payout-card.uncommon .rarity-glow { background: linear-gradient(to bottom, var(--success), transparent); }
+  .payout-icon { font-size: 28px; position: relative; z-index: 1; }
+  .payout-name {
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--text-primary); text-align: center; position: relative; z-index: 1;
+  }
+  .payout-chance {
+    font-family: 'Inter', sans-serif; font-size: 10px;
+    color: var(--text-tertiary); position: relative; z-index: 1;
+  }
+
+  /* === Sticky Bottom === */
+  .sticky-bottom {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: linear-gradient(to top, var(--bg-abyss) 60%, transparent);
+    padding: 32px 16px 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .spin-cost {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Inter', sans-serif; font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .spin-cost .amount {
+    color: var(--gold-bright);
+    font-weight: 600;
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+  }
+  .spin-btn {
+    width: 100%; max-width: 380px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-bright), var(--gold));
+    border: 2px solid var(--gold-bright);
+    border-radius: 12px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-on-gold);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 24px rgba(212,165,55,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .spin-btn:hover {
+    box-shadow: 0 0 36px rgba(212,165,55,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .spin-btn:active { transform: scale(0.98); }
+  .spin-btn .shimmer {
+    position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    animation: shimmer 3s infinite;
+  }
+  @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+
+  .spins-remaining {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* === Win Modal === */
+  .modal-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal-content {
+    background: var(--bg-secondary);
+    border: 2px solid var(--gold);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    position: relative;
+    animation: modalIn 0.4s ease;
+  }
+  @keyframes modalIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px; font-weight: 700;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .modal-prize-icon { font-size: 64px; margin-bottom: 12px; }
+  .modal-prize-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px; color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .modal-prize-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+  .modal-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    border: 1px solid var(--gold-bright);
+    border-radius: 10px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px; font-weight: 600;
+    color: var(--text-on-gold);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 720px) {
+    .wheel-container { width: 92vw; height: 92vw; }
+  }
+  @media (max-width: 380px) {
+    .wheel-container { width: 95vw; height: 95vw; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <button class="back-btn">&#8249;</button>
+    <div class="header-title">Fortune Wheel</div>
+    <div class="header-balance">&#x1F4B0; 12,450</div>
+  </div>
+
+  <div class="ornament-divider">
+    <div class="divider-line"></div>
+    <div class="divider-diamond"></div>
+    <div class="divider-diamond" style="width:4px;height:4px;background:var(--border-medium)"></div>
+    <div class="divider-diamond"></div>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- Wheel -->
+  <div class="wheel-container">
+    <div class="wheel-glow"></div>
+    <div class="wheel-spin-container" id="wheelSpin">
+      <canvas class="wheel-canvas" id="wheelCanvas"></canvas>
+    </div>
+    <div class="wheel-ring"></div>
+    <div class="pointer">
+      <div class="pointer-arrow"></div>
+    </div>
+    <div class="wheel-center">
+      <div class="center-outer">
+        <div class="center-inner-ring"></div>
+        <div class="center-icon">&#x1F52E;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payout Table -->
+  <div class="payout-section">
+    <div class="ornament-divider">
+      <div class="divider-line"></div>
+      <div class="divider-diamond"></div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="payout-row">
+      <div class="payout-card legendary">
+        <div class="rarity-glow"></div>
+        <div class="payout-icon">&#x2694;&#xFE0F;</div>
+        <div class="payout-name">Legendary Weapon</div>
+        <div class="payout-chance">2%</div>
+      </div>
+      <div class="payout-card epic">
+        <div class="rarity-glow"></div>
+        <div class="payout-icon">&#x1F6E1;&#xFE0F;</div>
+        <div class="payout-name">Epic Armor</div>
+        <div class="payout-chance">5%</div>
+      </div>
+      <div class="payout-card rare">
+        <div class="rarity-glow"></div>
+        <div class="payout-icon">&#x1F48E;</div>
+        <div class="payout-name">Rare Gems</div>
+        <div class="payout-chance">10%</div>
+      </div>
+    </div>
+    <div class="payout-row">
+      <div class="payout-card uncommon">
+        <div class="rarity-glow"></div>
+        <div class="payout-icon">&#x1F9EA;</div>
+        <div class="payout-name">Potions x5</div>
+        <div class="payout-chance">18%</div>
+      </div>
+      <div class="payout-card uncommon">
+        <div class="rarity-glow"></div>
+        <div class="payout-icon">&#x1F4B0;</div>
+        <div class="payout-name">Gold x500</div>
+        <div class="payout-chance">25%</div>
+      </div>
+      <div class="payout-card" style="border-color: var(--border-medium);">
+        <div class="payout-icon">&#x1F4DC;</div>
+        <div class="payout-name">Scroll x3</div>
+        <div class="payout-chance">40%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sticky Bottom -->
+<div class="sticky-bottom">
+  <div class="spin-cost">Cost: <span class="amount">&#x1F4B0; 100</span></div>
+  <button class="spin-btn" id="spinBtn" onclick="spinWheel()">
+    <span class="shimmer"></span>
+    Spin the Wheel
+  </button>
+  <div class="spins-remaining">3 free spins remaining</div>
+</div>
+
+<!-- Win Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-content">
+    <div class="modal-title" id="modalTitle">You Won!</div>
+    <div class="modal-prize-icon" id="modalIcon"></div>
+    <div class="modal-prize-name" id="modalName"></div>
+    <div class="modal-prize-desc" id="modalDesc"></div>
+    <button class="modal-btn" onclick="closeModal()">Claim Reward</button>
+  </div>
+</div>
+
+<script>
+  const segments = [
+    { label: 'Legendary',   emoji: '\u2694\uFE0F', color: '#3D2200', accent: '#D4A537' },
+    { label: 'Gold x500',   emoji: '\uD83D\uDCB0', color: '#1A2E1A', accent: '#2ECC71' },
+    { label: 'Epic Armor',  emoji: '\uD83D\uDEE1\uFE0F', color: '#2A1540', accent: '#9B59B6' },
+    { label: 'Scroll x3',   emoji: '\uD83D\uDCDC', color: '#1A1A2E', accent: '#6B6B80' },
+    { label: 'Rare Gems',   emoji: '\uD83D\uDC8E', color: '#0D2540', accent: '#3498DB' },
+    { label: 'Potions x5',  emoji: '\uD83E\uDDEA', color: '#1A2E1A', accent: '#2ECC71' },
+    { label: 'Legendary',   emoji: '\u2694\uFE0F', color: '#3D2200', accent: '#D4A537' },
+    { label: 'Gold x500',   emoji: '\uD83D\uDCB0', color: '#1A2E1A', accent: '#2ECC71' },
+    { label: 'Epic Armor',  emoji: '\uD83D\uDEE1\uFE0F', color: '#2A1540', accent: '#9B59B6' },
+    { label: 'Scroll x3',   emoji: '\uD83D\uDCDC', color: '#1A1A2E', accent: '#6B6B80' },
+    { label: 'Rare Gems',   emoji: '\uD83D\uDC8E', color: '#0D2540', accent: '#3498DB' },
+    { label: 'Potions x5',  emoji: '\uD83E\uDDEA', color: '#1A2E1A', accent: '#2ECC71' },
+  ];
+
+  const prizes = [
+    { icon: '\u2694\uFE0F', name: 'Legendary Weapon', desc: 'A mighty blade of ancient power', title: 'LEGENDARY!' },
+    { icon: '\uD83D\uDCB0', name: 'Gold x500', desc: '500 gold coins added to your treasury', title: 'You Won!' },
+    { icon: '\uD83D\uDEE1\uFE0F', name: 'Epic Armor', desc: 'Forged in the fires of the abyss', title: 'EPIC!' },
+    { icon: '\uD83D\uDCDC', name: 'Scroll x3', desc: '3 enchantment scrolls', title: 'You Won!' },
+    { icon: '\uD83D\uDC8E', name: 'Rare Gems', desc: 'Precious gems from the deep mines', title: 'RARE!' },
+    { icon: '\uD83E\uDDEA', name: 'Potions x5', desc: '5 healing potions', title: 'You Won!' },
+  ];
+
+  const canvas = document.getElementById('wheelCanvas');
+  const ctx = canvas.getContext('2d');
+  let spinning = false;
+  let currentRotation = 0;
+
+  function drawWheel() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const size = Math.round(rect.width);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size / 2 - 4;
+    const segAngle = (2 * Math.PI) / segments.length;
+
+    segments.forEach(function(seg, i) {
+      var startAngle = i * segAngle - Math.PI / 2;
+      var endAngle = startAngle + segAngle;
+
+      // Segment fill
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.closePath();
+      ctx.fillStyle = seg.color;
+      ctx.fill();
+
+      // Segment border
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(212,165,55,0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Accent arc at edge
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 6, startAngle + 0.02, endAngle - 0.02);
+      ctx.strokeStyle = seg.accent;
+      ctx.lineWidth = 4;
+      ctx.globalAlpha = 0.25;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Labels
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(startAngle + segAngle / 2);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = 6;
+
+      // Emoji
+      ctx.font = (size > 400 ? '32' : '20') + 'px serif';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(seg.emoji, r * 0.58, -8);
+
+      // Text label
+      ctx.font = '600 ' + (size > 400 ? '15' : '10') + 'px Oswald';
+      ctx.fillStyle = seg.accent;
+      ctx.fillText(seg.label, r * 0.58, 14);
+
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    });
+
+    // Inner vignette
+    var grad = ctx.createRadialGradient(cx, cy, r * 0.65, cx, cy, r);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Center dark circle
+    var cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.18);
+    cGrad.addColorStop(0, 'rgba(8,8,12,0.9)');
+    cGrad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.18, 0, 2 * Math.PI);
+    ctx.fillStyle = cGrad;
+    ctx.fill();
+  }
+
+  function spinWheel() {
+    if (spinning) return;
+    spinning = true;
+    document.getElementById('spinBtn').style.opacity = '0.5';
+
+    var extraSpins = 5 + Math.random() * 5;
+    var targetAngle = currentRotation + extraSpins * 360 + Math.random() * 360;
+
+    var spinEl = document.getElementById('wheelSpin');
+    spinEl.style.transition = 'transform 4s cubic-bezier(0.2, 0.8, 0.2, 1.0)';
+    spinEl.style.transform = 'rotate(' + targetAngle + 'deg)';
+    currentRotation = targetAngle;
+
+    var normalizedAngle = targetAngle % 360;
+    var segAngle = 360 / segments.length;
+    var winIndex = Math.floor(((360 - normalizedAngle + segAngle / 2) % 360) / segAngle);
+    var prizeIndex = winIndex % prizes.length;
+
+    setTimeout(function() {
+      spinning = false;
+      document.getElementById('spinBtn').style.opacity = '1';
+      showModal(prizes[prizeIndex]);
+    }, 4200);
+  }
+
+  function showModal(prize) {
+    document.getElementById('modalTitle').textContent = prize.title;
+    document.getElementById('modalIcon').textContent = prize.icon;
+    document.getElementById('modalName').textContent = prize.name;
+    document.getElementById('modalDesc').textContent = prize.desc;
+    document.getElementById('modal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+  }
+
+  drawWheel();
+  window.addEventListener('resize', drawWheel);
+</script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Buttons — Horizontal Cards</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Oswald', sans-serif;
+  }
+
+  .phone-frame {
+    width: 393px;
+    background: #111118;
+    border-radius: 20px;
+    padding: 24px 16px;
+    border: 1px solid #1a1a24;
+  }
+
+  .label {
+    color: #6a6a7a;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  /* === Current Layout === */
+  .current .btn-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .current .btn-big {
+    background: linear-gradient(180deg, #c9a84c 0%, #a07c2a 100%);
+    color: #1a1200;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .current .btn-row {
+    display: flex;
+    gap: 8px;
+  }
+  .current .btn-secondary {
+    flex: 1;
+    background: #16161e;
+    border: 1px solid #c9a84c44;
+    color: #c9a84c;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 12px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .divider {
+    height: 1px;
+    background: #1a1a24;
+    margin: 32px 0;
+  }
+
+  /* === NEW: Horizontal Cards === */
+  .new-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .action-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid transparent;
+  }
+
+  .action-card:active {
+    opacity: 0.7;
+  }
+
+  /* Challenge — gold CTA */
+  .action-card.challenge {
+    background: linear-gradient(180deg, #c9a84c 0%, #a07c2a 100%);
+    border-color: #dbb95e;
+  }
+  .action-card.challenge .card-icon {
+    font-size: 24px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  }
+  .action-card.challenge .card-label {
+    color: #1a1200;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+  /* Inner glow */
+  .action-card.challenge::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.15);
+    pointer-events: none;
+  }
+
+  /* Message — dark card */
+  .action-card.message {
+    background: #16161e;
+    border-color: #c9a84c33;
+  }
+  .action-card.message .card-icon {
+    font-size: 22px;
+  }
+  .action-card.message .card-label {
+    color: #c9a84c;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Add Ally — dark card */
+  .action-card.ally {
+    background: #16161e;
+    border-color: #c9a84c33;
+  }
+  .action-card.ally .card-icon {
+    font-size: 22px;
+  }
+  .action-card.ally .card-label {
+    color: #c9a84c;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Corner brackets on cards */
+  .action-card .corner {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: #c9a84c;
+    border-style: solid;
+  }
+  .action-card .corner.tl { top: 3px; left: 3px; border-width: 1px 0 0 1px; }
+  .action-card .corner.tr { top: 3px; right: 3px; border-width: 1px 1px 0 0; }
+  .action-card .corner.bl { bottom: 3px; left: 3px; border-width: 0 0 1px 1px; }
+  .action-card .corner.br { bottom: 3px; right: 3px; border-width: 0 1px 1px 0; }
+
+  .action-card.challenge .corner {
+    border-color: rgba(26, 18, 0, 0.3);
+  }
+
+  /* Corner diamonds */
+  .action-card .diamond {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: #c9a84c;
+    transform: rotate(45deg);
+  }
+  .action-card .diamond.tl { top: -1px; left: -1px; }
+  .action-card .diamond.tr { top: -1px; right: -1px; }
+  .action-card .diamond.bl { bottom: -1px; left: -1px; }
+  .action-card .diamond.br { bottom: -1px; right: -1px; }
+
+  .action-card.challenge .diamond {
+    background: #1a1200;
+    opacity: 0.3;
+  }
+
+  /* === Variant B: Equal weight, all dark === */
+  .variant-b .action-card.challenge {
+    background: #16161e;
+    border-color: #c9a84c55;
+  }
+  .variant-b .action-card.challenge .card-label {
+    color: #c9a84c;
+  }
+  .variant-b .action-card.challenge .card-icon {
+    filter: none;
+  }
+  .variant-b .action-card.challenge::after {
+    display: none;
+  }
+  .variant-b .action-card.challenge .corner {
+    border-color: #c9a84c;
+  }
+  .variant-b .action-card.challenge .diamond {
+    background: #c9a84c;
+    opacity: 1;
+  }
+
+  /* Variant label */
+  .variant-label {
+    color: #c9a84c;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .section { margin-bottom: 32px; }
+</style>
+</head>
+<body>
+
+<div style="display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; padding: 24px;">
+
+  <!-- Current -->
+  <div class="phone-frame current section">
+    <div class="variant-label">Текущий</div>
+    <div class="btn-stack">
+      <button class="btn-big">🔥 Challenge</button>
+      <div class="btn-row">
+        <button class="btn-secondary">💬 Message</button>
+        <button class="btn-secondary">👥 Add Ally</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variant A: Challenge is gold hero -->
+  <div class="phone-frame section">
+    <div class="variant-label">A — Gold Hero</div>
+    <div class="new-row">
+      <div class="action-card challenge">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="diamond tl"></span><span class="diamond tr"></span>
+        <span class="diamond bl"></span><span class="diamond br"></span>
+        <span class="card-icon">⚔️</span>
+        <span class="card-label">Challenge</span>
+      </div>
+      <div class="action-card message">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="diamond tl"></span><span class="diamond tr"></span>
+        <span class="diamond bl"></span><span class="diamond br"></span>
+        <span class="card-icon">💬</span>
+        <span class="card-label">Message</span>
+      </div>
+      <div class="action-card ally">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="diamond tl"></span><span class="diamond tr"></span>
+        <span class="diamond bl"></span><span class="diamond br"></span>
+        <span class="card-icon">🤝</span>
+        <span class="card-label">Add Ally</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variant B: Equal weight -->
+  <div class="phone-frame variant-b section">
+    <div class="variant-label">B — Equal Weight</div>
+    <div class="new-row">
+      <div class="action-card challenge">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="diamond tl"></span><span class="diamond tr"></span>
+        <span class="diamond bl"></span><span class="diamond br"></span>
+        <span class="card-icon">⚔️</span>
+        <span class="card-label">Challenge</span>
+      </div>
+      <div class="action-card message">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="diamond tl"></span><span class="diamond tr"></span>
+        <span class="diamond bl"></span><span class="diamond br"></span>
+        <span class="card-icon">💬</span>
+        <span class="card-label">Message</span>
+      </div>
+      <div class="action-card ally">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <span class="diamond tl"></span><span class="diamond tr"></span>
+        <span class="diamond bl"></span><span class="diamond br"></span>
+        <span class="card-icon">🤝</span>
+        <span class="card-label">Add Ally</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
