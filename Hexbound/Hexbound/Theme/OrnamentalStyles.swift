@@ -487,4 +487,81 @@ extension View {
     }
 }
 
+// MARK: - Shadow Depth Presets
+
+/// Standardized shadow depth tiers for the dark fantasy UI.
+/// Always use dual shadows: accent glow + depth shadow.
+enum ShadowDepth {
+    /// Text readability shadow (radius: 2, y: 1)
+    case text
+    /// Light panel shadow (radius: 4, y: 2)
+    case panel
+    /// Standard card shadow (radius: 6, y: 3)
+    case card
+    /// Elevated surface shadow (radius: 8, y: 4)
+    case elevated
+    /// Heavy modal shadow (radius: 32, y: 8)
+    case modal
+
+    var radius: CGFloat {
+        switch self {
+        case .text: 2
+        case .panel: 4
+        case .card: 6
+        case .elevated: 8
+        case .modal: 32
+        }
+    }
+
+    var yOffset: CGFloat {
+        switch self {
+        case .text: 1
+        case .panel: 2
+        case .card: 3
+        case .elevated: 4
+        case .modal: 8
+        }
+    }
+
+    var abyssOpacity: Double {
+        switch self {
+        case .text: 0.3
+        case .panel: 0.35
+        case .card: 0.4
+        case .elevated: 0.5
+        case .modal: 0.8
+        }
+    }
+}
+
+extension View {
+    /// Dual shadow: accent-colored glow + dark depth (mandatory pattern).
+    /// - Parameters:
+    ///   - glowColor: Accent glow color (e.g. `gold.opacity(0.15)`). Use `.clear` for depth-only.
+    ///   - glowRadius: Glow spread radius.
+    ///   - depth: Shadow depth tier.
+    func dualShadow(
+        glowColor: Color = .clear,
+        glowRadius: CGFloat = 8,
+        depth: ShadowDepth = .card
+    ) -> some View {
+        self
+            .shadow(color: glowColor, radius: glowRadius)
+            .shadow(
+                color: DarkFantasyTheme.bgAbyss.opacity(depth.abyssOpacity),
+                radius: depth.radius,
+                y: depth.yOffset
+            )
+    }
+
+    /// Depth-only shadow (no accent glow). Use for secondary panels.
+    func depthShadow(_ depth: ShadowDepth = .card) -> some View {
+        shadow(
+            color: DarkFantasyTheme.bgAbyss.opacity(depth.abyssOpacity),
+            radius: depth.radius,
+            y: depth.yOffset
+        )
+    }
+}
+
 // Note: `if` conditional modifier is defined in WidgetPill.swift (shared across project)

@@ -465,6 +465,18 @@ enum DarkFantasyTheme {
     static func section(size: CGFloat) -> Font { .custom("Oswald-Regular", size: size) }
     static func body(size: CGFloat) -> Font { .custom("Inter-Regular", size: size) }
 
+    // MARK: - Opacity Scale
+
+    static let opacityMicro: Double = 0.04     // Very subtle backgrounds (pill offline)
+    static let opacitySoft: Double = 0.08      // Subtle glows, highlights, shimmer
+    static let opacityLight: Double = 0.12     // Pill backgrounds, radial glow
+    static let opacityMild: Double = 0.15      // Border accents, pill borders
+    static let opacityMedium: Double = 0.25    // Rarity glows, moderate accents
+    static let opacityStrong: Double = 0.40    // Glow shadows, accent fills
+    static let opacityHeavy: Double = 0.60     // Strong overlays, fog
+    static let opacityDense: Double = 0.75     // Modal backgrounds
+    static let opacityOpaque: Double = 0.85    // Heavy backdrops
+
     // MARK: - Gradients
 
     // Gold button gradient

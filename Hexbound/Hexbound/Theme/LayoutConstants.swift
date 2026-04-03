@@ -142,7 +142,7 @@ enum LayoutConstants {
     // Use these tokens for any NPC tip/tutorial widget across screens.
 
     static let npcAvatarSize: CGFloat = 256           // Full NPC portrait (no frame, no clip)
-    static let npcAvatarOffset: CGFloat = -30         // Shift avatar up so it peeks above the bar
+    static let npcAvatarOffset: CGFloat = -80         // Shift avatar up so it peeks above the bar (per Figma NPC Guide Widget)
     static let npcBarHeight: CGFloat = 90             // Fixed speech bar height (title + 2-line body + padding)
     static let npcBarRadius: CGFloat = 12             // Rounded corners for widget card (matches widgetRadius)
     static let npcBarPaddingH: CGFloat = 16           // Horizontal inner padding (matches screenPadding)
@@ -196,4 +196,13 @@ enum LayoutConstants {
     static let heroBarFont: CGFloat = 13           // text inside bars (increased from 11 for readability)
     static let heroPortraitNameFont: CGFloat = 16  // name overlay on portrait
     static let heroBottomSlots: Int = 4            // Ring, Weapon, Relic, Belt
+
+    // MARK: - Icon Size Scale
+
+    static let iconXS: CGFloat = 12       // Micro icons (status dots, inline indicators)
+    static let iconSM: CGFloat = 16       // Small icons (pill icons, badge icons)
+    static let iconMD: CGFloat = 20       // Medium icons (list row icons, nav icons)
+    static let iconLG: CGFloat = 24       // Large icons (action icons, toolbar)
+    static let iconXL: CGFloat = 32       // Extra-large (empty state, fallback)
+    static let icon2XL: CGFloat = 48      // Hero icons (empty state, celebration)
 }

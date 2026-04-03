@@ -199,6 +199,32 @@ extension View {
     }
 }
 
+// MARK: - Shadow Convenience Extensions
+
+extension View {
+    /// Standard card depth shadow (bgAbyss 0.4, radius 6, y 3).
+    /// The most common single shadow in the codebase (~37 uses).
+    func cardShadow() -> some View {
+        shadow(color: DarkFantasyTheme.bgAbyss.opacity(ShadowDepth.card.abyssOpacity),
+               radius: ShadowDepth.card.radius, y: ShadowDepth.card.yOffset)
+    }
+
+    /// Subtle text/stat readability shadow (bgAbyss 0.3, radius 2, y 1).
+    func subtleShadow() -> some View {
+        shadow(color: DarkFantasyTheme.bgAbyss.opacity(ShadowDepth.text.abyssOpacity),
+               radius: ShadowDepth.text.radius, y: ShadowDepth.text.yOffset)
+    }
+
+    /// Badge capsule styling: padded capsule with tinted fill + stroke.
+    func badgeCapsule(color: Color) -> some View {
+        self
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .background(Capsule().fill(color.opacity(DarkFantasyTheme.opacityMild)))
+            .overlay(Capsule().stroke(color.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1))
+    }
+}
+
 // MARK: - Screen Background
 
 struct ScreenBackground: ViewModifier {

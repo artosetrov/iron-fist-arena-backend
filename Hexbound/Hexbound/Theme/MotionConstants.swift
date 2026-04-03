@@ -141,6 +141,20 @@ enum MotionConstants {
     static let tabCrossfade: Double = 0.2
     /// Tab indicator slide
     static let tabIndicatorSlide = Animation.spring(response: 0.25, dampingFraction: 0.75)
+
+    // MARK: - Navigation & Ceremony Timing
+
+    /// Navigation delay: clear path before pushing new route (prevents animation conflicts)
+    static let navigationDelay: Double = 0.15
+
+    /// Ceremony phase delays (multi-step celebration sequences)
+    static let ceremonyPhase1: Double = 0.3    // First element appears (title, icon)
+    static let ceremonyPhase2: Double = 0.6    // Second element (subtitle, divider)
+    static let ceremonyPhase3: Double = 0.8    // Main content reveal
+    static let ceremonyPhase4: Double = 1.0    // Rewards / detail cards
+    static let ceremonyPhase5: Double = 1.6    // Secondary content (unlocks, bonuses)
+    static let ceremonyButton: Double = 1.8    // Continue/dismiss button appears
+    static let ceremonySlow: Double = 2.5      // Extended ceremonies (rank up, season)
 }
 
 // MARK: - Computed Helpers
