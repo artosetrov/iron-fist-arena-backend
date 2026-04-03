@@ -19,8 +19,20 @@ final class SFXManager {
     // MARK: - Public API
 
     /// Play a sound effect by SFX enum case (with paired haptic feedback).
+    /// If the SFX has variations, picks one at random for variety.
     func play(_ sfx: SFX) {
-        play(filename: sfx.filename)
+        let count = sfx.variationCount
+        if count > 1 {
+            let pick = Int.random(in: 1...count)
+            if pick == 1 {
+                play(filename: sfx.filename)
+            } else {
+                // e.g. "hit_physical_2.wav"
+                play(filename: sfx.rawValue + "_\(pick).wav")
+            }
+        } else {
+            play(filename: sfx.filename)
+        }
         // Fire paired haptic if haptics enabled
         if settings.hapticsEnabled {
             sfx.haptic?()
@@ -76,17 +88,20 @@ final class SFXManager {
     }
 
     /// Preload SFX into memory cache for faster first playback.
+    /// Also preloads all variations (e.g. hit_physical_2, hit_physical_3).
     func preload(_ sfxList: [SFX]) {
         for sfx in sfxList {
-            let filename = sfx.filename
-            guard cache[filename] == nil else { continue }
+            for i in 1...sfx.variationCount {
+                let filename = i == 1 ? sfx.filename : sfx.rawValue + "_\(i).wav"
+                guard cache[filename] == nil else { continue }
 
-            let name = (filename as NSString).deletingPathExtension
-            let ext = (filename as NSString).pathExtension.isEmpty ? "wav" : (filename as NSString).pathExtension
+                let name = (filename as NSString).deletingPathExtension
+                let ext = (filename as NSString).pathExtension.isEmpty ? "wav" : (filename as NSString).pathExtension
 
-            if let url = Bundle.main.url(forResource: name, withExtension: ext),
-               let data = try? Data(contentsOf: url) {
-                cache[filename] = data
+                if let url = Bundle.main.url(forResource: name, withExtension: ext),
+                   let data = try? Data(contentsOf: url) {
+                    cache[filename] = data
+                }
             }
         }
     }
@@ -146,6 +161,8 @@ enum SFX: String, CaseIterable {
     case hitMagical = "hit_magical"
     case hitCritical = "hit_critical"
     case hitPoison = "hit_poison"
+    case hitRogue = "hit_rogue"
+    case hitTrue = "hit_true"
 
     // Combat — actions
     case combatBlock = "combat_block"
@@ -154,13 +171,58 @@ enum SFX: String, CaseIterable {
     case combatPoison = "combat_poison"
     case combatHeal = "combat_heal"
     case combatDeath = "combat_death"
+    case combatSpecial = "combat_special"
+    case combatShield = "combat_shield"
+    case combatBuff = "combat_buff"
+
+    // Dungeon
+    case dungeonEnter = "dungeon_enter"
+    case dungeonFloorComplete = "dungeon_floor_complete"
+    case dungeonBossAppear = "dungeon_boss_appear"
+    case dungeonDoorOpen = "dungeon_door_open"
+    case dungeonDoorClose = "dungeon_door_close"
+    case dungeonGateClose = "dungeon_gate_close"
+    case dungeonUnlock = "dungeon_unlock"
 
     // Misc
     case coinDrop = "coin_drop"
     case itemDrop = "item_drop"
     case potionUse = "potion_use"
+    case chestOpen = "chest_open"
+    case chestClose = "chest_close"
+    case goldMine = "gold_mine"
 
     var filename: String { rawValue + ".wav" }
+
+    /// Number of available sound files for this SFX (1 = no variations).
+    /// Variations are named `<rawValue>_2.wav`, `<rawValue>_3.wav`, etc.
+    var variationCount: Int {
+        switch self {
+        case .hitPhysical:      return 7  // hit_physical + _2.._7
+        case .hitMagical:       return 7  // hit_magical + _2.._7
+        case .hitCritical:      return 6  // hit_critical + _2.._6
+        case .hitPoison:        return 2  // hit_poison + _2, _3
+        case .hitRogue:         return 4  // hit_rogue + _2.._4
+        case .hitTrue:          return 4  // hit_true + _2.._4
+        case .combatBlock:      return 4  // combat_block + _2.._4
+        case .combatMiss:       return 4  // combat_miss + _2.._4
+        case .combatDodge:      return 3  // combat_dodge + _2, _3
+        case .combatPoison:     return 5  // combat_poison + _2.._6
+        case .combatHeal:       return 2  // combat_heal + _2, _3
+        case .combatSpecial:    return 2  // combat_special + _2
+        case .combatShield:     return 4  // combat_shield + _2.._4
+        case .uiEquip:          return 2  // ui_equip + _2
+        case .uiUnequip:        return 2  // ui_unequip + _2
+        case .chestOpen:        return 3  // chest_open + _2, _3
+        case .chestClose:       return 2  // chest_close + _2
+        case .goldMine:         return 5  // gold_mine + _2.._5
+        case .dungeonEnter:     return 3  // dungeon_enter + _2, _3
+        case .dungeonBossAppear: return 3  // dungeon_boss_appear + _2, _3
+        case .dungeonDoorOpen:  return 2  // dungeon_door_open + _2
+        case .dungeonDoorClose: return 2  // dungeon_door_close + _2
+        default:                return 1
+        }
+    }
 
     // MARK: - Haptic Mapping
 
@@ -215,6 +277,10 @@ enum SFX: String, CaseIterable {
             return { HapticManager.heavy() }
         case .hitPoison:
             return { HapticManager.light() }
+        case .hitRogue:
+            return { HapticManager.medium() }
+        case .hitTrue:
+            return { HapticManager.medium() }
 
         // Combat — actions
         case .combatBlock:
@@ -227,6 +293,26 @@ enum SFX: String, CaseIterable {
             return { HapticManager.success() }
         case .combatDeath:
             return { HapticManager.shake() }
+        case .combatSpecial:
+            return { HapticManager.heavy() }
+        case .combatShield:
+            return { HapticManager.medium() }
+        case .combatBuff:
+            return { HapticManager.light() }
+
+        // Dungeon
+        case .dungeonEnter:
+            return { HapticManager.heavy() }
+        case .dungeonFloorComplete:
+            return { HapticManager.success() }
+        case .dungeonBossAppear:
+            return { HapticManager.heavy() }
+        case .dungeonDoorOpen, .dungeonDoorClose:
+            return { HapticManager.medium() }
+        case .dungeonGateClose:
+            return { HapticManager.heavy() }
+        case .dungeonUnlock:
+            return { HapticManager.success() }
 
         // Misc
         case .coinDrop:
@@ -235,6 +321,12 @@ enum SFX: String, CaseIterable {
             return { HapticManager.medium() }
         case .potionUse:
             return { HapticManager.light() }
+        case .chestOpen:
+            return { HapticManager.medium() }
+        case .chestClose:
+            return { HapticManager.light() }
+        case .goldMine:
+            return { HapticManager.medium() }
         }
     }
 
@@ -249,7 +341,7 @@ enum SFX: String, CaseIterable {
         case .magicalCrit:  return .hitCritical
         case .poisonHit:    return .hitPoison
         case .poisonCrit:   return .hitCritical
-        case .trueHit:      return .hitMagical
+        case .trueHit:      return .hitTrue
         case .trueCrit:     return .hitCritical
         case .dodge:        return .combatDodge
         case .miss:         return .combatMiss
