@@ -1,10 +1,11 @@
 # HEXBOUND — Система дизайна (Design System)
 
-**Версия:** 2.1.0
-**Статус:** Production-ready (v2.1 — Structural Rebranding)
-**Дата:** 22 марта 2026
+**Версия:** 2.2.0
+**Статус:** Production-ready (v2.2 — Figma DS Integration)
+**Дата:** 1 апреля 2026
 **Платформа:** iOS SwiftUI (Portrait, 1170×2532)
 **Язык:** Русский + технические термины на английском
+**Figma Design System:** [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS)
 
 ---
 
@@ -15,8 +16,10 @@
 - **Приложение:** Hexbound Mobile PvP RPG (Dark Fantasy Premium)
 - **Целевая аудитория:** iOS players 16+, portrait orientation, touch-first interaction
 - **Экраны:** 38+
-- **Компоненты переиспользования:** 17+
+- **Компоненты переиспользования:** 24+
 - **Токены дизайна:** 200+ (colors, spacing, typography)
+- **Figma переменных:** 162 (91 primitives + 57 semantic + 14 spacing/radius)
+- **Figma компонентов:** 24 component sets, 105 variants
 - **Баттон стили:** 20
 - **Карточек стили:** 5 + 2 dividers
 

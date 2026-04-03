@@ -216,6 +216,7 @@ All classes equally viable — balance tuned for equal ELO distribution.
 - **Durability cap**: 100-500 depending on rarity
 - **Repair cost**: 10% of item's purchase price to restore to max
 - **Broken state**: Durability 0 = equipment disabled (can't equip)
+- **Repair All widget**: On Hero screen (INVENTORY tab), below equipment card. Shows damaged equipped item count, total repair cost, and Repair All button. Disabled when all items are fully repaired or player lacks gold. Only considers equipped items (`is_equipped = true`).
 - **Purpose**: Gold sink to prevent economy hoarding
 
 ### Upgrade System (+1 to +10)

@@ -85,6 +85,7 @@ Design system, screen inventory, and user experience audits.
 | Document | Location | Purpose |
 |----------|----------|---------|
 | **Design System** | `docs/07_ui_ux/DESIGN_SYSTEM.md` | DarkFantasyTheme token reference (colors, fonts, spacing), ButtonStyles (all variants), LayoutConstants, component library overview |
+| **Figma Design System** | [Hexbound-DS (Figma)](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) | 162 Figma variables (91 primitives + 57 semantic + 14 spacing/radius), 9 text styles, 4 effect styles, 24 component sets with 105 variants. iOS code syntax on all tokens. |
 | **Screen Inventory** | `docs/07_ui_ux/SCREEN_INVENTORY.md` | All 20+ iOS screens: name, purpose, states (empty/loading/error/success), wireframes, navigation flows |
 | **UX Audit (v2)** | `docs/07_ui_ux/UX_AUDIT.md` | Current UX assessment: strengths, issues with impact/priority, recommendations per screen, 3-second rule compliance |
 

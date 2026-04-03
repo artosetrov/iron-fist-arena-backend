@@ -26,7 +26,7 @@
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Hub | `HubView.swift` | default, loading | Main home: stamina bar, character card, city map, floating buttons |
-| Hero Detail | `HeroDetailView.swift` | INVENTORY tab, STATUS tab, stat points banner | Character equipment (INVENTORY tab via HeroIntegratedCard), stats & stat allocation (STATUS tab), stance display |
+| Hero Detail | `HeroDetailView.swift` | INVENTORY tab, STATUS tab, stat points banner | Character equipment (INVENTORY tab via HeroIntegratedCard), Repair Equipment widget (mass repair all damaged equipped items), stats & stat allocation (STATUS tab), stance display |
 | City Map | `CityMapView.swift` | default | Interactive hub map with buildings |
 | City Building | `CityBuildingView.swift` | default | Individual building on city map (with `CityBuildingConfig`, `CityBuildingLabel`) |
 | City Map Effects | `CityMapEffects.swift` | — | Ambient particle/glow effects on city map |

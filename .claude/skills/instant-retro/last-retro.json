@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-30T12:02:36Z",
-  "commit": "76a30e5",
-  "summary": "7 коммитов: battle mail + inbox tabs, dungeon defeat, HP regen fix, token cleanup, CDO v2 skills. 43+ файла в WIP (UI polish всех экранов, PvP matchmaking, victory redesign).",
-  "retro_count": 4
+  "timestamp": "2026-04-03T12:00:00Z",
+  "commit": "813b1b6",
+  "summary": "2 коммита + 285 файлов WIP: массовый UI polish всех экранов, 30+ новых SFX, новые компоненты (CardLevelBadge, PvPStatsWidget, TreasureRewardOverlay), fortune wheel backend, DS audit, Figma export pipeline.",
+  "retro_count": 5
 }

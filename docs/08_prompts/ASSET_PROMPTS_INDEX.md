@@ -25,6 +25,7 @@ Master index of all AI image generation prompt collections for the Hexbound proj
 | Loot & Asset Icons | Gold coins, XP crystals, gems, weapons, potions | `docs/08_prompts/asset-prompts.md` | Active | 20+ assets |
 | Gold Mine Cards | Minigame card illustrations for the mine game | `docs/08_prompts/mine-card-prompts.md` | Active | Multiple card designs |
 | Tavern Interior | Tavern screen background (9:16) + minigame icons (shell game, fortune wheel, dice) + patron busts | `docs/08_prompts/TAVERN_INTERIOR_PROMPTS.md` | Active | 1 bg + 3 icons + 3 patrons |
+| Fortune Wheel Assets | Full asset set: background, wheel texture, Lady Fortuna portrait, sector icons (5), pointer, spin button decoration | `docs/08_prompts/FORTUNE_WHEEL_ASSET_PROMPTS.md` | Active | 1 bg + 1 texture + 1 portrait + 5 icons + 1 pointer + 1 button |
 
 ---
 
