@@ -15,6 +15,8 @@ enum DarkFantasyTheme {
     static let bgTertiary = Color(hex: 0x16213E)    // Card interiors, form fields
     static let bgElevated = Color(hex: 0x1E2240)    // Active cards, selected items
     static let bgDisabled = Color(hex: 0x333340)    // Disabled button background
+    static let bgSecondaryPressed = Color(hex: 0x18182B) // Pressed state of bgSecondary
+    static let bgTertiaryPressed = Color(hex: 0x151F3A)  // Pressed state of bgTertiary
     static let bgModal = Color.black.opacity(0.75)   // Modal overlay
     static let bgBackdrop = Color.black.opacity(0.85) // Heavy backdrop for sheets
     static let bgBackdropLight = Color.black.opacity(0.7) // Lighter backdrop for popups
@@ -253,6 +255,20 @@ enum DarkFantasyTheme {
     static let toastInfo        = Color(hex: 0xCCCCDA)
     static let toastError       = textDanger
 
+    // MARK: - Event Banner Colors
+
+    static let eventNormalBg   = Color(hex: 0x29252F)  // Event banner normal bg tint
+    static let eventUrgentBg   = Color(hex: 0x2A1E2F)  // Event banner urgent bg tint
+    static let eventNormalIcon = Color(hex: 0x3F3630)  // Event banner normal icon bg
+    static let eventUrgentIcon = Color(hex: 0x432431)  // Event banner urgent icon bg
+
+    // MARK: - Payout Pill Backgrounds
+
+    static let payoutX15Bg = Color(hex: 0x302B2F)     // x1.5 payout pill tinted bg
+    static let payoutX2Bg  = Color(hex: 0x353128)     // x2 payout pill tinted bg
+    static let payoutX3Bg  = Color(hex: 0x29223E)     // x3 payout pill tinted bg
+    static let payoutX5Bg  = Color(hex: 0x1D2943)     // x5 payout pill tinted bg
+
     // ╔══════════════════════════════════════════════════════════╗
     // ║  PILL COLOR FACTORY — replaces 20 individual tokens     ║
     // ║  Usage: DarkFantasyTheme.pill(.heal, .bg)               ║
@@ -427,6 +443,7 @@ enum DarkFantasyTheme {
     static let section = Font.custom("Oswald-Regular", size: 22)
     static let cardTitle = Font.custom("Oswald-Regular", size: 18)
     static let buttonLabel = Font.custom("Oswald-Regular", size: 18)
+    static let buttonLabelCompact = Font.custom("Oswald-Regular", size: 16) // Compact/small buttons
 
     // Inter — body text, UI labels, captions
     static let body = Font.custom("Inter-Regular", size: 16)
@@ -434,10 +451,17 @@ enum DarkFantasyTheme {
     static let caption = Font.custom("Inter-Regular", size: 12)
     static let badge = Font.custom("Inter-Regular", size: 11).bold()
 
-    // Dynamic size helpers
-    static func title(size: CGFloat) -> Font { .custom("Oswald-Regular", size: size) }
-    static func section(size: CGFloat) -> Font { .custom("Oswald-Regular", size: size) }
-    static func body(size: CGFloat) -> Font { .custom("Inter-Regular", size: size) }
+    // Special-purpose font tokens (SF Symbols, branded text, debug)
+    static let iconHero = Font.system(size: 64)                       // Large decorative SF Symbols
+    static let iconCinematic = Font.system(size: 44)                  // Ceremony SF Symbols
+    static let iconLarge = Font.system(size: 24, design: .rounded)    // Featured SF Symbol icons
+    static let iconMedium = Font.system(size: 20)                     // Medium emoji/SF Symbols
+    static let iconSmall = Font.system(size: 14)                      // Small emoji/SF Symbols
+    static let iconMini = Font.system(size: 12)                       // Mini emoji indicators
+    static let iconFlame = Font.system(size: 11, design: .rounded)    // Smallest allowed icon (min 11pt)
+    static let googleLogo = Font.system(size: 22, weight: .bold, design: .rounded)  // Google "G" branding
+    static let debugMono = Font.system(size: 12, weight: .medium, design: .monospaced) // Dev tools only
+    static let debugMonoSmall = Font.system(size: 10, design: .monospaced)            // Catalog IDs
 
     // MARK: - Opacity Scale
 

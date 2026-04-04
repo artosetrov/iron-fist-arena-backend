@@ -38,15 +38,15 @@ struct ToastView: View {
                     .foregroundStyle(toast.type.color)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(toast.title)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel).bold())
+                    .font(DarkFantasyTheme.uiLabel.bold())
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(2)
 
                 if !toast.subtitle.isEmpty {
                     Text(toast.subtitle)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .lineLimit(1)
                 }
@@ -60,7 +60,7 @@ struct ToastView: View {
                     onDismiss()
                 } label: {
                     Text(label)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge).bold())
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(toast.type.color)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .frame(minHeight: 32) // Touch target compliance
@@ -108,7 +108,7 @@ struct ToastView: View {
             Capsule()
                 .fill(DarkFantasyTheme.textTertiary.opacity(0.3))
                 .frame(width: 24, height: 3)
-                .padding(.bottom, 4)
+                .padding(.bottom, LayoutConstants.spaceXS)
         }
         .shadow(color: toast.type.color.opacity(0.15), radius: 6, y: 0)
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 8, y: -4)
@@ -125,7 +125,7 @@ struct ToastView: View {
                 .onEnded { value in
                     if value.translation.height > 30 {
                         // Dismiss downward
-                        withAnimation(.easeOut(duration: 0.2)) {
+                        withAnimation(MotionConstants.snappy) {
                             dragOffset = 100
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

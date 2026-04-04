@@ -55,7 +55,7 @@ struct TavernDetailView: View {
                 VStack(spacing: LayoutConstants.spaceMD) {
                     // Header
                     Text("Welcome, traveler.\nPick your game.")
-                        .font(DarkFantasyTheme.body(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.top, LayoutConstants.spaceSM)
@@ -82,7 +82,7 @@ struct TavernDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("TAVERN")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -122,17 +122,17 @@ private struct TavernGameCard: View {
                 )
 
                 // Info section
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(game.title)
-                        .font(DarkFantasyTheme.section(size: 15))
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     Text(game.hostName)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(game.accentColor.opacity(0.8))
 
                     Text(game.subtitle)
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .lineLimit(2)
                 }

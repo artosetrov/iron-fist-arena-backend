@@ -124,7 +124,7 @@ struct ArenaDetailView: View {
                             NPCGuideWidget(
                                 npcTitle: "Field Medic",
                                 onDismiss: {
-                                    withAnimation(.easeOut(duration: 0.2)) {
+                                    withAnimation(MotionConstants.snappy) {
                                         showLowHPGuide = false
                                     }
                                 },
@@ -149,7 +149,7 @@ struct ArenaDetailView: View {
                             NPCGuideWidget(
                                 npcTitle: "Arena Master",
                                 onDismiss: {
-                                    withAnimation(.easeOut(duration: 0.2)) {
+                                    withAnimation(MotionConstants.snappy) {
                                         showArenaGuide = false
                                     }
                                     arenaGuideDismissed = true
@@ -251,7 +251,7 @@ struct ArenaDetailView: View {
                 }
             } else {
                 // HP recovered — hide the guide
-                withAnimation(.easeOut(duration: 0.2)) {
+                withAnimation(MotionConstants.snappy) {
                     showLowHPGuide = false
                 }
             }
@@ -511,21 +511,21 @@ struct ArenaDetailView: View {
                         .fill(DarkFantasyTheme.danger.opacity(0.1))
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(entry.attackerName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text("Lv.\(entry.attackerLevel)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text("-\(entry.ratingLost) rating")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text(entry.timeAgo)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -536,13 +536,13 @@ struct ArenaDetailView: View {
             Button {
                 Task { await vm.revenge(revengeId: entry.id) }
             } label: {
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     if vm.fightingOpponentId == entry.id {
                         ProgressView()
                             .tint(.textPrimary)
                             .scaleEffect(0.8)
                     } else {
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "swords")
                                 .font(DarkFantasyTheme.caption)
                             Text("REVENGE")
@@ -586,9 +586,9 @@ struct ArenaDetailView: View {
                 .font(.system(size: 20)) // emoji — keep
 
             // Opponent info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(match.opponentName)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
@@ -596,10 +596,10 @@ struct ArenaDetailView: View {
                     Text(match.opponentClass.icon)
                         .font(.system(size: 12)) // emoji — keep
                     Text("Lv.\(match.opponentLevel)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text(match.timeAgo)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -607,15 +607,15 @@ struct ArenaDetailView: View {
             Spacer()
 
             // Rating change + rewards
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: LayoutConstants.space2XS) {
                 let ratingText = match.ratingChange > 0 ? "+\(match.ratingChange)" : "\(match.ratingChange)"
                 Text(ratingText)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(match.ratingChange > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
                 if let gold = match.goldReward, gold > 0 {
                     Text("+\(gold) 💰")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -651,7 +651,7 @@ struct ArenaDetailView: View {
             Text(icon)
                 .font(.system(size: 40)) // emoji — keep
             Text(message)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
             cta()

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Full UI Audit Dashboard</title>
+<style>
+:root {
+  --bg: #0d0f14; --bg2: #161922; --bg3: #1e2230; --bg4: #262a38;
+  --gold: #d4a843; --gold-dim: #8b7335; --gold-bright: #f5d67b;
+  --text: #e8e0d0; --text2: #a09882; --text3: #6b6354;
+  --danger: #c04040; --success: #4a9e4a; --info: #4a8ec0;
+  --purple: #8b6cc0; --cyan: #4ac0b0; --stamina: #c09040;
+  --border: #2a2e3a; --border-gold: rgba(212,168,67,0.3);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+h1 { font-family: 'Oswald', sans-serif; font-size: 36px; color: var(--gold); margin-bottom: 8px; }
+h2 { font-family: 'Oswald', sans-serif; font-size: 24px; color: var(--gold-bright); margin: 32px 0 16px; border-bottom: 1px solid var(--border-gold); padding-bottom: 8px; }
+h3 { font-size: 18px; color: var(--text); margin: 16px 0 8px; }
+.subtitle { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+/* KPI Cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+.kpi-value { font-size: 36px; font-weight: 700; font-family: 'Oswald', sans-serif; }
+.kpi-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.kpi-good .kpi-value { color: var(--success); }
+.kpi-warn .kpi-value { color: var(--stamina); }
+.kpi-bad .kpi-value { color: var(--danger); }
+.kpi-info .kpi-value { color: var(--info); }
+.kpi-gold .kpi-value { color: var(--gold); }
+.kpi-purple .kpi-value { color: var(--purple); }
+/* Filters */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.filter-btn:hover { border-color: var(--gold-dim); color: var(--text); }
+.filter-btn.active { background: rgba(212,168,67,0.15); border-color: var(--gold); color: var(--gold); }
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px; }
+th { background: var(--bg3); color: var(--gold); text-align: left; padding: 10px 12px; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--gold-dim); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: rgba(212,168,67,0.03); }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.pill-atom { background: rgba(74,142,192,0.15); color: var(--info); }
+.pill-molecule { background: rgba(74,192,176,0.15); color: var(--cyan); }
+.pill-organism { background: rgba(139,108,192,0.15); color: var(--purple); }
+.pill-modifier { background: rgba(192,144,64,0.15); color: var(--stamina); }
+.pill-yes { background: rgba(74,158,74,0.15); color: var(--success); }
+.pill-partial { background: rgba(192,144,64,0.15); color: var(--stamina); }
+.pill-no { background: rgba(192,64,64,0.15); color: var(--danger); }
+.pill-high { background: rgba(192,64,64,0.2); color: #e06060; }
+.pill-medium { background: rgba(192,144,64,0.2); color: var(--stamina); }
+.pill-low { background: rgba(74,158,74,0.15); color: var(--success); }
+.pill-screen { background: rgba(212,168,67,0.1); color: var(--gold); }
+/* Progress bars */
+.progress-bar { height: 8px; background: var(--bg4); border-radius: 4px; overflow: hidden; width: 100%; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.fill-good { background: linear-gradient(90deg, var(--success), #6abe6a); }
+.fill-warn { background: linear-gradient(90deg, var(--stamina), #d4a843); }
+.fill-bad { background: linear-gradient(90deg, var(--danger), #e06060); }
+/* Sections */
+.section { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.section-header .toggle { color: var(--text3); font-size: 18px; transition: transform 0.2s; }
+.section-header.open .toggle { transform: rotate(180deg); }
+.section-body { margin-top: 16px; }
+.hidden { display: none; }
+/* Tabs */
+.tab-bar { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+.tab { padding: 8px 20px; cursor: pointer; color: var(--text3); font-size: 14px; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+/* Gap list */
+.gap-item { padding: 12px 16px; border-left: 3px solid var(--danger); margin-bottom: 8px; background: rgba(192,64,64,0.05); border-radius: 0 8px 8px 0; }
+.gap-item.warn { border-left-color: var(--stamina); background: rgba(192,144,64,0.05); }
+.gap-item.info { border-left-color: var(--info); background: rgba(74,142,192,0.05); }
+.gap-title { font-weight: 600; margin-bottom: 4px; }
+.gap-detail { font-size: 12px; color: var(--text2); }
+/* Search */
+.search-box { width: 100%; padding: 10px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; margin-bottom: 16px; }
+.search-box:focus { outline: none; border-color: var(--gold-dim); }
+/* Badge counts */
+.badge { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; background: var(--danger); color: white; font-size: 11px; font-weight: 700; border-radius: 10px; padding: 0 6px; margin-left: 6px; }
+.badge.warn { background: var(--stamina); }
+.badge.good { background: var(--success); }
+@media (max-width: 768px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .container { padding: 12px; }
+  h1 { font-size: 24px; }
+}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>HEXBOUND — UI AUDIT DASHBOARD</h1>
+<p class="subtitle">Full product audit: 48 screens, 41 components, 130+ Swift files | Generated: 2026-04-03</p>
+
+<!-- KPI SUMMARY -->
+<div class="kpi-grid">
+  <div class="kpi kpi-gold"><div class="kpi-value">48</div><div class="kpi-label">Screens Audited</div></div>
+  <div class="kpi kpi-purple"><div class="kpi-value">41</div><div class="kpi-label">DS Components</div></div>
+  <div class="kpi kpi-good"><div class="kpi-value">92%</div><div class="kpi-label">DS Compliance</div></div>
+  <div class="kpi kpi-good"><div class="kpi-value">100%</div><div class="kpi-label">Color Token Coverage</div></div>
+  <div class="kpi kpi-warn"><div class="kpi-value">87%</div><div class="kpi-label">Font Token Coverage</div></div>
+  <div class="kpi kpi-good"><div class="kpi-value">93%</div><div class="kpi-label">Spacing Token Coverage</div></div>
+  <div class="kpi kpi-warn"><div class="kpi-value">67</div><div class="kpi-label">Hardcoded Font Sizes</div></div>
+  <div class="kpi kpi-bad"><div class="kpi-value">12</div><div class="kpi-label">Missing States</div></div>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <div class="tab active" onclick="showTab('screens')">Screens <span class="badge good">48</span></div>
+  <div class="tab" onclick="showTab('components')">Components <span class="badge good">41</span></div>
+  <div class="tab" onclick="showTab('gaps')">Gaps & Issues <span class="badge warn">67</span></div>
+  <div class="tab" onclick="showTab('tokens')">Token Audit</div>
+  <div class="tab" onclick="showTab('actions')">Action Items <span class="badge">38</span></div>
+  <div class="tab" onclick="showTab('figma')">Figma Readiness</div>
+</div>
+
+<!-- TAB: SCREENS -->
+<div id="tab-screens" class="tab-content active">
+<h2>Screen-by-Screen Audit</h2>
+<input type="text" class="search-box" id="screenSearch" placeholder="Search screens..." oninput="filterTable('screenTable', this.value)">
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filterGroup(this, 'all')">All</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'auth')">Auth</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'hub')">Hub</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'arena')">Arena & PvP</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'combat')">Combat</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'dungeon')">Dungeon</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'minigame')">Minigames</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'shop')">Shop</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'inventory')">Inventory</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'progression')">Progression</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'social')">Social</button>
+  <button class="filter-btn" onclick="filterGroup(this, 'settings')">Settings</button>
+</div>
+
+<table id="screenTable">
+<thead>
+<tr><th>Screen</th><th>Group</th><th>File</th><th>Colors</th><th>Fonts</th><th>Spacing</th><th>Radii</th><th>Loading</th><th>Empty</th><th>Error</th><th>DS Score</th><th>Figma Ready</th></tr>
+</thead>
+<tbody>
+<!-- AUTH -->
+<tr data-group="auth"><td>Welcome</td><td><span class="pill pill-screen">Auth</span></td><td>WelcomeView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:98%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Login</td><td><span class="pill pill-screen">Auth</span></td><td>LoginView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Register</td><td><span class="pill pill-screen">Auth</span></td><td>RegisterDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Onboarding (3 steps)</td><td><span class="pill pill-screen">Auth</span></td><td>OnboardingDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:96%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Name Step</td><td><span class="pill pill-screen">Auth</span></td><td>NameStepView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:98%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Class Selection</td><td><span class="pill pill-screen">Auth</span></td><td>ClassSelectionStepView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Appearance Step</td><td><span class="pill pill-screen">Auth</span></td><td>AppearanceStepView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">85%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:92%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<tr data-group="auth"><td>Character Selection</td><td><span class="pill pill-screen">Auth</span></td><td>CharacterSelectionView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">60%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:82%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<tr data-group="auth"><td>Lore Intro</td><td><span class="pill pill-screen">Auth</span></td><td>LoreIntroView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">80%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:90%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Email Confirmation</td><td><span class="pill pill-screen">Auth</span></td><td>EmailConfirmationView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:98%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="auth"><td>Upgrade Guest</td><td><span class="pill pill-screen">Auth</span></td><td>UpgradeGuestView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- HUB -->
+<tr data-group="hub"><td>Hub (Main)</td><td><span class="pill pill-screen">Hub</span></td><td>HubView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="hub"><td>City Map</td><td><span class="pill pill-screen">Hub</span></td><td>CityMapView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:88%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="hub"><td>City Building</td><td><span class="pill pill-screen">Hub</span></td><td>CityBuildingView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="hub"><td>Hero Detail</td><td><span class="pill pill-screen">Hub</span></td><td>HeroDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:94%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="hub"><td>Stance Selector</td><td><span class="pill pill-screen">Hub</span></td><td>StanceSelectorDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:88%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- ARENA -->
+<tr data-group="arena"><td>Arena</td><td><span class="pill pill-screen">Arena</span></td><td>ArenaDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:96%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="arena"><td>Arena Carousel</td><td><span class="pill pill-screen">Arena</span></td><td>ArenaCarouselView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:98%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="arena"><td>Arena Comparison</td><td><span class="pill pill-screen">Arena</span></td><td>ArenaComparisonSheet.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="arena"><td>Rank Up Ceremony</td><td><span class="pill pill-screen">Arena</span></td><td>RankUpCeremonyView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:98%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- COMBAT -->
+<tr data-group="combat"><td>Combat (Live)</td><td><span class="pill pill-screen">Combat</span></td><td>CombatDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">90%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="combat"><td>Combat Result</td><td><span class="pill pill-screen">Combat</span></td><td>CombatResultDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">85%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:93%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="combat"><td>Loot Display</td><td><span class="pill pill-screen">Combat</span></td><td>LootDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">85%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:80%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<!-- DUNGEON -->
+<tr data-group="dungeon"><td>Dungeon Select</td><td><span class="pill pill-screen">Dungeon</span></td><td>DungeonSelectDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:96%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="dungeon"><td>Dungeon Room</td><td><span class="pill pill-screen">Dungeon</span></td><td>DungeonRoomDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">90%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:93%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="dungeon"><td>Dungeon Victory</td><td><span class="pill pill-screen">Dungeon</span></td><td>DungeonVictoryView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:100%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="dungeon"><td>Dungeon Defeat</td><td><span class="pill pill-screen">Dungeon</span></td><td>DungeonDefeatView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:100%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="dungeon"><td>Dungeon Map</td><td><span class="pill pill-screen">Dungeon</span></td><td>DungeonMapView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:85%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<!-- MINIGAMES -->
+<tr data-group="minigame"><td>Gold Mine</td><td><span class="pill pill-screen">Minigame</span></td><td>GoldMineDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">85%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:93%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="minigame"><td>Shell Game</td><td><span class="pill pill-screen">Minigame</span></td><td>ShellGameDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:88%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="minigame"><td>Dungeon Rush</td><td><span class="pill pill-screen">Minigame</span></td><td>DungeonRushDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">85%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:92%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="minigame"><td>Tavern</td><td><span class="pill pill-screen">Minigame</span></td><td>TavernDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">75%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:82%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<tr data-group="minigame"><td>Fortune Wheel</td><td><span class="pill pill-screen">Minigame</span></td><td>FortuneWheelDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:96%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- SHOP -->
+<tr data-group="shop"><td>Shop</td><td><span class="pill pill-screen">Shop</span></td><td>ShopDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:99%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="shop"><td>Shop Offers</td><td><span class="pill pill-screen">Shop</span></td><td>ShopOfferBannerView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:98%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="shop"><td>Currency Purchase</td><td><span class="pill pill-screen">Shop</span></td><td>CurrencyPurchaseView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">Partial</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="shop"><td>Premium Purchase</td><td><span class="pill pill-screen">Shop</span></td><td>PremiumPurchaseView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">Partial</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:93%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- INVENTORY -->
+<tr data-group="inventory"><td>Item Card</td><td><span class="pill pill-screen">Inventory</span></td><td>ItemCardView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="inventory"><td>Item Detail Sheet</td><td><span class="pill pill-screen">Inventory</span></td><td>ItemDetailSheet.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- PROGRESSION -->
+<tr data-group="progression"><td>Daily Quests</td><td><span class="pill pill-screen">Progression</span></td><td>DailyQuestsDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:96%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="progression"><td>Daily Login</td><td><span class="pill pill-screen">Progression</span></td><td>DailyLoginDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="progression"><td>Daily Login Popup</td><td><span class="pill pill-screen">Progression</span></td><td>DailyLoginPopupView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">N/A</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="progression"><td>Achievements</td><td><span class="pill pill-screen">Progression</span></td><td>AchievementsDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="progression"><td>Battle Pass</td><td><span class="pill pill-screen">Progression</span></td><td>BattlePassDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<!-- SOCIAL -->
+<tr data-group="social"><td>Leaderboard</td><td><span class="pill pill-screen">Social</span></td><td>LeaderboardDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:97%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="social"><td>Inbox</td><td><span class="pill pill-screen">Social</span></td><td>InboxDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">70%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:85%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<tr data-group="social"><td>Guild Hall</td><td><span class="pill pill-screen">Social</span></td><td>GuildHallDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">80%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:90%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<!-- SETTINGS -->
+<tr data-group="settings"><td>Settings</td><td><span class="pill pill-screen">Settings</span></td><td>SettingsDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:88%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="settings"><td>Appearance Editor</td><td><span class="pill pill-screen">Settings</span></td><td>AppearanceEditorDetailView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">75%</span></td><td><span class="pill pill-yes">90%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:82%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<tr data-group="settings"><td>Character Profile</td><td><span class="pill pill-screen">Settings</span></td><td>CharacterProfileView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-partial">80%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-partial">Partial</span></td><td><div class="progress-bar"><div class="progress-fill fill-warn" style="width:88%"></div></div></td><td><span class="pill pill-partial">Partial</span></td></tr>
+<tr data-group="settings"><td>Session Summary</td><td><span class="pill pill-screen">Settings</span></td><td>SessionSummaryView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">95%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-yes">Yes</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:95%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+<tr data-group="settings"><td>Tutorial</td><td><span class="pill pill-screen">Settings</span></td><td>TutorialView.swift</td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-yes">100%</span></td><td><span class="pill pill-no">No</span></td><td><span class="pill pill-partial">N/A</span></td><td><span class="pill pill-no">No</span></td><td><div class="progress-bar"><div class="progress-fill fill-good" style="width:92%"></div></div></td><td><span class="pill pill-yes">Yes</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- TAB: COMPONENTS -->
+<div id="tab-components" class="tab-content">
+<h2>Component Library Audit</h2>
+<input type="text" class="search-box" placeholder="Search components..." oninput="filterTable('compTable', this.value)">
+<table id="compTable">
+<thead>
+<tr><th>Component</th><th>File</th><th>Level</th><th>DS Tokens</th><th>States</th><th>Reusable</th><th>In Figma</th><th>Issues</th></tr>
+</thead>
+<tbody>
+<tr><td>ScreenLayout</td><td>ScreenLayout.swift</td><td><span class="pill pill-atom">Atom</span></td><td><span class="pill pill-yes">100%</span></td><td>Layout only</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>TabSwitcher</td><td>TabSwitcher.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">100%</span></td><td>Selected, Swipe</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>ToastOverlayView</td><td>ToastOverlayView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">98%</span></td><td>7 types, dismiss</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>minHeight:32 hardcoded</td></tr>
+<tr><td>EmptyStateView</td><td>EmptyStateView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">100%</span></td><td>5 presets</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>ErrorStateView</td><td>ErrorStateView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">100%</span></td><td>5 presets</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>LoadingOverlay</td><td>LoadingOverlay.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">95%</span></td><td>Animated</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Sizes 240,180 hardcoded</td></tr>
+<tr><td>SkeletonViews</td><td>SkeletonViews.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">100%</span></td><td>11 variants</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>CurrencyDisplay</td><td>CurrencyDisplay.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">100%</span></td><td>3 sizes, animated</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>HPBarView</td><td>HPBarView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">98%</span></td><td>3 sizes, critical</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>radius:4 hardcoded</td></tr>
+<tr><td>StaminaBarView</td><td>StaminaBarView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">98%</span></td><td>2 sizes</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>height:14 hardcoded</td></tr>
+<tr><td>XPBarView</td><td>XPBarView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">98%</span></td><td>2 sizes, near-lvl</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>radius:6 hardcoded</td></tr>
+<tr><td>AvatarImageView</td><td>AvatarImageView.swift</td><td><span class="pill pill-atom">Atom</span></td><td><span class="pill pill-yes">100%</span></td><td>Loading, fallback</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>ItemImageView</td><td>ItemImageView.swift</td><td><span class="pill pill-atom">Atom</span></td><td><span class="pill pill-yes">100%</span></td><td>3-tier cache</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td>None</td></tr>
+<tr><td>WidgetPill</td><td>WidgetPill.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">98%</span></td><td>10 styles</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>padding:2 hardcoded</td></tr>
+<tr><td>OrnamentalTitle</td><td>OrnamentalTitle.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">100%</span></td><td>Optional subtitle</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>UnifiedHeroWidget</td><td>UnifiedHeroWidget.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">100%</span></td><td>Critical HP, SP</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>HeroIntegratedCard</td><td>HeroIntegratedCard.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">95%</span></td><td>Equipment grid</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Sizes 200,60,36 hardcoded</td></tr>
+<tr><td>OpponentIntegratedCard</td><td>OpponentIntegratedCard.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">93%</span></td><td>Compare mode</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td>Font 13 hardcoded</td></tr>
+<tr><td>ArenaOpponentCard</td><td>ArenaOpponentCard.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">100%</span></td><td>Difficulty glow</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>BattleResultCardView</td><td>BattleResultCardView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">100%</span></td><td>Win/loss, particles</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>ItemCardView</td><td>ItemCardView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">97%</span></td><td>8 states, 4 contexts</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>PvPStatsWidget</td><td>PvPStatsWidget.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">90%</span></td><td>Compact/full</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Fonts 20,40 hardcoded</td></tr>
+<tr><td>GuestGateView</td><td>GuestGateView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">100%</span></td><td>Gate overlay</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>LevelUpModalView</td><td>LevelUpModalView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">97%</span></td><td>8-phase ceremony</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Font 28 in shield</td></tr>
+<tr><td>SessionExpiredModal</td><td>SessionExpiredModalView.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-yes">95%</span></td><td>Blocking modal</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Width 280, height 52</td></tr>
+<tr><td>NPCGuideWidget</td><td>NPCGuideWidget.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">97%</span></td><td>Typewriter, CTA</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>60px fallback circle</td></tr>
+<tr><td>CelebrationBanner</td><td>CelebrationBannerView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">97%</span></td><td>5 types</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Sizes 36,44 hardcoded</td></tr>
+<tr><td>EventBanner</td><td>EventBannerView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">97%</span></td><td>Timer, urgent</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>spacing:4, icon:36</td></tr>
+<tr><td>LowHPPotionBanner</td><td>LowHPPotionBanner.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">97%</span></td><td>Has/no potion</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>40x40 icon</td></tr>
+<tr><td>InboxRowView</td><td>InboxRowView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-partial">75%</span></td><td>Read/unread, claim</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>20+ hardcoded fonts</td></tr>
+<tr><td>LeaderboardRowView</td><td>LeaderboardRowView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">100%</span></td><td>Rank, current</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>AchievementCardView</td><td>AchievementCardView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">97%</span></td><td>4 states</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>icon 44x44, bar 6px</td></tr>
+<tr><td>BPRewardNodeView</td><td>BPRewardNodeView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">95%</span></td><td>3 states</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>Node 64x64, 90 width</td></tr>
+<tr><td>DungeonBossCard</td><td>DungeonBossCard.swift</td><td><span class="pill pill-organism">Organism</span></td><td><span class="pill pill-partial">80%</span></td><td>Defeated/current/locked</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>6+ hardcoded font sizes</td></tr>
+<tr><td>ActiveQuestBanner</td><td>ActiveQuestBanner.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">97%</span></td><td>Progress, claim</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td>22x22 icon, 40x5 bar</td></tr>
+<tr><td>CardLevelBadge</td><td>CardLevelBadge.swift</td><td><span class="pill pill-atom">Atom</span></td><td><span class="pill pill-yes">100%</span></td><td>Standard/compact</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>StatPointsBadge</td><td>StatPointsBadge.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">100%</span></td><td>3 layouts</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-yes">Yes</span></td><td>None</td></tr>
+<tr><td>OfflineBanner</td><td>OfflineBannerView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">98%</span></td><td>Network-driven</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td>opacity:0.8</td></tr>
+<tr><td>StanceDisplayView</td><td>StanceDisplayView.swift</td><td><span class="pill pill-molecule">Molecule</span></td><td><span class="pill pill-yes">95%</span></td><td>Interactive/display</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">Partial</span></td><td>Sizes 20x48, 7x7</td></tr>
+<tr><td>VictoryParticles</td><td>VictoryParticlesView.swift</td><td><span class="pill pill-modifier">Modifier</span></td><td><span class="pill pill-yes">100%</span></td><td>Victory/defeat</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td>None</td></tr>
+<tr><td>RewardBurstView</td><td>RewardBurstView.swift</td><td><span class="pill pill-modifier">Modifier</span></td><td><span class="pill pill-yes">100%</span></td><td>8 styles</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td>None</td></tr>
+<tr><td>ShimmerModifier</td><td>ShimmerModifier.swift</td><td><span class="pill pill-modifier">Modifier</span></td><td><span class="pill pill-yes">100%</span></td><td>isActive</td><td><span class="pill pill-yes">Yes</span></td><td><span class="pill pill-partial">N/A</span></td><td>None</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- TAB: GAPS -->
+<div id="tab-gaps" class="tab-content">
+<h2>Gaps & Issues</h2>
+
+<h3>Critical: Hardcoded Font Sizes (67 instances)</h3>
+<div class="gap-item"><div class="gap-title">InboxRowView.swift — 21 hardcoded font sizes</div><div class="gap-detail">Lines: 117, 134, 258, 275, 349, 355, 359, 371, 377, 389, 395, 468, 473, 480, 487, 498, 513, 526, 538, 603 + InboxDetailView:530. Sizes: 11, 12, 14, 16. Fix: Replace with LayoutConstants.textBadge (11), textCaption (12), textLabel (14), textCard (16).</div></div>
+<div class="gap-item"><div class="gap-title">CharacterSelectionView.swift — 17 hardcoded font sizes</div><div class="gap-detail">Lines: 254, 259, 299, 303, 342, 345, 356, 385, 389, 399, 411, 430, 447, 454, 582, 698, 726, 732, 748. Sizes: 9, 10, 11, 12, 13, 14, 15, 16, 20, 28. Fix: Map to LayoutConstants.</div></div>
+<div class="gap-item"><div class="gap-title">AppearanceStepView.swift — 5 hardcoded font sizes</div><div class="gap-detail">Lines: 10, 42, 116, 158, 366. Sizes: 12, 14, 20, 48. Fix: Use LayoutConstants constants.</div></div>
+<div class="gap-item"><div class="gap-title">LoreIntroView.swift — 3 hardcoded font sizes</div><div class="gap-detail">Lines: 359, 390, 407. Sizes: 14, 15, 16.</div></div>
+<div class="gap-item"><div class="gap-title">DungeonBossCard.swift — 6 hardcoded font sizes</div><div class="gap-detail">Lines: 130, 230, 238, 274, 278. Sizes: 9, 10, 12, 13, 28.</div></div>
+<div class="gap-item"><div class="gap-title">TavernDetailView.swift — 3 hardcoded sizes</div><div class="gap-detail">Lines: 58, 127, 135. Sizes: 12, 14, 15.</div></div>
+<div class="gap-item"><div class="gap-title">Combat views — 5 hardcoded sizes</div><div class="gap-detail">CombatDetailView:505 (11), CombatResultDetailView:316,320 (20), LootDetailView:140,144 (20).</div></div>
+<div class="gap-item"><div class="gap-title">Minigames — 4 hardcoded sizes</div><div class="gap-detail">GoldMine:76 (32), DungeonRush:379 (28), DungeonRush:1238 (32), TreasureReward:53 (28).</div></div>
+
+<h3>Missing States</h3>
+<div class="gap-item warn"><div class="gap-title">12 screens missing loading/empty/error states</div><div class="gap-detail">
+<strong>No loading:</strong> CityMapView, StanceSelectorDetailView, ShellGameDetailView, TavernDetailView, SettingsDetailView, TutorialView<br>
+<strong>No error:</strong> CityMapView, StanceSelectorDetailView, ShellGameDetailView, TavernDetailView, SettingsDetailView, TutorialView, LootDetailView, DungeonMapView<br>
+<strong>No empty:</strong> TavernDetailView, AppearanceEditorDetailView, LootDetailView
+</div></div>
+
+<h3>Components Missing from Figma DS</h3>
+<div class="gap-item info"><div class="gap-title">6 components not fully represented in Figma</div><div class="gap-detail">
+<strong>Partial:</strong> ItemImageView (asset loading states), OpponentIntegratedCard (compare mode), ActiveQuestBanner (progress animation), OfflineBannerView (banner states), StanceDisplayView (interactive mode)<br>
+<strong>Not applicable:</strong> Animation modifiers (ShimmerModifier, VictoryParticles, RewardBurst, CoinFly) — Figma doesn't animate
+</div></div>
+
+<h3>Missing Components in DS</h3>
+<div class="gap-item info"><div class="gap-title">8 ad-hoc patterns that should be DS components</div><div class="gap-detail">
+1. <strong>StyledTextField / StyledSecureField</strong> — defined inline in LoginView.swift, not reusable<br>
+2. <strong>MiningSparklesOverlay</strong> — Canvas particle system, unique to GoldMine<br>
+3. <strong>FortuneWheelView</strong> — Canvas pie-chart component, unique to FortuneWheel<br>
+4. <strong>ProgressBarGeneric</strong> — various 6px/8px/14px bars with different fills, should be unified<br>
+5. <strong>CountdownTimer</strong> — inline in EmailConfirmation, EventBanner, DailyLogin — should be shared<br>
+6. <strong>StatComparisonRow</strong> — inline in ArenaComparison, ItemDetail — should be shared<br>
+7. <strong>DifficultyTag</strong> — inline badge in ArenaOpponentCard — exists in Figma but not as Swift component<br>
+8. <strong>GlowCircleOrnament</strong> — repeated 400x400/240x240/160x160 radial glow circles across modals
+</div></div>
+</div>
+
+<!-- TAB: TOKENS -->
+<div id="tab-tokens" class="tab-content">
+<h2>Token Coverage Audit</h2>
+
+<h3>Color Tokens</h3>
+<div class="section">
+<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Coverage</span><strong style="color:var(--success)">100%</strong></div>
+<div class="progress-bar"><div class="progress-fill fill-good" style="width:100%"></div></div>
+<p style="margin-top:12px;color:var(--text2);font-size:13px">Zero hardcoded hex colors in Views/. Zero raw Color.red/green/blue usage. All colors reference DarkFantasyTheme tokens. All rarity/rank/class colors use factory methods.</p>
+</div>
+
+<h3>Font Tokens</h3>
+<div class="section">
+<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Coverage</span><strong style="color:var(--stamina)">87%</strong></div>
+<div class="progress-bar"><div class="progress-fill fill-warn" style="width:87%"></div></div>
+<p style="margin-top:12px;color:var(--text2);font-size:13px">67 instances of DarkFantasyTheme.font(size: N) with hardcoded numeric sizes instead of LayoutConstants references. 4 instances of .font(.system(size:)) for SF Symbol icons (marked with "keep" comments). No invented font token names found.</p>
+<h3 style="margin-top:16px">Missing Font Tokens (proposed)</h3>
+<table>
+<thead><tr><th>Token</th><th>Value</th><th>Use</th><th>Current Usage</th></tr></thead>
+<tbody>
+<tr><td><code>textMicro</code></td><td>9</td><td>Tiny stat labels</td><td>DungeonBossCard, CharacterSelection</td></tr>
+<tr><td><code>textMini</code></td><td>10</td><td>Compact badges, boss numbers</td><td>DungeonBossCard, CharacterSelection</td></tr>
+<tr><td><code>textSmallSection</code></td><td>13</td><td>Compact section headers</td><td>DungeonBossCard, OpponentCard</td></tr>
+<tr><td><code>textCompactSection</code></td><td>15</td><td>Medium section headers</td><td>TavernDetailView, LoreIntro</td></tr>
+<tr><td><code>textLargeSection</code></td><td>20</td><td>Combat results, stat headers</td><td>CombatResult, LootDetail, AppearanceStep</td></tr>
+<tr><td><code>textHeroAmount</code></td><td>28</td><td>Large display numbers</td><td>TreasureReward, DungeonRush, CharSelection</td></tr>
+<tr><td><code>textJumbo</code></td><td>32</td><td>Mining output, rush results</td><td>GoldMine, DungeonRush</td></tr>
+<tr><td><code>textGiant</code></td><td>48</td><td>Dice/icon display</td><td>AppearanceStep dice button</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Spacing Tokens</h3>
+<div class="section">
+<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Coverage</span><strong style="color:var(--success)">93%</strong></div>
+<div class="progress-bar"><div class="progress-fill fill-good" style="width:93%"></div></div>
+<p style="margin-top:12px;color:var(--text2);font-size:13px">Most views use LayoutConstants tokens. Minor hardcoded values: padding(5), padding(6), spacing(1), spacing(2), spacing(3). No invented spacing token names found.</p>
+</div>
+
+<h3>Corner Radius Tokens</h3>
+<div class="section">
+<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Coverage</span><strong style="color:var(--success)">99%</strong></div>
+<div class="progress-bar"><div class="progress-fill fill-good" style="width:99%"></div></div>
+<p style="margin-top:12px;color:var(--text2);font-size:13px">Only 2 hardcoded radius values found: cornerRadius:1 (HubView decorative line) and cornerRadius:4/6 (progress bar compact variants). All cards, modals, panels use LayoutConstants.radius* tokens.</p>
+</div>
+</div>
+
+<!-- TAB: ACTIONS -->
+<div id="tab-actions" class="tab-content">
+<h2>Action Items</h2>
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Priority</th><th>Scope</th><th>Files Affected</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Add 8 missing font size tokens to LayoutConstants</td><td><span class="pill pill-high">High</span></td><td>LayoutConstants.swift</td><td>1 file</td></tr>
+<tr><td>2</td><td>Replace 21 hardcoded fonts in InboxRowView</td><td><span class="pill pill-high">High</span></td><td>InboxRowView.swift</td><td>1 file</td></tr>
+<tr><td>3</td><td>Replace 17 hardcoded fonts in CharacterSelectionView</td><td><span class="pill pill-high">High</span></td><td>CharacterSelectionView.swift</td><td>1 file</td></tr>
+<tr><td>4</td><td>Replace 6 hardcoded fonts in DungeonBossCard</td><td><span class="pill pill-high">High</span></td><td>DungeonBossCard.swift</td><td>1 file</td></tr>
+<tr><td>5</td><td>Replace 5 hardcoded fonts in AppearanceStepView</td><td><span class="pill pill-medium">Medium</span></td><td>AppearanceStepView.swift</td><td>1 file</td></tr>
+<tr><td>6</td><td>Replace 5 hardcoded fonts in Combat views</td><td><span class="pill pill-medium">Medium</span></td><td>CombatDetailView, CombatResultDetailView, LootDetailView</td><td>3 files</td></tr>
+<tr><td>7</td><td>Replace 4 hardcoded fonts in Minigame views</td><td><span class="pill pill-medium">Medium</span></td><td>GoldMine, DungeonRush, TreasureReward</td><td>3 files</td></tr>
+<tr><td>8</td><td>Replace 3 hardcoded fonts in TavernDetailView</td><td><span class="pill pill-medium">Medium</span></td><td>TavernDetailView.swift</td><td>1 file</td></tr>
+<tr><td>9</td><td>Replace 3 hardcoded fonts in LoreIntroView</td><td><span class="pill pill-low">Low</span></td><td>LoreIntroView.swift</td><td>1 file</td></tr>
+<tr><td>10</td><td>Add loading/error states to CityMapView</td><td><span class="pill pill-medium">Medium</span></td><td>CityMapView.swift</td><td>1 file</td></tr>
+<tr><td>11</td><td>Add loading/error states to StanceSelectorDetailView</td><td><span class="pill pill-low">Low</span></td><td>StanceSelectorDetailView.swift</td><td>1 file</td></tr>
+<tr><td>12</td><td>Add loading/error states to ShellGameDetailView</td><td><span class="pill pill-medium">Medium</span></td><td>ShellGameDetailView.swift</td><td>1 file</td></tr>
+<tr><td>13</td><td>Add loading/error/empty states to TavernDetailView</td><td><span class="pill pill-medium">Medium</span></td><td>TavernDetailView.swift</td><td>1 file</td></tr>
+<tr><td>14</td><td>Add loading/error states to SettingsDetailView</td><td><span class="pill pill-low">Low</span></td><td>SettingsDetailView.swift</td><td>1 file</td></tr>
+<tr><td>15</td><td>Add error/empty states to AppearanceEditorDetailView</td><td><span class="pill pill-medium">Medium</span></td><td>AppearanceEditorDetailView.swift</td><td>1 file</td></tr>
+<tr><td>16</td><td>Add all states to LootDetailView</td><td><span class="pill pill-medium">Medium</span></td><td>LootDetailView.swift</td><td>1 file</td></tr>
+<tr><td>17</td><td>Add loading state to DungeonMapView</td><td><span class="pill pill-low">Low</span></td><td>DungeonMapView.swift</td><td>1 file</td></tr>
+<tr><td>18</td><td>Extract StyledTextField to Components/</td><td><span class="pill pill-medium">Medium</span></td><td>LoginView → Components/StyledTextField.swift</td><td>3+ files</td></tr>
+<tr><td>19</td><td>Create shared CountdownTimerView component</td><td><span class="pill pill-low">Low</span></td><td>EmailConfirmation, EventBanner, DailyLogin</td><td>3 files</td></tr>
+<tr><td>20</td><td>Create shared StatComparisonRow component</td><td><span class="pill pill-low">Low</span></td><td>ArenaComparison, ItemDetail</td><td>2 files</td></tr>
+<tr><td>21</td><td>Create DifficultyTag as Swift DS component</td><td><span class="pill pill-low">Low</span></td><td>ArenaOpponentCard, DungeonBossCard</td><td>2 files</td></tr>
+<tr><td>22</td><td>Unify progress bar heights (6/8/14px → token)</td><td><span class="pill pill-medium">Medium</span></td><td>LayoutConstants + 10+ files</td><td>10+ files</td></tr>
+<tr><td>23</td><td>Add hardcoded dimension constants for portraits (200, 280)</td><td><span class="pill pill-low">Low</span></td><td>LayoutConstants.swift</td><td>1 file</td></tr>
+<tr><td>24</td><td>Add hardcoded dimension constants for icons (36, 40, 44, 60)</td><td><span class="pill pill-low">Low</span></td><td>LayoutConstants.swift</td><td>1 file</td></tr>
+<tr><td>25</td><td>Add hardcoded dimension constants for modals (280, 300)</td><td><span class="pill pill-low">Low</span></td><td>LayoutConstants.swift</td><td>1 file</td></tr>
+<tr><td>26</td><td>Add compact bar radius tokens (4, 6)</td><td><span class="pill pill-low">Low</span></td><td>LayoutConstants.swift, HPBarView, XPBarView</td><td>3 files</td></tr>
+<tr><td>27</td><td>Update Figma DS: OpponentIntegratedCard — add compare mode</td><td><span class="pill pill-low">Low</span></td><td>Figma DS</td><td>Figma</td></tr>
+<tr><td>28</td><td>Update Figma DS: OfflineBannerView — add all states</td><td><span class="pill pill-low">Low</span></td><td>Figma DS</td><td>Figma</td></tr>
+<tr><td>29</td><td>Update Figma DS: StanceDisplayView — add interactive variant</td><td><span class="pill pill-low">Low</span></td><td>Figma DS</td><td>Figma</td></tr>
+<tr><td>30</td><td>Update Figma DS: ActiveQuestBanner — add progress variant</td><td><span class="pill pill-low">Low</span></td><td>Figma DS</td><td>Figma</td></tr>
+<tr><td>31</td><td>Document Input Field component in Figma (3 states)</td><td><span class="pill pill-medium">Medium</span></td><td>Figma DS</td><td>Figma</td></tr>
+<tr><td>32</td><td>Add FortuneWheelView to Figma as static component</td><td><span class="pill pill-low">Low</span></td><td>Figma DS</td><td>Figma</td></tr>
+<tr><td>33</td><td>Centralize animation timings (glowRotation: 4s, 1.8s, 2.4s)</td><td><span class="pill pill-low">Low</span></td><td>MotionConstants.swift</td><td>5+ files</td></tr>
+<tr><td>34</td><td>Standardize hardcoded spacing (2,3,4,5 → spaceXXS)</td><td><span class="pill pill-low">Low</span></td><td>LayoutConstants + 15+ files</td><td>15+ files</td></tr>
+<tr><td>35</td><td>Add GlowCircleOrnament to OrnamentalStyles</td><td><span class="pill pill-low">Low</span></td><td>OrnamentalStyles.swift</td><td>5+ files</td></tr>
+<tr><td>36</td><td>Create ornamentalCard() composite modifier</td><td><span class="pill pill-medium">Medium</span></td><td>CardStyles.swift</td><td>20+ files</td></tr>
+<tr><td>37</td><td>Create ProgressBarToken enum (hp/xp/stamina/quest/generic)</td><td><span class="pill pill-medium">Medium</span></td><td>New component</td><td>10+ files</td></tr>
+<tr><td>38</td><td>Update SCREEN_INVENTORY.md with new screens found in audit</td><td><span class="pill pill-medium">Medium</span></td><td>docs/07_ui_ux/SCREEN_INVENTORY.md</td><td>1 file</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- TAB: FIGMA READINESS -->
+<div id="tab-figma" class="tab-content">
+<h2>Figma 1:1 Reconstruction Readiness</h2>
+<p style="color:var(--text2);margin-bottom:16px">Can each screen be assembled in Figma using ONLY DS components + tokens?</p>
+
+<div class="kpi-grid" style="margin-bottom:24px">
+  <div class="kpi kpi-good"><div class="kpi-value">38</div><div class="kpi-label">Figma Ready</div></div>
+  <div class="kpi kpi-warn"><div class="kpi-value">10</div><div class="kpi-label">Partial (minor gaps)</div></div>
+  <div class="kpi kpi-bad"><div class="kpi-value">0</div><div class="kpi-label">Not Ready</div></div>
+</div>
+
+<h3>Screens Needing Work Before Figma 1:1</h3>
+<table>
+<thead><tr><th>Screen</th><th>Blocker</th><th>Fix Required</th></tr></thead>
+<tbody>
+<tr><td>Character Selection</td><td>17 hardcoded fonts, complex card layouts</td><td>Tokenize fonts, create HeroSelectionCard in Figma</td></tr>
+<tr><td>Inbox / InboxRow</td><td>21 hardcoded fonts, complex expandable rows</td><td>Tokenize fonts, create expanded/collapsed InboxRow variants in Figma</td></tr>
+<tr><td>Appearance Editor</td><td>Hardcoded fonts, missing empty/error states</td><td>Tokenize, add states, create SkinSelector component in Figma</td></tr>
+<tr><td>Character Profile</td><td>Hardcoded fonts, basic error state</td><td>Tokenize, improve error handling</td></tr>
+<tr><td>Guild Hall</td><td>Hardcoded fonts, partial empty states</td><td>Tokenize, create GuildMemberRow + FriendRow in Figma</td></tr>
+<tr><td>Tavern</td><td>Hardcoded fonts, no states</td><td>Tokenize, add loading/empty/error, create TavernGameCard in Figma</td></tr>
+<tr><td>Loot Display</td><td>No loading/empty/error states</td><td>Add all states</td></tr>
+<tr><td>Dungeon Map</td><td>No loading/error states</td><td>Add states</td></tr>
+<tr><td>Dungeon Boss Card</td><td>6 hardcoded fonts</td><td>Tokenize all font sizes</td></tr>
+<tr><td>Appearance Step</td><td>5 hardcoded fonts</td><td>Tokenize</td></tr>
+</tbody>
+</table>
+
+<h3>Overall Assessment</h3>
+<div class="section" style="border-color:var(--gold-dim)">
+<p style="font-size:15px"><strong style="color:var(--gold)">Verdict: 79% of screens (38/48) can be assembled 1:1 in Figma right now.</strong></p>
+<p style="margin-top:8px;color:var(--text2)">The remaining 10 screens need font tokenization (primary blocker) and missing state additions. Color, spacing, radius, and ornamental systems are already at 93-100% coverage. After implementing Action Items #1-9 (font tokens) and #10-17 (missing states), all 48 screens will be Figma-reconstructable.</p>
+<p style="margin-top:12px;color:var(--text2)"><strong>Estimated effort:</strong> ~2-3 hours for font tokenization, ~3-4 hours for missing states. Total: 1 day of focused work to reach 100% Figma parity.</p>
+</div>
+</div>
+
+</div><!-- container -->
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+function filterTable(tableId, query) {
+  const rows = document.getElementById(tableId).querySelectorAll('tbody tr');
+  query = query.toLowerCase();
+  rows.forEach(r => { r.style.display = r.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+}
+function filterGroup(btn, group) {
+  document.querySelectorAll('.filters .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.getElementById('screenTable').querySelectorAll('tbody tr');
+  rows.forEach(r => { r.style.display = (group === 'all' || r.dataset.group === group) ? '' : 'none'; });
+}
+</script>
+</body>
+</html>

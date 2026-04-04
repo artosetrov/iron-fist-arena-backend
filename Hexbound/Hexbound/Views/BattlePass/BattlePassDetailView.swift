@@ -83,7 +83,7 @@ struct BattlePassDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("BATTLE PASS")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -100,19 +100,19 @@ struct BattlePassDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Season name
             Text(vm.seasonName)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .accessibilityLabel("Season: \(vm.seasonName)")
 
             // Level + XP text
             HStack {
                 Text("Level \(vm.currentLevel)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .accessibilityLabel("Battle Pass level \(vm.currentLevel)")
                 Spacer()
                 Text("\(vm.currentXp) / \(vm.xpToNext) XP")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .accessibilityLabel("Experience: \(vm.currentXp) of \(vm.xpToNext)")
             }
@@ -178,7 +178,7 @@ struct BattlePassDetailView: View {
     private func rewardTrackSection(title: String, rewards: [BPReward], vm: BattlePassViewModel) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             Text(title)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             ScrollViewReader { proxy in
@@ -205,7 +205,7 @@ struct BattlePassDetailView: View {
                         ?? rewards.first(where: { $0.level >= vm.currentLevel })?.level
                     if let target {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            withAnimation(.easeInOut(duration: 0.4)) {
+                            withAnimation(.easeInOut(duration: MotionConstants.normal)) {
                                 proxy.scrollTo(target, anchor: .center)
                             }
                         }

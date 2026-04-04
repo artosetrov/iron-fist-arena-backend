@@ -56,7 +56,7 @@ struct ScreenLayout<Content: View>: View {
             }
             ToolbarItem(placement: .principal) {
                 Text(title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }

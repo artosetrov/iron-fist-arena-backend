@@ -73,7 +73,7 @@ struct CharacterSelectionView: View {
                     Button { appState.authPath.append(AppRoute.settings) } label: {
                         Image("icon-settings")
                             .resizable()
-                            .frame(width: 24, height: 24)
+                            .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                     }
                     .buttonStyle(.plain)
                 }
@@ -121,12 +121,12 @@ struct CharacterSelectionView: View {
     private var headerSection: some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text("CHOOSE YOUR HERO")
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .tracking(2)
 
             Text("Select a hero to enter the world")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .padding(.top, LayoutConstants.spaceMD)
@@ -238,7 +238,7 @@ struct CharacterSelectionView: View {
                     ZStack {
                         Circle()
                             .fill(DarkFantasyTheme.bgTertiary)
-                            .frame(width: 48, height: 48)
+                            .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
                             .overlay(
                                 Circle()
                                     .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1.5)
@@ -249,14 +249,14 @@ struct CharacterSelectionView: View {
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
 
-                    VStack(spacing: 2) {
+                    VStack(spacing: LayoutConstants.space2XS) {
                         Text("CREATE HERO")
-                            .font(DarkFantasyTheme.section(size: 14))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .tracking(0.8)
 
                         Text("\(vm.slotsLeft) of 5 slots")
-                            .font(DarkFantasyTheme.body(size: 11))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -293,14 +293,14 @@ struct CharacterSelectionView: View {
                     )
                 }
             } label: {
-                VStack(spacing: 2) {
+                VStack(spacing: LayoutConstants.space2XS) {
                     if let selected = vm.selectedCharacter, !enterPressed {
                         Text("Playing as \(selected.characterName)")
-                            .font(DarkFantasyTheme.body(size: 11))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
                     }
                     Text(enterPressed ? "ENTERING..." : "ENTER GAME")
-                        .font(DarkFantasyTheme.section(size: 16))
+                        .font(DarkFantasyTheme.buttonLabel)
                         .tracking(1.5)
                 }
                 .frame(maxWidth: .infinity)
@@ -330,7 +330,7 @@ struct CharacterSelectionView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.gold)
-                .frame(width: 32, height: 32)
+                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
                 .background(
                     Circle()
                         .fill(DarkFantasyTheme.gold.opacity(0.1))
@@ -339,10 +339,10 @@ struct CharacterSelectionView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Guest Account")
-                    .font(DarkFantasyTheme.section(size: 12))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text("Create an account to save progress")
-                    .font(DarkFantasyTheme.body(size: 11))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -353,7 +353,7 @@ struct CharacterSelectionView: View {
                 appState.authPath.append(AppRoute.register)
             } label: {
                 Text("SIGN UP")
-                    .font(DarkFantasyTheme.section(size: 11))
+                    .font(DarkFantasyTheme.caption)
                     .tracking(0.8)
             }
             .buttonStyle(.compactPrimary)
@@ -378,15 +378,15 @@ struct CharacterSelectionView: View {
             Spacer()
 
             Image(systemName: "person.badge.plus")
-                .font(Font.custom("Oswald-Regular", size: LayoutConstants.textCelebration))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(DarkFantasyTheme.gold.opacity(0.4))
 
             Text("No Heroes Yet")
-                .font(DarkFantasyTheme.title(size: 20))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Text("Create your first hero and begin\nyour journey in Hexbound")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
 
@@ -396,7 +396,7 @@ struct CharacterSelectionView: View {
                 appState.authPath.append(AppRoute.onboarding)
             } label: {
                 Text("CREATE HERO")
-                    .font(DarkFantasyTheme.section(size: 15))
+                    .font(DarkFantasyTheme.body)
                     .tracking(1)
                     .frame(maxWidth: 220)
                     .frame(height: 52)
@@ -408,7 +408,7 @@ struct CharacterSelectionView: View {
                     appState.authPath.append(AppRoute.register)
                 } label: {
                     Text("Or create an account")
-                        .font(DarkFantasyTheme.body(size: 13))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -427,7 +427,7 @@ struct CharacterSelectionView: View {
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.2)
             Text("Loading heroes...")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
         }
@@ -444,14 +444,14 @@ struct CharacterSelectionView: View {
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Button {
                 Task { await vm.loadCharacters(appState: appState) }
             } label: {
                 Text("RETRY")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.body)
                     .tracking(1)
                     .frame(width: 140, height: 44)
             }
@@ -477,11 +477,11 @@ struct CharacterSelectionView: View {
                     .shadow(color: DarkFantasyTheme.gold.opacity(enterGlow ? 0.6 : 0.1), radius: enterGlow ? 16 : 4)
 
                 Text("Entering the Realm...")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text("Preparing your adventure...")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .padding(LayoutConstants.spaceLG)
@@ -579,11 +579,11 @@ struct HeroSelectionCard: View {
                     VStack(spacing: 0) {
                         Spacer()
                         Text("◆  ACTIVE  ◆")
-                            .font(DarkFantasyTheme.body(size: 9).bold())
+                            .font(DarkFantasyTheme.caption.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .tracking(2)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 4)
+                            .padding(.vertical, LayoutConstants.spaceXS)
                             .background(
                                 LinearGradient(
                                     colors: [
@@ -662,7 +662,7 @@ struct HeroSelectionCard: View {
             // Low HP badge (selection state shown by ACTIVE ribbon + edit button overlay)
             if hpPercent < 0.5 && !isSelected {
                 Text("LOW HP")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(DarkFantasyTheme.danger)
                     .padding(.horizontal, LayoutConstants.spaceSM)
                     .padding(.vertical, LayoutConstants.space2XS)
@@ -685,35 +685,23 @@ struct HeroSelectionCard: View {
     }
 
     private var bottomInfoStack: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             // Name
             Text(character.characterName)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
 
             // Class tag pill
-            Text(character.characterClass.displayName.uppercased())
-                .font(DarkFantasyTheme.body(size: 10).bold())
-                .foregroundStyle(classColor)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                        .fill(classColor.opacity(0.12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                .stroke(classColor.opacity(0.25), lineWidth: 0.5)
-                        )
-                )
+            ClassTagView(characterClass: character.characterClass)
 
             // Rating row with icon
-            HStack(spacing: 5) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 if UIImage(named: "icon-pvp-rating") != nil {
                     Image("icon-pvp-rating")
                         .resizable()
-                        .frame(width: 20, height: 20)
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                         .opacity(0.7)
                 } else {
                     Image(systemName: "star.fill")
@@ -723,13 +711,13 @@ struct HeroSelectionCard: View {
 
                 if isNewHero {
                     Text("NEW")
-                        .font(DarkFantasyTheme.section(size: 20))
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .tracking(2)
                         .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
                 } else {
                     Text("\(character.pvpRating)")
-                        .font(DarkFantasyTheme.section(size: 28))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .shadow(color: glowColor.opacity(0.4), radius: 12)
                         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
@@ -737,63 +725,41 @@ struct HeroSelectionCard: View {
             }
 
             // Currency row
-            HStack(spacing: 8) {
-                HStack(spacing: 3) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     if UIImage(named: "icon-gold") != nil {
                         Image("icon-gold")
                             .resizable()
                             .frame(width: 14, height: 14)
                     }
                     Text("\(character.gold)")
-                        .font(DarkFantasyTheme.body(size: 11))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
                 }
 
-                HStack(spacing: 3) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     if UIImage(named: "icon-gems") != nil {
                         Image("icon-gems")
                             .resizable()
                             .frame(width: 14, height: 14)
                     }
                     Text("\(character.gems ?? 0)")
-                        .font(DarkFantasyTheme.body(size: 11))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
                 }
             }
 
             // Glass stat pills
-            HStack(spacing: 4) {
-                glassStatPill(value: "\(character.strength ?? 0)", label: "ATK", color: DarkFantasyTheme.danger)
-                glassStatPill(value: "\(character.vitality ?? 0)", label: "DEF", color: DarkFantasyTheme.info)
-                glassStatPill(value: "Lv.\(character.level)", label: "Level", color: DarkFantasyTheme.gold)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                GlassStatPill(value: "\(character.strength ?? 0)", label: "ATK", color: DarkFantasyTheme.danger)
+                GlassStatPill(value: "\(character.vitality ?? 0)", label: "DEF", color: DarkFantasyTheme.info)
+                GlassStatPill(value: "Lv.\(character.level)", label: "Level", color: DarkFantasyTheme.gold)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Glass Stat Pill
-
-    @ViewBuilder
-    private func glassStatPill(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(DarkFantasyTheme.section(size: 13))
-                .foregroundStyle(color)
-            Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(color.opacity(0.15), lineWidth: 0.5)
-                )
-        )
-    }
+    // MARK: - Glass Stat Pill (uses shared GlassStatPill component)
 
     // MARK: - Animated Border
 

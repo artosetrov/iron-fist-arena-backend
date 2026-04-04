@@ -42,12 +42,12 @@ struct StatPointsBadge: View {
 
     private var bannerLayout: some View {
         HStack {
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "star.fill")
                     .font(DarkFantasyTheme.caption)
                 Text("Stat Points: \(points)")
             }
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+            .font(DarkFantasyTheme.cardTitle)
             .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .frame(maxWidth: .infinity)
@@ -84,11 +84,11 @@ struct StatPointsBadge: View {
             Text("⭐")
                 .font(.system(size: LayoutConstants.textCard))
             Text("Stat Points")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text("+\(points)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody).bold())
+                .font(DarkFantasyTheme.buttonLabel.bold())
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .accessibilityLabel("Stat Points reward: plus \(points)")
@@ -99,7 +99,7 @@ struct StatPointsBadge: View {
 
 #if DEBUG
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: LayoutConstants.spaceLG) {
         StatPointsBadge(points: 5, style: .banner)
             .padding(.horizontal, LayoutConstants.spaceMD)
         StatPointsBadge(points: 3, style: .pill, onTap: {})

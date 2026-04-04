@@ -88,7 +88,7 @@ final class CombatViewModel {
             currentRound = (i / 2) + 1
 
             // Update turn label — show attack vs defense context
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 if isPlayerAttacking {
                     turnLabel = "YOUR ATTACK"
                     turnLabelColor = DarkFantasyTheme.danger
@@ -99,7 +99,7 @@ final class CombatViewModel {
             }
 
             // Update action zones
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 currentAttackZone = turn.targetZone?.uppercased()
                 currentDefendZone = turn.defendZone?.uppercased()
             }

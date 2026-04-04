@@ -100,9 +100,9 @@ struct ShellGameDetailView: View {
                     // ─── STATUS TEXT ─────────────────────────────────────
                     if gamePhase != .result {
                         Text(statusText)
-                            .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .animation(.easeInOut(duration: 0.2), value: gamePhase)
+                            .animation(MotionConstants.snappy, value: gamePhase)
                     }
 
                     // ─── CUPS (with shuffle animation) ───────
@@ -121,7 +121,7 @@ struct ShellGameDetailView: View {
                         VStack(spacing: LayoutConstants.spaceSM) {
                             ZStack {
                                 Text(result == "win" ? "You Win!" : "Wrong Cup!")
-                                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                                    .font(DarkFantasyTheme.section)
                                     .foregroundStyle(result == "win" ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
                                 if result == "win" {
@@ -131,7 +131,7 @@ struct ShellGameDetailView: View {
 
                             if result == "win" {
                                 Text("+\(vm.winAmount) gold")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                                    .font(DarkFantasyTheme.cardTitle)
                                     .foregroundStyle(DarkFantasyTheme.goldBright)
                             }
                         }
@@ -157,7 +157,7 @@ struct ShellGameDetailView: View {
                     .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.4, isActive: bottomButtonEnabled)
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.bottom, LayoutConstants.spaceSM)
-                    .animation(.easeInOut(duration: 0.25), value: gamePhase)
+                    .animation(.easeInOut(duration: MotionConstants.fast), value: gamePhase)
                 }
                 .transaction { $0.animation = nil }
             }
@@ -170,7 +170,7 @@ struct ShellGameDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("SHELL GAME")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -186,11 +186,11 @@ struct ShellGameDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             HStack {
                 Text("BET AMOUNT")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Spacer()
                 Text("Win = 2x payout")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
 
@@ -319,7 +319,7 @@ struct ShellGameDetailView: View {
             }
         }
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(MotionConstants.smooth) {
             gamePhase = .result
         }
 
@@ -343,7 +343,7 @@ struct ShellGameDetailView: View {
             lossFlashOpacity = 0.2
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.easeOut(duration: 0.15)) {
+            withAnimation(.easeOut(duration: MotionConstants.instant)) {
                 lossFlashOpacity = 0
             }
         }

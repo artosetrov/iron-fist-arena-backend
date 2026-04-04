@@ -33,13 +33,13 @@ struct MerchantStripView: View {
     @ViewBuilder
     private var speechCard: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("MERCHANT")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.buttonLabel)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text(tipProvider.currentTip.attributedText)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(3)
                     .id(tipProvider.currentTip)
@@ -112,13 +112,13 @@ struct MerchantStripView: View {
     @ViewBuilder
     private var speechBubble: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("MERCHANT")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.buttonLabel)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text(tipProvider.currentTip.attributedText)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(3)
                     .id(tipProvider.currentTip)

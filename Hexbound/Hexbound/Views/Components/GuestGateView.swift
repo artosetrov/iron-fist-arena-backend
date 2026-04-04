@@ -24,12 +24,12 @@ struct GuestGateView: View {
 
                 // Title
                 Text("REGISTRATION REQUIRED")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 // Description
                 Text("\(feature) is available for registered players.\nCreate an account to unlock it and keep all your progress!")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LayoutConstants.spaceMD)
@@ -89,9 +89,9 @@ struct GuestGateView: View {
             Image(systemName: icon)
                 .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.gold)
-                .frame(width: 24)
+                .frame(width: LayoutConstants.iconLG)
             Text(text)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
         }
     }

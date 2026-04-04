@@ -604,11 +604,11 @@ struct TopCurrencyBar: View {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image("icon-gold")
                         .resizable()
-                        .frame(width: 20, height: 20)
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                     NumberTickUpText(
                         value: character?.gold ?? 0,
                         color: DarkFantasyTheme.goldBright,
-                        font: DarkFantasyTheme.section(size: 15)
+                        font: DarkFantasyTheme.section
                     )
                 }
                 .frame(minHeight: LayoutConstants.touchMin)
@@ -626,11 +626,11 @@ struct TopCurrencyBar: View {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image("icon-gems")
                         .resizable()
-                        .frame(width: 20, height: 20)
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                     NumberTickUpText(
                         value: character?.gems ?? 0,
                         color: DarkFantasyTheme.cyan,
-                        font: DarkFantasyTheme.section(size: 15)
+                        font: DarkFantasyTheme.section
                     )
                 }
                 .frame(minHeight: LayoutConstants.touchMin)
@@ -677,17 +677,17 @@ struct DailyQuestsCard: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY QUESTS")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.gold)
                 if appState.cachedBonusClaimedToday {
                     TimelineView(.periodic(from: .now, by: 60)) { _ in
                         Text("✓ Bonus claimed • \(timeUntilReset())")
-                            .font(DarkFantasyTheme.body(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 } else {
                     Text(total > 0 ? "\(completed)/\(total) completed" : "Loading...")
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -739,15 +739,15 @@ struct BattlePassCard: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
             Image(systemName: "medal.fill")
-                .font(.system(size: 24, design: .rounded))
+                .font(DarkFantasyTheme.iconLarge)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("BATTLE PASS")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Text("Season 1 • Level \(level)/\(maxLevel)")
-                    .font(DarkFantasyTheme.body(size: 12))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -806,7 +806,7 @@ struct FirstWinBonusCard: View {
                         .frame(width: 28, height: 28)
 
                     Text("FIRST WIN BONUS")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
 
                     Spacer()
@@ -823,9 +823,9 @@ struct FirstWinBonusCard: View {
                         Image("icon-gold")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("×2 Gold")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .padding(.horizontal, LayoutConstants.spaceMS)
@@ -839,9 +839,9 @@ struct FirstWinBonusCard: View {
                         Image("icon-xp")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("×2 XP")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .padding(.horizontal, LayoutConstants.spaceMS)
@@ -917,14 +917,14 @@ struct BattleInviteBanner: View {
                     .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Text("BATTLE CHALLENGE")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Spacer()
 
                 if challenges.count > 1 {
                     Text("+\(challenges.count - 1) more")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -951,17 +951,17 @@ struct BattleInviteBanner: View {
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(challenge.challenger.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
 
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text("Lv.\(challenge.challenger.level)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text(challenge.challenger.rankName)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
                 }
@@ -984,7 +984,7 @@ struct BattleInviteBanner: View {
                                 .font(DarkFantasyTheme.caption.bold())
                         }
                         Text("FIGHT")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -1004,7 +1004,7 @@ struct BattleInviteBanner: View {
                                 .font(DarkFantasyTheme.badge.bold())
                         }
                         Text("DECLINE")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -1214,12 +1214,12 @@ struct QuestRewardWidget: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Quest icon
             AssetPlaceholderView(systemIcon: "scroll.fill")
-                .frame(width: 24, height: 24)
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
 
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(quest.title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
@@ -1261,15 +1261,15 @@ struct QuestRewardWidget: View {
                 Image("hud-quests")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 32, height: 32)
+                    .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("\(claimableQuests.count) REWARDS READY")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
 
                     Text("Tap to claim your quest rewards")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
 
@@ -1295,7 +1295,7 @@ struct QuestRewardWidget: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("+\(gold)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -1306,7 +1306,7 @@ struct QuestRewardWidget: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("+\(xp)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.cyan)
                 }
             }
@@ -1317,7 +1317,7 @@ struct QuestRewardWidget: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("+\(gems)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.purple)
                 }
             }
@@ -1407,10 +1407,10 @@ struct DailyLoginCard: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY LOGIN")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(canClaim ? DarkFantasyTheme.goldBright : DarkFantasyTheme.gold)
                 Text(canClaim ? "Tap to claim today's reward!" : "Reward claimed today ✓")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(canClaim ? DarkFantasyTheme.goldBright : DarkFantasyTheme.success)
             }
 
@@ -1495,7 +1495,7 @@ struct FloatingActionIcon: View {
                             .frame(width: size * 0.75, height: size * 0.75)
                     } else if let systemIcon {
                         Image(systemName: systemIcon)
-                            .font(.system(size: iconSize, weight: .semibold))
+                            .font(.system(size: iconSize, weight: .semibold)) // dynamic — based on component size param
                             .foregroundStyle(accentColor)
                     }
                 }
@@ -1518,9 +1518,9 @@ struct FloatingActionIcon: View {
                                 .fill(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(0.08),
+                                            DarkFantasyTheme.textPrimary.opacity(0.08),
                                             Color.clear,
-                                            Color.black.opacity(0.12)
+                                            DarkFantasyTheme.bgAbyss.opacity(0.12)
                                         ],
                                         startPoint: .top,
                                         endPoint: .bottom
@@ -1537,7 +1537,7 @@ struct FloatingActionIcon: View {
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    colors: [Color.white.opacity(0.08), Color.clear, Color.black.opacity(0.12)],
+                                    colors: [DarkFantasyTheme.textPrimary.opacity(0.08), Color.clear, DarkFantasyTheme.bgAbyss.opacity(0.12)],
                                     startPoint: .top,
                                     endPoint: .bottom
                                 ),
@@ -1567,7 +1567,7 @@ struct FloatingActionIcon: View {
         .contentShape(Circle())
         .onAppear {
             if badgeActive {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                withAnimation(MotionConstants.pulse) {
                     badgePulse = true
                 }
             }
@@ -1635,7 +1635,7 @@ struct FloatingSoundToggle: View {
                 // Equalizer bars below icon (idle indicator)
                 if !isMuted {
                     equalizerBars
-                        .transition(.opacity.animation(.easeInOut(duration: 0.4)))
+                        .transition(.opacity.animation(.easeInOut(duration: MotionConstants.normal)))
                 }
             }
         }
@@ -1674,9 +1674,9 @@ struct FloatingSoundToggle: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.08),
+                                    DarkFantasyTheme.textPrimary.opacity(0.08),
                                     Color.clear,
-                                    Color.black.opacity(0.12)
+                                    DarkFantasyTheme.bgAbyss.opacity(0.12)
                                 ],
                                 startPoint: .top,
                                 endPoint: .bottom
@@ -1692,7 +1692,7 @@ struct FloatingSoundToggle: View {
                 Circle()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.08), Color.clear, Color.black.opacity(0.12)],
+                            colors: [DarkFantasyTheme.textPrimary.opacity(0.08), Color.clear, DarkFantasyTheme.bgAbyss.opacity(0.12)],
                             startPoint: .top,
                             endPoint: .bottom
                         ),
@@ -1705,13 +1705,13 @@ struct FloatingSoundToggle: View {
             .scaleEffect(tapScale)
             .animation(.spring(response: 0.3, dampingFraction: 0.45), value: tapScale)
             .animation(.easeInOut(duration: 2.5), value: idleGlow)
-            .animation(.easeInOut(duration: 0.3), value: isMuted)
+            .animation(MotionConstants.smooth, value: isMuted)
     }
 
     // MARK: - Equalizer Bars
 
     private var equalizerBars: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: LayoutConstants.space2XS) {
             equalizerBar(height: eq1, maxHeight: 8)
             equalizerBar(height: eq2, maxHeight: 8)
             equalizerBar(height: eq3, maxHeight: 8)
@@ -1720,7 +1720,7 @@ struct FloatingSoundToggle: View {
     }
 
     private func equalizerBar(height: CGFloat, maxHeight: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 1)
+        RoundedRectangle(cornerRadius: 1) // keep — sub-pixel decorative equalizer bar
             .fill(
                 LinearGradient(
                     colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
@@ -1778,7 +1778,7 @@ struct FloatingSoundToggle: View {
     }
 
     private func startIdleLoop() {
-        withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+        withAnimation(MotionConstants.breathing) {
             idleGlow = true
         }
         withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
@@ -1818,7 +1818,7 @@ struct NavTile: View {
                         .frame(width: 28, height: 28)
                 } else {
                     AssetPlaceholderView(systemIcon: "scroll.fill")
-                        .frame(width: 24, height: 24)
+                        .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                 }
                 Text(label)
             }

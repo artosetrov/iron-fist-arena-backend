@@ -134,12 +134,12 @@ struct OpponentIntegratedCard: View {
             // Rank + Rating pill row
             HStack(spacing: LayoutConstants.spaceSM) {
                 let rank = profile.pvpRank
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: rank.icon)
                         .font(DarkFantasyTheme.badge.weight(.semibold))
                         .foregroundStyle(rank.color)
                     Text(rank.rawValue)
-                        .font(DarkFantasyTheme.section(size: 13))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(rank.color)
                 }
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -150,12 +150,12 @@ struct OpponentIntegratedCard: View {
                         .overlay(Capsule().stroke(rank.color.opacity(0.25), lineWidth: 1))
                 )
 
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "swords")
                         .font(DarkFantasyTheme.badge.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Text("\(profile.pvpRating)")
-                        .font(DarkFantasyTheme.section(size: 13))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -210,13 +210,13 @@ struct OpponentIntegratedCard: View {
             // Name + class overlay at bottom
             VStack {
                 Spacer()
-                VStack(spacing: 2) {
+                VStack(spacing: LayoutConstants.space2XS) {
                     Text(profile.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.heroPortraitNameFont))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
                     Text(profile.characterClass.rawValue.uppercased())
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .padding(.vertical, LayoutConstants.spaceXS)
@@ -243,7 +243,7 @@ struct OpponentIntegratedCard: View {
                     Spacer()
 
                     Text("Lv. \(profile.level)")
-                        .font(DarkFantasyTheme.section(size: 10).bold())
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceXS)
                         .padding(.vertical, LayoutConstants.space2XS)
@@ -262,10 +262,10 @@ struct OpponentIntegratedCard: View {
                     HStack {
                         Spacer()
                         Text("P\(prestige)")
-                            .font(DarkFantasyTheme.section(size: 10))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.cyan)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, LayoutConstants.spaceSM)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
                                 Capsule()
                                     .fill(DarkFantasyTheme.cyan.opacity(0.15))

@@ -102,30 +102,34 @@ struct FortuneWheelDetailView: View {
         }
     }
 
-    // MARK: - Payout Section (above wheel)
+    // MARK: - Payout Section (above wheel — Figma: Speech Card Payout Pill)
 
     private func payoutSection(_ vm: FortuneWheelViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            Text("PAYOUTS")
-                .font(DarkFantasyTheme.caption)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .tracking(2)
-
-            HStack(spacing: LayoutConstants.spaceSM) {
-                payoutPill(asset: "icon-fortune-x15", label: "x1.5", count: 3, color: DarkFantasyTheme.gold)
-                payoutPill(asset: "icon-fortune-x2", label: "x2", count: 1, color: DarkFantasyTheme.goldBright)
-                payoutPill(asset: "icon-fortune-x3", label: "x3", count: 1, color: DarkFantasyTheme.purple)
-                payoutPill(asset: "icon-fortune-x5", label: "x5", count: 1, color: DarkFantasyTheme.info)
-            }
-            .padding(.horizontal, LayoutConstants.screenPadding)
+        HStack(spacing: LayoutConstants.spaceSM) {
+            payoutPill(asset: "reward-gold", label: "x1.5", count: 3, color: DarkFantasyTheme.goldBright)
+            payoutPill(asset: "reward-loot", label: "x2", count: 1, color: DarkFantasyTheme.goldBright)
+            payoutPill(asset: "reward-level-up", label: "x3", count: 1, color: DarkFantasyTheme.purple)
+            payoutPill(asset: "neck_emerald", label: "x5", count: 1, color: DarkFantasyTheme.info)
         }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                        .stroke(DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.top, LayoutConstants.spaceXS)
     }
 
+    /// Figma: PayoutPill — flat color tint bg + color border, Inter fonts
     private func payoutPill(asset: String, label: String, count: Int, color: Color) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Image(asset)
                 .resizable()
+                .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
                 .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
 
@@ -136,22 +140,19 @@ struct FortuneWheelDetailView: View {
             Text("\(count) sector\(count > 1 ? "s" : "")")
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(0.5)
         }
         .frame(maxWidth: .infinity)
+        .padding(.horizontal, LayoutConstants.spaceXS)
         .padding(.vertical, LayoutConstants.spaceSM)
         .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: color,
-                glowIntensity: DarkFantasyTheme.opacityLight,
-                cornerRadius: LayoutConstants.panelRadius
-            )
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(color.opacity(DarkFantasyTheme.opacitySoft))
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .stroke(color.opacity(DarkFantasyTheme.opacityMild), lineWidth: 1)
         )
-        .compositingGroup()
     }
 
     // MARK: - Wheel Section

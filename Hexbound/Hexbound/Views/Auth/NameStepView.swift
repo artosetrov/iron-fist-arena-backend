@@ -29,7 +29,7 @@ struct NameStepView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: LayoutConstants.spaceLG) {
                 Text("Choose Your Name")
-                    .font(DarkFantasyTheme.title(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(1)
                     .padding(.top, LayoutConstants.spaceLG)
@@ -85,7 +85,7 @@ struct NameStepView: View {
         }
 
         // Level badge: shadow radius pulse
-        withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+        withAnimation(MotionConstants.breathing) {
             levelGlowRadius = 22
         }
 
@@ -190,9 +190,9 @@ struct NameStepView: View {
         HStack {
             // Level circle with pulsing glow
             Text("1")
-                .font(DarkFantasyTheme.section(size: 14))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
-                .frame(width: 32, height: 32)
+                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
                 .background(
                     Circle()
                         .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
@@ -208,9 +208,9 @@ struct NameStepView: View {
                     Image(origin.iconAsset)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 16, height: 16)
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                     Text(origin.displayName.uppercased())
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -230,10 +230,10 @@ struct NameStepView: View {
     // MARK: - Bottom Info
 
     private var creationBottomInfo: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             // Hero summary line (e.g. "Female Dogfolk Warrior")
             Text(vm.heroSummary)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
@@ -241,10 +241,10 @@ struct NameStepView: View {
             // Class tag pill
             if let cls = vm.selectedClass {
                 Text(cls.displayName.uppercased())
-                    .font(DarkFantasyTheme.body(size: 10).bold())
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(cardClassColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, LayoutConstants.spaceSM)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(cardClassColor.opacity(0.12))
@@ -256,11 +256,11 @@ struct NameStepView: View {
             }
 
             // "NEW" rating badge
-            HStack(spacing: 5) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 if UIImage(named: "icon-pvp-rating") != nil {
                     Image("icon-pvp-rating")
                         .resizable()
-                        .frame(width: 20, height: 20)
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                         .opacity(0.7)
                 } else {
                     Image(systemName: "star.fill")
@@ -268,7 +268,7 @@ struct NameStepView: View {
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 }
                 Text("NEW")
-                    .font(DarkFantasyTheme.section(size: 20))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .tracking(2)
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
@@ -276,7 +276,7 @@ struct NameStepView: View {
 
             // Glass stat pills — top combined bonuses
             if !vm.combinedBonuses.isEmpty {
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     ForEach(Array(vm.combinedBonuses.prefix(3).enumerated()), id: \.element.stat) { index, bonus in
                         creationStatPill(
                             value: "+\(bonus.value)",
@@ -309,14 +309,14 @@ struct NameStepView: View {
     private func creationStatPill(value: String, label: String, color: Color) -> some View {
         VStack(spacing: 1) {
             Text(value)
-                .font(DarkFantasyTheme.section(size: 13))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(color)
             Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 5)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
@@ -388,12 +388,12 @@ struct NameStepView: View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             HStack {
                 Text("YOUR NAME")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldDim)
                     .tracking(2)
                 Spacer()
                 Text("\(vm.characterName.count)/16")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
 
@@ -401,14 +401,14 @@ struct NameStepView: View {
                 ZStack(alignment: .leading) {
                     if vm.characterName.isEmpty {
                         Text("Enter hero name...")
-                            .font(DarkFantasyTheme.title(size: 20))
+                            .font(DarkFantasyTheme.cardTitle)
                             .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.6))
                             .padding(.horizontal, LayoutConstants.spaceMD)
                     }
 
                     HStack(spacing: LayoutConstants.spaceSM) {
                         TextField("", text: $vm.characterName)
-                            .font(DarkFantasyTheme.title(size: 22))
+                            .font(DarkFantasyTheme.section)
                             .foregroundStyle(nameTextColor)
                             .autocapitalization(.none)
                             .disableAutocorrection(true)
@@ -438,7 +438,7 @@ struct NameStepView: View {
                                     EmptyView()
                                 }
                             }
-                            .frame(width: 32)
+                            .frame(width: LayoutConstants.iconXL)
                             .transition(.opacity.combined(with: .scale(scale: 0.8)))
                             .animation(.spring(response: 0.3), value: vm.nameAvailability)
                         }
@@ -453,7 +453,7 @@ struct NameStepView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: heroInputRadius)
                         .stroke(inputBorderColor, lineWidth: vm.characterName.isEmpty ? 1.5 : 2)
-                        .animation(.easeInOut(duration: 0.2), value: vm.nameAvailability)
+                        .animation(MotionConstants.snappy, value: vm.nameAvailability)
                 )
                 .shadow(
                     color: vm.nameAvailability == .available
@@ -494,7 +494,7 @@ struct NameStepView: View {
                             lineWidth: vm.characterName.isEmpty ? 2 : 1
                         )
                 )
-                .animation(.easeInOut(duration: 0.2), value: vm.characterName.isEmpty)
+                .animation(MotionConstants.snappy, value: vm.characterName.isEmpty)
                 .buttonStyle(.scalePress(0.95))
             }
 
@@ -515,8 +515,8 @@ struct NameStepView: View {
                     Text(" ")
                 }
             }
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-            .animation(.easeInOut(duration: 0.2), value: vm.nameAvailability)
+            .font(DarkFantasyTheme.body)
+            .animation(MotionConstants.snappy, value: vm.nameAvailability)
         }
     }
 

@@ -26,13 +26,13 @@ struct LootPreviewSheet: View {
                     // Info
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                         Text(loot.name)
-                            .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                            .font(DarkFantasyTheme.cardTitle)
                             .foregroundStyle(rarityColor)
                             .lineLimit(2)
 
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Text(loot.rarity.rawValue)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(rarityColor)
                                 .padding(.horizontal, LayoutConstants.spaceXS)
                                 .padding(.vertical, LayoutConstants.space2XS)
@@ -45,7 +45,7 @@ struct LootPreviewSheet: View {
                         }
 
                         Text(loot.detail)
-                            .font(DarkFantasyTheme.section(size: 14))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
 
@@ -72,18 +72,18 @@ struct LootPreviewSheet: View {
                             .scaledToFit()
                             .frame(width: 14, height: 14)
                         Text("DROP INFO")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .tracking(1.2)
                     }
 
                     HStack {
                         Text("Amount / Chance")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Spacer()
                         Text(loot.detail)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(rarityColor)
                     }
                 }
@@ -96,7 +96,7 @@ struct LootPreviewSheet: View {
                         .frame(height: 1)
 
                     Text(lootFlavorText(for: loot))
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel).italic())
+                        .font(DarkFantasyTheme.uiLabel.italic())
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(LayoutConstants.cardPadding)

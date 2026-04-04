@@ -62,7 +62,7 @@ struct FlashBorder: View {
             .onChange(of: isActive) { _, active in
                 if active {
                     // Flash in
-                    withAnimation(.easeOut(duration: 0.15)) {
+                    withAnimation(.easeOut(duration: MotionConstants.instant)) {
                         opacity = 1
                         glowRadius = 8
                     }
@@ -92,7 +92,7 @@ struct InlineCheckmark: View {
         ZStack {
             Circle()
                 .fill(color)
-                .frame(width: 20, height: 20)
+                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
 
             Image(systemName: "checkmark")
                 .font(DarkFantasyTheme.badge.bold())

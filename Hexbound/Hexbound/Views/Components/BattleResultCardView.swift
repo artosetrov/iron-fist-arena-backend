@@ -153,7 +153,7 @@ struct BattleResultCardView: View {
             // Subtitle (near-miss motivation or general)
             if let subtitle = config.subtitle {
                 Text(subtitle)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(!config.isVictory ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
                     .opacity(showTitle ? 1 : 0)
                     .transition(.opacity)
@@ -213,7 +213,7 @@ struct BattleResultCardView: View {
     @ViewBuilder
     private var titleView: some View {
         Text(config.title)
-            .font(DarkFantasyTheme.title(size: LayoutConstants.textCinematic))
+            .font(DarkFantasyTheme.cinematicTitle)
             .foregroundStyle(accentColor)
             .shadow(
                 color: accentColor.opacity(titleGlowPulse ? 0.6 : 0.2),
@@ -226,13 +226,13 @@ struct BattleResultCardView: View {
 
     @ViewBuilder
     private var firstWinBadge: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             Image("reward-first-win")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 36, height: 36)
             Text("FIRST WIN BONUS x2!")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
@@ -255,7 +255,7 @@ struct BattleResultCardView: View {
     private var rewardsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("REWARDS")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
@@ -298,16 +298,16 @@ struct BattleResultCardView: View {
             Image(iconImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 48, height: 48)
+                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
 
             Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .contentTransition(.numericText())
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .frame(maxWidth: .infinity)
@@ -321,20 +321,20 @@ struct BattleResultCardView: View {
             // Header: Level + LEVEL UP badge
             HStack {
                 Text("Level \(xpConfig.displayLevel)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.purple)
                     .shadow(color: DarkFantasyTheme.purple.opacity(0.3), radius: 6)
 
                 Spacer()
 
                 if xpConfig.leveledUp {
-                    HStack(spacing: 4) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
                         Image("reward-level-up")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 24, height: 24)
+                            .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                         Text("LEVEL UP!")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .shadow(color: DarkFantasyTheme.goldBright.opacity(0.6), radius: 8)
                     }
@@ -346,25 +346,25 @@ struct BattleResultCardView: View {
             if let xpNeeded = config.xpNeeded {
                 HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
                     Text("\(xpHeroDisplay)")
-                        .font(DarkFantasyTheme.title(size: 36))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.purple)
                         .shadow(color: DarkFantasyTheme.purple.opacity(0.4), radius: 10)
                         .monospacedDigit()
                         .contentTransition(.numericText())
 
                     Text("/")
-                        .font(DarkFantasyTheme.title(size: 22))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.4))
 
                     Text("\(xpNeeded)")
-                        .font(DarkFantasyTheme.title(size: 22))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
                         .monospacedDigit()
 
                     // +XP gain badge
                     if let xpReward = config.xpReward, xpReward > 0 {
                         Text("+\(xpReward)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.purple.opacity(0.9))
                             .padding(.horizontal, LayoutConstants.spaceSM)
                             .padding(.vertical, LayoutConstants.space2XS)
@@ -390,7 +390,7 @@ struct BattleResultCardView: View {
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                                 .stroke(DarkFantasyTheme.purple.opacity(0.15), lineWidth: 1)
                         )
-                        .shadow(color: Color.black.opacity(0.3), radius: 2, y: 1)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
 
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .fill(DarkFantasyTheme.xpGradient)
@@ -398,7 +398,7 @@ struct BattleResultCardView: View {
                         .shadow(color: DarkFantasyTheme.purple.opacity(0.4), radius: 8, y: 0)
                 }
             }
-            .frame(height: 16)
+            .frame(height: LayoutConstants.iconMD)
         }
         .padding(.top, LayoutConstants.spaceXS)
     }
@@ -410,11 +410,11 @@ struct BattleResultCardView: View {
         VStack(spacing: LayoutConstants.spaceXS) {
             HStack {
                 Text("Dungeon Progress")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
                 Text("\(progress.defeated) / \(progress.total)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(
                         progress.isComplete
                             ? DarkFantasyTheme.success
@@ -434,14 +434,14 @@ struct BattleResultCardView: View {
                                 : DarkFantasyTheme.progressGradient
                         )
                         .frame(width: geo.size.width * progress.fraction)
-                        .animation(.easeOut(duration: 0.8), value: progress.defeated)
+                        .animation(.easeOut(duration: MotionConstants.tickUpLong), value: progress.defeated)
                 }
             }
-            .frame(height: 8)
+            .frame(height: LayoutConstants.spaceSM)
 
             if progress.isComplete {
                 Text("DUNGEON CLEARED!")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .padding(.top, LayoutConstants.spaceXS)
             }
@@ -463,12 +463,13 @@ struct BattleResultCardView: View {
                     if isEarned && isRevealed {
                         Circle()
                             .fill(DarkFantasyTheme.goldBright.opacity(0.25))
-                            .frame(width: 48, height: 48)
+                            .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
                             .blur(radius: 8)
                     }
 
                     Image(systemName: isEarned ? "star.fill" : "star")
-                        .font(DarkFantasyTheme.title.bold())
+                        .font(DarkFantasyTheme.title)
+                        .bold()
                         .foregroundStyle(
                             isEarned
                                 ? DarkFantasyTheme.goldBright
@@ -494,7 +495,7 @@ struct BattleResultCardView: View {
                 .padding(.horizontal, LayoutConstants.spaceMD)
 
             Text("LOOT")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
@@ -534,17 +535,17 @@ struct BattleResultCardView: View {
                         )
                         .overlay(
                             Text("?")
-                                .font(DarkFantasyTheme.title(size: 28))
+                                .font(DarkFantasyTheme.cardTitle)
                                 .foregroundStyle(DarkFantasyTheme.borderStrong)
                         )
 
                     Text("???")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 80)
 
                     Text(" ")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                 }
                 .rotation3DEffect(
                     .degrees(isRevealed ? -90 : 0),
@@ -569,7 +570,7 @@ struct BattleResultCardView: View {
                     .frame(width: 72, height: 72)
 
                     Text(item.name)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .textCase(.uppercase)
                         .lineLimit(2)
@@ -578,7 +579,7 @@ struct BattleResultCardView: View {
                         .frame(width: 80)
 
                     Text(item.rarityName)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(rarityColor)
                 }
                 .rotation3DEffect(

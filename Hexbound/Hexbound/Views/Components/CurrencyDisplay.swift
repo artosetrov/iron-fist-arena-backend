@@ -53,9 +53,9 @@ struct CurrencyDisplay: View {
 
         var font: Font {
             switch self {
-            case .standard: DarkFantasyTheme.section(size: 28)
-            case .compact: DarkFantasyTheme.body(size: LayoutConstants.textLabel)
-            case .mini: DarkFantasyTheme.section(size: LayoutConstants.textCaption)
+            case .standard: DarkFantasyTheme.title
+            case .compact: DarkFantasyTheme.uiLabel
+            case .mini: DarkFantasyTheme.caption
             }
         }
 
@@ -124,7 +124,7 @@ struct CurrencyDisplay: View {
                     onAdd?()
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
                 .buttonStyle(.plain)

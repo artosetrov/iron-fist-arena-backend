@@ -40,7 +40,7 @@ struct DesignSystemPreview: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("DESIGN SYSTEM")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -129,7 +129,7 @@ struct DesignSystemPreview: View {
                             )
                             .shadow(color: DarkFantasyTheme.rarityGlow(for: rarity), radius: 6)
                         Text(rarity.rawValue.capitalized)
-                            .font(DarkFantasyTheme.body(size: 9))
+                            .font(DarkFantasyTheme.badge) // dev preview label
                             .foregroundStyle(DarkFantasyTheme.rarityColor(for: rarity))
                             .lineLimit(1)
                     }
@@ -180,10 +180,10 @@ struct DesignSystemPreview: View {
                     .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Text("Body — The quick brown fox jumps over the lazy dog")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Text("Caption — Secondary information")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
         }
@@ -246,23 +246,23 @@ struct DesignSystemPreview: View {
                 HStack(spacing: 12) {
                     Button { } label: { Image(systemName: "xmark") }
                         .buttonStyle(.closeButton)
-                    Text("closeButton").font(DarkFantasyTheme.body(size: 10)).foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("closeButton").font(DarkFantasyTheme.badge) // dev preview label.foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
                     Button("G") {}
                         .buttonStyle(.socialAuth)
                         .frame(width: 80)
-                    Text("socialAuth").font(DarkFantasyTheme.body(size: 10)).foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("socialAuth").font(DarkFantasyTheme.badge) // dev preview label.foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
                 HStack(spacing: 8) {
                     Button("$4.99") {}
                         .buttonStyle(.compactPrimary)
                         .frame(width: 72, height: 40)
-                    Text("compactPrimary").font(DarkFantasyTheme.body(size: 10)).foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("compactPrimary").font(DarkFantasyTheme.badge) // dev preview label.foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
                     Button("REVENGE") {}
                         .buttonStyle(.dangerCompact)
-                    Text("dangerCompact").font(DarkFantasyTheme.body(size: 10)).foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("dangerCompact").font(DarkFantasyTheme.badge) // dev preview label.foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
                 HStack(spacing: 8) {
@@ -270,12 +270,12 @@ struct DesignSystemPreview: View {
                         .buttonStyle(.colorToggle(isActive: true))
                     Button("100") {}
                         .buttonStyle(.colorToggle(isActive: false))
-                    Text("colorToggle").font(DarkFantasyTheme.body(size: 10)).foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("colorToggle").font(DarkFantasyTheme.badge) // dev preview label.foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
                 Button("ScalePress — Card tap") {}
                     .buttonStyle(.scalePress(0.96))
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(LayoutConstants.cardPadding)
@@ -295,11 +295,11 @@ struct DesignSystemPreview: View {
                         Image(systemName: style.icon)
                             .font(DarkFantasyTheme.badge)
                         Text(style.label)
-                            .font(DarkFantasyTheme.body(size: 8).bold())
+                            .font(DarkFantasyTheme.badge) // dev preview label
                     }
                     .foregroundStyle(.textPrimary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(style.color.opacity(0.7))
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                 }
@@ -311,18 +311,18 @@ struct DesignSystemPreview: View {
 
     private var statusEffectBadgesSection: some View {
         dsSection("Status Effect Badges") {
-            HStack(spacing: 8) {
+            HStack(spacing: LayoutConstants.spaceSM) { // keep — dev preview
                 ForEach(["Bleed", "Burn", "Stun", "Poison", "Freeze"], id: \.self) { name in
                     let effect = StatusEffect(name: name)
-                    HStack(spacing: 3) {
+                    HStack(spacing: LayoutConstants.space2XS) { // keep — dev preview
                         Image(systemName: effect.icon)
                             .font(DarkFantasyTheme.badge)
                         Text(effect.abbreviation)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                            .font(DarkFantasyTheme.badge)
                     }
                     .foregroundStyle(.textPrimary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, LayoutConstants.spaceSM) // keep — dev preview, nearest token
+                    .padding(.vertical, LayoutConstants.space2XS) // keep — dev preview, nearest token
                     .background(effect.color.opacity(0.8))
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                 }
@@ -335,7 +335,7 @@ struct DesignSystemPreview: View {
     private func dsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             Text(title.uppercased())
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.buttonLabelCompact)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             content()
@@ -356,7 +356,7 @@ struct DesignSystemPreview: View {
                         .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                 )
             Text(name)
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.badge) // dev preview label
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .lineLimit(1)
         }
@@ -364,7 +364,7 @@ struct DesignSystemPreview: View {
 
     private func textSample(_ label: String, _ color: Color) -> some View {
         Text(label)
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(color)
     }
 
@@ -374,7 +374,7 @@ struct DesignSystemPreview: View {
                 .fill(color)
                 .frame(width: 12, height: 12)
             Text(label)
-                .font(DarkFantasyTheme.body(size: 8))
+                .font(DarkFantasyTheme.badge) // dev preview label
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .lineLimit(1)
         }
@@ -383,7 +383,7 @@ struct DesignSystemPreview: View {
     private func spacingBar(_ label: String, _ width: CGFloat) -> some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(DarkFantasyTheme.body(size: 10))
+                .font(DarkFantasyTheme.badge) // dev preview label
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(width: 80, alignment: .leading)
             RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)

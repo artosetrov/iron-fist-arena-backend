@@ -1,4 +1,5 @@
 import SwiftUI
+import Hexbound
 
 /// Onboarding Step 2: Race + Gender + Avatar selection on a single screen.
 struct AppearanceStepView: View {
@@ -7,7 +8,7 @@ struct AppearanceStepView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text("Choose Your Appearance")
-                .font(DarkFantasyTheme.title(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .tracking(1)
                 .padding(.top, LayoutConstants.spaceMD)
@@ -39,7 +40,7 @@ struct AppearanceStepView: View {
     private var raceRow: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("Race")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textDimLabel)
 
             HStack(spacing: LayoutConstants.spaceXS) {
@@ -57,12 +58,12 @@ struct AppearanceStepView: View {
 
         Button {
             SFXManager.shared.play(.uiTap)
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 vm.selectedOrigin = origin
                 vm.onOriginChanged()
             }
         } label: {
-            VStack(spacing: 3) {
+            VStack(spacing: LayoutConstants.space2XS) {
                 Image(origin.iconAsset)
                     .resizable()
                     .scaledToFit()
@@ -79,7 +80,7 @@ struct AppearanceStepView: View {
                     .shadow(color: isSelected ? DarkFantasyTheme.goldGlow : .clear, radius: 7)
 
                 Text(origin.displayName)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary)
             }
         }
@@ -107,13 +108,13 @@ struct AppearanceStepView: View {
                             .scaledToFit()
                             .frame(width: 36, height: 36)
 
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                             Text(origin.displayName)
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
 
                             Text(origin.description)
-                                .font(DarkFantasyTheme.body(size: 12))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                                 .lineLimit(1)
                         }
@@ -135,13 +136,13 @@ struct AppearanceStepView: View {
                 .padding(.vertical, LayoutConstants.spaceXS)
             } else {
                 Text("Select a race to see avatars")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
         .frame(maxWidth: .infinity)
         .fixedSize(horizontal: false, vertical: true)
-        .animation(.easeInOut(duration: 0.2), value: vm.selectedOrigin)
+        .animation(MotionConstants.snappy, value: vm.selectedOrigin)
     }
 
     // MARK: - Empty State
@@ -155,12 +156,12 @@ struct AppearanceStepView: View {
                 .frame(width: 160, height: 160)
                 .overlay(
                     Text("?")
-                        .font(DarkFantasyTheme.title(size: 48))
+                        .font(DarkFantasyTheme.cinematicTitle)
                         .foregroundStyle(DarkFantasyTheme.bgDarkPanelBorder)
                 )
 
             Text("Choose a race above to see available avatars")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
 
@@ -188,7 +189,7 @@ struct AppearanceStepView: View {
                     ), size: sideSize, bg: DarkFantasyTheme.xpRing.opacity(0.1),
                        border: DarkFantasyTheme.xpRing, shadow: DarkFantasyTheme.xpRing.opacity(0.2)) {
                         SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: 0.2)) { vm.toggleGender() }
+                        withAnimation(MotionConstants.snappy) { vm.toggleGender() }
                     }
                     Spacer()
                     squareButton(content: AnyView(
@@ -199,7 +200,7 @@ struct AppearanceStepView: View {
                     ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
                        border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
                         SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: 0.25)) { vm.prevAvatar() }
+                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.prevAvatar() }
                     }
                 }
                 .frame(width: sideSize, height: avatarSize)
@@ -217,7 +218,7 @@ struct AppearanceStepView: View {
                     ), size: sideSize, bg: DarkFantasyTheme.gold.opacity(0.1),
                        border: DarkFantasyTheme.gold.opacity(0.3), shadow: .clear) {
                         SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(MotionConstants.smooth) {
                             vm.diceRotation += 360
                             vm.randomize()
                         }
@@ -231,7 +232,7 @@ struct AppearanceStepView: View {
                     ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
                        border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
                         SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: 0.25)) { vm.nextAvatar() }
+                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.nextAvatar() }
                     }
                 }
                 .frame(width: sideSize, height: avatarSize)
@@ -289,7 +290,7 @@ struct AppearanceStepView: View {
                 .stroke(DarkFantasyTheme.gold, lineWidth: 3)
         )
         .shadow(color: DarkFantasyTheme.goldGlow, radius: 20, y: 8)
-        .animation(.easeInOut(duration: 0.25), value: vm.avatarIndex)
+        .animation(.easeInOut(duration: MotionConstants.fast), value: vm.avatarIndex)
     }
 
     private var avatarTransition: AnyTransition {
@@ -316,7 +317,7 @@ struct AppearanceStepView: View {
 
                 Button {
                     SFXManager.shared.play(.uiTap)
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(MotionConstants.snappy) {
                         vm.selectAvatar(at: index)
                     }
                 } label: {
@@ -352,18 +353,18 @@ struct AppearanceStepView: View {
                 Image(statType.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
             }
 
             Text(name)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
             Spacer(minLength: 4)
 
             Text("\(value > 0 ? "+" : "")\(value)")
-                .font(DarkFantasyTheme.section(size: 20).bold())
+                .font(DarkFantasyTheme.cardTitle.bold())
                 .foregroundStyle(value > 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textDanger)
         }
         .padding(.horizontal, LayoutConstants.spaceMS)

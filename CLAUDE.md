@@ -4,7 +4,7 @@
 > **Canonical rules**: See `docs/09_rules_and_guidelines/DEVELOPMENT_RULES.md` for the extended version.
 > **iOS/SwiftUI rules**: See `Hexbound/CLAUDE.md`
 > **Backend/TypeScript rules**: See `backend/CLAUDE.md`
-> **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 359 tokens, 37 components, 137+ variants, 21 pages
+> **Figma Design System**: [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS) — 359 tokens, 47 component sets, 235 variants, 164 instances, 22 pages
 > **DS Audit**: See `docs/07_ui_ux/DESIGN_SYSTEM_AUDIT.md` for compliance status
 
 ## Architecture
@@ -56,6 +56,7 @@ Generate unique 24-character hex IDs. Keep entries alphabetically sorted. **If y
 | `.section` | Oswald | 22 | Sub-section headers |
 | `.cardTitle` | Oswald | 18 | Card headers |
 | `.buttonLabel` | Oswald | 18 | Button text |
+| `.buttonLabelCompact` | Oswald | 16 | Compact/small button text |
 | `.body` | Inter | 16 | Body text |
 | `.uiLabel` | Inter | 14 | Labels |
 | `.caption` | Inter | 12 | Captions |
@@ -106,25 +107,25 @@ All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutCon
 - **9 Text Styles:** Heading/ (Cinematic Title 40, Title 28, Section 22, Card Title 18, Button Label 18) + Body/ (Body 16, UI Label 14, Caption 12, Badge 11)
 - **4 Effect Styles:** Shadow/Card, Shadow/Modal, Shadow/Gold Glow, Shadow/Danger Glow
 
-### Component Pages (21 pages, 37 sets, 137+ variants)
+### Component Pages (22 pages, 47 sets, 235 variants, 164 instances)
 
 **Foundational (standalone pages):**
 
 | Page | Components | Swift Source |
 |---|---|---|
-| **Buttons** | Button — 18 variants (Primary/Secondary/Danger/Ghost/Fight/Premium × 3 states) | ButtonStyles.swift |
+| **Buttons** | Button (18v), Compact Button (15v), Combat Button (12v), Special Button (15v), Navigation Button (6v), Wager Button (3v) — 69 total variants | ButtonStyles.swift |
 | **Cards** | Card — 9 variants (Panel/Highlight/Info/Modal + 5 Rarities) | CardStyles.swift |
 | **Ornamental** | Ornamental system showcase | OrnamentalStyles.swift |
 | **Dividers** | Divider — 3 (Gold/Ornamental/EtchedGroove) | OrnamentalStyles.swift |
 | **Tab Switcher** | Tab Switcher — 2 (2-tab/3-tab) | TabSwitcher.swift |
 | **Progress Bars** | Progress Bar — 15 (HP/XP/Stamina × compact/widget/large) | HPBarView, XPBarView, StaminaBarView |
-| **Badges & Pills** | Widget Pill (10), Card Level Badge (2), Payout Pill, Wager Button, Stat Points Badge (3) | WidgetPill.swift, CardLevelBadge.swift, StatPointsBadge.swift |
-| **Currency Display** | Currency Display — 3 (Standard/Compact/Mini) | CurrencyDisplay.swift |
+| **Badges & Pills** | Widget Pill (10), Card Level Badge (2), Payout Pill (4), Stat Points Badge (3), Class Tag (4), Difficulty Tag (3), Stat Box (2), Icon Box (3), Comparison Indicator (2), Reward Box (4), Level Circle (1), Equipped Badge (1), Glass Stat Pill (3) | WidgetPill.swift, CardLevelBadge.swift, StatPointsBadge.swift, GlassStatPill.swift, ClassTagView.swift |
+| **Currency Display** | Currency Display — 4 (Standard/Compact/Mini/Animated) | CurrencyDisplay.swift |
 | **Empty & Error States** | State View — 4 (EmptyInventory/NoQuests/NetworkError/ServerError), Asset Placeholder (1) | EmptyStateView, ErrorStateView, AssetPlaceholderView.swift |
 | **Loading** | Loading Overlay — 1 | LoadingOverlay.swift |
 | **Navigation** | Navigation — 3 (NavGrid/BackButton/ScreenHeader) | ScreenLayout.swift |
 | **Ornamental Title** | Ornamental Title — 2 (ScreenTitle/SectionHeader) | OrnamentalTitle.swift |
-| **Item Card** | Item Card — 5 (Common→Legendary) | ItemCardView.swift |
+| **Item Card** | Item Card — 9 (Common→Legendary × contexts) | ItemCardView.swift |
 | **Skeleton** | Skeleton — 3 (Rectangle/Card/ItemCell) | SkeletonViews.swift |
 | **Input** | Input Field — 3 (Default/Focused/Error) | Auth screens |
 
@@ -132,12 +133,39 @@ All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutCon
 
 | Page | Components | Swift Source |
 |---|---|---|
-| **Hero & Character** | Hero Widget (1), Hero Integrated Card (1), Stance Display (1), Avatar (3) | UnifiedHeroWidget, HeroIntegratedCard, StanceDisplayView, AvatarImageView |
-| **Arena & PvP** | Arena Card (1), Battle Result Card (2), Leaderboard Row (2), PvP Stats Widget (2+1), Opponent Integrated Card (1) | ArenaOpponentCard, BattleResultCardView, LeaderboardRowView, PvPStatsWidget, OpponentIntegratedCard |
+| **Hero & Character** | Unified Hero Widget (2), Avatar (3) | UnifiedHeroWidget, AvatarImageView |
+| **Arena & PvP** | Arena Card (3), Battle Result Card (2), Leaderboard Row (2), PvP Stats Widget (2) | ArenaOpponentCard, BattleResultCardView, LeaderboardRowView, PvPStatsWidget |
 | **Dungeon & Progression** | Dungeon Boss Card (3), Achievement Card (4), Active Quest Banner (2), BP Reward Node (4) | DungeonBossCard, AchievementCardView, ActiveQuestBanner, BPRewardNodeView |
-| **Social & Messaging** | Inbox Row (2), NPC Guide Widget (2+1) | InboxRowView, NPCGuideWidget |
-| **Toast & Banners** | Toast (7), Event Banner (2), Celebration Banner (5), Guest Nudge Banner (1), Offline Banner (1), Low HP Potion Banner (2) | ToastOverlayView, EventBannerView, CelebrationBannerView, GuestNudgeBanner, OfflineBannerView, LowHPPotionBanner |
-| **Modals & Sheets** | Guest Gate (1), Session Expired Modal (1), Item Detail Sheet (1), Level Up Modal (1) | GuestGateView, SessionExpiredModalView, ItemDetailSheet, LevelUpModalView |
+| **Social & Messaging** | Inbox Row (2), NPC Guide Widget (2) | InboxRowView, NPCGuideWidget |
+| **Toast & Banners** | Toast (7), Event Banner (2), Celebration Banner (5), Low HP Potion Banner (2) | ToastOverlayView, EventBannerView, CelebrationBannerView, LowHPPotionBanner |
+| **Modals & Sheets** | Guest Gate (1), Session Expired Modal (1), Item Detail Sheet (3: Inventory/Shop/Loot), Level Up Modal (1) | GuestGateView, SessionExpiredModalView, ItemDetailSheet, LevelUpModalView |
+| **Minigames** | Mine Slot Card (3: Idle/Mining/Ready), Locked Mine Card (1), Mining Output Card (1) | GoldMineDetailView.swift (MineSlotCard, LockedMineCard, miningOutputCard) |
+
+### Figma DS Component Quality Rules (CRITICAL)
+
+**Every component in Figma DS MUST be built from tokens, molecules, and existing components — NEVER raw values.**
+
+| Layer | Rule | Example |
+|---|---|---|
+| **Colors** | ALL fills/strokes bound to Color collection variables | `color/text/secondary`, NOT hardcoded `#9B95A0` |
+| **Typography** | ALL text nodes linked to Text Styles | `Heading/Section`, NOT manual Oswald 22 |
+| **Spacing** | ALL gap/padding bound to Spacing collection variables | `spacing/md`, NOT raw `16` |
+| **Radius** | ALL cornerRadius bound to Spacing collection radius variables | `radius/xl`, NOT raw `16` |
+| **Effects** | ALL shadows linked to Effect Styles | `Shadow/Modal`, NOT manual drop shadow |
+| **Buttons** | Use Button component instances | Import from Buttons page, NOT custom frames |
+| **Dividers** | Use Divider component instances | Import from Dividers page, NOT rectangles |
+| **Cards/Badges** | Use existing component instances where available | Import from respective foundational pages |
+
+**Audit checklist after creating/editing ANY Figma component:**
+1. `textStyleId !== ''` on every TEXT node (0 unlinked allowed)
+2. `boundVariables.fills` on every colored node (except internal component sub-layers)
+3. `boundVariables.itemSpacing/padding*` on every auto-layout frame
+4. `boundVariables.topLeftRadius` on every rounded frame
+5. Zero FRAME nodes pretending to be buttons — use Button instances
+6. Zero RECTANGLE nodes pretending to be dividers — use Divider instances
+7. Effect style applied to root component (Shadow/Card or Shadow/Modal)
+
+**Violation = rebuild.** No exceptions.
 
 ### Figma ↔ Code Sync Rules
 
@@ -145,6 +173,106 @@ All 377 variables have **iOS code syntax** set (`DarkFantasyTheme.*`, `LayoutCon
 - When adding a new **component** to `Views/Components/` → create Figma component on the matching domain page (Hero & Character, Arena & PvP, Dungeon & Progression, Social & Messaging, Toast & Banners, Modals & Sheets) or a foundational page
 - When changing a **token value** → update Figma variable (semantic alias stays, only primitive changes)
 - Use `figma-use` skill with fileKey `uDjXIz7CdJxcEOI5jCBcjY` for all Figma operations
+
+### Figma ↔ Swift 1:1 Parity Protocol (CRITICAL — ALL COMPONENTS)
+
+**Every Figma component MUST be a pixel-perfect mirror of its Swift implementation.** This applies to buttons, cards, badges, progress bars, modals, toasts — everything.
+
+#### Step 0: Before creating/editing ANY Figma component
+
+1. **Open the Swift source file.** Find the exact View/Style struct. Read every modifier.
+2. **Extract the truth table:** fill, foregroundStyle, font, padding, cornerRadius, stroke, opacity, shadow, overlay — per state (Default, Pressed, Disabled, Active, Inactive, etc.)
+3. **Only then build in Figma.** Never eyeball or guess values.
+
+#### Step 1: Fills (backgrounds)
+
+| Swift pattern | Figma fill |
+|---|---|
+| `.fill(LinearGradient(colors: [A, B], startPoint, endPoint))` | Gradient fill matching exact colors + direction |
+| `.fill(SomeColor)` | Solid fill with exact hex from `DarkFantasyTheme` |
+| `.fill(color.opacity(X))` | Solid fill with opacity X |
+| No `.background` / `.fill(.clear)` | NO fill — leave empty |
+| `.fill(bgDisabled)` | Solid `#333340` |
+
+**NEVER leave a fill as `visible: false`.** Either the fill is there (visible: true) or not there at all.
+
+#### Step 2: Interactive states
+
+| Swift pattern | Figma variant |
+|---|---|
+| `.brightness(pressed ? -0.06 : 0)` | Darkened fill (RGB × 0.94), `opacity = 1.0` |
+| `.brightness(pressed ? -0.08 : 0)` | Darkened fill (RGB × 0.92), `opacity = 1.0` |
+| `.opacity(pressed ? 0.85 : 1)` | Same fill as Default, root `opacity = 0.85` |
+| `.opacity(pressed ? 0.6 : 1)` | Same fill as Default, root `opacity = 0.6` |
+| `.opacity(isActive ? 1.0 : 0.6)` | Inactive variant root `opacity = 0.6` |
+| Compound: `.opacity(0.6).opacity(pressed ? 0.85 : 1)` | Multiply: root `opacity = 0.51` |
+
+**NEVER mix brightness and opacity.** Read the Swift code — use exactly what it says.
+
+#### Step 3: Text and foreground
+
+| Swift `foregroundStyle` | Figma text fill |
+|---|---|
+| `DarkFantasyTheme.textOnGold` | `#1A1A2E` — ONLY on gold/colored fills |
+| `DarkFantasyTheme.textPrimary` | `#F5F5F5` — on dark fills |
+| `DarkFantasyTheme.textSecondary` | `#A0A0B0` — secondary on dark |
+| `DarkFantasyTheme.textDisabled` | `#555566` — all disabled states |
+| `.white` | `#FFFFFF` — on danger/fight fills |
+| `DarkFantasyTheme.gold` | `#D4A537` — on transparent (outline styles) |
+| `DarkFantasyTheme.danger` | `#E63946` — on transparent (danger outline) |
+
+**Contrast check:** dark text requires light fill, light text requires dark fill. If text is invisible → fill is wrong.
+
+#### Step 4: Typography
+
+| Swift modifier | Figma |
+|---|---|
+| `.font(DarkFantasyTheme.buttonLabel)` | Text Style `Heading/Button Label` |
+| `.font(DarkFantasyTheme.buttonLabelCompact)` | Text Style `Heading/Button Label` (size 16) |
+| `.font(DarkFantasyTheme.body)` | Text Style `Body/Body` |
+| `.textCase(.uppercase)` | Text transform: UPPERCASE |
+| `.tracking(2)` | Letter spacing: 2 |
+
+#### Step 5: Spacing, radius, stroke
+
+| Swift | Figma |
+|---|---|
+| `.padding(.horizontal, LayoutConstants.spaceMD)` | Auto-layout horizontal padding = 16 (bound to `spacing/md`) |
+| `.cornerRadius(LayoutConstants.buttonRadius)` | Corner radius bound to `radius/button` variable |
+| `.stroke(color, lineWidth: X)` | Stroke fill = color, weight = X |
+| `.shadow(color:, radius:, y:)` | Effect style or manual shadow matching values |
+
+#### Step 6: Ornamental layers (buttons with gold CTA)
+
+For `.primary`, `.fight`, `.premium`, `.danger` button families:
+- `SurfaceLightingOverlay` → gradient rectangle (white 8% top → black 12% bottom)
+- `.innerBorder()` → inner stroke rectangle
+- `.cornerBrackets()` → 8 bracket rectangles at corners
+- `.cornerDiamonds()` → 4 diamond rectangles at corners
+- `.sideDiamonds()` (if present) → 2 side diamond rectangles
+
+#### Step 7: Mandatory audit after ANY component change
+
+```
+1. get_screenshot of the full component set
+2. Verify: text readable in ALL state variants
+3. Verify: each state visually distinct (Default ≠ Pressed ≠ Disabled)
+4. Verify: no hidden fills (visible: false) — run audit script
+5. Cross-check: open Swift source → compare every property
+```
+
+**Audit script (run via use_figma after changes):**
+```js
+// Find hidden fills in a component set
+const cs = await figma.getNodeByIdAsync('COMPONENT_SET_ID');
+for (const v of cs.children) {
+  const hiddenFills = v.fills?.filter(f => f.visible === false) || [];
+  if (hiddenFills.length > 0) return `FAIL: ${v.name} has hidden fills`;
+}
+return 'PASS';
+```
+
+**Violation = fix immediately. Never leave for later.**
 
 ### Asset Import (xcassets → Figma)
 
@@ -171,6 +299,18 @@ Figma DS has matching `Assets / *` pages with **350 named placeholder components
 1. Re-run `bash scripts/export-assets-for-figma.sh`
 2. Create new component on matching Figma page (via `use_figma` or manually)
 3. Import PNG into the component
+
+## Asset Pipeline Rules (CRITICAL)
+
+> Full audit: `docs/07_ui_ux/ASSET_CONSISTENCY_AUDIT.md`
+
+- **Scale-aware loading**: `AssetManager` loads images with `UIImage(data: data, scale: UIScreen.main.scale)` — never bare `UIImage(data:)`
+- **Interpolation hints**: All shared image components (`CachedAssetImage`, `ItemImageView`, `AvatarImageView`, `CityBuildingView`) use `.interpolation(.high)`; backgrounds use `.interpolation(.medium)`
+- **sync-assets.sh max dimension**: 1024px (not 512). Never resize below display size × 3
+- **No orphaned sidebar icons**: Only 32 active icons remain; verify before adding new ones
+- **New assets require**: Figma DS component → export → xcassets → code reference. No direct xcassets addition
+- **Naming**: kebab-case for UI assets (`building-arena`), snake_case exception for Supabase items (`wpn_excalibur`)
+- **Oversized check**: Icons displayed at ≤36pt must not exceed 256×256 source PNG
 
 ## Game Enums (VERIFY BEFORE USE)
 
@@ -345,6 +485,13 @@ When a rule violation is found that **no agent caught**: identify which agent sh
 | `hexbound-preflight` | Pre-commit: pbxproj, Prisma, subtree, junk | `scripts/preflight_check.sh` |
 | `hexbound-build-verify` | Full build + static analysis | `scripts/verify_build.sh` |
 | `hexbound-retro` | Meta: lessons → rule/agent updates | `scripts/gather_metrics.sh` |
+| `ds-code-audit` | DS compliance: tokens, duplicates, inline patterns, orphans | `.claude/skills/ds-code-audit/` |
+| `ds-figma-sync` | Code↔Figma parity: tokens, components, text/effect styles | `.claude/skills/ds-figma-sync/` |
+| `ds-extract-component` | Extract inline pattern → reusable Swift + Figma component | `.claude/skills/ds-extract-component/` |
+| `ds-ecosystem` | Master plan: 10-phase Figma ecosystem build orchestrator | `.claude/skills/ds-ecosystem/` |
+| `ds-screen-builder` | Build app screens in Figma from DS components | `.claude/skills/ds-screen-builder/` |
+| `ds-prototype` | Create clickable prototype flows between screens | `.claude/skills/ds-prototype/` |
+| `ds-qa-coverage` | Final QA: coverage, bindings, naming, connections | `.claude/skills/ds-qa-coverage/` |
 
 ## CLAUDE.md Hygiene (META)
 

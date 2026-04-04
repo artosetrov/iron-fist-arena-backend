@@ -58,7 +58,7 @@ struct DungeonSelectDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("DUNGEONS")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -117,7 +117,7 @@ struct DungeonSelectDetailView: View {
                 Image("ui-arrow-left")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 16, height: 16)
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 Text("RETURN TO HUB")
             }
         }
@@ -158,7 +158,7 @@ struct DungeonSelectDetailView: View {
                 .accessibilityValue("\(current) of \(max)")
 
                 Text("\(current)/\(max)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.stamina)
                     .monospacedDigit()
                     .accessibilityElement(children: .ignore)
@@ -249,11 +249,11 @@ struct DungeonSelectDetailView: View {
                         .overlay(alignment: .topTrailing) {
                             // Completed badge
                             if isCompleted {
-                                HStack(spacing: 4) {
+                                HStack(spacing: LayoutConstants.spaceXS) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .font(DarkFantasyTheme.uiLabel)
                                     Text("COMPLETED")
-                                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                                        .font(DarkFantasyTheme.badge)
                                 }
                                 .foregroundStyle(DarkFantasyTheme.success)
                                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -268,11 +268,11 @@ struct DungeonSelectDetailView: View {
 
                     // Energy cost badge
                     if !isLocked {
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "bolt.fill")
                                 .font(DarkFantasyTheme.caption.bold())
                             Text("\(dungeon.energyCost)")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                         }
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
@@ -296,7 +296,7 @@ struct DungeonSelectDetailView: View {
                                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                                     if case .locked(let req) = state {
                                         Text(req)
-                                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                            .font(DarkFantasyTheme.caption)
                                             .foregroundStyle(DarkFantasyTheme.stamina)
                                     }
                                 }
@@ -309,21 +309,21 @@ struct DungeonSelectDetailView: View {
                     // Name + level
                     HStack {
                         Text(dungeon.name.uppercased())
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                            .font(DarkFantasyTheme.cardTitle)
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textPrimary)
                             .accessibilityLabel("Dungeon: \(dungeon.name)")
 
                         Spacer()
 
                         Text("Lv. \(dungeon.minLevel)–\(dungeon.maxLevel)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .accessibilityLabel("Difficulty: Level \(dungeon.minLevel) to \(dungeon.maxLevel)")
                     }
 
                     // Description
                     Text(dungeon.description)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .lineLimit(2)
 
@@ -333,11 +333,11 @@ struct DungeonSelectDetailView: View {
                     // Reward icons
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text("Rewards:")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         ForEach(dungeon.rewardIcons, id: \.self) { icon in
                             AssetPlaceholderView(systemIcon: "cube.fill")
-                                .frame(width: 16, height: 16)
+                                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                                 .opacity(isLocked ? 0.4 : 1.0)
                         }
                     }
@@ -402,7 +402,7 @@ struct DungeonSelectDetailView: View {
 
             // Label
             Text("\(defeated)/\(total)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(
                     fraction >= 1.0
                         ? DarkFantasyTheme.success

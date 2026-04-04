@@ -44,7 +44,7 @@ struct StaminaBarView: View {
     private var compactLayout: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "bolt.fill")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody).bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.stamina)
 
             GeometryReader { geo in
@@ -64,19 +64,19 @@ struct StaminaBarView: View {
             .frame(height: 14)
 
             Text("\(currentStamina)/\(maxStamina)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.stamina)
                 .monospacedDigit()
 
             if showPlus {
                 Image(systemName: "plus.circle.fill")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
 
             if let recoveryText, currentStamina < maxStamina {
                 Text(recoveryText)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -120,14 +120,19 @@ struct StaminaBarView: View {
             }
             .frame(height: LayoutConstants.heroBarXpHeight)
 
-            // Label + Value centered
+            // Label + Value centered with dark pill for readability
             HStack {
                 Spacer()
                 Text("Stamina  \(currentStamina) / \(maxStamina)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
+                    .font(DarkFantasyTheme.uiLabel.bold())
                     .foregroundStyle(isLow ? DarkFantasyTheme.textWarning : DarkFantasyTheme.textPrimary)
-                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 2)
                     .monospacedDigit()
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, LayoutConstants.barInternalPadding)
+                    .background(
+                        Capsule()
+                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
+                    )
                 Spacer()
             }
             .frame(height: LayoutConstants.heroBarXpHeight)

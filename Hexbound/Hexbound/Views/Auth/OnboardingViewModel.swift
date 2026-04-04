@@ -1,4 +1,5 @@
 import SwiftUI
+import Hexbound
 
 @MainActor @Observable
 final class OnboardingViewModel {
@@ -159,7 +160,7 @@ final class OnboardingViewModel {
         guard canProceed else { return }
         errorMessage = ""
         if step < Self.totalSteps - 1 {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(MotionConstants.smooth) {
                 step += 1
             }
         }
@@ -168,7 +169,7 @@ final class OnboardingViewModel {
     func prevStep() {
         errorMessage = ""
         if step > 0 {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(MotionConstants.smooth) {
                 step -= 1
             }
         }
@@ -319,7 +320,7 @@ final class OnboardingViewModel {
     func selectClass(at index: Int) {
         let classes = CharacterClass.allCases
         guard index >= 0, index < classes.count else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(MotionConstants.snappy) {
             selectedClass = classes[index]
         }
     }

@@ -137,11 +137,11 @@ struct LootDetailView: View {
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                         if isGold, let qty = quantity {
                             Text("\(qty) Gold")
-                                .font(DarkFantasyTheme.section(size: 20))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(rarityColor)
                         } else {
                             Text(upgrade > 0 ? "\(name) +\(upgrade)" : name)
-                                .font(DarkFantasyTheme.section(size: 20))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(rarityColor)
                                 .lineLimit(2)
                         }
@@ -149,7 +149,7 @@ struct LootDetailView: View {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             if let t = type {
                                 Text(t.displayName.lowercased())
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .font(DarkFantasyTheme.badge)
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                                     .padding(.horizontal, LayoutConstants.spaceXS)
                                     .padding(.vertical, LayoutConstants.space2XS)
@@ -159,7 +159,7 @@ struct LootDetailView: View {
                             }
 
                             Text(rarity.rawValue)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(rarityColor)
                                 .padding(.horizontal, LayoutConstants.spaceXS)
                                 .padding(.vertical, LayoutConstants.space2XS)
@@ -171,7 +171,7 @@ struct LootDetailView: View {
 
                         if !isGold {
                             Text("Level \(level)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
@@ -200,7 +200,7 @@ struct LootDetailView: View {
                                 .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                             Text("STATS")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 .tracking(1.2)
                         }
@@ -208,12 +208,12 @@ struct LootDetailView: View {
                         ForEach(stats.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                             HStack {
                                 Text(Item.statLabels[key] ?? key.capitalized)
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                    .font(DarkFantasyTheme.uiLabel)
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                                     .accessibilityLabel("Stat: \(Item.statLabels[key] ?? key)")
                                 Spacer()
                                 Text("+\(value)")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                                    .font(DarkFantasyTheme.cardTitle)
                                     .foregroundStyle(DarkFantasyTheme.statColor(for: key))
                                     .accessibilityLabel("+\(value) \(Item.statLabels[key] ?? key)")
                             }
@@ -234,7 +234,7 @@ struct LootDetailView: View {
                             .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(effect)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -267,7 +267,7 @@ struct LootDetailView: View {
                                     .font(DarkFantasyTheme.caption)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 Text(equipped != nil ? "VS. EQUIPPED" : "STAT BONUS")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .font(DarkFantasyTheme.badge)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                     .tracking(1.2)
                             }
@@ -291,7 +291,7 @@ struct LootDetailView: View {
                     if sellPrice > 0 {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Text("Sell:")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                             CurrencyDisplay(gold: sellPrice, size: .compact, currencyType: .gold, animated: false)
                         }
@@ -307,7 +307,7 @@ struct LootDetailView: View {
 
                 if let desc = description, !desc.isEmpty {
                     Text(desc)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .italic()
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -353,17 +353,17 @@ struct LootDetailView: View {
                 Image(statType.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 20, height: 20)
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
             }
 
             Text(Item.statLabels[key] ?? key.capitalized)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Spacer(minLength: 4)
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                .font(DarkFantasyTheme.badge.weight(.bold))
                 .foregroundStyle(deltaColor)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.spaceXS)
@@ -377,7 +377,7 @@ struct LootDetailView: View {
                 )
 
             Text("+\(itemValue)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .frame(minWidth: 30, alignment: .trailing)
         }

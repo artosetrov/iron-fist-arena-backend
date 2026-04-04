@@ -55,7 +55,7 @@ struct LoginView: View {
                     // Error
                     if !vm.errorMessage.isEmpty {
                         Text(vm.errorMessage)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textDanger)
                             .multilineTextAlignment(.center)
                             .transition(.opacity)
@@ -68,7 +68,7 @@ struct LoginView: View {
                                 .fill(DarkFantasyTheme.borderSubtle)
                                 .frame(height: 1)
                             Text("CONNECT WITH")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                .font(DarkFantasyTheme.caption)
                                 .tracking(1)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 .fixedSize()
@@ -116,7 +116,7 @@ struct LoginView: View {
 
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Text("G")
-                                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                                        .font(DarkFantasyTheme.googleLogo)
                                     Text("Google")
                                         .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                                 }
@@ -161,7 +161,7 @@ struct LoginView: View {
 
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, 60)
+                .padding(.bottom, LayoutConstants.authBottomInset)
             }
 
             if vm.isLoading {
@@ -210,11 +210,11 @@ struct StyledTextField: View {
             if !icon.isEmpty {
                 Image(systemName: icon)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .frame(width: 20)
+                    .frame(width: LayoutConstants.iconMD)
             }
 
             TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(DarkFantasyTheme.textTertiary))
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .keyboardType(keyboardType)
                 .textInputAutocapitalization(autocapitalization)
@@ -246,7 +246,7 @@ struct StyledSecureField: View {
             if !icon.isEmpty {
                 Image(systemName: icon)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .frame(width: 20)
+                    .frame(width: LayoutConstants.iconMD)
             }
 
             Group {
@@ -256,7 +256,7 @@ struct StyledSecureField: View {
                     SecureField("", text: $text, prompt: Text(placeholder).foregroundStyle(DarkFantasyTheme.textTertiary))
                 }
             }
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textPrimary)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()

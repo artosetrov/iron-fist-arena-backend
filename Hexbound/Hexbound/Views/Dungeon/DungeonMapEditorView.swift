@@ -66,13 +66,13 @@ struct DungeonMapEditorView: View {
                 VStack {
                     Spacer()
                     Text(msg)
-                        .font(DarkFantasyTheme.body(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, LayoutConstants.spaceMD)
+                        .padding(.vertical, LayoutConstants.spaceMS)
                         .background(DarkFantasyTheme.success.opacity(0.9))
                         .clipShape(Capsule())
-                        .padding(.bottom, 140)
+                        .padding(.bottom, LayoutConstants.editorBottomInset)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -85,7 +85,7 @@ struct DungeonMapEditorView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("DUNGEON MAP EDITOR")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -95,7 +95,8 @@ struct DungeonMapEditorView: View {
                         sizeOverrides.removeAll()
                     }
                 }
-                .font(DarkFantasyTheme.body(size: 14))
+                .buttonStyle(.plain)
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.danger)
             }
         }
@@ -145,11 +146,11 @@ struct DungeonMapEditorView: View {
 
                 HStack {
                     Text(building.label)
-                        .font(DarkFantasyTheme.section(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Spacer()
                     Text("(\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY))) S: \(String(format: "%.2f", currentSize))")
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .font(DarkFantasyTheme.debugMono)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
 
@@ -185,7 +186,7 @@ struct DungeonMapEditorView: View {
                 }
             } else {
                 Text("Tap a dungeon to select, drag to move")
-                    .font(DarkFantasyTheme.body(size: 13))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -319,9 +320,10 @@ struct DraggableEditorDungeonBuilding: View {
         let baseX = terrainSize.width * building.relativeX
         let baseY = terrainSize.height * building.relativeY
 
-        VStack(spacing: 2) {
+        VStack(spacing: LayoutConstants.space2XS) {
             Text("\(building.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(DarkFantasyTheme.debugMonoSmall)
+                .bold()
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)

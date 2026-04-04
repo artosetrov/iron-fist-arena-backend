@@ -9,9 +9,9 @@ struct CityBuildingLabel: View {
     var isLocked: Bool = false
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Text(text)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
             if isLocked {
@@ -20,10 +20,10 @@ struct CityBuildingLabel: View {
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             } else if let badge {
                 Text(badge)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
                     .padding(.horizontal, LayoutConstants.spaceXS)
-                    .padding(.vertical, 1)
+                    .padding(.vertical, LayoutConstants.barInternalPadding)
                     .background(
                         Capsule().fill(DarkFantasyTheme.gold)
                     )

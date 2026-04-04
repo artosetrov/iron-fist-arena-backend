@@ -16,11 +16,11 @@ struct RegisterDetailView: View {
                     // Header
                     VStack(spacing: LayoutConstants.spaceSM) {
                         Text("CREATE ACCOUNT")
-                            .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
+                            .font(DarkFantasyTheme.title)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
 
                         Text("Join the Arena")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .padding(.bottom, LayoutConstants.spaceMD)
@@ -65,7 +65,7 @@ struct RegisterDetailView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
                         Text("OR")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .fixedSize()
@@ -85,7 +85,7 @@ struct RegisterDetailView: View {
                                 Image(systemName: "apple.logo")
                                     .font(DarkFantasyTheme.cardTitle.weight(.medium))
                                 Text("Apple")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -114,9 +114,9 @@ struct RegisterDetailView: View {
 
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Text("G")
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .font(DarkFantasyTheme.googleLogo)
                                 Text("Google")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .allowsHitTesting(false)
@@ -146,7 +146,7 @@ struct RegisterDetailView: View {
                     // Error
                     if !vm.errorMessage.isEmpty {
                         Text(vm.errorMessage)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(
                                 vm.errorMessage.contains("Check your email")
                                     ? DarkFantasyTheme.textSuccess

@@ -47,7 +47,7 @@ struct GoldMineDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("GOLD MINE")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -62,7 +62,7 @@ struct GoldMineDetailView: View {
     private func miningOutputCard(vm: GoldMineViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("MINING OUTPUT")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .tracking(1.5)
 
@@ -73,7 +73,7 @@ struct GoldMineDetailView: View {
                     .accessibilityLabel("Gold per hour")
                     .accessibilityElement(children: .ignore)
                 Text("\(vm.activeSlotCount * 200)/HR")
-                    .font(DarkFantasyTheme.title(size: 32))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .contentTransition(.numericText())
                     .animation(.spring(duration: 0.4), value: vm.activeSlotCount)
@@ -81,7 +81,7 @@ struct GoldMineDetailView: View {
             }
 
             Text("\(vm.activeSlotCount) Active Slots")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .accessibilityLabel("\(vm.activeSlotCount) active mining slots")
         }
@@ -347,7 +347,7 @@ private struct MineSlotCard: View {
     private var infoPanel: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("SLOT \(index + 1)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .accessibilityLabel("Mining slot \(index + 1)")
 
@@ -377,17 +377,17 @@ private struct MineSlotCard: View {
         switch status {
         case "mining":
             Text("Mining... \(vm.timeRemaining(slot))")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         case "ready":
             Text("Ready to collect!")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.success)
         default:
             Text("Idle")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
     }
@@ -440,7 +440,7 @@ private struct MineSlotCard: View {
                     Text("BOOST")
                     Image("icon-gems")
                         .resizable()
-                        .frame(width: 12, height: 12)
+                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -455,7 +455,7 @@ private struct MineSlotCard: View {
                     Text("COLLECT")
                     Image("icon-gold")
                         .resizable()
-                        .frame(width: 12, height: 12)
+                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -513,18 +513,18 @@ private struct LockedMineCard: View {
             // Info
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text("SLOT \(slotNumber)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 HStack(spacing: LayoutConstants.space2XS) {
                     Text("Unlock for")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Image("icon-gems")
                         .resizable()
-                        .frame(width: 12, height: 12)
+                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                     Text("50")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.cyan)
                 }
 

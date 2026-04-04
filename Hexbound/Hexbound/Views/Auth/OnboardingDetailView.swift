@@ -1,4 +1,5 @@
 import SwiftUI
+import Hexbound
 
 struct OnboardingDetailView: View {
     @Environment(AppState.self) private var appState
@@ -30,7 +31,7 @@ struct OnboardingDetailView: View {
                 // Error
                 if !vm.errorMessage.isEmpty {
                     Text(vm.errorMessage)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textDanger)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, LayoutConstants.screenPadding)
@@ -79,12 +80,12 @@ struct OnboardingDetailView: View {
                 .onTapGesture {
                     if i < vm.step {
                         SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(MotionConstants.smooth) {
                             vm.step = i
                         }
                     } else if i == vm.step + 1 && vm.canProceed {
                         SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(MotionConstants.smooth) {
                             vm.step = i
                         }
                     }
@@ -99,7 +100,7 @@ struct OnboardingDetailView: View {
         let borderColor = isActive ? DarkFantasyTheme.gold : (isCompleted ? DarkFantasyTheme.goldDim : DarkFantasyTheme.borderSubtle)
         let bgColor = isActive ? DarkFantasyTheme.gold.opacity(0.12) : DarkFantasyTheme.bgSecondary
 
-        HStack(spacing: 4) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             ZStack {
                 Circle()
                     .fill(isActive ? DarkFantasyTheme.gold : (isCompleted ? DarkFantasyTheme.goldDim : DarkFantasyTheme.bgTertiary))
@@ -107,23 +108,23 @@ struct OnboardingDetailView: View {
 
                 if isCompleted {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold)) // SF Symbol icon — keep as is
+                        .font(.system(size: 10, weight: .bold)) // keep — SF Symbol icon
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                 } else {
                     Text("\(number)")
-                        .font(.system(size: 11, weight: .bold, design: .rounded)) // rounded design — keep as is
+                        .font(.system(size: 11, weight: .bold, design: .rounded)) // keep — rounded design
                         .foregroundStyle(isActive ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
                 }
             }
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(isActive ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -156,11 +157,11 @@ struct OnboardingDetailView: View {
                         vm.prevStep()
                     }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
                         Image("ui-arrow-left")
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 16, height: 16)
+                            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("BACK")
                     }
                 }
@@ -198,17 +199,17 @@ struct OnboardingDetailView: View {
 
             VStack(spacing: LayoutConstants.spaceMD) {
                 Image(systemName: "shield.lefthalf.filled")
-                    .font(Font.custom("Oswald-Regular", size: LayoutConstants.textCelebration))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .opacity(forgeGlow ? 1.0 : 0.4)
                     .shadow(color: DarkFantasyTheme.gold.opacity(forgeGlow ? 0.6 : 0.1), radius: forgeGlow ? 16 : 4)
 
                 Text("Forging Your Hero...")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text("Sharpening swords, polishing armor...")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .padding(LayoutConstants.spaceLG)

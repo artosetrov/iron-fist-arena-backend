@@ -44,7 +44,7 @@ struct CharacterProfileView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text(characterName)
-                    .font(DarkFantasyTheme.section(size: 18))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -70,7 +70,7 @@ struct CharacterProfileView: View {
     private func errorView(_ message: String) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(Font.custom("Oswald-Regular", size: LayoutConstants.textCelebration))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
@@ -295,10 +295,10 @@ struct CharacterProfileView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             ForEach(StatGroup.allCases, id: \.self) { group in
                 VStack(spacing: LayoutConstants.spaceSM) {
-                    statGroupHeader(group.rawValue)
+                    StatGroupHeader(group.rawValue)
                     ForEach(group.stats, id: \.self) { stat in
-                        opponentStatCell(
-                            stat,
+                        OpponentStatCell(
+                            stat: stat,
                             value: profile.statValue(for: stat),
                             playerValue: playerStatValue(for: stat)
                         )
@@ -323,95 +323,7 @@ struct CharacterProfileView: View {
     }
 
     @ViewBuilder
-    private func opponentStatCell(_ stat: StatType, value: Int, playerValue: Int) -> some View {
-        let color = DarkFantasyTheme.statColor(for: stat.rawValue)
-        let delta = value - playerValue
-
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(stat.iconAsset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
-
-            Text(stat.fullName)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(color)
-                .lineLimit(1)
-
-            Spacer(minLength: 4)
-
-            if delta != 0 {
-                let deltaColor = delta > 0 ? DarkFantasyTheme.danger : DarkFantasyTheme.success
-                let arrow = delta > 0 ? "▲" : "▼"
-                let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
-
-                Text(label)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(deltaColor)
-                    .padding(.horizontal, LayoutConstants.spaceSM)
-                    .padding(.vertical, LayoutConstants.spaceXS)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .fill(deltaColor.opacity(0.15))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .stroke(deltaColor.opacity(0.4), lineWidth: 1)
-                            )
-                    )
-            }
-
-            Text("\(value)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .frame(minWidth: 36, alignment: .trailing)
-        }
-        .padding(LayoutConstants.spaceSM + 2)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.3,
-                cornerRadius: LayoutConstants.panelRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
-        .overlay(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius).stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
-        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
-    }
-
-    @ViewBuilder
-    private func statGroupHeader(_ label: String) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(LinearGradient(colors: [.clear, DarkFantasyTheme.goldDim.opacity(0.4)], startPoint: .leading, endPoint: .trailing))
-                    .frame(height: 1)
-                Rectangle()
-                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
-                    .frame(width: 4, height: 4)
-                    .rotationEffect(.degrees(45))
-            }
-
-            Text(label)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
-                .lineLimit(1)
-                .fixedSize()
-
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
-                    .frame(width: 4, height: 4)
-                    .rotationEffect(.degrees(45))
-                Rectangle()
-                    .fill(LinearGradient(colors: [DarkFantasyTheme.goldDim.opacity(0.4), .clear], startPoint: .leading, endPoint: .trailing))
-                    .frame(height: 1)
-            }
-        }
-        .padding(.top, LayoutConstants.spaceXS)
-    }
+    // MARK: - Stat Cells & Headers (uses shared OpponentStatCell, StatGroupHeader components)
 
     // MARK: - Derived Stats
 
@@ -433,11 +345,11 @@ struct CharacterProfileView: View {
     private func derivedRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(color)
                 .monospacedDigit()
         }
@@ -459,7 +371,7 @@ struct CharacterProfileView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .font(DarkFantasyTheme.uiLabel)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .tracking(2)
             .frame(maxWidth: .infinity, alignment: .leading)

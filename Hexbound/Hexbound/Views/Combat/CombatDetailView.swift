@@ -147,7 +147,7 @@ struct CombatDetailView: View {
             critFlashOpacity = 0.3
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-            withAnimation(.easeOut(duration: 0.15)) {
+            withAnimation(.easeOut(duration: MotionConstants.instant)) {
                 critFlashOpacity = 0
             }
         }
@@ -211,27 +211,27 @@ struct CombatDetailView: View {
 
             // Pulsing swords icon
             Image(systemName: "swords")
-                .font(Font.custom("Inter-Regular", size: 72))
+                .font(.system(size: 72)) // keep — SF Symbol decorative, no DS token for 72pt
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.5), radius: animatePulse ? 20 : 8)
                 .animation(
-                    .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                    MotionConstants.pulse,
                     value: animatePulse
                 )
 
             Text("PREPARING BATTLE")
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                .font(DarkFantasyTheme.section)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.3), radius: 12)
 
             // Animated loading dots
-            HStack(spacing: 8) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
                         .fill(DarkFantasyTheme.gold)
                         .frame(width: 8, height: 8)
                         .opacity(animatePulse ? 1 : 0.3)
                         .animation(
-                            .easeInOut(duration: 0.5)
+                            .easeInOut(duration: MotionConstants.tickUpDuration)
                                 .repeatForever(autoreverses: true)
                                 .delay(Double(i) * 0.15),
                             value: animatePulse
@@ -250,7 +250,7 @@ struct CombatDetailView: View {
     @ViewBuilder
     private func roundHeader(_ vm: CombatViewModel) -> some View {
         Text(vm.turnLabel)
-            .font(DarkFantasyTheme.title(size: vm.isFinished ? LayoutConstants.textScreen : LayoutConstants.textSection))
+            .font(vm.isFinished ? DarkFantasyTheme.title : DarkFantasyTheme.section)
             .foregroundStyle(vm.turnLabelColor)
             .shadow(color: vm.turnLabelColor.opacity(0.4), radius: 8)
             .padding(.top, LayoutConstants.spaceLG)
@@ -275,9 +275,9 @@ struct CombatDetailView: View {
 
             // VS label
             Text("VS")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .padding(.top, 90)
+                .padding(.top, LayoutConstants.combatVsTopInset)
 
             // Enemy Side
             fighterPanel(
@@ -310,7 +310,7 @@ struct CombatDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // YOU / ENEMY label
             Text(isPlayer ? "YOU" : "ENEMY")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(borderColor)
 
             // Avatar box with colored border
@@ -365,13 +365,13 @@ struct CombatDetailView: View {
 
             // Character Name
             Text(fighter.characterName.uppercased())
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
             // Level + Class
             Text("Lv.\(fighter.level) \(fighter.characterClass.rawValue.capitalized)")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             // HP Bar
@@ -380,10 +380,10 @@ struct CombatDetailView: View {
                     .accessibilityLabel("Health \(currentHp) of \(maxHp)")
 
                 Text("\(currentHp)/\(maxHp)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.hpBlood)
                     .contentTransition(.numericText())
-                    .animation(.easeInOut(duration: 0.3), value: currentHp)
+                    .animation(MotionConstants.smooth, value: currentHp)
             }
 
             // Status Effects
@@ -394,7 +394,7 @@ struct CombatDetailView: View {
                             Image(systemName: status.icon)
                                 .font(DarkFantasyTheme.badge)
                             Text(status.abbreviation)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                                .font(DarkFantasyTheme.badge.weight(.bold))
                         }
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceXS)
@@ -417,10 +417,10 @@ struct CombatDetailView: View {
             // Attack zone
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text("Attack")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(vm.currentAttackZone ?? "—")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(zoneColor(vm.currentAttackZone))
                     .padding(.horizontal, LayoutConstants.spaceMS)
                     .padding(.vertical, LayoutConstants.spaceXS)
@@ -430,17 +430,17 @@ struct CombatDetailView: View {
                     )
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, LayoutConstants.spaceMS)
             .background(DarkFantasyTheme.bgSecondary.opacity(0.6))
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
 
             // Defend zone
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text("Defend")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(vm.currentDefendZone ?? "—")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(zoneColor(vm.currentDefendZone))
                     .padding(.horizontal, LayoutConstants.spaceMS)
                     .padding(.vertical, LayoutConstants.spaceXS)
@@ -450,7 +450,7 @@ struct CombatDetailView: View {
                     )
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, LayoutConstants.spaceMS)
             .background(DarkFantasyTheme.bgSecondary.opacity(0.6))
             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
         }
@@ -473,7 +473,7 @@ struct CombatDetailView: View {
     private func combatLogPanel(_ vm: CombatViewModel) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("COMBAT LOG")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.danger)
                 .padding(.bottom, LayoutConstants.spaceSM)
 
@@ -484,15 +484,15 @@ struct CombatDetailView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: LayoutConstants.spaceXS) {
                                     Text(entry.text)
-                                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                        .font(DarkFantasyTheme.caption)
                                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                                     Text("→")
-                                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                        .font(DarkFantasyTheme.caption)
                                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                                     Text(entry.result)
-                                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                                        .font(DarkFantasyTheme.caption.weight(.bold))
                                         .foregroundStyle(entry.resultColor)
 
                                     if let label = entry.damageTypeLabel, let color = entry.damageTypeColor {
@@ -502,7 +502,7 @@ struct CombatDetailView: View {
                                                     .font(DarkFantasyTheme.badge)
                                             }
                                             Text(label)
-                                                .font(DarkFantasyTheme.body(size: 11).bold())
+                                                .font(DarkFantasyTheme.badge.weight(.bold))
                                         }
                                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                                         .padding(.horizontal, LayoutConstants.spaceXS)
@@ -513,8 +513,7 @@ struct CombatDetailView: View {
                                 }
                                 .padding(.vertical, LayoutConstants.spaceXS)
 
-                                Divider()
-                                    .background(DarkFantasyTheme.borderSubtle)
+                                EtchedGroove()
                             }
                             .id(entry.id)
                         }
@@ -523,7 +522,7 @@ struct CombatDetailView: View {
                 .onChange(of: vm.visibleLogEntries.count) { _, _ in
                     DispatchQueue.main.async {
                         if let last = vm.visibleLogEntries.last {
-                            withAnimation(.easeOut(duration: 0.2)) {
+                            withAnimation(MotionConstants.snappy) {
                                 proxy.scrollTo(last.id, anchor: .bottom)
                             }
                         }
@@ -563,7 +562,7 @@ struct CombatDetailView: View {
                 Task { await vm.goToResult() }
             } label: {
                 if vm.isNavigatingToResult {
-                    HStack(spacing: 8) {
+                    HStack(spacing: LayoutConstants.spaceSM) {
                         ProgressView()
                             .tint(DarkFantasyTheme.textOnGold)
                         Text("LOADING...")
@@ -649,7 +648,7 @@ struct DamagePopupBubble: View {
 
     var body: some View {
         Text(popup.text)
-            .font(DarkFantasyTheme.title(size: popup.isCrit ? 36 : 24))
+            .font(popup.isCrit ? DarkFantasyTheme.cinematicTitle : DarkFantasyTheme.section)
             .foregroundStyle(popup.color)
             .shadow(color: popup.color.opacity(0.5), radius: 4)
             .scaleEffect(scale)
@@ -662,7 +661,7 @@ struct DamagePopupBubble: View {
                         scale = 1.0
                     }
                 }
-                withAnimation(.easeOut(duration: 0.8)) {
+                withAnimation(.easeOut(duration: MotionConstants.tickUpLong)) {
                     offsetY = -70
                 }
                 withAnimation(.easeIn(duration: 0.4).delay(0.4)) {

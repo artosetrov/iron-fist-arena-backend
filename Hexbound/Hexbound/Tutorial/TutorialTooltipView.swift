@@ -71,7 +71,7 @@ struct TutorialSpotlightOverlay: View {
         path.addRect(CGRect(origin: .zero, size: size))
         // Cutout — rounded rect around the target
         let inset = targetFrame.insetBy(dx: -6, dy: -6)
-        let cutout = Path(roundedRect: inset, cornerRadius: 10)
+        let cutout = Path(roundedRect: inset, cornerRadius: LayoutConstants.radiusLG)
         path = path.subtracting(cutout)
         return path
     }

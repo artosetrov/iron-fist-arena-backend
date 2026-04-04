@@ -44,7 +44,7 @@ struct InboxRowView: View {
             mailHeader
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(MotionConstants.snappy) {
                         isExpanded.toggle()
 
                         if isExpanded && !message.isRead {
@@ -100,9 +100,8 @@ struct InboxRowView: View {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(message.subject)
                         .font(
-                            DarkFantasyTheme.section(
-                                size: message.isRead
-                                    ? LayoutConstants.textBody : LayoutConstants.textCard)
+                            message.isRead
+                                ? DarkFantasyTheme.body : DarkFantasyTheme.cardTitle
                         )
                         .foregroundStyle(
                             message.isRead
@@ -114,10 +113,10 @@ struct InboxRowView: View {
                     // Battle result: rating change badge
                     if let battle = message.battleData {
                         Text("\(battle.ratingChange > 0 ? "+" : "")\(battle.ratingChange)")
-                            .font(DarkFantasyTheme.section(size: 11))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
+                            .padding(.horizontal, LayoutConstants.spaceSM)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
                                 Capsule()
                                     .fill(DarkFantasyTheme.bgTertiary)
@@ -131,10 +130,10 @@ struct InboxRowView: View {
                     // Battle invite: status badge
                     if let invite = message.inviteData {
                         Text(invite.status.uppercased())
-                            .font(DarkFantasyTheme.section(size: 11))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(inviteStatusColor(invite.status))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
+                            .padding(.horizontal, LayoutConstants.spaceSM)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
                                 Capsule()
                                     .fill(DarkFantasyTheme.bgTertiary)
@@ -157,15 +156,15 @@ struct InboxRowView: View {
                 // Sender + date row
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text(message.senderName)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Text("·")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Text(formatDate(message.createdAt))
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Spacer()
@@ -178,7 +177,7 @@ struct InboxRowView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, 14)
+        .padding(.vertical, LayoutConstants.spaceMS)
     }
 
     // MARK: - Sender Icon
@@ -250,16 +249,16 @@ struct InboxRowView: View {
     private func attachmentPills(_ attachments: [MailAttachment]) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             ForEach(Array(attachments.prefix(3).enumerated()), id: \.offset) { _, attachment in
-                HStack(spacing: 3) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     attachmentIcon(for: attachment.type)
-                        .frame(width: 12, height: 12)
+                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
 
                     Text(formatAmount(attachment.amount))
-                        .font(DarkFantasyTheme.section(size: 11))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(
                     Capsule()
                         .fill(DarkFantasyTheme.bgTertiary)
@@ -272,7 +271,7 @@ struct InboxRowView: View {
 
             if attachments.count > 3 {
                 Text("+\(attachments.count - 3)")
-                    .font(DarkFantasyTheme.section(size: 11))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -296,7 +295,7 @@ struct InboxRowView: View {
             } else {
                 // Regular mail: plain text body
                 Text(message.body)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(nil)
                     .padding(.horizontal, LayoutConstants.spaceMD)
@@ -328,13 +327,13 @@ struct InboxRowView: View {
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 Text(battle.label)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 Spacer()
 
                 Text("\(battle.totalTurns) turns")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
 
@@ -343,20 +342,20 @@ struct InboxRowView: View {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
-                    .frame(width: 20)
+                    .frame(width: LayoutConstants.iconMD)
 
                 Text("Rating")
-                    .font(DarkFantasyTheme.body(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 Spacer()
 
                 Text("\(battle.ratingBefore) → \(battle.ratingAfter)")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 Text("(\(battle.ratingChange > 0 ? "+" : "")\(battle.ratingChange))")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
             }
 
@@ -364,17 +363,17 @@ struct InboxRowView: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image("icon-gold")
                     .resizable()
-                    .frame(width: 16, height: 16)
-                    .frame(width: 20)
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                    .frame(width: LayoutConstants.iconMD)
 
                 Text("Gold")
-                    .font(DarkFantasyTheme.body(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 Spacer()
 
                 Text("+\(battle.goldReward)")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
 
@@ -383,16 +382,16 @@ struct InboxRowView: View {
                 Image(systemName: "sparkles")
                     .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.cyan)
-                    .frame(width: 20)
+                    .frame(width: LayoutConstants.iconMD)
 
                 Text("XP")
-                    .font(DarkFantasyTheme.body(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 Spacer()
 
                 Text("+\(battle.xpReward)")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.cyan)
             }
         }
@@ -465,26 +464,26 @@ struct InboxRowView: View {
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(invite.challengerName)
-                        .font(DarkFantasyTheme.section(size: 16))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text("Lv.\(invite.challengerLevel)")
-                            .font(DarkFantasyTheme.body(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text("·")
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         Text(invite.challengerClass.capitalized)
-                            .font(DarkFantasyTheme.body(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text("·")
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         Text("\(invite.challengerRating)")
-                            .font(DarkFantasyTheme.section(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
                 }
@@ -495,7 +494,7 @@ struct InboxRowView: View {
             // Challenge message (if any)
             if let msg = invite.message, !msg.isEmpty {
                 Text("\"\(msg)\"")
-                    .font(DarkFantasyTheme.body(size: 14).italic())
+                    .font(DarkFantasyTheme.uiLabel.italic())
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -510,7 +509,7 @@ struct InboxRowView: View {
                             Image(systemName: "swords")
                                 .font(DarkFantasyTheme.caption)
                             Text("FIGHT")
-                                .font(DarkFantasyTheme.section(size: 14))
+                                .font(DarkFantasyTheme.uiLabel)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -523,7 +522,7 @@ struct InboxRowView: View {
                             Image(systemName: "xmark")
                                 .font(DarkFantasyTheme.caption.bold())
                             Text("DECLINE")
-                                .font(DarkFantasyTheme.section(size: 14))
+                                .font(DarkFantasyTheme.uiLabel)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -535,7 +534,7 @@ struct InboxRowView: View {
                     Image(systemName: invite.isAccepted ? "checkmark.circle.fill" : invite.isDeclined ? "xmark.circle.fill" : "clock")
                         .foregroundStyle(inviteStatusColor(invite.status))
                     Text(invite.status.capitalized)
-                        .font(DarkFantasyTheme.body(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(inviteStatusColor(invite.status))
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -592,15 +591,15 @@ struct InboxRowView: View {
     private func rewardPill(_ attachment: MailAttachment) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             attachmentIcon(for: attachment.type)
-                .frame(width: 16, height: 16)
+                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(formatAmount(attachment.amount))
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text(attachment.type.capitalized)
-                    .font(DarkFantasyTheme.body(size: 11))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -626,7 +625,7 @@ struct InboxRowView: View {
                         Image(systemName: "gift.fill")
                             .font(DarkFantasyTheme.uiLabel)
                         Text("Claim Rewards")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                            .font(DarkFantasyTheme.body)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -638,7 +637,7 @@ struct InboxRowView: View {
                         .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.goldDim)
                     Text("Claimed")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
@@ -650,7 +649,7 @@ struct InboxRowView: View {
                     Image(systemName: "trash.fill")
                         .font(DarkFantasyTheme.caption)
                     Text("Delete")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                 }
                 .frame(maxWidth: .infinity)
             }

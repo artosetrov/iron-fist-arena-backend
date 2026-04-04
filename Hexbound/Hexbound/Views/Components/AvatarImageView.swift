@@ -17,7 +17,9 @@ struct AvatarImageView: View {
         let resolvedKey = cache.skinImageKey(for: skinKey)
         if let image = resolvedImage ?? AssetManager.shared.image(forKey: resolvedKey) {
             Image(uiImage: image)
-                .resizable().scaledToFill()
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
                 .frame(width: size, height: size)
                 .clipped()
         } else if isLoading {

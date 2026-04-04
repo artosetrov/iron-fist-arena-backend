@@ -90,7 +90,7 @@ struct WidgetPill: View {
 
             // Label
             Text(text)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.pillFont).weight(.semibold))
+                .font(DarkFantasyTheme.badge.weight(.semibold))
                 .foregroundStyle(textColor)
                 .lineLimit(1)
 
@@ -98,10 +98,10 @@ struct WidgetPill: View {
             if let count = count {
                 Spacer(minLength: 0)
                 Text(count)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.pillCountFont).weight(.bold))
+                    .font(DarkFantasyTheme.badge.weight(.bold))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.horizontal, LayoutConstants.spaceXS)
-                    .padding(.vertical, 2)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(
                         RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
                             .fill(accentColor.opacity(0.2))
@@ -195,7 +195,7 @@ extension View {
 
 #if DEBUG
 #Preview {
-    VStack(spacing: 16) {
+    VStack(spacing: LayoutConstants.spaceMD) {
         WidgetPill(icon: "", text: "Heal", count: "×3", imageAsset: "health_potion_small", style: .heal, isInteractive: true, action: {})
         WidgetPill(icon: "", text: "Heal", count: "×1", imageAsset: "health_potion_small", style: .urgent, isInteractive: true, action: {})
         WidgetPill(icon: "", text: "Energy", count: "×2", imageAsset: "stamina_potion_small", style: .energy, isInteractive: true, action: {})

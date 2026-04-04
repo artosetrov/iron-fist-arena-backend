@@ -51,6 +51,7 @@ struct CityMapView: View {
                         // Layer 1: Terrain background (scrolls at 1x)
                         Image("bg-hub")
                             .resizable()
+                            .interpolation(.medium)
                             .frame(width: terrainWidth, height: viewHeight)
 
                         // Layer 2: Lantern glow effects

@@ -15,12 +15,12 @@ struct GuestNudgeBanner: View {
                     .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.gold)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("Save your progress!")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                     Text("Create an account to keep everything")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
 
@@ -30,7 +30,7 @@ struct GuestNudgeBanner: View {
                     appState.mainPath.append(AppRoute.upgradeGuest)
                 } label: {
                     Text("SIGN UP")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.spaceXS)

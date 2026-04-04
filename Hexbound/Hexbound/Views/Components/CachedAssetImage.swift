@@ -26,6 +26,7 @@ struct CachedAssetImage: View {
             if let image = loadedImage ?? AssetManager.shared.image(forKey: key) {
                 Image(uiImage: image)
                     .resizable()
+                    .interpolation(.high)
                     .aspectRatio(contentMode: contentMode)
             } else if isLoading {
                 // Skeleton placeholder while downloading

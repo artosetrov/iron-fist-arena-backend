@@ -16,7 +16,7 @@ struct TabSwitcher: View {
                     }
                 } label: {
                     Text(tabs[index])
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(
                             selectedIndex == index ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary
                         )
@@ -35,7 +35,7 @@ struct TabSwitcher: View {
                                             endPoint: .trailing
                                         )
                                     )
-                                    .frame(height: 2)
+                                    .frame(height: LayoutConstants.space2XS)
                                     .shadow(color: DarkFantasyTheme.goldGlow, radius: 4, y: 0)
                                     .matchedGeometryEffect(id: "tabIndicator", in: tabNamespace)
                             }

@@ -18,14 +18,14 @@ struct NPCSpeechBubble: View {
             npcAvatar
 
             // Dialog
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text(npcName.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.buttonLabel)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .tracking(0.5)
 
                 Text(message)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.buttonLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -73,7 +73,7 @@ struct NPCSpeechBubble: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
-        .frame(width: 48, height: 48)
+        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 4, y: 2)
     }
 

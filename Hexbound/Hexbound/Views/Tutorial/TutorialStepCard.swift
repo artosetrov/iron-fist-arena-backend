@@ -26,23 +26,23 @@ struct TutorialStepCard: View {
 
             // Title
             Text(objective.title)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.buttonLabel)
                 .foregroundStyle(state == .locked ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textPrimary)
                 .tracking(1)
 
             // Subtitle
             Text(objective.subtitle)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.buttonLabel)
                 .foregroundStyle(state == .locked ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             // Reward
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "gift.fill")
                     .font(DarkFantasyTheme.uiLabel)
                 Text(objective.rewardText)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.buttonLabel)
             }
             .foregroundStyle(state == .locked ? DarkFantasyTheme.textDisabled : DarkFantasyTheme.gold)
         }
@@ -92,9 +92,9 @@ struct TutorialStepCard: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.04),
+                            DarkFantasyTheme.textPrimary.opacity(0.04),
                             Color.clear,
-                            Color.black.opacity(0.04)
+                            DarkFantasyTheme.bgAbyss.opacity(0.04)
                         ],
                         startPoint: .top,
                         endPoint: .bottom

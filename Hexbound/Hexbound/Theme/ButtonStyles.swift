@@ -25,7 +25,7 @@ struct PrimaryButtonStyle: ButtonStyle {
         EnabledReader(manualEnabled: isEnabled) { effectiveEnabled in
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .font(DarkFantasyTheme.buttonLabel)
             .textCase(.uppercase)
             .tracking(2)
             .foregroundStyle(effectiveEnabled ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textDisabled)
@@ -83,7 +83,7 @@ struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .textCase(.uppercase)
             .tracking(2)
             .foregroundStyle(DarkFantasyTheme.gold)
@@ -131,7 +131,7 @@ struct DangerButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .textCase(.uppercase)
             .tracking(2)
             .foregroundStyle(.white)
@@ -174,7 +174,7 @@ struct DangerButtonStyle: ButtonStyle {
 struct GhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .opacity(configuration.isPressed ? 0.6 : 1)
             .onChange(of: configuration.isPressed) { _, pressed in
@@ -188,7 +188,7 @@ struct GhostButtonStyle: ButtonStyle {
 struct NavGridButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .textCase(.uppercase)
             .tracking(1)
             .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -226,7 +226,7 @@ struct CombatToggleButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .font(DarkFantasyTheme.buttonLabel)
             .foregroundStyle(isActive ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightMD)
@@ -250,7 +250,7 @@ struct CombatToggleButtonStyle: ButtonStyle {
 struct CombatControlButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .font(DarkFantasyTheme.buttonLabel)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightMD)
@@ -345,7 +345,7 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
         EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .foregroundStyle(isEnabled ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textDisabled)
             .padding(.horizontal, LayoutConstants.spaceMD)
             .padding(.vertical, LayoutConstants.spaceSM)
@@ -390,7 +390,7 @@ struct DangerCompactButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         EnabledReader(manualEnabled: true) { isEnabled in
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .foregroundStyle(isEnabled ? .white : DarkFantasyTheme.textDisabled)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.spaceXS)
@@ -419,7 +419,7 @@ struct CompactOutlineButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .foregroundStyle(color)
             .padding(.horizontal, LayoutConstants.spaceMD)
             .padding(.vertical, LayoutConstants.spaceSM)
@@ -444,7 +444,7 @@ struct CompactOutlineButtonStyle: ButtonStyle {
 struct DangerOutlineButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .font(DarkFantasyTheme.buttonLabel)
             .textCase(.uppercase)
             .tracking(2)
             .foregroundStyle(DarkFantasyTheme.danger)
@@ -475,7 +475,7 @@ struct NeutralButtonStyle: ButtonStyle {
         let borderColor = isEnabled ? DarkFantasyTheme.borderMedium : DarkFantasyTheme.borderSubtle
 
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .font(DarkFantasyTheme.buttonLabel)
             .foregroundStyle(isEnabled ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textDisabled)
             .frame(maxWidth: .infinity)
             .frame(height: LayoutConstants.buttonHeightMD)
@@ -515,7 +515,7 @@ struct ColorToggleButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .foregroundStyle(isActive ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: height)
@@ -545,7 +545,7 @@ struct FightButtonStyle: ButtonStyle {
         EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton - 2))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .tracking(2)
             .foregroundStyle(isEnabled ? .white : DarkFantasyTheme.textDisabled)
             .frame(maxWidth: .infinity)
@@ -623,7 +623,7 @@ struct CompactFightButtonStyle: ButtonStyle {
         EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .textCase(.uppercase)
             .tracking(1)
             .foregroundStyle(isEnabled ? .white : DarkFantasyTheme.textDisabled)
@@ -778,7 +778,7 @@ extension ButtonStyle where Self == ColorToggleButtonStyle {
 struct GetMoreButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+            .font(DarkFantasyTheme.buttonLabelCompact)
             .textCase(.uppercase)
             .tracking(1)
             .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -818,7 +818,7 @@ struct PremiumButtonStyle: ButtonStyle {
         EnabledReader(manualEnabled: true) { isEnabled in
         let pressed = configuration.isPressed
         configuration.label
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textButton))
+            .font(DarkFantasyTheme.buttonLabel)
             .textCase(.uppercase)
             .tracking(2)
             .foregroundStyle(.white)

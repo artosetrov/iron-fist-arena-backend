@@ -140,7 +140,7 @@ struct ShopDetailView: View {
             Button {
                 appState.mainPath.append(AppRoute.currencyPurchase())
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "plus")
                         .font(DarkFantasyTheme.body.bold())
                     Text("GET MORE")
@@ -252,7 +252,7 @@ struct ShopDetailView: View {
                     Text(section.icon)
                         .font(.system(size: 14)) // emoji — keep
                     Text(section.title.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                     Spacer()
                 }
@@ -315,7 +315,7 @@ struct ShopDetailView: View {
                 playerLevel: vm.playerLevel
             )
             .transition(.opacity)
-            .animation(.easeInOut(duration: 0.2), value: vm.showItemDetail)
+            .animation(MotionConstants.snappy, value: vm.showItemDetail)
         }
     }
 
@@ -330,7 +330,7 @@ struct ShopDetailView: View {
                 NPCGuideWidget(
                     npcTitle: "Merchant",
                     onDismiss: {
-                        withAnimation(.easeOut(duration: 0.2)) {
+                        withAnimation(MotionConstants.snappy) {
                             showMerchant = false
                         }
                         merchantDismissed = true

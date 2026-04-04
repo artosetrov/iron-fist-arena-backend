@@ -14,12 +14,12 @@ struct AchievementsDetailView: View {
                     // Count + unclaimed indicator
                     HStack {
                         Text("\(vm.completedCount) / \(vm.totalCount)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .accessibilityLabel("Achievements: \(vm.completedCount) of \(vm.totalCount) completed")
                         if vm.unclaimedCount > 0 {
                             Text("(\(vm.unclaimedCount) unclaimed!)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
                                 .accessibilityLabel("\(vm.unclaimedCount) unclaimed achievements available")
                         }
@@ -79,7 +79,7 @@ struct AchievementsDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("ACHIEVEMENTS")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -110,9 +110,9 @@ struct AchievementsDetailView: View {
                     let count = vm.unclaimedCountForTab(index)
                     if count > 0 && index != vm.selectedTab {
                         Text("\(count)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .frame(width: 20, height: 20)
+                            .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                             .background(
                                 Circle()
                                     .fill(DarkFantasyTheme.gold)

@@ -172,12 +172,12 @@ struct HeroIntegratedCard: View {
             // Name + class overlay at bottom
             VStack {
                 Spacer()
-                VStack(spacing: 2) {
+                VStack(spacing: LayoutConstants.space2XS) {
                     Text(character.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.heroPortraitNameFont))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                     Text(character.characterClass.rawValue.uppercased())
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .padding(.vertical, LayoutConstants.spaceXS)
@@ -203,7 +203,7 @@ struct HeroIntegratedCard: View {
                     Spacer()
 
                     Text("Lv. \(character.level)")
-                        .font(DarkFantasyTheme.section(size: 10).bold())
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceXS)
                         .padding(.vertical, LayoutConstants.space2XS)

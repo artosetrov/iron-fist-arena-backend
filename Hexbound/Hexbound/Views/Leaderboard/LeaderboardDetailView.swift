@@ -79,14 +79,14 @@ struct LeaderboardDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
-                .frame(width: 20)
+                .frame(width: LayoutConstants.iconMD)
 
             TextField("", text: Binding(
                 get: { vm.searchText },
                 set: { vm.searchText = $0 }
             ), prompt: Text("Search by name...")
                 .foregroundStyle(DarkFantasyTheme.textTertiary))
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -132,24 +132,24 @@ struct LeaderboardDetailView: View {
     private func yourRankBanner(vm: LeaderboardViewModel) -> some View {
         HStack {
             Text("Your Position:")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .accessibilityLabel("Your leaderboard position")
             if let rank = vm.myRank {
                 HStack(spacing: 0) {
                     Text("#")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                     NumberTickUpText(
                         value: rank,
                         color: DarkFantasyTheme.goldBright,
-                        font: DarkFantasyTheme.section(size: LayoutConstants.textLabel)
+                        font: DarkFantasyTheme.uiLabel
                     )
                     .accessibilityLabel("Rank \(rank)")
                 }
             } else {
                 Text("Not ranked")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .accessibilityLabel("You are not currently ranked")
             }
@@ -215,7 +215,7 @@ struct LeaderboardDetailView: View {
                 ProgressView()
                     .tint(DarkFantasyTheme.gold)
                 Text("Searching...")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
             }
@@ -227,13 +227,13 @@ struct LeaderboardDetailView: View {
                     .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.danger)
                 Text("Search failed")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Button {
                     vm.retrySearch()
                 } label: {
                     Text("Retry")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .padding(.horizontal, LayoutConstants.spaceLG)
                         .padding(.vertical, LayoutConstants.spaceSM)
@@ -252,10 +252,10 @@ struct LeaderboardDetailView: View {
                     .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("No warriors found")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Text("Try a different name")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
             }
@@ -263,7 +263,7 @@ struct LeaderboardDetailView: View {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
                 Text("Type at least 2 characters")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
             }
@@ -313,26 +313,26 @@ struct LeaderboardDetailView: View {
                 )
 
                 // Name + class
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(result.characterName)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(isMe ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
 
                     Text("Lv.\(result.level) • \(result.characterClass.capitalized)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
                 Spacer()
 
                 // Rating
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: LayoutConstants.space2XS) {
                     Text("\(result.rating)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Text("Rating")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -366,7 +366,7 @@ struct LeaderboardDetailView: View {
         guard let myId = vm.myCharacterId else { return }
         guard vm.currentEntries.contains(where: { $0.characterId == myId }) else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.easeInOut(duration: 0.4)) {
+            withAnimation(.easeInOut(duration: MotionConstants.normal)) {
                 proxy.scrollTo(myId, anchor: .center)
             }
         }

@@ -40,7 +40,7 @@ struct CardLevelBadge: View {
 
     var body: some View {
         Text("\(level)")
-            .font(DarkFantasyTheme.section(size: size.font))
+            .font(DarkFantasyTheme.buttonLabel)
             .foregroundStyle(DarkFantasyTheme.textOnGold)
             .frame(width: size.diameter, height: size.diameter)
             .background(
@@ -82,13 +82,14 @@ struct CardActionButton: View {
                 )
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 4, y: 2)
         }
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
     ZStack {
         DarkFantasyTheme.bgAbyss.ignoresSafeArea()
-        VStack(spacing: 20) {
+        VStack(spacing: LayoutConstants.spaceLG) {
             CardLevelBadge(level: 16, accentColor: DarkFantasyTheme.gold)
             CardLevelBadge(level: 3, accentColor: DarkFantasyTheme.info, size: .compact)
             CardActionButton(icon: "trash", color: DarkFantasyTheme.danger) {}

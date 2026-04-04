@@ -16,7 +16,7 @@ struct CelebrationBannerOverlay: View {
 
             Spacer()
         }
-        .padding(.top, 94) // Below status bar (50) + nav bar (44)
+        .padding(.top, LayoutConstants.bannerTopInset) // Status bar (50) + nav bar (44)
         .animation(MotionConstants.spring, value: appState.celebrationBanner?.id)
     }
 }
@@ -44,7 +44,7 @@ struct CelebrationBannerView: View {
                     .foregroundStyle(banner.type.color)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(banner.title)
                     .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(banner.type.color)

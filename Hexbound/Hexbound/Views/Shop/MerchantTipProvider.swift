@@ -25,11 +25,11 @@ struct MerchantTip: Equatable, Hashable {
             case .gold(let text):
                 part = AttributedString(text)
                 part.foregroundColor = DarkFantasyTheme.goldBright
-                part.font = DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold()
+                part.font = DarkFantasyTheme.caption.bold()
             case .gem(let text):
                 part = AttributedString(text)
                 part.foregroundColor = DarkFantasyTheme.cyan
-                part.font = DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold()
+                part.font = DarkFantasyTheme.caption.bold()
             }
             result.append(part)
         }
@@ -95,7 +95,7 @@ final class MerchantTipProvider {
         guard !tips.isEmpty else { return }
         let index = currentTipIndex % tips.count
         if animated {
-            withAnimation(.easeOut(duration: 0.15)) {
+            withAnimation(.easeOut(duration: MotionConstants.instant)) {
                 currentTip = tips[index]
             }
         } else {

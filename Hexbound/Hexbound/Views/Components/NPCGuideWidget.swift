@@ -219,7 +219,7 @@ struct NPCGuideWidget: View {
                     skipAll()
                 } label: {
                     Text("Skip all")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .buttonStyle(.plain)
@@ -231,7 +231,7 @@ struct NPCGuideWidget: View {
                     continueAction()
                 } label: {
                     Text("Continue")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceLG)
                         .padding(.vertical, LayoutConstants.spaceSM)
@@ -260,7 +260,7 @@ struct NPCGuideWidget: View {
                 guard !Task.isCancelled else { return }
                 typewriterText.append(char)
             }
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(MotionConstants.smooth) {
                 typewriterDone = true
             }
         }

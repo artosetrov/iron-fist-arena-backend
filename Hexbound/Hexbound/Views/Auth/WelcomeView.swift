@@ -49,7 +49,7 @@ struct WelcomeView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
                         Text("OR")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .fixedSize()
@@ -69,7 +69,7 @@ struct WelcomeView: View {
                                 Image(systemName: "apple.logo")
                                     .font(DarkFantasyTheme.cardTitle.weight(.medium))
                                 Text("Apple")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -98,9 +98,9 @@ struct WelcomeView: View {
 
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Text("G")
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .font(DarkFantasyTheme.googleLogo)
                                 Text("Google")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .allowsHitTesting(false)
@@ -130,7 +130,7 @@ struct WelcomeView: View {
 
                     // Guest warning
                     Text("Guest progress may be lost. Link your account later in Settings.")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .multilineTextAlignment(.center)
                 }
@@ -140,7 +140,7 @@ struct WelcomeView: View {
                 // Error
                 if !vm.errorMessage.isEmpty {
                     Text(vm.errorMessage)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textDanger)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, LayoutConstants.screenPadding)

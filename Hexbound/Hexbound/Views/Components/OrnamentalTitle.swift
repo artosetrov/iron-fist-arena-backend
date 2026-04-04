@@ -28,7 +28,7 @@ struct OrnamentalTitle: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Title text
             Text(title)
-                .font(DarkFantasyTheme.title(size: titleSize))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .tracking(3)
                 .textCase(.uppercase)
@@ -46,7 +46,7 @@ struct OrnamentalTitle: View {
             // Subtitle
             if let subtitle = subtitle {
                 Text(subtitle)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
         }
@@ -87,7 +87,7 @@ struct OrnamentalSectionHeader: View {
                     .rotationEffect(.degrees(45))
 
                 Text(title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(accentColor)
                     .tracking(2)
                     .textCase(.uppercase)

@@ -27,13 +27,13 @@ struct LowHPPotionBanner: View {
             // Text
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("Critical HP!")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.danger)
 
                 Text(hasHealthPotion
                      ? "Drink a potion to restore health before your next fight."
                      : "You have no potions. Visit the shop to stock up!")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)

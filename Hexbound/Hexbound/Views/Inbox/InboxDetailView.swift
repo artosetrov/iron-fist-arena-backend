@@ -128,11 +128,11 @@ struct InboxDetailView: View {
 
             VStack(spacing: LayoutConstants.spaceSM) {
                 Text(emptyStateTitle)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 Text(emptyStateSubtitle)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LayoutConstants.spaceLG)
@@ -223,9 +223,7 @@ private struct InboxConversationRow: View {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(conversation.otherCharacter.characterName)
-                        .font(DarkFantasyTheme.section(
-                            size: hasUnread ? LayoutConstants.textCard : LayoutConstants.textLabel
-                        ))
+                        .font(hasUnread ? DarkFantasyTheme.cardTitle : DarkFantasyTheme.uiLabel)
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textSecondary
                         )
@@ -234,7 +232,7 @@ private struct InboxConversationRow: View {
                     Spacer(minLength: 4)
 
                     Text(formatDate(conversation.lastMessage.createdAt))
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.textTertiary
                         )
@@ -242,7 +240,7 @@ private struct InboxConversationRow: View {
 
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(conversation.lastMessage.content)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary
                         )
@@ -253,10 +251,10 @@ private struct InboxConversationRow: View {
                     // Badge: unread (gold) or total count (subtle)
                     if let count = badgeCount {
                         Text(count > 99 ? "99+" : "\(count)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(hasUnread ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, LayoutConstants.spaceSM)
+                            .padding(.vertical, LayoutConstants.space2XS)
                             .background(
                                 Capsule()
                                     .fill(hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
@@ -340,7 +338,7 @@ private struct InboxConversationRow: View {
                         )
 
                     Text(String(conversation.otherCharacter.characterName.prefix(1)).uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }
@@ -465,11 +463,11 @@ private struct EmptyMailState: View {
 
             VStack(spacing: LayoutConstants.spaceSM) {
                 Text("NO MAIL")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 Text("Your mailbox is empty.\nCheck back later for rewards and messages.")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LayoutConstants.spaceLG)
@@ -506,11 +504,11 @@ private struct EmptyScrollsState: View {
 
             VStack(spacing: LayoutConstants.spaceSM) {
                 Text("NO SCROLLS")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 Text("No player messages yet.\nVisit the Guild Hall to find allies.")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LayoutConstants.spaceLG)
@@ -527,10 +525,10 @@ private struct UnreadBadge: View {
 
     var body: some View {
         Text("\(count)")
-            .font(DarkFantasyTheme.section(size: 11))
+            .font(DarkFantasyTheme.badge)
             .foregroundStyle(DarkFantasyTheme.textOnGold)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.space2XS)
             .background(
                 Capsule()
                     .fill(DarkFantasyTheme.gold)
@@ -552,7 +550,7 @@ private struct ErrorBanner: View {
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(2)
 
@@ -560,7 +558,8 @@ private struct ErrorBanner: View {
 
             if let onRetry {
                 Button("Retry") { onRetry() }
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                    .buttonStyle(.plain)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
         }

@@ -93,15 +93,15 @@ struct SessionSummaryView: View {
             sectionHeader("Combat")
 
             HStack(spacing: LayoutConstants.spaceLG) {
-                statPill(label: "Matches", value: "\(summary.matchesPlayed)", color: DarkFantasyTheme.gold)
-                statPill(label: "Wins", value: "\(summary.wins)", color: DarkFantasyTheme.success)
-                statPill(label: "Losses", value: "\(summary.losses)", color: DarkFantasyTheme.danger)
+                GlassStatPill(value: "\(summary.matchesPlayed)", label: "Matches", color: DarkFantasyTheme.gold, size: .large)
+                GlassStatPill(value: "\(summary.wins)", label: "Wins", color: DarkFantasyTheme.success, size: .large)
+                GlassStatPill(value: "\(summary.losses)", label: "Losses", color: DarkFantasyTheme.danger, size: .large)
             }
 
             if summary.matchesPlayed > 0 {
                 // Win rate bar
                 let winRate = summary.matchesPlayed > 0 ? Double(summary.wins) / Double(summary.matchesPlayed) : 0
-                VStack(spacing: 4) {
+                VStack(spacing: LayoutConstants.spaceXS) {
                     HStack {
                         Text("Win Rate")
                             .font(DarkFantasyTheme.caption)
@@ -115,14 +115,14 @@ struct SessionSummaryView: View {
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                 .fill(DarkFantasyTheme.bgTertiary)
-                                .frame(height: 8)
+                                .frame(height: LayoutConstants.spaceSM)
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                 .fill(DarkFantasyTheme.gold)
-                                .frame(width: geo.size.width * winRate, height: 8)
+                                .frame(width: geo.size.width * winRate, height: LayoutConstants.spaceSM)
                                 .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
                         }
                     }
-                    .frame(height: 8)
+                    .frame(height: LayoutConstants.spaceSM)
                 }
             }
         }
@@ -231,7 +231,7 @@ struct SessionSummaryView: View {
                 .font(DarkFantasyTheme.section.bold())
                 .foregroundStyle(summary.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("Rating Change")
                     .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
@@ -269,25 +269,15 @@ struct SessionSummaryView: View {
         }
     }
 
-    private func statPill(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(DarkFantasyTheme.title)
-                .foregroundStyle(color)
-            Text(label)
-                .font(DarkFantasyTheme.caption)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
+    // MARK: - Stat Pill (uses shared GlassStatPill component)
 
     private func rewardRow(icon: String, label: String, value: String) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             Image(icon)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 20, height: 20)
-            VStack(alignment: .leading, spacing: 2) {
+                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(value)
                     .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.goldBright)

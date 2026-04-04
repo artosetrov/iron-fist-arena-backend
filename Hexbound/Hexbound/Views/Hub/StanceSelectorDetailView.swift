@@ -36,7 +36,7 @@ struct StanceSelectorDetailView: View {
                         ) { zone in
                             vm.attackZone = zone
                         }
-                        .animation(.easeInOut(duration: 0.2), value: vm.attackZone)
+                        .animation(MotionConstants.snappy, value: vm.attackZone)
 
                         EtchedGroove()
                             .padding(.horizontal, LayoutConstants.screenPadding + LayoutConstants.spaceMD)
@@ -64,7 +64,7 @@ struct StanceSelectorDetailView: View {
                         ) { zone in
                             vm.defenseZone = zone
                         }
-                        .animation(.easeInOut(duration: 0.2), value: vm.defenseZone)
+                        .animation(MotionConstants.snappy, value: vm.defenseZone)
 
                         EtchedGroove()
                             .padding(.horizontal, LayoutConstants.screenPadding + LayoutConstants.spaceMD)
@@ -94,7 +94,7 @@ struct StanceSelectorDetailView: View {
                                         endPoint: .bottom
                                     )
                                 )
-                                .frame(height: 12)
+                                .frame(height: LayoutConstants.spaceMS)
 
                             Button {
                                 vm.saveStance()
@@ -110,7 +110,7 @@ struct StanceSelectorDetailView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                .animation(.easeInOut(duration: 0.25), value: vm.hasChanges)
+                .animation(.easeInOut(duration: MotionConstants.fast), value: vm.hasChanges)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -121,7 +121,7 @@ struct StanceSelectorDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("COMBAT STANCE")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -151,7 +151,7 @@ struct StanceSelectorDetailView: View {
                     .font(DarkFantasyTheme.caption.weight(.semibold))
                     .foregroundStyle(roleColor)
                 Text(title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -199,7 +199,7 @@ struct StanceSelectorDetailView: View {
                     .frame(width: 22, height: 22)
                     .colorMultiply(isSelected ? .white : DarkFantasyTheme.textSecondary)
                 Text(zone.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
             }
         }
         .buttonStyle(.colorToggle(isActive: isSelected, color: color, height: LayoutConstants.touchMin))
@@ -214,10 +214,10 @@ struct StanceSelectorDetailView: View {
                 .font(DarkFantasyTheme.badge.weight(.semibold))
                 .foregroundStyle(color)
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(value >= 0 ? "+\(value)%" : "\(value)%")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(color)
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
@@ -239,7 +239,7 @@ struct StanceSelectorDetailView: View {
                     .font(DarkFantasyTheme.caption.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
                 Text("ZONE MATCHING")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
 
@@ -251,10 +251,10 @@ struct StanceSelectorDetailView: View {
                         .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.success)
                     Text("Match:")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Text("+15% DEF")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.success)
                 }
 
@@ -264,10 +264,10 @@ struct StanceSelectorDetailView: View {
                         .font(DarkFantasyTheme.caption.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text("Miss:")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Text("+5% OFF")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
             }

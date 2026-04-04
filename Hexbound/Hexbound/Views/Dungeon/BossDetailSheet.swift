@@ -81,7 +81,7 @@ struct BossDetailSheet: View {
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
 
                         Text("PREPARING FOR BATTLE...")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .tracking(2)
 
@@ -127,7 +127,7 @@ struct BossDetailSheet: View {
         .overlay {
             if showLootModal, let loot = selectedLootForModal {
                 LootPreviewSheet(loot: loot, onClose: {
-                    withAnimation(.easeOut(duration: 0.2)) {
+                    withAnimation(MotionConstants.snappy) {
                         showLootModal = false
                     }
                 })
@@ -148,7 +148,7 @@ struct BossDetailSheet: View {
                             Image(systemName: "chevron.left")
                                 .font(DarkFantasyTheme.uiLabel.weight(.semibold))
                             Text("Bosses")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                         }
                         .foregroundStyle(DarkFantasyTheme.gold)
                     }
@@ -156,7 +156,7 @@ struct BossDetailSheet: View {
                 }
                 ToolbarItem(placement: .principal) {
                     Text(boss.name.uppercased())
-                        .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(stateColor)
                         .tracking(2)
                         .lineLimit(1)
@@ -211,7 +211,7 @@ struct BossDetailSheet: View {
                 statusPill
 
                 Text(boss.name.uppercased())
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .tracking(2)
                     .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 6)
@@ -219,11 +219,11 @@ struct BossDetailSheet: View {
 
                 HStack(spacing: LayoutConstants.spaceSM) {
                     // Boss tag
-                    HStack(spacing: 4) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
                         Text("\u{2620}")
                             .font(DarkFantasyTheme.caption)
                         Text("BOSS")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .tracking(2)
                     }
                     .foregroundStyle(stateColor)
@@ -232,7 +232,7 @@ struct BossDetailSheet: View {
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Text("Level \(boss.level)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -252,12 +252,12 @@ struct BossDetailSheet: View {
     private var statusPill: some View {
         switch state {
         case .defeated:
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DarkFantasyTheme.caption)
                 Text("DEFEATED")
             }
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+            .font(DarkFantasyTheme.badge.bold())
             .foregroundStyle(DarkFantasyTheme.textPrimary)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -265,19 +265,19 @@ struct BossDetailSheet: View {
 
         case .current:
             Text("READY TO FIGHT")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                .font(DarkFantasyTheme.badge.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.space2XS)
                 .background(Capsule().fill(DarkFantasyTheme.arenaRankGold))
 
         case .locked:
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "lock.fill")
                     .font(DarkFantasyTheme.badge)
                 Text("LOCKED")
             }
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+            .font(DarkFantasyTheme.badge.bold())
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -290,12 +290,12 @@ struct BossDetailSheet: View {
     private var loreSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("LORE")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(boss.extendedLore)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody).italic())
+                .font(DarkFantasyTheme.body.italic())
                 .foregroundStyle(DarkFantasyTheme.textBossDesc)
                 .lineSpacing(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -320,7 +320,7 @@ struct BossDetailSheet: View {
     private var statsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("BOSS STATS")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -338,7 +338,7 @@ struct BossDetailSheet: View {
             VStack(spacing: LayoutConstants.space2XS) {
                 HStack {
                     Text("HP")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
                     Text(
@@ -346,7 +346,7 @@ struct BossDetailSheet: View {
                             ? "0 / \(formatNumber(boss.hp))"
                             : "\(formatNumber(boss.hp)) / \(formatNumber(boss.hp))"
                     )
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .monospacedDigit()
                 }
@@ -384,11 +384,11 @@ struct BossDetailSheet: View {
     private func bossStatRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(color)
                 .monospacedDigit()
         }
@@ -415,7 +415,7 @@ struct BossDetailSheet: View {
                     Image(systemName: "gift.fill")
                         .font(DarkFantasyTheme.caption)
                     Text("POSSIBLE LOOT")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .tracking(1)
                 }
                 .foregroundStyle(DarkFantasyTheme.lootGold)
@@ -431,7 +431,7 @@ struct BossDetailSheet: View {
                 ForEach(boss.loot) { lootItem in
                     ItemCardView(item: lootItem.toItem(), context: .loot) {
                         selectedLootForModal = lootItem
-                        withAnimation(.easeOut(duration: 0.2)) {
+                        withAnimation(MotionConstants.snappy) {
                             showLootModal = true
                         }
                     }
@@ -451,7 +451,7 @@ struct BossDetailSheet: View {
                 colors: [Color.clear, DarkFantasyTheme.bgPrimary.opacity(0.95)],
                 startPoint: .top, endPoint: .bottom
             )
-            .frame(height: 20)
+            .frame(height: LayoutConstants.iconMD)
 
             VStack(spacing: LayoutConstants.spaceXS) {
                 Button {
@@ -472,7 +472,7 @@ struct BossDetailSheet: View {
                                 Image(systemName: "bolt.fill")
                                     .font(DarkFantasyTheme.badge)
                                 Text("\(energyCost) Energy")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge - 1))
+                                    .font(DarkFantasyTheme.caption)
                             }
                             .opacity(0.7)
                         }
@@ -483,7 +483,7 @@ struct BossDetailSheet: View {
 
                 if !hasEnergy {
                     Text("Not enough energy — \(stamina)/\(energyCost)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
             }
@@ -526,7 +526,7 @@ private struct DiamondLoadingDot: View {
             .opacity(isAnimating ? 1.0 : 0.3)
             .onAppear {
                 withAnimation(
-                    .easeInOut(duration: 0.6)
+                    MotionConstants.reward
                     .repeatForever(autoreverses: true)
                     .delay(delay)
                 ) {

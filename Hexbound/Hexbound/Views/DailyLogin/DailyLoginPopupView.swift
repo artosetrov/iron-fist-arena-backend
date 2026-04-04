@@ -72,7 +72,7 @@ struct DailyLoginPopupView: View {
             withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
                 iconFloat = true
             }
-            withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) {
+            withAnimation(MotionConstants.pulse) {
                 glowPulse = true
             }
             withAnimation(.linear(duration: 4.5).repeatForever(autoreverses: false)) {
@@ -133,7 +133,7 @@ struct DailyLoginPopupView: View {
                 Text(reward.description)
                     .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .padding(.top, 2)
+                    .padding(.top, LayoutConstants.space2XS)
             }
 
             // 7-day streak dots
@@ -210,7 +210,7 @@ struct DailyLoginPopupView: View {
 
     @ViewBuilder
     private func dayBadge(day: Int) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: "flame.fill")
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.gold)
@@ -220,7 +220,7 @@ struct DailyLoginPopupView: View {
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
         .padding(.horizontal, LayoutConstants.spaceMS)
-        .padding(.vertical, 5)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
             Capsule()
                 .fill(DarkFantasyTheme.gold.opacity(0.10))
@@ -230,7 +230,7 @@ struct DailyLoginPopupView: View {
 
     @ViewBuilder
     private func claimedBadge() -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Circle()
                 .fill(DarkFantasyTheme.success)
                 .frame(width: 6, height: 6)
@@ -241,7 +241,7 @@ struct DailyLoginPopupView: View {
                 .foregroundStyle(DarkFantasyTheme.success)
         }
         .padding(.horizontal, LayoutConstants.spaceMS)
-        .padding(.vertical, 5)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
             Capsule()
                 .fill(DarkFantasyTheme.success.opacity(0.10))
@@ -383,13 +383,13 @@ struct DailyLoginPopupView: View {
             }
 
             // Text info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("СЕГОДНЯ")
                     .font(DarkFantasyTheme.badge)
                     .tracking(1)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
-                HStack(alignment: .lastTextBaseline, spacing: 2) {
+                HStack(alignment: .lastTextBaseline, spacing: LayoutConstants.space2XS) {
                     Text("+")
                         .font(DarkFantasyTheme.uiLabel.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -416,7 +416,7 @@ struct DailyLoginPopupView: View {
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.success)
                 .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, 5)
+                .padding(.vertical, LayoutConstants.spaceXS)
                 .background(
                     Capsule()
                         .fill(DarkFantasyTheme.success.opacity(0.12))
@@ -437,7 +437,7 @@ struct DailyLoginPopupView: View {
     @ViewBuilder
     private func streakRow(data: DailyLoginData) -> some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("СЕРИЯ ВХОДОВ")
                     .font(DarkFantasyTheme.badge)
                     .tracking(1)
@@ -449,7 +449,7 @@ struct DailyLoginPopupView: View {
 
             Spacer()
 
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(1...7, id: \.self) { day in
                     Capsule()
                         .fill(
@@ -504,7 +504,7 @@ struct DailyLoginPopupView: View {
     @ViewBuilder
     private func tomorrowHint(vm: DailyLoginPopupViewModel) -> some View {
         if let nextReward = vm.nextDayReward {
-            HStack(spacing: 5) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Text("Завтра:")
                     .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)

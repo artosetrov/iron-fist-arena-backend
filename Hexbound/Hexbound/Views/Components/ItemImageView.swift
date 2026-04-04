@@ -19,6 +19,7 @@ struct ItemImageView: View {
         if let image = resolvedImage ?? AssetManager.shared.image(forKey: imageKey) {
             Image(uiImage: image)
                 .resizable()
+                .interpolation(.high)
                 .aspectRatio(contentMode: .fill)
                 .clipped()
         } else if isLoading {

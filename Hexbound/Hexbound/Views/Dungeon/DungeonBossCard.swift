@@ -127,7 +127,7 @@ struct DungeonBossCard: View {
         HStack {
             // Boss number circle
             Text("\(boss.id)")
-                .font(DarkFantasyTheme.section(size: 12))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(stateColor)
                 .frame(width: 28, height: 28)
                 .background(
@@ -150,12 +150,12 @@ struct DungeonBossCard: View {
     private var statusBadge: some View {
         switch state {
         case .defeated:
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "checkmark")
                     .font(DarkFantasyTheme.badge.bold())
                 Text("DEFEATED")
             }
-            .font(DarkFantasyTheme.body(size: 10).bold())
+            .font(DarkFantasyTheme.caption.bold())
             .foregroundStyle(DarkFantasyTheme.success)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -170,12 +170,12 @@ struct DungeonBossCard: View {
             .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.success.opacity(0.08))
 
         case .current:
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "bolt.fill")
                     .font(DarkFantasyTheme.badge.bold())
                 Text("CURRENT")
             }
-            .font(DarkFantasyTheme.body(size: 10).bold())
+            .font(DarkFantasyTheme.caption.bold())
             .foregroundStyle(DarkFantasyTheme.goldBright)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -190,12 +190,12 @@ struct DungeonBossCard: View {
             .innerBorder(cornerRadius: LayoutConstants.radiusSM - 1, inset: 1, color: DarkFantasyTheme.arenaRankGold.opacity(0.12))
 
         case .locked:
-            HStack(spacing: 4) {
+            HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "lock.fill")
                     .font(DarkFantasyTheme.badge)
                 Text("LOCKED")
             }
-            .font(DarkFantasyTheme.body(size: 10).bold())
+            .font(DarkFantasyTheme.caption.bold())
             .foregroundStyle(DarkFantasyTheme.lockedGray)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -213,10 +213,10 @@ struct DungeonBossCard: View {
     // MARK: - Bottom Info Stack
 
     private var bottomInfoStack: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             // Boss name
             Text(boss.name.uppercased())
-                .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(
                     state == .locked ? DarkFantasyTheme.textDisabled :
                     state == .current ? DarkFantasyTheme.goldBright :
@@ -227,15 +227,15 @@ struct DungeonBossCard: View {
 
             // Lore tagline
             Text(boss.description)
-                .font(DarkFantasyTheme.body(size: 10).italic())
+                .font(DarkFantasyTheme.caption.italic())
                 .foregroundStyle(DarkFantasyTheme.textBossDesc)
                 .lineLimit(2)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 4)
 
             // Level — dominant
-            HStack(spacing: 6) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Text("Lv. \(boss.level)")
-                    .font(DarkFantasyTheme.section(size: 28))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .shadow(color: stateColor.opacity(0.4), radius: 12)
                     .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
@@ -244,18 +244,18 @@ struct DungeonBossCard: View {
             }
 
             // Glass stat pills
-            HStack(spacing: 4) {
-                glassStatPill(
+            HStack(spacing: LayoutConstants.spaceXS) {
+                GlassStatPill(
                     value: formatHP(boss.hp),
                     label: "HP",
                     color: DarkFantasyTheme.danger
                 )
-                glassStatPill(
+                GlassStatPill(
                     value: "\(boss.loot.count)",
                     label: "Drops",
                     color: DarkFantasyTheme.lootGold
                 )
-                glassStatPill(
+                GlassStatPill(
                     value: boss.loot.first(where: { $0.rarity == .legendary || $0.rarity == .epic })?.rarity.rawValue.prefix(4).uppercased().description ?? "—",
                     label: "Best",
                     color: bestLootColor
@@ -265,30 +265,7 @@ struct DungeonBossCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Glass Stat Pill
-
-    @ViewBuilder
-    private func glassStatPill(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(DarkFantasyTheme.section(size: 13))
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(color.opacity(0.15), lineWidth: 0.5)
-                )
-        )
-    }
+    // MARK: - Glass Stat Pill (uses shared GlassStatPill component)
 
     // MARK: - Animated Border Glow
 

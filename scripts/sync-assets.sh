@@ -134,7 +134,7 @@ download_file() {
 
 optimize_image() {
     local input="$1"
-    local max_dimension="${2:-512}"
+    local max_dimension="${2:-1024}"
 
     # Skip if sips not available (non-macOS)
     if ! command -v sips &>/dev/null; then
@@ -329,7 +329,7 @@ for item in data:
 
                 # Optimize if enabled
                 if $OPTIMIZE; then
-                    optimize_image "$tmp_file" 512
+                    optimize_image "$tmp_file" 1024
                 fi
 
                 # Create imageset

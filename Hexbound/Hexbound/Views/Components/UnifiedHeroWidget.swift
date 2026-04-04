@@ -80,21 +80,21 @@ struct UnifiedHeroWidget: View {
         .onTapGesture {
             onTap?()
         }
-        .animation(.easeInOut(duration: 0.3), value: hpPercent)
+        .animation(MotionConstants.smooth, value: hpPercent)
         .onChange(of: isCriticalHP) { _, critical in
             if critical {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                withAnimation(MotionConstants.pulse) {
                     lowHPPulse = true
                 }
             } else {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(MotionConstants.smooth) {
                     lowHPPulse = false
                 }
             }
         }
         .onAppear {
             if isCriticalHP {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                withAnimation(MotionConstants.pulse) {
                     lowHPPulse = true
                 }
             }
@@ -141,7 +141,7 @@ struct UnifiedHeroWidget: View {
 
             // Level badge (bottom-left) with glow
             Text("Lv. \(character.level)")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.widgetLevelBadgeFont).weight(.bold))
+                .font(DarkFantasyTheme.badge.weight(.bold))
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
@@ -167,7 +167,7 @@ struct UnifiedHeroWidget: View {
             if isCriticalHP {
                 Circle()
                     .fill(DarkFantasyTheme.danger.opacity(lowHPPulse ? 0.3 : 0))
-                    .animation(.easeInOut(duration: 0.8).repeatForever(), value: lowHPPulse)
+                    .animation(MotionConstants.pulse, value: lowHPPulse)
             }
         }
         .frame(width: size, height: size)
@@ -175,10 +175,10 @@ struct UnifiedHeroWidget: View {
         .overlay(alignment: .topTrailing) {
             if statPointsAvailable > 0 {
                 Text("+\(statPointsAvailable)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                    .font(DarkFantasyTheme.badge.bold())
                 .foregroundStyle(DarkFantasyTheme.textOnGold)
                 .padding(.horizontal, LayoutConstants.spaceXS)
-                .padding(.vertical, 2)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(
                     Capsule()
                         .fill(DarkFantasyTheme.goldBright)
@@ -219,7 +219,7 @@ struct UnifiedHeroWidget: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Character name
             Text(character.characterName)
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
@@ -267,14 +267,14 @@ struct UnifiedHeroWidget: View {
                     .fill(DarkFantasyTheme.staminaGradient)
                     .frame(width: geo.size.width * max(0.02, min(1, staminaPercent)))
 
-                HStack(spacing: 2) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     NumberTickUpText(
                         value: character.currentStamina,
                         color: DarkFantasyTheme.textPrimary,
-                        font: DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold()
+                        font: DarkFantasyTheme.uiLabel.bold()
                     )
                     Text("/\(character.maxStamina)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.widgetBarFont).bold())
+                        .font(DarkFantasyTheme.uiLabel.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)

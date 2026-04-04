@@ -1,4 +1,5 @@
 import SwiftUI
+import Hexbound
 
 @MainActor @Observable
 final class GoldMineViewModel {
@@ -63,7 +64,7 @@ final class GoldMineViewModel {
         let now = ISO8601DateFormatter().string(from: Date())
         let endsAt = ISO8601DateFormatter().string(from: Date().addingTimeInterval(4 * 3600))
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(MotionConstants.smooth) {
             if slotIndex < slots.count {
                 var slot = slots[slotIndex]
                 slot["status"] = "mining"
@@ -83,7 +84,7 @@ final class GoldMineViewModel {
                 body: ["character_id": charId, "slot_index": slotIndex]
             )
             if let updatedSlots = data["slots"] as? [[String: Any]] {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(MotionConstants.smooth) {
                     slots = updatedSlots
                 }
             }
@@ -110,7 +111,7 @@ final class GoldMineViewModel {
             return slot["gold_accumulated"] as? Int ?? slot["gold_mined"] as? Int ?? 50
         }()
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(MotionConstants.smooth) {
             // Mark slot as mining (reset status)
             if slotIndex < slots.count {
                 var slot = slots[slotIndex]
@@ -131,7 +132,7 @@ final class GoldMineViewModel {
                 body: ["character_id": charId, "slot_index": slotIndex]
             )
             // Update with real server values
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(MotionConstants.smooth) {
                 if let updatedSlots = data["slots"] as? [[String: Any]] {
                     slots = updatedSlots
                 }

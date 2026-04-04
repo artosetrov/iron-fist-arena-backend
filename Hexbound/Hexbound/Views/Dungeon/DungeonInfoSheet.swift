@@ -140,7 +140,7 @@ struct DungeonInfoSheet: View {
             // Title + meta chips
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text(dungeon.name.uppercased())
-                    .font(DarkFantasyTheme.title(size: 28))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(themeColor)
                     .tracking(2)
                     .shadow(color: themeColor.opacity(0.45), radius: 10)
@@ -164,11 +164,11 @@ struct DungeonInfoSheet: View {
     }
 
     private func metaChip(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
                 .font(DarkFantasyTheme.badge.weight(.semibold))
             Text(text)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge.weight(.semibold))
                 .fontWeight(.semibold)
         }
         .foregroundStyle(color)
@@ -188,12 +188,12 @@ struct DungeonInfoSheet: View {
         VStack(spacing: LayoutConstants.spaceXS) {
             HStack {
                 Text("PROGRESS")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .tracking(1.5)
                 Spacer()
                 Text("\(defeatedCount) / \(totalBosses) Bosses")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.gold)
                     .monospacedDigit()
             }
@@ -224,7 +224,7 @@ struct DungeonInfoSheet: View {
                     }
                 }
             }
-            .frame(height: 8)
+            .frame(height: LayoutConstants.spaceSM)
         }
     }
 
@@ -241,7 +241,7 @@ struct DungeonInfoSheet: View {
                         rewardTile(loot)
                     }
                 }
-                .padding(.horizontal, 2) // prevent shadow clipping
+                .padding(.horizontal, LayoutConstants.space2XS) // prevent shadow clipping
             }
         }
     }
@@ -283,7 +283,7 @@ struct DungeonInfoSheet: View {
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.4), radius: 3, y: 2)
 
             Text(loot.name)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -329,14 +329,14 @@ struct DungeonInfoSheet: View {
                 .foregroundStyle(color)
 
             Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .minimumScaleFactor(0.65)
                 .lineLimit(1)
                 .multilineTextAlignment(.center)
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .frame(maxWidth: .infinity)
@@ -374,12 +374,12 @@ struct DungeonInfoSheet: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceMS) {
                 Text(dungeon.description)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).italic())
+                    .font(DarkFantasyTheme.caption.italic())
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineSpacing(4)
 
                 Text(extendedLore)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineSpacing(4)
             }
@@ -422,10 +422,10 @@ struct DungeonInfoSheet: View {
                     .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.stamina)
                 Text("\(dungeon.energyCost)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.stamina)
                 Text("Energy")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.stamina.opacity(0.60))
             }
             .frame(width: 64)
@@ -461,7 +461,7 @@ struct DungeonInfoSheet: View {
                     Image(systemName: "figure.fencing")
                         .font(DarkFantasyTheme.body.weight(.semibold))
                     Text("ENTER DUNGEON")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                        .font(DarkFantasyTheme.cardTitle)
                 }
             }
             .buttonStyle(.primary)
@@ -496,7 +496,7 @@ struct DungeonInfoSheet: View {
             HStack(spacing: LayoutConstants.spaceXS) {
                 diamondMotif
                 Text(label)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(themeColor)
                     .tracking(2)
                     .lineLimit(1)
@@ -517,7 +517,7 @@ struct DungeonInfoSheet: View {
     }
 
     private var diamondMotif: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: LayoutConstants.space2XS) {
             Rectangle()
                 .fill(themeColor)
                 .frame(width: 5, height: 5)

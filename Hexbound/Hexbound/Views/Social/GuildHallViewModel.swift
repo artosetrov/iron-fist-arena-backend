@@ -334,7 +334,7 @@ class GuildHallViewModel {
                 characterId: characterId,
                 withCharacterId: targetId
             )
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 activeThread = messages
             }
             isLoadingThreadMessages = false
@@ -384,7 +384,7 @@ class GuildHallViewModel {
             )
             // Replace temp message with real one (animated status change)
             pendingTempIds.remove(tempId)
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
                     activeThread[idx] = DirectMessageItem(
                         id: sent.id,
@@ -400,7 +400,7 @@ class GuildHallViewModel {
         } catch {
             // Remove optimistic message on failure
             pendingTempIds.remove(tempId)
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 activeThread.removeAll(where: { $0.id == tempId })
             }
             sendMessageError = "Failed to send message"
@@ -439,7 +439,7 @@ class GuildHallViewModel {
             )
             // Replace temp with real message (animated status change)
             pendingTempIds.remove(tempId)
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 if let idx = activeThread.firstIndex(where: { $0.id == tempId }) {
                     activeThread[idx] = DirectMessageItem(
                         id: sent.id,
@@ -455,7 +455,7 @@ class GuildHallViewModel {
         } catch {
             // Remove optimistic on failure
             pendingTempIds.remove(tempId)
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 activeThread.removeAll(where: { $0.id == tempId })
             }
         }

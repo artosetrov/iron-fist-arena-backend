@@ -29,7 +29,7 @@ struct GuildHallDetailView: View {
                         ProgressView()
                             .tint(DarkFantasyTheme.gold)
                         Text("Opening conversation...")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .padding(.top, LayoutConstants.spaceSM)
                         Spacer()
@@ -194,13 +194,13 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             Text("Allies")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Spacer()
 
             Text("\(vm.friendCount)/\(vm.maxFriends)")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
         .padding(LayoutConstants.spaceSM)
@@ -240,20 +240,20 @@ struct GuildHallDetailView: View {
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(request.characterName)
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text("Lv.\(request.level)")
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     Text("·")
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Text(request.classEnum.rawValue.capitalized)
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -318,12 +318,12 @@ struct GuildHallDetailView: View {
 
                     VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                         Text(request.characterName)
-                            .font(DarkFantasyTheme.section(size: 14))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .lineLimit(1)
 
                         Text("Pending...")
-                            .font(DarkFantasyTheme.body(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
 
@@ -374,29 +374,29 @@ struct GuildHallDetailView: View {
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text(friend.characterName)
-                        .font(DarkFantasyTheme.section(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
 
                     Text(friend.rankName)
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .padding(.horizontal, LayoutConstants.spaceXS)
-                        .padding(.vertical, 2)
+                        .padding(.vertical, LayoutConstants.space2XS)
                         .background(DarkFantasyTheme.gold.opacity(0.12))
                         .clipShape(Capsule())
                 }
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text("Lv.\(friend.level)")
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     Text("·")
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Text(friend.classEnum.rawValue.capitalized)
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     if let lastSeen = friend.lastSeenText, friend.onlineStatus == .offline {
@@ -404,7 +404,7 @@ struct GuildHallDetailView: View {
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         Text(lastSeen)
-                            .font(DarkFantasyTheme.body(size: 11))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -435,7 +435,7 @@ struct GuildHallDetailView: View {
                         Label("Send Scroll", systemImage: "bubble.left.fill")
                     }
 
-                    Divider()
+                    Divider() // System menu separator — keep native
 
                     Button(role: .destructive) {
                         _ = vm.removeFriend(friend)
@@ -483,11 +483,11 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("No Allies Yet")
-                .font(DarkFantasyTheme.section(size: 16))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Text("Find warriors on the Leaderboard and send them an ally request.")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, LayoutConstants.spaceLG)
@@ -526,7 +526,7 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
-                .font(DarkFantasyTheme.section(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Button {
@@ -654,10 +654,10 @@ struct GuildHallDetailView: View {
                 }
 
                 // Info
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     HStack {
                         Text(convo.otherCharacter.characterName)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .lineLimit(1)
 
@@ -665,17 +665,17 @@ struct GuildHallDetailView: View {
 
                         if hasUnread {
                             Text("\(convo.unreadCount)")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(DarkFantasyTheme.textOnGold)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, LayoutConstants.spaceSM)
+                                .padding(.vertical, LayoutConstants.space2XS)
                                 .background(DarkFantasyTheme.gold)
                                 .clipShape(Capsule())
                         }
                     }
 
                     Text(convo.lastMessage.content)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(hasUnread ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textTertiary)
                         .lineLimit(1)
                 }
@@ -704,11 +704,11 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("No Scrolls Yet")
-                .font(DarkFantasyTheme.section(size: 16))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Text("Send a message to an ally from their profile.")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
         }
@@ -733,7 +733,7 @@ struct GuildHallDetailView: View {
                         .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text("Failed to load messages")
-                        .font(DarkFantasyTheme.body(size: 14))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Button("Retry") {
                         if let targetId = vm.activeThreadCharacterId,
@@ -755,7 +755,7 @@ struct GuildHallDetailView: View {
                     ProgressView()
                         .tint(DarkFantasyTheme.gold)
                     Text("Loading messages...")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 Spacer()
@@ -785,7 +785,7 @@ struct GuildHallDetailView: View {
                     .onChange(of: vm.activeThread.count) { _, _ in
                         // Auto-scroll to newest message
                         if let lastId = vm.activeThread.last?.id {
-                            withAnimation(.easeOut(duration: 0.2)) {
+                            withAnimation(MotionConstants.snappy) {
                                 proxy.scrollTo(lastId, anchor: .bottom)
                             }
                         }
@@ -829,7 +829,7 @@ struct GuildHallDetailView: View {
 
             // Character name — centered, large Oswald title
             Text(vm.activeThreadCharacterName ?? "Unknown")
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                .font(DarkFantasyTheme.section)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .lineLimit(1)
 
@@ -888,7 +888,7 @@ struct GuildHallDetailView: View {
             // Surface lighting — top highlight
             Rectangle()
                 .fill(LinearGradient(colors: [Color.white.opacity(0.04), .clear], startPoint: .top, endPoint: .bottom))
-                .frame(height: 24)
+                .frame(height: LayoutConstants.spaceLG)
                 .allowsHitTesting(false)
         }
         .overlay(alignment: .bottom) {
@@ -906,11 +906,11 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
 
             Text("Start the conversation")
-                .font(DarkFantasyTheme.section(size: 15))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Text("Send a quick message or write your own scroll.")
-                .font(DarkFantasyTheme.body(size: 13))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
         }
@@ -932,22 +932,22 @@ struct GuildHallDetailView: View {
                             .font(DarkFantasyTheme.section)
                             .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.gold)
                         Text(msg.content)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
                     }
                 } else {
                     Text(msg.content)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(isMine ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
                 }
 
                 // Timestamp + delivery status
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     if isMine {
                         messageStatusView(msg)
                     } else {
                         Text(formatMessageTime(msg.createdAt))
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.8))
                     }
                 }
@@ -1017,7 +1017,7 @@ struct GuildHallDetailView: View {
                 .frame(height: 1)
 
             Text(text.uppercased())
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
@@ -1044,7 +1044,7 @@ struct GuildHallDetailView: View {
                         Task { await vm.sendQuickMessage(quick.rawValue) }
                     } label: {
                         Text(quick.displayText)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.gold)
                             .padding(.horizontal, LayoutConstants.spaceMD)
                             .padding(.vertical, LayoutConstants.spaceSM + 2)
@@ -1081,7 +1081,7 @@ struct GuildHallDetailView: View {
                 set: { vm.composedMessage = $0 }
             ))
             .focused($isComposeFieldFocused)
-            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textPrimary)
             .padding(.horizontal, LayoutConstants.spaceMD)
             .padding(.vertical, LayoutConstants.spaceMS)
@@ -1151,7 +1151,7 @@ struct GuildHallDetailView: View {
         let isSending = msg.id.hasPrefix("temp-")
         let statusColor = DarkFantasyTheme.textOnGold.opacity(isSending ? 0.4 : (msg.isRead ? 0.7 : 0.5))
 
-        HStack(spacing: 3) {
+        HStack(spacing: LayoutConstants.space2XS) {
             if isSending {
                 // Sending… — animated clock icon
                 Image(systemName: "clock")
@@ -1159,11 +1159,11 @@ struct GuildHallDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.5))
                     .symbolEffect(.pulse.byLayer)
                 Text("Sending…")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.4))
             } else {
                 Text(formatMessageTime(msg.createdAt))
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(statusColor)
 
                 if msg.isRead {
@@ -1183,8 +1183,8 @@ struct GuildHallDetailView: View {
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: isSending)
-        .animation(.easeInOut(duration: 0.3), value: msg.isRead)
+        .animation(MotionConstants.smooth, value: isSending)
+        .animation(MotionConstants.smooth, value: msg.isRead)
     }
 
     private func formatMessageTime(_ isoString: String) -> String {
@@ -1253,10 +1253,10 @@ struct GuildHallDetailView: View {
             // Daily limit counter
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("Pending:")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("\(vm.pendingOutgoingCount) / 5")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(vm.pendingOutgoingCount >= 5 ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -1287,12 +1287,12 @@ struct GuildHallDetailView: View {
     private func duelsSectionLabel(_ title: String, count: Int) -> some View {
         HStack {
             Text(title)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
             Spacer()
             Text("\(count)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.goldDim)
         }
     }
@@ -1312,14 +1312,14 @@ struct GuildHallDetailView: View {
                     avatar: challenge.challenger.avatar
                 )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(challenge.challenger.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("Lv.\(challenge.challenger.level)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         let rank = PvPRank.fromRating(challenge.challenger.pvpRating)
@@ -1327,13 +1327,13 @@ struct GuildHallDetailView: View {
                             .font(DarkFantasyTheme.badge.weight(.semibold))
                             .foregroundStyle(rank.color)
                         Text("\(challenge.challenger.pvpRating)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(rank.color)
                     }
 
                     if let msg = challenge.message {
                         Text("\"\(msg)\"")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.goldDim)
                             .italic()
                             .lineLimit(1)
@@ -1344,12 +1344,12 @@ struct GuildHallDetailView: View {
 
                 // Expiry timer badge
                 if !expiryText.isEmpty {
-                    HStack(spacing: 4) {
+                    HStack(spacing: LayoutConstants.spaceXS) {
                         Circle()
                             .fill(DarkFantasyTheme.stamina)
                             .frame(width: 6, height: 6)
                         Text(expiryText)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.stamina)
                     }
                 }
@@ -1395,14 +1395,14 @@ struct GuildHallDetailView: View {
                     _ = vm.declineChallenge(challenge)
                 } label: {
                     Text("DECLINE")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .tracking(1)
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 36)
                 }
                 .disabled(isProcessing)
-                .padding(.vertical, 2)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(
                     RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                         .fill(DarkFantasyTheme.danger.opacity(0.08))
@@ -1446,13 +1446,13 @@ struct GuildHallDetailView: View {
                 )
                 .opacity(isDimmed ? 0.5 : 1.0)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(challenge.defender.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(isDimmed ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textPrimary)
 
                     Text("Lv.\(challenge.defender.level)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
@@ -1468,12 +1468,12 @@ struct GuildHallDetailView: View {
                     // Expiry timer (24h from creation)
                     let expiryText = Self.duelTimeRemaining(from: challenge.createdAt, addingHours: 24)
                     if !expiryText.isEmpty {
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "clock")
                                 .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                             Text("Expires in \(expiryText)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
@@ -1484,7 +1484,7 @@ struct GuildHallDetailView: View {
                     Button {
                         _ = vm.cancelOutgoingChallenge(challenge)
                     } label: {
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             if isProcessing {
                                 ProgressView()
                                     .tint(DarkFantasyTheme.danger)
@@ -1493,13 +1493,13 @@ struct GuildHallDetailView: View {
                                 Image(systemName: "xmark")
                                     .font(DarkFantasyTheme.badge.weight(.semibold))
                                 Text("CANCEL")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                                    .font(DarkFantasyTheme.badge)
                                     .tracking(0.5)
                             }
                         }
                         .foregroundStyle(DarkFantasyTheme.danger)
                         .padding(.horizontal, LayoutConstants.spaceSM)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, LayoutConstants.spaceSM)
                         .background(
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                                 .fill(DarkFantasyTheme.danger.opacity(0.08))
@@ -1536,16 +1536,16 @@ struct GuildHallDetailView: View {
         let icon = statusIcon(status)
         let label = status.capitalized
 
-        return HStack(spacing: 4) {
+        return HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
                 .font(DarkFantasyTheme.badge.weight(.semibold))
             Text(label)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .tracking(0.5)
         }
         .foregroundStyle(color)
         .padding(.horizontal, LayoutConstants.spaceSM)
-        .padding(.vertical, 4)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(color.opacity(0.1))
@@ -1581,24 +1581,24 @@ struct GuildHallDetailView: View {
                     .foregroundStyle(accentColor)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(didWin ? "Victory vs \(opponentName)" : "Defeat vs \(opponentName)")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    HStack(spacing: 2) {
+                    HStack(spacing: LayoutConstants.space2XS) {
                         Image("icon-gold")
                             .resizable()
-                            .frame(width: 12, height: 12)
+                            .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                         Text("+\(challenge.goldReward)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
-                    HStack(spacing: 2) {
+                    HStack(spacing: LayoutConstants.space2XS) {
                         Text("+\(challenge.xpReward) XP")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.cyan)
                     }
                 }
@@ -1606,7 +1606,7 @@ struct GuildHallDetailView: View {
                 // Timestamp
                 if let completedAt = challenge.completedAt {
                     Text(Self.duelTimeAgo(from: completedAt))
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                 }
             }
@@ -1635,11 +1635,11 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("No Duels Yet")
-                .font(DarkFantasyTheme.section(size: 16))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Text("Challenge opponents from the Arena or Leaderboard.")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
 
@@ -1728,11 +1728,11 @@ struct GuildHallDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Text("\(feature) — Coming Soon")
-                .font(DarkFantasyTheme.section(size: 16))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             Text("This feature is being forged in the depths.")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
         }
@@ -1761,7 +1761,7 @@ struct GuildHallDetailView: View {
                         .frame(width: 40, height: 40)
 
                     Text(String(name.prefix(1)).uppercased())
-                        .font(DarkFantasyTheme.section(size: 16))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
             }

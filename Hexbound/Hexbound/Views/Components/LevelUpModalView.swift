@@ -69,7 +69,7 @@ struct LevelUpModalView: View {
 
                 // "LEVEL UP!" title — scale-in with blur
                 Text("LEVEL UP!")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textCinematic))
+                    .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.8), radius: 16)
                     .shadow(color: DarkFantasyTheme.goldBright.opacity(0.4), radius: 4)
@@ -79,7 +79,7 @@ struct LevelUpModalView: View {
 
                 // New level number
                 Text("LEVEL \(newLevel)")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textCelebration))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .opacity(showLevel ? 1 : 0)
                     .offset(y: showLevel ? 0 : 8)
@@ -232,9 +232,9 @@ struct LevelUpModalView: View {
 
             // Level number inside shield
             Text("\(newLevel)")
-                .font(DarkFantasyTheme.title(size: 28))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .shadow(color: Color.black.opacity(0.3), radius: 2, y: 1)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
         }
         .opacity(showTitle ? 1 : 0)
     }
@@ -294,13 +294,13 @@ struct LevelUpModalView: View {
             }
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Spacer()
 
             Text("+\(value)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.1), value: value)
@@ -332,7 +332,7 @@ struct LevelUpModalView: View {
     private var unlockSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("NEW UNLOCKS")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .tracking(2)
 
@@ -350,7 +350,7 @@ struct LevelUpModalView: View {
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.success)
             Text(name)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)

@@ -1,4 +1,5 @@
 import SwiftUI
+import Hexbound
 
 /// Onboarding Step 1: Class selection with showcase + carousel.
 struct ClassSelectionStepView: View {
@@ -7,7 +8,7 @@ struct ClassSelectionStepView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text("CHOOSE A CLASS")
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                .font(DarkFantasyTheme.section)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .padding(.top, LayoutConstants.spaceLG)
 
@@ -20,12 +21,12 @@ struct ClassSelectionStepView: View {
                             .onEnded { value in
                                 if value.translation.width < -40 {
                                     SFXManager.shared.play(.uiTap)
-                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                    withAnimation(MotionConstants.smooth) {
                                         vm.selectNextClass()
                                     }
                                 } else if value.translation.width > 40 {
                                     SFXManager.shared.play(.uiTap)
-                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                    withAnimation(MotionConstants.smooth) {
                                         vm.selectPreviousClass()
                                     }
                                 }
@@ -70,29 +71,29 @@ struct ClassSelectionStepView: View {
 
             // Class name
             Text(charClass.sfName)
-                .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
 
             // Main attribute pill
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("MAIN ATTRIBUTE")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text("–")
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text(charClass.mainAttribute)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
 
             Text(charClass.mainAttributeDescription)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             Text(charClass.bonuses)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSuccess)
 
             // Stat distribution bars
@@ -183,7 +184,7 @@ struct ClassSelectionStepView: View {
     private func classStatBars(_ charClass: CharacterClass) -> some View {
         let stats = classStatProfile(charClass)
 
-        VStack(spacing: 5) {
+        VStack(spacing: LayoutConstants.spaceXS) {
             ForEach(stats, id: \.name) { stat in
                 GeometryReader { geo in
                     let isBoosted = stat.value > 5
@@ -205,17 +206,17 @@ struct ClassSelectionStepView: View {
                         // Stat name inside the bar (left-aligned)
                         // Dark text on gold fill for WCAG AA contrast
                         Text(stat.name)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .shadow(color: Color.white.opacity(0.08), radius: 1, x: 0, y: 1)
-                            .padding(.leading, 8)
+                            .shadow(color: DarkFantasyTheme.textPrimary.opacity(0.08), radius: 1, x: 0, y: 1)
+                            .padding(.leading, LayoutConstants.spaceSM)
 
                         // Value on the right — bright for boosted, white for base
                         Text("\(stat.value)")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(isBoosted ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.trailing, 8)
+                            .padding(.trailing, LayoutConstants.spaceSM)
                     }
                 }
                 .frame(height: 22)

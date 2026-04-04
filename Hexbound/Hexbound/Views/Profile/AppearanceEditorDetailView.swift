@@ -1,4 +1,5 @@
 import SwiftUI
+import Hexbound
 
 struct AppearanceEditorDetailView: View {
     @Environment(AppState.self) private var appState
@@ -18,7 +19,7 @@ struct AppearanceEditorDetailView: View {
                     VStack(spacing: 0) {
                         // Title
                         Text("CHOOSE YOUR APPEARANCE")
-                            .font(DarkFantasyTheme.title(size: 16))
+                            .font(DarkFantasyTheme.cardTitle)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .tracking(2)
                             .padding(.top, LayoutConstants.spaceMD)
@@ -45,7 +46,7 @@ struct AppearanceEditorDetailView: View {
                         // Error
                         if !vm.errorMessage.isEmpty {
                             Text(vm.errorMessage)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                                 .foregroundStyle(DarkFantasyTheme.textDanger)
                                 .multilineTextAlignment(.center)
                                 .padding(.bottom, LayoutConstants.spaceSM)
@@ -62,7 +63,7 @@ struct AppearanceEditorDetailView: View {
                                     Text("SAVE")
                                     if let cost = vm.costText {
                                         Text("(\(cost))")
-                                            .font(DarkFantasyTheme.body(size: 13))
+                                            .font(DarkFantasyTheme.uiLabel)
                                             .foregroundStyle(DarkFantasyTheme.goldBright)
                                     }
                                 }
@@ -86,7 +87,7 @@ struct AppearanceEditorDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("APPEARANCE")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -133,15 +134,15 @@ struct AppearanceEditorDetailView: View {
                     Image(origin.iconAsset)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 48, height: 48)
+                        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
 
                     VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                         Text(origin.displayName)
-                            .font(DarkFantasyTheme.section(size: 16))
+                            .font(DarkFantasyTheme.cardTitle)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
 
                         Text(origin.description)
-                            .font(DarkFantasyTheme.body(size: 13))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .lineLimit(2)
                     }
@@ -149,7 +150,7 @@ struct AppearanceEditorDetailView: View {
                     Spacer(minLength: 0)
 
                     Text(origin.bonuses)
-                        .font(DarkFantasyTheme.section(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                         .multilineTextAlignment(.trailing)
                         .lineLimit(2)
@@ -159,7 +160,7 @@ struct AppearanceEditorDetailView: View {
         }
         .frame(height: 88)
         .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.2), value: vm.selectedOrigin)
+        .animation(.easeInOut(duration: MotionConstants.fast), value: vm.selectedOrigin)
     }
 
     // MARK: - Premium Avatars Button
@@ -167,7 +168,7 @@ struct AppearanceEditorDetailView: View {
     @ViewBuilder
     private func editorPremiumButton(vm: AppearanceEditorViewModel) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(.easeInOut(duration: MotionConstants.fast)) {
                 vm.showPremiumSkins.toggle()
             }
         } label: {
@@ -177,7 +178,7 @@ struct AppearanceEditorDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
 
                 Text("PREMIUM AVATARS")
-                    .font(DarkFantasyTheme.section(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
 
                 Spacer()
@@ -214,7 +215,7 @@ struct AppearanceEditorDetailView: View {
                 let isSelected = vm.selectedSkinKey == skin.skinKey
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(MotionConstants.snappy) {
                         vm.selectedSkinKey = skin.skinKey
                         vm.slideDirection = .none
                         // Sync avatar index to show in main preview
@@ -243,7 +244,7 @@ struct AppearanceEditorDetailView: View {
                                 .resizable()
                                 .frame(width: 8, height: 8)
                             Text("\(skin.priceGems)")
-                                .font(DarkFantasyTheme.body(size: 10))
+                                .font(DarkFantasyTheme.caption)
                         }
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceXS)
@@ -279,7 +280,7 @@ struct AppearanceEditorDetailView: View {
                             .frame(width: sideSize * 0.6, height: sideSize * 0.6)
                     ), size: sideSize, bg: DarkFantasyTheme.xpRing.opacity(0.1),
                        border: DarkFantasyTheme.xpRing, shadow: DarkFantasyTheme.xpRing.opacity(0.2)) {
-                        withAnimation(.easeInOut(duration: 0.2)) { vm.toggleGender() }
+                        withAnimation(MotionConstants.snappy) { vm.toggleGender() }
                     }
                     Spacer()
                     editorSquareButton(content: AnyView(
@@ -289,7 +290,7 @@ struct AppearanceEditorDetailView: View {
                             .frame(width: sideSize * 0.5, height: sideSize * 0.5)
                     ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
                        border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
-                        withAnimation(.easeInOut(duration: 0.25)) { vm.prevAvatar() }
+                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.prevAvatar() }
                     }
                 }
                 .frame(width: sideSize, height: avatarSize)
@@ -307,7 +308,7 @@ struct AppearanceEditorDetailView: View {
                             .rotationEffect(.degrees(vm.diceRotation))
                     ), size: sideSize, bg: DarkFantasyTheme.gold.opacity(0.1),
                        border: DarkFantasyTheme.gold.opacity(0.3), shadow: .clear) {
-                        withAnimation(.easeInOut(duration: 0.3)) {
+                        withAnimation(MotionConstants.smooth) {
                             vm.diceRotation += 360
                             vm.randomize()
                         }
@@ -320,7 +321,7 @@ struct AppearanceEditorDetailView: View {
                             .frame(width: sideSize * 0.5, height: sideSize * 0.5)
                     ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
                        border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
-                        withAnimation(.easeInOut(duration: 0.25)) { vm.nextAvatar() }
+                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.nextAvatar() }
                     }
                 }
                 .frame(width: sideSize, height: avatarSize)
@@ -376,7 +377,7 @@ struct AppearanceEditorDetailView: View {
                 .stroke(borderColor, lineWidth: 3)
         )
         .shadow(color: borderColor.opacity(0.2), radius: 20, y: 8)
-        .animation(.easeInOut(duration: 0.25), value: vm.selectedSkinKey)
+        .animation(.easeInOut(duration: MotionConstants.fast), value: vm.selectedSkinKey)
     }
 
     private func editorAvatarTransition(vm: AppearanceEditorViewModel) -> AnyTransition {
@@ -403,7 +404,7 @@ struct AppearanceEditorDetailView: View {
                 let isSelected = vm.avatarIndex == index
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(MotionConstants.snappy) {
                         vm.selectAvatar(at: index)
                     }
                 } label: {

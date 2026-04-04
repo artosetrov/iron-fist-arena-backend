@@ -92,18 +92,18 @@ struct ArenaComparisonSheet: View {
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 3, y: 2)
 
                 Text(character.characterName)
-                    .font(DarkFantasyTheme.section(size: 15))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 Text("Lv.\(character.level) \(character.characterClass.displayName)")
-                    .font(DarkFantasyTheme.body(size: 12).bold())
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
 
             // VS
             Text("VS")
-                .font(DarkFantasyTheme.title(size: 32))
+                .font(DarkFantasyTheme.title)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             // Opponent avatar (mirrored to face player)
@@ -123,12 +123,12 @@ struct ArenaComparisonSheet: View {
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 3, y: 2)
 
                 Text(opponent.characterName)
-                    .font(DarkFantasyTheme.section(size: 15))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 Text("Lv.\(opponent.level) \(opponent.characterClass.displayName)")
-                    .font(DarkFantasyTheme.body(size: 12).bold())
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
         }
@@ -146,7 +146,7 @@ struct ArenaComparisonSheet: View {
                 // Player equipment
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Text("YOUR GEAR")
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .tracking(1)
 
@@ -154,14 +154,15 @@ struct ArenaComparisonSheet: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                Divider()
-                    .frame(height: 120)
-                    .overlay(DarkFantasyTheme.borderSubtle)
+                // Vertical separator between player and opponent
+                Rectangle()
+                    .fill(DarkFantasyTheme.borderSubtle)
+                    .frame(width: 1, height: 120)
 
                 // Opponent placeholder
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Text("OPPONENT")
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .tracking(1)
 
@@ -207,7 +208,7 @@ struct ArenaComparisonSheet: View {
     }
 
     private func equippedItemSlot(_ item: Item) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: LayoutConstants.spaceXS) {
             ZStack(alignment: .topTrailing) {
                 // Item background
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
@@ -229,7 +230,7 @@ struct ArenaComparisonSheet: View {
 
                 // Rarity badge
                 Text(item.rarity.displayName.prefix(1).uppercased())
-                    .font(DarkFantasyTheme.body(size: 9).bold())
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(.white)
                     .padding(LayoutConstants.spaceXS)
                     .background(Circle().fill(DarkFantasyTheme.rarityColor(for: item.rarity)))
@@ -238,14 +239,14 @@ struct ArenaComparisonSheet: View {
 
             // Item name
             Text(item.displayName)
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .lineLimit(1)
         }
     }
 
     private var emptyItemSlot: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: LayoutConstants.spaceXS) {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .fill(DarkFantasyTheme.bgDarkPanel.opacity(0.5))
                 .overlay(
@@ -255,7 +256,7 @@ struct ArenaComparisonSheet: View {
                 .frame(height: 60)
 
             Text("Empty")
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
     }
@@ -265,15 +266,15 @@ struct ArenaComparisonSheet: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 // Class icon
                 AssetPlaceholderView(systemIcon: "shield.fill")
-                    .frame(width: 32, height: 32)
+                    .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(opponent.characterClass.displayName)
-                        .font(DarkFantasyTheme.body(size: 12))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     Text("Lv. \(opponent.level)")
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
@@ -290,7 +291,7 @@ struct ArenaComparisonSheet: View {
             )
 
             Text("Equipment data\nunavailable")
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
         }
@@ -359,7 +360,7 @@ struct ArenaComparisonSheet: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
-            .font(DarkFantasyTheme.body(size: 12))
+            .font(DarkFantasyTheme.caption)
             .foregroundStyle(DarkFantasyTheme.textTertiary)
             .tracking(2)
     }
@@ -368,20 +369,20 @@ struct ArenaComparisonSheet: View {
     private func statRow(label: String, myValue: Int, theirValue: Int) -> some View {
         HStack {
             Text("\(myValue)")
-                .font(DarkFantasyTheme.section(size: 18))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(statColor(my: myValue, their: theirValue))
                 .frame(width: 70, alignment: .trailing)
 
             Spacer()
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: 13))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             Spacer()
 
             Text("\(theirValue)")
-                .font(DarkFantasyTheme.section(size: 18))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(statColor(my: theirValue, their: myValue))
                 .frame(width: 70, alignment: .leading)
         }
@@ -410,12 +411,12 @@ struct ArenaComparisonSheet: View {
     // MARK: - Win Prediction
 
     private var winPrediction: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             Text("Estimated win chance:")
-                .font(DarkFantasyTheme.body(size: 15))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Text("\(winChance)%")
-                .font(DarkFantasyTheme.section(size: 20))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(winChanceColor)
         }
     }
@@ -441,10 +442,10 @@ struct ArenaComparisonSheet: View {
                     Text("FIGHT")
                     if staminaCost > 0 {
                         Text("(\(staminaCost) STA)")
-                            .font(DarkFantasyTheme.body(size: 13))
+                            .font(DarkFantasyTheme.uiLabel)
                     } else {
                         Text("FREE")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .padding(.horizontal, LayoutConstants.spaceSM)
                             .padding(.vertical, LayoutConstants.space2XS)

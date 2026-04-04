@@ -87,7 +87,7 @@ struct LeaderboardPlayerDetailSheet: View {
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.2)
             Text("Loading profile...")
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
     }
@@ -99,7 +99,7 @@ struct LeaderboardPlayerDetailSheet: View {
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
-                .font(DarkFantasyTheme.body(size: 14))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
 
@@ -188,10 +188,10 @@ struct LeaderboardPlayerDetailSheet: View {
     private func pvpStatCell(label: String, value: String, color: Color) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(value)
-                .font(DarkFantasyTheme.section(size: 15))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -214,11 +214,11 @@ struct LeaderboardPlayerDetailSheet: View {
             // Grouped stats — same layout as hero page STATUS tab
             ForEach(StatGroup.allCases, id: \.self) { group in
                 VStack(spacing: LayoutConstants.spaceSM) {
-                    statGroupHeader(group.rawValue)
+                    StatGroupHeader(group.rawValue)
 
                     ForEach(group.stats, id: \.self) { stat in
-                        opponentStatCell(
-                            stat,
+                        OpponentStatCell(
+                            stat: stat,
                             value: profile.statValue(for: stat),
                             playerValue: playerStatValue(for: stat)
                         )
@@ -244,123 +244,14 @@ struct LeaderboardPlayerDetailSheet: View {
 
     /// Read-only stat cell with comparison delta vs the current player.
     /// ▲ red  = opponent higher (danger for player)
-    /// ▼ green = opponent lower (player has the edge)
-    @ViewBuilder
-    private func opponentStatCell(_ stat: StatType, value: Int, playerValue: Int) -> some View {
-        let color = DarkFantasyTheme.statColor(for: stat.rawValue)
-        let delta = value - playerValue
-
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(stat.iconAsset)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 22, height: 22)
-
-            Text(stat.fullName)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
-                .foregroundStyle(color)
-                .lineLimit(1)
-
-            Spacer(minLength: 4)
-
-            // Comparison delta badge
-            if delta != 0 {
-                let deltaColor = delta > 0 ? DarkFantasyTheme.danger : DarkFantasyTheme.success
-                let arrow = delta > 0 ? "▲" : "▼"
-                let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
-
-                Text(label)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
-                    .foregroundStyle(deltaColor)
-                    .padding(.horizontal, LayoutConstants.spaceSM)
-                    .padding(.vertical, LayoutConstants.spaceXS)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .fill(deltaColor.opacity(0.15))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .stroke(deltaColor.opacity(0.4), lineWidth: 1)
-                            )
-                    )
-            }
-
-            Text("\(value)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .frame(minWidth: 36, alignment: .trailing)
-        }
-        .padding(LayoutConstants.spaceSM + 2)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.3,
-                cornerRadius: LayoutConstants.panelRadius
-            )
-        )
-        .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-        .innerBorder(
-            cornerRadius: LayoutConstants.panelRadius - 2,
-            inset: 2,
-            color: DarkFantasyTheme.borderMedium.opacity(0.15)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-        )
-        .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 10, thickness: 1.5)
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
-    }
-
-    /// Stat group header with ornamental diamond lines — matches HeroDetailView
-    @ViewBuilder
-    private func statGroupHeader(_ label: String) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [.clear, DarkFantasyTheme.goldDim.opacity(0.4)],
-                            startPoint: .leading, endPoint: .trailing
-                        )
-                    )
-                    .frame(height: 1)
-                Rectangle()
-                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
-                    .frame(width: 4, height: 4)
-                    .rotationEffect(.degrees(45))
-            }
-
-            Text(label)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
-                .lineLimit(1)
-                .fixedSize()
-
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(DarkFantasyTheme.goldDim.opacity(0.5))
-                    .frame(width: 4, height: 4)
-                    .rotationEffect(.degrees(45))
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.goldDim.opacity(0.4), .clear],
-                            startPoint: .leading, endPoint: .trailing
-                        )
-                    )
-                    .frame(height: 1)
-            }
-        }
-        .padding(.top, LayoutConstants.spaceXS)
-    }
+    // MARK: - Stat Cells & Headers (uses shared OpponentStatCell, StatGroupHeader components)
 
     // MARK: - Derived Stats
 
     private func derivedStatsSection(_ profile: OpponentProfile) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("DERIVED STATS")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -382,11 +273,11 @@ struct LeaderboardPlayerDetailSheet: View {
     private func derivedRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(color)
                 .monospacedDigit()
         }
@@ -443,7 +334,7 @@ struct LeaderboardPlayerDetailSheet: View {
         Button(action: action) {
             VStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: icon)
-                    .font(DarkFantasyTheme.section.weight(.semibold))
+                    .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                 Text(label)
                     .font(DarkFantasyTheme.badge)
                     .textCase(.uppercase)
@@ -600,7 +491,7 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+            .font(DarkFantasyTheme.uiLabel)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .tracking(2)
             .frame(maxWidth: .infinity, alignment: .leading)

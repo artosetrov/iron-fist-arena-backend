@@ -266,8 +266,10 @@ final class AssetManager {
 
     private func loadFromDiskCache(key: String) -> UIImage? {
         let path = diskCacheFile(forKey: key)
-        guard FileManager.default.fileExists(atPath: path.path) else { return nil }
-        return UIImage(contentsOfFile: path.path)
+        guard FileManager.default.fileExists(atPath: path.path),
+              let data = try? Data(contentsOf: path) else { return nil }
+        // Load with device scale so cached images display at correct point size
+        return UIImage(data: data, scale: UIScreen.main.scale)
     }
 
     private nonisolated func downloadAndCache(key: String, url: URL) async -> UIImage? {
@@ -275,8 +277,12 @@ final class AssetManager {
             let (data, response) = try await downloadSession.data(from: url)
 
             guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200,
-                  let image = UIImage(data: data) else {
+                  httpResponse.statusCode == 200 else {
+                return nil
+            }
+            // Load with device scale so network images display at correct point size
+            let scale = await MainActor.run { UIScreen.main.scale }
+            guard let image = UIImage(data: data, scale: scale) else {
                 return nil
             }
 

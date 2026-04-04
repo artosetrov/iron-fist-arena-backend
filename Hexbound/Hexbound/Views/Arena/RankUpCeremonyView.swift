@@ -59,7 +59,7 @@ struct RankUpCeremonyView: View {
                 // Rewards
                 if showRewards {
                     GoldDivider()
-                        .padding(.horizontal, 40)
+                        .padding(.horizontal, LayoutConstants.cinematicPaddingH)
 
                     HStack(spacing: LayoutConstants.spaceXL) {
                         if goldReward > 0 {
@@ -99,9 +99,9 @@ struct RankUpCeremonyView: View {
     // MARK: - Components
 
     private func rankBadge(rank: String, isOld: Bool) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: isOld ? "shield" : "shield.fill")
-                .font(Font.custom("Oswald-Regular", size: isOld ? LayoutConstants.textCelebration : LayoutConstants.textHero).bold())
+                .font((isOld ? DarkFantasyTheme.title : DarkFantasyTheme.cinematicTitle).bold())
                 .foregroundStyle(
                     isOld ? DarkFantasyTheme.textSecondary : rankColor(for: newRank)
                 )
@@ -130,17 +130,17 @@ struct RankUpCeremonyView: View {
     }
 
     private func rewardPill(icon: String, amount: Int) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: LayoutConstants.spaceSM) {
             Image(icon)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 20, height: 20)
+                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
             Text("+\(amount)")
                 .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceSM)
         .background(DarkFantasyTheme.bgSecondary)
         .clipShape(Capsule())
         .overlay(Capsule().stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1))
@@ -156,7 +156,7 @@ struct RankUpCeremonyView: View {
 
         // Phase 1: Transition arrow
         DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase3) {
-            withAnimation(.easeInOut(duration: 0.4)) {
+            withAnimation(.easeInOut(duration: MotionConstants.normal)) {
                 showTransition = true
             }
         }

@@ -431,7 +431,9 @@ Code has 93 screens. Figma documents ~50. Missing:
 
 Code has 12 skeleton variants. Figma DS has 3. Missing from Figma:
 
-SkeletonQuestCard, SkeletonLeaderboardRow, SkeletonShopItemCard, SkeletonAchievementCard, SkeletonBPNode, SkeletonDungeonCard, SkeletonMineSlot, SkeletonConversationCard, SkeletonRevengeCard
+SkeletonQuestCard, SkeletonLeaderboardRow, SkeletonShopItemCard, SkeletonAchievementCard, SkeletonBPNode, SkeletonDungeonCard, SkeletonConversationCard, SkeletonRevengeCard
+
+> **Note:** SkeletonMineSlot removed from this list — MineSlotCard (3 variants), LockedMineCard, and MiningOutputCard added to Figma DS on "Components / Minigames" page (2026-04-04).
 
 #### D.3.5 Asset Naming Inconsistency
 

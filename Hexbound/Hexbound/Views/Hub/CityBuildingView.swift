@@ -54,7 +54,7 @@ struct CityBuildingView: View {
                             .font(DarkFantasyTheme.section.bold())
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Text("SOON")
-                            .font(DarkFantasyTheme.section(size: 10))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .padding(LayoutConstants.spaceSM)
@@ -82,6 +82,7 @@ struct CityBuildingView: View {
         if UIImage(named: building.imageName) != nil {
             Image(building.imageName)
                 .resizable()
+                .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
         } else {
             // Placeholder fallback
@@ -98,7 +99,7 @@ struct CityBuildingView: View {
                         .font(DarkFantasyTheme.title)
                         .foregroundStyle(building.glowColor)
                     Text(building.label)
-                        .font(DarkFantasyTheme.section(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }

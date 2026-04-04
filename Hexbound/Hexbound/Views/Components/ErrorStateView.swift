@@ -35,13 +35,13 @@ struct ErrorStateView: View {
 
             // Title
             Text(title)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textSection))
+                .font(DarkFantasyTheme.section)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .multilineTextAlignment(.center)
 
             // Message
             Text(message)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, LayoutConstants.spaceXL)

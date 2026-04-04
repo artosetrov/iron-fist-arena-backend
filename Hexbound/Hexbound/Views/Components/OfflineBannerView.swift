@@ -13,13 +13,13 @@ struct OfflineBannerView: View {
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
 
                 Text("NO CONNECTION")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
 
                 Spacer()
 
                 Text("Some features may not work")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.8))
             }
             .padding(.horizontal, LayoutConstants.screenPadding)

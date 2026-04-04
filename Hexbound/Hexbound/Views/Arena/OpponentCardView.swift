@@ -42,23 +42,23 @@ struct OpponentCardView: View {
                         .stroke(DarkFantasyTheme.classColor(for: opponent.characterClass).opacity(0.4), lineWidth: 1)
                 )
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(opponent.characterName)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
 
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("Lv.\(opponent.level)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text(opponent.characterClass.displayName)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.classColor(for: opponent.characterClass))
 
                         Text(difficultyLabel)
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(difficultyColor)
                             .padding(.horizontal, LayoutConstants.spaceXS)
                             .padding(.vertical, LayoutConstants.space2XS)
@@ -72,9 +72,9 @@ struct OpponentCardView: View {
                 Spacer()
 
                 // Rating badge
-                VStack(spacing: 2) {
+                VStack(spacing: LayoutConstants.space2XS) {
                     Text("\(opponent.pvpRating)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.rankColor(for: opponent.pvpRating))
                     Image(systemName: opponent.rank.icon)
                         .font(DarkFantasyTheme.caption.weight(.semibold))
@@ -84,9 +84,9 @@ struct OpponentCardView: View {
 
             // Stats row
             HStack(spacing: LayoutConstants.spaceMD) {
-                statPill(label: "HP", value: "\(opponent.maxHp)", color: DarkFantasyTheme.danger)
-                statPill(label: "W/L", value: "\(opponent.pvpWins)/\(opponent.pvpLosses)", color: DarkFantasyTheme.textSecondary)
-                statPill(label: "WR", value: String(format: "%.0f%%", opponent.winRate), color: opponent.winRate >= 50 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
+                GlassStatPill(value: "\(opponent.maxHp)", label: "HP", color: DarkFantasyTheme.danger, size: .compact)
+                GlassStatPill(value: "\(opponent.pvpWins)/\(opponent.pvpLosses)", label: "W/L", color: DarkFantasyTheme.textSecondary, size: .compact)
+                GlassStatPill(value: String(format: "%.0f%%", opponent.winRate), label: "WR", color: opponent.winRate >= 50 ? DarkFantasyTheme.success : DarkFantasyTheme.danger, size: .compact)
                 Spacer()
             }
 
@@ -99,20 +99,20 @@ struct OpponentCardView: View {
                         ProgressView()
                             .tint(DarkFantasyTheme.textOnGold)
                     } else {
-                        HStack(spacing: 4) {
+                        HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "swords")
                                 .font(DarkFantasyTheme.caption)
                             Text("FIGHT")
                         }
                         if staminaCost > 0 {
                             Text("(\(staminaCost) STA)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                .font(DarkFantasyTheme.caption)
                         } else {
                             Text("FREE")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, LayoutConstants.spaceSM)
+                                .padding(.vertical, LayoutConstants.space2XS)
                                 .background(DarkFantasyTheme.bgDarkPanel)
                                 .clipShape(Capsule())
                         }
@@ -125,15 +125,5 @@ struct OpponentCardView: View {
         .panelCard()
     }
 
-    @ViewBuilder
-    private func statPill(label: String, value: String, color: Color) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel).bold())
-                .foregroundStyle(color)
-            Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-        }
-    }
+    // MARK: - Stat Pill (uses shared GlassStatPill component)
 }

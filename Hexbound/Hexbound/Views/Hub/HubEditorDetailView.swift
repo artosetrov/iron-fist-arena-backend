@@ -89,13 +89,13 @@ struct HubEditorDetailView: View {
                 VStack {
                     Spacer()
                     Text(msg)
-                        .font(DarkFantasyTheme.body(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceMD)
                         .padding(.vertical, LayoutConstants.spaceMS)
                         .background(DarkFantasyTheme.success.opacity(0.9))
                         .clipShape(Capsule())
-                        .padding(.bottom, 140)
+                        .padding(.bottom, LayoutConstants.editorBottomInset)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -108,7 +108,7 @@ struct HubEditorDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("HUB EDITOR")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -116,7 +116,7 @@ struct HubEditorDetailView: View {
                     Button(showSkyObjects ? "☁️ On" : "☁️ Off") {
                         withAnimation { showSkyObjects.toggle() }
                     }
-                    .font(DarkFantasyTheme.body(size: 12))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(showSkyObjects ? DarkFantasyTheme.gold : DarkFantasyTheme.textSecondary)
                     .buttonStyle(.scalePress)
 
@@ -126,7 +126,7 @@ struct HubEditorDetailView: View {
                             sizeOverrides.removeAll()
                         }
                     }
-                    .font(DarkFantasyTheme.body(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.danger)
                     .buttonStyle(.scalePress)
                 }
@@ -178,11 +178,11 @@ struct HubEditorDetailView: View {
 
                 HStack {
                     Text(label)
-                        .font(DarkFantasyTheme.section(size: 14))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Spacer()
                     Text("(\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY))) S: \(String(format: "%.2f", currentSize))")
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .font(DarkFantasyTheme.debugMono)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
 
@@ -218,7 +218,7 @@ struct HubEditorDetailView: View {
                 }
             } else {
                 Text("Tap a building to select, drag to move")
-                    .font(DarkFantasyTheme.body(size: 13))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -374,9 +374,10 @@ struct DraggableEditorBuilding: View {
         let baseX = terrainSize.width * building.relativeX
         let baseY = terrainSize.height * building.relativeY
 
-        VStack(spacing: 2) {
+        VStack(spacing: LayoutConstants.space2XS) {
             Text("\(building.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(DarkFantasyTheme.debugMonoSmall)
+                .bold()
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
@@ -396,7 +397,7 @@ struct DraggableEditorBuilding: View {
                             .stroke(isSelected ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina, lineWidth: 2)
                     )
                     .overlay(
-                        VStack(spacing: 4) {
+                        VStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: building.fallbackIcon)
                                 .font(DarkFantasyTheme.section)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -482,10 +483,11 @@ struct DraggableEditorSkyObject: View {
 
         VStack(spacing: LayoutConstants.space2XS) {
             Text("\(object.id) (\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY)))")
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .font(DarkFantasyTheme.debugMonoSmall)
+                .bold()
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.space2XS)
-                .padding(.vertical, 1)
+                .padding(.vertical, LayoutConstants.barInternalPadding)
                 .background(isSelected ? layerColor.opacity(0.9) : layerColor.opacity(0.5))
                 .cornerRadius(LayoutConstants.radiusXS)
 

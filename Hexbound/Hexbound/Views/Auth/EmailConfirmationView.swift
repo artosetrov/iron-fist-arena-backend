@@ -28,7 +28,7 @@ struct EmailConfirmationView: View {
                         .blur(radius: 40)
 
                     Image(systemName: "envelope.badge.shield.half.filled")
-                        .font(Font.custom("Oswald-Regular", size: 72).weight(.light))
+                        .font(DarkFantasyTheme.cinematicTitle.weight(.light))
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .symbolEffect(.pulse, options: .repeating)
                 }
@@ -37,22 +37,22 @@ struct EmailConfirmationView: View {
                 // Title
                 VStack(spacing: LayoutConstants.spaceSM) {
                     Text("CHECK YOUR EMAIL")
-                        .font(DarkFantasyTheme.title(size: LayoutConstants.textScreen))
+                        .font(DarkFantasyTheme.title)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
 
                     Text("We sent a confirmation link to")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     Text(email)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
 
                 Text("Tap the link in the email to verify your account. The app will open automatically.")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LayoutConstants.spaceLG)
@@ -82,7 +82,7 @@ struct EmailConfirmationView: View {
 
                     if !resendMessage.isEmpty {
                         Text(resendMessage)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(
                                 resendMessage.contains("sent")
                                     ? DarkFantasyTheme.textSuccess

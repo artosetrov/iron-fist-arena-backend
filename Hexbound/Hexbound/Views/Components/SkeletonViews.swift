@@ -144,7 +144,7 @@ struct SkeletonLeaderboardRow: View {
         HStack(spacing: LayoutConstants.spaceMS) {
             SkeletonRect(width: 28, height: 14) // rank
             SkeletonRect(width: 36, height: 36, cornerRadius: 18) // circle: half of width // avatar
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 110, height: 14)
                 SkeletonRect(width: 70, height: 10)
             }
@@ -274,7 +274,7 @@ struct SkeletonConversationCard: View {
             // Avatar circle placeholder (matches 40pt AvatarImageView)
             SkeletonRect(width: 40, height: 40, cornerRadius: 20)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 HStack {
                     // Sender name
                     SkeletonRect(width: 110, height: 14)
@@ -309,7 +309,7 @@ struct SkeletonRevengeCard: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
             SkeletonRect(width: 40, height: 40, cornerRadius: LayoutConstants.radiusMD)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 100, height: 14)
                 SkeletonRect(width: 130, height: 10)
             }
@@ -326,12 +326,12 @@ struct SkeletonHistoryRow: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
             SkeletonRect(width: 24, height: 24, cornerRadius: LayoutConstants.radiusXS)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 100, height: 14)
                 SkeletonRect(width: 80, height: 10)
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: LayoutConstants.spaceXS) {
                 SkeletonRect(width: 40, height: 14)
                 SkeletonRect(width: 50, height: 10)
             }

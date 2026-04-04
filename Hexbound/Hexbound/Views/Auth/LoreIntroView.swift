@@ -152,7 +152,7 @@ struct LoreIntroView: View {
             AudioManager.shared.playBGM("main-theme.mp3")
             animateSlideIn()
             // Fade curtain out
-            withAnimation(.easeOut(duration: 1.2)) {
+            withAnimation(.easeOut(duration: MotionConstants.epic)) {
                 curtainOpacity = 0
             }
             // Start particle animation
@@ -176,7 +176,7 @@ struct LoreIntroView: View {
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
                     .opacity(0.35 * bgOpacity)
-                    .animation(.easeInOut(duration: 0.6), value: currentSlide)
+                    .animation(.easeInOut(duration: MotionConstants.reward), value: currentSlide)
             }
             .ignoresSafeArea()
 
@@ -192,7 +192,7 @@ struct LoreIntroView: View {
                 endRadius: 400
             )
             .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.5), value: currentSlide)
+            .animation(.easeInOut(duration: MotionConstants.tickUpDuration), value: currentSlide)
         }
     }
 
@@ -356,7 +356,7 @@ struct LoreIntroView: View {
 
             if let footnote = slide.footnote {
                 Text(footnote)
-                    .font(DarkFantasyTheme.body(size: 14))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(3)
@@ -387,7 +387,7 @@ struct LoreIntroView: View {
                                 .scaleEffect(0.8)
                         }
                         Text(isEntering ? "ENTERING..." : "ENTER HEXBOUND")
-                            .font(DarkFantasyTheme.section(size: 16))
+                            .font(DarkFantasyTheme.buttonLabel)
                             .tracking(1.5)
                     }
                     .frame(maxWidth: .infinity)
@@ -404,7 +404,7 @@ struct LoreIntroView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("CONTINUE")
-                            .font(DarkFantasyTheme.section(size: 15))
+                            .font(DarkFantasyTheme.cardTitle)
                             .tracking(1)
                         Image(systemName: "chevron.right")
                             .font(DarkFantasyTheme.caption.weight(.semibold))
@@ -416,7 +416,7 @@ struct LoreIntroView: View {
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: isLastSlide)
+        .animation(.easeInOut(duration: MotionConstants.fast), value: isLastSlide)
     }
 
     // MARK: - Progress Bar
@@ -445,10 +445,10 @@ struct LoreIntroView: View {
                     )
                     .frame(width: totalWidth * progress)
                     .shadow(color: slides[currentSlide].accentColor.opacity(0.5), radius: 6)
-                    .animation(.easeInOut(duration: 0.4), value: currentSlide)
+                    .animation(.easeInOut(duration: MotionConstants.normal), value: currentSlide)
             }
         }
-        .frame(height: 4)
+        .frame(height: LayoutConstants.spaceXS)
         .padding(.horizontal, LayoutConstants.spaceLG)
     }
 

@@ -50,12 +50,12 @@ struct SeasonSummaryModalView: View {
                 if showTitle {
                     VStack(spacing: LayoutConstants.spaceXS) {
                         Text("SEASON COMPLETE")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .tracking(3)
 
                         Text(summary.seasonName.uppercased())
-                            .font(DarkFantasyTheme.title(size: LayoutConstants.textCelebration))
+                            .font(DarkFantasyTheme.cinematicTitle)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .tracking(2)
                     }
@@ -74,7 +74,7 @@ struct SeasonSummaryModalView: View {
                 if showNewSeason {
                     ZStack {
                         Text("NEW SEASON BEGINS")
-                            .font(DarkFantasyTheme.title(size: 28))
+                            .font(DarkFantasyTheme.title)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .tracking(3)
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
@@ -123,7 +123,7 @@ struct SeasonSummaryModalView: View {
             statCell(label: "TOTAL BATTLES", value: summary.totalBattles, icon: "swords", index: 1)
             statCell(label: "VICTORIES", value: summary.wins, icon: "trophy.fill", index: 2)
             statCell(label: "PEAK RANK", value: summary.peakRank, icon: "crown", prefix: "#", index: 3)
-            statCell(label: "GOLD EARNED", value: summary.goldEarned, icon: "dollarsign.circle", assetIcon: "icon-gold", index: 4)
+            statCell(label: "GOLD EARNED", value: summary.goldEarned, icon: "star.fill", assetIcon: "icon-gold", index: 4)
             statCell(label: "REWARDS CLAIMED", value: summary.rewardsClaimed, icon: "gift", index: 5)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
@@ -136,27 +136,27 @@ struct SeasonSummaryModalView: View {
                 Image(assetIcon)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
             } else {
                 AssetPlaceholderView(systemIcon: "star.fill")
-                    .frame(width: 24, height: 24)
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
             }
 
             HStack(spacing: 0) {
                 if !prefix.isEmpty {
                     Text(prefix)
-                        .font(DarkFantasyTheme.title(size: LayoutConstants.textCard))
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
                 NumberTickUpText(
                     value: value,
                     color: DarkFantasyTheme.goldBright,
-                    font: DarkFantasyTheme.title(size: LayoutConstants.textCard)
+                    font: DarkFantasyTheme.cardTitle
                 )
             }
 
             Text(label)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1)
         }

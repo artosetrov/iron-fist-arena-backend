@@ -28,7 +28,7 @@ struct ScreenCatalogView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("SCREEN CATALOG")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
@@ -40,7 +40,7 @@ struct ScreenCatalogView: View {
     private func catalogCard(_ section: CatalogSection) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             Text(section.title)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             ForEach(section.items) { item in
@@ -54,17 +54,17 @@ struct ScreenCatalogView: View {
                             .frame(width: 24)
 
                         Text(item.name)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                         Spacer()
 
                         if item.isModal {
                             Text("MODAL")
-                                .font(DarkFantasyTheme.body(size: 10))
+                                .font(DarkFantasyTheme.badge) // dev catalog label
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, LayoutConstants.spaceSM) // keep — dev catalog
+                                .padding(.vertical, LayoutConstants.space2XS) // keep — dev catalog
                                 .background(
                                     RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                                         .fill(DarkFantasyTheme.bgTertiary)
@@ -119,7 +119,7 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
     case auth, hub, hero, arena, combat, shop
     case dungeon, minigames, quests, achievements
     case leaderboard, battlePass, profile, settings, modals
-    case devTools
+    case componentCatalogs, devTools
 
     var id: String { rawValue }
 
@@ -140,6 +140,7 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
         case .profile: "Profile"
         case .settings: "Settings"
         case .modals: "Modals / Overlays"
+        case .componentCatalogs: "Component Catalogs"
         case .devTools: "Dev Tools"
         }
     }
@@ -217,9 +218,17 @@ private enum CatalogSection: String, CaseIterable, Identifiable {
                 CatalogItem(id: "level-up-modal", name: "Level Up Modal", icon: "arrow.up.circle.fill", route: nil, isModal: true),
                 CatalogItem(id: "toast-overlay", name: "Toast Notifications", icon: "bell.fill", route: nil, isModal: true),
             ]
+        case .componentCatalogs:
+            return [
+                CatalogItem(id: "cards-catalog", name: "Cards & Ornamental", icon: "rectangle.on.rectangle", route: .cardsCatalog),
+                CatalogItem(id: "progress-bars-catalog", name: "Progress Bars", icon: "chart.bar.fill", route: .progressBarsCatalog),
+                CatalogItem(id: "badges-catalog", name: "Badges & Pills", icon: "tag.fill", route: .badgesCatalog),
+                CatalogItem(id: "components-catalog", name: "Components", icon: "square.stack.3d.up", route: .componentsCatalog),
+                CatalogItem(id: "modals-catalog", name: "Modals & Gates", icon: "rectangle.portrait.on.rectangle.portrait", route: .modalsCatalog),
+            ]
         case .devTools:
             return [
-                CatalogItem(id: "design-system", name: "Design System", icon: "paintpalette.fill", route: .designSystem),
+                CatalogItem(id: "design-system", name: "Design System (Tokens)", icon: "paintpalette.fill", route: .designSystem),
             ]
         }
     }

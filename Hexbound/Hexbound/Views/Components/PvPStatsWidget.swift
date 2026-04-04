@@ -98,12 +98,12 @@ struct PvPStatsWidget: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text("\(data.pvpRating)")
-                        .font(DarkFantasyTheme.section(size: 20))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(data.pvpRankColor)
                         .monospacedDigit()
                         .contentTransition(.numericText())
                     Text("RATING")
-                        .font(DarkFantasyTheme.body(size: 9))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .tracking(1)
                 }
@@ -116,7 +116,7 @@ struct PvPStatsWidget: View {
             compactStat(
                 label: "W / L",
                 content: {
-                    HStack(spacing: 2) {
+                    HStack(spacing: LayoutConstants.space2XS) {
                         Text("\(data.pvpWins)")
                             .foregroundStyle(DarkFantasyTheme.success)
                         Text("/")
@@ -124,7 +124,7 @@ struct PvPStatsWidget: View {
                         Text("\(data.pvpLosses)")
                             .foregroundStyle(DarkFantasyTheme.danger)
                     }
-                    .font(DarkFantasyTheme.section(size: 13))
+                    .font(DarkFantasyTheme.uiLabel)
                 }
             )
 
@@ -133,7 +133,7 @@ struct PvPStatsWidget: View {
             // Win Rate
             compactStat(label: "RATE") {
                 Text("\(data.pvpWinRate)%")
-                    .font(DarkFantasyTheme.section(size: 13))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(data.pvpWinRateColor)
             }
 
@@ -150,7 +150,7 @@ struct PvPStatsWidget: View {
 
                 compactStat(label: "RANK") {
                     Text("#\(rank)")
-                        .font(DarkFantasyTheme.section(size: 13))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -191,7 +191,7 @@ struct PvPStatsWidget: View {
             // Header: PVP STATS + Tier badge + Rank
             HStack {
                 Text("PVP")
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 // Tier badge
@@ -199,12 +199,12 @@ struct PvPStatsWidget: View {
                     Image(systemName: data.pvpRank.icon)
                         .font(DarkFantasyTheme.badge.weight(.semibold))
                     Text(data.pvpRank.rawValue)
-                        .font(DarkFantasyTheme.body(size: 11))
+                        .font(DarkFantasyTheme.badge)
                         .fontWeight(.semibold)
                 }
                 .foregroundStyle(data.pvpRankColor)
                 .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, 3)
+                .padding(.vertical, LayoutConstants.space2XS)
                 .background(
                     Capsule()
                         .fill(data.pvpRankColor.opacity(0.1))
@@ -214,14 +214,14 @@ struct PvPStatsWidget: View {
 
                 // Leaderboard rank
                 if let rank = leaderboardRank {
-                    HStack(spacing: 2) {
+                    HStack(spacing: LayoutConstants.space2XS) {
                         Text("#\(rank)")
-                            .font(DarkFantasyTheme.body(size: 12))
+                            .font(DarkFantasyTheme.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         if let total = totalPlayers {
                             Text("/ \(total)")
-                                .font(DarkFantasyTheme.body(size: 10))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
@@ -234,7 +234,7 @@ struct PvPStatsWidget: View {
                 HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
                     Spacer()
                     Text("\(data.pvpRating)")
-                        .font(DarkFantasyTheme.title(size: 40))
+                        .font(DarkFantasyTheme.cinematicTitle)
                         .foregroundStyle(data.pvpRankColor)
                         .monospacedDigit()
                         .contentTransition(.numericText())
@@ -252,7 +252,7 @@ struct PvPStatsWidget: View {
                 fullStatCell(
                     label: "RECORD",
                     content: {
-                        HStack(spacing: 3) {
+                        HStack(spacing: LayoutConstants.space2XS) {
                             Text("\(data.pvpWins)")
                                 .foregroundStyle(DarkFantasyTheme.success)
                             Text("/")
@@ -260,7 +260,7 @@ struct PvPStatsWidget: View {
                             Text("\(data.pvpLosses)")
                                 .foregroundStyle(DarkFantasyTheme.danger)
                         }
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                     },
                     subtitle: "\(data.pvpTotalGames) games"
                 )
@@ -269,7 +269,7 @@ struct PvPStatsWidget: View {
                     label: "WIN RATE",
                     content: {
                         Text("\(data.pvpWinRate)%")
-                            .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(data.pvpWinRateColor)
                     },
                     winRateBar: true
@@ -309,11 +309,11 @@ struct PvPStatsWidget: View {
 
     @ViewBuilder
     private func compactStat<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: LayoutConstants.space2XS) {
             content()
                 .lineLimit(1)
             Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(0.5)
         }
@@ -335,7 +335,7 @@ struct PvPStatsWidget: View {
     ) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1.5)
 
@@ -345,7 +345,7 @@ struct PvPStatsWidget: View {
 
             if let subtitle {
                 Text(subtitle)
-                    .font(DarkFantasyTheme.body(size: 10))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
 
@@ -354,7 +354,7 @@ struct PvPStatsWidget: View {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                            .fill(Color.white.opacity(0.04))
+                            .fill(DarkFantasyTheme.textPrimary.opacity(0.04))
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(data.pvpWinRateColor)
                             .frame(width: geo.size.width * CGFloat(data.pvpWinRate) / 100)
@@ -374,7 +374,7 @@ struct PvPStatsWidget: View {
         let streak = data.pvpCurrentStreak
         if streak == 0 {
             Text("—")
-                .font(DarkFantasyTheme.section(size: compact ? 12 : 14))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         } else {
             let isWin = streak > 0
@@ -382,14 +382,14 @@ struct PvPStatsWidget: View {
             let color = isWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger
             let isHot = abs >= 5
 
-            HStack(spacing: 2) {
+            HStack(spacing: LayoutConstants.space2XS) {
                 Image(systemName: isWin ? "arrow.up" : "arrow.down")
                     .font(DarkFantasyTheme.badge.bold())
                 Text("\(abs)")
-                    .font(DarkFantasyTheme.section(size: compact ? 12 : LayoutConstants.textLabel))
+                    .font(compact ? DarkFantasyTheme.caption : DarkFantasyTheme.uiLabel)
                 if isHot {
                     Image(systemName: "flame.fill")
-                        .font(.system(size: compact ? 8 : 10, design: .rounded))
+                        .font(DarkFantasyTheme.iconFlame)
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
             }
@@ -418,21 +418,21 @@ struct PvPStatsWidget: View {
             let rangeEnd = nextRank.minRating
             let progress = Double(data.pvpRating - rangeStart) / Double(rangeEnd - rangeStart)
 
-            VStack(spacing: 3) {
+            VStack(spacing: LayoutConstants.space2XS) {
                 HStack {
                     Text(rank.rawValue)
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
                     Text("\(nextRank.rawValue) \(rangeEnd)")
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.rankColor(for: nextRank.minRating).opacity(0.6))
                 }
 
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                            .fill(Color.white.opacity(0.04))
+                            .fill(DarkFantasyTheme.textPrimary.opacity(0.04))
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(
                                 LinearGradient(

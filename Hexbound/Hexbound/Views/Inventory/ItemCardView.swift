@@ -379,7 +379,7 @@ private extension ItemCardView {
                 .renderingMode(.template)
                 .resizable().scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(20)
+                .padding(LayoutConstants.spaceLG)
                 .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.25))
                 .saturation(0)
         }
@@ -418,8 +418,8 @@ private extension ItemCardView {
         Text("2H")
             .font(DarkFantasyTheme.badge.weight(.heavy))
             .foregroundStyle(DarkFantasyTheme.stamina)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 2)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
             .background(
                 Capsule()
                     .fill(DarkFantasyTheme.bgSecondary.opacity(0.9))
@@ -437,20 +437,14 @@ private extension ItemCardView {
     var topTrailingOverlay: some View {
         if isEquipped {
             // Equipped badge — shown in any context
-            Text("E")
-                .font(DarkFantasyTheme.body(size: 11).bold())
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
-                .padding(.horizontal, LayoutConstants.spaceXS)
-                .padding(.vertical, LayoutConstants.space2XS)
-                .background(DarkFantasyTheme.gold)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
+            EquippedBadge()
                 .padding(LayoutConstants.spaceXS)
         } else if isBroken {
             // Broken indicator — equipment context
             Text("!")
                 .font(DarkFantasyTheme.badge.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .frame(width: 16, height: 16)
+                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 .background(Circle().fill(DarkFantasyTheme.danger))
                 .padding(LayoutConstants.spaceXS)
         }
@@ -467,7 +461,7 @@ private extension ItemCardView {
             shopPriceBar(price: price, isGem: isGem, originalPrice: originalPrice, discountPct: discountPct)
         } else {
             // Rarity stars + upgrade level
-            HStack(spacing: 2) {
+            HStack(spacing: LayoutConstants.space2XS) {
                 ForEach(0..<starCount, id: \.self) { _ in
                     Image(systemName: "star.fill")
                         .font(DarkFantasyTheme.badge)
@@ -476,12 +470,12 @@ private extension ItemCardView {
                 }
                 if let upg = upgradeLevel, upg > 0 {
                     Text("+\(upg)")
-                        .font(DarkFantasyTheme.body(size: 9).bold())
+                        .font(DarkFantasyTheme.caption.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
                 }
             }
-            .padding(.bottom, 4)
+            .padding(.bottom, LayoutConstants.spaceXS)
         }
     }
 
@@ -491,7 +485,7 @@ private extension ItemCardView {
     var bottomTrailingOverlay: some View {
         if let qty = quantity, qty > 1 {
             Text("x\(qty)")
-                .font(DarkFantasyTheme.body(size: 11).bold())
+                .font(DarkFantasyTheme.caption.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
@@ -545,10 +539,10 @@ private extension ItemCardView {
             // Discount badge (top-right corner of price bar)
             if let pct = discountPct, pct > 0 {
                 Text("-\(pct)%")
-                    .font(DarkFantasyTheme.body(size: 10).bold())
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, LayoutConstants.space2XS)
                     .background(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(DarkFantasyTheme.danger)

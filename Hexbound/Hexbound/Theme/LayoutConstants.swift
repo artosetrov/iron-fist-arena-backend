@@ -192,4 +192,13 @@ enum LayoutConstants {
     static let packageCardMinHeight: CGFloat = 96          // Unique: visual weight
     static let packageAmountFont: CGFloat = textSection     // 22
     static let packageBestValueAmountFont: CGFloat = 26    // Unique: best value emphasis
+
+    // MARK: - Layout Insets (safe area + navigation offsets)
+
+    static let barInternalPadding: CGFloat = 1             // Pixel-precise internal padding for progress bars
+    static let editorBottomInset: CGFloat = 140            // Clearance above bottom toolbar in editor views
+    static let combatVsTopInset: CGFloat = 90              // VS label positioning in combat view
+    static let authBottomInset: CGFloat = 60               // Bottom padding in auth screens
+    static let bannerTopInset: CGFloat = 94                // Status bar (50) + nav bar (44) for overlays
+    static let cinematicPaddingH: CGFloat = 40             // Horizontal padding for cinematic ceremonies
 }

@@ -65,7 +65,7 @@ struct NumberTickUpView: View {
 
         // Clear flash after animation
         DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.1) {
-            withAnimation(.easeOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 flashColor = nil
             }
         }
@@ -102,13 +102,13 @@ enum TickUpStyle {
     var font: Font {
         switch self {
         case .gold, .gems:
-            return DarkFantasyTheme.section(size: LayoutConstants.textCard)
+            return DarkFantasyTheme.cardTitle
         case .xp, .rating:
-            return DarkFantasyTheme.section(size: LayoutConstants.textBody)
+            return DarkFantasyTheme.buttonLabel
         case .stat:
-            return DarkFantasyTheme.body(size: LayoutConstants.textBody)
+            return DarkFantasyTheme.body
         case .plain:
-            return DarkFantasyTheme.body(size: LayoutConstants.textBody)
+            return DarkFantasyTheme.body
         }
     }
 
@@ -153,7 +153,7 @@ enum TickUpStyle {
 struct NumberTickUpText: View {
     let value: Int
     var color: Color = DarkFantasyTheme.textPrimary
-    var font: Font = DarkFantasyTheme.body(size: LayoutConstants.textBody)
+    var font: Font = DarkFantasyTheme.body
     var duration: Double = MotionConstants.tickUpShort
 
     @State private var displayValue: Double = 0

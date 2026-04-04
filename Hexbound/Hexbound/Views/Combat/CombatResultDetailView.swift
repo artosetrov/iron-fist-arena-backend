@@ -313,11 +313,11 @@ struct CombatResultDetailView: View {
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                         if isGold, let qty = quantity {
                             Text("\(qty) Gold")
-                                .font(DarkFantasyTheme.section(size: 20))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(rarityColor)
                         } else {
                             Text(upgrade > 0 ? "\(name) +\(upgrade)" : name)
-                                .font(DarkFantasyTheme.section(size: 20))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(rarityColor)
                                 .lineLimit(2)
                         }
@@ -325,7 +325,7 @@ struct CombatResultDetailView: View {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             if let t = type {
                                 Text(t.displayName.lowercased())
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .font(DarkFantasyTheme.badge)
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                                     .padding(.horizontal, LayoutConstants.spaceXS)
                                     .padding(.vertical, LayoutConstants.space2XS)
@@ -334,7 +334,7 @@ struct CombatResultDetailView: View {
                             }
 
                             Text(rarity.rawValue)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(rarityColor)
                                 .padding(.horizontal, LayoutConstants.spaceXS)
                                 .padding(.vertical, LayoutConstants.space2XS)
@@ -344,7 +344,7 @@ struct CombatResultDetailView: View {
 
                         if !isGold {
                             Text("Level \(level)")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
@@ -373,7 +373,7 @@ struct CombatResultDetailView: View {
                                 .font(DarkFantasyTheme.caption)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                             Text("STATS")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                .font(DarkFantasyTheme.badge)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 .tracking(1.2)
                         }
@@ -381,11 +381,11 @@ struct CombatResultDetailView: View {
                         ForEach(stats.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                             HStack {
                                 Text(Item.statLabels[key] ?? key.capitalized)
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                    .font(DarkFantasyTheme.uiLabel)
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                                 Spacer()
                                 Text("+\(value)")
-                                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                                    .font(DarkFantasyTheme.cardTitle)
                                     .foregroundStyle(DarkFantasyTheme.statColor(for: key))
                             }
                         }
@@ -404,7 +404,7 @@ struct CombatResultDetailView: View {
                             .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(effect)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                            .font(DarkFantasyTheme.uiLabel)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -437,7 +437,7 @@ struct CombatResultDetailView: View {
                                     .font(DarkFantasyTheme.caption)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 Text(equipped != nil ? "VS. EQUIPPED" : "STAT BONUS")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                                    .font(DarkFantasyTheme.badge)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                     .tracking(1.2)
                             }
@@ -461,7 +461,7 @@ struct CombatResultDetailView: View {
                     if sellPrice > 0 {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Text("Sell:")
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                             CurrencyDisplay(gold: sellPrice, size: .compact, currencyType: .gold, animated: false)
                         }
@@ -477,7 +477,7 @@ struct CombatResultDetailView: View {
 
                 if let desc = description, !desc.isEmpty {
                     Text(desc)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .italic()
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -523,17 +523,17 @@ struct CombatResultDetailView: View {
                 Image(statType.iconAsset)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 20, height: 20)
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
             }
 
             Text(Item.statLabels[key] ?? key.capitalized)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Spacer(minLength: 4)
 
             Text(label)
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                .font(DarkFantasyTheme.badge.weight(.bold))
                 .foregroundStyle(deltaColor)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.spaceXS)
@@ -547,7 +547,7 @@ struct CombatResultDetailView: View {
                 )
 
             Text("+\(itemValue)")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .frame(minWidth: 30, alignment: .trailing)
         }
@@ -605,7 +605,7 @@ struct CombatResultDetailView: View {
     private func runXpBarAnimation() {
         if didLevelUp {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.easeInOut(duration: 0.8)) {
+                withAnimation(.easeInOut(duration: MotionConstants.tickUpLong)) {
                     xpBarProgress = 1.0
                 }
             }
@@ -619,7 +619,7 @@ struct CombatResultDetailView: View {
                 if let newLvl = result?.newLevel {
                     displayLevel = newLvl
                 }
-                withAnimation(.easeOut(duration: 0.6)) {
+                withAnimation(.easeOut(duration: MotionConstants.reward)) {
                     xpBarProgress = newXpFraction
                 }
             }
@@ -631,7 +631,7 @@ struct CombatResultDetailView: View {
             }
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                withAnimation(.easeInOut(duration: 0.8)) {
+                withAnimation(.easeInOut(duration: MotionConstants.tickUpLong)) {
                     xpBarProgress = newXpFraction
                 }
             }

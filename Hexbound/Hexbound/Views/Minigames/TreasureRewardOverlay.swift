@@ -38,7 +38,7 @@ struct TreasureRewardOverlay: View {
                 }
 
                 Text("TREASURE!")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 VStack(spacing: LayoutConstants.spaceSM) {
@@ -50,7 +50,7 @@ struct TreasureRewardOverlay: View {
                                 .scaledToFit()
                                 .frame(width: 36, height: 36)
                             Text("+\(Int(goldCount)) GOLD")
-                                .font(DarkFantasyTheme.section(size: 28))
+                                .font(DarkFantasyTheme.section)
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
                                 .monospacedDigit()
                                 .contentTransition(.numericText(value: goldCount))
@@ -62,9 +62,9 @@ struct TreasureRewardOverlay: View {
                             Image(assetName)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 20, height: 20)
+                                .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                             Text(buff.name)
-                                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                                 .foregroundStyle(DarkFantasyTheme.purple)
                         }
                     }

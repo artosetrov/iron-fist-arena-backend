@@ -19,7 +19,7 @@ struct DungeonMapBuildingView: View {
         let posX = terrainSize.width * building.relativeX
         let posY = terrainSize.height * building.relativeY
 
-        VStack(spacing: 4) {
+        VStack(spacing: LayoutConstants.spaceXS) {
             // Label above building
             dungeonLabel
 
@@ -49,7 +49,7 @@ struct DungeonMapBuildingView: View {
     private var dungeonLabel: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Text(building.label.uppercased())
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBadge))
+                .font(DarkFantasyTheme.badge)
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
             if isLocked {
@@ -103,7 +103,7 @@ struct DungeonMapBuildingView: View {
                             .font(DarkFantasyTheme.title)
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : building.glowColor)
                         Text(building.label)
-                            .font(DarkFantasyTheme.section(size: 10))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
                     }
                 }
@@ -117,7 +117,7 @@ struct DungeonMapBuildingView: View {
                         .font(DarkFantasyTheme.section.bold())
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text("Lvl \(building.minLevel)")
-                        .font(DarkFantasyTheme.section(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .padding(LayoutConstants.spaceSM)

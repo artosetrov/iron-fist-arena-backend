@@ -17,15 +17,15 @@ struct UpgradeGuestView: View {
                     // Header
                     VStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "person.badge.plus")
-                            .font(.system(size: 44)) // SF Symbol icon — keep as is
+                            .font(DarkFantasyTheme.iconCinematic)
                             .foregroundStyle(DarkFantasyTheme.gold)
 
                         Text("SAVE YOUR PROGRESS")
-                            .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                            .font(DarkFantasyTheme.title)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
 
                         Text("Create an account to keep your character,\ninventory, and all progress forever.")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .multilineTextAlignment(.center)
                     }
@@ -42,7 +42,7 @@ struct UpgradeGuestView: View {
                                 Image(systemName: "apple.logo")
                                     .font(DarkFantasyTheme.section.weight(.medium))
                                 Text("CONTINUE WITH APPLE")
-                                    .font(DarkFantasyTheme.title(size: LayoutConstants.textBody))
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -67,9 +67,9 @@ struct UpgradeGuestView: View {
                         } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Text("G")
-                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                                    .font(DarkFantasyTheme.googleLogo)
                                 Text("CONTINUE WITH GOOGLE")
-                                    .font(DarkFantasyTheme.title(size: LayoutConstants.textBody))
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -95,7 +95,7 @@ struct UpgradeGuestView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
                         Text("OR")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .fixedSize()
@@ -110,11 +110,11 @@ struct UpgradeGuestView: View {
                         // Email
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                             Text("Email")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                             TextField("", text: $vm.email)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .keyboardType(.emailAddress)
                                 .textContentType(.emailAddress)
@@ -135,11 +135,11 @@ struct UpgradeGuestView: View {
                         // Username
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                             Text("Username")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                             TextField("", text: $vm.username)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .textContentType(.username)
                                 .autocapitalization(.none)
@@ -159,11 +159,11 @@ struct UpgradeGuestView: View {
                         // Password
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                             Text("Password")
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                                .font(DarkFantasyTheme.uiLabel)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                             SecureField("", text: $vm.password)
-                                .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                                 .textContentType(.newPassword)
                                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -179,7 +179,7 @@ struct UpgradeGuestView: View {
 
                             if vm.password.count > 0 && vm.password.count < 6 {
                                 Text("Minimum 6 characters")
-                                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                                    .font(DarkFantasyTheme.caption)
                                     .foregroundStyle(DarkFantasyTheme.danger)
                             }
                         }
@@ -189,7 +189,7 @@ struct UpgradeGuestView: View {
                     // Error message
                     if let error = vm.errorMessage {
                         Text(error)
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .padding(.horizontal, LayoutConstants.screenPadding)
                     }
@@ -212,10 +212,10 @@ struct UpgradeGuestView: View {
                     // Reassurance
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 14)) // SF Symbol icon — keep as is
+                            .font(DarkFantasyTheme.iconSmall)
                             .foregroundStyle(DarkFantasyTheme.textSuccess)
                         Text("All your progress will be kept")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                            .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSuccess)
                     }
                 }
@@ -234,7 +234,7 @@ struct UpgradeGuestView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("REGISTER")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }

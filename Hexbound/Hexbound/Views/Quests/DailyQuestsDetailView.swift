@@ -16,7 +16,7 @@ struct DailyQuestsDetailView: View {
                 VStack(spacing: 0) {
                     // Reset timer
                     Text(vm.resetTimeText)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .padding(.top, LayoutConstants.spaceSM)
                         .accessibilityLabel("Daily quests reset: \(vm.resetTimeText)")
@@ -64,7 +64,7 @@ struct DailyQuestsDetailView: View {
             }
             ToolbarItem(placement: .principal) {
                 Text("DAILY QUESTS")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.cyan)
             }
         }
@@ -115,39 +115,39 @@ struct DailyQuestsDetailView: View {
     private func rewardLabel(gold: Int, xp: Int, gems: Int?) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             if gold > 0 {
-                HStack(spacing: 2) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Image("icon-gold")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("\(gold)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                         .monospacedDigit()
                         .lineLimit(1)
                 }
             }
             if xp > 0 {
-                HStack(spacing: 2) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Image("icon-xp")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("\(xp)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.cyan)
                         .monospacedDigit()
                         .lineLimit(1)
                 }
             }
             if let gems, gems > 0 {
-                HStack(spacing: 2) {
+                HStack(spacing: LayoutConstants.space2XS) {
                     Image("icon-gems")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("\(gems)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.purple)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -162,7 +162,7 @@ struct DailyQuestsDetailView: View {
     private func bonusPanel(vm: DailyQuestsViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("Complete All \(vm.quests.count) Quests")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .accessibilityLabel("Daily quest completion challenge")
 
@@ -178,12 +178,12 @@ struct DailyQuestsDetailView: View {
                             .frame(width: geo.size.width * fraction)
                     }
                 }
-                .frame(height: 8)
+                .frame(height: LayoutConstants.spaceSM)
                 .accessibilityLabel("Quest completion progress")
                 .accessibilityValue("\(vm.completedCount) of \(vm.quests.count) quests complete")
 
                 Text("\(vm.completedCount)/\(vm.quests.count)")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .monospacedDigit()
                     .fixedSize(horizontal: true, vertical: false)
@@ -191,17 +191,17 @@ struct DailyQuestsDetailView: View {
             }
 
             Text("Bonus: +500 Gold, +10 Gems")
-                .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
 
             if vm.bonusClaimedToday {
-                VStack(spacing: 4) {
+                VStack(spacing: LayoutConstants.spaceXS) {
                     Text("✓ Claimed")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.success)
                     TimelineView(.periodic(from: .now, by: 60)) { _ in
                         Text("Next bonus: \(timeUntilReset())")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -321,14 +321,14 @@ struct DailyQuestsDetailView: View {
                 .frame(width: 44)
 
             // Info
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(quest.title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 Text(quest.description)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineLimit(2)
 
@@ -346,7 +346,7 @@ struct DailyQuestsDetailView: View {
                     .frame(height: 6)
 
                     Text(progressText(progress: quest.progress, target: quest.target))
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -360,10 +360,10 @@ struct DailyQuestsDetailView: View {
             Spacer(minLength: 4)
 
             // Right side: Claim button or navigation chevron
-            VStack(spacing: 6) {
+            VStack(spacing: LayoutConstants.spaceSM) {
                 if quest.rewardClaimed {
                     Text("Done")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.success)
                 } else if quest.canClaim {
                     Button {

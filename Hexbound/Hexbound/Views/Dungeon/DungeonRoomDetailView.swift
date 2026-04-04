@@ -78,7 +78,7 @@ struct DungeonRoomDetailView: View {
             // Loading overlay when fight is starting
             if let vm, vm.isFighting {
                 ZStack {
-                    Color.black.opacity(0.55)
+                    DarkFantasyTheme.bgAbyss.opacity(0.55)
                         .ignoresSafeArea()
                     VStack(spacing: LayoutConstants.spaceMD) {
                         ProgressView()
@@ -108,14 +108,14 @@ struct DungeonRoomDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .animation(.easeInOut(duration: 0.2), value: vm?.isFighting)
+        .animation(MotionConstants.snappy, value: vm?.isFighting)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
             }
             ToolbarItem(placement: .principal) {
                 Text(vm?.dungeon?.name.uppercased() ?? "DUNGEON")
-                    .font(DarkFantasyTheme.title(size: LayoutConstants.textSection))
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(accentOrange)
                     .tracking(2)
             }
@@ -208,23 +208,23 @@ struct DungeonRoomDetailView: View {
                     NumberTickUpText(
                         value: defeated,
                         color: DarkFantasyTheme.textPrimary,
-                        font: DarkFantasyTheme.section(size: LayoutConstants.textBody)
+                        font: DarkFantasyTheme.section
                     )
                     Text("/\(total)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
 
                 if vm.isDungeonComplete {
                     Text("Complete!")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(completedGreen))
                 } else {
                     Text("\(pctInt)%")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge).bold())
+                        .font(DarkFantasyTheme.badge.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
@@ -237,7 +237,7 @@ struct DungeonRoomDetailView: View {
                     Image(systemName: "bolt.fill")
                         .font(DarkFantasyTheme.uiLabel)
                     Text("Cost \(vm.dungeon?.energyCost ?? 10)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.section)
                 }
                 .foregroundStyle(DarkFantasyTheme.stamina)
             }
@@ -271,7 +271,7 @@ struct DungeonRoomDetailView: View {
         let isSelected = vm.selectedBossIndex == index
 
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(MotionConstants.snappy) {
                 vm.selectBoss(at: index)
             }
         } label: {
@@ -305,11 +305,11 @@ struct DungeonRoomDetailView: View {
                         .foregroundStyle(completedGreen)
                 case .current:
                     Text("\(boss.id)")
-                        .font(DarkFantasyTheme.body(size: 10).bold())
+                        .font(DarkFantasyTheme.caption.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 case .locked:
                     Text("\(boss.id)")
-                        .font(DarkFantasyTheme.body(size: 10))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                 }
             }
@@ -390,14 +390,14 @@ struct DungeonRoomDetailView: View {
             VStack(spacing: LayoutConstants.spaceSM) {
                 if let boss = vm?.currentBoss {
                     Text(boss.name.uppercased())
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                        .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .tracking(3)
                         .opacity(bossSlamOpacity)
                 }
 
                 Text("BOSS FIGHT")
-                    .font(DarkFantasyTheme.title(size: 38))
+                    .font(DarkFantasyTheme.cinematicTitle)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(4)
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)

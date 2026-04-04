@@ -38,11 +38,11 @@ struct SessionExpiredModalView: View {
 
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Text("Session Expired")
-                        .font(DarkFantasyTheme.section(size: 20))
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     Text("Your session has ended.\nPlease log in again to continue.")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
@@ -54,7 +54,7 @@ struct SessionExpiredModalView: View {
                     appState.dismissSessionExpiredAndLogout()
                 } label: {
                     Text("Log In")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody).bold())
+                        .font(DarkFantasyTheme.buttonLabel.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)

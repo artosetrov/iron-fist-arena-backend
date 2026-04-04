@@ -109,17 +109,17 @@ struct StanceDisplayView: View {
                     .foregroundStyle(role.tintColor.opacity(0.85))
 
                 Text(role.label)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption).bold())
+                    .font(DarkFantasyTheme.caption.bold())
                     .foregroundStyle(role.tintColor.opacity(0.85))
             }
 
             // Row 2: Zone icon + zone name (colored by zone)
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(StanceSelectorViewModel.zoneAsset(for: zone))
-                    .resizable().scaledToFit().frame(width: 20, height: 20)
+                    .resizable().scaledToFit().frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
 
                 Text(zone.uppercased())
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textCard))
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(zoneCol)
             }
         }
@@ -207,7 +207,7 @@ private struct StancePressStyle: ButtonStyle {
 
 #if DEBUG
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: LayoutConstants.spaceLG) {
         // Same zone — the old design made this confusing
         StanceDisplayView(attack: "legs", defense: "legs")
 

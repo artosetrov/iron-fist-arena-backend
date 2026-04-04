@@ -74,6 +74,11 @@ enum AppRoute: Hashable, Codable {
     case screenCatalog
     case designSystem
     case hubEditor
+    case cardsCatalog
+    case progressBarsCatalog
+    case badgesCatalog
+    case componentsCatalog
+    case modalsCatalog
 }
 
 // MARK: - Bottom Tab
@@ -182,8 +187,14 @@ struct MainRouterView: View {
         case .designSystem: DesignSystemPreview()
         case .hubEditor: HubEditorDetailView()
         case .dungeonMapEditor: DungeonMapEditorView()
+        case .cardsCatalog: CardsCatalogView()
+        case .progressBarsCatalog: ProgressBarsCatalogView()
+        case .badgesCatalog: BadgesCatalogView()
+        case .componentsCatalog: ComponentsCatalogView()
+        case .modalsCatalog: ModalsCatalogView()
         #else
-        case .screenCatalog, .designSystem, .hubEditor, .dungeonMapEditor:
+        case .screenCatalog, .designSystem, .hubEditor, .dungeonMapEditor,
+             .cardsCatalog, .progressBarsCatalog, .badgesCatalog, .componentsCatalog, .modalsCatalog:
             PlaceholderView()
         #endif
         
@@ -234,11 +245,11 @@ struct PlaceholderView: View {
                     .modifier(BounceEffectModifier())
                 
                 Text("Coming Soon")
-                    .font(DarkFantasyTheme.title(size: 28))
+                    .font(DarkFantasyTheme.title)
                     .foregroundStyle(DarkFantasyTheme.gold)
                 
                 Text("This feature is under development")
-                    .font(DarkFantasyTheme.body(size: 16))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)

@@ -37,14 +37,14 @@ struct EventBannerView: View {
                 eventIcon
 
                 // Event info
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(event.name.uppercased())
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .tracking(1)
 
                     Text(event.description)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .lineLimit(1)
                 }
@@ -52,9 +52,9 @@ struct EventBannerView: View {
                 Spacer(minLength: 4)
 
                 // Timer
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: LayoutConstants.space2XS) {
                     Text(timeRemaining)
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textCaption))
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(isUrgent ? DarkFantasyTheme.arenaRankGold : event.themeColor)
                         .monospacedDigit()
                         .contentTransition(.numericText())

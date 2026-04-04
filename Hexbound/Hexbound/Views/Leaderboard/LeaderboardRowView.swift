@@ -18,20 +18,20 @@ struct LeaderboardRowView: View {
             portraitView
 
             // Name + class
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(entry.characterName)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(isSelf ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
-                HStack(spacing: 4) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     Text(className)
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     if let lvl = entry.level {
                         Text("Lv.\(lvl)")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                            .font(DarkFantasyTheme.badge)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -41,7 +41,7 @@ struct LeaderboardRowView: View {
 
             // Value
             Text(formattedValue)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .frame(minWidth: 50, alignment: .trailing)
         }
@@ -73,7 +73,7 @@ struct LeaderboardRowView: View {
                     .frame(width: 28, height: 28)
             }
             Text("\(entry.rank)")
-                .font(DarkFantasyTheme.section(size: entry.rank <= 3 ? LayoutConstants.textLabel : LayoutConstants.textBadge))
+                .font(entry.rank <= 3 ? DarkFantasyTheme.uiLabel : DarkFantasyTheme.badge)
                 .foregroundStyle(rankColor)
         }
         .frame(width: 30)

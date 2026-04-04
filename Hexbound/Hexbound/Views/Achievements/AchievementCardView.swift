@@ -24,7 +24,7 @@ struct AchievementCardView: View {
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(achievement.title)
-                    .font(DarkFantasyTheme.section(size: LayoutConstants.textLabel))
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(
                         achievement.rewardClaimed ? DarkFantasyTheme.textSecondary
                         : achievement.canClaim ? DarkFantasyTheme.goldBright
@@ -32,7 +32,7 @@ struct AchievementCardView: View {
                     )
 
                 Text(achievement.description)
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textCaption))
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textSecondary) // H3 fix: was textTertiary (2.8:1 contrast)
                     .lineLimit(2)
 
@@ -51,7 +51,7 @@ struct AchievementCardView: View {
                     .frame(height: 6)
 
                     Text("\(achievement.formattedProgress)/\(achievement.formattedTarget)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .monospacedDigit()
                         .frame(width: 60, alignment: .trailing)
@@ -150,13 +150,13 @@ struct AchievementCardView: View {
                     .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.success)
                 Text("Claimed")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         } else if let reward = achievement.reward {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("Reward:")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                    .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 if let gold = reward.gold, gold > 0 {
@@ -167,12 +167,12 @@ struct AchievementCardView: View {
                 }
                 if let title = reward.title {
                     Text("Title: \(title)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
                 if let frame = reward.frame {
                     Text("Frame: \(frame)")
-                        .font(DarkFantasyTheme.body(size: LayoutConstants.textBadge))
+                        .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }

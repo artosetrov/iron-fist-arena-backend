@@ -132,76 +132,41 @@ struct ArenaOpponentCard: View {
     // MARK: - Bottom Info Stack
 
     private var bottomInfoStack: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             // Name
             Text(opponent.characterName)
-                .font(DarkFantasyTheme.section(size: LayoutConstants.arenaNameFont))
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
 
             // Class tag pill
-            Text(opponent.characterClass.displayName.uppercased())
-                .font(DarkFantasyTheme.body(size: 10).bold())
-                .foregroundStyle(classColor)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                        .fill(classColor.opacity(0.12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                .stroke(classColor.opacity(0.25), lineWidth: 0.5)
-                        )
-                )
+            ClassTagView(characterClass: opponent.characterClass)
 
-            // Rating — dominant
+            // Rating — dominant display
             Text("\(opponent.pvpRating)")
-                .font(DarkFantasyTheme.section(size: 32))
+                .font(DarkFantasyTheme.title.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .shadow(color: difficulty.glowColor.opacity(0.4), radius: 12)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
 
             // Glass stat pills
-            HStack(spacing: 4) {
-                glassStatPill(value: "\(opponent.attackPower)", label: "Attack", color: DarkFantasyTheme.danger)
-                glassStatPill(value: "\(opponent.armor ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
-                glassStatPill(value: "\(Int(opponent.winRate))%", label: "Winrate", color: DarkFantasyTheme.success)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                GlassStatPill(value: "\(opponent.attackPower)", label: "Attack", color: DarkFantasyTheme.danger)
+                GlassStatPill(value: "\(opponent.armor ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
+                GlassStatPill(value: "\(Int(opponent.winRate))%", label: "Winrate", color: DarkFantasyTheme.success)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Glass Stat Pill
-
-    @ViewBuilder
-    private func glassStatPill(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(DarkFantasyTheme.section(size: 13))
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(DarkFantasyTheme.body(size: 9))
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 5)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(color.opacity(0.15), lineWidth: 0.5)
-                )
-        )
-    }
+    // MARK: - Glass Stat Pill (uses shared GlassStatPill component)
 
     // MARK: - Difficulty Badge
 
     private var difficultyBadge: some View {
         Text(difficulty.label)
-            .font(DarkFantasyTheme.body(size: LayoutConstants.arenaDifficultyFont).bold())
+            .font(DarkFantasyTheme.badge.bold())
             .foregroundStyle(difficulty.textColor)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)

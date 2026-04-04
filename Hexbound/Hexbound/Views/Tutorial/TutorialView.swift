@@ -91,7 +91,7 @@ struct TutorialView: View {
             if let character = appState.currentCharacter {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text("LEVEL: \(character.level)")
-                        .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                        .font(DarkFantasyTheme.buttonLabel)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .tracking(1)
 
@@ -106,7 +106,7 @@ struct TutorialView: View {
                                 .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusMD))
                         }
                     }
-                    .frame(height: 16)
+                    .frame(height: LayoutConstants.iconMD)
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                             .stroke(DarkFantasyTheme.gold.opacity(0.2), lineWidth: 1)
@@ -134,7 +134,7 @@ struct TutorialView: View {
     private var cardsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("OBJECTIVES")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.buttonLabel)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
@@ -190,7 +190,7 @@ struct TutorialView: View {
                 appState.mainPath = NavigationPath()
             } label: {
                 Text("Skip Tutorial")
-                    .font(DarkFantasyTheme.body(size: LayoutConstants.textBody))
+                    .font(DarkFantasyTheme.buttonLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             .buttonStyle(.ghost)
@@ -203,13 +203,13 @@ struct TutorialView: View {
 
     @ViewBuilder
     private var progressIndicator: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: LayoutConstants.spaceSM) {
             Text("\(tutorial.ftueCompletedCount)/\(FTUEObjective.allCases.count) STEPS COMPLETE")
-                .font(DarkFantasyTheme.section(size: LayoutConstants.textBody))
+                .font(DarkFantasyTheme.buttonLabel)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(0.5)
 
-            HStack(spacing: 8) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(FTUEObjective.allCases) { objective in
                     let state = tutorial.ftueState(for: objective)
                     diamondDot(state: state, isSelected: objective.index == selectedObjectiveIndex)

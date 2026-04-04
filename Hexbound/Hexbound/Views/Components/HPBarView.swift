@@ -47,14 +47,6 @@ struct HPBarView: View {
             }
         }
 
-        var fontSize: CGFloat {
-            switch self {
-            case .compact: LayoutConstants.textBadge
-            case .widget: LayoutConstants.widgetBarFont
-            case .large: LayoutConstants.heroBarFont
-            }
-        }
-
         var showsTextAlways: Bool {
             self == .large || self == .widget
         }
@@ -111,22 +103,27 @@ struct HPBarView: View {
                     )
                     .opacity(pulseOnCritical && isCritical ? pulseOpacity : 1)
 
-                // Text overlay
+                // Text overlay with dark pill for readability
                 if shouldShowText {
                     HStack {
                         Spacer()
                         Text(textContent)
-                            .font(DarkFantasyTheme.body(size: size.fontSize).bold())
+                            .font(size == .compact ? DarkFantasyTheme.badge : DarkFantasyTheme.uiLabel.bold())
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
-                            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(size == .large ? 0.6 : 0.5), radius: size == .large ? 2 : 1)
                             .monospacedDigit()
+                            .padding(.horizontal, LayoutConstants.spaceXS)
+                            .padding(.vertical, LayoutConstants.barInternalPadding)
+                            .background(
+                                Capsule()
+                                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
+                            )
                         Spacer()
                     }
                 }
             }
         }
         .frame(height: size.height)
-        .animation(.easeInOut(duration: 0.4), value: percentage)
+        .animation(.easeInOut(duration: MotionConstants.normal), value: percentage)
         .accessibilityLabel("Health: \(currentHp) of \(maxHp)")
     }
 

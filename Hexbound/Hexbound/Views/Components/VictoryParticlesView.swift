@@ -90,7 +90,7 @@ struct VictoryParticlesView: View {
         let colors: [Color] = [
             DarkFantasyTheme.danger.opacity(0.4),
             DarkFantasyTheme.danger.opacity(0.2),
-            Color.gray.opacity(0.3),
+            DarkFantasyTheme.textTertiary.opacity(0.3),
             .textPrimary.opacity(0.1)
         ]
         return Particle(

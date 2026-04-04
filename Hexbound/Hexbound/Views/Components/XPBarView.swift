@@ -65,22 +65,27 @@ struct XPBarView: View {
                         y: 0
                     )
 
-                // Text (large only)
+                // Text with dark pill for readability (large only)
                 if size == .large {
                     HStack {
                         Spacer()
                         Text("XP  \(currentXp) / \(xpNeeded)\(isNearLevelUp ? " ⬆" : "")")
-                            .font(DarkFantasyTheme.body(size: LayoutConstants.heroBarFont).bold())
+                            .font(DarkFantasyTheme.uiLabel.bold())
                             .foregroundStyle(isNearLevelUp ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
-                            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 2)
                             .monospacedDigit()
+                            .padding(.horizontal, LayoutConstants.spaceXS)
+                            .padding(.vertical, LayoutConstants.barInternalPadding)
+                            .background(
+                                Capsule()
+                                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.55))
+                            )
                         Spacer()
                     }
                 }
             }
         }
         .frame(height: size.height)
-        .animation(.easeInOut(duration: 0.4), value: fraction)
+        .animation(.easeInOut(duration: MotionConstants.normal), value: fraction)
         .accessibilityLabel("Experience: \(currentXp) of \(xpNeeded)")
     }
 }
