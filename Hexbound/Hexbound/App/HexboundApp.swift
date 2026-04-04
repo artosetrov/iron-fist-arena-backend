@@ -136,7 +136,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgDark.ignoresSafeArea()
+            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
             VStack(spacing: 12) {
                 ZStack {

@@ -347,7 +347,7 @@ struct LeaderboardPlayerDetailSheet: View {
             .frame(height: 72)
             .background(
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(DarkFantasyTheme.bgCard)
+                    .fill(DarkFantasyTheme.bgSecondary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)

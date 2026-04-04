@@ -276,6 +276,7 @@ struct GuildHallDetailView: View {
                             .background(DarkFantasyTheme.success)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel("Accept \(request.characterName)")
 
                     Button {
@@ -288,6 +289,7 @@ struct GuildHallDetailView: View {
                             .background(DarkFantasyTheme.bgTertiary)
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel("Decline \(request.characterName)")
                 }
             }
@@ -874,6 +876,7 @@ struct GuildHallDetailView: View {
                         .offset(x: 2, y: 2)
                 }
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
         .padding(.vertical, LayoutConstants.spaceSM)
@@ -1401,6 +1404,7 @@ struct GuildHallDetailView: View {
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: 36)
                 }
+                .buttonStyle(.plain)
                 .disabled(isProcessing)
                 .padding(.vertical, LayoutConstants.space2XS)
                 .background(
@@ -1509,6 +1513,7 @@ struct GuildHallDetailView: View {
                                 )
                         )
                     }
+                    .buttonStyle(.plain)
                     .disabled(isProcessing)
                 }
                 .padding(.top, LayoutConstants.spaceSM)

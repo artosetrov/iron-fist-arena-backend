@@ -75,7 +75,7 @@ struct FortuneWheelDetailView: View {
             VStack(spacing: 0) {
                 // Scrollable content: payouts + divider + wheel
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: LayoutConstants.spaceMD) {
+                    VStack(spacing: LayoutConstants.spaceSM) {
                         // Payouts — ABOVE wheel (per Figma)
                         payoutSection(vm)
 
@@ -86,8 +86,8 @@ struct FortuneWheelDetailView: View {
                         // The Wheel
                         wheelSection(vm)
 
-                        // Spacer for NPC widget clearance
-                        Spacer().frame(height: 240)
+                        // Spacer for NPC widget clearance (accounts for larger NPC avatar)
+                        Spacer().frame(height: 280)
                     }
                 }
             }
@@ -158,46 +158,55 @@ struct FortuneWheelDetailView: View {
     // MARK: - Wheel Section
 
     private func wheelSection(_ vm: FortuneWheelViewModel) -> some View {
-        ZStack {
-            // Outer glow
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild),
-                            DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMicro),
-                            Color.clear
-                        ],
-                        center: .center,
-                        startRadius: 80,
-                        endRadius: 220
+        GeometryReader { geo in
+            // Figma: fortune-wheel-face size-[401px] on 393px screen (left: -5px, full-bleed)
+            let wheelSize = geo.size.width + 10 // Slightly wider than screen (Figma: 401 on 393)
+            let glowSize = wheelSize + 40
+
+            ZStack {
+                // Outer glow
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild),
+                                DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMicro),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: wheelSize * 0.2,
+                            endRadius: glowSize / 2
+                        )
                     )
+                    .frame(width: glowSize, height: glowSize)
+
+                // Wheel with sectors + asset icons
+                FortuneWheelView(
+                    sectors: vm.sectors,
+                    rotation: wheelRotation
                 )
-                .frame(width: 420, height: 420)
+                .frame(width: wheelSize, height: wheelSize)
 
-            // Wheel with sectors + asset icons
-            FortuneWheelView(
-                sectors: vm.sectors,
-                rotation: wheelRotation
-            )
-            .frame(width: 350, height: 350)
+                // Center ornament
+                wheelCenter(vm)
 
-            // Center ornament
-            wheelCenter(vm)
-
-            // Pointer (top) — asset-based dagger
-            VStack {
-                Image("fortune-pointer")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 44, height: 56)
-                    .rotationEffect(.degrees(135))
-                    .shadow(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), radius: 6)
-                    .offset(y: -4)
-                Spacer()
+                // Pointer (top) — asset-based dagger
+                VStack {
+                    Image("fortune-pointer")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 44, height: 56)
+                        .rotationEffect(.degrees(135))
+                        .shadow(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), radius: 6)
+                        .offset(y: -4)
+                    Spacer()
+                }
+                .frame(height: wheelSize)
             }
-            .frame(height: 350)
+            .frame(maxWidth: .infinity)
+            .offset(x: -5) // Figma: left: -5px
         }
+        .aspectRatio(1.05, contentMode: .fit)
     }
 
     // MARK: - Wheel Center
@@ -333,6 +342,7 @@ struct FortuneWheelDetailView: View {
                                     )
                             )
                     }
+                    .buttonStyle(.plain)
                     .disabled(vm.isSpinning || !canAfford)
                     .opacity(canAfford ? 1 : DarkFantasyTheme.opacityStrong)
                 }
@@ -658,3 +668,167 @@ struct FortuneWheelView: View {
         }
     }
 }
+
+// MARK: - Static Preview (no network, no AppState dependency)
+
+#if DEBUG
+#Preview("Fortune Wheel — Layout") {
+    // Static wheel + NPC widget preview for layout tuning
+    ZStack(alignment: .bottom) {
+        // Background
+        ZStack {
+            DarkFantasyTheme.bgPrimary
+            Image("bg-fortune-wheel")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .opacity(DarkFantasyTheme.opacityHeavy)
+        }
+        .ignoresSafeArea()
+
+        VStack(spacing: 0) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: LayoutConstants.spaceSM) {
+                    // Payout pills
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        ForEach(["reward-gold", "reward-loot", "reward-level-up", "neck_emerald"], id: \.self) { asset in
+                            VStack(spacing: LayoutConstants.spaceXS) {
+                                Image(asset)
+                                    .resizable()
+                                    .interpolation(.high)
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                                Text("x1.5")
+                                    .font(DarkFantasyTheme.uiLabel)
+                                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                                Text("3 sectors")
+                                    .font(DarkFantasyTheme.badge)
+                                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, LayoutConstants.spaceSM)
+                            .background(
+                                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                                    .fill(DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacitySoft))
+                            )
+                        }
+                    }
+                    .padding(LayoutConstants.spaceSM)
+                    .background(
+                        RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                            .fill(DarkFantasyTheme.bgSecondary)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                                    .stroke(DarkFantasyTheme.borderMedium.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.top, LayoutConstants.spaceXS)
+
+                    // Gold divider
+                    GoldDivider()
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+
+                    // Wheel (static — Figma: 401px full-bleed)
+                    GeometryReader { geo in
+                        let wheelSize = geo.size.width + 10
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    RadialGradient(
+                                        colors: [
+                                            DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityMild),
+                                            Color.clear
+                                        ],
+                                        center: .center,
+                                        startRadius: wheelSize * 0.2,
+                                        endRadius: wheelSize / 2 + 20
+                                    )
+                                )
+                                .frame(width: wheelSize + 40, height: wheelSize + 40)
+
+                            FortuneWheelView(
+                                sectors: FortuneWheelViewModel.previewSectors,
+                                rotation: 0
+                            )
+                            .frame(width: wheelSize, height: wheelSize)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .offset(x: -5)
+                    }
+                    .aspectRatio(1.05, contentMode: .fit)
+
+                    Spacer().frame(height: 280)
+                }
+            }
+        }
+
+        // NPC Widget (static)
+        NPCGuideWidget(
+            npcTitle: "LADY FORTUNA",
+            onDismiss: {},
+            npcImageName: "lady-fortuna",
+            plainMessage: nil,
+            wheelContent: AnyView(
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+                    // Spins row
+                    HStack {
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            Image(systemName: "arrow.trianglehead.2.counterclockwise.rotate.90")
+                                .font(DarkFantasyTheme.badge)
+                            Text("8/10")
+                                .font(DarkFantasyTheme.badge)
+                        }
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                        .padding(.horizontal, LayoutConstants.spaceSM)
+                        .padding(.vertical, LayoutConstants.spaceXS)
+                        .background(
+                            Capsule()
+                                .fill(DarkFantasyTheme.bgTertiary)
+                                .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
+                        )
+                        Spacer()
+                        CurrencyDisplay(gold: 12450, gems: 385, size: .standard, animated: false)
+                    }
+
+                    // Bet buttons
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        ForEach([50, 100, 200, 500, 1000], id: \.self) { bet in
+                            Text("\(bet)")
+                                .font(DarkFantasyTheme.cardTitle)
+                                .tracking(2)
+                                .foregroundStyle(bet == 100 ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textPrimary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 34)
+                                .background(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                        .fill(bet == 100 ? DarkFantasyTheme.goldGradient : LinearGradient(colors: [DarkFantasyTheme.bgTertiary], startPoint: .top, endPoint: .bottom))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                        .stroke(bet == 100 ? DarkFantasyTheme.goldBright.opacity(DarkFantasyTheme.opacityHeavy) : DarkFantasyTheme.borderSubtle, lineWidth: bet == 100 ? 1.5 : 1)
+                                )
+                        }
+                    }
+
+                    GoldDivider()
+
+                    // SPIN CTA
+                    Button {} label: {
+                        HStack(spacing: LayoutConstants.spaceSM) {
+                            Image(systemName: "hurricane")
+                                .font(DarkFantasyTheme.cardTitle.bold())
+                            Text("SPIN — 100 GOLD")
+                        }
+                        .font(DarkFantasyTheme.cardTitle)
+                        .tracking(1)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: LayoutConstants.buttonHeightMD)
+                    }
+                    .buttonStyle(.primary)
+                }
+            )
+        )
+    }
+    .preferredColorScheme(.dark)
+}
+#endif

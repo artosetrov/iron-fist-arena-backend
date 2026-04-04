@@ -86,7 +86,7 @@ struct CurrencyDisplay: View {
         var gemsColor: Color {
             switch self {
             case .standard: DarkFantasyTheme.cyan
-            case .compact: DarkFantasyTheme.gems
+            case .compact: DarkFantasyTheme.cyan
             case .mini: DarkFantasyTheme.cyan
             }
         }

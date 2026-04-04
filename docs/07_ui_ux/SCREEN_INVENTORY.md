@@ -1,12 +1,13 @@
 # Hexbound — Screen Inventory (Source of Truth)
 
-*Derived from iOS app code. Updated: 2026-03-19*
+*Derived from iOS app code. Updated: 2026-04-04*
 
 ## Summary
 
-**Total screens**: 38+ (24 primary + 14 overlays/sheets/sub-views)
+**Total screens**: 70+ Swift views (46 in Figma Screens, 15 missing)
 **Architecture**: NavigationStack + AppRouter enum routing (28 routes, 3 bottom tabs: Hub, Arena, Hero)
 **Pattern**: @MainActor @Observable ViewModels
+**Figma Screens file**: [Hexbound-Design](https://www.figma.com/design/PalemJ36B97ZdC0cd8jzv4/Hexbound-Design)
 
 ---
 
@@ -82,19 +83,22 @@
 ### Shop Sub-components
 | File | Purpose |
 |------|---------|
-| `ShopItemCardView.swift` | Individual shop item card |
+| `ItemCardView.swift` | Unified item card (shop/inventory/loot contexts) |
 
-## Dungeons (5 screens)
+## Dungeons (7 screens)
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Dungeon Select | `DungeonSelectDetailView.swift` | default, loading | Pick dungeon + difficulty |
 | Dungeon Info | `DungeonInfoSheet.swift` | default | Dungeon details sheet (lore, rewards, difficulty info) |
 | Dungeon Room | `DungeonRoomDetailView.swift` | room, boss, loot | Room-by-room progression |
+| Dungeon Map | `DungeonMapView.swift` | default | Visual dungeon map with room nodes |
+| Boss Detail | `BossDetailSheet.swift` | default | Boss stats, abilities, lore |
 | Dungeon Victory | `DungeonVictoryView.swift` | default | Victory with loot display |
+| Dungeon Defeat | `DungeonDefeatView.swift` | default | Defeat screen with retry option |
 | Loot Preview | `LootPreviewSheet.swift` | default | Pre-battle loot preview sheet |
 
-## Minigames (4 screens)
+## Minigames (5 screens)
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -102,8 +106,9 @@
 | Shell Game | `ShellGameDetailView.swift` | betting, playing, result | 3-cup guessing game |
 | Dungeon Rush | `DungeonRushDetailView.swift` | fighting, shopping, result | Wave-based boss rush |
 | Tavern | `TavernDetailView.swift` | default | Tavern activity hub |
+| Fortune Wheel | `FortuneWheelDetailView.swift` | betting, spinning, result | Fortune wheel minigame |
 
-## Quests & Progression (6 screens)
+## Quests & Progression (7 screens)
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
@@ -113,21 +118,31 @@
 | Achievements | `AchievementsDetailView.swift` | loading, list | Achievement list + claim |
 | Achievement Card | `AchievementCardView.swift` | locked, in-progress, claimable, claimed | Individual achievement row |
 | Battle Pass | `BattlePassDetailView.swift` | free, premium tracks | Seasonal reward tree (with `BPRewardNodeView` nodes) |
+| Season Summary | `SeasonSummaryModalView.swift` | default | End-of-season stats recap |
 
-## Leaderboard & Social (2 screens)
+## Leaderboard & Social (3 screens)
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Leaderboard | `LeaderboardDetailView.swift` | rating, level, gold tabs | Global rankings (with `LeaderboardRowView` rows) |
+| Leaderboard Player Detail | `LeaderboardPlayerDetailSheet.swift` | default | Player profile sheet from leaderboard |
 | Inbox | `InboxDetailView.swift` | loading, list, empty, detail | Mail messages (with `InboxRowView` rows) |
+| Guild Hall | `GuildHallDetailView.swift` | default, loading | Guild management & social |
 
-## Settings & Profile (3 screens)
+## Settings & Profile (4 screens)
 
 | Screen | View File | States | Purpose |
 |--------|-----------|--------|---------|
 | Settings | `SettingsDetailView.swift` | default | Audio, language, account |
 | Appearance Editor | `AppearanceEditorDetailView.swift` | default | Skin/avatar customization |
-| Profile | implicit via hub | — | Character stats overlay |
+| Character Profile | `CharacterProfileView.swift` | default | Full character stats view |
+| Session Summary | `SessionSummaryView.swift` | default | End-of-session stats recap |
+
+## Tutorial (1 screen)
+
+| Screen | View File | States | Purpose |
+|--------|-----------|--------|---------|
+| Tutorial | `TutorialView.swift` | step-by-step | Guided onboarding tutorial with NPC guide |
 
 ## Debug Only (2 screens)
 
@@ -174,4 +189,48 @@
 | `FloatingActionIcon` | `HubView.swift` | Round floating button with badge (shop, mail, etc.) |
 | `HubLogoButton` | `ScreenLayout.swift` | Custom logo navigation button |
 | `HubCharacterCard` | `HubCharacterCard.swift` | Hub character summary card |
-| `ItemCardView` | `ItemCardView.swift` | Inventory grid item card |
+| `ItemCardView` | `ItemCardView.swift` | Unified item card (inventory/shop/loot) |
+| `NPCGuideWidget` | `NPCGuideWidget.swift` | Reusable NPC speech card + mini button |
+| `HeroIntegratedCard` | `HeroIntegratedCard.swift` | Equipment grid with portrait |
+| `OpponentIntegratedCard` | `OpponentIntegratedCard.swift` | Opponent equipment grid |
+| `UnifiedHeroWidget` | `UnifiedHeroWidget.swift` | Compact hero HP/XP/Stamina widget |
+| `PvPStatsWidget` | `PvPStatsWidget.swift` | Arena stats summary widget |
+| `InlineFeedback` | `InlineFeedback.swift` | Floating text, flash border, checkmark feedback |
+| `WidgetPill` | `WidgetPill.swift` | Hub navigation pills |
+| `CardLevelBadge` | `CardLevelBadge.swift` | Level badge overlay on cards |
+| `GlassStatPill` | `GlassStatPill.swift` | Glass morphism stat indicator |
+| `ClassTagView` | `ClassTagView.swift` | Character class tag badge |
+| `StatPointsBadge` | `StatPointsBadge.swift` | Available stat points indicator |
+| `OrnamentalTitle` | `OrnamentalTitle.swift` | Screen/section title with ornaments |
+| `EventBannerView` | `EventBannerView.swift` | Limited-time event banner |
+| `CelebrationBannerView` | `CelebrationBannerView.swift` | Victory/achievement celebration |
+| `LowHPPotionBanner` | `LowHPPotionBanner.swift` | Low HP warning with potion CTA |
+| `SessionExpiredModalView` | `SessionExpiredModalView.swift` | Session timeout modal |
+
+---
+
+## Figma Screen Coverage (Gap Analysis)
+
+*Updated: 2026-04-04*
+
+**In Figma Screens (46):** Hub, Arena, Hero Detail, Dungeon Select, Dungeon Room, Dungeon Victory, Tavern, Gold Mine, Dungeon Rush, Combat Active, Combat Result Victory/Defeat, Shop, Inventory, Inventory Empty, Daily Quests, Daily Quests Empty, Daily Login, Achievements, Battle Pass, Leaderboard, Leaderboard Player Detail, Leaderboard Loading, Character Creation, Character Profile, Appearance Editor, Stance Selector, Fortune Wheel, Shell Game, Top Bar, Item Detail Sheet, Dungeon Info Sheet, Level Up Modal, Guest Gate, Session Expired, Arena Comparison, Currency Purchase, Rank Up Ceremony, Welcome, Login, Register, Email Confirmation, Upgrade Guest, Arena Loading, Shop Loading, Server Error.
+
+**Missing from Figma (15 screens):**
+
+| Priority | Screen | Swift File | Notes |
+|----------|--------|-----------|-------|
+| P0 | Guild Hall | `GuildHallDetailView.swift` | New feature, needs full design |
+| P0 | Tutorial | `TutorialView.swift` | Onboarding flow, critical for new users |
+| P0 | Settings | `SettingsDetailView.swift` | Standard screen, straightforward |
+| P0 | Inbox Detail | `InboxDetailView.swift` | Mail system UI |
+| P1 | Session Summary | `SessionSummaryView.swift` | End-of-session recap |
+| P1 | Loot (Combat) | `LootDetailView.swift` | Post-combat reward display |
+| P1 | Dungeon Map | `DungeonMapView.swift` | Visual room navigation |
+| P1 | Dungeon Defeat | `DungeonDefeatView.swift` | Defeat + retry screen |
+| P1 | Premium Purchase | `PremiumPurchaseView.swift` | IAP cosmetics store |
+| P1 | Boss Detail | `BossDetailSheet.swift` | Boss info sheet |
+| P1 | Loot Preview | `LootPreviewSheet.swift` | Pre-battle loot preview |
+| P2 | City Map | `CityMapView.swift` | Hub building map (interactive) |
+| P2 | Daily Login Popup | `DailyLoginPopupView.swift` | Auto-popup variant |
+| P2 | Season Summary | `SeasonSummaryModalView.swift` | End-of-season modal |
+| P2 | Lore Intro | `LoreIntroView.swift` | Auth flow narrative intro |

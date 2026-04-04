@@ -174,18 +174,15 @@ enum LayoutConstants {
 
     // MARK: - NPC Guide Widget
 
-    static let npcAvatarSize: CGFloat = 256                // Full NPC portrait (unique, design-driven)
-    static let npcAvatarOffset: CGFloat = -80              // Shift avatar up (unique, negative offset)
+    static let npcAvatarSize: CGFloat = 256                // Full NPC portrait (Figma: NPC Avatar size-[256px])
+    static let npcAvatarOffset: CGFloat = -140             // Shift avatar up (Figma: VStack mb-[-40px] → ZStack equivalent)
     static let npcBarHeight: CGFloat = 90                  // Fixed speech bar height (unique)
     static let npcBarRadius: CGFloat = radiusLG            // 12
     static let npcBarPaddingH: CGFloat = spaceMD           // 16
     static let npcBarPaddingV: CGFloat = spaceMS           // 12
     static let npcOuterPadding: CGFloat = spaceMD          // 16
 
-    // Legacy aliases (used in MerchantStripView + NPCGuideWidget)
-    static let merchantAvatarSize: CGFloat = npcAvatarSize
-    static let merchantMiniSize: CGFloat = touchComfortable // 56
-    static let merchantBubbleRadius: CGFloat = radiusLG    // 12
+    // (Legacy merchant aliases removed — migrated to npc*/touchComfortable tokens)
 
     // MARK: - Package Cards (Currency Purchase)
 

@@ -77,6 +77,22 @@ final class FortuneWheelViewModel {
 
     static let bets = [50, 100, 200, 500, 1000]
 
+    /// Static sectors for Xcode Preview (no VM instance needed)
+    static let previewSectors: [WheelSector] = [
+        WheelSector(id: 0,  multiplier: 0,   label: "LOSE"),
+        WheelSector(id: 1,  multiplier: 1.5, label: "x1.5"),
+        WheelSector(id: 2,  multiplier: 0,   label: "LOSE"),
+        WheelSector(id: 3,  multiplier: 2,   label: "x2"),
+        WheelSector(id: 4,  multiplier: 0,   label: "LOSE"),
+        WheelSector(id: 5,  multiplier: 1.5, label: "x1.5"),
+        WheelSector(id: 6,  multiplier: 0,   label: "LOSE"),
+        WheelSector(id: 7,  multiplier: 3,   label: "x3"),
+        WheelSector(id: 8,  multiplier: 0,   label: "LOSE"),
+        WheelSector(id: 9,  multiplier: 1.5, label: "x1.5"),
+        WheelSector(id: 10, multiplier: 0,   label: "LOSE"),
+        WheelSector(id: 11, multiplier: 5,   label: "x5"),
+    ]
+
     private let speechLines = [
         "Spin the wheel, brave soul! Fortune favors the bold.",
         "Feeling lucky? The wheel knows no mercy.",

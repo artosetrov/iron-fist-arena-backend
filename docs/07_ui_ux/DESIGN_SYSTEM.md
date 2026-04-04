@@ -1,8 +1,8 @@
 # HEXBOUND — Система дизайна (Design System)
 
-**Версия:** 2.2.0
-**Статус:** Production-ready (v2.2 — Figma DS Integration)
-**Дата:** 1 апреля 2026
+**Версия:** 2.3.0
+**Статус:** Production-ready (v2.3 — DS Audit Cleanup)
+**Дата:** 4 апреля 2026
 **Платформа:** iOS SwiftUI (Portrait, 1170×2532)
 **Язык:** Русский + технические термины на английском
 **Figma Design System:** [Hexbound-DS](https://www.figma.com/design/uDjXIz7CdJxcEOI5jCBcjY/Hexbound-DS)
@@ -15,13 +15,13 @@
 
 - **Приложение:** Hexbound Mobile PvP RPG (Dark Fantasy Premium)
 - **Целевая аудитория:** iOS players 16+, portrait orientation, touch-first interaction
-- **Экраны:** 38+
-- **Компоненты переиспользования:** 24+
-- **Токены дизайна:** 200+ (colors, spacing, typography)
-- **Figma переменных:** 162 (91 primitives + 57 semantic + 14 spacing/radius)
-- **Figma компонентов:** 24 component sets, 105 variants
-- **Баттон стили:** 20
-- **Карточек стили:** 5 + 2 dividers
+- **Экраны:** 46 (Figma) / 70+ (Swift)
+- **Компоненты переиспользования:** 30+
+- **Токены дизайна:** 370+ (colors, spacing, typography, opacity)
+- **Figma переменных:** 377 (209 Primitives + 158 Color semantic + 14 Spacing/Radius)
+- **Figma компонентов:** 47 component sets, 235 variants, 164 instances
+- **Баттон стили:** 20 (6 families × states)
+- **Карточек стили:** 9 (Panel/Highlight/Info/Modal + 5 Rarities) + 3 dividers
 
 Этот документ заменяет все предыдущие версии и становит новый стандарт качества.
 
@@ -416,6 +416,28 @@ Hexbound стремится к **мрачной красоте**:
 | `.bgArenaCard` | bgTertiary | bgSecondary | Arena card gradient |
 | `.fightButtonGradient` | glowOrange | gold | Fight action button |
 | `.bgArenaCardPremium` | premiumPink | bgPremiumDeep | Premium arena card |
+
+### 4.17 Opacity Scale (Шкала прозрачности)
+
+| Токен | Значение | Применение |
+|-------|---------|-----------|
+| `opacityMicro` | 0.04 | Micro tint, едва видимый |
+| `opacitySoft` | 0.08 | Inner borders, subtle fills |
+| `opacityLight` | 0.12 | Light tinted backgrounds |
+| `opacityMild` | 0.15 | Mild overlays, strokes |
+| `opacityMedium` | 0.25 | Medium overlays |
+| `opacityStrong` | 0.40 | Visible overlays, pressed states |
+| `opacityHeavy` | 0.60 | Heavy overlays, dimming |
+| `opacityDense` | 0.75 | Dense overlays, near-solid |
+| `opacityOpaque` | 0.85 | Modal backdrops, near-opaque |
+
+```swift
+// Usage: someColor.opacity(DarkFantasyTheme.opacitySoft)
+.innerBorder(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacitySoft))
+.fill(DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityOpaque))
+```
+
+> **Примечание:** Токены opacity рекомендованы для **новых** компонентов. Массовая миграция существующих hardcoded opacity отложена — большинство значений являются художественными и контекстными.
 
 ---
 

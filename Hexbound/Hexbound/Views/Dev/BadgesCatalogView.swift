@@ -44,18 +44,18 @@ struct BadgesCatalogView: View {
         catalogSection("Widget Pills") {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    WidgetPill(icon: "trophy.fill", label: "1847", variant: .gold)
-                    WidgetPill(icon: "flame.fill", label: "5 Streak", variant: .streak)
-                    WidgetPill(icon: "shield.fill", label: "85", variant: .armor)
+                    WidgetPill(icon: "trophy.fill", text: "1847", style: .pvp)
+                    WidgetPill(icon: "flame.fill", text: "5 Streak", style: .streak)
+                    WidgetPill(icon: "shield.fill", text: "85", style: .stat)
                 }
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    WidgetPill(icon: "bolt.fill", label: "90/120", variant: .stamina)
-                    WidgetPill(icon: "heart.fill", label: "680/850", variant: .hp)
-                    WidgetPill(icon: "star.fill", label: "Lv 25", variant: .level)
+                    WidgetPill(icon: "bolt.fill", text: "90/120", style: .energy)
+                    WidgetPill(icon: "heart.fill", text: "680/850", style: .heal)
+                    WidgetPill(icon: "star.fill", text: "Lv 25", style: .bonus)
                 }
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    WidgetPill(icon: "person.2.fill", label: "Guild", variant: .info)
-                    WidgetPill(icon: "exclamationmark.triangle", label: "Error", variant: .danger)
+                    WidgetPill(icon: "person.2.fill", text: "Guild", style: .stat)
+                    WidgetPill(icon: "exclamationmark.triangle", text: "Error", style: .error)
                 }
             }
         }
@@ -98,19 +98,19 @@ struct BadgesCatalogView: View {
         catalogSection("Card Level Badges") {
             HStack(spacing: LayoutConstants.spaceMD) {
                 VStack(spacing: LayoutConstants.spaceXS) {
-                    CardLevelBadge(level: 5)
+                    CardLevelBadge(level: 5, accentColor: DarkFantasyTheme.gold)
                     Text("Standard")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 VStack(spacing: LayoutConstants.spaceXS) {
-                    CardLevelBadge(level: 25)
+                    CardLevelBadge(level: 25, accentColor: DarkFantasyTheme.purple)
                     Text("High")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 VStack(spacing: LayoutConstants.spaceXS) {
-                    CardLevelBadge(level: 99)
+                    CardLevelBadge(level: 99, accentColor: DarkFantasyTheme.danger)
                     Text("Max")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -129,35 +129,35 @@ struct BadgesCatalogView: View {
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
-                    CurrencyDisplay(gold: 14500, gems: 320, size: .standard)
+                    CurrencyDisplay(gold: 14500, gems: 320, size: .standard, animated: false)
                 }
                 HStack {
                     Text("Compact")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
-                    CurrencyDisplay(gold: 14500, gems: 320, size: .compact)
+                    CurrencyDisplay(gold: 14500, gems: 320, size: .compact, animated: false)
                 }
                 HStack {
                     Text("Mini")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
-                    CurrencyDisplay(gold: 14500, size: .mini)
+                    CurrencyDisplay(gold: 14500, size: .mini, animated: false)
                 }
                 HStack {
                     Text("Gold Only")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
-                    CurrencyDisplay(gold: 14500, currencyType: .gold, size: .standard)
+                    CurrencyDisplay(gold: 14500, size: .standard, currencyType: .gold, animated: false)
                 }
                 HStack {
                     Text("Gems Only")
                         .font(DarkFantasyTheme.badge)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
-                    CurrencyDisplay(gold: 0, gems: 320, currencyType: .gems, size: .standard)
+                    CurrencyDisplay(gold: 0, gems: 320, size: .standard, currencyType: .gems, animated: false)
                 }
             }
         }

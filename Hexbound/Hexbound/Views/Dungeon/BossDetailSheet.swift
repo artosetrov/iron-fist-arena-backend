@@ -526,7 +526,7 @@ private struct DiamondLoadingDot: View {
             .opacity(isAnimating ? 1.0 : 0.3)
             .onAppear {
                 withAnimation(
-                    MotionConstants.reward
+                    Animation.easeInOut(duration: MotionConstants.reward)
                     .repeatForever(autoreverses: true)
                     .delay(delay)
                 ) {

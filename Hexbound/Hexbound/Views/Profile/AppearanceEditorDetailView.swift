@@ -1,5 +1,4 @@
 import SwiftUI
-import Hexbound
 
 struct AppearanceEditorDetailView: View {
     @Environment(AppState.self) private var appState

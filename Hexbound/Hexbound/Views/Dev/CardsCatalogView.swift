@@ -87,7 +87,7 @@ struct CardsCatalogView: View {
                         RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                             .fill(DarkFantasyTheme.bgTertiary)
                             .frame(height: 80)
-                            .rarityCard(rarity: rarity)
+                            .rarityCard(rarity)
 
                         Text(rarity.rawValue.uppercased())
                             .font(DarkFantasyTheme.badge)

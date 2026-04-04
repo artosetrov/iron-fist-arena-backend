@@ -100,6 +100,7 @@ struct RegisterDetailView: View {
                             )
                             .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                         }
+                        .buttonStyle(.plain)
                         .accessibilityLabel("Sign up with Apple")
 
                         // Google
@@ -110,6 +111,7 @@ struct RegisterDetailView: View {
                             } label: {
                                 Color.clear
                             }
+                            .buttonStyle(.plain)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                             HStack(spacing: LayoutConstants.spaceSM) {

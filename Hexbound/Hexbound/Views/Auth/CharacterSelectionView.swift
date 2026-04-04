@@ -411,6 +411,7 @@ struct CharacterSelectionView: View {
                         .font(DarkFantasyTheme.uiLabel)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
+                .buttonStyle(.ghost)
             }
 
             Spacer()

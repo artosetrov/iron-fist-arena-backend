@@ -102,18 +102,14 @@ struct LoginView: View {
                                 )
                                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                             }
+                            .buttonStyle(.plain)
                             .accessibilityLabel("Sign in with Apple")
 
                             // Google — same bgSecondary background
-                            ZStack {
-                                Button {
-                                    SFXManager.shared.play(.uiTap)
-                                    Task { await vm.handleGoogleSignIn(appState: appState) }
-                                } label: {
-                                    Color.clear
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
+                            Button {
+                                SFXManager.shared.play(.uiTap)
+                                Task { await vm.handleGoogleSignIn(appState: appState) }
+                            } label: {
                                 HStack(spacing: LayoutConstants.spaceSM) {
                                     Text("G")
                                         .font(DarkFantasyTheme.googleLogo)
@@ -121,19 +117,19 @@ struct LoginView: View {
                                         .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                                 }
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
-                                .allowsHitTesting(false)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: LayoutConstants.buttonHeightLG)
+                                .background(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                        .fill(DarkFantasyTheme.bgSecondary)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius))
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: LayoutConstants.buttonHeightLG)
-                            .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                    .fill(DarkFantasyTheme.bgSecondary)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
-                                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                            )
-                            .contentShape(Rectangle())
+                            .buttonStyle(.plain)
                             .accessibilityLabel("Sign in with Google")
                         }
                     }

@@ -1,5 +1,4 @@
 import SwiftUI
-import Hexbound
 
 /// Onboarding Step 2: Race + Gender + Avatar selection on a single screen.
 struct AppearanceStepView: View {

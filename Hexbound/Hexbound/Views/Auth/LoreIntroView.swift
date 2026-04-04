@@ -273,6 +273,7 @@ struct LoreIntroView: View {
                             .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
                     )
             }
+            .buttonStyle(.plain)
         }
     }
 

@@ -106,6 +106,7 @@ struct LeaderboardDetailView: View {
                         .frame(width: LayoutConstants.touchMin, height: LayoutConstants.touchMin)
                         .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
             }
         }
@@ -242,6 +243,7 @@ struct LeaderboardDetailView: View {
                                 .stroke(DarkFantasyTheme.gold, lineWidth: 1)
                         )
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Retry search")
                 Spacer()
             }

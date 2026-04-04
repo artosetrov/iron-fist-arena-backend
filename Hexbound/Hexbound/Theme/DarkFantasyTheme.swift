@@ -41,7 +41,6 @@ enum DarkFantasyTheme {
     static let stamina = Color(hex: 0xE67E22)         // Orange stamina
 
     // Semantic aliases
-    static let gems = cyan
     static let healFlash = success
 
     // MARK: - Text Colors
@@ -555,29 +554,9 @@ enum DarkFantasyTheme {
     static func statColor(for stat: String) -> Color { statBarFill }
 
     // ╔══════════════════════════════════════════════════════════╗
-    // ║  LEGACY ALIASES — backward compat, will be removed      ║
-    // ╚══════════════════════════════════════════════════════════╝
+    // MARK: - Specialized Colors (active usage)
 
-    // MARK: - Legacy Aliases
-
-    static let bgDark = bgPrimary
-    static let bgCard = bgSecondary
-    static let goldLight = goldBright
-    static let textMuted = textTertiary
-    static let borderDefault = borderSubtle
-    static let hpRed = danger
-    static let hpBlood = Color(hex: 0xC41E3A)
-    static let glowOrange = Color(hex: 0xF39C12)
-
-    // Deprecated HP gradients — use canonicalHpGradient(percentage:) instead
-    static let hpMidGradient = LinearGradient(
-        colors: [Color(hex: 0xA01830), Color(hex: 0x801525)],
-        startPoint: .leading, endPoint: .trailing
-    )
-    static let hpLowGradient = LinearGradient(
-        colors: [Color(hex: 0x80101E), Color(hex: 0x600C18)],
-        startPoint: .leading, endPoint: .trailing
-    )
+    static let hpBlood = Color(hex: 0xC41E3A)    // Deep HP red for consumable/combat accents
 }
 
 // MARK: - Color hex initializer

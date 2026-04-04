@@ -1,5 +1,4 @@
 import SwiftUI
-import Hexbound
 
 /// Onboarding Step 1: Class selection with showcase + carousel.
 struct ClassSelectionStepView: View {

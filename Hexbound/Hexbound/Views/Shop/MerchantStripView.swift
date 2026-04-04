@@ -140,11 +140,11 @@ struct MerchantStripView: View {
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.vertical, LayoutConstants.spaceMS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.merchantBubbleRadius)
+            RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius)
                 .fill(DarkFantasyTheme.bgElevated.opacity(0.92))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.merchantBubbleRadius)
+            RoundedRectangle(cornerRadius: LayoutConstants.npcBarRadius)
                 .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
         )
     }
@@ -173,8 +173,8 @@ struct MerchantMiniButton: View {
                 }
             }
             .frame(
-                width: LayoutConstants.merchantMiniSize,
-                height: LayoutConstants.merchantMiniSize
+                width: LayoutConstants.touchComfortable,
+                height: LayoutConstants.touchComfortable
             )
             .clipShape(Circle())
             .background(

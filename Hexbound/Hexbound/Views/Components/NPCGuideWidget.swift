@@ -350,7 +350,7 @@ struct NPCMiniButton: View {
                     AvatarImageView(
                         skinKey: avatarSkinKey,
                         characterClass: avatarClass ?? .warrior,
-                        size: LayoutConstants.merchantMiniSize
+                        size: LayoutConstants.touchComfortable
                     )
                 } else if let imageName = npcImageName, UIImage(named: imageName) != nil {
                     Image(imageName)
@@ -363,8 +363,8 @@ struct NPCMiniButton: View {
                 }
             }
             .frame(
-                width: LayoutConstants.merchantMiniSize,
-                height: LayoutConstants.merchantMiniSize
+                width: LayoutConstants.touchComfortable,
+                height: LayoutConstants.touchComfortable
             )
             .clipShape(Circle())
             .background(
