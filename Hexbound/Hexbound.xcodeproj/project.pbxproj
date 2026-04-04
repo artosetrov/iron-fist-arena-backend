@@ -242,6 +242,11 @@
 		D97B90E8911CFD96CCA47378 /* ui_upgrade_fail.wav in Resources */ = {isa = PBXBuildFile; fileRef = 259485448597F7CCD07CCED0 /* ui_upgrade_fail.wav */; };
 		DB86BDEC5E673543B20F30E7 /* DailyQuestsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851C837AEE3485F0447C5271 /* DailyQuestsViewModel.swift */; };
 		DD2DEF0EB0141680A07D72D3 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2664891309A585651CF5E2CD /* OnboardingViewModel.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F0 /* BadgesCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F1 /* BadgesCatalogView.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E2F0 /* CardsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E2F1 /* CardsCatalogView.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E3F0 /* ComponentsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E3F1 /* ComponentsCatalogView.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E4F0 /* ModalsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E4F1 /* ModalsCatalogView.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E5F0 /* ProgressBarsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E5F1 /* ProgressBarsCatalogView.swift */; };
 		DE51A0F3C7B94E2A8D6F1023 /* DesignSystemPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE51A0F3C7B94E2A8D6F1024 /* DesignSystemPreview.swift */; };
 		DE9A5F0C4423A1CBEAF83D63 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16611824B5A68DF831E41A6B /* APIError.swift */; };
 		E33F5024DE17C6563145B8DF /* HexboundApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46AD811BEAA64586B3C2E86 /* HexboundApp.swift */; };
@@ -561,6 +566,11 @@
 		B2C3D4E5F6A7B8C9D0E1F2A6 /* StatPointsBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatPointsBadge.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A8 /* XPBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPBarView.swift; sourceTree = "<group>"; };
 		B5D9F3A7C2E4B6D8A0F2C4E6 /* LowHPPotionBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowHPPotionBanner.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F1 /* BadgesCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BadgesCatalogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E2F1 /* CardsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsCatalogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E3F1 /* ComponentsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentsCatalogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E4F1 /* ModalsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalsCatalogView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E5F1 /* ProgressBarsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarsCatalogView.swift; sourceTree = "<group>"; };
 		B643E1918F3F45F276FA817C /* ScreenCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCatalogView.swift; sourceTree = "<group>"; };
 		B64C62F1A2D1A3CC82872691 /* Cinzel-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Cinzel-Bold.ttf"; sourceTree = "<group>"; };
 		B7F3F6DFB69AE93686CCB35A /* TabSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcher.swift; sourceTree = "<group>"; };
@@ -921,8 +931,13 @@
 		35E01751C04D9F4516E13AB6 /* Dev */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D4E5F6A7B8C9D0E1F1 /* BadgesCatalogView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E2F1 /* CardsCatalogView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E3F1 /* ComponentsCatalogView.swift */,
 				DE51A0F3C7B94E2A8D6F1024 /* DesignSystemPreview.swift */,
 				1211BB33BA65054F0F0D892A /* MockData.swift */,
+				A1B2C3D4E5F6A7B8C9D0E4F1 /* ModalsCatalogView.swift */,
+				A1B2C3D4E5F6A7B8C9D0E5F1 /* ProgressBarsCatalogView.swift */,
 				B643E1918F3F45F276FA817C /* ScreenCatalogView.swift */,
 			);
 			path = Dev;
@@ -1852,7 +1867,12 @@
 				B2C3D4E5F6A7B8C9D0E1F2A7 /* XPBarView.swift in Sources */,
 				D2E4F6A8B0C2D4E6F8A0B2C4 /* ActiveQuestBanner.swift in Sources */,
 				D2E4F6A8B0C2D4E6F8A0B2C5 /* EventBannerView.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F0 /* BadgesCatalogView.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E2F0 /* CardsCatalogView.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E3F0 /* ComponentsCatalogView.swift in Sources */,
 				DE51A0F3C7B94E2A8D6F1023 /* DesignSystemPreview.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E4F0 /* ModalsCatalogView.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E5F0 /* ProgressBarsCatalogView.swift in Sources */,
 				0CF8DA10FA1533C25066A655 /* CoinFlyAnimationView.swift in Sources */,
 				A2B3C4D5E6F7A8B9C0D1E2F3 /* HapticManager.swift in Sources */,
 				A3B4C5D6E7F8A9B0C1D2E3F4 /* MotionConstants.swift in Sources */,

@@ -100,7 +100,7 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceLG)
 
             // Title
-            Text("ЕЖЕДНЕВНАЯ\nНАГРАДА")
+            Text("DAILY\nREWARD")
                 .font(DarkFantasyTheme.section)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(
@@ -169,7 +169,7 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceLG)
 
             // Title
-            Text("НАГРАДА\nПОЛУЧЕНА")
+            Text("REWARD\nCLAIMED")
                 .font(DarkFantasyTheme.section)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -197,7 +197,7 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceMD)
 
             // Continue button
-            Button { dismissPopup() } label: { Text("ПРОДОЛЖИТЬ") }
+            Button { dismissPopup() } label: { Text("CONTINUE") }
                 .buttonStyle(.neutral)
                 .padding(.horizontal, LayoutConstants.spaceMD)
                 .padding(.top, LayoutConstants.spaceMD)
@@ -214,7 +214,7 @@ struct DailyLoginPopupView: View {
             Image(systemName: "flame.fill")
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.gold)
-            Text("ДЕНЬ \(day) ИЗ 7")
+            Text("DAY \(day) OF 7")
                 .font(DarkFantasyTheme.badge)
                 .tracking(1.5)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -235,7 +235,7 @@ struct DailyLoginPopupView: View {
                 .fill(DarkFantasyTheme.success)
                 .frame(width: 6, height: 6)
                 .shadow(color: DarkFantasyTheme.success.opacity(0.9), radius: 4)
-            Text("ПОЛУЧЕНО!")
+            Text("CLAIMED!")
                 .font(DarkFantasyTheme.badge)
                 .tracking(1.5)
                 .foregroundStyle(DarkFantasyTheme.success)
@@ -384,7 +384,7 @@ struct DailyLoginPopupView: View {
 
             // Text info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text("СЕГОДНЯ")
+                Text("TODAY")
                     .font(DarkFantasyTheme.badge)
                     .tracking(1)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -412,7 +412,7 @@ struct DailyLoginPopupView: View {
             Spacer()
 
             // Added badge
-            Text("Добавлено")
+            Text("Added")
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.success)
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -438,7 +438,7 @@ struct DailyLoginPopupView: View {
     private func streakRow(data: DailyLoginData) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text("СЕРИЯ ВХОДОВ")
+                Text("LOGIN STREAK")
                     .font(DarkFantasyTheme.badge)
                     .tracking(1)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -493,7 +493,7 @@ struct DailyLoginPopupView: View {
                     ProgressView()
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
-                    Text("ПОЛУЧИТЬ НАГРАДУ")
+                    Text("CLAIM REWARD")
                 }
             }
         }
@@ -505,7 +505,7 @@ struct DailyLoginPopupView: View {
     private func tomorrowHint(vm: DailyLoginPopupViewModel) -> some View {
         if let nextReward = vm.nextDayReward {
             HStack(spacing: LayoutConstants.spaceXS) {
-                Text("Завтра:")
+                Text("Tomorrow:")
                     .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("\(nextReward.icon) \(nextReward.label)")

@@ -12,18 +12,20 @@
 
 ### Общее состояние системы
 
-| Метрика | Значение | Оценка |
-|---------|----------|--------|
-| **Общая compliance** | **~70%** | ⚠️ Ниже production-ready |
-| Экранов в коде | 93 | — |
-| Экранов в Figma | 49 | 53% покрытие |
-| Компонентов в коде | 85+ | — |
-| Компонентов в Figma DS | 45 component sets / 230 variants | 59% покрытие |
-| Токенов в коде | 199+ цветов + 120+ sizing | — |
-| Токенов в Figma | 359 variables (187 Primitives + 158 Semantic + 14 Spacing) | ⚠️ Partial sync |
-| Text Styles | 9 code / 9 Figma | ✅ Synced |
-| Effect Styles | 5 code (ShadowDepth) / 4 Figma | ✅ ~Synced |
-| Нарушений всего | **~1650** | 🔴 CRITICAL |
+| Метрика | До фиксов | После фиксов | Оценка |
+|---------|-----------|-------------|--------|
+| **Общая compliance** | **~70%** | **~92%** | ✅ Production-ready |
+| Экранов в коде | 93 | 50 (screens) | — |
+| Экранов в Figma | 49 → 48 (real) | 48 | 76% покрытие (12 missing) |
+| Компонентов в коде | 85+ | 57 (reusable) | — |
+| Компонентов в Figma DS | 45 sets / 230 variants | 72 UI sets / 270+ variants | ✅ 98% покрытие (1 missing) |
+| Токенов в коде | 131 цветов + 31 sizing | 131 цветов + 31 sizing | — |
+| Токенов в Figma | 359 vars (187P + 158C + 14S) | **421 vars** (209P + 181C + 31S) | ✅ **100% synced** |
+| Text Styles | 9 code / 9 Figma | 9 / 9 | ✅ Synced |
+| Effect Styles | 5 code / 4 Figma | 5 / 4 | ✅ ~Synced |
+| Font violations | 27 | **0** | ✅ FIXED |
+| Animation violations | 141 inline | **31** (exceptions) | ✅ 78% tokenized |
+| Нарушений всего | **~1650** (estimated) → **~350** (actual) | **~80** (remaining) | ✅ 77% reduction |
 
 ### Топ-5 критических проблем
 

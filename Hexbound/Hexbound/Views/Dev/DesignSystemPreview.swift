@@ -297,7 +297,7 @@ struct DesignSystemPreview: View {
                         Text(style.label)
                             .font(DarkFantasyTheme.badge) // dev preview label
                     }
-                    .foregroundStyle(.textPrimary)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, LayoutConstants.space2XS)
                     .background(style.color.opacity(0.7))
@@ -320,7 +320,7 @@ struct DesignSystemPreview: View {
                         Text(effect.abbreviation)
                             .font(DarkFantasyTheme.badge)
                     }
-                    .foregroundStyle(.textPrimary)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.horizontal, LayoutConstants.spaceSM) // keep — dev preview, nearest token
                     .padding(.vertical, LayoutConstants.space2XS) // keep — dev preview, nearest token
                     .background(effect.color.opacity(0.8))

@@ -134,14 +134,12 @@ struct DungeonMapBuildingView: View {
     private func handleTap() {
         guard !isLocked else {
             // Haptic for locked
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.warning)
+            HapticManager.warning()
             return
         }
 
         // Haptic
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        HapticManager.medium()
 
         // Visual feedback
         withAnimation {

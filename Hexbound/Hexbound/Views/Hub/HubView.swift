@@ -156,8 +156,7 @@ struct HubView: View {
             .overlay(alignment: .bottom) {
                 // Bottom button — switches between ADVENTURES and CASTLE
                 Button {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
+                    HapticManager.medium()
                     triggerMapTransition(toDungeon: !showDungeonMap)
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {

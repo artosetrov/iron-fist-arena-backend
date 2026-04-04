@@ -111,8 +111,7 @@ struct CityBuildingView: View {
 
     private func handleTap() {
         guard !isLocked else {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.warning)
+            HapticManager.warning()
             return
         }
 
