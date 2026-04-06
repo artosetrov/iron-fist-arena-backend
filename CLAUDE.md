@@ -92,6 +92,10 @@ Generate unique 24-character hex IDs. Keep entries alphabetically sorted. **If y
 
 Figma DS is the **visual single source of truth** for all Hexbound UI. It mirrors Swift code tokens 1:1.
 
+> **Screen creation rules**: See `docs/07_ui_ux/FIGMA_SCREEN_RULES.md` — MANDATORY for every `use_figma` call that creates/modifies screens.
+> **Zero tolerance**: 0 hardcoded colors, 0 unstyled text, 0 fake-component frames, 0 default placeholder text.
+> **Post-creation audit REQUIRED**: Run the audit script from FIGMA_SCREEN_RULES.md Rule 7 after EVERY screen. Must pass before proceeding.
+
 ### Token Collections (359 total)
 
 | Collection | Variables | Modes | Scopes |

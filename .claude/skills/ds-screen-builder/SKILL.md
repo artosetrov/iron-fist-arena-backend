@@ -6,225 +6,214 @@ description: |
 
 # DS Screen Builder
 
+> **MANDATORY PREREQUISITE:** Read `docs/07_ui_ux/FIGMA_SCREEN_RULES.md` BEFORE any screen creation.
+> That document contains the complete rules, variable IDs, style keys, and audit script.
+> **This skill SUPPLEMENTS those rules — it does NOT replace them.**
+
 You build Hexbound app screens in the **Figma Screens file** using ONLY components and tokens from the **Figma DS file**.
 
 **Screens file:** `PalemJ36B97ZdC0cd8jzv4`
 **DS file:** `uDjXIz7CdJxcEOI5jCBcjY`
 **DS library key:** `lk-1e3d5b13e106c557d2ec56c3ac95231374bc21a6136997e732d7a804ec4d86c11297eee6bd376c1bc936574dd6ba4ddea2380be439e8701a5408d7daaff18fb4`
 
+## HARD RULES (violate any = delete and rebuild)
+
+1. **ZERO hardcoded colors** — every fill/stroke/text color bound to Color collection variable
+2. **ZERO unstyled text** — every TEXT node has `textStyleId` from published library
+3. **ZERO fake components** — buttons, cards, badges, dividers MUST be DS instances
+4. **ZERO default placeholder text** — every instance text overridden to match Swift code
+5. **ZERO raw spacing** — all gap/padding/radius bound to Spacing collection variables
+6. **Post-creation audit MUST PASS** before proceeding to next screen
+
 ## Prerequisites
 
 1. Load `figma-use` skill BEFORE any `use_figma` calls
-2. Load `figma-generate-design` skill for screen assembly patterns
+2. Read `docs/07_ui_ux/FIGMA_SCREEN_RULES.md` for variable IDs and style keys
 3. Read the Swift view source for the screen you're building
 4. All operations on **Screens file only** — NEVER create components here
 
-## Phase 1: Read the Swift View
+## Phase 1: Read Swift Code and Build Truth Table (CRITICAL)
 
-For the target screen, read the full Swift source:
+Before writing a SINGLE line of Figma code:
 
-```bash
-# Example: building Arena screen
-cat Hexbound/Hexbound/Views/Arena/ArenaView.swift
-```
-
-**Map every visual element to a DS component or token:**
-
-| Swift Element | Figma Equivalent |
-|---|---|
-| `ScreenLayout(title:)` | Navigation / ScreenHeader instance |
-| `.panelCard()` | Card / Panel instance |
-| `.highlightCard()` | Card / Highlight instance |
-| `CurrencyDisplay(...)` | Currency Display instance |
-| `TabSwitcher(...)` | Tab Switcher instance |
-| `Button(...).buttonStyle(.primary)` | Button / Primary instance |
-| `EtchedGroove()` | Divider / Etched Groove instance |
-| `GoldDivider()` | Divider / Gold instance |
-| `Text(...).font(DarkFantasyTheme.title)` | Text with Heading/Title style |
-| `DarkFantasyTheme.bgPrimary` | color/bg/primary variable binding |
-| `LayoutConstants.spaceMD` | spacing/md variable binding |
-
-## Phase 2: Discover DS Components
-
-Use `search_design_system` to find available components:
+1. **Read the full Swift source file** — every line, every modifier
+2. **Extract the truth table:**
 
 ```
-search_design_system(fileKey: "uDjXIz7CdJxcEOI5jCBcjY", query: "Button")
-search_design_system(fileKey: "uDjXIz7CdJxcEOI5jCBcjY", query: "Card")
+| Swift Code                                    | Figma Equivalent                           |
+|-----------------------------------------------|--------------------------------------------|
+| Text("TUTORIAL")                              | Text characters = "TUTORIAL"               |
+| .font(DarkFantasyTheme.title)                 | textStyleId → Heading/Title (key: ce24...) |
+| .foregroundStyle(DarkFantasyTheme.textPrimary) | fill bound to color/text/primary           |
+| .panelCard()                                  | Card / Panel instance from DS              |
+| Button("Continue").buttonStyle(.primary)       | Button / Primary Default instance from DS  |
+| .padding(.horizontal, LayoutConstants.spaceMD) | paddingLeft/Right bound to spacing/md      |
 ```
 
-Then use `importComponentByKeyAsync` in `use_figma` to import instances into the Screens file.
+3. **List ALL DS components needed** — search in DS file for their variant keys
 
-## Phase 3: Screen Frame Setup
+**DO NOT PROCEED until truth table is complete.**
 
-Every screen follows this structure:
+## Phase 2: Discover and Cache DS Component Keys
 
+```javascript
+// In DS file (uDjXIz7CdJxcEOI5jCBcjY) — get variant keys
+const page = figma.root.children.find(p => p.name === 'Buttons');
+await figma.setCurrentPageAsync(page);
+const compSet = page.findOne(n => n.type === 'COMPONENT_SET' && n.name === 'Button');
+const keys = {};
+for (const v of compSet.children) {
+  keys[v.name] = v.key;
+}
+return JSON.stringify(keys, null, 2);
 ```
-FRAME "Screens / {Category} / {ScreenName} — {State}" (390×844)
-├── fills: color/bg/primary (variable binding)
-├── auto-layout: VERTICAL, padding: spacing/md (16)
-├── INSTANCE: Navigation / ScreenHeader
-├── FRAME "Content" (fill container)
-│   ├── auto-layout: VERTICAL, gap: spacing/md (16)
-│   ├── ... screen-specific content ...
-│   └── ...
-└── INSTANCE: Navigation / NavGrid (if applicable)
-```
 
-### Frame dimensions:
-- iPhone 15 Pro: **390 × 844** (standard)
-- Safe area: top 59px, bottom 34px (home indicator)
-- All screens use this size for consistency
+**Cache ALL needed keys before switching to Screens file.**
 
-### Setup code template:
+## Phase 3: Build Screen Using MANDATORY Helpers
 
-```js
-// In use_figma — create screen frame
-const page = figma.root.children.find(p => p.name === '{Category}');
-// Create page if not exists
-if (!page) {
-  const newPage = figma.createPage();
-  newPage.name = '{Category}';
+Every screen script MUST use the helper functions from `FIGMA_SCREEN_RULES.md` Rule 8.
+
+**Copy the entire helper block** into every `use_figma` call that creates a screen. This includes:
+- `TEXT_STYLE_KEYS` dictionary
+- `EFFECT_STYLE_KEYS` dictionary
+- `getTextStyle()` / `getEffectStyle()` functions
+- `makeText()` function — creates text with style + color binding
+- `getColorVar()` / `bindFill()` functions
+- `bindSpacing()` function
+- `makeScreenFrame()` function
+- `importComponent()` / `addToParent()` functions
+
+### Screen frame template:
+
+```javascript
+// Create screen
+const screen = await makeScreenFrame('Tutorial');
+
+// Import DS components
+const ornTitle = await importComponent('ORNAMENTAL_TITLE_VARIANT_KEY');
+addToParent(screen, ornTitle);
+// Override text inside instance:
+const titleText = ornTitle.findOne(n => n.type === 'TEXT');
+if (titleText) {
+  await figma.loadFontAsync(titleText.fontName);
+  titleText.characters = 'TUTORIAL'; // From Swift: OrnamentalTitle("Tutorial")
 }
 
-const frame = figma.createFrame();
-frame.name = 'Screens / {Category} / {ScreenName} — Default';
-frame.resize(390, 844);
-frame.layoutMode = 'VERTICAL';
-frame.primaryAxisAlignItems = 'MIN';
-frame.counterAxisAlignItems = 'MIN';
-frame.paddingTop = 59; // safe area
-frame.paddingBottom = 34; // home indicator
-frame.paddingLeft = 0;
-frame.paddingRight = 0;
-frame.itemSpacing = 0;
-frame.clipsContent = true;
+// Custom text (not a component)
+const label = await makeText('1/3 STEPS COMPLETE', 'caption', 'color/text/tertiary');
+screen.appendChild(label);
 
-// Bind background to color/bg/primary
-const collections = await figma.variables.getLocalVariableCollectionsAsync();
-const colorCol = collections.find(c => c.name === 'Color');
-// ... find bgPrimary variable and bind
+// Card section
+const card = await importComponent('CARD_PANEL_VARIANT_KEY');
+addToParent(screen, card);
+
+// Button
+const btn = await importComponent('BUTTON_PRIMARY_DEFAULT_KEY');
+addToParent(screen, btn);
+// Override button text:
+const btnText = btn.findOne(n => n.type === 'TEXT');
+if (btnText) {
+  await figma.loadFontAsync(btnText.fontName);
+  btnText.characters = 'BEGIN QUEST';
+}
 ```
 
-## Phase 4: Import DS Components
+## Phase 4: Override ALL Instance Text
 
-Import each needed component from DS library:
+**DEFAULT TEXT IS NEVER ACCEPTABLE.**
 
-```js
-// Import component by key from DS library
-const component = await figma.importComponentByKeyAsync('COMPONENT_KEY');
-const instance = component.createInstance();
-// Position in auto-layout frame
-parentFrame.appendChild(instance);
+After placing every instance, find and override its text nodes:
+
+```javascript
+async function overrideText(instance, defaultSubstring, newText) {
+  const textNodes = instance.findAll(n => n.type === 'TEXT');
+  for (const t of textNodes) {
+    if (t.characters.toUpperCase().includes(defaultSubstring.toUpperCase())) {
+      await figma.loadFontAsync(t.fontName);
+      t.characters = newText;
+    }
+  }
+}
+
+// Examples:
+await overrideText(ornTitle, 'ARENA OF CHAMPIONS', 'TUTORIAL');
+await overrideText(button, 'BUTTON LABEL', 'BEGIN QUEST');
+await overrideText(statPill, 'ATK', 'DMG DEALT');
+await overrideText(statPill, '1,240', '3,847');
 ```
 
-**Finding component keys:**
-1. Use `search_design_system` to find components
-2. Or use `get_metadata` on DS file to get component keys
-3. Cache keys for repeated use
+## Phase 5: MANDATORY Post-Creation Audit
 
-## Phase 5: Bind ALL Values to Tokens
+**Run this IMMEDIATELY after creating each screen. MUST PASS.**
 
-**MANDATORY — zero raw values allowed:**
+```javascript
+async function auditScreen(screenId) {
+  const node = await figma.getNodeByIdAsync(screenId);
+  const failures = [];
+  let totalText = 0, styledText = 0;
+  let totalFills = 0, boundFills = 0;
+  let instanceCount = 0;
 
-```js
-// Bind fill to color variable
-const bgVar = await findVariable('color/bg/primary');
-node.setBoundVariable('fills', 0, bgVar);
+  function walk(n) {
+    if (n.type === 'INSTANCE') { instanceCount++; return; }
+    if (n.type === 'TEXT') {
+      totalText++;
+      if (n.textStyleId && n.textStyleId !== '') styledText++;
+      else failures.push(`UNSTYLED TEXT: "${n.characters.substring(0,30)}" (${n.id})`);
 
-// Bind spacing to spacing variable
-const spacingVar = await findVariable('spacing/md');
-node.setBoundVariable('itemSpacing', spacingVar);
-node.setBoundVariable('paddingTop', spacingVar);
+      // Check for default placeholder text
+      const defaults = ['ARENA OF CHAMPIONS', 'BUTTON LABEL', '1,240', 'ATK'];
+      for (const d of defaults) {
+        if (n.characters.includes(d)) {
+          failures.push(`DEFAULT TEXT: "${n.characters.substring(0,30)}" (${n.id})`);
+        }
+      }
+    }
+    if (n.fills && Array.isArray(n.fills) && n.fills.length > 0 && n.fills.some(f => f.visible !== false)) {
+      totalFills++;
+      if (n.boundVariables?.fills?.length > 0) boundFills++;
+      else {
+        const f = n.fills[0];
+        const hex = f.color ? `#${Math.round(f.color.r*255).toString(16).padStart(2,'0')}${Math.round(f.color.g*255).toString(16).padStart(2,'0')}${Math.round(f.color.b*255).toString(16).padStart(2,'0')}` : 'gradient';
+        failures.push(`HARDCODED FILL: ${n.type}:"${n.name}" → ${hex} (${n.id})`);
+      }
+    }
+    if ('children' in n) n.children.forEach(walk);
+  }
+  walk(node);
 
-// Link text style
-const textStyle = figma.getLocalTextStyles().find(s => s.name === 'Heading/Title');
-textNode.textStyleId = textStyle.id;
+  const textPct = totalText > 0 ? Math.round(styledText/totalText*100) : 100;
+  const fillPct = totalFills > 0 ? Math.round(boundFills/totalFills*100) : 100;
+  const pass = failures.length === 0;
+
+  return { screen: node.name, textScore: `${textPct}%`, fillScore: `${fillPct}%`, instances: instanceCount, pass, failures: failures.slice(0, 15) };
+}
+
+const result = await auditScreen('SCREEN_ID');
+if (!result.pass) return 'AUDIT FAILED:\\n' + result.failures.join('\\n');
+return 'AUDIT PASSED: Text ' + result.textScore + ', Fills ' + result.fillScore;
 ```
 
-## Phase 6: Screen States
+### Acceptance Criteria:
 
-Each screen needs multiple states. Create as separate frames:
-
-| State | Naming | Content |
-|---|---|---|
-| Default | `{ScreenName} — Default` | Normal populated view |
-| Loading | `{ScreenName} — Loading` | Skeleton placeholders |
-| Empty | `{ScreenName} — Empty` | EmptyStateView instance |
-| Error | `{ScreenName} — Error` | ErrorStateView instance |
-| Success | `{ScreenName} — Success` | If applicable (e.g., purchase confirm) |
-
-**Minimum 3 states per screen:** Default + Loading + Empty/Error
-
-## Phase 7: Quality Checklist
-
-After building each screen, verify:
-
-- [ ] Frame name follows convention: `Screens / {Category} / {Name} — {State}`
-- [ ] Frame size: 390×844
-- [ ] Background bound to `color/bg/primary` (or appropriate bg token)
-- [ ] ALL text nodes have linked text styles (Heading/* or Body/*)
-- [ ] ALL colored elements have variable bindings (fills, strokes)
-- [ ] ALL spacing (gaps, padding) bound to spacing variables
-- [ ] ALL buttons are DS Button instances (not custom frames)
-- [ ] ALL dividers are DS Divider instances (not rectangles)
-- [ ] ALL cards are DS Card instances
-- [ ] No orphaned layers outside auto-layout
-- [ ] Content scrollable area uses correct constraints
-- [ ] Screen matches Swift view structure 1:1
-
-## Screen Inventory (48 screens)
-
-### Priority Order (build in this sequence):
-
-**Tier 1 — Core Loop (build first):**
-1. Hub/CityMap ✅ (exists)
-2. ArenaView ✅ (exists)
-3. HeroDetail ✅ (exists)
-4. CombatView
-5. CombatResult (BattleResultCard)
-6. InventoryView
-7. ItemDetailSheet
-
-**Tier 2 — Monetization + Progression:**
-8. ShopView
-9. BattlePassView
-10. DailyQuestsDetail
-11. DailyLoginPopup
-12. FortuneWheelDetail ✅ (exists)
-13. ShellGameDetail ✅ (exists)
-14. QuestBanner ✅ (exists)
-
-**Tier 3 — Auth + Onboarding:**
-15. Welcome
-16. Login
-17. Register
-18. EmailConfirmation
-19. CharacterCreation (4 steps)
-20. CharacterSelection
-21. LoreIntro
-
-**Tier 4 — Secondary Systems:**
-22-48. Remaining screens (Dungeon, Leaderboard, Social, Settings, etc.)
-
-## Page Structure in Screens File
-
-| Page Name | Screens |
+| Metric | Required |
 |---|---|
-| Auth | Welcome, Login, Register, EmailConfirm, CharacterCreation×4, CharacterSelect, LoreIntro, UpgradeGuest |
-| Hub | Hub/CityMap, CityBuilding, StanceSelector |
-| Character | CharacterProfile, HeroDetail, AppearanceEditor |
-| Combat | CombatView, CombatDetail, CombatResult, LootDetail |
-| Arena | ArenaView, ArenaCarousel, ArenaComparison, OpponentProfile, RankUpCeremony |
-| Inventory | InventoryView, ItemDetailSheet |
-| Shop | ShopView, CurrencyPurchase, PremiumPurchase |
-| Dungeon | DungeonSelect, DungeonInfo, DungeonRoom, Victory, Defeat, LootPreview |
-| BattlePass | BattlePassView, RewardNodes, SeasonSummary |
-| Progression | DailyQuests, DailyLogin, Achievements |
-| Social | Leaderboard, LeaderboardDetail, Inbox, InboxDetail, GuildHall |
-| Minigames | GoldMine, ShellGame, DungeonRush, FortuneWheel, TavernHub |
-| Settings | Settings |
-| Modals & Overlays | LevelUp, SessionExpired, GuestGate, all sheets |
+| Text styled % | **100%** |
+| Fill bound % | **100%** (screen root allowed as exception) |
+| Default text remaining | **0** |
+| Instances as % of children | **≥ 50%** |
+
+**If audit fails → FIX ALL FAILURES before proceeding to next screen.**
+
+## Phase 6: Visual Verification
+
+After audit passes:
+
+1. `get_screenshot` of the screen
+2. Compare visually against Swift code / iOS simulator
+3. Verify: all text readable, all states visually distinct, layout correct
+4. If anything looks wrong → investigate and fix → re-audit
 
 ## Handling Missing Components
 
@@ -233,16 +222,65 @@ If a screen element has no matching DS component:
 1. **STOP building the screen**
 2. Note the missing component
 3. Use `ds-extract-component` skill to create it in DS first
-4. Then return and continue building the screen
+4. Publish the library
+5. Then return and continue building the screen
 
-**NEVER create components in the Screens file.** All components live in DS file only.
+**NEVER create components in the Screens file. NEVER fake a component with frames.**
 
-## Batch Building Strategy
+## Quick Reference: Style Keys
 
-When building multiple screens in one session:
+### Text Styles (importStyleByKeyAsync):
 
-1. **Discover phase:** List all needed DS components for the batch
-2. **Import phase:** Import all component keys once, cache references
-3. **Build phase:** Build screens sequentially, reusing cached imports
-4. **Verify phase:** Run quality checklist on each screen
-5. **Screenshot phase:** Take `get_screenshot` of each completed screen for visual verification
+| Token | Key |
+|---|---|
+| cinematicTitle (40) | `9c11a0c58dae12b273c8a237e9b0b98450eaebf1` |
+| title (28) | `ce245f83ac721aeb90db5258e80bedcfaa4e8cae` |
+| section (22) | `460e0abe0ddacaefa8b6f698fb61f27a04af7759` |
+| cardTitle (18) | `24f763b8b7ec47532b5c5f77d77375124f082210` |
+| buttonLabel (18) | `197938eeaef9704d5ddf2e6efe8c6986d62b6b7f` |
+| buttonLabelCompact (16) | `e5461cffd767dc18fc4ea03d3d5fcf7bff1f289c` |
+| body (16) | `fef6dd502465059c68ca8041a45afbee2ed690f1` |
+| uiLabel (14) | `b147294861bbd172aee02c25d4dd88c13c3a6b80` |
+| caption (12) | `1d94244a59a22997f3f590d3ad9209b702a7a71d` |
+| badge (11 bold) | `71f8c0a0806a1197ef63e77a0a591a5bfeac5a95` |
+
+### Effect Styles:
+
+| Style | Key |
+|---|---|
+| Shadow/Card | `492a984d82c5f4febf620e4ff807e01a21521209` |
+| Shadow/Modal | `1452cba48fb12135a3e248ea91e548c38c64133e` |
+| Shadow/Gold Glow | `765a5605d7606710559e71a6a24e473e70461c1c` |
+| Shadow/Danger Glow | `35769d68a9327b01327c68baca2442868f16b19b` |
+
+### Common Color Variables (use with bindFill/getColorVar):
+
+| Swift Token | Variable Name |
+|---|---|
+| bgPrimary | `color/bg/primary` |
+| bgSecondary | `color/bg/secondary` |
+| bgElevated | `color/bg/elevated` |
+| textPrimary | `color/text/primary` |
+| textSecondary | `color/text/secondary` |
+| textDisabled | `color/text/disabled` |
+| gold | `color/gold/default` |
+| textGold | `color/text/gold` |
+| textOnGold | `color/text/on-gold` |
+| danger | `color/feedback/danger` |
+| success | `color/feedback/success` |
+| borderSubtle | `color/border/subtle` |
+| borderGold | `color/border/gold` |
+| bgModal | `color/bg/modal` |
+
+### Spacing Variables (use with bindSpacing):
+
+| Swift Token | Variable Name |
+|---|---|
+| space2XS (2) | `spacing/2xs` |
+| spaceXS (4) | `spacing/xs` |
+| spaceSM (8) | `spacing/sm` |
+| spaceMS (12) | `spacing/ms` |
+| spaceMD (16) | `spacing/md` |
+| spaceLG (24) | `spacing/lg` |
+| spaceXL (32) | `spacing/xl` |
+| space2XL (48) | `spacing/2xl` |
