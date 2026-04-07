@@ -87,7 +87,7 @@ struct FortuneWheelDetailView: View {
                         wheelSection(vm)
 
                         // Spacer for NPC widget clearance (accounts for larger NPC avatar)
-                        Spacer().frame(height: 280)
+                        Spacer().frame(height: 320)
                     }
                 }
             }
@@ -160,7 +160,7 @@ struct FortuneWheelDetailView: View {
     private func wheelSection(_ vm: FortuneWheelViewModel) -> some View {
         GeometryReader { geo in
             // Figma: fortune-wheel-face size-[401px] on 393px screen (left: -5px, full-bleed)
-            let wheelSize = geo.size.width + 10 // Slightly wider than screen (Figma: 401 on 393)
+            let wheelSize = geo.size.width + 30 // Bigger wheel, centered
             let glowSize = wheelSize + 40
 
             ZStack {
@@ -204,9 +204,8 @@ struct FortuneWheelDetailView: View {
                 .frame(height: wheelSize)
             }
             .frame(maxWidth: .infinity)
-            .offset(x: -5) // Figma: left: -5px
         }
-        .aspectRatio(1.05, contentMode: .fit)
+        .aspectRatio(0.95, contentMode: .fit)
     }
 
     // MARK: - Wheel Center
@@ -257,7 +256,9 @@ struct FortuneWheelDetailView: View {
             onDismiss: { /* no dismiss on fortune wheel */ },
             npcImageName: "lady-fortuna",
             plainMessage: vm.npcSpeech,
-            wheelContent: AnyView(wheelWagerSection(vm))
+            wheelContent: AnyView(wheelWagerSection(vm)),
+            customAvatarSize: 320,
+            customAvatarOffset: -210
         )
     }
 
@@ -730,7 +731,7 @@ struct FortuneWheelView: View {
 
                     // Wheel (static — Figma: 401px full-bleed)
                     GeometryReader { geo in
-                        let wheelSize = geo.size.width + 10
+                        let wheelSize = geo.size.width + 30
                         ZStack {
                             Circle()
                                 .fill(
@@ -753,11 +754,10 @@ struct FortuneWheelView: View {
                             .frame(width: wheelSize, height: wheelSize)
                         }
                         .frame(maxWidth: .infinity)
-                        .offset(x: -5)
                     }
-                    .aspectRatio(1.05, contentMode: .fit)
+                    .aspectRatio(0.95, contentMode: .fit)
 
-                    Spacer().frame(height: 280)
+                    Spacer().frame(height: 320)
                 }
             }
         }
@@ -826,7 +826,9 @@ struct FortuneWheelView: View {
                     }
                     .buttonStyle(.primary)
                 }
-            )
+            ),
+            customAvatarSize: 320,
+            customAvatarOffset: -210
         )
     }
     .preferredColorScheme(.dark)

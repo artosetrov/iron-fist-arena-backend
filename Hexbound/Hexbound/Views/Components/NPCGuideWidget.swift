@@ -57,6 +57,10 @@ struct NPCGuideWidget: View {
     // MARK: - Customization
     /// SF Symbol fallback when NPC image asset is missing
     var npcFallbackIcon: String = "person.crop.circle.fill"
+    /// Custom avatar size override (default: LayoutConstants.npcAvatarSize)
+    var customAvatarSize: CGFloat? = nil
+    /// Custom avatar vertical offset override (default: LayoutConstants.npcAvatarOffset)
+    var customAvatarOffset: CGFloat? = nil
     /// Unique ID for message transition animation
     var messageId: AnyHashable? = nil
     /// Enable typewriter text animation (characters appear one by one)
@@ -92,7 +96,7 @@ struct NPCGuideWidget: View {
             // Layer 1 (back): NPC/player image, bottom-left, peeks above card
             HStack(alignment: .bottom) {
                 npcAvatar
-                    .offset(y: LayoutConstants.npcAvatarOffset)
+                    .offset(y: customAvatarOffset ?? LayoutConstants.npcAvatarOffset)
                 Spacer()
             }
 
@@ -283,7 +287,7 @@ struct NPCGuideWidget: View {
                     AvatarImageView(
                         skinKey: avatarSkinKey,
                         characterClass: avatarClass ?? .warrior,
-                        size: LayoutConstants.npcAvatarSize
+                        size: customAvatarSize ?? LayoutConstants.npcAvatarSize
                     )
                     .clipShape(Circle())
                 } else if let imageName = npcImageName, UIImage(named: imageName) != nil {
@@ -315,8 +319,8 @@ struct NPCGuideWidget: View {
                 }
             }
             .frame(
-                width: LayoutConstants.npcAvatarSize,
-                height: LayoutConstants.npcAvatarSize
+                width: customAvatarSize ?? LayoutConstants.npcAvatarSize,
+                height: customAvatarSize ?? LayoutConstants.npcAvatarSize
             )
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 8, y: 2)
         }

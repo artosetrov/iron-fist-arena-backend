@@ -90,6 +90,7 @@ enum APIEndpoints {
     // MARK: - Shell Game
     static let shellGameStart = "/api/minigames/shell-game/start"
     static let shellGameGuess = "/api/minigames/shell-game/guess"
+    static let shellGameStatus = "/api/minigames/shell-game/status"
 
     // MARK: - Fortune Wheel
     static let fortuneWheelSpin = "/api/minigames/fortune-wheel/spin"

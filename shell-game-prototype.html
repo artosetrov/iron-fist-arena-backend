@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shell Game — Hexbound Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    /* Hexbound Dark Fantasy Tokens */
+    --bg-primary: #0D0D1A;
+    --bg-secondary: #1A1A2E;
+    --bg-tertiary: #252540;
+    --bg-scrim: rgba(13, 13, 26, 0.85);
+    --gold: #D4A537;
+    --gold-bright: #F0C94D;
+    --gold-dim: #8B7A3E;
+    --gold-gradient-start: #D4A537;
+    --gold-gradient-end: #B8860B;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6B6B80;
+    --text-on-gold: #1A1A2E;
+    --text-disabled: #555566;
+    --danger: #E63946;
+    --success: #4CAF50;
+    --info: #5B9BD5;
+    --border-gold: rgba(212, 165, 55, 0.3);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --surface-lighting-top: rgba(255, 255, 255, 0.08);
+    --surface-lighting-bottom: rgba(0, 0, 0, 0.12);
+
+    /* Spacing */
+    --space-2xs: 2px;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-ms: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+
+    /* Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 16px;
+    --radius-pill: 100px;
+    --radius-button: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .phone-frame {
+    width: 393px;
+    height: 852px;
+    background: var(--bg-primary);
+    position: relative;
+    overflow: hidden;
+    border: 2px solid var(--bg-tertiary);
+    border-radius: 40px;
+    margin-top: 20px;
+  }
+
+  /* Background */
+  .game-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(212, 165, 55, 0.06) 0%, transparent 60%),
+      linear-gradient(180deg, #0D0D1A 0%, #12122A 50%, #0D0D1A 100%);
+  }
+
+  .game-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--bg-scrim);
+  }
+
+  /* Main content */
+  .game-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-top: 54px; /* status bar */
+  }
+
+  /* Navigation bar */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    padding: var(--space-ms) var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .nav-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    flex: 1;
+  }
+
+  /* Currency display */
+  .currency-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .currency-pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: var(--space-xs) var(--space-ms);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .currency-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+  }
+
+  .gold-icon {
+    background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  }
+
+  .gem-icon {
+    background: linear-gradient(135deg, #7B68EE, #9B8FFF);
+  }
+
+  /* Scrollable area */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-md) var(--space-md) 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Payout info */
+  .payout-card {
+    background: rgba(26, 26, 46, 0.9);
+    border: 1px solid var(--border-gold);
+    border-radius: var(--radius-lg);
+    padding: var(--space-ms);
+    margin-bottom: var(--space-md);
+  }
+
+  .payout-row {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+  }
+
+  .payout-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .payout-2x {
+    background: rgba(212, 165, 55, 0.15);
+    color: var(--gold-bright);
+    border: 1px solid rgba(212, 165, 55, 0.25);
+  }
+
+  .payout-3x {
+    background: rgba(123, 104, 238, 0.15);
+    color: #9B8FFF;
+    border: 1px solid rgba(123, 104, 238, 0.25);
+  }
+
+  .payout-miss {
+    background: rgba(230, 57, 70, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(230, 57, 70, 0.15);
+  }
+
+  .payout-pill .pip {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .payout-2x .pip { background: var(--gold-bright); }
+  .payout-3x .pip { background: #9B8FFF; }
+  .payout-miss .pip { background: var(--danger); }
+
+  /* Gold divider */
+  .gold-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    margin: var(--space-md) 0;
+  }
+
+  /* Status text */
+  .status-text {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold-bright);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    min-height: 30px;
+    transition: opacity 0.3s;
+    margin-bottom: var(--space-md);
+  }
+
+  /* Cups area */
+  .cups-stage {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: var(--space-lg);
+    padding: var(--space-xl) 0;
+    min-height: 200px;
+    position: relative;
+  }
+
+  .cup-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s;
+  }
+
+  .cup-container:active {
+    transform: scale(0.95);
+  }
+
+  .cup-container.disabled {
+    pointer-events: none;
+  }
+
+  .cup {
+    width: 90px;
+    height: 100px;
+    position: relative;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 2;
+  }
+
+  .cup-body {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #8B6914 0%, #5C4510 40%, #3A2A08 100%);
+    border-radius: 8px 8px 45px 45px;
+    position: relative;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 215, 0, 0.3),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(212, 165, 55, 0.4);
+  }
+
+  .cup-body::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 16px;
+    background: linear-gradient(180deg, var(--gold), #8B6914);
+    border-radius: 50%;
+    box-shadow: 0 -2px 4px rgba(212, 165, 55, 0.4);
+  }
+
+  .cup-body::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 5%;
+    right: 5%;
+    height: 8px;
+    background: linear-gradient(180deg, transparent, rgba(212, 165, 55, 0.3));
+    border-radius: 0 0 40px 40px;
+  }
+
+  /* Cup shine */
+  .cup-shine {
+    position: absolute;
+    top: 10%;
+    left: 15%;
+    width: 30%;
+    height: 60%;
+    background: linear-gradient(180deg, rgba(255, 215, 0, 0.15) 0%, transparent 100%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* Ball */
+  .ball {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #FFD700, #D4A537, #8B6914);
+    box-shadow:
+      0 0 12px rgba(212, 165, 55, 0.6),
+      inset 0 -3px 6px rgba(0, 0, 0, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .ball.visible {
+    opacity: 1;
+  }
+
+  .ball::after {
+    content: '✦';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .cup.lifted {
+    transform: translateY(-80px);
+  }
+
+  /* Cup glow on hover / guessing */
+  .cup-container.guessable .cup-body {
+    box-shadow:
+      inset 0 2px 4px rgba(255, 215, 0, 0.3),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(212, 165, 55, 0.3);
+    animation: pulseGlow 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: inset 0 2px 4px rgba(255,215,0,0.3), 0 0 12px rgba(212,165,55,0.2); }
+    50% { box-shadow: inset 0 2px 4px rgba(255,215,0,0.3), 0 0 24px rgba(212,165,55,0.5); }
+  }
+
+  .cup-container.faded {
+    opacity: 0.4;
+    transition: opacity 0.4s;
+  }
+
+  /* Surface under cups */
+  .cups-surface {
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    border-radius: 2px;
+  }
+
+  /* Result overlay */
+  .result-text {
+    text-align: center;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .result-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .result-title.show {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .result-title.win { color: var(--gold-bright); }
+  .result-title.lose { color: var(--danger); }
+
+  .result-amount {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s 0.2s;
+  }
+
+  .result-amount.show { opacity: 1; }
+  .result-amount.win { color: var(--gold-bright); }
+  .result-amount.lose { color: var(--danger); }
+
+  /* Spacer */
+  .flex-spacer { flex: 1; }
+
+  /* ========== NPC WIDGET (Bottom-pinned) ========== */
+  .npc-widget-area {
+    position: relative;
+    z-index: 10;
+    padding: 0;
+  }
+
+  /* Fade gradient above widget */
+  .npc-fade {
+    height: 40px;
+    background: linear-gradient(180deg, transparent, var(--bg-primary));
+    pointer-events: none;
+  }
+
+  .npc-widget {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-gold);
+    padding: var(--space-ms) var(--space-md) var(--space-lg);
+    position: relative;
+    min-height: 180px;
+  }
+
+  /* NPC Avatar */
+  .npc-avatar-wrap {
+    position: absolute;
+    left: var(--space-md);
+    top: -180px;
+    width: 160px;
+    height: 240px;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .npc-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+  }
+
+  /* NPC placeholder (since no real image) */
+  .npc-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, rgba(90, 60, 20, 0.8) 0%, rgba(50, 30, 10, 0.9) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-gold);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .npc-avatar-placeholder .npc-emoji {
+    font-size: 64px;
+    filter: none;
+  }
+
+  .npc-avatar-placeholder .npc-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* NPC header */
+  .npc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-sm);
+    padding-left: 130px; /* clear avatar */
+  }
+
+  .npc-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .npc-speech {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding-left: 130px;
+    line-height: 1.4;
+    margin-bottom: var(--space-ms);
+    min-height: 20px;
+  }
+
+  /* Widget content (bet selector + CTA) */
+  .widget-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-ms);
+  }
+
+  /* Spins/plays badge row */
+  .plays-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .plays-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(212, 165, 55, 0.1);
+    border: 1px solid rgba(212, 165, 55, 0.2);
+    border-radius: var(--radius-pill);
+    padding: 4px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .plays-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* Bet buttons */
+  .bet-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .bet-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .bet-buttons {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .bet-btn {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: var(--radius-button);
+    border: 1.5px solid var(--bg-tertiary);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .bet-btn:hover {
+    border-color: var(--gold-dim);
+    color: var(--text-primary);
+  }
+
+  .bet-btn.selected {
+    background: linear-gradient(180deg, var(--gold-gradient-start), var(--gold-gradient-end));
+    border-color: var(--gold-bright);
+    color: var(--text-on-gold);
+    box-shadow: 0 0 12px rgba(212, 165, 55, 0.3);
+  }
+
+  .bet-btn.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* CTA button */
+  .cta-btn {
+    width: 100%;
+    padding: 14px var(--space-md);
+    border: none;
+    border-radius: var(--radius-button);
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+  }
+
+  .cta-btn.primary {
+    background: linear-gradient(180deg, var(--gold-gradient-start), var(--gold-gradient-end));
+    color: var(--text-on-gold);
+    box-shadow: 0 0 20px rgba(212, 165, 55, 0.3);
+  }
+
+  .cta-btn.primary:hover {
+    box-shadow: 0 0 30px rgba(212, 165, 55, 0.5);
+  }
+
+  .cta-btn.primary:active {
+    filter: brightness(0.92);
+  }
+
+  .cta-btn.danger {
+    background: linear-gradient(180deg, var(--danger), #C0313C);
+    color: white;
+    box-shadow: 0 0 20px rgba(230, 57, 70, 0.3);
+  }
+
+  .cta-btn.disabled {
+    background: #333340;
+    color: var(--text-disabled);
+    box-shadow: none;
+    pointer-events: none;
+  }
+
+  /* Surface lighting overlay on CTA */
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--surface-lighting-top) 0%, var(--surface-lighting-bottom) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Corner brackets on CTA */
+  .cta-btn .bracket-tl,
+  .cta-btn .bracket-tr,
+  .cta-btn .bracket-bl,
+  .cta-btn .bracket-br {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: rgba(255, 255, 255, 0.25);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  .cta-btn .bracket-tl { top: 3px; left: 3px; border-top-width: 1.5px; border-left-width: 1.5px; }
+  .cta-btn .bracket-tr { top: 3px; right: 3px; border-top-width: 1.5px; border-right-width: 1.5px; }
+  .cta-btn .bracket-bl { bottom: 3px; left: 3px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+  .cta-btn .bracket-br { bottom: 3px; right: 3px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+  /* Inner border */
+  .cta-btn .inner-border {
+    position: absolute;
+    inset: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: calc(var(--radius-button) - 2px);
+    pointer-events: none;
+  }
+
+  /* Gold divider in widget */
+  .widget-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 5%, var(--border-gold) 50%, transparent 95%);
+  }
+
+  /* ========== ANIMATIONS ========== */
+
+  @keyframes shuffleLeft {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-110px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes shuffleRight {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(110px); }
+    100% { transform: translateX(0); }
+  }
+
+  @keyframes lossFlash {
+    0% { opacity: 0; }
+    20% { opacity: 0.15; }
+    100% { opacity: 0; }
+  }
+
+  .loss-flash {
+    position: absolute;
+    inset: 0;
+    background: var(--danger);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  .loss-flash.active {
+    animation: lossFlash 0.4s ease-out;
+  }
+
+  /* Reward burst particles */
+  @keyframes burstParticle {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+  }
+
+  .burst-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold-bright);
+    animation: burstParticle 0.8s ease-out forwards;
+    pointer-events: none;
+  }
+
+  /* Glow pulse on CTA */
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 16px rgba(212, 165, 55, 0.25); }
+    50% { box-shadow: 0 0 28px rgba(212, 165, 55, 0.5); }
+  }
+
+  .cta-btn.primary:not(.disabled) {
+    animation: glowPulse 2s ease-in-out infinite;
+  }
+
+  /* Typewriter cursor */
+  .typewriter-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: var(--gold);
+    margin-left: 2px;
+    animation: blink 0.6s step-end infinite;
+    vertical-align: text-bottom;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Safe area bottom padding */
+  .safe-bottom {
+    height: 20px;
+    background: var(--bg-secondary);
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame" id="app">
+  <div class="game-bg"></div>
+  <div class="loss-flash" id="lossFlash"></div>
+
+  <div class="game-content">
+    <!-- Nav Bar -->
+    <div class="nav-bar">
+      <div class="back-btn">‹</div>
+      <div class="nav-title">Shell Game</div>
+    </div>
+
+    <!-- Currency -->
+    <div class="currency-row">
+      <div class="currency-pill">
+        <div class="currency-icon gold-icon"></div>
+        <span id="goldDisplay">2,450</span>
+      </div>
+      <div class="currency-pill">
+        <div class="currency-icon gem-icon"></div>
+        <span>85</span>
+      </div>
+    </div>
+
+    <!-- Scrollable game area -->
+    <div class="scroll-area">
+      <!-- Payout info -->
+      <div class="payout-card">
+        <div class="payout-row">
+          <div class="payout-pill payout-2x">
+            <div class="pip"></div>
+            2× PAYOUT
+          </div>
+          <div class="payout-pill payout-3x">
+            <div class="pip"></div>
+            3× JACKPOT
+          </div>
+          <div class="payout-pill payout-miss">
+            <div class="pip"></div>
+            MISS
+          </div>
+        </div>
+      </div>
+
+      <!-- Status + NPC Speech -->
+      <div class="status-text" id="statusText">PLACE YOUR BET</div>
+      <div style="text-align: center; font-family: Inter, sans-serif; font-size: 13px; color: var(--text-secondary); margin-top: -8px; margin-bottom: 8px; min-height: 18px; padding: 0 16px;">
+        <span id="npcSpeechText"></span>
+        <span class="typewriter-cursor" id="typewriterCursor"></span>
+      </div>
+
+      <!-- Cups Stage -->
+      <div class="cups-stage" id="cupsStage">
+        <div class="cup-container disabled" data-cup="0" onclick="pickCup(0)">
+          <div class="cup" id="cup0">
+            <div class="cup-body">
+              <div class="cup-shine"></div>
+            </div>
+          </div>
+          <div class="ball" id="ball0"></div>
+        </div>
+
+        <div class="cup-container disabled" data-cup="1" onclick="pickCup(1)">
+          <div class="cup" id="cup1">
+            <div class="cup-body">
+              <div class="cup-shine"></div>
+            </div>
+          </div>
+          <div class="ball" id="ball1"></div>
+        </div>
+
+        <div class="cup-container disabled" data-cup="2" onclick="pickCup(2)">
+          <div class="cup" id="cup2">
+            <div class="cup-body">
+              <div class="cup-shine"></div>
+            </div>
+          </div>
+          <div class="ball" id="ball2"></div>
+        </div>
+
+        <div class="cups-surface"></div>
+      </div>
+
+      <!-- Result text -->
+      <div class="result-text" id="resultArea">
+        <div class="result-title" id="resultTitle"></div>
+        <div class="result-amount" id="resultAmount"></div>
+      </div>
+
+      <!-- Spacer to push NPC widget down -->
+      <div class="flex-spacer"></div>
+    </div>
+
+    <!-- NPC Widget (Bottom-pinned, like Fortune Wheel) -->
+    <div class="npc-widget-area">
+      <div class="npc-fade"></div>
+      <div class="npc-widget">
+        <!-- NPC Avatar -->
+        <div class="npc-avatar-wrap">
+          <div class="npc-avatar-placeholder">
+            <div class="npc-emoji">🎩</div>
+            <div class="npc-label">Shell Master</div>
+          </div>
+        </div>
+
+        <!-- NPC Title -->
+        <div class="npc-header">
+          <div class="npc-name">SHELL GAME MASTER</div>
+        </div>
+
+        <!-- Widget Content: Bets + CTA -->
+        <div class="widget-content">
+          <!-- Plays remaining -->
+          <div class="plays-row">
+            <div class="plays-badge">
+              <div class="dot"></div>
+              <span id="playsDisplay">7 / 10 PLAYS</span>
+            </div>
+            <div class="currency-pill" style="font-size: 12px;">
+              <div class="currency-icon gold-icon" style="width: 14px; height: 14px;"></div>
+              <span id="goldSmall">2,450</span>
+            </div>
+          </div>
+
+          <!-- Bet selector -->
+          <div class="bet-section">
+            <div class="bet-label">BET AMOUNT</div>
+            <div class="bet-buttons" id="betButtons">
+              <div class="bet-btn" data-bet="50" onclick="selectBet(50)">50</div>
+              <div class="bet-btn selected" data-bet="100" onclick="selectBet(100)">100</div>
+              <div class="bet-btn" data-bet="200" onclick="selectBet(200)">200</div>
+              <div class="bet-btn" data-bet="500" onclick="selectBet(500)">500</div>
+              <div class="bet-btn" data-bet="1000" onclick="selectBet(1000)">1000</div>
+            </div>
+          </div>
+
+          <div class="widget-divider"></div>
+
+          <!-- CTA -->
+          <button class="cta-btn primary" id="ctaBtn" onclick="handleCTA()">
+            <span class="inner-border"></span>
+            <span class="bracket-tl"></span>
+            <span class="bracket-tr"></span>
+            <span class="bracket-bl"></span>
+            <span class="bracket-br"></span>
+            <span id="ctaIcon">🎲</span>
+            <span id="ctaText">START — 100 GOLD</span>
+          </button>
+        </div>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== GAME STATE ==========
+const state = {
+  phase: 'idle',        // idle, revealing, shuffling, guessing, result
+  selectedBet: 100,
+  gold: 2450,
+  playsRemaining: 7,
+  playsLimit: 10,
+  winningCup: -1,
+  selectedCup: -1,
+  isWin: false,
+  winAmount: 0,
+  multiplier: 2,        // default 2x, rare 3x jackpot
+};
+
+const npcLines = {
+  idle: [
+    "Step right up! Find the golden ball, double your gold...",
+    "Think you've got sharp eyes? Let's put them to the test!",
+    "The cups move fast, but your wits must be faster.",
+    "A simple game... for those with a keen eye.",
+  ],
+  revealing: [
+    "Watch closely now... remember where it hides!",
+    "See the ball? Lock it in your mind!",
+  ],
+  shuffling: [
+    "Round and round they go...",
+    "Can you keep up? I'm just getting started!",
+  ],
+  guessing: [
+    "Choose wisely, adventurer! Which cup hides the prize?",
+    "Trust your instincts... or your memory?",
+  ],
+  win: [
+    "Well played! The gold is yours, sharp-eye!",
+    "Impressive! Not many can track my shuffle.",
+    "A worthy winner! Lady luck smiles on you.",
+  ],
+  lose: [
+    "So close! The ball was hiding elsewhere...",
+    "Better luck next time, adventurer!",
+    "The cups are tricky, aren't they?",
+  ],
+};
+
+// ========== NPC SPEECH (Typewriter) ==========
+let typewriterTimer = null;
+
+function setNPCSpeech(text, instant = false) {
+  const el = document.getElementById('npcSpeechText');
+  const cursor = document.getElementById('typewriterCursor');
+  clearInterval(typewriterTimer);
+
+  if (instant) {
+    el.textContent = text;
+    cursor.style.display = 'none';
+    return;
+  }
+
+  el.textContent = '';
+  cursor.style.display = 'inline-block';
+  let i = 0;
+  typewriterTimer = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i];
+      i++;
+    } else {
+      clearInterval(typewriterTimer);
+      cursor.style.display = 'none';
+    }
+  }, 30);
+}
+
+function randomLine(category) {
+  const lines = npcLines[category];
+  return lines[Math.floor(Math.random() * lines.length)];
+}
+
+// ========== BET SELECTION ==========
+function selectBet(amount) {
+  if (state.phase !== 'idle' && state.phase !== 'result') return;
+  if (amount > state.gold) return;
+
+  state.selectedBet = amount;
+  document.querySelectorAll('.bet-btn').forEach(btn => {
+    const val = parseInt(btn.dataset.bet);
+    btn.classList.toggle('selected', val === amount);
+    btn.classList.toggle('disabled', val > state.gold);
+  });
+  updateCTA();
+}
+
+// ========== CTA ==========
+function updateCTA() {
+  const btn = document.getElementById('ctaBtn');
+  const icon = document.getElementById('ctaIcon');
+  const text = document.getElementById('ctaText');
+
+  btn.className = 'cta-btn';
+
+  switch (state.phase) {
+    case 'idle':
+      btn.classList.add(state.gold >= state.selectedBet && state.playsRemaining > 0 ? 'primary' : 'disabled');
+      icon.textContent = '🎲';
+      text.textContent = `START — ${state.selectedBet} GOLD`;
+      break;
+    case 'revealing':
+    case 'shuffling':
+      btn.classList.add('disabled');
+      icon.textContent = '👀';
+      text.textContent = 'WATCH THE CUPS...';
+      break;
+    case 'guessing':
+      btn.classList.add('disabled');
+      icon.textContent = '👆';
+      text.textContent = 'PICK A CUP!';
+      break;
+    case 'result':
+      btn.classList.add(state.isWin ? 'primary' : 'danger');
+      icon.textContent = '🎲';
+      text.textContent = 'PLAY AGAIN';
+      break;
+  }
+}
+
+function updateGold() {
+  document.getElementById('goldDisplay').textContent = state.gold.toLocaleString();
+  document.getElementById('goldSmall').textContent = state.gold.toLocaleString();
+  document.getElementById('playsDisplay').textContent = `${state.playsRemaining} / ${state.playsLimit} PLAYS`;
+
+  // Update bet button availability
+  document.querySelectorAll('.bet-btn').forEach(btn => {
+    const val = parseInt(btn.dataset.bet);
+    btn.classList.toggle('disabled', val > state.gold && state.phase === 'idle');
+  });
+}
+
+function updateStatus(text) {
+  document.getElementById('statusText').textContent = text;
+}
+
+// ========== CUP ANIMATIONS ==========
+function resetCups() {
+  [0, 1, 2].forEach(i => {
+    const cup = document.getElementById(`cup${i}`);
+    const ball = document.getElementById(`ball${i}`);
+    const container = cup.parentElement;
+    cup.classList.remove('lifted');
+    ball.classList.remove('visible');
+    container.classList.remove('guessable', 'faded');
+    container.classList.add('disabled');
+    container.style.transform = '';
+  });
+}
+
+function liftCup(index) {
+  return new Promise(resolve => {
+    const cup = document.getElementById(`cup${index}`);
+    cup.classList.add('lifted');
+    setTimeout(resolve, 400);
+  });
+}
+
+function lowerCup(index) {
+  return new Promise(resolve => {
+    const cup = document.getElementById(`cup${index}`);
+    cup.classList.remove('lifted');
+    setTimeout(resolve, 400);
+  });
+}
+
+function showBall(index) {
+  document.getElementById(`ball${index}`).classList.add('visible');
+}
+
+function hideBall(index) {
+  document.getElementById(`ball${index}`).classList.remove('visible');
+}
+
+function swapCups(a, b) {
+  return new Promise(resolve => {
+    const containerA = document.querySelector(`[data-cup="${a}"]`);
+    const containerB = document.querySelector(`[data-cup="${b}"]`);
+
+    // Get current positions
+    const rectA = containerA.getBoundingClientRect();
+    const rectB = containerB.getBoundingClientRect();
+    const diff = rectB.left - rectA.left;
+
+    containerA.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    containerB.style.transition = 'transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+    containerA.style.transform = `translateX(${diff}px)`;
+    containerB.style.transform = `translateX(${-diff}px)`;
+
+    setTimeout(() => {
+      // Swap in DOM
+      containerA.style.transition = 'none';
+      containerB.style.transition = 'none';
+      containerA.style.transform = '';
+      containerB.style.transform = '';
+
+      // Swap data-cup attributes for logical tracking
+      const parent = containerA.parentElement;
+      if (rectA.left < rectB.left) {
+        parent.insertBefore(containerB, containerA);
+      } else {
+        parent.insertBefore(containerA, containerB);
+      }
+
+      resolve();
+    }, 420);
+  });
+}
+
+// ========== GAME FLOW ==========
+async function handleCTA() {
+  if (state.phase === 'idle') {
+    await startGame();
+  } else if (state.phase === 'result') {
+    resetGame();
+  }
+}
+
+async function startGame() {
+  if (state.gold < state.selectedBet || state.playsRemaining <= 0) return;
+
+  // Deduct bet
+  state.gold -= state.selectedBet;
+  state.playsRemaining--;
+  updateGold();
+
+  // Determine winning cup
+  state.winningCup = Math.floor(Math.random() * 3);
+  // Small chance of 3x jackpot (10%)
+  state.multiplier = Math.random() < 0.1 ? 3 : 2;
+
+  // Phase: Revealing
+  state.phase = 'revealing';
+  updateCTA();
+  updateStatus('WATCH CLOSELY!');
+  setNPCSpeech(randomLine('revealing'));
+
+  // Disable bet buttons
+  document.querySelectorAll('.bet-btn').forEach(b => b.classList.add('disabled'));
+
+  // Show ball, lift cup
+  showBall(state.winningCup);
+  await liftCup(state.winningCup);
+  await sleep(1200);
+  await lowerCup(state.winningCup);
+  hideBall(state.winningCup);
+  await sleep(300);
+
+  // Phase: Shuffling
+  state.phase = 'shuffling';
+  updateCTA();
+  updateStatus('FOLLOW THE CUP...');
+  setNPCSpeech(randomLine('shuffling'));
+
+  // Perform shuffles
+  const shuffleCount = 4 + Math.floor(Math.random() * 3); // 4-6 shuffles
+  for (let s = 0; s < shuffleCount; s++) {
+    let a = Math.floor(Math.random() * 3);
+    let b;
+    do { b = Math.floor(Math.random() * 3); } while (b === a);
+    await swapCups(a, b);
+    await sleep(100);
+  }
+
+  await sleep(300);
+
+  // Phase: Guessing
+  state.phase = 'guessing';
+  updateCTA();
+  updateStatus('PICK A CUP!');
+  setNPCSpeech(randomLine('guessing'));
+
+  // Enable cup selection
+  document.querySelectorAll('.cup-container').forEach(c => {
+    c.classList.remove('disabled');
+    c.classList.add('guessable');
+  });
+}
+
+async function pickCup(index) {
+  if (state.phase !== 'guessing') return;
+
+  state.phase = 'result';
+  state.selectedCup = index;
+
+  // Find which container has the winning cup
+  const containers = document.querySelectorAll('.cup-container');
+  let winningContainerIndex = -1;
+  containers.forEach((c, i) => {
+    const cupEl = c.querySelector('.cup');
+    // Track by DOM position — the cups were physically swapped
+  });
+
+  // The cups in the DOM are now in shuffled order
+  // The winning cup index tracks which LOGICAL cup has the ball
+  // But since we physically swap DOM elements, we need to find it by data-cup
+  // Actually, since we swap DOM elements directly, the positions changed
+  // The ball should appear under the cup the user picked IF they win
+
+  // Simple sim: ~45% win chance
+  state.isWin = Math.random() < 0.45;
+  state.winAmount = state.isWin ? state.selectedBet * state.multiplier : 0;
+
+  // Remove guessable from all
+  containers.forEach(c => {
+    c.classList.remove('guessable');
+    c.classList.add('disabled');
+  });
+
+  // Show result
+  const selectedContainer = containers[index];
+
+  if (state.isWin) {
+    // Show ball under selected cup
+    const ball = selectedContainer.querySelector('.ball');
+    ball.classList.add('visible');
+    await liftCup(index);
+
+    state.gold += state.winAmount;
+    updateGold();
+
+    updateStatus(state.multiplier === 3 ? 'JACKPOT!' : 'YOU WIN!');
+    setNPCSpeech(randomLine('win'));
+
+    showResult(true, state.winAmount, state.multiplier);
+    spawnBurst(selectedContainer);
+
+    // Fade other cups
+    containers.forEach((c, i) => {
+      if (i !== index) c.classList.add('faded');
+    });
+  } else {
+    // Show ball under a different cup
+    const wrongIndex = index;
+    const correctIndex = (index + 1 + Math.floor(Math.random() * 2)) % 3;
+
+    const correctBall = containers[correctIndex].querySelector('.ball');
+    correctBall.classList.add('visible');
+
+    // Lift both
+    await Promise.all([
+      liftCup(index),
+      liftCup(correctIndex),
+    ]);
+
+    // Loss flash
+    document.getElementById('lossFlash').classList.add('active');
+    setTimeout(() => document.getElementById('lossFlash').classList.remove('active'), 400);
+
+    updateStatus('WRONG CUP!');
+    setNPCSpeech(randomLine('lose'));
+
+    showResult(false, state.selectedBet, 0);
+
+    // Fade wrong cup
+    containers[index].classList.add('faded');
+  }
+
+  updateCTA();
+
+  // Re-enable bet buttons
+  document.querySelectorAll('.bet-btn').forEach(b => {
+    const val = parseInt(b.dataset.bet);
+    b.classList.toggle('disabled', val > state.gold);
+  });
+}
+
+function showResult(isWin, amount, mult) {
+  const title = document.getElementById('resultTitle');
+  const amtEl = document.getElementById('resultAmount');
+
+  title.className = `result-title ${isWin ? 'win' : 'lose'}`;
+  title.textContent = isWin ? (mult === 3 ? 'JACKPOT! ×3' : 'YOU WIN! ×2') : 'WRONG CUP!';
+
+  amtEl.className = `result-amount ${isWin ? 'win' : 'lose'}`;
+  amtEl.textContent = isWin ? `+${amount} Gold` : `-${amount} Gold`;
+
+  requestAnimationFrame(() => {
+    title.classList.add('show');
+    amtEl.classList.add('show');
+  });
+}
+
+function resetGame() {
+  state.phase = 'idle';
+  state.selectedCup = -1;
+  state.isWin = false;
+  state.winAmount = 0;
+
+  // Hide result
+  document.getElementById('resultTitle').classList.remove('show');
+  document.getElementById('resultAmount').classList.remove('show');
+  document.getElementById('resultTitle').textContent = '';
+  document.getElementById('resultAmount').textContent = '';
+
+  resetCups();
+  updateCTA();
+  updateStatus('PLACE YOUR BET');
+  setNPCSpeech(randomLine('idle'));
+  selectBet(state.selectedBet); // refresh bet buttons
+}
+
+// ========== EFFECTS ==========
+function spawnBurst(container) {
+  const rect = container.getBoundingClientRect();
+  const appRect = document.getElementById('app').getBoundingClientRect();
+  const cx = rect.left + rect.width / 2 - appRect.left;
+  const cy = rect.top + rect.height / 2 - appRect.top;
+
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'burst-particle';
+    const angle = (Math.PI * 2 * i) / 12;
+    const dist = 40 + Math.random() * 60;
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    p.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+    p.style.background = Math.random() > 0.5 ? 'var(--gold-bright)' : 'var(--gold)';
+    document.getElementById('app').appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ========== INIT ==========
+setNPCSpeech(randomLine('idle'));
+updateCTA();
+</script>
+
+</body>
+</html>

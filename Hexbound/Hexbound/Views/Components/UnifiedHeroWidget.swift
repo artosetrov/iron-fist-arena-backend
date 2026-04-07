@@ -42,13 +42,19 @@ struct UnifiedHeroWidget: View {
             // MARK: Left — Avatar with XP Ring + Level Badge
             avatarSection
 
-            // MARK: Right — Name/Resources, HP bar
+            // MARK: Right — Name, HP bar, Resources
             VStack(alignment: .leading, spacing: LayoutConstants.widgetRowGap) {
-                // Row 1: Name + Currencies + Stamina inline
-                nameAndResourcesRow
+                // Row 1: Name
+                Text(character.characterName)
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
 
                 // Row 2: HP bar (full width, text inside)
                 hpBarSection
+
+                // Row 3: Resources (gold + gems + stamina)
+                resourcesRow
             }
         }
         .frame(minHeight: LayoutConstants.widgetMinHeight)
@@ -204,18 +210,10 @@ struct UnifiedHeroWidget: View {
         }
     }
 
-    // MARK: - Row 1: Name + Currencies + Stamina Inline
+    // MARK: - Row 3: Resources (Gold + Gems + Stamina)
 
-    private var nameAndResourcesRow: some View {
+    private var resourcesRow: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            // Character name
-            Text(character.characterName)
-                .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-
-            Spacer(minLength: LayoutConstants.spaceXS)
-
             // Currencies (widget size — larger than compact for readability)
             if showCurrencies {
                 CurrencyDisplay(
@@ -229,6 +227,8 @@ struct UnifiedHeroWidget: View {
 
             // Stamina inline (always visible — it's an action resource, not a currency)
             staminaInlineView
+
+            Spacer(minLength: 0)
         }
     }
 

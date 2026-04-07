@@ -55,7 +55,7 @@ struct ActiveQuestBanner: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Icon
             AssetPlaceholderView(systemIcon: "scroll.fill")
-                .frame(width: 22, height: 22)
+                .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
 
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
@@ -69,7 +69,7 @@ struct ActiveQuestBanner: View {
                     .lineLimit(1)
             }
 
-            Spacer(minLength: 4)
+            Spacer(minLength: LayoutConstants.spaceXS)
 
             // Progress / Claim
             if quest.canClaim {
@@ -102,22 +102,22 @@ struct ActiveQuestBanner: View {
             }
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
-        .padding(.vertical, LayoutConstants.spaceXS + 2)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
                 glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
+                glowIntensity: DarkFantasyTheme.opacityStrong,
                 cornerRadius: LayoutConstants.panelRadius
             )
         )
         .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.cyan.opacity(0.08))
+        .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.cyan.opacity(DarkFantasyTheme.opacitySoft))
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(DarkFantasyTheme.cyan.opacity(0.5), lineWidth: 1.5)
+                .stroke(DarkFantasyTheme.cyan.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1.5)
         )
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityMedium), radius: 4, y: 2)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 

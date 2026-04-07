@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
     try {
       session = await prisma.$transaction(async (tx) => {
         const locked = await tx.$queryRaw<{ gold: number }[]>`
-          SELECT gold FROM "Character" WHERE id = ${character_id} FOR UPDATE
+          SELECT gold FROM "characters" WHERE id = ${character_id} FOR UPDATE
         `
         const currentGold = locked[0]?.gold ?? 0
         if (currentGold < bet_amount) {
@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       session_id: session.id,
       bet_amount: session.betAmount,
+      winning_cup: correctShell,
+      plays_remaining: Math.max(0, 20 - todayGames - 1),
+      plays_limit: 20,
     })
   } catch (error) {
     console.error('shell-game start error:', error)
