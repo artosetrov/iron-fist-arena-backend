@@ -427,7 +427,7 @@ struct DailyLoginDetailView: View {
                         HStack(spacing: LayoutConstants.spaceSM) {
                             Image(systemName: "building.columns.fill")
                                 .font(DarkFantasyTheme.uiLabel.bold())
-                            Text("В ЗАМОК")
+                            Text("TO THE CASTLE")
                         }
                     }
                     .buttonStyle(.primary)

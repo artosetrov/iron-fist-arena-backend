@@ -174,8 +174,20 @@ struct DangerButtonStyle: ButtonStyle {
 struct GhostButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DarkFantasyTheme.body)
+            .font(DarkFantasyTheme.buttonLabelCompact)
+            .textCase(.uppercase)
+            .tracking(2)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
+            .frame(maxWidth: .infinity)
+            .frame(height: LayoutConstants.buttonHeightMD)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .fill(DarkFantasyTheme.textPrimary.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
             .opacity(configuration.isPressed ? 0.6 : 1)
             .onChange(of: configuration.isPressed) { _, pressed in
                 if pressed { SFXManager.shared.play(.uiTap) }

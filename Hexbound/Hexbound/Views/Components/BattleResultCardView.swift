@@ -381,24 +381,28 @@ struct BattleResultCardView: View {
                 .frame(maxWidth: .infinity)
             }
 
-            // Thick XP bar
+            // Thick XP bar — high contrast track
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                        .fill(DarkFantasyTheme.bgTertiary)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                        .fill(DarkFantasyTheme.bgAbyss)
                         .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                                .stroke(DarkFantasyTheme.purple.opacity(0.15), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                                .stroke(DarkFantasyTheme.purple.opacity(0.35), lineWidth: 1.5)
                         )
-                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
 
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
                         .fill(DarkFantasyTheme.xpGradient)
+                        .overlay(
+                            BarFillHighlight(cornerRadius: LayoutConstants.radiusLG)
+                        )
                         .frame(width: geo.size.width * min(xpConfig.progress, 1.0))
-                        .shadow(color: DarkFantasyTheme.purple.opacity(0.4), radius: 8, y: 0)
+                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
+                        .shadow(color: DarkFantasyTheme.purple.opacity(0.5), radius: 10, y: 0)
                 }
             }
-            .frame(height: LayoutConstants.iconMD)
+            .frame(height: LayoutConstants.spaceLG)
         }
         .padding(.top, LayoutConstants.spaceXS)
     }

@@ -57,6 +57,9 @@ struct CityMapView: View {
                         // Layer 2: Lantern glow effects
                         LanternGlowLayer(terrainSize: terrainSize)
 
+                        // Layer 2.5: Chimney smoke (above terrain, below buildings)
+                        ChimneySmokeLayer(terrainSize: terrainSize)
+
                         // Layer 3: Building sprites (images only, no labels)
                         let layoutOverrides = cache.hubLayout
                         let buildings = applyOverrides(layoutOverrides)
@@ -105,8 +108,11 @@ struct CityMapView: View {
                         // Layer 4: Fog at bottom
                         FogLayer(width: terrainWidth, height: viewHeight)
 
-                        // Layer 5: Wind particles
+                        // Layer 5: Wind particles (with gust dynamics)
                         WindParticlesLayer(width: terrainWidth, height: viewHeight)
+
+                        // Layer 5.5: Falling leaves & embers
+                        FallingLeavesLayer(width: terrainWidth, height: viewHeight)
 
                         // Layer 6: Front clouds (over terrain + buildings)
                         ParallaxLayer(factor: parallaxFactor(for: .frontCloud)) {
@@ -237,39 +243,47 @@ struct SkyObjectView: View {
     var isMoon: Bool = false
 
     @State private var drift: CGFloat = 0
-    @State private var shimmer: CGFloat = 0.7
+    @State private var shimmer: CGFloat = 0.6
+    /// Secondary breathing cycle — slower, offsets primary for organic feel
+    @State private var breathe: CGFloat = 0.8
 
     private var objectHeight: CGFloat {
         terrainSize.height * object.relativeSize
     }
 
+    /// Combined glow intensity from two overlapping cycles
+    private var glowIntensity: CGFloat {
+        (shimmer * 0.6 + breathe * 0.4)
+    }
+
     var body: some View {
         ZStack {
             if isMoon {
-                // Moon glow layers
+                // Outer halo — large, soft, responds to breathing
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                DarkFantasyTheme.moonGlowOuter1.opacity(shimmer * 0.25),
-                                DarkFantasyTheme.moonGlowOuter2.opacity(shimmer * 0.12),
-                                DarkFantasyTheme.moonGlowOuter3.opacity(shimmer * 0.05),
+                                DarkFantasyTheme.moonGlowOuter1.opacity(glowIntensity * 0.28),
+                                DarkFantasyTheme.moonGlowOuter2.opacity(glowIntensity * 0.14),
+                                DarkFantasyTheme.moonGlowOuter3.opacity(glowIntensity * 0.05),
                                 .clear
                             ],
                             center: .center,
                             startRadius: objectHeight * 0.15,
-                            endRadius: objectHeight * 1.3
+                            endRadius: objectHeight * 1.4
                         )
                     )
-                    .frame(width: objectHeight * 2.6, height: objectHeight * 2.6)
+                    .frame(width: objectHeight * 2.8, height: objectHeight * 2.8)
                     .blendMode(.screen)
 
+                // Inner corona — tighter, warmer
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                DarkFantasyTheme.moonGlowInner1.opacity(shimmer * 0.3),
-                                DarkFantasyTheme.moonGlowInner2.opacity(shimmer * 0.1),
+                                DarkFantasyTheme.moonGlowInner1.opacity(glowIntensity * 0.35),
+                                DarkFantasyTheme.moonGlowInner2.opacity(glowIntensity * 0.12),
                                 .clear
                             ],
                             center: .center,
@@ -285,8 +299,10 @@ struct SkyObjectView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: objectHeight)
-                .opacity(object.opacity)
+                .opacity(isMoon ? (0.85 + glowIntensity * 0.15) : object.opacity)
         }
+        // Moon subtle scale breathing (±3%)
+        .scaleEffect(isMoon ? (0.97 + glowIntensity * 0.06) : 1.0)
         .offset(x: drift)
         .position(
             x: terrainSize.width * object.relativeX,
@@ -295,8 +311,13 @@ struct SkyObjectView: View {
         .allowsHitTesting(false)
         .onAppear {
             if isMoon {
-                withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
-                    shimmer = 0.95
+                // Primary shimmer: 7-10s cycle (slow, mystical)
+                withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
+                    shimmer = 1.0
+                }
+                // Secondary breathe: 12-15s cycle (even slower, offset)
+                withAnimation(.easeInOut(duration: 13).repeatForever(autoreverses: true)) {
+                    breathe = 1.0
                 }
             }
             if object.driftSpeed > 0 {
@@ -307,8 +328,8 @@ struct SkyObjectView: View {
             }
         }
         .onDisappear {
-            // Stop animation drivers when off-screen
-            shimmer = 0.7
+            shimmer = 0.6
+            breathe = 0.8
             drift = 0
         }
     }

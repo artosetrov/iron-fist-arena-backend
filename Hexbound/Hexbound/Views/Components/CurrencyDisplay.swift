@@ -40,12 +40,14 @@ struct CurrencyDisplay: View {
 
     enum DisplaySize {
         case standard  // Large icons + text (shop, inventory)
+        case widget    // Medium icons + text (UnifiedHeroWidget)
         case compact   // Small inline (widget, header)
         case mini      // Tiny price tags (shop cards, item detail)
 
         var iconSize: CGFloat {
             switch self {
             case .standard: 36
+            case .widget: 18
             case .compact: 14
             case .mini: 12
             }
@@ -54,6 +56,7 @@ struct CurrencyDisplay: View {
         var font: Font {
             switch self {
             case .standard: DarkFantasyTheme.title
+            case .widget: DarkFantasyTheme.body.bold()
             case .compact: DarkFantasyTheme.uiLabel
             case .mini: DarkFantasyTheme.caption
             }
@@ -62,6 +65,7 @@ struct CurrencyDisplay: View {
         var spacing: CGFloat {
             switch self {
             case .standard: LayoutConstants.spaceXS
+            case .widget: LayoutConstants.space2XS
             case .compact: LayoutConstants.space2XS
             case .mini: LayoutConstants.space2XS
             }
@@ -70,6 +74,7 @@ struct CurrencyDisplay: View {
         var groupSpacing: CGFloat {
             switch self {
             case .standard: LayoutConstants.spaceMD
+            case .widget: LayoutConstants.spaceSM
             case .compact: LayoutConstants.spaceMS
             case .mini: LayoutConstants.spaceXS
             }
@@ -78,6 +83,7 @@ struct CurrencyDisplay: View {
         var goldColor: Color {
             switch self {
             case .standard: DarkFantasyTheme.goldBright
+            case .widget: DarkFantasyTheme.textGold
             case .compact: DarkFantasyTheme.textGold
             case .mini: DarkFantasyTheme.goldBright
             }
@@ -86,6 +92,7 @@ struct CurrencyDisplay: View {
         var gemsColor: Color {
             switch self {
             case .standard: DarkFantasyTheme.cyan
+            case .widget: DarkFantasyTheme.cyan
             case .compact: DarkFantasyTheme.cyan
             case .mini: DarkFantasyTheme.cyan
             }

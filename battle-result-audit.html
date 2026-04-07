@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Battle Result — UX Audit Prototype</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-abyss: #050508;
+    --bg-primary: #0D0D12;
+    --bg-secondary: #111827;
+    --bg-tertiary: #16213E;
+    --bg-modal: rgba(5,5,8,0.92);
+    --gold: #D4A537;
+    --gold-bright: #F0C746;
+    --purple: #9B59B6;
+    --purple-dark: #8E44AD;
+    --danger: #E63946;
+    --success: #2ECC71;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6B6B80;
+    --text-disabled: #555566;
+    --text-on-gold: #1A1A2E;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-medium: rgba(255,255,255,0.12);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-ms: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+  }
+
+  body {
+    background: #0a0a10;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    padding: 40px 20px;
+    min-height: 100vh;
+    flex-wrap: wrap;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    padding: 8px 24px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .label-current {
+    color: var(--danger);
+    background: rgba(230,57,70,0.12);
+    border: 1px solid rgba(230,57,70,0.3);
+  }
+  .label-proposed {
+    color: var(--success);
+    background: rgba(46,204,113,0.12);
+    border: 1px solid rgba(46,204,113,0.3);
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 390px;
+    min-height: 700px;
+    background: var(--bg-primary);
+    border-radius: 40px;
+    overflow: hidden;
+    border: 3px solid rgba(255,255,255,0.08);
+    position: relative;
+  }
+
+  .screen {
+    padding: 60px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    min-height: 700px;
+  }
+
+  /* Card */
+  .result-card {
+    width: 100%;
+    background: radial-gradient(ellipse at center, #1a2240, var(--bg-secondary));
+    border-radius: var(--radius-xl);
+    border: 2px solid rgba(230,57,70,0.5);
+    padding: 28px 20px 20px;
+    position: relative;
+    box-shadow:
+      0 4px 20px rgba(230,57,70,0.3),
+      0 6px 12px rgba(5,5,8,0.6);
+  }
+
+  /* Title */
+  .title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 40px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--danger);
+    text-shadow: 0 0 20px rgba(230,57,70,0.4);
+    margin-bottom: 4px;
+  }
+
+  /* Divider */
+  .divider {
+    width: 80%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+    margin: 12px auto;
+    position: relative;
+  }
+  .divider::after {
+    content: '◆◆';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 8px;
+    color: var(--gold);
+    letter-spacing: 4px;
+    background: var(--bg-secondary);
+    padding: 0 8px;
+  }
+
+  /* Rewards */
+  .rewards-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .rewards-row {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 8px;
+  }
+
+  .reward-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .reward-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .reward-value {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .reward-value.gold { color: var(--gold-bright); }
+  .reward-value.purple { color: var(--purple); }
+  .reward-value.danger { color: var(--danger); }
+
+  .reward-name {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  /* XP Section */
+  .xp-section {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .xp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .xp-level {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: var(--purple);
+    text-shadow: 0 0 6px rgba(155,89,182,0.3);
+  }
+
+  .xp-numbers {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .xp-current {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    color: var(--purple);
+    text-shadow: 0 0 10px rgba(155,89,182,0.4);
+  }
+
+  .xp-slash {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    color: rgba(107,107,128,0.4);
+  }
+
+  .xp-needed {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    color: rgba(107,107,128,0.5);
+  }
+
+  .xp-gain-badge {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: rgba(155,89,182,0.9);
+    background: rgba(155,89,182,0.12);
+    border: 1px solid rgba(155,89,182,0.2);
+    border-radius: 20px;
+    padding: 2px 8px;
+    margin-left: 8px;
+  }
+
+  /* XP Bar — CURRENT (low contrast) */
+  .xp-bar-track {
+    width: 100%;
+    height: 20px;
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+  }
+  .xp-bar-track.current {
+    background: var(--bg-tertiary);
+    border: 1px solid rgba(155,89,182,0.15);
+    box-shadow: inset 0 1px 2px rgba(5,5,8,0.3);
+  }
+
+  /* XP Bar — PROPOSED (high contrast) */
+  .xp-bar-track.proposed {
+    background: var(--bg-abyss);
+    border: 1.5px solid rgba(155,89,182,0.35);
+    box-shadow:
+      inset 0 2px 4px rgba(0,0,0,0.6),
+      inset 0 1px 1px rgba(0,0,0,0.4);
+    height: 24px;
+    border-radius: 10px;
+  }
+
+  .xp-bar-fill {
+    height: 100%;
+    border-radius: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+  .xp-bar-fill.current {
+    width: 33.3%;
+    background: linear-gradient(to right, var(--purple), var(--purple-dark));
+    box-shadow: 0 0 8px rgba(155,89,182,0.4);
+  }
+  .xp-bar-fill.proposed {
+    width: 33.3%;
+    background: linear-gradient(to right, #A66BC7, var(--purple), var(--purple-dark));
+    box-shadow:
+      0 0 12px rgba(155,89,182,0.5),
+      0 0 4px rgba(155,89,182,0.3);
+  }
+  .xp-bar-fill.proposed::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
+    border-radius: inherit;
+  }
+
+  /* Buttons */
+  .buttons-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Oswald', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+  }
+
+  /* CURRENT button styles — разные высоты */
+  .buttons-section.current {
+    gap: 8px;
+  }
+
+  .btn-primary-current {
+    height: 56px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-on-gold);
+    background: linear-gradient(180deg, #F0C746 0%, #C4941E 100%);
+    border-radius: var(--radius-md);
+    box-shadow:
+      0 0 15px rgba(212,165,55,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  /* Ornamental brackets hint */
+  .btn-primary-current::before,
+  .btn-primary-current::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgba(212,165,55,0.6);
+    border-style: solid;
+  }
+  .btn-primary-current::before {
+    top: 4px; left: 4px;
+    border-width: 2px 0 0 2px;
+  }
+  .btn-primary-current::after {
+    bottom: 4px; right: 4px;
+    border-width: 0 2px 2px 0;
+  }
+
+  .btn-secondary-current {
+    height: 48px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--gold);
+    background: transparent;
+    border: 1.5px solid rgba(212,165,55,0.5);
+    border-radius: var(--radius-md);
+  }
+  /* Ornamental brackets */
+  .btn-secondary-current::before,
+  .btn-secondary-current::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: rgba(212,165,55,0.4);
+    border-style: solid;
+  }
+  .btn-secondary-current::before {
+    top: 3px; left: 3px;
+    border-width: 1.5px 0 0 1.5px;
+  }
+  .btn-secondary-current::after {
+    bottom: 3px; right: 3px;
+    border-width: 0 1.5px 1.5px 0;
+  }
+
+  .btn-ghost-current {
+    height: auto;
+    padding: 10px 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-secondary);
+    background: transparent;
+  }
+  .btn-ghost-current .icon {
+    font-size: 14px;
+  }
+
+  /* PROPOSED button styles — одинаковые высоты */
+  .buttons-section.proposed {
+    gap: 10px;
+  }
+
+  .btn-primary-proposed {
+    height: 56px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-on-gold);
+    background: linear-gradient(180deg, #F0C746 0%, #C4941E 100%);
+    border-radius: var(--radius-md);
+    box-shadow:
+      0 0 15px rgba(212,165,55,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .btn-primary-proposed::before,
+  .btn-primary-proposed::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgba(212,165,55,0.6);
+    border-style: solid;
+  }
+  .btn-primary-proposed::before {
+    top: 4px; left: 4px;
+    border-width: 2px 0 0 2px;
+  }
+  .btn-primary-proposed::after {
+    bottom: 4px; right: 4px;
+    border-width: 0 2px 2px 0;
+  }
+
+  .btn-secondary-proposed {
+    height: 56px;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--gold);
+    background: transparent;
+    border: 1.5px solid rgba(212,165,55,0.5);
+    border-radius: var(--radius-md);
+  }
+  .btn-secondary-proposed::before,
+  .btn-secondary-proposed::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: rgba(212,165,55,0.4);
+    border-style: solid;
+  }
+  .btn-secondary-proposed::before {
+    top: 4px; left: 4px;
+    border-width: 1.5px 0 0 1.5px;
+  }
+  .btn-secondary-proposed::after {
+    bottom: 4px; right: 4px;
+    border-width: 0 1.5px 1.5px 0;
+  }
+
+  .btn-ghost-proposed {
+    height: 56px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-md);
+    letter-spacing: 2px;
+  }
+
+  /* Issue callouts */
+  .issue-marker {
+    position: absolute;
+    right: -12px;
+    background: var(--danger);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(230,57,70,0.4);
+  }
+
+  .fix-marker {
+    position: absolute;
+    right: -12px;
+    background: var(--success);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(46,204,113,0.4);
+  }
+
+  .relative { position: relative; }
+
+  /* Annotations */
+  .annotation {
+    background: rgba(230,57,70,0.08);
+    border: 1px solid rgba(230,57,70,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    width: 390px;
+  }
+  .annotation.fix {
+    background: rgba(46,204,113,0.08);
+    border: 1px solid rgba(46,204,113,0.2);
+  }
+  .annotation strong {
+    color: var(--text-primary);
+  }
+
+  /* Size comparison visual */
+  .size-indicator {
+    position: absolute;
+    right: -50px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'Inter', monospace;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== CURRENT ========== -->
+<div class="column">
+  <div class="label label-current">СЕЙЧАС — Проблемы</div>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="result-card">
+        <!-- Title -->
+        <div class="title">DEFEAT</div>
+        <div class="divider"></div>
+
+        <!-- Rewards -->
+        <div class="rewards-label">REWARDS</div>
+        <div class="rewards-row">
+          <div class="reward-item">
+            <div class="reward-icon">🪙</div>
+            <div class="reward-value gold">+96</div>
+            <div class="reward-name">Gold</div>
+          </div>
+          <div class="reward-item">
+            <div class="reward-icon">✨</div>
+            <div class="reward-value purple">+53</div>
+            <div class="reward-name">XP</div>
+          </div>
+          <div class="reward-item">
+            <div class="reward-icon">📉</div>
+            <div class="reward-value danger">-10</div>
+            <div class="reward-name">Rating</div>
+          </div>
+        </div>
+
+        <!-- XP Section -->
+        <div class="xp-section">
+          <div class="xp-header">
+            <span class="xp-level">Level 4</span>
+          </div>
+          <div class="xp-numbers">
+            <span class="xp-current">333</span>
+            <span class="xp-slash">/</span>
+            <span class="xp-needed">1,000</span>
+            <span class="xp-gain-badge">+53</span>
+          </div>
+
+          <!-- LOW CONTRAST BAR -->
+          <div class="relative">
+            <div class="xp-bar-track current">
+              <div class="xp-bar-fill current"></div>
+            </div>
+            <div class="issue-marker" style="top: -4px;">⚠ Низкий контраст</div>
+          </div>
+        </div>
+
+        <!-- Buttons — РАЗНАЯ ВЫСОТА -->
+        <div class="buttons-section current">
+          <div class="relative" style="width:100%">
+            <button class="btn btn-primary-current">FIGHT AGAIN</button>
+            <div class="size-indicator" style="right: -54px; color: var(--text-tertiary);">56px</div>
+          </div>
+          <div class="relative" style="width:100%">
+            <button class="btn btn-secondary-current">
+              <span class="icon">✉</span> SEND MESSAGE
+            </button>
+            <div class="issue-marker" style="top: -4px;">⚠ 48px ≠ 56px</div>
+            <div class="size-indicator" style="right: -54px; color: var(--danger);">48px</div>
+          </div>
+          <div class="relative" style="width:100%">
+            <button class="btn btn-ghost-current">
+              <span class="icon">📊</span> Session Stats
+            </button>
+            <div class="issue-marker" style="top: -4px;">⚠ auto height</div>
+            <div class="size-indicator" style="right: -54px; color: var(--danger);">~38px</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <strong>Проблема 1:</strong> XP-бар — трек <code>#16213E</code> на фоне карточки <code>#111827</code>. Разница яркости &lt;5%. Бар визуально «тонет».<br><br>
+    <strong>Проблема 2:</strong> Три кнопки — три высоты: 56px → 48px → ~38px. Нет визуального ритма. Ghost вообще без рамки и без фиксированной высоты.
+  </div>
+</div>
+
+<!-- ========== PROPOSED ========== -->
+<div class="column">
+  <div class="label label-proposed">ПРЕДЛОЖЕНИЕ — Фиксы</div>
+
+  <div class="phone">
+    <div class="screen">
+      <div class="result-card">
+        <!-- Title -->
+        <div class="title">DEFEAT</div>
+        <div class="divider"></div>
+
+        <!-- Rewards -->
+        <div class="rewards-label">REWARDS</div>
+        <div class="rewards-row">
+          <div class="reward-item">
+            <div class="reward-icon">🪙</div>
+            <div class="reward-value gold">+96</div>
+            <div class="reward-name">Gold</div>
+          </div>
+          <div class="reward-item">
+            <div class="reward-icon">✨</div>
+            <div class="reward-value purple">+53</div>
+            <div class="reward-name">XP</div>
+          </div>
+          <div class="reward-item">
+            <div class="reward-icon">📉</div>
+            <div class="reward-value danger">-10</div>
+            <div class="reward-name">Rating</div>
+          </div>
+        </div>
+
+        <!-- XP Section -->
+        <div class="xp-section">
+          <div class="xp-header">
+            <span class="xp-level">Level 4</span>
+          </div>
+          <div class="xp-numbers">
+            <span class="xp-current">333</span>
+            <span class="xp-slash">/</span>
+            <span class="xp-needed">1,000</span>
+            <span class="xp-gain-badge">+53</span>
+          </div>
+
+          <!-- HIGH CONTRAST BAR -->
+          <div class="relative">
+            <div class="xp-bar-track proposed">
+              <div class="xp-bar-fill proposed"></div>
+            </div>
+            <div class="fix-marker" style="top: -4px;">✓ Контраст OK</div>
+          </div>
+        </div>
+
+        <!-- Buttons — ОДИНАКОВАЯ ВЫСОТА -->
+        <div class="buttons-section proposed">
+          <div class="relative" style="width:100%">
+            <button class="btn btn-primary-proposed">FIGHT AGAIN</button>
+            <div class="size-indicator" style="right: -54px; color: var(--success);">56px</div>
+          </div>
+          <div class="relative" style="width:100%">
+            <button class="btn btn-secondary-proposed">
+              <span>✉</span> SEND MESSAGE
+            </button>
+            <div class="fix-marker" style="top: -4px;">✓ 56px</div>
+            <div class="size-indicator" style="right: -54px; color: var(--success);">56px</div>
+          </div>
+          <div class="relative" style="width:100%">
+            <button class="btn btn-ghost-proposed">
+              <span>📊</span> SESSION STATS
+            </button>
+            <div class="fix-marker" style="top: -4px;">✓ 56px + рамка</div>
+            <div class="size-indicator" style="right: -54px; color: var(--success);">56px</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="annotation fix">
+    <strong>Фикс 1 — XP бар:</strong> Трек → <code>bgAbyss (#050508)</code>, обводка <code>purple 35%</code>, высота 24pt, inner shadow для глубины, highlight на fill.<br><br>
+    <strong>Фикс 2 — Кнопки:</strong> Все три = <code>56px</code> высота, <code>maxWidth: .infinity</code>. Ghost получает subtle фон <code>rgba(255,255,255,0.04)</code> + тонкую рамку + Oswald uppercase. Равный gap = <code>10px</code>.
+  </div>
+</div>
+
+</body>
+</html>

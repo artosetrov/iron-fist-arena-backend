@@ -73,7 +73,7 @@ enum LayoutConstants {
     // MARK: - Buttons (semantic → scale)
 
     static let buttonHeightLG: CGFloat = touchComfortable  // 56 — Primary CTA
-    static let buttonHeightMD: CGFloat = touchMin          // 48 — Secondary buttons
+    static let buttonHeightMD: CGFloat = touchComfortable   // 56 — Unified: all full-width buttons same height as Primary
     static let buttonHeightSM: CGFloat = 36                // Tertiary, filter tags
     static let buttonPaddingH: CGFloat = spaceLG           // 24 — horizontal padding inside buttons
     static let buttonRadius: CGFloat = radiusMD            // 8

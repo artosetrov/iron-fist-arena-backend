@@ -210,18 +210,18 @@ struct UnifiedHeroWidget: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Character name
             Text(character.characterName)
-                .font(DarkFantasyTheme.cardTitle)
+                .font(DarkFantasyTheme.section)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
             Spacer(minLength: LayoutConstants.spaceXS)
 
-            // Currencies (unified component, compact size)
+            // Currencies (widget size — larger than compact for readability)
             if showCurrencies {
                 CurrencyDisplay(
                     gold: character.gold,
                     gems: character.gems,
-                    size: .compact,
+                    size: .widget,
                     showGems: context == .hub || context == .hero,
                     animated: false
                 )
@@ -239,16 +239,16 @@ struct UnifiedHeroWidget: View {
             Image("icon-stamina")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 14, height: 14)
+                .frame(width: 18, height: 18)
 
             HStack(spacing: 0) {
                 NumberTickUpText(
                     value: character.currentStamina,
                     color: isStaminaLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina,
-                    font: DarkFantasyTheme.uiLabel.bold()
+                    font: DarkFantasyTheme.body.bold()
                 )
                 Text("/\(character.maxStamina)")
-                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(
                         (isStaminaLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
                             .opacity(0.6)

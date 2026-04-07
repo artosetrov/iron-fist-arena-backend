@@ -111,7 +111,7 @@ let defaultCityBuildings: [CityBuilding] = [
         id: "guild-hall",
         imageName: "building-guild-hall",
         label: "GUILD HALL",
-        route: .guildHall,
+        route: nil,
         relativeX: 0.12,
         relativeY: 0.38,
         relativeSize: 0.24,
