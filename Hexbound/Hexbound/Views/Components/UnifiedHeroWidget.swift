@@ -3,13 +3,11 @@ import SwiftUI
 /// Unified hero widget replacing HubCharacterCard, StaminaBarView header, and currency displays.
 /// Adapts layout and actions based on context (Hub, Arena, Dungeon, Hero).
 ///
-/// Layout (matching prototype):
-/// ┌──────────────────────────────────────────┐
-/// │ [Avatar]  Name              💎 18,838 💠 151 │
-/// │ [Lv.14]  ████████ HP 1,030/1,030 ████████  │
-/// │          ████████ STA 120/120 ████████████  │
-/// │          [Pills row — conditional]          │
-/// └──────────────────────────────────────────┘
+/// Layout:
+/// ┌───────────────────────────────────────────────────┐
+/// │ [Avatar]  Name           💰 18,838  💎 151  ⚡ 120/120 │
+/// │ [Lv.14]  ████████████ HP 1,030/1,030 ████████████ │
+/// └───────────────────────────────────────────────────┘
 @MainActor
 struct UnifiedHeroWidget: View {
     let character: Character
@@ -29,12 +27,8 @@ struct UnifiedHeroWidget: View {
     }
 
     private var hpPercent: Double { character.hpPercentage }
-    private var staminaPercent: Double {
-        guard character.maxStamina > 0 else { return 0 }
-        return Double(character.currentStamina) / Double(character.maxStamina)
-    }
-
     private var isCriticalHP: Bool { hpPercent < 0.25 }
+    private var isStaminaLow: Bool { character.maxStamina > 0 && Double(character.currentStamina) / Double(character.maxStamina) < 0.15 }
     private var statPointsAvailable: Int { character.statPoints ?? 0 }
 
     private func formatGold(_ n: Int) -> String {
@@ -48,16 +42,13 @@ struct UnifiedHeroWidget: View {
             // MARK: Left — Avatar with XP Ring + Level Badge
             avatarSection
 
-            // MARK: Right — Name/Currencies, HP bar, Stamina bar, Pills
+            // MARK: Right — Name/Resources, HP bar
             VStack(alignment: .leading, spacing: LayoutConstants.widgetRowGap) {
-                // Row 1: Name + Currencies
-                nameAndCurrenciesRow
+                // Row 1: Name + Currencies + Stamina inline
+                nameAndResourcesRow
 
                 // Row 2: HP bar (full width, text inside)
                 hpBarSection
-
-                // Row 3: Stamina bar (full width, text inside)
-                staminaBarSection
             }
         }
         .frame(minHeight: LayoutConstants.widgetMinHeight)
@@ -213,9 +204,9 @@ struct UnifiedHeroWidget: View {
         }
     }
 
-    // MARK: - Row 1: Name + Currencies
+    // MARK: - Row 1: Name + Currencies + Stamina Inline
 
-    private var nameAndCurrenciesRow: some View {
+    private var nameAndResourcesRow: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Character name
             Text(character.characterName)
@@ -235,7 +226,37 @@ struct UnifiedHeroWidget: View {
                     animated: false
                 )
             }
+
+            // Stamina inline (always visible — it's an action resource, not a currency)
+            staminaInlineView
         }
+    }
+
+    // MARK: - Stamina Inline Display (⚡ 85/120)
+
+    private var staminaInlineView: some View {
+        HStack(spacing: LayoutConstants.space2XS) {
+            Image("icon-stamina")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+
+            HStack(spacing: 0) {
+                NumberTickUpText(
+                    value: character.currentStamina,
+                    color: isStaminaLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina,
+                    font: DarkFantasyTheme.uiLabel.bold()
+                )
+                Text("/\(character.maxStamina)")
+                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .foregroundStyle(
+                        (isStaminaLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
+                            .opacity(0.6)
+                    )
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Stamina \(character.currentStamina) of \(character.maxStamina)")
     }
 
     // MARK: - Row 2: HP Bar (unified component, widget size)
@@ -247,42 +268,6 @@ struct UnifiedHeroWidget: View {
             size: .widget,
             pulseOnCritical: isCriticalHP
         )
-    }
-
-    // MARK: - Row 3: Stamina Bar (widget-size inline bar with tick-up text)
-    // Note: StaminaBarView doesn't have a .widget size with NumberTickUpText,
-    // so we keep a slim custom version here that delegates to the shared gradient.
-
-    private var staminaBarSection: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
-                    .fill(DarkFantasyTheme.bgTertiary)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
-                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
-                    )
-
-                RoundedRectangle(cornerRadius: LayoutConstants.widgetBarRadius)
-                    .fill(DarkFantasyTheme.staminaGradient)
-                    .frame(width: geo.size.width * max(0.02, min(1, staminaPercent)))
-
-                HStack(spacing: LayoutConstants.space2XS) {
-                    NumberTickUpText(
-                        value: character.currentStamina,
-                        color: DarkFantasyTheme.textPrimary,
-                        font: DarkFantasyTheme.uiLabel.bold()
-                    )
-                    Text("/\(character.maxStamina)")
-                        .font(DarkFantasyTheme.uiLabel.bold())
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                }
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 1, x: 0, y: 1)
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .frame(height: LayoutConstants.widgetBarHeight)
-        .animation(.easeInOut(duration: MotionConstants.normal), value: staminaPercent)
     }
 
     // Pills removed — contextual actions now shown via NPC widget
@@ -378,6 +363,39 @@ struct UnifiedHeroWidget: View {
         pvpWinStreak: 0,
         firstWinToday: false,
         statPoints: 2
+    )
+
+    return UnifiedHeroWidget(
+        character: mockChar,
+        context: .hub,
+        showCurrencies: true
+    )
+    .padding()
+    .background(DarkFantasyTheme.bgPrimary)
+    .environment(AppState())
+}
+
+#Preview("Zero Stamina") {
+    let mockChar = Character(
+        id: "test-4",
+        characterName: "Exhausted",
+        characterClass: .mage,
+        origin: .skeleton,
+        avatar: "skin-mage-001",
+        level: 10,
+        experience: 3000,
+        gold: 5000,
+        gems: 20,
+        currentHp: 200,
+        maxHp: 200,
+        currentStamina: 0,
+        maxStamina: 120,
+        pvpRating: 1200,
+        pvpWins: 5,
+        pvpLosses: 3,
+        pvpWinStreak: 0,
+        firstWinToday: false,
+        statPoints: 0
     )
 
     return UnifiedHeroWidget(

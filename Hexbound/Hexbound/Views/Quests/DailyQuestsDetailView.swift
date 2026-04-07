@@ -79,6 +79,24 @@ struct DailyQuestsDetailView: View {
         }
     }
 
+    // MARK: - Quest Icon Asset
+
+    /// Returns the asset image name for a quest type.
+    /// For `item_upgrade` uses the hero's avatar (dynamic).
+    private func questIconAsset(for questType: String) -> String {
+        switch questType {
+        case "pvp_wins":          return "building-arena"
+        case "dungeons_complete": return "building-dungeon"
+        case "gold_spent":        return "building-shop"
+        case "item_upgrade":
+            return appState.currentCharacter?.avatar ?? "knight"
+        case "consumable_use":    return "health-potion-medium"
+        case "shell_game_play":   return "shell-cup"
+        case "gold_mine_collect": return "building-gold-mine"
+        default:                  return "icon-xp" // safe fallback
+        }
+    }
+
     // MARK: - Helpers
 
     private func timeUntilReset() -> String {
@@ -315,10 +333,16 @@ struct DailyQuestsDetailView: View {
     @ViewBuilder
     private func questCardBody(_ quest: Quest, vm: DailyQuestsViewModel, isClaiming: Bool, destination: AppRoute?) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            // Icon
-            Text(quest.icon)
-                .font(DarkFantasyTheme.title) // emoji text
-                .frame(width: 44)
+            // Icon — asset image instead of emoji
+            Image(questIconAsset(for: quest.type))
+                .resizable()
+                .scaledToFill()
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                )
 
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {

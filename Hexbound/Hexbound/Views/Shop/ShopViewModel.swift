@@ -146,12 +146,15 @@ final class ShopViewModel {
     }
 
     func buyOffer(_ offer: ShopOffer) async {
+        guard buyingOfferId == nil else { return } // double-tap guard
         guard let charId = appState.currentCharacter?.id else { return }
         guard offer.canPurchase else {
             appState.showToast("Purchase limit reached!", type: .error)
             return
         }
+        buyingOfferId = offer.id
         guard canAffordOffer(offer) else {
+            buyingOfferId = nil
             appState.showToast(
                 offer.isGemPurchase ? "Not enough gems!" : "Not enough gold!",
                 type: .error,
@@ -173,11 +176,11 @@ final class ShopViewModel {
             appState.currentCharacter?.gold = savedGold - offer.salePrice
         }
         HapticManager.success()
-        buyingOfferId = nil
 
         // ── Fire API in background ──
         Task { [weak self] in
             guard let self else { return }
+            defer { buyingOfferId = nil }
             do {
                 let response: OfferPurchaseResponse = try await APIClient.shared.post(
                     APIEndpoints.shopOffers,
@@ -186,6 +189,7 @@ final class ShopViewModel {
                 if response.success {
                     appState.currentCharacter?.gold = response.gold
                     appState.currentCharacter?.gems = response.gems
+                    appState.showToast("Offer purchased!", type: .reward)
                     await loadOffers()
                 } else {
                     // Revert
@@ -258,6 +262,8 @@ final class ShopViewModel {
     }
 
     func buy(_ item: ShopItem) async {
+        guard buyingItemId == nil else { return } // double-tap guard
+
         // Validate currency
         if !canAfford(item) {
             HapticManager.error()
@@ -271,6 +277,8 @@ final class ShopViewModel {
             )
             return
         }
+
+        buyingItemId = item.id
 
         // ── Optimistic UI: update instantly ──
         let savedGold = appState.currentCharacter?.gold ?? 0
@@ -298,10 +306,10 @@ final class ShopViewModel {
         appState.invalidateCache("quests")
 
         // ── Fire API in background ──
-        buyingItemId = nil
         let ct = item.consumableType ?? item.catalogId ?? ""
         Task { [weak self] in
             guard let self else { return }
+            defer { buyingItemId = nil }
             let success: Bool
             if ct.hasPrefix("gem_pack_") {
                 let gemsAmount: Int
@@ -319,7 +327,9 @@ final class ShopViewModel {
                 success = await service.buy(catalogId: catalogId)
             }
 
-            if !success {
+            if success {
+                appState.showToast("Item purchased!", type: .reward)
+            } else {
                 // Revert optimistic state
                 appState.currentCharacter?.gold = savedGold
                 appState.currentCharacter?.gems = savedGems

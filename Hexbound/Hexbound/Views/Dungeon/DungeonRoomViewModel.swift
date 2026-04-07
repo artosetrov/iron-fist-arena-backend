@@ -182,6 +182,7 @@ final class DungeonRoomViewModel {
     // MARK: - Fight
 
     func fight() async {
+        guard !isFighting else { return } // prevent double-tap
         guard canFightSelectedBoss else { return }
         isFighting = true
         // Capture XP snapshot before fight to detect level-up on victory screen

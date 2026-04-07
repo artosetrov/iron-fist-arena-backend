@@ -408,16 +408,30 @@ struct DailyLoginDetailView: View {
     private func tomorrowHint(vm: DailyLoginPopupViewModel) -> some View {
         if let nextReward = vm.nextDayReward {
             if vm.hasClaimed {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    Text("Come back tomorrow for")
-                        .font(DarkFantasyTheme.uiLabel)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        rewardIcon(nextReward, size: 16)
-                        Text(nextReward.label)
+                VStack(spacing: LayoutConstants.spaceMD) {
+                    VStack(spacing: LayoutConstants.spaceXS) {
+                        Text("Come back tomorrow for")
+                            .font(DarkFantasyTheme.uiLabel)
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        HStack(spacing: LayoutConstants.spaceXS) {
+                            rewardIcon(nextReward, size: 16)
+                            Text(nextReward.label)
+                        }
+                        .font(DarkFantasyTheme.body.weight(.bold))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
-                    .font(DarkFantasyTheme.body.weight(.bold))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: LayoutConstants.spaceSM) {
+                            Image(systemName: "building.columns.fill")
+                                .font(DarkFantasyTheme.uiLabel.bold())
+                            Text("В ЗАМОК")
+                        }
+                    }
+                    .buttonStyle(.primary)
+                    .padding(.horizontal, LayoutConstants.screenPadding)
                 }
             } else {
                 HStack(spacing: LayoutConstants.spaceXS) {

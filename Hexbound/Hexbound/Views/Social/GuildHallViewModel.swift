@@ -648,11 +648,16 @@ class GuildHallViewModel {
         return .success
     }
 
+    private var sendingChallengeTargetId: String?
+
     func sendChallenge(targetId: String, message: String? = nil) -> ActionResult {
+        guard sendingChallengeTargetId == nil else { return .success } // prevent double-tap
+        sendingChallengeTargetId = targetId
         HapticManager.light()
 
         Task { [weak self] in
             guard let self else { return }
+            defer { self.sendingChallengeTargetId = nil }
             do {
                 _ = try await self.challengeService.sendChallenge(
                     characterId: self.characterId,

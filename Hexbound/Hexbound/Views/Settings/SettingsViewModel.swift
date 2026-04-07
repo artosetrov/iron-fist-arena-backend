@@ -37,6 +37,7 @@ final class SettingsViewModel {
     }
 
     var linkAccountMessage: String?
+    var isDeleting = false
 
     init(appState: AppState) {
         self.appState = appState
@@ -51,10 +52,14 @@ final class SettingsViewModel {
     }
 
     func deleteAccount() async {
+        guard !isDeleting else { return }
+        isDeleting = true
         do {
             _ = try await APIClient.shared.postRaw("/api/user/delete")
+            isDeleting = false
             appState.logout()
         } catch {
+            isDeleting = false
             appState.showToast("Failed to delete account", subtitle: error.localizedDescription, type: .error)
         }
     }

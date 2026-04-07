@@ -81,6 +81,7 @@ final class RegisterViewModel {
     // MARK: - Google Sign In
 
     func handleGoogleSignIn(appState: AppState) async {
+        guard !isLoading else { return } // prevent double-tap
         isLoading = true; errorMessage = ""
 
         do {
@@ -123,6 +124,7 @@ final class RegisterViewModel {
     }
 
     func register(appState: AppState) async {
+        guard !isLoading else { return } // prevent double-tap
         guard validate() else { return }
         isLoading = true
         errorMessage = ""

@@ -170,6 +170,7 @@ final class DungeonRushViewModel {
     // MARK: - Fight (combat/elite/miniboss rooms)
 
     func fight() async {
+        guard !isFighting else { return } // prevent double-tap
         guard currentRoom?.isCombat == true else { return }
         isFighting = true
         let result = await service.rushFight(runId: runId)
@@ -199,6 +200,7 @@ final class DungeonRushViewModel {
     // MARK: - Resolve (treasure/event rooms)
 
     func resolveRoom() async {
+        guard !isLoading else { return } // prevent double-tap
         guard let room = currentRoom, !room.isCombat, room.type != "shop" else { return }
         isLoading = true
         let result = await service.rushResolve(runId: runId)
@@ -210,6 +212,7 @@ final class DungeonRushViewModel {
     // MARK: - Shop
 
     func openShop() async {
+        guard !isLoading else { return } // prevent double-tap
         guard currentRoom?.type == "shop" else { return }
         isLoading = true
         let result = await service.rushResolve(runId: runId)
@@ -234,44 +237,59 @@ final class DungeonRushViewModel {
     }
 
     func buyShopItem(slot: Int) async {
+        guard !isProcessingShop else { return }
         isProcessingShop = true
+
+        // Optimistic: mark item purchased + deduct gold locally
+        let savedShopItems = shopItems
+        let savedGold = appState.currentCharacter?.gold ?? 0
+        let itemPrice = shopItems.first(where: { $0.slot == slot })?.price ?? 0
+
+        shopItems = shopItems.map { item in
+            if item.slot == slot {
+                return RushShopItem(slot: item.slot, type: item.type, name: item.name,
+                                    icon: item.icon, description: item.description,
+                                    price: item.price, purchased: true)
+            }
+            return item
+        }
+        appState.currentCharacter?.gold = savedGold - itemPrice
+        HapticManager.light()
+
+        // Background API call
         let result = await service.rushShopBuy(runId: runId, slot: slot)
         isProcessingShop = false
-        guard let result else {
+
+        guard let result, result["purchased"] as? Bool == true else {
+            // Revert on failure
+            shopItems = savedShopItems
+            appState.currentCharacter?.gold = savedGold
             appState.showToast("Purchase failed", subtitle: "Not enough gold for this item", type: .error)
             return
         }
 
-        if result["purchased"] as? Bool == true {
-            // Update HP and buffs
-            currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
-            updateHpFromPercent(result)
-            parseBuffs(from: result["buffs"])
+        // Sync with server values
+        currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
+        updateHpFromPercent(result)
+        parseBuffs(from: result["buffs"])
 
-            // Update shop purchased state
-            if let purchased = result["shopPurchased"] as? [Int] {
-                shopItems = shopItems.map { item in
-                    RushShopItem(
-                        slot: item.slot,
-                        type: item.type,
-                        name: item.name,
-                        icon: item.icon,
-                        description: item.description,
-                        price: item.price,
-                        purchased: purchased.contains(item.slot)
-                    )
-                }
+        if let purchased = result["shopPurchased"] as? [Int] {
+            shopItems = shopItems.map { item in
+                RushShopItem(
+                    slot: item.slot, type: item.type, name: item.name,
+                    icon: item.icon, description: item.description,
+                    price: item.price, purchased: purchased.contains(item.slot)
+                )
             }
-
-            HapticManager.light()
         }
     }
 
     func leaveShop() async {
-        isLoading = true
-        let result = await service.rushResolve(runId: runId, action: "leave_shop")
-        isLoading = false
+        // Close shop UI instantly
         showShop = false
+
+        // Resolve in background
+        let result = await service.rushResolve(runId: runId, action: "leave_shop")
         guard let result else { return }
         advanceFromResult(result)
     }

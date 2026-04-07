@@ -459,6 +459,7 @@ struct LeaderboardPlayerDetailSheet: View {
     // MARK: - Challenge Action
 
     private func sendChallenge() async {
+        guard !challengeSent else { return } // double-tap guard
         guard let charId = appState.currentCharacter?.id else { return }
 
         // Optimistic: show sent state instantly

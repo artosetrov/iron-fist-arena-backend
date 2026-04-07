@@ -62,6 +62,17 @@ struct MailMessage: Codable, Identifiable {
         )
     }
 
+    /// Return a copy marked as unread (for rollback)
+    func withUnread() -> MailMessage {
+        MailMessage(
+            id: id, subject: subject, body: body,
+            senderType: senderType, senderName: senderName,
+            attachments: attachments,
+            isRead: false, isClaimed: isClaimed,
+            createdAt: createdAt, expiresAt: expiresAt
+        )
+    }
+
     /// Return a copy marked as claimed (and read)
     func withClaimed() -> MailMessage {
         MailMessage(

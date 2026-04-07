@@ -10,6 +10,7 @@ final class GoldMineViewModel {
     var isLoading = false
     var actionSlotId: String?
     var isBuyingSlot = false
+    private var activeActionSlots: Set<Int> = []  // prevents double-tap per slot
 
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
@@ -56,7 +57,9 @@ final class GoldMineViewModel {
     // MARK: - Start Mining
 
     func startMining(slotIndex: Int) async {
+        guard !activeActionSlots.contains(slotIndex) else { return }
         guard let charId = appState.currentCharacter?.id else { return }
+        activeActionSlots.insert(slotIndex)
 
         // Optimistic UI — update slot to "mining" instantly
         let savedSlots = slots
@@ -94,12 +97,15 @@ final class GoldMineViewModel {
             }
             appState.showToast("Failed to start mining", subtitle: "Check connection and try again", type: .error)
         }
+        activeActionSlots.remove(slotIndex)
     }
 
     // MARK: - Collect
 
     func collect(slotIndex: Int) async {
+        guard !activeActionSlots.contains(slotIndex) else { return }
         guard let charId = appState.currentCharacter?.id else { return }
+        activeActionSlots.insert(slotIndex)
 
         // Optimistic: update UI immediately
         let savedSlots = slots
@@ -148,12 +154,15 @@ final class GoldMineViewModel {
             }
             appState.showToast("Failed to collect", subtitle: "Check connection and try again", type: .error)
         }
+        activeActionSlots.remove(slotIndex)
     }
 
     // MARK: - Boost
 
     func boost(slotIndex: Int) {
+        guard !activeActionSlots.contains(slotIndex) else { return }
         guard let charId = appState.currentCharacter?.id else { return }
+        activeActionSlots.insert(slotIndex)
         actionSlotId = "\(slotIndex)"
 
         // Optimistic: deduct gems + show boosted
@@ -183,6 +192,7 @@ final class GoldMineViewModel {
                 appState.showToast("Failed to boost", subtitle: "Check your gem balance", type: .error)
             }
             actionSlotId = nil
+            activeActionSlots.remove(slotIndex)
         }
     }
 
@@ -193,14 +203,19 @@ final class GoldMineViewModel {
         guard let charId = appState.currentCharacter?.id else { return }
         isBuyingSlot = true
 
-        // Optimistic: deduct gems instantly
+        // Optimistic: deduct gems + increase slot count instantly
         let prevGems = appState.currentCharacter?.gems ?? 0
+        let prevMaxSlots = maxSlots
+        let prevSlots = slots
         let slotCost = 50
         appState.currentCharacter?.gems = max(0, prevGems - slotCost)
+        maxSlots += 1
+        // Add an idle slot placeholder so UI shows the new slot immediately
+        slots.append(["status": "idle", "slot_index": maxSlots - 1])
         HapticManager.success()
         appState.showToast("New mining slot unlocked!", type: .reward)
 
-        // Fire API in background
+        // Fire API in background — server response overwrites with authoritative values
         Task { [weak self] in
             guard let self else { return }
             do {
@@ -220,6 +235,8 @@ final class GoldMineViewModel {
             } catch {
                 // Revert on failure
                 appState.currentCharacter?.gems = prevGems
+                maxSlots = prevMaxSlots
+                slots = prevSlots
                 appState.showToast("Failed to buy slot", subtitle: "Check your gem balance", type: .error)
             }
             isBuyingSlot = false

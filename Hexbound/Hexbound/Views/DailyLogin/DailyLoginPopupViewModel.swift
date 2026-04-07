@@ -31,7 +31,7 @@ final class DailyLoginPopupViewModel {
     }
 
     func claimReward() async {
-        guard loginData?.canClaim == true else { return }
+        guard loginData?.canClaim == true, !isClaiming else { return }
         let currentDay = loginData?.currentDay ?? 0
         isClaiming = true
 
@@ -41,14 +41,15 @@ final class DailyLoginPopupViewModel {
             showClaimParticles = true
             hasClaimed = true
         }
-        isClaiming = false
         appState.dailyLoginCanClaim = false
         // Invalidate cached daily login so Hub doesn't re-read stale canClaim=true
         appState.cachedDailyLogin = nil
 
         // Fire API in background — don't block UI
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             let updatedData = await service.claimReward()
+            isClaiming = false
             if let data = updatedData {
                 loginData = data
             } else {
@@ -61,7 +62,7 @@ final class DailyLoginPopupViewModel {
             // Reset particles after animation
             try? await Task.sleep(for: .seconds(1.0))
             withAnimation {
-                showClaimParticles = false
+                self.showClaimParticles = false
             }
         }
     }

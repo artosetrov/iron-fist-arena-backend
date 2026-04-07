@@ -138,16 +138,37 @@ final class CharacterViewModel {
     }
 
     func respecStats() {
+        guard !isRespeccing else { return } // prevent double-tap
         isRespeccing = true
         pendingChanges.removeAll()
         HapticManager.success()
 
-        // Fire API in background
+        // Snapshot for rollback
+        let savedCharacter = appState.currentCharacter
+
+        // Optimistic: reset all stats to 0 and return points immediately
+        if var char = appState.currentCharacter {
+            let stats: [Int] = [
+                char.strength ?? 0, char.agility ?? 0,
+                char.vitality ?? 0, char.endurance ?? 0,
+                char.intelligence ?? 0, char.wisdom ?? 0,
+                char.luck ?? 0, char.charisma ?? 0,
+                char.statPoints ?? 0
+            ]
+            let totalPoints = stats.reduce(0, +)
+            char.strength = 0; char.agility = 0; char.vitality = 0; char.endurance = 0
+            char.intelligence = 0; char.wisdom = 0; char.luck = 0; char.charisma = 0
+            char.statPoints = totalPoints
+            appState.currentCharacter = char
+        }
+
+        // Fire API in background — server response will overwrite with authoritative values
         Task { [weak self] in
             guard let self else { return }
             let success = await service.respecStats()
             isRespeccing = false
             if !success {
+                appState.currentCharacter = savedCharacter
                 appState.showToast("Respec failed", subtitle: "Try again", type: .error)
             }
         }
@@ -163,18 +184,39 @@ final class CharacterViewModel {
             statChanges[stat.apiKey] = delta
         }
 
-        // Optimistic: clear pending + show success instantly
+        // Snapshot for rollback
         let savedPending = pendingChanges
+        let savedCharacter = appState.currentCharacter
+
+        // Optimistic: apply deltas to Character immediately so UI shows new values
+        if var char = appState.currentCharacter {
+            for (stat, delta) in pendingChanges where delta > 0 {
+                switch stat {
+                case .strength:     char.strength     = (char.strength ?? 0) + delta
+                case .agility:      char.agility      = (char.agility ?? 0) + delta
+                case .vitality:     char.vitality     = (char.vitality ?? 0) + delta
+                case .endurance:    char.endurance     = (char.endurance ?? 0) + delta
+                case .intelligence: char.intelligence  = (char.intelligence ?? 0) + delta
+                case .wisdom:       char.wisdom        = (char.wisdom ?? 0) + delta
+                case .luck:         char.luck          = (char.luck ?? 0) + delta
+                case .charisma:     char.charisma      = (char.charisma ?? 0) + delta
+                }
+            }
+            char.statPoints = (char.statPoints ?? 0) - pointsSpent
+            appState.currentCharacter = char
+        }
+
         pendingChanges.removeAll()
         HapticManager.success()
         isSaving = false
 
-        // Fire API in background
+        // Fire API in background — server response will overwrite with authoritative values
         Task { [weak self] in
             guard let self else { return }
             let success = await service.allocateStats(statChanges: statChanges)
             if !success {
-                // Revert on failure
+                // Revert both Character and pending on failure
+                appState.currentCharacter = savedCharacter
                 pendingChanges = savedPending
                 appState.showToast("Failed to save stats", subtitle: "Try again", type: .error)
             }

@@ -69,7 +69,6 @@ final class BattlePassViewModel {
         guard rewardState(reward) == .claimable else { return }
         guard !claimingLevels.contains(level) else { return }
         claimingLevels.insert(level)
-        defer { claimingLevels.remove(level) }
 
         // ── Optimistic UI: mark claimed instantly ──
         if var bp = data {
@@ -106,6 +105,9 @@ final class BattlePassViewModel {
             data = freshData
             cache.cacheBattlePass(freshData)
         }
+
+        // Remove lock AFTER all async work (API + refresh) completes
+        claimingLevels.remove(level)
     }
 
     func buyPremium() {

@@ -75,6 +75,7 @@ final class CharacterSelectionViewModel {
 
     /// Permanently deletes a character. Returns true on success.
     func deleteCharacter(id: String) async -> Bool {
+        guard !isDeletingCharacter else { return false } // prevent double-tap
         isDeletingCharacter = true
         deleteError = nil
 
@@ -101,6 +102,7 @@ final class CharacterSelectionViewModel {
         appState: AppState,
         cache: GameDataCache
     ) async {
+        guard !isLoading else { return } // prevent double-tap
         guard let character = characters.first(where: { $0.id == characterId }) else { return }
 
         isLoading = true

@@ -154,20 +154,23 @@ final class InventoryViewModel {
     }
 
     func sell(_ item: Item) async {
-        // Optimistic UI: remove item immediately
+        // Optimistic UI: remove item + add gold immediately
         let previousItems = items
+        let previousGold = appState.currentCharacter?.gold ?? 0
         let sellPrice = item.sellPrice ?? 0
         items.removeAll { $0.id == item.id }
+        appState.currentCharacter?.gold = previousGold + sellPrice
         showItemDetail = false
         appState.showToast("Sold for \(sellPrice) gold", type: .reward)
 
         if let result = await service.sell(inventoryId: item.id) {
-            // Server confirmed — update gold, keep local state (no full reload)
+            // Server confirmed — sync authoritative gold
             appState.currentCharacter?.gold = result.gold
             appState.cachedInventory = items
         } else {
             // Rollback on failure
             items = previousItems
+            appState.currentCharacter?.gold = previousGold
             appState.cachedInventory = previousItems
             appState.showToast("Failed to sell", subtitle: "Unequip the item first", type: .error)
         }
@@ -263,7 +266,11 @@ final class InventoryViewModel {
         }
     }
 
+    private var repairingItemId: String?
+
     func repair(_ item: Item) {
+        guard repairingItemId == nil else { return } // prevent double-tap
+        repairingItemId = item.id
         showItemDetail = false
 
         // Optimistic: restore durability + deduct gold instantly
@@ -288,6 +295,7 @@ final class InventoryViewModel {
         let itemId = item.id
         Task { [weak self] in
             guard let self else { return }
+            defer { repairingItemId = nil }
             guard let result = await shopService.repair(inventoryId: itemId) else {
                 // Revert on failure
                 items = previousItems
@@ -310,7 +318,10 @@ final class InventoryViewModel {
 
     // MARK: - Expand Inventory
 
+    private var isExpanding = false
+
     func expandInventory() {
+        guard !isExpanding else { return } // prevent double-tap
         guard canExpand else { return }
         guard gold >= expandCost else {
             appState.showToast("Not enough gold", subtitle: "Earn gold in arena or dungeons", type: .error)
@@ -320,6 +331,7 @@ final class InventoryViewModel {
         // Optimistic: increase slots + deduct gold instantly
         let previousSlots = totalSlots
         let previousGold = appState.currentCharacter?.gold ?? 0
+        isExpanding = true
         totalSlots += 10
         appState.currentCharacter?.gold = max(0, previousGold - expandCost)
         HapticManager.success()
@@ -328,6 +340,7 @@ final class InventoryViewModel {
         // Fire API in background
         Task { [weak self] in
             guard let self else { return }
+            defer { isExpanding = false }
             if let newSlots = await service.expandInventory() {
                 totalSlots = newSlots
             } else {

@@ -484,6 +484,7 @@ struct CharacterProfileView: View {
     }
 
     private func sendChallenge() {
+        guard !challengeSent else { return } // double-tap guard
         guard let charId = appState.currentCharacter?.id else { return }
 
         // Optimistic: show sent state instantly

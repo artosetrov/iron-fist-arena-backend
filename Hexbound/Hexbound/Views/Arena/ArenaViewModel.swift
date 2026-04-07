@@ -337,6 +337,7 @@ final class ArenaViewModel {
     // MARK: - Refresh
 
     func refreshOpponents() async {
+        guard !isRefreshing else { return }
         isRefreshing = true
 
         if opponents.count > 2 {

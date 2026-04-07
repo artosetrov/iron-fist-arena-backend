@@ -30,7 +30,8 @@ final class StanceSelectorViewModel {
     }
 
     func saveStance() {
-        guard hasChanges else { return }
+        guard hasChanges, !isSaving else { return }
+        isSaving = true
 
         // Optimistic: update character stance + navigate back instantly
         let prevAttack = appState.currentCharacter?.combatStance?.attack
@@ -45,6 +46,7 @@ final class StanceSelectorViewModel {
         Task { [weak self] in
             guard let self else { return }
             let success = await service.setStance(attack: attack, defense: defense)
+            isSaving = false
             if !success {
                 // Revert on failure
                 if let prevAttack, let prevDefense {

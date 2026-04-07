@@ -39,6 +39,10 @@ final class ShellGameViewModel {
         sessionId = nil
         winningCup = nil
 
+        // Optimistic: deduct gold before API call
+        let savedGold = appState.currentCharacter?.gold ?? 0
+        appState.currentCharacter?.gold = savedGold - selectedBet
+
         do {
             let data = try await APIClient.shared.postRaw(
                 APIEndpoints.shellGameStart,
@@ -52,15 +56,16 @@ final class ShellGameViewModel {
 
             guard let sid else {
                 isPlaying = false
+                appState.currentCharacter?.gold = savedGold // revert
                 return nil
             }
 
             sessionId = sid
-            appState.currentCharacter?.gold -= selectedBet
 
             return revealCup
         } catch let error as APIError {
             isPlaying = false
+            appState.currentCharacter?.gold = savedGold // revert
             switch error {
             case .rateLimited(let message):
                 appState.showToast(message, type: .error)
@@ -72,6 +77,7 @@ final class ShellGameViewModel {
             return nil
         } catch {
             isPlaying = false
+            appState.currentCharacter?.gold = savedGold // revert
             appState.showToast("Shell game unavailable", subtitle: "Try again later", type: .error)
             return nil
         }

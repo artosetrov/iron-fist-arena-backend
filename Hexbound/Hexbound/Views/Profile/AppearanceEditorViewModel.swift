@@ -239,7 +239,7 @@ final class AppearanceEditorViewModel {
         appState.currentCharacter?.gender = selectedGender
         appState.currentCharacter?.avatar = selectedSkinKey
         HapticManager.success()
-        isSaving = false
+        isSaving = true
         didSave = true
         errorMessage = ""
 
@@ -253,6 +253,7 @@ final class AppearanceEditorViewModel {
         let charId = char.id
         Task { [weak self] in
             guard let self else { return }
+            defer { isSaving = false }
             do {
                 let result = try await APIClient.shared.patchRaw(
                     APIEndpoints.changeAppearance(charId),

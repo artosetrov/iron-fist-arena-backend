@@ -346,6 +346,7 @@ final class OnboardingViewModel {
     // MARK: - Create Character
 
     func createCharacter(appState: AppState, cache: GameDataCache) async {
+        guard !isCreating else { return } // prevent double-tap
         let gender = selectedGender
         guard let charClass = selectedClass,
               let origin = selectedOrigin,

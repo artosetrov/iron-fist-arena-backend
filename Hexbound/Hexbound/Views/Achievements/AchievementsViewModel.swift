@@ -12,6 +12,7 @@ final class AchievementsViewModel {
     static let tabs = ["PvP", "Progress", "Ranking"]
     static let tabCategories = ["pvp", "progression", "ranking"]
 
+    private var claimingKeys: Set<String> = []
     private let cache: GameDataCache
 
     init(appState: AppState, cache: GameDataCache) {
@@ -62,6 +63,9 @@ final class AchievementsViewModel {
     // MARK: - Claim
 
     func claim(_ achievement: Achievement) async {
+        guard !claimingKeys.contains(achievement.key) else { return }
+        claimingKeys.insert(achievement.key)
+
         // ── Optimistic UI: mark claimed instantly ──
         if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
             achievements[idx].rewardClaimed = true
@@ -72,6 +76,7 @@ final class AchievementsViewModel {
 
         // ── API call (runs after UI update thanks to await suspension) ──
         let success = await service.claim(achievementKey: achievement.key)
+        claimingKeys.remove(achievement.key)
         if !success {
             // Revert on failure
             if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {

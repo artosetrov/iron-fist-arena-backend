@@ -77,48 +77,43 @@ final class DailyQuestsViewModel {
     // MARK: - Claim
 
     func claimQuest(_ quest: Quest) async {
+        guard claimingQuestId == nil else { return } // prevent double-tap
         claimingQuestId = quest.id
 
         // ── Optimistic UI: mark claimed instantly ──
         if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
             quests[idx].rewardClaimed = true
         }
-        claimingQuestId = nil
         HapticManager.success()
         appState.showCelebration(.questComplete, title: "Quest Complete!", subtitle: quest.title)
 
-        // ── Fire API in background ──
-        Task { [weak self] in
-            guard let self else { return }
-            let success = await service.claimQuest(questId: quest.id)
-            if !success {
-                // Revert on failure
-                if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
-                    quests[idx].rewardClaimed = false
-                }
-                appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
+        // ── Fire API — keep claimingQuestId until done ──
+        let success = await service.claimQuest(questId: quest.id)
+        claimingQuestId = nil
+        if !success {
+            // Revert on failure
+            if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
+                quests[idx].rewardClaimed = false
             }
+            appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
         }
     }
 
     func claimBonus() async {
-        guard !bonusClaimedToday else { return }
+        guard !bonusClaimedToday, !isClaimingBonus else { return }
 
         // ── Optimistic UI: mark bonus claimed instantly ──
         isClaimingBonus = true
         bonusClaimedToday = true
-        isClaimingBonus = false
         HapticManager.success()
 
-        // ── Fire API in background ──
-        Task { [weak self] in
-            guard let self else { return }
-            let success = await service.claimBonus()
-            if !success {
-                // Revert on failure
-                bonusClaimedToday = false
-                appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)
-            }
+        // ── Fire API — keep isClaimingBonus until done ──
+        let success = await service.claimBonus()
+        isClaimingBonus = false
+        if !success {
+            // Revert on failure
+            bonusClaimedToday = false
+            appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)
         }
     }
 }

@@ -159,15 +159,27 @@ final class InboxViewModel {
                     body: ["character_id": characterId]
                 )
             } catch {
-                // Revert — re-fetch to get accurate state
-                await fetchInbox(characterId: characterId)
+                // Revert only the affected message
+                if let idx = messages.firstIndex(where: { $0.id == messageId }) {
+                    messages[idx] = messages[idx].withUnread()
+                    mailUnreadCount += 1
+                    rebuildUnifiedFeed()
+                }
             }
         }
     }
 
+    private var claimingMessageIds: Set<String> = []
+
     func claimAttachments(messageId: String, characterId: String, appState: AppState) {
+        guard !claimingMessageIds.contains(messageId) else { return }
+        claimingMessageIds.insert(messageId)
+
         // Save for revert
-        guard let idx = messages.firstIndex(where: { $0.id == messageId }) else { return }
+        guard let idx = messages.firstIndex(where: { $0.id == messageId }) else {
+            claimingMessageIds.remove(messageId)
+            return
+        }
         let savedMessage = messages[idx]
 
         // Optimistic: mark claimed instantly
@@ -179,6 +191,7 @@ final class InboxViewModel {
         // Fire API in background
         Task { [weak self] in
             guard let self else { return }
+            defer { claimingMessageIds.remove(messageId) }
             do {
                 let _: MailClaimResponse = try await apiClient.post(
                     "/api/mail/\(messageId)/claim",

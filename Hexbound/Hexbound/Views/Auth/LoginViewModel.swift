@@ -19,6 +19,7 @@ final class LoginViewModel {
     }
 
     func login(appState: AppState) async {
+        guard !isLoading else { return } // prevent double-tap
         guard validate() else { return }
         isLoading = true
         errorMessage = ""
@@ -31,6 +32,7 @@ final class LoginViewModel {
     }
 
     func guestLogin(appState: AppState) async {
+        guard !isLoading else { return } // prevent double-tap
         isLoading = true
         errorMessage = ""
 
@@ -94,6 +96,7 @@ final class LoginViewModel {
     }
 
     func handleGoogleSignIn(appState: AppState) async {
+        guard !isLoading else { return } // prevent double-tap
         isLoading = true; errorMessage = ""
 
         do {
@@ -138,14 +141,19 @@ final class LoginViewModel {
         }
     }
 
+    var isResettingPassword = false
+
     func sendPasswordReset(appState: AppState) async {
         let trimmed = forgotEmail.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty, trimmed.contains("@") else {
             errorMessage = "Please enter a valid email"
             return
         }
+        guard !isResettingPassword else { return }
+        isResettingPassword = true
 
         let result = await authService?.forgotPassword(email: trimmed)
+        isResettingPassword = false
         switch result {
         case .success:
             appState.showToast("Password reset email sent", type: .info)
