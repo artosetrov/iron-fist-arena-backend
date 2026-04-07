@@ -11,21 +11,88 @@ final class ShellGameViewModel {
     var result: String?
     var winAmount = 0
 
+    // NPC speech
+    var npcSpeech: String = ""
+
+    // Daily plays limit (backend = 20/day)
+    var playsRemaining: Int = 20
+    var playsLimit: Int = 20
+
     private var sessionId: String?
 
-    static let bets = [50, 100, 200, 500]
+    static let bets = [50, 100, 200, 500, 1000]
 
     init(appState: AppState) {
         self.appState = appState
+        randomizeSpeech()
     }
 
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
 
     var canPlay: Bool {
-        gold >= selectedBet && !isPlaying
+        gold >= selectedBet && !isPlaying && playsRemaining > 0
     }
 
+    var playsUsed: Int { playsLimit - playsRemaining }
+
     var cups: [Int] { [0, 1, 2] }
+
+    // MARK: - NPC Speech Lines
+
+    private static let defaultLines = [
+        "Step right up! Find the golden ball, double your gold...",
+        "Think you've got sharp eyes? Let's put them to the test!",
+        "The cups move fast, but your wits must be faster.",
+        "A simple game... for those with a keen eye.",
+        "Fortune favors the brave. Place your bet!",
+        "My cups have fooled kings and thieves alike.",
+    ]
+
+    private static let winLines = [
+        "Well played! Sharp eyes you have, adventurer!",
+        "Impressive! Not many can track my shuffle.",
+        "A worthy winner! The gold is yours.",
+        "You've bested me... this time.",
+    ]
+
+    private static let loseLines = [
+        "So close! The ball was hiding elsewhere...",
+        "Better luck next time, adventurer!",
+        "The cups are tricky, aren't they?",
+        "Don't feel bad — even rogues miss sometimes.",
+    ]
+
+    func randomizeSpeech() {
+        npcSpeech = Self.defaultLines.randomElement() ?? ""
+    }
+
+    func onResultComplete() {
+        if result == "win" {
+            npcSpeech = Self.winLines.randomElement() ?? ""
+        } else {
+            npcSpeech = Self.loseLines.randomElement() ?? ""
+        }
+    }
+
+    // MARK: - Load Status (daily plays)
+
+    func loadStatus() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        do {
+            let data = try await APIClient.shared.getRaw(
+                APIEndpoints.shellGameStatus,
+                params: ["character_id": charId]
+            )
+            if let remaining = data["plays_remaining"] as? Int {
+                playsRemaining = remaining
+            }
+            if let limit = data["plays_limit"] as? Int {
+                playsLimit = limit
+            }
+        } catch {
+            // Keep defaults (20/20) — non-critical
+        }
+    }
 
     // MARK: - Step 1: Start session
 
@@ -38,6 +105,10 @@ final class ShellGameViewModel {
         winAmount = 0
         sessionId = nil
         winningCup = nil
+
+        // Optimistic: deduct gold before API call
+        let savedGold = appState.currentCharacter?.gold ?? 0
+        appState.currentCharacter?.gold = savedGold - selectedBet
 
         do {
             let data = try await APIClient.shared.postRaw(
@@ -52,15 +123,26 @@ final class ShellGameViewModel {
 
             guard let sid else {
                 isPlaying = false
+                appState.currentCharacter?.gold = savedGold // revert
                 return nil
             }
 
             sessionId = sid
-            appState.currentCharacter?.gold -= selectedBet
+
+            // Update plays from server response if available
+            if let remaining = data["plays_remaining"] as? Int {
+                playsRemaining = remaining
+            } else {
+                playsRemaining = max(0, playsRemaining - 1)
+            }
+            if let limit = data["plays_limit"] as? Int {
+                playsLimit = limit
+            }
 
             return revealCup
         } catch let error as APIError {
             isPlaying = false
+            appState.currentCharacter?.gold = savedGold // revert
             switch error {
             case .rateLimited(let message):
                 appState.showToast(message, type: .error)
@@ -72,6 +154,7 @@ final class ShellGameViewModel {
             return nil
         } catch {
             isPlaying = false
+            appState.currentCharacter?.gold = savedGold // revert
             appState.showToast("Shell game unavailable", subtitle: "Try again later", type: .error)
             return nil
         }
@@ -127,5 +210,6 @@ final class ShellGameViewModel {
         winAmount = 0
         isPlaying = false
         sessionId = nil
+        randomizeSpeech()
     }
 }
