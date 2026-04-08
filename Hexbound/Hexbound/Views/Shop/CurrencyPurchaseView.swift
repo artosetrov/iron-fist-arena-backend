@@ -468,7 +468,7 @@ struct CurrencyPackageCard: View {
             // Buy button — meets touchMin (48pt)
             Button(action: onBuy) {
                 if isPurchasing {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
                     Text(package.priceUSD)
@@ -578,7 +578,7 @@ struct MonthlyGemCardOffer: View {
             // Buy button
             Button(action: onBuy) {
                 if isPurchasing {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)

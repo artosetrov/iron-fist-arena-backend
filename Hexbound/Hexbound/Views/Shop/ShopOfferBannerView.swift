@@ -123,7 +123,7 @@ private struct OfferCard: View {
                         onBuy()
                     } label: {
                         if isBuying {
-                            ProgressView()
+                            HexPulseLoader(.compact)
                                 .progressViewStyle(.circular)
                                 .tint(DarkFantasyTheme.textPrimary)
                         } else {

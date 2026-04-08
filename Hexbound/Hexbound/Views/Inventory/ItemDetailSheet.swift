@@ -750,7 +750,7 @@ struct ItemDetailSheet: View {
                 shop.onBuy()
             } label: {
                 if shop.isBuying {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
                     HStack(spacing: LayoutConstants.spaceXS) {

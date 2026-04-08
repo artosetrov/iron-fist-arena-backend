@@ -4,6 +4,7 @@ struct AchievementsDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: AchievementsViewModel?
+    @State private var achievementHint: NPCHint?
 
     var body: some View {
         ZStack {
@@ -83,9 +84,11 @@ struct AchievementsDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
+        .contextualHint(achievementHint)
         .task {
             if vm == nil { vm = AchievementsViewModel(appState: appState, cache: cache) }
             await vm?.loadAchievements()
+            if let vm { achievementHint = ContextualHintProvider.achievementsHint(hasUnclaimedRewards: vm.unclaimedCount > 0) }
         }
     }
 

@@ -47,12 +47,12 @@ struct BPRewardNodeView: View {
             // Name + amount — unified format: "Gold x130" or just "Skin"
             if reward.amount > 1 {
                 Text("\(reward.rewardName) x\(reward.amount)")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             } else {
                 Text(reward.rewardName)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             }
@@ -61,7 +61,7 @@ struct BPRewardNodeView: View {
             switch state {
             case .locked:
                 Text(reward.track == "premium" ? "Premium" : "Locked")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             case .claimable:
                 Button {
@@ -72,7 +72,7 @@ struct BPRewardNodeView: View {
                 .buttonStyle(.compactPrimary)
             case .claimed:
                 Text("Claimed")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }

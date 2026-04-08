@@ -18,7 +18,7 @@ struct FortuneWheelDetailView: View {
                 mainContent(vm)
                     .transaction { $0.animation = nil }
             } else {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             }
         }
@@ -195,15 +195,15 @@ struct FortuneWheelDetailView: View {
                     Image("fortune-pointer")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 44, height: 56)
-                        .rotationEffect(.degrees(135))
-                        .shadow(color: DarkFantasyTheme.gold.opacity(DarkFantasyTheme.opacityStrong), radius: 6)
-                        .offset(y: -4)
+                        .frame(width: 96, height: 120)
+                        .rotationEffect(.degrees(30))
+                        .shadow(color: DarkFantasyTheme.gold, radius: 10)
+                        .offset(y: -2)
                     Spacer()
                 }
                 .frame(height: wheelSize)
             }
-            .frame(maxWidth: .infinity)
+            .position(x: geo.size.width / 2, y: (wheelSize + 20) / 2)
         }
         .aspectRatio(0.95, contentMode: .fit)
     }
@@ -543,22 +543,6 @@ struct FortuneWheelView: View {
                     sectorContent(sector, radius: radius - 6)
                 }
 
-                // Outer metallic ring
-                Circle()
-                    .stroke(
-                        AngularGradient(
-                            colors: [
-                                DarkFantasyTheme.goldBright,
-                                DarkFantasyTheme.gold,
-                                DarkFantasyTheme.goldDim,
-                                DarkFantasyTheme.gold,
-                                DarkFantasyTheme.goldBright
-                            ],
-                            center: .center
-                        ),
-                        lineWidth: 4
-                    )
-
                 // Inner circle border
                 Circle()
                     .stroke(DarkFantasyTheme.goldDim.opacity(DarkFantasyTheme.opacityHeavy), lineWidth: 1)
@@ -646,11 +630,11 @@ struct FortuneWheelView: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(
-                width: sector.isLose ? LayoutConstants.iconMD : LayoutConstants.iconLG,
-                height: sector.isLose ? LayoutConstants.iconMD : LayoutConstants.iconLG
+                width: sector.isLose ? 56 : 80,
+                height: sector.isLose ? 56 : 80
             )
-            .opacity(sector.isLose ? DarkFantasyTheme.opacityHeavy : 0.9)
-            .shadow(color: sector.color.opacity(sector.isLose ? 0 : DarkFantasyTheme.opacityHeavy), radius: 3)
+            .opacity(sector.isLose ? DarkFantasyTheme.opacityHeavy : 1.0)
+            .shadow(color: sector.color.opacity(sector.isLose ? 0 : 1.0), radius: 6)
             .offset(x: iconX, y: iconY)
             .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))
 

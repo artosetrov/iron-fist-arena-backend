@@ -147,16 +147,16 @@ struct AchievementCardView: View {
         if achievement.rewardClaimed {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.success)
                 Text("Claimed")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         } else if let reward = achievement.reward {
-            HStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Text("Reward:")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 if let gold = reward.gold, gold > 0 {
@@ -167,12 +167,12 @@ struct AchievementCardView: View {
                 }
                 if let title = reward.title {
                     Text("Title: \(title)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
                 if let frame = reward.frame {
                     Text("Frame: \(frame)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }

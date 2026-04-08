@@ -37,7 +37,7 @@ struct DungeonRoomDetailView: View {
             if let vm {
                 Group {
                 if vm.isLoading {
-                    ProgressView().tint(DarkFantasyTheme.gold)
+                    HexPulseLoader(.compact)
                 } else if vm.errorMessage != nil {
                     ErrorStateView.loadFailed {
                         Task { await vm.loadState() }
@@ -81,7 +81,7 @@ struct DungeonRoomDetailView: View {
                     DarkFantasyTheme.bgAbyss.opacity(0.55)
                         .ignoresSafeArea()
                     VStack(spacing: LayoutConstants.spaceMD) {
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .tint(DarkFantasyTheme.gold)
                             .scaleEffect(1.4)
                         Text("Preparing for battle...")

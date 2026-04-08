@@ -141,18 +141,7 @@ struct BossDetailSheet: View {
         .toolbar {
             if isNavigationMode {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        HStack(spacing: LayoutConstants.spaceXS) {
-                            Image(systemName: "chevron.left")
-                                .font(DarkFantasyTheme.uiLabel.weight(.semibold))
-                            Text("Bosses")
-                                .font(DarkFantasyTheme.uiLabel)
-                        }
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                    }
-                    .buttonStyle(.plain)
+                    HubLogoButton { dismiss() }
                 }
                 ToolbarItem(placement: .principal) {
                     Text(boss.name.uppercased())
@@ -459,7 +448,7 @@ struct BossDetailSheet: View {
                     onFight()
                 } label: {
                     if isFighting {
-                        ProgressView().tint(DarkFantasyTheme.textPrimary)
+                        HexPulseLoader(.compact)
                     } else {
                         VStack(spacing: LayoutConstants.space2XS) {
                             HStack(spacing: LayoutConstants.spaceSM) {

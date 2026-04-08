@@ -35,6 +35,7 @@
 		1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D145DE1A5F794907BB756397 /* CombatDetailView.swift */; };
 		1BDC4E98CDE7ACA78658823C /* DarkFantasyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */; };
 		1CB529F446C25EDE59BE9F6F /* LoreIntroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AAECE6F02EE4D31586157 /* LoreIntroView.swift */; };
+		6CD62A87D50EC73FA010F9FA /* OnboardingCinematicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E77652C9FE7EBA66EE8BDC30 /* OnboardingCinematicView.swift */; };
 		1DBFF877794C9BA0839B0D1F /* GameDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E3C795887491564EEEA91D /* GameDataCache.swift */; };
 		1DF365585FEF43884C9CDEC0 /* DungeonRushViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A84C12D9BFA71769CEBB55D0 /* DungeonRushViewModel.swift */; };
 		1E7F3A8B9C0D1E2F3A4B5C6D /* MerchantStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */; };
@@ -58,6 +59,8 @@
 		3449F508531BAD61DC33733A /* Difficulty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121D1EBEBB21F2F8CB461C46 /* Difficulty.swift */; };
 		34A9736F58B7E41F8EC88EC6 /* LootDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C432FC1973DEA4743369E3C8 /* LootDetailView.swift */; };
 		35AD12CF5A704250C1DAA4D2 /* NPCHintOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */; };
+		3BB18BBF23F623CBC9967688 /* ContextualHintOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D25C881865117CB558F2C7 /* ContextualHintOverlay.swift */; };
+		3F158567061BEC058DB2A2CA /* NPCCompactHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05DE5020E58145ECF366FFFC /* NPCCompactHintView.swift */; };
 		38A8AC4DDA2330F3FF73B117 /* InlineFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82B3E41C6190D8AE925913E0 /* InlineFeedback.swift */; };
 		38CBB3719646591CA3E97AFE /* TabSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F3F6DFB69AE93686CCB35A /* TabSwitcher.swift */; };
 		39D74F5FA6517FA9F682F63D /* GameInitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF17A62986FA6638EFB96553 /* GameInitService.swift */; };
@@ -115,6 +118,7 @@
 		62CDBA6CE116AF4D039246CF /* ui_level_up.wav in Resources */ = {isa = PBXBuildFile; fileRef = 74EFBF2CDF5C93D5C559BBCC /* ui_level_up.wav */; };
 		65188E2F930B0CCFEE6FED75 /* OrnamentalTitle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B899DC5918ADE4B9A07F875B /* OrnamentalTitle.swift */; };
 		67bedf2b79f62a87bf402c22 /* NPCGuideWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = b3dbf063205e999acde9526d /* NPCGuideWidget.swift */; };
+		6F7F11A2E2D3489715C43550 /* BuildingLockOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A939232902186D39EE630E6 /* BuildingLockOverlay.swift */; };
 		686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1B4BDE312B412B655B4901 /* InventoryViewModel.swift */; };
 		69ed6fbf2f47f2843d8c3f50 /* ChallengeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44e83640753af3d064cd2dda /* ChallengeService.swift */; };
 		6B3AA0AE4FC179DBECC75D9C /* battle_start.wav in Resources */ = {isa = PBXBuildFile; fileRef = FC77CC6E25A2848F71E8C5C2 /* battle_start.wav */; };
@@ -150,6 +154,7 @@
 		95A2C5527E0D38C558367AB0 /* combat_block.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0CCDA9FFE0140112EA65EE15 /* combat_block.wav */; };
 		95A33C717E6DFC5BB43324C7 /* AvatarImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4599C5B23903A3CEB334E06E /* AvatarImageView.swift */; };
 		96844CD8AFAA42E132100B2A /* BattlePassViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB9546BEA21F368E3E72FA3 /* BattlePassViewModel.swift */; };
+		AAA20B5F92A1A7803ABFCB3C /* HexPulseLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA51BA22E1C9E99ECDDDE93F /* HexPulseLoader.swift */; };
 		9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */; };
 		9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */; };
 		9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */; };
@@ -170,6 +175,8 @@
 		A1B2C3D4E5F60718A9B0C1D4 /* AppearanceStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */; };
 		A1B2C3D4E5F60718A9B0C1D6 /* NameStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718A9B0C1D7 /* NameStepView.swift */; };
 		A1B2C3D4E5F6789012340001 /* TutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340002 /* TutorialView.swift */; };
+		957960B6A4229E470D1774CA /* TutorialOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A10CBA6CE5382D3C002F3F3 /* TutorialOverlayView.swift */; };
+		651F64F2C939FDC2746C1799 /* TutorialQuestBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0576D3CAFFBF1303F286B35 /* TutorialQuestBanner.swift */; };
 		A1B2C3D4E5F6789012340003 /* TutorialStepCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340004 /* TutorialStepCard.swift */; };
 		A1B2C3D4E5F6789012340005 /* NPCSpeechBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012340006 /* NPCSpeechBubble.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* DungeonBossCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F5 /* DungeonBossCard.swift */; };
@@ -228,6 +235,7 @@
 		C5342FADCAE6D9D360F07F82 /* PvPRank.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9F77C1F26D7F3F4A893CD9D /* PvPRank.swift */; };
 		C70E9AD47FC899F2C57ADD80 /* AchievementsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 553D0C40DE02EC82C7902148 /* AchievementsViewModel.swift */; };
 		C8A6A02DD37B0D4D88EE1155 /* SettingsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C53C086F4EE08A374066CD1 /* SettingsDetailView.swift */; };
+		77DFA39FC5C4215967DF859A /* ReferralSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DB29A5904727560971AAF5D /* ReferralSectionView.swift */; };
 		CA7A6AB72BD48C516FDAC604 /* CharacterGender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 324BA7E625D6131DED6E99D5 /* CharacterGender.swift */; };
 		CD45A54A5C05B8D0728AD6DE /* EquipmentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B8909F01E03E455694F1AA /* EquipmentViewModel.swift */; };
 		CF1A52C22613934E0272D11B /* CombatEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3890414A062272EB010CBAE9 /* CombatEngine.swift */; };
@@ -239,6 +247,7 @@
 		D788C260A8580D588409DD3A /* DailyQuestsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903A21125F97518656FFCDB6 /* DailyQuestsDetailView.swift */; };
 		D8911F262CCE44C45338CEF1 /* SessionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200396381DBAD59E7A4E025A /* SessionSummaryView.swift */; };
 		D8A4769BCC75756BFE3517E8 /* NPCHintManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */; };
+		DD005FACC4436A6156EA026D /* ContextualHintProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86950AC4E5F14D02EB978CC4 /* ContextualHintProvider.swift */; };
 		D97B90E8911CFD96CCA47378 /* ui_upgrade_fail.wav in Resources */ = {isa = PBXBuildFile; fileRef = 259485448597F7CCD07CCED0 /* ui_upgrade_fail.wav */; };
 		DB86BDEC5E673543B20F30E7 /* DailyQuestsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851C837AEE3485F0447C5271 /* DailyQuestsViewModel.swift */; };
 		DD2DEF0EB0141680A07D72D3 /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2664891309A585651CF5E2CD /* OnboardingViewModel.swift */; };
@@ -386,6 +395,7 @@
 		B6D065AB078ABF21D519E164 /* combat_block_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_block_3.wav; sourceTree = "<group>"; };
 		0D50542690564E6DD583B058 /* ShopService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopService.swift; sourceTree = "<group>"; };
 		0D6AAECE6F02EE4D31586157 /* LoreIntroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoreIntroView.swift; sourceTree = "<group>"; };
+		E77652C9FE7EBA66EE8BDC30 /* OnboardingCinematicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCinematicView.swift; sourceTree = "<group>"; };
 		0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantTipProvider.swift; sourceTree = "<group>"; };
 		0EB45D259067154C4872D952 /* ui_close.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_close.wav; sourceTree = "<group>"; };
 		1211BB33BA65054F0F0D892A /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
@@ -422,12 +432,15 @@
 		39859708651A5AACC1204865 /* BattlePassService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassService.swift; sourceTree = "<group>"; };
 		3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroIntegratedCard.swift; sourceTree = "<group>"; };
 		3C5D33D5ACD1B39D871AF34E /* ItemType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemType.swift; sourceTree = "<group>"; };
+		EA51BA22E1C9E99ECDDDE93F /* HexPulseLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexPulseLoader.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingOverlay.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorStateView.swift; sourceTree = "<group>"; };
 		3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		3F0687CEF0F7469DB974B7DB /* coin_drop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coin_drop.wav; sourceTree = "<group>"; };
 		3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectDetailView.swift; sourceTree = "<group>"; };
+		05DE5020E58145ECF366FFFC /* NPCCompactHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCCompactHintView.swift; sourceTree = "<group>"; };
 		408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintOverlay.swift; sourceTree = "<group>"; };
+		47D25C881865117CB558F2C7 /* ContextualHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualHintOverlay.swift; sourceTree = "<group>"; };
 		41D739E061B444DC46FF0A6D /* SFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXManager.swift; sourceTree = "<group>"; };
 		4207BE33FB8C08DAEF7E2385 /* CharacterClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterClass.swift; sourceTree = "<group>"; };
 		42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingConfig.swift; sourceTree = "<group>"; };
@@ -486,6 +499,7 @@
 		79F022C8EB7B52576FEE27CC /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Social.swift; sourceTree = "<group>"; };
 		7C53C086F4EE08A374066CD1 /* SettingsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailView.swift; sourceTree = "<group>"; };
+		4DB29A5904727560971AAF5D /* ReferralSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferralSectionView.swift; sourceTree = "<group>"; };
 		7C880E81BB00C0825153DE0E /* ui_open.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_open.wav; sourceTree = "<group>"; };
 		7C8D9E0F1A2B3C4D5E6F7A8B /* DungeonDefeatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonDefeatView.swift; sourceTree = "<group>"; };
 		7F3A9E2B41C8D605E1A0B3C8 /* OpponentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpponentProfile.swift; sourceTree = "<group>"; };
@@ -558,6 +572,7 @@
 		AD40BDBCA20D23E4447ED1C6 /* BattlePassDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassDetailView.swift; sourceTree = "<group>"; };
 		ADE51BBD5FCAAC0F04E83401 /* Hexbound.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Hexbound.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF9F8FF13ADC4FEDF34F3BFA /* QuestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestService.swift; sourceTree = "<group>"; };
+		86950AC4E5F14D02EB978CC4 /* ContextualHintProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualHintProvider.swift; sourceTree = "<group>"; };
 		B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintManager.swift; sourceTree = "<group>"; };
 		B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailConfirmationView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F60718A9B0C1D2E4 /* OfflineBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBannerView.swift; sourceTree = "<group>"; };
@@ -677,6 +692,9 @@
 		VFX00001REF00005 /* DodgeMissBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DodgeMissBlock.swift; sourceTree = "<group>"; };
 		VFX00001REF00006 /* HealEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealEffect.swift; sourceTree = "<group>"; };
 		VFX00001REF00007 /* StatusVFXEffects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusVFXEffects.swift; sourceTree = "<group>"; };
+		2A939232902186D39EE630E6 /* BuildingLockOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildingLockOverlay.swift; sourceTree = "<group>"; };
+		4A10CBA6CE5382D3C002F3F3 /* TutorialOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialOverlayView.swift; sourceTree = "<group>"; };
+		F0576D3CAFFBF1303F286B35 /* TutorialQuestBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialQuestBanner.swift; sourceTree = "<group>"; };
 		b3dbf063205e999acde9526d /* NPCGuideWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCGuideWidget.swift; sourceTree = "<group>"; };
 		dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedHeroWidget.swift; sourceTree = "<group>"; };
 		D0E1F2A3B4C5D6E7F8A9B0C1 /* PvPStatsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPStatsWidget.swift; sourceTree = "<group>"; };
@@ -913,6 +931,7 @@
 				A1B2C3D4E5F60718A9B0C1D5 /* AppearanceStepView.swift */,
 				F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */,
 				0D6AAECE6F02EE4D31586157 /* LoreIntroView.swift */,
+				E77652C9FE7EBA66EE8BDC30 /* OnboardingCinematicView.swift */,
 				A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */,
 				B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */,
 				8295F58FEE8531E138102511 /* LoginView.swift */,
@@ -959,6 +978,7 @@
 			isa = PBXGroup;
 			children = (
 				7C53C086F4EE08A374066CD1 /* SettingsDetailView.swift */,
+				4DB29A5904727560971AAF5D /* ReferralSectionView.swift */,
 				5B6DF2AB4A5F6FDC34209975 /* SettingsViewModel.swift */,
 			);
 			path = Settings;
@@ -994,6 +1014,7 @@
 				E7B8C9D0E1F2A3B4C5D6E7F9 /* GuestNudgeBanner.swift */,
 				DDB9FFFE4B66FE8540FBEA77 /* ItemImageView.swift */,
 				8E88E6579AE4331AE8DC2F07 /* LevelUpModalView.swift */,
+				EA51BA22E1C9E99ECDDDE93F /* HexPulseLoader.swift */,
 				3DBBD58BF6237C9AE1DD128D /* LoadingOverlay.swift */,
 				3DBBD58BF6237C9AE1DD128E /* ErrorStateView.swift */,
 				3DBBD58BF6237C9AE1DD128F /* EmptyStateView.swift */,
@@ -1007,8 +1028,13 @@
 				E4FF07BEAA46D906846F3946 /* StaminaBarView.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A6 /* StatPointsBadge.swift */,
 				B7F3F6DFB69AE93686CCB35A /* TabSwitcher.swift */,
+				4A10CBA6CE5382D3C002F3F3 /* TutorialOverlayView.swift */,
+				F0576D3CAFFBF1303F286B35 /* TutorialQuestBanner.swift */,
+				2A939232902186D39EE630E6 /* BuildingLockOverlay.swift */,
 				b3dbf063205e999acde9526d /* NPCGuideWidget.swift */,
+				47D25C881865117CB558F2C7 /* ContextualHintOverlay.swift */,
 				408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */,
+				05DE5020E58145ECF366FFFC /* NPCCompactHintView.swift */,
 				dd4b1106e1a68e29a267cae4 /* UnifiedHeroWidget.swift */,
 				D0E1F2A3B4C5D6E7F8A9B0C1 /* PvPStatsWidget.swift */,
 				F3A5B6C7D8E9F0A1B2C3D4E6 /* VictoryParticlesView.swift */,
@@ -1097,6 +1123,7 @@
 				GSIG00001REF00001 /* GoogleSignInHelper.swift */,
 				2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */,
 				D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */,
+				86950AC4E5F14D02EB978CC4 /* ContextualHintProvider.swift */,
 				B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */,
 				MSVC001REF00001 /* MessageService.swift */,
 				PUSH001REF0000000000000B /* PushNotificationService.swift */,
@@ -1693,6 +1720,7 @@
 				d76bd676315957bf3aa6ad1d /* Challenge.swift in Sources */,
 				55ED2F4293172AA050CFC300 /* CharacterSelectionView.swift in Sources */,
 				1CB529F446C25EDE59BE9F6F /* LoreIntroView.swift in Sources */,
+				6CD62A87D50EC73FA010F9FA /* OnboardingCinematicView.swift in Sources */,
 				CSVW0001BLD000000000001 /* CharacterSelectionViewModel.swift in Sources */,
 				69ed6fbf2f47f2843d8c3f50 /* ChallengeService.swift in Sources */,
 				FF8A6609F9A15BDE7717A743 /* ButtonStyles.swift in Sources */,
@@ -1790,6 +1818,7 @@
 				A31D68D9C8AECACB630CCB29 /* LeaderboardService.swift in Sources */,
 				BF8B5691ACE23B193D4EB076 /* LeaderboardViewModel.swift in Sources */,
 				6056EEBEF912AA9AF2CADE12 /* LevelUpModalView.swift in Sources */,
+				AAA20B5F92A1A7803ABFCB3C /* HexPulseLoader.swift in Sources */,
 				9AF6F86AEA5D94BD62F80788 /* LoadingOverlay.swift in Sources */,
 				9AF6F86AEA5D94BD62F80789 /* ErrorStateView.swift in Sources */,
 				9AF6F86AEA5D94BD62F8078A /* EmptyStateView.swift in Sources */,
@@ -1831,6 +1860,7 @@
 				7B9C1D3E5F7A9B1C3D5E7F8B /* Social.swift in Sources */,
 				8A0D2E4F6A8B9C0D1E2F3A4B /* SocialService.swift in Sources */,
 				C8A6A02DD37B0D4D88EE1155 /* SettingsDetailView.swift in Sources */,
+				77DFA39FC5C4215967DF859A /* ReferralSectionView.swift in Sources */,
 				2AF622924BD22E871CCC1E02 /* SettingsManager.swift in Sources */,
 				B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */,
 				E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */,
@@ -1859,8 +1889,14 @@
 				38A8AC4DDA2330F3FF73B117 /* InlineFeedback.swift in Sources */,
 				F20220F2C416CD8228A76FBA /* ToastOverlayView.swift in Sources */,
 				67bedf2b79f62a87bf402c22 /* NPCGuideWidget.swift in Sources */,
+				6F7F11A2E2D3489715C43550 /* BuildingLockOverlay.swift in Sources */,
+				957960B6A4229E470D1774CA /* TutorialOverlayView.swift in Sources */,
+				651F64F2C939FDC2746C1799 /* TutorialQuestBanner.swift in Sources */,
 				D8A4769BCC75756BFE3517E8 /* NPCHintManager.swift in Sources */,
+				3BB18BBF23F623CBC9967688 /* ContextualHintOverlay.swift in Sources */,
 				35AD12CF5A704250C1DAA4D2 /* NPCHintOverlay.swift in Sources */,
+				3F158567061BEC058DB2A2CA /* NPCCompactHintView.swift in Sources */,
+				DD005FACC4436A6156EA026D /* ContextualHintProvider.swift in Sources */,
 				447d8a37dea56559ee287a2b /* UnifiedHeroWidget.swift in Sources */,
 				d680a257344d7fdf12459044 /* WidgetPill.swift in Sources */,
 				936bc7da30515e5a4d639a03 /* XPRingShape.swift in Sources */,

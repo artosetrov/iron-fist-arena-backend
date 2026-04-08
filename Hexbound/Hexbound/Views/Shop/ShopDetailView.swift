@@ -10,6 +10,7 @@ struct ShopDetailView: View {
     @State private var showMerchant = false
     @State private var showMerchantMini = false
     @State private var tipProvider = MerchantTipProvider()
+    @State private var shopHint: NPCHint?
 
     var body: some View {
         ZStack {
@@ -52,6 +53,7 @@ struct ShopDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .npcHint(.shop, isReady: vm != nil)
+        .contextualHint(shopHint)
         .tutorialOverlay(steps: [.shopGems])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -73,7 +75,22 @@ struct ShopDetailView: View {
                 vm = shopVM
             }
             await vm?.loadItems()
+            updateShopHint()
         }
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateShopHint() {
+        guard let char = appState.currentCharacter else { return }
+        let quests = appState.cachedTypedQuests ?? cache.cachedDailyQuests()?.quests ?? []
+        // Determine redirect reason from navigation context
+        let redirectReason: ContextualHintProvider.ShopRedirectReason? = nil
+        shopHint = ContextualHintProvider.shopHint(
+            character: char,
+            quests: quests,
+            redirectReason: redirectReason
+        )
     }
 
     // MARK: - Main Content (VStack + Item Detail)

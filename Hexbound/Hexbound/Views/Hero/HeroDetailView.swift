@@ -25,7 +25,7 @@ struct HeroDetailView: View {
     @State private var showRespecConfirm = false
     @State private var statsBadgePulse = false
     @State private var tooltipStat: StatType?
-    @State private var showInventoryHint = false
+    @State private var heroHint: NPCHint?
 
     var body: some View {
         ZStack {
@@ -52,7 +52,7 @@ struct HeroDetailView: View {
                     .transition(.opacity)
                 }
             } else {
-                ProgressView().tint(DarkFantasyTheme.gold)
+                HexPulseLoader(.compact)
             }
 
             // Sticky Save Bar (stats tab)
@@ -88,50 +88,47 @@ struct HeroDetailView: View {
         .task(id: inventoryVM != nil) {
             guard let vm = inventoryVM else { return }
             await vm.loadInventory()
-            // Show inventory hint if player has no equipped items (first visit)
-            let charId = appState.currentCharacter?.id ?? ""
-            let equippedCount = vm.items.filter { $0.isEquipped == true }.count
-            if equippedCount == 0 && !charId.isEmpty {
-                let hintManager = NPCHintManager.shared
-                if !hintManager.hasSeen(NPCHint.inventory.id, for: charId) {
-                    try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s delay
-                    withAnimation(MotionConstants.smooth) {
-                        showInventoryHint = true
-                    }
+            updateHeroHint()
+        }
+        .onChange(of: inventoryVM?.items.count) { _, _ in updateHeroHint() }
+        .onChange(of: appState.currentCharacter?.currentHp) { _, _ in updateHeroHint() }
+        .contextualHint(heroHint, onCTA: {
+            // Route CTA based on hint type
+            if let hint = heroHint {
+                switch hint.id {
+                case "hero_no_gear", "hero_upgrade_no_item":
+                    appState.mainPath.append(AppRoute.shop)
+                case "hero_low_hp_no_potions":
+                    appState.mainPath.append(AppRoute.shop)
+                default:
+                    break
                 }
             }
+        })
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateHeroHint() {
+        guard let char = appState.currentCharacter else { return }
+        let items = inventoryVM?.items ?? []
+        let equippedCount = items.filter { $0.isEquipped == true }.count
+        let potionCount = items.filter { $0.consumableType?.contains("health_potion") == true }.count
+        let hasDamagedGear = items.contains { item in
+            guard let dur = item.durability, let maxDur = item.maxDurability else { return false }
+            return dur < maxDur && (item.isEquipped ?? false)
         }
-        .safeAreaInset(edge: .bottom) {
-            if showInventoryHint {
-                NPCGuideWidget(
-                    npcTitle: NPCHint.inventory.npcName,
-                    onDismiss: {
-                        let charId = appState.currentCharacter?.id ?? ""
-                        let key = "npc_hint_seen_\(charId)_\(NPCHint.inventory.id)"
-                        UserDefaults.standard.set(true, forKey: key)
-                        withAnimation(.easeInOut(duration: MotionConstants.fast)) {
-                            showInventoryHint = false
-                        }
-                    },
-                    npcImageName: NPCHint.inventory.npcImage,
-                    plainMessage: NPCHint.inventory.message,
-                    ctaLabel: "Go to Shop",
-                    onCTA: {
-                        let charId = appState.currentCharacter?.id ?? ""
-                        let key = "npc_hint_seen_\(charId)_\(NPCHint.inventory.id)"
-                        UserDefaults.standard.set(true, forKey: key)
-                        withAnimation(.easeInOut(duration: MotionConstants.fast)) {
-                            showInventoryHint = false
-                        }
-                        appState.mainPath.append(AppRoute.shop)
-                    },
-                    typewriterEnabled: true
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, LayoutConstants.spaceSM)
-            }
-        }
+        let quests = appState.cachedTypedQuests ?? cache.cachedDailyQuests()?.quests ?? []
+        let inventoryCount = items.count
+
+        heroHint = ContextualHintProvider.heroHint(
+            character: char,
+            equippedCount: equippedCount,
+            potionCount: potionCount,
+            hasDamagedGear: hasDamagedGear,
+            quests: quests,
+            inventoryCount: inventoryCount
+        )
     }
 
     // MARK: - Actions
@@ -355,7 +352,8 @@ struct HeroDetailView: View {
                     spacing: LayoutConstants.spaceSM
                 ) {
                     ForEach(bonuses.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
-                        derivedRow(key.uppercased(), value: "+\(value)", color: DarkFantasyTheme.statColor(for: key))
+                        let label = StatType(rawValue: key.uppercased())?.fullName ?? key.uppercased()
+                        derivedRow(label, value: "+\(value)", color: DarkFantasyTheme.statColor(for: key))
                     }
                 }
             }
@@ -761,7 +759,7 @@ struct HeroDetailView: View {
                             showRespecConfirm = false
                         } label: {
                             if vm.isRespeccing {
-                                ProgressView().tint(DarkFantasyTheme.textOnGold)
+                                HexPulseLoader.onGold()
                             } else {
                                 HStack(spacing: LayoutConstants.spaceXS) {
                                     Text("CONFIRM")
@@ -1050,6 +1048,25 @@ struct HeroDetailView: View {
     }
 
     // ========================================
+    // MARK: - Stamina Inline Label (⚡ 120/120)
+
+    @ViewBuilder
+    private func staminaInlineLabel(_ char: Character) -> some View {
+        let isLow = char.maxStamina > 0 && Double(char.currentStamina) / Double(char.maxStamina) < 0.15
+        // Match CurrencyDisplay .standard size: icon 36, font .title, spacing .spaceXS
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image("icon-stamina")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 36, height: 36)
+
+            Text("\(char.currentStamina)/\(char.maxStamina)")
+                .font(DarkFantasyTheme.title)
+                .foregroundStyle(isLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
+                .monospacedDigit()
+        }
+    }
+
     // MARK: - INVENTORY (inline in Equipment tab)
     // ========================================
 
@@ -1063,6 +1080,12 @@ struct HeroDetailView: View {
                     gems: appState.currentCharacter?.gems ?? 0,
                     animated: false
                 )
+
+                // Stamina inline (number display)
+                if let char = appState.currentCharacter {
+                    staminaInlineLabel(char)
+                }
+
                 Spacer()
                 Text("\(vm.items.count) items")
                     .font(DarkFantasyTheme.caption)

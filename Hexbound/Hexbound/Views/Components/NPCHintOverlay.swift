@@ -8,6 +8,7 @@ import SwiftUI
 struct NPCHintOverlay: ViewModifier {
     let hint: NPCHint
     var isReady: Bool
+    var onCTA: (() -> Void)? = nil
     @Environment(AppState.self) private var appState
 
     func body(content: Content) -> some View {
@@ -30,6 +31,13 @@ struct NPCHintOverlay: ViewModifier {
                         onContinue: {
                             hintManager.dismiss(for: charId)
                         },
+                        ctaLabel: active.ctaLabel,
+                        onCTA: onCTA.map { action in
+                            {
+                                hintManager.dismiss(for: charId)
+                                action()
+                            }
+                        },
                         typewriterEnabled: true
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -39,14 +47,12 @@ struct NPCHintOverlay: ViewModifier {
             }
             .onChange(of: isReady) { _, ready in
                 if ready {
-                    // Show hint after content has loaded + small visual delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         hintManager.tryShow(hint, for: charId)
                     }
                 }
             }
             .onAppear {
-                // If already ready on appear (cached data), show with delay
                 if isReady {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                         hintManager.tryShow(hint, for: charId)
@@ -58,10 +64,7 @@ struct NPCHintOverlay: ViewModifier {
 
 extension View {
     /// Shows a one-time NPC guide hint when this screen's content is ready.
-    /// - Parameters:
-    ///   - hint: The NPC hint to show
-    ///   - isReady: Whether the screen content has loaded (default: true for immediate show with delay)
-    func npcHint(_ hint: NPCHint, isReady: Bool = true) -> some View {
-        modifier(NPCHintOverlay(hint: hint, isReady: isReady))
+    func npcHint(_ hint: NPCHint, isReady: Bool = true, onCTA: (() -> Void)? = nil) -> some View {
+        modifier(NPCHintOverlay(hint: hint, isReady: isReady, onCTA: onCTA))
     }
 }

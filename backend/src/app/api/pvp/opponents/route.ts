@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { shouldFaceBots, generateBotOpponentCard, NPC_FIGHT_THRESHOLD } from '@/lib/game/npc-bots'
+import type { CharacterClassType } from '@/lib/game/combat'
 
 const LEVEL_RANGE = 10
 const MAX_OPPONENTS = 5
@@ -23,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { userId: true, pvpRating: true, level: true, gearScore: true },
+      select: { userId: true, pvpRating: true, level: true, gearScore: true, pvpWins: true, pvpLosses: true, class: true },
     })
 
     if (!character) {
@@ -141,8 +143,28 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => a.ratingDiff - b.ratingDiff || a.levelDiff - b.levelDiff || a.gearDiff - b.gearDiff)
       .slice(0, MAX_OPPONENTS)
 
+    // --- NPC Bot injection for new players ---
+    // Players with < NPC_FIGHT_THRESHOLD total fights get bot opponents mixed in.
+    // Bots are placed at the TOP of the list so the player picks them first.
+    const totalFights = character.pvpWins + character.pvpLosses
+    let opponents = sorted as Record<string, unknown>[]
+
+    if (shouldFaceBots(character.pvpWins, character.pvpLosses)) {
+      const botsNeeded = Math.min(NPC_FIGHT_THRESHOLD - totalFights, MAX_OPPONENTS)
+      const bots: Record<string, unknown>[] = []
+      for (let i = 0; i < botsNeeded; i++) {
+        bots.push(generateBotOpponentCard(
+          character.level,
+          character.class as CharacterClassType,
+          totalFights + i,
+        ))
+      }
+      // Bots first, then real opponents to fill remaining slots
+      opponents = [...bots, ...sorted.slice(0, MAX_OPPONENTS - botsNeeded)]
+    }
+
     return NextResponse.json({
-      opponents: sorted,
+      opponents,
       playerRating: character.pvpRating,
       playerLevel: character.level,
       playerGearScore,

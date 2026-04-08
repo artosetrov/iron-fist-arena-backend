@@ -176,7 +176,7 @@ struct OnboardingDetailView: View {
                     }
                 } label: {
                     if vm.isCreating {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
+                        HexPulseLoader.onGold()
                     } else {
                         Text(vm.step == OnboardingViewModel.totalSteps - 1 ? "SAVE" : "CONTINUE")
                     }

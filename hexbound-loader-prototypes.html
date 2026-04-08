@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Unified Loader Prototypes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;700&display=swap');
+
+  :root {
+    --bg-abyss: #08080C;
+    --bg-primary: #0D0D12;
+    --bg-secondary: #1A1A2E;
+    --bg-tertiary: #16213E;
+    --bg-elevated: #1E2240;
+    --gold: #D4A537;
+    --gold-bright: #FFD700;
+    --gold-dim: #8B6914;
+    --gold-glow: rgba(243, 156, 18, 0.4);
+    --danger: #E63946;
+    --text-primary: #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary: #6B6B80;
+    --border-subtle: #2A2A3E;
+    --border-medium: #3A3A50;
+    --border-ornament: #B8860B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-abyss);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 28px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold-bright);
+    text-align: center;
+    padding: 40px 20px 10px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  /* Navigation tabs */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 20px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 10px 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .tab:first-child { border-radius: 8px 0 0 8px; }
+  .tab:last-child { border-radius: 0 8px 8px 0; }
+  .tab.active {
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--bg-secondary);
+    border-color: var(--gold);
+  }
+  .tab:hover:not(.active) {
+    border-color: var(--gold-dim);
+    color: var(--text-primary);
+  }
+
+  /* Prototype container */
+  .proto-section { display: none; }
+  .proto-section.active { display: block; }
+
+  .proto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px;
+    padding: 0 24px 60px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .proto-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+  }
+  .proto-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .proto-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .proto-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: var(--gold-bright);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .proto-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-current { background: var(--bg-tertiary); color: var(--text-tertiary); }
+  .badge-new { background: var(--gold); color: var(--bg-secondary); }
+  .badge-recommended { background: linear-gradient(135deg, var(--gold), var(--gold-bright)); color: var(--bg-abyss); }
+
+  .proto-preview {
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .proto-desc {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .proto-desc strong { color: var(--text-primary); }
+
+  .use-cases {
+    padding: 0 20px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .use-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* ==========================================
+     LOADER ANIMATIONS
+     ========================================== */
+
+  /* 1. Current Splash — hex logo + spinner */
+  .splash-current .hex-glow {
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212, 165, 55, 0.25), rgba(255, 215, 0, 0.05), transparent);
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .splash-current .hex-icon {
+    width: 120px; height: 120px;
+    position: relative;
+  }
+  .splash-current .hex-icon svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+    animation: pulse-shadow 2s ease-in-out infinite alternate;
+  }
+  .splash-current .spinner-native {
+    width: 24px; height: 24px;
+    border: 2px solid var(--gold-dim);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-top: 30px;
+  }
+
+  /* 2. Unified Hex Pulse — animated hexagon outline */
+  .hex-pulse-container {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 24px;
+  }
+  .hex-pulse-ring {
+    width: 120px; height: 120px;
+    position: relative;
+  }
+  .hex-pulse-ring svg {
+    width: 100%; height: 100%;
+  }
+  .hex-stroke-outer {
+    fill: none;
+    stroke: var(--gold-dim);
+    stroke-width: 1.5;
+    opacity: 0.4;
+  }
+  .hex-stroke-main {
+    fill: none;
+    stroke: url(#goldGrad);
+    stroke-width: 2;
+    stroke-dasharray: 360;
+    stroke-dashoffset: 360;
+    animation: hex-draw 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(212, 165, 55, 0.5));
+  }
+  .hex-center-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent);
+    animation: pulse-glow 1.5s ease-in-out infinite alternate;
+  }
+  .hex-inner-diamond {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 12px; height: 12px;
+    background: var(--gold);
+    animation: diamond-pulse 1.5s ease-in-out infinite alternate;
+    box-shadow: 0 0 12px var(--gold-glow);
+  }
+
+  /* 3. Ornamental Diamond Dots */
+  .diamond-dots-container {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 28px;
+  }
+  .diamond-dots {
+    display: flex; align-items: center; gap: 0;
+  }
+  .diamond-line {
+    width: 50px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim));
+  }
+  .diamond-line.right {
+    background: linear-gradient(90deg, var(--gold-dim), transparent);
+  }
+  .diamond-dot-group {
+    display: flex; gap: 14px; padding: 0 12px;
+  }
+  .diamond-dot {
+    width: 8px; height: 8px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    animation: dot-pulse 1s ease-in-out infinite alternate;
+    box-shadow: 0 0 8px var(--gold-glow);
+  }
+  .diamond-dot:nth-child(2) { animation-delay: 0.15s; }
+  .diamond-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  /* 4. Rune Circle */
+  .rune-container {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 24px;
+  }
+  .rune-circle {
+    width: 140px; height: 140px;
+    position: relative;
+  }
+  .rune-ring-outer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: 1.5px solid var(--gold-dim);
+    border-radius: 50%;
+    opacity: 0.3;
+  }
+  .rune-ring-spinning {
+    position: absolute;
+    top: 5px; left: 5px; right: 5px; bottom: 5px;
+    animation: spin-slow 8s linear infinite;
+  }
+  .rune-ring-spinning svg { width: 100%; height: 100%; }
+  .rune-ring-inner {
+    position: absolute;
+    top: 20px; left: 20px; right: 20px; bottom: 20px;
+    animation: spin-reverse 6s linear infinite;
+  }
+  .rune-ring-inner svg { width: 100%; height: 100%; }
+  .rune-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px; height: 30px;
+  }
+  .rune-center-diamond {
+    width: 14px; height: 14px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    margin: 8px auto;
+    box-shadow: 0 0 16px var(--gold-glow);
+    animation: diamond-pulse 1.5s ease-in-out infinite alternate;
+  }
+  .rune-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212, 165, 55, 0.2), transparent);
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  /* 5. Hex Grid Cascade */
+  .hex-grid-container {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 24px;
+  }
+  .hex-grid {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+  }
+  .hex-grid-row {
+    display: flex; gap: 4px;
+  }
+  .hex-mini {
+    width: 22px; height: 25px;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: var(--gold-dim);
+    opacity: 0.15;
+    animation: hex-cascade 2s ease-in-out infinite;
+  }
+  .hex-mini.a1 { animation-delay: 0s; }
+  .hex-mini.a2 { animation-delay: 0.1s; }
+  .hex-mini.a3 { animation-delay: 0.2s; }
+  .hex-mini.a4 { animation-delay: 0.3s; }
+  .hex-mini.a5 { animation-delay: 0.4s; }
+  .hex-mini.a6 { animation-delay: 0.5s; }
+  .hex-mini.a7 { animation-delay: 0.6s; }
+
+  /* 6. Sword & Shield (Battle Loader) */
+  .battle-loader-container {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 24px;
+  }
+  .battle-swords {
+    width: 100px; height: 100px;
+    position: relative;
+  }
+  .sword-left, .sword-right {
+    position: absolute;
+    width: 60px; height: 4px;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+    top: 50%;
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--gold-glow);
+  }
+  .sword-left {
+    left: 5px;
+    transform: rotate(-30deg);
+    transform-origin: right center;
+    animation: sword-clash-left 1.5s ease-in-out infinite;
+  }
+  .sword-right {
+    right: 5px;
+    transform: rotate(30deg);
+    transform-origin: left center;
+    animation: sword-clash-right 1.5s ease-in-out infinite;
+    background: linear-gradient(90deg, var(--gold-bright), var(--gold-dim));
+  }
+  .clash-spark {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--gold-bright), transparent);
+    animation: clash-flash 1.5s ease-in-out infinite;
+    opacity: 0;
+  }
+
+  /* Loading text styles */
+  .loading-text {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    text-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+  }
+  .loading-text-sm {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  /* Size variants section */
+  .size-variants {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    width: 100%;
+    padding: 20px;
+  }
+  .size-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .size-variant {
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  /* Skeleton demo */
+  .skeleton-demo {
+    width: 90%;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .skel-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+  }
+  .skel-circle {
+    width: 44px; height: 44px; min-width: 44px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    position: relative; overflow: hidden;
+  }
+  .skel-rect {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    position: relative; overflow: hidden;
+  }
+  .skel-circle::after, .skel-rect::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 165, 55, 0.06), rgba(160, 160, 176, 0.06), transparent);
+    animation: shimmer-sweep 1.5s ease-in-out infinite;
+  }
+  .skel-lines {
+    flex: 1;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  /* Inline loader demo */
+  .inline-demo {
+    width: 85%;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    padding: 20px;
+  }
+  .inline-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    border-radius: 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--bg-secondary);
+    margin-top: 12px;
+  }
+  .inline-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(26, 26, 46, 0.3);
+    border-top-color: var(--bg-secondary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  /* ==========================================
+     KEYFRAMES
+     ========================================== */
+
+  @keyframes pulse-glow {
+    from { opacity: 0.3; transform: translate(-50%, -50%) scale(0.9); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  }
+  @keyframes pulse-shadow {
+    from { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.2)); }
+    to { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5)); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin-slow { to { transform: rotate(360deg); } }
+  @keyframes spin-reverse { to { transform: rotate(-360deg); } }
+
+  @keyframes hex-draw {
+    0% { stroke-dashoffset: 360; }
+    50% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: -360; }
+  }
+  @keyframes diamond-pulse {
+    from { opacity: 0.5; transform: translate(-50%, -50%) rotate(45deg) scale(0.8); }
+    to { opacity: 1; transform: translate(-50%, -50%) rotate(45deg) scale(1.1); }
+  }
+  @keyframes dot-pulse {
+    from { opacity: 0.2; box-shadow: 0 0 4px transparent; }
+    to { opacity: 1; box-shadow: 0 0 10px var(--gold-glow); }
+  }
+  @keyframes hex-cascade {
+    0%, 100% { opacity: 0.1; background: var(--gold-dim); }
+    50% { opacity: 0.9; background: var(--gold); box-shadow: 0 0 6px var(--gold-glow); }
+  }
+  @keyframes sword-clash-left {
+    0%, 100% { transform: rotate(-30deg) translateX(5px); }
+    40%, 60% { transform: rotate(-15deg) translateX(-2px); }
+  }
+  @keyframes sword-clash-right {
+    0%, 100% { transform: rotate(30deg) translateX(-5px); }
+    40%, 60% { transform: rotate(15deg) translateX(2px); }
+  }
+  @keyframes clash-flash {
+    0%, 35%, 65%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    45%, 55% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  }
+  @keyframes shimmer-sweep {
+    0% { left: -100%; }
+    100% { left: 200%; }
+  }
+
+  /* Comparison table */
+  .comparison {
+    max-width: 1100px;
+    margin: 0 auto 60px;
+    padding: 0 24px;
+  }
+  .comparison table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .comparison th {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gold-dim);
+  }
+  .comparison td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+  .comparison tr:hover td { background: rgba(26, 26, 46, 0.4); }
+  .check { color: var(--gold-bright); }
+  .cross { color: var(--text-tertiary); }
+
+  /* Full-screen preview */
+  .fullscreen-btn {
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 32px; height: 32px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    z-index: 5;
+    font-size: 14px;
+  }
+  .fullscreen-btn:hover {
+    background: var(--bg-elevated);
+    color: var(--gold);
+    border-color: var(--gold-dim);
+  }
+
+  /* Full screen overlay */
+  .fs-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg-abyss);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+    cursor: pointer;
+  }
+  .fs-overlay.visible { display: flex; }
+  .fs-hint {
+    position: absolute;
+    bottom: 40px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Hexbound Loader System</h1>
+<p class="subtitle">Прототипы унифицированных лоадеров. Кликни ⛶ чтобы увидеть full-screen.</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showSection('fullscreen')">Full-Screen</div>
+  <div class="tab" onclick="showSection('inline')">Inline</div>
+  <div class="tab" onclick="showSection('skeleton')">Skeletons</div>
+  <div class="tab" onclick="showSection('compare')">Сравнение</div>
+</div>
+
+<!-- ============ FULL-SCREEN LOADERS ============ -->
+<div class="proto-section active" id="section-fullscreen">
+<div class="proto-grid">
+
+  <!-- A: Current (baseline) -->
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">A. Текущий Splash</span>
+      <span class="proto-badge badge-current">Сейчас</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-primary); flex-direction: column; gap: 0;">
+      <button class="fullscreen-btn" onclick="openFullscreen('fsA')">⛶</button>
+      <div class="splash-current" style="display: flex; flex-direction: column; align-items: center;">
+        <div class="hex-glow">
+          <div class="hex-icon">
+            <svg viewBox="0 0 100 100"><polygon points="50,5 93,27 93,73 50,95 7,73 7,27" fill="none" stroke="#D4A537" stroke-width="2"/><polygon points="50,20 78,35 78,65 50,80 22,65 22,35" fill="none" stroke="#8B6914" stroke-width="1"/><circle cx="50" cy="50" r="8" fill="#D4A537"/><line x1="50" y1="42" x2="50" y2="20" stroke="#8B6914" stroke-width="1"/><line x1="50" y1="58" x2="50" y2="80" stroke="#8B6914" stroke-width="1"/><line x1="42" y1="50" x2="22" y2="35" stroke="#8B6914" stroke-width="1"/><line x1="58" y1="50" x2="78" y2="35" stroke="#8B6914" stroke-width="1"/><line x1="42" y1="50" x2="22" y2="65" stroke="#8B6914" stroke-width="1"/><line x1="58" y1="50" x2="78" y2="65" stroke="#8B6914" stroke-width="1"/></svg>
+          </div>
+        </div>
+        <div class="spinner-native"></div>
+        <div style="margin-top: 16px;" class="loading-text-sm">Loading</div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Логотип + стандартный iOS спиннер. Минимальный, но <strong>не thematic</strong> — спиннер выглядит как системный элемент, не как часть тёмного фэнтези.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">App Launch</span>
+    </div>
+  </div>
+
+  <!-- B: Hex Pulse (recommended) -->
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">B. Hex Pulse</span>
+      <span class="proto-badge badge-recommended">★ Рекомендую</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-abyss); flex-direction: column;">
+      <button class="fullscreen-btn" onclick="openFullscreen('fsB')">⛶</button>
+      <div class="hex-pulse-container">
+        <div class="hex-pulse-ring">
+          <svg viewBox="0 0 120 120">
+            <defs>
+              <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8B6914"/>
+                <stop offset="50%" stop-color="#FFD700"/>
+                <stop offset="100%" stop-color="#8B6914"/>
+              </linearGradient>
+            </defs>
+            <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" class="hex-stroke-outer"/>
+            <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" class="hex-stroke-main"/>
+          </svg>
+          <div class="hex-center-glow"></div>
+          <div class="hex-inner-diamond"></div>
+        </div>
+        <div class="loading-text">Loading</div>
+        <!-- ornamental line -->
+        <div class="diamond-dots">
+          <div class="diamond-line"></div>
+          <div class="diamond-dot-group">
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+          </div>
+          <div class="diamond-line right"></div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Анимированный контур гексагона «рисуется» бесконечно + пульсирующий ромб в центре + орнаментальные точки. <strong>Полностью thematic</strong>, масштабируется от 40px до 200px. Единый лоадер для всех сценариев.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">Splash</span>
+      <span class="use-tag">Full-screen overlay</span>
+      <span class="use-tag">Tab loading</span>
+      <span class="use-tag">Battle prep</span>
+    </div>
+  </div>
+
+  <!-- C: Rune Circle -->
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">C. Rune Circle</span>
+      <span class="proto-badge badge-new">Новый</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-abyss); flex-direction: column;">
+      <button class="fullscreen-btn" onclick="openFullscreen('fsC')">⛶</button>
+      <div class="rune-container">
+        <div class="rune-circle">
+          <div class="rune-ring-outer"></div>
+          <div class="rune-ring-spinning">
+            <svg viewBox="0 0 130 130">
+              <circle cx="65" cy="65" r="60" fill="none" stroke="#8B6914" stroke-width="1" stroke-dasharray="4 12" opacity="0.6"/>
+              <!-- Rune marks -->
+              <text x="65" y="12" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᚱ</text>
+              <text x="118" y="68" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᚦ</text>
+              <text x="65" y="124" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᚨ</text>
+              <text x="12" y="68" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᛗ</text>
+              <text x="100" y="25" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᛉ</text>
+              <text x="100" y="112" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᛏ</text>
+              <text x="30" y="25" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᚹ</text>
+              <text x="30" y="112" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᚷ</text>
+            </svg>
+          </div>
+          <div class="rune-ring-inner">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#B8860B" stroke-width="0.8" stroke-dasharray="2 8" opacity="0.4"/>
+              <polygon points="50,12 85,30 85,70 50,88 15,70 15,30" fill="none" stroke="#8B6914" stroke-width="0.6" opacity="0.3"/>
+            </svg>
+          </div>
+          <div class="rune-glow"></div>
+          <div class="rune-center">
+            <div class="rune-center-diamond"></div>
+          </div>
+        </div>
+        <div class="loading-text">Loading</div>
+        <div class="diamond-dots">
+          <div class="diamond-line"></div>
+          <div class="diamond-dot-group">
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+          </div>
+          <div class="diamond-line right"></div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Два кольца с рунами вращаются в противоположных направлениях + гексагон внутри + пульсирующий ромб. <strong>Максимально атмосферный</strong>, но тяжелее для GPU. Лучше только для splash/battle.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">Splash</span>
+      <span class="use-tag">Battle prep</span>
+      <span class="use-tag">Dungeon enter</span>
+    </div>
+  </div>
+
+  <!-- D: Hex Grid Cascade -->
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">D. Hex Grid</span>
+      <span class="proto-badge badge-new">Новый</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-abyss); flex-direction: column;">
+      <button class="fullscreen-btn" onclick="openFullscreen('fsD')">⛶</button>
+      <div class="hex-grid-container">
+        <div class="hex-grid">
+          <div class="hex-grid-row">
+            <div class="hex-mini a1"></div>
+            <div class="hex-mini a3"></div>
+            <div class="hex-mini a5"></div>
+          </div>
+          <div class="hex-grid-row" style="margin-top: -4px;">
+            <div class="hex-mini a2"></div>
+            <div class="hex-mini a4"></div>
+            <div class="hex-mini a6"></div>
+            <div class="hex-mini a7"></div>
+          </div>
+          <div class="hex-grid-row" style="margin-top: -4px;">
+            <div class="hex-mini a3"></div>
+            <div class="hex-mini a5"></div>
+            <div class="hex-mini a1"></div>
+          </div>
+          <div class="hex-grid-row" style="margin-top: -4px;">
+            <div class="hex-mini a4"></div>
+            <div class="hex-mini a6"></div>
+            <div class="hex-mini a2"></div>
+            <div class="hex-mini a7"></div>
+          </div>
+          <div class="hex-grid-row" style="margin-top: -4px;">
+            <div class="hex-mini a5"></div>
+            <div class="hex-mini a1"></div>
+            <div class="hex-mini a3"></div>
+          </div>
+        </div>
+        <div class="loading-text">Loading</div>
+        <div class="diamond-dots">
+          <div class="diamond-line"></div>
+          <div class="diamond-dot-group">
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+          </div>
+          <div class="diamond-line right"></div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Сетка мини-гексагонов каскадно вспыхивает волной. <strong>Отсылка к hex-grid игрового поля</strong>. Хорошо подходит для загрузки карт/данжей.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">Dungeon loading</span>
+      <span class="use-tag">Map loading</span>
+      <span class="use-tag">Full-screen</span>
+    </div>
+  </div>
+
+  <!-- E: Battle Swords -->
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">E. Battle Clash</span>
+      <span class="proto-badge badge-new">Новый</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-abyss); flex-direction: column;">
+      <button class="fullscreen-btn" onclick="openFullscreen('fsE')">⛶</button>
+      <div class="battle-loader-container">
+        <div class="battle-swords">
+          <div class="sword-left"></div>
+          <div class="sword-right"></div>
+          <div class="clash-spark"></div>
+        </div>
+        <div class="loading-text">Preparing Battle</div>
+        <div class="diamond-dots">
+          <div class="diamond-line"></div>
+          <div class="diamond-dot-group">
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+            <div class="diamond-dot"></div>
+          </div>
+          <div class="diamond-line right"></div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Два меча сталкиваются + вспышка в момент удара. <strong>Контекстный лоадер только для боя</strong> — подчёркивает, что сервер готовит бой.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">PvP matchmaking</span>
+      <span class="use-tag">Battle prep</span>
+    </div>
+  </div>
+
+  <!-- F: Minimal Diamond (compact) -->
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">F. Размерная линейка</span>
+      <span class="proto-badge badge-new">Все размеры</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-abyss); flex-direction: column; gap: 40px;">
+      <div class="size-variants">
+        <!-- XS: 24px inline -->
+        <div class="size-variant">
+          <div style="width: 24px; height: 24px; position: relative;">
+            <svg viewBox="0 0 120 120" width="24" height="24">
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#D4A537" stroke-width="4" stroke-dasharray="360" stroke-dashoffset="360" style="animation: hex-draw 2s ease-in-out infinite;"/>
+            </svg>
+          </div>
+          <div class="size-label">24px<br>inline</div>
+        </div>
+        <!-- SM: 40px -->
+        <div class="size-variant">
+          <div style="width: 40px; height: 40px; position: relative;">
+            <svg viewBox="0 0 120 120" width="40" height="40">
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#8B6914" stroke-width="2" opacity="0.4"/>
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="url(#goldGrad)" stroke-width="3" stroke-dasharray="360" stroke-dashoffset="360" style="animation: hex-draw 2s ease-in-out infinite; filter: drop-shadow(0 0 4px rgba(212, 165, 55, 0.4));"/>
+            </svg>
+            <div style="position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: #D4A537; transform: translate(-50%, -50%) rotate(45deg); animation: diamond-pulse 1.5s ease-in-out infinite alternate;"></div>
+          </div>
+          <div class="size-label">40px<br>button</div>
+        </div>
+        <!-- MD: 80px -->
+        <div class="size-variant">
+          <div style="width: 80px; height: 80px; position: relative;">
+            <svg viewBox="0 0 120 120" width="80" height="80">
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#8B6914" stroke-width="1.5" opacity="0.4"/>
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-dasharray="360" stroke-dashoffset="360" style="animation: hex-draw 2s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(212, 165, 55, 0.5));"/>
+            </svg>
+            <div style="position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent); animation: pulse-glow 1.5s ease-in-out infinite alternate;"></div>
+            <div style="position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: #D4A537; transform: translate(-50%, -50%) rotate(45deg); animation: diamond-pulse 1.5s ease-in-out infinite alternate; box-shadow: 0 0 8px rgba(243, 156, 18, 0.4);"></div>
+          </div>
+          <div class="size-label">80px<br>section</div>
+        </div>
+        <!-- LG: 140px -->
+        <div class="size-variant">
+          <div class="hex-pulse-ring" style="width: 100px; height: 100px;">
+            <svg viewBox="0 0 120 120" width="100" height="100">
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" class="hex-stroke-outer"/>
+              <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" class="hex-stroke-main"/>
+            </svg>
+            <div class="hex-center-glow"></div>
+            <div class="hex-inner-diamond"></div>
+          </div>
+          <div class="size-label">100px<br>overlay</div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Вариант B (Hex Pulse) масштабируется от <strong>24px</strong> (инлайн в кнопке) до <strong>140px+</strong> (full-screen). Один компонент — все размеры.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">Все сценарии</span>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ INLINE LOADERS ============ -->
+<div class="proto-section" id="section-inline">
+<div class="proto-grid">
+
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">Inline Button</span>
+      <span class="proto-badge badge-new">Новый</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-primary); flex-direction: column; gap: 16px;">
+      <div class="inline-demo">
+        <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">Нажата кнопка → ожидание ответа:</div>
+        <div class="inline-btn">
+          <div class="inline-spinner"></div>
+          Finding Opponent...
+        </div>
+      </div>
+      <div class="inline-demo">
+        <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 8px;">Мини hex-spinner в кнопке:</div>
+        <div class="inline-btn">
+          <svg viewBox="0 0 120 120" width="18" height="18" style="animation: spin 2s linear infinite;">
+            <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#1A1A2E" stroke-width="4" stroke-dasharray="120 240" opacity="0.8"/>
+          </svg>
+          Saving...
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Инлайн-лоадеры внутри кнопок. Варианты: <strong>круглый спиннер</strong> (простой) или <strong>мини-гексагон</strong> (thematic).
+    </div>
+  </div>
+
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">Section Loading</span>
+      <span class="proto-badge badge-new">Новый</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-primary); flex-direction: column; gap: 0; padding: 20px;">
+      <div style="width: 90%; padding: 40px 0; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+        <div style="width: 50px; height: 50px; position: relative;">
+          <svg viewBox="0 0 120 120" width="50" height="50">
+            <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#8B6914" stroke-width="2" opacity="0.3"/>
+            <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#D4A537" stroke-width="2" stroke-dasharray="360" stroke-dashoffset="360" style="animation: hex-draw 2s ease-in-out infinite; filter: drop-shadow(0 0 4px rgba(212, 165, 55, 0.4));"/>
+          </svg>
+          <div style="position: absolute; top: 50%; left: 50%; width: 7px; height: 7px; background: #D4A537; transform: translate(-50%, -50%) rotate(45deg); animation: diamond-pulse 1.5s ease-in-out infinite alternate; box-shadow: 0 0 6px rgba(243, 156, 18, 0.4);"></div>
+        </div>
+        <div class="loading-text-sm">Loading opponents</div>
+      </div>
+      <div style="width: 90%; height: 1px; background: linear-gradient(90deg, transparent, var(--border-subtle), transparent); margin: 8px 0;"></div>
+      <div style="color: var(--text-tertiary); font-size: 12px; text-align: center; padding: 8px;">↑ Вместо скелетонов для маленьких секций</div>
+    </div>
+    <div class="proto-desc">
+      Компактный Hex Pulse (50px) + текст контекста загрузки. Заменяет <strong>ProgressView()</strong> во всех секциях.
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ SKELETON SECTION ============ -->
+<div class="proto-section" id="section-skeleton">
+<div class="proto-grid">
+
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">Текущие Skeletons</span>
+      <span class="proto-badge badge-current">Сейчас</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-primary); flex-direction: column; gap: 10px; padding: 16px;">
+      <div class="skeleton-demo">
+        <div class="skel-row">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-rect" style="width: 65%;"></div>
+            <div class="skel-rect" style="width: 45%;"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+            <div class="skel-rect" style="width: 40px;"></div>
+            <div class="skel-rect" style="width: 55px;"></div>
+          </div>
+        </div>
+        <div class="skel-row">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-rect" style="width: 55%;"></div>
+            <div class="skel-rect" style="width: 35%;"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+            <div class="skel-rect" style="width: 40px;"></div>
+            <div class="skel-rect" style="width: 55px;"></div>
+          </div>
+        </div>
+        <div class="skel-row">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-rect" style="width: 70%;"></div>
+            <div class="skel-rect" style="width: 50%;"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+            <div class="skel-rect" style="width: 40px;"></div>
+            <div class="skel-rect" style="width: 55px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      13 скелетонов уже хороши — <strong>золотой shimmer + bgTertiary</strong>. Предлагаю оставить как есть, но унифицировать shimmer timing.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">Списки</span>
+      <span class="use-tag">Карточки</span>
+      <span class="use-tag">Гриды</span>
+    </div>
+  </div>
+
+  <div class="proto-card">
+    <div class="proto-header">
+      <span class="proto-title">Skeleton + Hex Spinner</span>
+      <span class="proto-badge badge-recommended">★ Комбо</span>
+    </div>
+    <div class="proto-preview" style="background: var(--bg-primary); flex-direction: column; gap: 10px; padding: 16px;">
+      <div class="skeleton-demo">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-subtle); margin-bottom: 4px;">
+          <svg viewBox="0 0 120 120" width="18" height="18">
+            <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" fill="none" stroke="#D4A537" stroke-width="4" stroke-dasharray="360" stroke-dashoffset="360" style="animation: hex-draw 2s ease-in-out infinite;"/>
+          </svg>
+          <span style="font-family: Oswald; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #A0A0B0;">Loading opponents...</span>
+        </div>
+        <div class="skel-row" style="opacity: 0.6;">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-rect" style="width: 65%;"></div>
+            <div class="skel-rect" style="width: 45%;"></div>
+          </div>
+        </div>
+        <div class="skel-row" style="opacity: 0.4;">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-rect" style="width: 55%;"></div>
+            <div class="skel-rect" style="width: 35%;"></div>
+          </div>
+        </div>
+        <div class="skel-row" style="opacity: 0.25;">
+          <div class="skel-circle"></div>
+          <div class="skel-lines">
+            <div class="skel-rect" style="width: 70%;"></div>
+            <div class="skel-rect" style="width: 50%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="proto-desc">
+      Мини hex-spinner в заголовке секции + скелетоны с <strong>затуханием opacity</strong> вниз. Более атмосферно, показывает и контекст, и прогресс.
+    </div>
+    <div class="use-cases">
+      <span class="use-tag">Арена</span>
+      <span class="use-tag">Лидерборд</span>
+      <span class="use-tag">Инвентарь</span>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ============ COMPARISON TABLE ============ -->
+<div class="proto-section" id="section-compare">
+<div class="comparison">
+  <table>
+    <tr>
+      <th>Сценарий</th>
+      <th>Сейчас</th>
+      <th>Предложение</th>
+      <th>Лоадер</th>
+    </tr>
+    <tr>
+      <td><strong>App Launch / Splash</strong></td>
+      <td>Logo + ProgressView()</td>
+      <td>Logo + Hex Pulse (140px) + diamond dots</td>
+      <td>B или C</td>
+    </tr>
+    <tr>
+      <td><strong>Full-screen overlay</strong><br><span style="color:var(--text-tertiary)">appState.isLoading</span></td>
+      <td>preloader-hex + diamonds</td>
+      <td>Hex Pulse (100px) + text + diamond dots</td>
+      <td>B</td>
+    </tr>
+    <tr>
+      <td><strong>Battle preparation</strong></td>
+      <td>=overlay</td>
+      <td>Battle Clash или Rune Circle + "Preparing Battle"</td>
+      <td>C или E</td>
+    </tr>
+    <tr>
+      <td><strong>Section loading</strong><br><span style="color:var(--text-tertiary)">Arena, Shop, Quests...</span></td>
+      <td>ProgressView() или ничего</td>
+      <td>Hex Pulse (50px) + контекстный текст</td>
+      <td>B (compact)</td>
+    </tr>
+    <tr>
+      <td><strong>Button loading</strong></td>
+      <td>—</td>
+      <td>Mini hex-spinner (18px) внутри кнопки</td>
+      <td>B (micro)</td>
+    </tr>
+    <tr>
+      <td><strong>List placeholders</strong></td>
+      <td>13 Skeleton*Views</td>
+      <td>Те же + hex-spinner header + opacity cascade</td>
+      <td>Skeletons</td>
+    </tr>
+    <tr>
+      <td><strong>Image loading</strong></td>
+      <td>ProgressView() fallback</td>
+      <td>SkeletonRect с shimmer</td>
+      <td>Skeleton</td>
+    </tr>
+    <tr>
+      <td><strong>Premium shimmer</strong></td>
+      <td>ShimmerModifier</td>
+      <td>Оставить без изменений</td>
+      <td>Shimmer</td>
+    </tr>
+  </table>
+</div>
+</div>
+
+<!-- Fullscreen overlays -->
+<div class="fs-overlay" id="fsA" onclick="this.classList.remove('visible')">
+  <div class="splash-current" style="display: flex; flex-direction: column; align-items: center;">
+    <div class="hex-glow" style="width: 280px; height: 280px;">
+      <div class="hex-icon" style="width: 160px; height: 160px;">
+        <svg viewBox="0 0 100 100"><polygon points="50,5 93,27 93,73 50,95 7,73 7,27" fill="none" stroke="#D4A537" stroke-width="2"/><polygon points="50,20 78,35 78,65 50,80 22,65 22,35" fill="none" stroke="#8B6914" stroke-width="1"/><circle cx="50" cy="50" r="8" fill="#D4A537"/><line x1="50" y1="42" x2="50" y2="20" stroke="#8B6914" stroke-width="1"/><line x1="50" y1="58" x2="50" y2="80" stroke="#8B6914" stroke-width="1"/><line x1="42" y1="50" x2="22" y2="35" stroke="#8B6914" stroke-width="1"/><line x1="58" y1="50" x2="78" y2="35" stroke="#8B6914" stroke-width="1"/><line x1="42" y1="50" x2="22" y2="65" stroke="#8B6914" stroke-width="1"/><line x1="58" y1="50" x2="78" y2="65" stroke="#8B6914" stroke-width="1"/></svg>
+      </div>
+    </div>
+    <div class="spinner-native" style="margin-top: 40px;"></div>
+    <div style="margin-top: 20px;" class="loading-text">Loading</div>
+  </div>
+  <div class="fs-hint">tap to close</div>
+</div>
+
+<div class="fs-overlay" id="fsB" onclick="this.classList.remove('visible')">
+  <div class="hex-pulse-container">
+    <div class="hex-pulse-ring" style="width: 160px; height: 160px;">
+      <svg viewBox="0 0 120 120" width="160" height="160">
+        <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" class="hex-stroke-outer"/>
+        <polygon points="60,8 108,32 108,88 60,112 12,88 12,32" class="hex-stroke-main"/>
+      </svg>
+      <div class="hex-center-glow" style="width: 60px; height: 60px;"></div>
+      <div class="hex-inner-diamond" style="width: 16px; height: 16px;"></div>
+    </div>
+    <div class="loading-text" style="font-size: 22px; letter-spacing: 6px;">Loading</div>
+    <div class="diamond-dots">
+      <div class="diamond-line" style="width: 70px;"></div>
+      <div class="diamond-dot-group">
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+      </div>
+      <div class="diamond-line right" style="width: 70px;"></div>
+    </div>
+  </div>
+  <div class="fs-hint">tap to close</div>
+</div>
+
+<div class="fs-overlay" id="fsC" onclick="this.classList.remove('visible')">
+  <div class="rune-container">
+    <div class="rune-circle" style="width: 200px; height: 200px;">
+      <div class="rune-ring-outer"></div>
+      <div class="rune-ring-spinning">
+        <svg viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="60" fill="none" stroke="#8B6914" stroke-width="1" stroke-dasharray="4 12" opacity="0.6"/>
+          <text x="65" y="12" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᚱ</text>
+          <text x="118" y="68" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᚦ</text>
+          <text x="65" y="124" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᚨ</text>
+          <text x="12" y="68" text-anchor="middle" fill="#D4A537" font-size="8" opacity="0.7">ᛗ</text>
+          <text x="100" y="25" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᛉ</text>
+          <text x="100" y="112" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᛏ</text>
+          <text x="30" y="25" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᚹ</text>
+          <text x="30" y="112" text-anchor="middle" fill="#8B6914" font-size="7" opacity="0.5">ᚷ</text>
+        </svg>
+      </div>
+      <div class="rune-ring-inner">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#B8860B" stroke-width="0.8" stroke-dasharray="2 8" opacity="0.4"/>
+          <polygon points="50,12 85,30 85,70 50,88 15,70 15,30" fill="none" stroke="#8B6914" stroke-width="0.6" opacity="0.3"/>
+        </svg>
+      </div>
+      <div class="rune-glow" style="width: 120px; height: 120px;"></div>
+      <div class="rune-center">
+        <div class="rune-center-diamond" style="width: 18px; height: 18px; margin: 6px auto;"></div>
+      </div>
+    </div>
+    <div class="loading-text" style="font-size: 22px; letter-spacing: 6px;">Loading</div>
+    <div class="diamond-dots">
+      <div class="diamond-line" style="width: 70px;"></div>
+      <div class="diamond-dot-group">
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+      </div>
+      <div class="diamond-line right" style="width: 70px;"></div>
+    </div>
+  </div>
+  <div class="fs-hint">tap to close</div>
+</div>
+
+<div class="fs-overlay" id="fsD" onclick="this.classList.remove('visible')">
+  <div class="hex-grid-container">
+    <div class="hex-grid" style="transform: scale(2);">
+      <div class="hex-grid-row">
+        <div class="hex-mini a1"></div><div class="hex-mini a3"></div><div class="hex-mini a5"></div>
+      </div>
+      <div class="hex-grid-row" style="margin-top: -4px;">
+        <div class="hex-mini a2"></div><div class="hex-mini a4"></div><div class="hex-mini a6"></div><div class="hex-mini a7"></div>
+      </div>
+      <div class="hex-grid-row" style="margin-top: -4px;">
+        <div class="hex-mini a3"></div><div class="hex-mini a5"></div><div class="hex-mini a1"></div>
+      </div>
+      <div class="hex-grid-row" style="margin-top: -4px;">
+        <div class="hex-mini a4"></div><div class="hex-mini a6"></div><div class="hex-mini a2"></div><div class="hex-mini a7"></div>
+      </div>
+      <div class="hex-grid-row" style="margin-top: -4px;">
+        <div class="hex-mini a5"></div><div class="hex-mini a1"></div><div class="hex-mini a3"></div>
+      </div>
+    </div>
+    <div class="loading-text" style="font-size: 22px; letter-spacing: 6px; margin-top: 60px;">Loading</div>
+    <div class="diamond-dots">
+      <div class="diamond-line" style="width: 70px;"></div>
+      <div class="diamond-dot-group">
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+      </div>
+      <div class="diamond-line right" style="width: 70px;"></div>
+    </div>
+  </div>
+  <div class="fs-hint">tap to close</div>
+</div>
+
+<div class="fs-overlay" id="fsE" onclick="this.classList.remove('visible')">
+  <div class="battle-loader-container">
+    <div class="battle-swords" style="width: 160px; height: 160px;">
+      <div class="sword-left" style="width: 100px; height: 6px;"></div>
+      <div class="sword-right" style="width: 100px; height: 6px;"></div>
+      <div class="clash-spark" style="width: 36px; height: 36px;"></div>
+    </div>
+    <div class="loading-text" style="font-size: 22px; letter-spacing: 6px;">Preparing Battle</div>
+    <div class="diamond-dots">
+      <div class="diamond-line" style="width: 70px;"></div>
+      <div class="diamond-dot-group">
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+        <div class="diamond-dot"></div>
+      </div>
+      <div class="diamond-line right" style="width: 70px;"></div>
+    </div>
+  </div>
+  <div class="fs-hint">tap to close</div>
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.proto-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function openFullscreen(id) {
+  event.stopPropagation();
+  document.getElementById(id).classList.add('visible');
+}
+</script>
+
+</body>
+</html>

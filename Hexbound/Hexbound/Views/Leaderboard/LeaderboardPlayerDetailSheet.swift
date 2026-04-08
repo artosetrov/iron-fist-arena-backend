@@ -83,7 +83,7 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private var loadingState: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            ProgressView()
+            HexPulseLoader(.compact)
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.2)
             Text("Loading profile...")

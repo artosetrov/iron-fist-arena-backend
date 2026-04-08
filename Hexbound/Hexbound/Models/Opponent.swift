@@ -11,6 +11,7 @@ struct Opponent: Codable, Identifiable {
     let pvpLosses: Int
     let maxHp: Int
     let armor: Int?
+    let gearScore: Int?
     let avatar: String?
 
     // Base stats for preview
@@ -31,6 +32,7 @@ struct Opponent: Codable, Identifiable {
         case pvpLosses
         case maxHp
         case armor
+        case gearScore
         case avatar
         case strength = "str"               // JSON: "str" (Prisma 3-letter field)
         case agility = "agi"

@@ -170,18 +170,11 @@ struct NPCGuideWidget: View {
                 // Optional CTA button (e.g. "Go to Shop")
                 if let label = ctaLabel, let action = onCTA, (!typewriterEnabled || typewriterDone) {
                     Button {
-                        HapticManager.light()
                         action()
                     } label: {
                         Text(label)
-                            .font(DarkFantasyTheme.cardTitle)
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .tracking(2)
-                            .padding(.horizontal, LayoutConstants.spaceLG)
-                            .padding(.vertical, LayoutConstants.spaceSM)
-                            .background(Capsule().fill(DarkFantasyTheme.gold))
                     }
-                    .buttonStyle(.scalePress(0.9))
+                    .buttonStyle(.compactPrimary)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
 
@@ -231,19 +224,11 @@ struct NPCGuideWidget: View {
 
             if let continueAction = onContinue {
                 Button {
-                    HapticManager.light()
                     continueAction()
                 } label: {
                     Text("Continue")
-                        .font(DarkFantasyTheme.uiLabel)
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .padding(.horizontal, LayoutConstants.spaceLG)
-                        .padding(.vertical, LayoutConstants.spaceSM)
-                        .background(
-                            Capsule().fill(DarkFantasyTheme.gold)
-                        )
                 }
-                .buttonStyle(.scalePress(0.9))
+                .buttonStyle(.compactPrimary)
             }
         }
     }

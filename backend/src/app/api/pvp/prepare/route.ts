@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
+import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
 // HP regen intentionally NOT used in Arena — players must use potions
 import {
   getStaminaConfig,
@@ -154,23 +155,46 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Load both combat characters in parallel
-    const [playerStats, enemyStats] = await Promise.all([
-      loadCombatCharacter(character_id),
-      loadCombatCharacter(resolvedOpponentId),
-    ])
+    // Load both combat characters — bot opponents are generated, not loaded from DB
+    const isBotFight = isNpcBot(resolvedOpponentId)
+    const playerStats = await loadCombatCharacter(character_id)
+
+    const totalFights = attacker.pvpRating !== undefined
+      ? await prisma.character.findUnique({
+          where: { id: character_id },
+          select: { pvpWins: true, pvpLosses: true },
+        }).then(c => (c?.pvpWins ?? 0) + (c?.pvpLosses ?? 0))
+      : 0
+
+    const enemyStats = isBotFight
+      ? generateBotCombatStats(resolvedOpponentId, playerStats, totalFights)
+      : await loadCombatCharacter(resolvedOpponentId)
 
     // Generate a server-issued battle ticket so /resolve cannot be replayed or forged.
+    // Bot fights skip the DB ticket (bot IDs have no FK target) and use a hash instead.
     const battleSeed = (Math.random() * 0x7FFFFFFF) | 0
-    const battleTicket = await prisma.pvpBattleTicket.create({
-      data: {
-        characterId: character_id,
-        opponentId: resolvedOpponentId,
-        revengeId: revenge_id ?? null,
-        battleSeed,
-        expiresAt: new Date(Date.now() + BATTLE_TICKET_TTL_MS),
-      },
-    })
+    let battleTicketId: string
+
+    if (isBotFight) {
+      // Lightweight ticket for bot fights: hash(characterId + botId + seed + secret)
+      const { createHash } = await import('crypto')
+      const secret = process.env.BOT_TICKET_SECRET ?? 'hexbound-bot-fights-2026'
+      battleTicketId = `bot_${createHash('sha256')
+        .update(`${character_id}:${resolvedOpponentId}:${battleSeed}:${secret}`)
+        .digest('hex')
+        .slice(0, 32)}`
+    } else {
+      const battleTicket = await prisma.pvpBattleTicket.create({
+        data: {
+          characterId: character_id,
+          opponentId: resolvedOpponentId,
+          revengeId: revenge_id ?? null,
+          battleSeed,
+          expiresAt: new Date(Date.now() + BATTLE_TICKET_TTL_MS),
+        },
+      })
+      battleTicketId = battleTicket.id
+    }
 
     // Serialize skills for client
     const serializeSkills = (stats: typeof playerStats) =>
@@ -204,7 +228,7 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({
-      battle_ticket_id: battleTicket.id,
+      battle_ticket_id: battleTicketId,
       battle_seed: battleSeed,
       player_stats: {
         id: playerStats.id,
@@ -277,6 +301,7 @@ export async function POST(req: NextRequest) {
         free_pvp_remaining: STAMINA.FREE_PVP_PER_DAY - freePvpUsed,
       },
       is_revenge: isRevenge,
+      is_bot_fight: isBotFight,
       ...(revenge_id ? { revenge_id } : {}),
     })
   } catch (error) {

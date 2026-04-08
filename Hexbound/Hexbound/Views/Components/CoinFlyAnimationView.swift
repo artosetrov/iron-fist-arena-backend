@@ -106,8 +106,8 @@ enum CoinStyle {
             ]
         case .xp:
             return [
-                DarkFantasyTheme.purple,
-                DarkFantasyTheme.purple.opacity(0.8),
+                DarkFantasyTheme.xpRing,
+                DarkFantasyTheme.xpRing.opacity(0.8),
                 DarkFantasyTheme.cyan.opacity(0.6)
             ]
         }

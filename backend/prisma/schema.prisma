@@ -129,6 +129,24 @@ model MilestoneClaim {
   @@map("milestone_claims")
 }
 
+model TutorialQuest {
+  id            String    @id @default(uuid())
+  characterId   String    @map("character_id")
+  questId       String    @map("quest_id")        // "equip_gear", "win_3_pvp", "first_dungeon", etc.
+  progress      Int       @default(0)
+  target        Int
+  isCompleted   Boolean   @default(false) @map("is_completed")
+  completedAt   DateTime? @map("completed_at")
+  rewardClaimed Boolean   @default(false) @map("reward_claimed")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  character     Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, questId])
+  @@index([characterId])
+  @@map("tutorial_quests")
+}
+
 enum EventType {
   boss_rush
   gold_rush
@@ -306,6 +324,12 @@ model Character {
   mailRecipients      MailRecipient[]
   shopOfferPurchases  ShopOfferPurchase[]
 
+  // Tutorial & Onboarding
+  tutorialStep        Int       @default(0) @map("tutorial_step")       // 0=new, 1=equipped, 2=first_fight, 3=completed
+  tutorialSkipped     Boolean   @default(false) @map("tutorial_skipped")
+  referralCode        String?   @unique @map("referral_code")           // 8-char invite code
+  referredBy          String?   @map("referred_by")                     // character_id of referrer
+
   // Social
   lastActiveAt        DateTime? @map("last_active_at")
   friendsSent         Friendship[] @relation("friendship_user")
@@ -315,6 +339,7 @@ model Character {
   challengesSent      Challenge[] @relation("challenge_challenger")
   challengesReceived  Challenge[] @relation("challenge_defender")
   milestoneClaims     MilestoneClaim[]
+  tutorialQuests      TutorialQuest[]
 
   @@index([userId])
   @@index([pvpRating])

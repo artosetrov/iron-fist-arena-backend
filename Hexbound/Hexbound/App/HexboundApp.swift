@@ -22,7 +22,7 @@ struct HexboundApp: App {
                     case .characterSelect:
                         CharacterSelectionView()
                     case .loreIntro(let heroName):
-                        LoreIntroView(heroName: heroName)
+                        OnboardingCinematicView(heroName: heroName)
                     case .game:
                         MainRouterView()
                     }
@@ -153,8 +153,7 @@ struct SplashView: View {
                 .opacity(titleOpacity)
                 .scaleEffect(titleScale)
 
-                ProgressView()
-                    .tint(DarkFantasyTheme.gold)
+                HexPulseLoader(.compact)
                     .padding(.top, 40)
                     .opacity(spinnerOpacity)
             }

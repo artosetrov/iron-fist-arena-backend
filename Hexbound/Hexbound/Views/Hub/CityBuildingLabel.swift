@@ -7,9 +7,20 @@ struct CityBuildingLabel: View {
     let visible: Bool
     var badge: String? = nil
     var isLocked: Bool = false
+    /// Shows a pulsing quest indicator (!) when an NPC quest points to this building
+    var hasQuest: Bool = false
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
+            // Quest indicator
+            if hasQuest && !isLocked {
+                Text("!")
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(DarkFantasyTheme.textOnGold)
+                    .frame(width: 16, height: 16)
+                    .background(Circle().fill(DarkFantasyTheme.gold))
+            }
+
             Text(text)
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)

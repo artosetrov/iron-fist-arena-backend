@@ -15,25 +15,25 @@ private struct TavernGame: Identifiable {
         TavernGame(
             id: "shell",
             title: "SHELL GAME",
-            subtitle: "Bet gold, find the ball. Double or nothing.",
+            subtitle: "Bet gold, find the ball.\nDouble or nothing.",
             hostName: "The Trickster",
-            hostImage: "icon-shell-game",
+            hostImage: "npc-shell-master",
             accentColor: DarkFantasyTheme.gold,
             route: .shellGame
         ),
         TavernGame(
             id: "wheel",
             title: "FORTUNE WHEEL",
-            subtitle: "Spin the wheel. Up to x5 your wager!",
+            subtitle: "Spin the wheel.\nUp to x5 your wager!",
             hostName: "Lady Fortuna",
-            hostImage: "building-tavern",
+            hostImage: "lady-fortuna",
             accentColor: DarkFantasyTheme.purple,
             route: .fortuneWheel
         ),
         TavernGame(
             id: "rush",
             title: "DUNGEON RUSH",
-            subtitle: "Endless waves. How far can you go?",
+            subtitle: "Endless waves.\nHow far can you go?",
             hostName: "The Warden",
             hostImage: "icon-dungeon-rush",
             accentColor: DarkFantasyTheme.danger,
@@ -46,6 +46,11 @@ private struct TavernGame: Identifiable {
 
 struct TavernDetailView: View {
     @Environment(AppState.self) private var appState
+
+    private let columns = [
+        GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
+        GridItem(.flexible(), spacing: LayoutConstants.spaceSM)
+    ]
 
     var body: some View {
         ZStack {
@@ -60,8 +65,8 @@ struct TavernDetailView: View {
                         .multilineTextAlignment(.center)
                         .padding(.top, LayoutConstants.spaceSM)
 
-                    // Minigame cards with host images
-                    VStack(spacing: LayoutConstants.spaceSM) {
+                    // Minigame cards — 2-column grid (like Gold Mine)
+                    LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
                         ForEach(TavernGame.allGames) { game in
                             TavernGameCard(game: game) {
                                 appState.mainPath.append(game.route)
@@ -89,7 +94,7 @@ struct TavernDetailView: View {
     }
 }
 
-// MARK: - Tavern Game Card (with Host Image)
+// MARK: - Tavern Game Card (Vertical — like MineSlotCard)
 
 private struct TavernGameCard: View {
     let game: TavernGame
@@ -97,55 +102,13 @@ private struct TavernGameCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 0) {
-                // Host image panel
-                ZStack {
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .fill(game.accentColor.opacity(0.12))
+            VStack(spacing: 0) {
+                // Host illustration (top section)
+                gameIllustration
 
-                    if UIImage(named: game.hostImage) != nil {
-                        Image(game.hostImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 72, height: 86)
-                            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(DarkFantasyTheme.title)
-                            .foregroundStyle(game.accentColor.opacity(0.6))
-                    }
-                }
-                .frame(width: 72, height: 86)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                        .stroke(game.accentColor.opacity(0.25), lineWidth: 1)
-                )
-
-                // Info section
-                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                    Text(game.title)
-                        .font(DarkFantasyTheme.cardTitle)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-
-                    Text(game.hostName)
-                        .font(DarkFantasyTheme.badge)
-                        .foregroundStyle(game.accentColor.opacity(0.8))
-
-                    Text(game.subtitle)
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        .lineLimit(2)
-                }
-                .padding(.leading, LayoutConstants.spaceSM)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
-                    .foregroundStyle(game.accentColor.opacity(0.6))
-                    .padding(.trailing, LayoutConstants.spaceSM)
+                // Info panel (bottom section)
+                infoPanel
             }
-            .padding(LayoutConstants.spaceSM)
             .background(
                 RadialGlowBackground(
                     baseColor: DarkFantasyTheme.bgSecondary,
@@ -160,11 +123,73 @@ private struct TavernGameCard: View {
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(game.accentColor.opacity(0.3), lineWidth: 1)
             )
-            .cornerBrackets(color: game.accentColor.opacity(0.3), length: 14, thickness: 1.5)
-            .compositingGroup()
-            .cardShadow()
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+            .shadow(color: game.accentColor.opacity(0.15), radius: 8, y: 2)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
             .contentShape(Rectangle())
         }
         .buttonStyle(.scalePress(0.97))
+    }
+
+    // MARK: - Game Illustration
+
+    private var gameIllustration: some View {
+        ZStack {
+            // Accent gradient background
+            LinearGradient(
+                colors: [game.accentColor.opacity(0.2), DarkFantasyTheme.bgTertiary],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            // Host NPC / scene image
+            if UIImage(named: game.hostImage) != nil {
+                Image(game.hostImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+            } else {
+                Image(systemName: "person.crop.circle.fill")
+                    .font(DarkFantasyTheme.title)
+                    .foregroundStyle(game.accentColor.opacity(0.6))
+            }
+
+            // Bottom gradient fade into info panel
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [.clear, DarkFantasyTheme.bgSecondary.opacity(0.8)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 32)
+            }
+        }
+        .frame(height: 110)
+        .clipped()
+    }
+
+    // MARK: - Info Panel
+
+    private var infoPanel: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Text(game.title)
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text(game.hostName)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(game.accentColor.opacity(0.8))
+
+            Text(game.subtitle)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceMS)
     }
 }

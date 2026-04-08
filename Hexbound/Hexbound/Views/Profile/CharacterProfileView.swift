@@ -58,7 +58,7 @@ struct CharacterProfileView: View {
 
     private var loadingView: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            ProgressView()
+            HexPulseLoader(.compact)
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.3)
             Text("Loading profile...")

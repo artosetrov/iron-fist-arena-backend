@@ -6,6 +6,9 @@ import SwiftUI
 struct ArenaOpponentCard: View {
     let opponent: Opponent
     let playerRating: Int
+    let playerLevel: Int
+    let playerAttackPower: Int
+    let playerArmor: Int
     let onTap: () -> Void
 
     // Animation state
@@ -13,12 +16,18 @@ struct ArenaOpponentCard: View {
     @State private var shimmerOffset: CGFloat = -1.2
     @State private var isAppeared = false
 
-    private var ratingDiff: Int { opponent.pvpRating - playerRating }
+    /// Composite threat ratio: compares combined power (rating + attack + armor + level×10)
+    /// Ratio > 1 means opponent is stronger, < 1 means weaker.
+    private var threatRatio: Double {
+        let myPower = Double(playerRating) + Double(playerAttackPower) + Double(playerArmor) + Double(playerLevel * 10)
+        let oppPower = Double(opponent.pvpRating) + Double(opponent.attackPower) + Double(opponent.armor ?? 0) + Double(opponent.level * 10)
+        return oppPower / max(myPower, 1)
+    }
 
     private var difficulty: OpponentDifficulty {
-        if ratingDiff < -200 { return .easy }
-        if ratingDiff < 200 { return .medium }
-        return .hard
+        if threatRatio < 0.85 { return .easy }
+        if threatRatio > 1.15 { return .hard }
+        return .medium
     }
 
     private var classColor: Color {

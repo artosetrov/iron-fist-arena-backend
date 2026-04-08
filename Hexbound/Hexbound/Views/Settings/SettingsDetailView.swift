@@ -20,14 +20,16 @@ struct SettingsDetailView: View {
                             .staggeredAppear(index: 1)
                         notificationsSection(vm: vm)
                             .staggeredAppear(index: 2)
-                        accountSection(vm: vm)
+                        referralSection
                             .staggeredAppear(index: 3)
+                        accountSection(vm: vm)
+                            .staggeredAppear(index: 4)
                         if appState.isAdmin {
                             devToolsSection
-                                .staggeredAppear(index: 4)
+                                .staggeredAppear(index: 5)
                         }
                         versionLabel
-                            .staggeredAppear(index: 5)
+                            .staggeredAppear(index: 6)
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceMD)
@@ -194,6 +196,14 @@ struct SettingsDetailView: View {
                 .buttonStyle(.scalePress(0.97))
                 .accessibilityLabel("Create a new hero, \(appState.userCharacters.count) of 5 slots used")
             }
+        }
+    }
+
+    // MARK: - Referral
+
+    private var referralSection: some View {
+        settingsCard {
+            ReferralSectionView()
         }
     }
 

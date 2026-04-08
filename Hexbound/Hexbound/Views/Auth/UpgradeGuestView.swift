@@ -200,7 +200,7 @@ struct UpgradeGuestView: View {
                         Task { await vm.upgrade(appState: appState) }
                     } label: {
                         if vm.isLoading {
-                            ProgressView().tint(DarkFantasyTheme.textOnGold)
+                            HexPulseLoader.onGold()
                         } else {
                             Text("CREATE ACCOUNT")
                         }

@@ -4,6 +4,7 @@ struct BattlePassDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: BattlePassViewModel?
+    @State private var bpHint: NPCHint?
 
     var body: some View {
         ZStack {
@@ -87,10 +88,21 @@ struct BattlePassDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
+        .contextualHint(bpHint)
         .task {
             if vm == nil { vm = BattlePassViewModel(appState: appState, cache: cache) }
             await vm?.loadBattlePass()
+            updateBPHint()
         }
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateBPHint() {
+        guard let vm else { return }
+        let allRewards = vm.freeRewards + vm.premiumRewards
+        let hasUnclaimed = allRewards.contains { vm.rewardState($0) == .claimable }
+        bpHint = ContextualHintProvider.battlePassHint(hasUnclaimedRewards: hasUnclaimed)
     }
 
     // MARK: - Header + XP (combined ornamental panel)

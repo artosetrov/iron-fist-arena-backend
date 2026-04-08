@@ -17,7 +17,7 @@ enum DarkFantasyTheme {
     static let bgDisabled = Color(hex: 0x333340)    // Disabled button background
     static let bgSecondaryPressed = Color(hex: 0x18182B) // Pressed state of bgSecondary
     static let bgTertiaryPressed = Color(hex: 0x151F3A)  // Pressed state of bgTertiary
-    static let bgModal = Color.black.opacity(0.75)   // Modal overlay
+    static let bgModal = Color.black.opacity(0.88)   // Modal overlay — darker for contrast
     static let bgBackdrop = Color.black.opacity(0.85) // Heavy backdrop for sheets
     static let bgBackdropLight = Color.black.opacity(0.7) // Lighter backdrop for popups
     static let bgScrim = Color.black.opacity(0.5)   // Semi-transparent scrim fill
@@ -486,7 +486,7 @@ enum DarkFantasyTheme {
     )
 
     static let xpGradient = LinearGradient(
-        colors: [purple, Color(hex: 0x8E44AD)],
+        colors: [xpRing, Color(hex: 0x3B8BC4)],
         startPoint: .leading, endPoint: .trailing
     )
 

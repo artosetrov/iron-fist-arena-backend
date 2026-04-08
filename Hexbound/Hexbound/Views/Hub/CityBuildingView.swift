@@ -10,6 +10,8 @@ struct CityBuildingView: View {
     /// When true, only render the sprite (no label). Used for z-order separation.
     var spriteOnly: Bool = false
     var isLocked: Bool = false
+    /// Required level for unlock (shown as "LV.X" on lock overlay). Nil = "SOON".
+    var requiredLevel: Int? = nil
 
     @State private var isPressed = false
     @State private var showLabel = false
@@ -53,7 +55,7 @@ struct CityBuildingView: View {
                         Image(systemName: "lock.fill")
                             .font(DarkFantasyTheme.section.bold())
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
-                        Text("SOON")
+                        Text(requiredLevel != nil ? "LV.\(requiredLevel!)" : "SOON")
                             .font(DarkFantasyTheme.caption)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }

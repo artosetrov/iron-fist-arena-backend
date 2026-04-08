@@ -423,7 +423,7 @@ struct NameStepView: View {
                             Group {
                                 switch vm.nameAvailability {
                                 case .checking:
-                                    ProgressView()
+                                    HexPulseLoader(.compact)
                                         .tint(DarkFantasyTheme.goldDim)
                                         .scaleEffect(0.85)
                                 case .available:

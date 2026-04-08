@@ -490,7 +490,7 @@ struct DailyLoginPopupView: View {
         } label: {
             Group {
                 if vm.isClaiming {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
                     Text("CLAIM REWARD")

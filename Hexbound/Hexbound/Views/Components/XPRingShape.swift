@@ -3,11 +3,16 @@ import SwiftUI
 /// A custom Shape that draws a rounded rectangle starting from top-center, proceeding clockwise.
 /// This allows using `.trim(from: 0, to: percentage)` for XP progress effects on the avatar.
 struct XPRingShape: Shape {
+    /// Corner radius of the ring path. Defaults to widget avatar radius + 2.
+    var ringCornerRadius: CGFloat = LayoutConstants.widgetAvatarRadius + 2
+    /// Stroke width used to calculate inset. Defaults to widget XP ring width.
+    var ringLineWidth: CGFloat = LayoutConstants.widgetXpRingWidth
+
     func path(in rect: CGRect) -> Path {
         var path = Path()
 
-        let cornerRadius: CGFloat = LayoutConstants.widgetAvatarRadius + 2
-        let inset: CGFloat = LayoutConstants.widgetXpRingWidth / 2
+        let cornerRadius: CGFloat = ringCornerRadius
+        let inset: CGFloat = ringLineWidth / 2
 
         let adjustedRect = rect.insetBy(dx: inset, dy: inset)
 

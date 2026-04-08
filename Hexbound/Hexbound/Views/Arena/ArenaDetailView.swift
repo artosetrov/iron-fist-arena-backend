@@ -16,6 +16,7 @@ struct ArenaDetailView: View {
     @State private var showArenaGuideMini = false
     // Low HP NPC widget — shown when character HP < 30%
     @State private var showLowHPGuide = false
+    @State private var arenaHint: NPCHint?
 
     var body: some View {
         ZStack {
@@ -231,6 +232,16 @@ struct ArenaDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .npcHint(.arena, isReady: vm != nil)
+        .contextualHint(arenaHint, onCTA: {
+            if let hint = arenaHint {
+                switch hint.id {
+                case "arena_low_hp_no_potions":
+                    appState.mainPath.append(AppRoute.shop)
+                default:
+                    break
+                }
+            }
+        })
         .tutorialOverlay(steps: [.arenaStance, .arenaOpponent])
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -276,6 +287,7 @@ struct ArenaDetailView: View {
             }
 
             await vm?.loadAll()
+            updateArenaHint()
         }
     }
 
@@ -285,6 +297,26 @@ struct ArenaDetailView: View {
     private var isLowHP: Bool {
         guard let char = appState.currentCharacter else { return false }
         return LowHPPotionBanner.shouldShow(character: char)
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateArenaHint() {
+        guard let char = appState.currentCharacter else { return }
+        let potionCount = appState.cachedInventory?.filter {
+            $0.consumableType?.contains("health_potion") == true && ($0.quantity ?? 0) > 0
+        }.count ?? 0
+        let totalPvpFights = char.pvpWins + char.pvpLosses
+        // Loss streak not tracked client-side yet — use 0 as default
+        let currentLossStreak = 0
+
+        arenaHint = ContextualHintProvider.arenaHint(
+            character: char,
+            potionCount: potionCount,
+            totalPvpFights: totalPvpFights,
+            currentLossStreak: currentLossStreak,
+            staminaCostPerFight: vm?.staminaCost ?? AppConstants.pvpStaminaCost
+        )
     }
 
     // MARK: - Potion Helpers
@@ -402,6 +434,9 @@ struct ArenaDetailView: View {
                         ArenaOpponentCard(
                             opponent: opponent,
                             playerRating: vm.pvpRating,
+                            playerLevel: vm.playerLevel,
+                            playerAttackPower: vm.character?.attackPower ?? 0,
+                            playerArmor: vm.character?.armor ?? 0,
                             onTap: { vm.selectOpponent(opponent) }
                         )
                         .frame(maxWidth: .infinity)
@@ -538,7 +573,7 @@ struct ArenaDetailView: View {
             } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     if vm.fightingOpponentId == entry.id {
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .tint(.textPrimary)
                             .scaleEffect(0.8)
                     } else {

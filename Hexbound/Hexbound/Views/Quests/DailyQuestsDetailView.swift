@@ -232,7 +232,7 @@ struct DailyQuestsDetailView: View {
                     Task { await vm.claimBonus() }
                 } label: {
                     if vm.isClaimingBonus {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
+                        HexPulseLoader.onGold()
                     } else {
                         Text("CLAIM BONUS")
                     }
@@ -398,7 +398,7 @@ struct DailyQuestsDetailView: View {
                         Task { await vm.claimQuest(quest) }
                     } label: {
                         if isClaiming {
-                            ProgressView().tint(DarkFantasyTheme.textOnGold).scaleEffect(0.8)
+                            HexPulseLoader.onGold()
                         } else {
                             Text("Claim")
                         }

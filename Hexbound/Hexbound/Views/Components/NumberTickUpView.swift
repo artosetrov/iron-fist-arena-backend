@@ -116,7 +116,7 @@ enum TickUpStyle {
         switch self {
         case .gold: return DarkFantasyTheme.textGold
         case .gems: return DarkFantasyTheme.cyan
-        case .xp: return DarkFantasyTheme.purple
+        case .xp: return DarkFantasyTheme.xpRing
         case .rating: return DarkFantasyTheme.textPrimary
         case .stat: return DarkFantasyTheme.textPrimary
         case .plain: return DarkFantasyTheme.textPrimary
@@ -135,7 +135,7 @@ enum TickUpStyle {
         switch self {
         case .gold: return DarkFantasyTheme.goldBright
         case .gems: return DarkFantasyTheme.cyan
-        case .xp: return DarkFantasyTheme.purple
+        case .xp: return DarkFantasyTheme.xpRing
         case .rating: return DarkFantasyTheme.success
         case .stat: return DarkFantasyTheme.success
         case .plain: return DarkFantasyTheme.success

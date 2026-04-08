@@ -436,7 +436,7 @@ struct ArenaComparisonSheet: View {
         } label: {
             HStack(spacing: LayoutConstants.spaceXS) {
                 if isFighting {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(.textPrimary)
                 } else {
                     Text("FIGHT")

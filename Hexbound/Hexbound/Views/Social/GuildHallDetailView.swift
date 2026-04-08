@@ -26,7 +26,7 @@ struct GuildHallDetailView: View {
                     // Deep-link mode: show loading while thread opens (don't flash Guild Hall UI)
                     VStack {
                         Spacer()
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .tint(DarkFantasyTheme.gold)
                         Text("Opening conversation...")
                             .font(DarkFantasyTheme.uiLabel)
@@ -71,7 +71,7 @@ struct GuildHallDetailView: View {
                     .transaction { $0.animation = nil }
                 }
             } else {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             }
         }
@@ -262,7 +262,7 @@ struct GuildHallDetailView: View {
 
             // Action buttons
             if isProcessing {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             } else {
                 HStack(spacing: LayoutConstants.spaceXS) {
@@ -416,7 +416,7 @@ struct GuildHallDetailView: View {
 
             // Actions
             if isProcessing {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             } else {
                 Menu {
@@ -754,7 +754,7 @@ struct GuildHallDetailView: View {
                 // Loading state — show centered spinner only when no messages yet
                 Spacer()
                 VStack(spacing: LayoutConstants.spaceSM) {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.gold)
                     Text("Loading messages...")
                         .font(DarkFantasyTheme.uiLabel)
@@ -1380,7 +1380,7 @@ struct GuildHallDetailView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         if isProcessing {
-                            ProgressView()
+                            HexPulseLoader(.compact)
                                 .tint(DarkFantasyTheme.textOnGold)
                                 .scaleEffect(0.7)
                         } else {
@@ -1490,7 +1490,7 @@ struct GuildHallDetailView: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             if isProcessing {
-                                ProgressView()
+                                HexPulseLoader(.compact)
                                     .tint(DarkFantasyTheme.danger)
                                     .scaleEffect(0.6)
                             } else {

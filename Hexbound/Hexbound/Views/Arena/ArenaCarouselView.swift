@@ -5,6 +5,9 @@ import SwiftUI
 struct ArenaCarouselView: View {
     let pages: [[Opponent]]
     let playerRating: Int
+    let playerLevel: Int
+    let playerAttackPower: Int
+    let playerArmor: Int
     let onSelect: (Opponent) -> Void
     @Binding var currentPage: Int
 
@@ -21,6 +24,9 @@ struct ArenaCarouselView: View {
                                 ArenaOpponentCard(
                                     opponent: opponent,
                                     playerRating: playerRating,
+                                    playerLevel: playerLevel,
+                                    playerAttackPower: playerAttackPower,
+                                    playerArmor: playerArmor,
                                     onTap: { onSelect(opponent) }
                                 )
                                 .frame(maxWidth: .infinity)

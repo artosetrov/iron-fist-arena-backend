@@ -26,7 +26,7 @@ struct DailyLoginDetailView: View {
             if let vm {
                 Group {
                 if vm.isLoading {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.gold)
                 } else if let data = vm.loginData {
                     ScrollView {
@@ -391,7 +391,7 @@ struct DailyLoginDetailView: View {
                 Task { await vm.claimReward() }
             } label: {
                 if vm.isClaiming {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
                     Text("CLAIM REWARD")

@@ -196,7 +196,7 @@ struct DungeonMapEditorView: View {
             } label: {
                 HStack {
                     if isSaving {
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .progressViewStyle(CircularProgressViewStyle(tint: DarkFantasyTheme.textPrimary))
                             .scaleEffect(0.8)
                     } else {

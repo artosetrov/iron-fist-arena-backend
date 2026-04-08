@@ -27,7 +27,7 @@ struct AvatarImageView: View {
                 .fill(DarkFantasyTheme.bgTertiary)
                 .frame(width: size, height: size)
                 .overlay {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textTertiary)
                         .scaleEffect(0.6)
                 }

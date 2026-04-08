@@ -191,7 +191,7 @@ struct DungeonRushDetailView: View {
                         Task { await vm.startRush() }
                     } label: {
                         if vm.isLoading {
-                            ProgressView().tint(DarkFantasyTheme.textOnGold)
+                            HexPulseLoader.onGold()
                         } else {
                             Text("ENTER THE DEPTHS")
                         }
@@ -233,7 +233,7 @@ struct DungeonRushDetailView: View {
     private func rewardPreviewPills() -> some View {
         let rewards: [(String, String, Color)] = [
             ("icon-gold", "Gold", DarkFantasyTheme.gold),
-            ("icon-xp", "XP", DarkFantasyTheme.purple),
+            ("icon-xp", "XP", DarkFantasyTheme.xpRing),
             ("reward-loot", "Loot", DarkFantasyTheme.cyan),
             ("icon-gems", "Rare+", DarkFantasyTheme.stamina),
         ]
@@ -857,7 +857,7 @@ struct DungeonRushDetailView: View {
                     }
                 } label: {
                     if vm.isFighting || vm.isLoading {
-                        ProgressView().tint(DarkFantasyTheme.textOnGold)
+                        HexPulseLoader.onGold()
                     } else {
                         Text(roomActionLabel(for: room.type))
                     }
@@ -947,7 +947,7 @@ struct DungeonRushDetailView: View {
                         Task { await vm.leaveShop() }
                     } label: {
                         if vm.isLoading {
-                            ProgressView().tint(DarkFantasyTheme.textOnGold)
+                            HexPulseLoader.onGold()
                         } else {
                             Text("LEAVE SHOP")
                         }
@@ -1301,7 +1301,7 @@ struct DungeonRushDetailView: View {
             }
             if vm.accumulatedXp > 0 {
                 rewardRow(label: "Experience", value: "+\(vm.accumulatedXp)",
-                          valueColor: DarkFantasyTheme.purple, iconName: "icon-xp")
+                          valueColor: DarkFantasyTheme.xpRing, iconName: "icon-xp")
             }
             if vm.accumulatedItems > 0 {
                 HStack {

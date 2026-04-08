@@ -7,23 +7,31 @@ struct OpponentCardView: View {
     let staminaCost: Int
     let onFight: () -> Void
     var playerRating: Int = 0
+    var playerLevel: Int = 1
+    var playerAttackPower: Int = 0
+    var playerArmor: Int = 0
 
-    private var ratingDiff: Int { opponent.pvpRating - playerRating }
+    /// Composite threat ratio: compares combined power (rating + attack + armor + level×10)
+    private var threatRatio: Double {
+        let myPower = Double(playerRating) + Double(playerAttackPower) + Double(playerArmor) + Double(playerLevel * 10)
+        let oppPower = Double(opponent.pvpRating) + Double(opponent.attackPower) + Double(opponent.armor ?? 0) + Double(opponent.level * 10)
+        return oppPower / max(myPower, 1)
+    }
 
     private var difficultyLabel: String {
-        let diff = ratingDiff
-        if diff < -200 { return "Easy" }
-        if diff < -50 { return "Fair" }
-        if diff < 100 { return "Tough" }
-        return "Hard"
+        if threatRatio < 0.85 { return "Easy" }
+        if threatRatio < 0.95 { return "Fair" }
+        if threatRatio > 1.15 { return "Hard" }
+        if threatRatio > 1.05 { return "Tough" }
+        return "Medium"
     }
 
     private var difficultyColor: Color {
-        let diff = ratingDiff
-        if diff < -200 { return DarkFantasyTheme.success }
-        if diff < -50 { return DarkFantasyTheme.textSecondary }
-        if diff < 100 { return DarkFantasyTheme.stamina }
-        return DarkFantasyTheme.danger
+        if threatRatio < 0.85 { return DarkFantasyTheme.success }
+        if threatRatio < 0.95 { return DarkFantasyTheme.textSecondary }
+        if threatRatio > 1.15 { return DarkFantasyTheme.danger }
+        if threatRatio > 1.05 { return DarkFantasyTheme.stamina }
+        return DarkFantasyTheme.textSecondary
     }
 
     var body: some View {
@@ -96,7 +104,7 @@ struct OpponentCardView: View {
             } label: {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     if isFighting {
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .tint(DarkFantasyTheme.textOnGold)
                     } else {
                         HStack(spacing: LayoutConstants.spaceXS) {

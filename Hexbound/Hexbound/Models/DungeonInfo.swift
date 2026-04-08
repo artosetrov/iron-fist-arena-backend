@@ -89,8 +89,23 @@ struct LootPreview: Identifiable, Hashable {
         }
     }
 
-    /// Resolved imageKey — specific asset first, then type-based fallback.
-    var resolvedImageKey: String? { imageKey ?? fallbackImageKey }
+    /// Resolved imageKey — remaps placeholder loot-* keys to real assets,
+    /// then falls back to type-based generic asset.
+    var resolvedImageKey: String? {
+        if let key = imageKey {
+            // Known currency icon mappings (loot-gold etc. don't exist in xcassets)
+            switch key {
+            case "loot-gold":  return "icon-gold"
+            case "loot-xp":    return "icon-xp"
+            case "loot-gems":  return "icon-gems"
+            default:
+                // Real asset key from server (e.g. "wpn_excalibur") — use as-is
+                if !key.hasPrefix("loot-") { return key }
+            }
+        }
+        // Placeholder loot-* keys or nil — fall through to type-based fallback
+        return fallbackImageKey
+    }
 
     /// Convert to a lightweight Item for the detail sheet
     func toItem() -> Item {
@@ -325,7 +340,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-cave-spider-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "70–110", imageKey: "loot-gold"),
-                        LootPreview(icon: "🧪", name: "Venom Vial", detail: "15%", imageKey: "loot-venom-vial", rarity: .uncommon),
+                        LootPreview(icon: "🧪", name: "Venom Vial", detail: "15%", imageKey: "loot-venom-vial", rarity: .uncommon, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 4, name: "Bone Warrior", level: 4, hp: 450,
                      description: "Reassembled from fallen fighters. Sworn to guard.",
@@ -333,7 +348,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-bone-warrior-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "80–130", imageKey: "loot-gold"),
-                        LootPreview(icon: "🛡️", name: "Bone Shield", detail: "Uncommon (20%)", imageKey: "loot-bone-shield", rarity: .uncommon),
+                        LootPreview(icon: "🛡️", name: "Bone Shield", detail: "Uncommon (20%)", imageKey: "loot-bone-shield", rarity: .uncommon, itemTypeRaw: "chest"),
                      ]),
             BossInfo(id: 5, name: "Fire Imp", level: 5, hp: 500,
                      description: "Small, fast, and loves setting things on fire.",
@@ -341,7 +356,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-fire-imp-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "90–150", imageKey: "loot-gold"),
-                        LootPreview(icon: "📜", name: "Fire Scroll", detail: "10%", imageKey: "loot-fire-scroll", rarity: .uncommon),
+                        LootPreview(icon: "📜", name: "Fire Scroll", detail: "10%", imageKey: "loot-fire-scroll", rarity: .uncommon, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 6, name: "Scarecrow Mage", level: 6, hp: 580,
                      description: "Waves a stick. Sparks occasionally fly.",
@@ -350,7 +365,7 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "100–170", imageKey: "loot-gold"),
                         LootPreview(icon: "🗡️", name: "Mage Wand", detail: "Rare (15%)", imageKey: "loot-mage-wand", rarity: .rare),
-                        LootPreview(icon: "📜", name: "Arcane Scroll", detail: "5%", imageKey: "loot-arcane-scroll", rarity: .rare),
+                        LootPreview(icon: "📜", name: "Arcane Scroll", detail: "5%", imageKey: "loot-arcane-scroll", rarity: .rare, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 7, name: "Shadow Stalker", level: 7, hp: 650,
                      description: "You won't see it coming. Literally.",
@@ -366,7 +381,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-iron-guardian-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "120–200", imageKey: "loot-gold"),
-                        LootPreview(icon: "🛡️", name: "Iron Plate", detail: "Rare (10%)", imageKey: "loot-iron-plate", rarity: .rare),
+                        LootPreview(icon: "🛡️", name: "Iron Plate", detail: "Rare (10%)", imageKey: "loot-iron-plate", rarity: .rare, itemTypeRaw: "chest"),
                      ]),
             BossInfo(id: 9, name: "Plague Bearer", level: 9, hp: 850,
                      description: "Its breath alone can fell a kingdom.",
@@ -374,7 +389,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-plague-bearer-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "130–220", imageKey: "loot-gold"),
-                        LootPreview(icon: "🧪", name: "Plague Elixir", detail: "Epic (5%)", imageKey: "loot-plague-elixir", rarity: .epic),
+                        LootPreview(icon: "🧪", name: "Plague Elixir", detail: "Epic (5%)", imageKey: "loot-plague-elixir", rarity: .epic, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 10, name: "Arena Warden", level: 10, hp: 1000,
                      description: "The final test. Only the worthy may pass.",
@@ -421,7 +436,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-ghoul-brute-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "180–300", imageKey: "loot-gold"),
-                        LootPreview(icon: "🛡️", name: "Ghoul Hide", detail: "Rare (15%)", imageKey: "loot-ghoul-hide", rarity: .rare),
+                        LootPreview(icon: "🛡️", name: "Ghoul Hide", detail: "Rare (15%)", imageKey: "loot-ghoul-hide", rarity: .rare, itemTypeRaw: "chest"),
                      ]),
             BossInfo(id: 4, name: "Banshee", level: 13, hp: 880,
                      description: "Her wail pierces flesh and soul alike.",
@@ -429,7 +444,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-banshee-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "200–320", imageKey: "loot-gold"),
-                        LootPreview(icon: "📜", name: "Wail Scroll", detail: "10%", imageKey: "loot-wail-scroll", rarity: .uncommon),
+                        LootPreview(icon: "📜", name: "Wail Scroll", detail: "10%", imageKey: "loot-wail-scroll", rarity: .uncommon, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 5, name: "Skeleton Knight", level: 14, hp: 950,
                      description: "Once a king's champion. Now a hollow guard.",
@@ -445,7 +460,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-corpse-weaver-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "250–380", imageKey: "loot-gold"),
-                        LootPreview(icon: "🧪", name: "Death Thread", detail: "Rare (8%)", imageKey: "loot-death-thread", rarity: .rare),
+                        LootPreview(icon: "🧪", name: "Death Thread", detail: "Rare (8%)", imageKey: "loot-death-thread", rarity: .rare, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 7, name: "Wraith Assassin", level: 16, hp: 1150,
                      description: "Phases through walls. Strikes from nowhere.",
@@ -461,7 +476,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-bone-colossus-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "300–450", imageKey: "loot-gold"),
-                        LootPreview(icon: "🛡️", name: "Bone Armor", detail: "Epic (5%)", imageKey: "loot-bone-armor", rarity: .epic),
+                        LootPreview(icon: "🛡️", name: "Bone Armor", detail: "Epic (5%)", imageKey: "loot-bone-armor", rarity: .epic, itemTypeRaw: "chest"),
                      ]),
             BossInfo(id: 9, name: "Necro Priest", level: 18, hp: 1450,
                      description: "Commands the dead with whispered curses.",
@@ -469,7 +484,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-necro-priest-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "350–500", imageKey: "loot-gold"),
-                        LootPreview(icon: "📜", name: "Necrotic Tome", detail: "Epic (4%)", imageKey: "loot-necrotic-tome", rarity: .epic),
+                        LootPreview(icon: "📜", name: "Necrotic Tome", detail: "Epic (4%)", imageKey: "loot-necrotic-tome", rarity: .epic, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 10, name: "Lich King Verath", level: 20, hp: 1800,
                      description: "Death incarnate. The catacombs are his domain.",
@@ -508,7 +523,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-ember-sprite-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "320–530", imageKey: "loot-gold"),
-                        LootPreview(icon: "📜", name: "Ember Rune", detail: "Uncommon", imageKey: "loot-ember-rune", rarity: .uncommon),
+                        LootPreview(icon: "📜", name: "Ember Rune", detail: "Uncommon", imageKey: "loot-ember-rune", rarity: .uncommon, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 3, name: "Slag Brute", level: 22, hp: 1250,
                      description: "Forged from cooling lava. Nearly indestructible.",
@@ -516,7 +531,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-slag-brute-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "350–560", imageKey: "loot-gold"),
-                        LootPreview(icon: "🛡️", name: "Slag Plate", detail: "Rare (15%)", imageKey: "loot-slag-plate", rarity: .rare),
+                        LootPreview(icon: "🛡️", name: "Slag Plate", detail: "Rare (15%)", imageKey: "loot-slag-plate", rarity: .rare, itemTypeRaw: "chest"),
                      ]),
             BossInfo(id: 4, name: "Flame Hound", level: 23, hp: 1350,
                      description: "Hunts by heat signature. Never loses prey.",
@@ -532,7 +547,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-molten-shaman-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "400–650", imageKey: "loot-gold"),
-                        LootPreview(icon: "📜", name: "Lava Burst Scroll", detail: "10%", imageKey: "loot-lava-scroll", rarity: .uncommon),
+                        LootPreview(icon: "📜", name: "Lava Burst Scroll", detail: "10%", imageKey: "loot-lava-scroll", rarity: .uncommon, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 6, name: "Obsidian Knight", level: 25, hp: 1650,
                      description: "Glass-like armor that shatters and reforms.",
@@ -548,7 +563,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-furnace-worm-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "480–750", imageKey: "loot-gold"),
-                        LootPreview(icon: "🧪", name: "Magma Core", detail: "Epic (5%)", imageKey: "loot-magma-core", rarity: .epic),
+                        LootPreview(icon: "🧪", name: "Magma Core", detail: "Epic (5%)", imageKey: "loot-magma-core", rarity: .epic, itemTypeRaw: "consumable"),
                      ]),
             BossInfo(id: 8, name: "Cinderlord", level: 27, hp: 2000,
                      description: "A walking inferno. Turns air to ash.",
@@ -556,7 +571,7 @@ struct DungeonInfo: Identifiable {
                      fullImage: "boss-cinderlord-full",
                      loot: [
                         LootPreview(icon: "🪙", name: "Gold", detail: "500–800", imageKey: "loot-gold"),
-                        LootPreview(icon: "🛡️", name: "Cinder Mail", detail: "Epic (4%)", imageKey: "loot-cinder-mail", rarity: .epic),
+                        LootPreview(icon: "🛡️", name: "Cinder Mail", detail: "Epic (4%)", imageKey: "loot-cinder-mail", rarity: .epic, itemTypeRaw: "chest"),
                      ]),
             BossInfo(id: 9, name: "Magma Titan", level: 28, hp: 2300,
                      description: "The forge's greatest creation. Or its greatest mistake.",

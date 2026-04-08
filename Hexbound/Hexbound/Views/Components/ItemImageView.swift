@@ -26,7 +26,7 @@ struct ItemImageView: View {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgTertiary)
                 .overlay {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textTertiary)
                         .scaleEffect(0.6)
                 }

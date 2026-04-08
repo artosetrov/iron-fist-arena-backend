@@ -184,6 +184,12 @@ final class AppState {
         isLoading = loading
     }
 
+    /// Reload character data from the server (e.g. after gold/XP changes)
+    func reloadCharacter() async {
+        let charService = CharacterService(appState: self)
+        await charService.loadCharacter()
+    }
+
     func showToast(_ title: String, subtitle: String = "", type: ToastType = .info, actionLabel: String? = nil, action: (() -> Void)? = nil) {
         // Deduplicate: if a toast with the same title already exists, reset its timer instead of adding a new one
         if let existingIndex = toasts.firstIndex(where: { $0.title == title }) {
@@ -337,7 +343,7 @@ enum CelebrationType {
 }
 
 enum ToastType {
-    case achievement, levelUp, rankUp, quest, reward, info, error
+    case achievement, levelUp, rankUp, quest, reward, success, info, error
 
     var color: Color {
         switch self {
@@ -346,6 +352,7 @@ enum ToastType {
         case .rankUp: DarkFantasyTheme.toastRankUp
         case .quest: DarkFantasyTheme.toastQuest
         case .reward: DarkFantasyTheme.toastReward
+        case .success: DarkFantasyTheme.success
         case .info: DarkFantasyTheme.toastInfo
         case .error: DarkFantasyTheme.toastError
         }
@@ -359,6 +366,7 @@ enum ToastType {
         case .rankUp: "crown.fill"
         case .quest: "scroll.fill"
         case .reward: "gift.fill"
+        case .success: "checkmark.circle.fill"
         case .info: "info.circle.fill"
         case .error: "exclamationmark.triangle.fill"
         }

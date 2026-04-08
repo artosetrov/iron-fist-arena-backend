@@ -46,6 +46,8 @@ final class ArenaViewModel {
 
     var character: Character? { appState.currentCharacter }
     var pvpRating: Int { character?.pvpRating ?? 1000 }
+    var playerLevel: Int { character?.level ?? 1 }
+    var playerGearScore: Int { character?.gearScore ?? 0 }
     var rank: PvPRank { PvPRank.fromRating(pvpRating) }
     /// Number of free PvP fights USED today (0..3)
     var freePvpUsed: Int { character?.freePvpToday ?? 0 }

@@ -27,6 +27,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { cacheDeletePrefix } from '@/lib/cache'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { createBattleResultMail } from '@/lib/game/battle-mail'
+import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -89,6 +90,14 @@ export async function POST(req: NextRequest) {
       if (revenge.victimId !== character_id) return NextResponse.json({ error: 'This revenge does not belong to your character' }, { status: 403 })
       if (revenge.isUsed) return NextResponse.json({ error: 'Revenge has already been used' }, { status: 400 })
       if (new Date() > revenge.expiresAt) return NextResponse.json({ error: 'Revenge has expired' }, { status: 400 })
+    }
+
+    // === NPC BOT FIGHT — simplified flow, no defender DB updates ===
+    if (isNpcBot(opponent_id)) {
+      return await resolveBotFight(
+        req, character_id, opponent_id, battle_seed, battle_ticket_id, client_winner_id,
+        STAMINA, GOLD_REWARDS, XP_REWARDS, FIRST_WIN_BONUS, BATTLE_PASS,
+      )
     }
 
     // Load characters
@@ -529,4 +538,269 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// =============================================================================
+// NPC Bot Fight Resolution
+// Simplified flow: no defender DB record, no ELO for defender, no revenge queue.
+// Player gets standard rewards (gold, XP, loot, achievements, quests, battle pass).
+// =============================================================================
+async function resolveBotFight(
+  req: NextRequest,
+  character_id: string,
+  opponent_id: string,
+  battle_seed: number,
+  battle_ticket_id: string,
+  client_winner_id: string,
+  STAMINA: Awaited<ReturnType<typeof getStaminaConfig>>,
+  GOLD_REWARDS: Awaited<ReturnType<typeof getGoldRewardsConfig>>,
+  XP_REWARDS: Awaited<ReturnType<typeof getXpRewardsConfig>>,
+  FIRST_WIN_BONUS: Awaited<ReturnType<typeof getFirstWinBonusConfig>>,
+  BATTLE_PASS: Awaited<ReturnType<typeof getBattlePassConfig>>,
+) {
+  // Validate bot ticket hash
+  const { createHash } = await import('crypto')
+  const secret = process.env.BOT_TICKET_SECRET ?? 'hexbound-bot-fights-2026'
+  const expectedTicketId = `bot_${createHash('sha256')
+    .update(`${character_id}:${opponent_id}:${battle_seed}:${secret}`)
+    .digest('hex')
+    .slice(0, 32)}`
+
+  if (battle_ticket_id !== expectedTicketId) {
+    return NextResponse.json({ error: 'Invalid bot battle ticket.' }, { status: 400 })
+  }
+
+  // Load attacker
+  const attacker = await prisma.character.findUnique({
+    where: { id: character_id },
+    select: {
+      id: true, userId: true, currentStamina: true, maxStamina: true,
+      lastStaminaUpdate: true, pvpRating: true, pvpCalibrationGames: true,
+      freePvpToday: true, freePvpDate: true, firstWinToday: true, firstWinDate: true,
+      highestPvpRank: true, cha: true, level: true, luk: true, characterName: true,
+      class: true, origin: true, gold: true, maxHp: true,
+      pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
+    },
+  })
+
+  if (!attacker) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+
+  const user = await getAuthUser(req)
+  if (!user || attacker.userId !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Run combat against bot
+  await initCombatConfig()
+  const attackerStats = await loadCombatCharacter(character_id)
+  const totalFights = attacker.pvpWins + attacker.pvpLosses
+  const botStats = generateBotCombatStats(opponent_id, attackerStats, totalFights)
+
+  const combatResult = await runCombat(attackerStats, botStats, battle_seed)
+  const attackerWon = combatResult.winnerId === attacker.id
+  const winnerId = combatResult.winnerId
+  const loserId = combatResult.loserId
+
+  const clientMatchesServer = client_winner_id === winnerId
+  if (!clientMatchesServer) {
+    console.warn(`Bot PvP resolve mismatch: client=${client_winner_id}, server=${winnerId}`)
+  }
+
+  // Rewards for attacker (standard PvP rewards — bot fights count as real for the player)
+  let goldReward = attackerWon
+    ? levelScaledReward(GOLD_REWARDS.PVP_WIN_BASE, attacker.level)
+    : levelScaledReward(GOLD_REWARDS.PVP_LOSS_BASE, attacker.level)
+  let xpReward = attackerWon
+    ? levelScaledReward(XP_REWARDS.PVP_WIN_XP, attacker.level)
+    : levelScaledReward(XP_REWARDS.PVP_LOSS_XP, attacker.level)
+  goldReward = chaGoldBonus(goldReward, attacker.cha)
+
+  if (attackerWon) {
+    const streakBonus = streakGoldMultiplier(attacker.pvpWinStreak + 1)
+    if (streakBonus > 0) goldReward = Math.floor(goldReward * (1 + streakBonus))
+    const lossStreakBonus = lossStreakGoldMultiplier(attacker.pvpLossStreak)
+    if (lossStreakBonus > 0) goldReward = Math.floor(goldReward * (1 + lossStreakBonus))
+  }
+
+  const firstWin = attackerWon && isFirstWinOfDay(attacker.firstWinToday, attacker.firstWinDate)
+  if (firstWin) {
+    goldReward = goldReward * FIRST_WIN_BONUS.GOLD_MULT
+    xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
+  }
+
+  const now = new Date()
+  // Bot fights give minimal ELO change to the player (calibration still counts)
+  const kFactor = await getKFactor(attacker.pvpCalibrationGames)
+  const ratingChange = attackerWon ? Math.round(kFactor * 0.3) : -Math.round(kFactor * 0.1)
+  const attackerNewRating = Math.max(0, attacker.pvpRating + ratingChange)
+
+  const attackerFinalHp = Math.max(combatResult.finalHp[attacker.id] ?? 0, 0)
+
+  // Build attacker update
+  const baseAttackerUpdate: Record<string, unknown> = {
+    currentHp: attackerFinalHp,
+    lastHpUpdate: now,
+    pvpRating: attackerNewRating,
+    pvpCalibrationGames: { increment: 1 },
+    gold: { increment: goldReward },
+    currentXp: { increment: xpReward },
+    lastPlayed: now,
+  }
+
+  if (attackerWon) {
+    baseAttackerUpdate.pvpWins = { increment: 1 }
+    baseAttackerUpdate.pvpWinStreak = { increment: 1 }
+    baseAttackerUpdate.pvpLossStreak = 0
+    if (attacker.highestPvpRank === null || attackerNewRating > attacker.highestPvpRank) {
+      baseAttackerUpdate.highestPvpRank = attackerNewRating
+    }
+    if (firstWin) {
+      baseAttackerUpdate.firstWinToday = true
+      baseAttackerUpdate.firstWinDate = now
+    }
+  } else {
+    baseAttackerUpdate.pvpLosses = { increment: 1 }
+    baseAttackerUpdate.pvpLossStreak = { increment: 1 }
+    baseAttackerUpdate.pvpWinStreak = 0
+  }
+
+  // Transaction: stamina + attacker update + PvpMatch record
+  const { updatedAttacker, pvpMatch, newStamina } = await prisma.$transaction(async (tx) => {
+    const [lockedRow] = await tx.$queryRawUnsafe<Array<{
+      id: string; current_stamina: number; max_stamina: number;
+      last_stamina_update: Date; free_pvp_today: number; free_pvp_date: Date | null;
+    }>>(
+      `SELECT id, current_stamina, max_stamina, last_stamina_update, free_pvp_today, free_pvp_date
+       FROM characters WHERE id = $1 FOR UPDATE`,
+      attacker.id
+    )
+
+    if (!lockedRow) throw new Error('ATTACKER_NOT_FOUND')
+
+    const lockedStaminaResult = await calculateCurrentStamina(
+      lockedRow.current_stamina, lockedRow.max_stamina,
+      lockedRow.last_stamina_update ?? new Date()
+    )
+    const lockedCurrentStamina = lockedStaminaResult.stamina
+    const lockedFreePvpUsed = isNewUtcDay(lockedRow.free_pvp_date) ? 0 : lockedRow.free_pvp_today
+    const lockedHasFreePvp = lockedFreePvpUsed < STAMINA.FREE_PVP_PER_DAY
+    const lockedStaminaCost = lockedHasFreePvp ? 0 : STAMINA.PVP_COST
+
+    if (!lockedHasFreePvp && lockedCurrentStamina < STAMINA.PVP_COST) {
+      throw new Error('NOT_ENOUGH_STAMINA')
+    }
+
+    const newStamina = lockedCurrentStamina - lockedStaminaCost
+
+    const attackerUpdate: Record<string, unknown> = {
+      ...baseAttackerUpdate,
+      currentStamina: newStamina,
+      lastStaminaUpdate: now,
+    }
+    if (lockedHasFreePvp) {
+      attackerUpdate.freePvpToday = lockedFreePvpUsed + 1
+      attackerUpdate.freePvpDate = now
+    }
+
+    const updatedAttacker = await tx.character.update({
+      where: { id: attacker.id },
+      data: attackerUpdate,
+    })
+
+    // Bot fight PvpMatch: self-reference for player2 since bot has no DB record.
+    // winnerId/loserId both point to attacker (the only real character).
+    // matchType='bot' distinguishes these from real fights.
+    const pvpMatch = await tx.pvpMatch.create({
+      data: {
+        player1Id: attacker.id,
+        player2Id: attacker.id,
+        player1RatingBefore: attacker.pvpRating,
+        player1RatingAfter: attackerNewRating,
+        player2RatingBefore: 1000,
+        player2RatingAfter: 1000,
+        winnerId: attacker.id,
+        loserId: attacker.id,
+        combatLog: JSON.parse(JSON.stringify(combatResult.turns)),
+        turnsTaken: combatResult.totalTurns,
+        goldReward,
+        xpReward,
+        matchType: 'bot',
+      },
+    })
+
+    return { updatedAttacker, pvpMatch, newStamina }
+  })
+
+  // Post-transaction side effects
+  const [levelUpResult, , , lootItem, durabilityResult] = await Promise.all([
+    applyLevelUp(prisma, attacker.id),
+    attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
+    awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
+    attackerWon
+      ? rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp', attacker.luk)
+      : Promise.resolve(null),
+    degradeEquipment(prisma, attacker.id),
+    // Achievement tracking for bot fights
+    (async () => {
+      try {
+        const updates: { key: string; increment: number; absolute?: boolean }[] = []
+        if (attackerWon) {
+          updates.push(
+            { key: 'pvp_first_blood', increment: 1 },
+            { key: 'pvp_wins_10', increment: 1 },
+            { key: 'pvp_wins_50', increment: 1 },
+            { key: 'pvp_wins_100', increment: 1 },
+            { key: 'pvp_wins_500', increment: 1 },
+            { key: 'pvp_streak_5', increment: attacker.pvpWinStreak + 1, absolute: true },
+            { key: 'pvp_streak_10', increment: attacker.pvpWinStreak + 1, absolute: true },
+          )
+        }
+        updates.push(
+          { key: 'rank_silver', increment: attackerNewRating, absolute: true },
+          { key: 'rank_gold', increment: attackerNewRating, absolute: true },
+          { key: 'rank_diamond', increment: attackerNewRating, absolute: true },
+          { key: 'rank_grandmaster', increment: attackerNewRating, absolute: true },
+        )
+        await updateMultipleAchievements(prisma, attacker.id, updates)
+      } catch (e) {
+        console.error('Achievement tracking error (bot fight):', e)
+      }
+    })(),
+  ])
+
+  const loot: LootResponseItem[] = []
+  if (lootItem) loot.push(lootItem)
+
+  console.log(`[BOT-FIGHT] ${attacker.characterName} vs ${opponent_id}: ${attackerWon ? 'WIN' : 'LOSS'}, gold=${goldReward}, xp=${xpReward}, rating=${attacker.pvpRating}→${attackerNewRating}`)
+
+  return NextResponse.json({
+    verified: true,
+    server_winner_id: winnerId,
+    client_matches: clientMatchesServer,
+    is_bot_fight: true,
+    post_combat_hp: {
+      player: attackerFinalHp,
+      enemy: Math.max(combatResult.finalHp[opponent_id] ?? 0, 0),
+      max: attacker.maxHp,
+    },
+    result: {
+      is_win: attackerWon,
+      winner_id: winnerId,
+      gold_reward: goldReward,
+      xp_reward: xpReward,
+      turns_taken: combatResult.totalTurns,
+      rating_change: ratingChange,
+      first_win_bonus: firstWin,
+      leveled_up: levelUpResult?.leveledUp ?? false,
+      new_level: levelUpResult?.newLevel,
+      stat_points_awarded: levelUpResult?.statPointsAwarded,
+    },
+    loot,
+    stamina: {
+      current: newStamina,
+      max: updatedAttacker.maxStamina,
+    },
+    durability_changes: durabilityResult.degraded,
+    matchId: pvpMatch.id,
+  })
 }

@@ -3,6 +3,7 @@ import SwiftUI
 struct ShellGameDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var vm: ShellGameViewModel?
+    @State private var shellHint: NPCHint?
 
     // Animation state
     @State private var cupLiftOffsets: [CGFloat] = [0, 0, 0]
@@ -40,7 +41,7 @@ struct ShellGameDetailView: View {
                 mainContent(vm)
                     .transaction { $0.animation = nil }
             } else {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             }
         }
@@ -57,12 +58,15 @@ struct ShellGameDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
+        .contextualHint(shellHint)
         .task {
             if vm == nil {
                 let newVM = ShellGameViewModel(appState: appState)
                 vm = newVM
                 await newVM.loadStatus()
             }
+            let quests = appState.cachedTypedQuests ?? []
+            shellHint = ContextualHintProvider.shellGameHint(quests: quests)
         }
     }
 
@@ -205,7 +209,7 @@ struct ShellGameDetailView: View {
             }
         }
         .frame(height: 170)
-        .padding(.top, LayoutConstants.spaceXS)
+        .padding(.top, LayoutConstants.spaceLG)
     }
 
     // MARK: - Cup View
@@ -237,13 +241,13 @@ struct ShellGameDetailView: View {
                     .scaledToFit()
                     .frame(width: 90, height: 90)
                     .offset(y: cupLiftOffsets[cup])
-                    .opacity(1.0)
                     .animation(.spring(response: 0.38, dampingFraction: 0.62), value: cupLiftOffsets[cup])
             }
             .frame(width: 110, height: 130)
         }
         .buttonStyle(.plain)
         .disabled(gamePhase != .guessing)
+        .opacity(1.0)
         // Pulsing gold glow when cups are pickable
         .shadow(
             color: gamePhase == .guessing

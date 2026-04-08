@@ -274,7 +274,7 @@ struct BattleResultCardView: View {
                         iconImage: "reward-xp",
                         value: "+\(xpDisplay)",
                         label: "XP",
-                        color: DarkFantasyTheme.purple
+                        color: DarkFantasyTheme.xpRing
                     )
                 }
 
@@ -322,8 +322,8 @@ struct BattleResultCardView: View {
             HStack {
                 Text("Level \(xpConfig.displayLevel)")
                     .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(DarkFantasyTheme.purple)
-                    .shadow(color: DarkFantasyTheme.purple.opacity(0.3), radius: 6)
+                    .foregroundStyle(DarkFantasyTheme.xpRing)
+                    .shadow(color: DarkFantasyTheme.xpRing.opacity(0.3), radius: 6)
 
                 Spacer()
 
@@ -347,8 +347,8 @@ struct BattleResultCardView: View {
                 HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
                     Text("\(xpHeroDisplay)")
                         .font(DarkFantasyTheme.title)
-                        .foregroundStyle(DarkFantasyTheme.purple)
-                        .shadow(color: DarkFantasyTheme.purple.opacity(0.4), radius: 10)
+                        .foregroundStyle(DarkFantasyTheme.xpRing)
+                        .shadow(color: DarkFantasyTheme.xpRing.opacity(0.4), radius: 10)
                         .monospacedDigit()
                         .contentTransition(.numericText())
 
@@ -365,15 +365,15 @@ struct BattleResultCardView: View {
                     if let xpReward = config.xpReward, xpReward > 0 {
                         Text("+\(xpReward)")
                             .font(DarkFantasyTheme.uiLabel)
-                            .foregroundStyle(DarkFantasyTheme.purple.opacity(0.9))
+                            .foregroundStyle(DarkFantasyTheme.xpRing.opacity(0.9))
                             .padding(.horizontal, LayoutConstants.spaceSM)
                             .padding(.vertical, LayoutConstants.space2XS)
                             .background(
                                 Capsule()
-                                    .fill(DarkFantasyTheme.purple.opacity(0.12))
+                                    .fill(DarkFantasyTheme.xpRing.opacity(0.12))
                                     .overlay(
                                         Capsule()
-                                            .stroke(DarkFantasyTheme.purple.opacity(0.2), lineWidth: 1)
+                                            .stroke(DarkFantasyTheme.xpRing.opacity(0.2), lineWidth: 1)
                                     )
                             )
                     }
@@ -388,7 +388,7 @@ struct BattleResultCardView: View {
                         .fill(DarkFantasyTheme.bgAbyss)
                         .overlay(
                             RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
-                                .stroke(DarkFantasyTheme.purple.opacity(0.35), lineWidth: 1.5)
+                                .stroke(DarkFantasyTheme.xpRing.opacity(0.35), lineWidth: 1.5)
                         )
                         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 1)
 
@@ -399,7 +399,7 @@ struct BattleResultCardView: View {
                         )
                         .frame(width: geo.size.width * min(xpConfig.progress, 1.0))
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
-                        .shadow(color: DarkFantasyTheme.purple.opacity(0.5), radius: 10, y: 0)
+                        .shadow(color: DarkFantasyTheme.xpRing.opacity(0.5), radius: 10, y: 0)
                 }
             }
             .frame(height: LayoutConstants.spaceLG)
@@ -495,23 +495,17 @@ struct BattleResultCardView: View {
     @ViewBuilder
     private var lootSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
-            GoldDivider()
-                .padding(.horizontal, LayoutConstants.spaceMD)
-
             Text("LOOT")
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: LayoutConstants.spaceMD) {
-                    ForEach(Array(config.lootItems.enumerated()), id: \.offset) { index, item in
-                        inlineLootCard(item, index: index)
-                    }
+            HStack(spacing: LayoutConstants.spaceMD) {
+                ForEach(Array(config.lootItems.enumerated()), id: \.offset) { index, item in
+                    inlineLootCard(item, index: index)
                 }
-                .padding(.horizontal, LayoutConstants.cardPadding)
-                .frame(maxWidth: .infinity)
             }
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -630,7 +624,15 @@ struct BattleResultCardView: View {
             HapticManager.medium()
             button.action()
         } label: {
-            if let icon = button.icon {
+            if let asset = button.assetIcon {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(asset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                    Text(button.title)
+                }
+            } else if let icon = button.icon {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: icon)
                         .font(DarkFantasyTheme.body.bold())
@@ -902,9 +904,18 @@ struct LootItemDisplay {
 
 struct ResultButton {
     let title: String
-    let icon: String?
+    let icon: String?         // SF Symbol name
+    let assetIcon: String?    // Asset image name (takes priority over icon)
     let style: ResultButtonStyle
     let action: () -> Void
+
+    init(title: String, icon: String? = nil, assetIcon: String? = nil, style: ResultButtonStyle, action: @escaping () -> Void) {
+        self.title = title
+        self.icon = icon
+        self.assetIcon = assetIcon
+        self.style = style
+        self.action = action
+    }
 }
 
 enum ResultButtonStyle {

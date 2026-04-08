@@ -5,6 +5,7 @@ struct DungeonSelectDetailView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var vm: DungeonSelectViewModel?
     @State private var isEnteringDungeon = false
+    @State private var dungeonHint: NPCHint?
 
     var body: some View {
         ZStack {
@@ -62,15 +63,34 @@ struct DungeonSelectDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
+        .tutorialOverlay(steps: [.dungeonEntry])
+        .contextualHint(dungeonHint, onCTA: {
+            if dungeonHint?.id == "dungeon_low_hp" {
+                appState.mainPath.append(AppRoute.hero)
+            }
+        })
         .task {
             if vm == nil { vm = DungeonSelectViewModel(appState: appState, cache: cache) }
             await vm?.loadProgress()
+            updateDungeonHint()
         }
         .overlay {
             if isEnteringDungeon {
                 LoadingOverlay(message: "ENTERING DUNGEON")
             }
         }
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateDungeonHint() {
+        guard let char = appState.currentCharacter else { return }
+        let quests = appState.cachedTypedQuests ?? cache.cachedDailyQuests()?.quests ?? []
+        dungeonHint = ContextualHintProvider.dungeonHint(
+            character: char,
+            staminaCostPerEntry: Difficulty.easy.staminaCost,
+            quests: quests
+        )
     }
 
     // MARK: - World Content
@@ -91,6 +111,7 @@ struct DungeonSelectDetailView: View {
                     ForEach(Array(vm.dungeons.enumerated()), id: \.element.id) { index, dungeon in
                         dungeonCard(dungeon, vm: vm)
                             .staggeredAppear(index: index)
+                            .if(index == 0) { $0.tutorialAnchor(.dungeonEntry) }
                     }
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)

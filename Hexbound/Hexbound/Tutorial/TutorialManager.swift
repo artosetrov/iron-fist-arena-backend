@@ -351,6 +351,157 @@ final class TutorialManager {
         defaults.set(Array(ftueCompleted), forKey: AppConstants.udFTUECompleted)
     }
 
+    // MARK: - Server-Synced Tutorial (Hard Guided + Quests)
+
+    /// Server tutorial step: 0=new, 1=weapon_equipped, 2=first_fight, 3=completed
+    private(set) var serverTutorialStep: Int = 3
+    /// Whether tutorial was skipped via "I'm experienced" button
+    private(set) var tutorialSkipped: Bool = false
+    /// Whether the hard guided tutorial should be shown
+    var shouldShowHardTutorial: Bool {
+        serverTutorialStep < 3 && !tutorialSkipped
+    }
+    /// Building unlock levels (mirrors server config)
+    private(set) var unlockedBuildings: [String: Bool] = [:]
+    /// Active tutorial quests from server
+    private(set) var tutorialQuests: [[String: Any]] = []
+    /// Available quests not yet started
+    private(set) var availableQuests: [[String: Any]] = []
+    /// Referral code
+    private(set) var referralCode: String?
+
+    /// Fetch tutorial state from server
+    func fetchTutorialState(characterId: String) async {
+        do {
+            let response = try await APIClient.shared.getRaw(
+                "/tutorial",
+                params: ["character_id": characterId]
+            )
+            await MainActor.run {
+                if let step = response["tutorialStep"] as? Int {
+                    self.serverTutorialStep = step
+                }
+                if let skipped = response["tutorialSkipped"] as? Bool {
+                    self.tutorialSkipped = skipped
+                }
+                if let buildings = response["unlockedBuildings"] as? [String: Bool] {
+                    self.unlockedBuildings = buildings
+                }
+                if let quests = response["quests"] as? [[String: Any]] {
+                    self.tutorialQuests = quests
+                }
+                if let available = response["availableQuests"] as? [[String: Any]] {
+                    self.availableQuests = available
+                }
+                if let code = response["referralCode"] as? String {
+                    self.referralCode = code
+                }
+            }
+        } catch {
+            // Silently fail — tutorial is non-critical
+            print("Tutorial state fetch failed:", error)
+        }
+    }
+
+    /// Initialize tutorial (claim welcome gift). Called after character creation.
+    func initializeTutorial(characterId: String, referralCode: String? = nil) async -> Bool {
+        do {
+            var body: [String: Any] = ["character_id": characterId]
+            if let code = referralCode {
+                body["referral_code"] = code
+            }
+            let response = try await APIClient.shared.postRaw("/tutorial", body: body)
+            await MainActor.run {
+                if let step = response["tutorialStep"] as? Int {
+                    self.serverTutorialStep = step
+                }
+            }
+            return true
+        } catch {
+            print("Tutorial init failed:", error)
+            return false
+        }
+    }
+
+    /// Advance tutorial step on server
+    func advanceTutorialStep(characterId: String) async -> Bool {
+        let nextStep = serverTutorialStep + 1
+        guard nextStep <= 3 else { return false }
+        do {
+            let response = try await APIClient.shared.postRaw(
+                "/tutorial/step",
+                body: ["character_id": characterId, "step": nextStep]
+            )
+            await MainActor.run {
+                if let step = response["tutorialStep"] as? Int {
+                    self.serverTutorialStep = step
+                }
+            }
+            return true
+        } catch {
+            print("Tutorial step advance failed:", error)
+            return false
+        }
+    }
+
+    /// Skip tutorial entirely
+    func skipTutorial(characterId: String, referralCode: String? = nil) async -> Bool {
+        do {
+            var body: [String: Any] = ["character_id": characterId]
+            if let code = referralCode {
+                body["referral_code"] = code
+            }
+            _ = try await APIClient.shared.postRaw("/tutorial/skip", body: body)
+            await MainActor.run {
+                self.serverTutorialStep = 3
+                self.tutorialSkipped = true
+            }
+            return true
+        } catch {
+            print("Tutorial skip failed:", error)
+            return false
+        }
+    }
+
+    /// Update quest progress on server
+    func updateQuestProgress(characterId: String, questId: String, amount: Int = 1) async {
+        do {
+            _ = try await APIClient.shared.postRaw(
+                "/tutorial/quest",
+                body: [
+                    "character_id": characterId,
+                    "quest_id": questId,
+                    "action": "progress",
+                    "amount": amount,
+                ]
+            )
+            // Refresh state
+            await fetchTutorialState(characterId: characterId)
+        } catch {
+            print("Quest progress update failed:", error)
+        }
+    }
+
+    /// Claim quest reward
+    func claimQuestReward(characterId: String, questId: String) async -> [String: Any]? {
+        do {
+            let response = try await APIClient.shared.postRaw(
+                "/tutorial/quest",
+                body: [
+                    "character_id": characterId,
+                    "quest_id": questId,
+                    "action": "claim",
+                ]
+            )
+            // Refresh state
+            await fetchTutorialState(characterId: characterId)
+            return response
+        } catch {
+            print("Quest claim failed:", error)
+            return nil
+        }
+    }
+
     // MARK: - Persistence
 
     private func persist() {

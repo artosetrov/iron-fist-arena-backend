@@ -236,7 +236,7 @@ struct PremiumPurchaseView: View {
                 buyPremium()
             } label: {
                 if isPurchasing {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(.textPrimary)
                         .frame(maxWidth: .infinity)
                         .frame(height: LayoutConstants.buttonHeightLG)

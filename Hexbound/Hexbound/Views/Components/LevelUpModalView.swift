@@ -36,7 +36,28 @@ struct LevelUpModalView: View {
     // TODO: Add when backend returns these fields
     private var passivePoints: Int { 1 }
     private var staminaRefill: Int { 120 }
-    private var unlocks: [String] { [] } // e.g. ["Heroic Dungeon", "Roulette"]
+    /// Buildings unlocked at this exact level (e.g. Lv3 → Dungeon, Lv5 → Gold Mine)
+    private var unlocks: [String] {
+        BuildingUnlockConfig.levels
+            .filter { $0.value == newLevel }
+            .map { buildingDisplayName($0.key) }
+            .sorted()
+    }
+
+    private func buildingDisplayName(_ id: String) -> String {
+        switch id {
+        case "arena":      return "Arena"
+        case "shop":        return "Shop"
+        case "achievements": return "Achievements"
+        case "dungeon":     return "Dungeon Rush"
+        case "gold-mine":   return "Gold Mine"
+        case "tavern":      return "Tavern"
+        case "battlepass":  return "Battle Pass"
+        case "ranks":       return "Leaderboard"
+        case "guild-hall":  return "Guild Hall"
+        default:            return id.capitalized
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -426,10 +447,14 @@ struct LevelUpModalView: View {
             }
         }
 
-        // Phase 7: Unlocks
+        // Phase 7: Unlocks (with SFX if new buildings open)
         DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.ceremonyPhase5) {
             withAnimation(.easeOut(duration: MotionConstants.ceremonyPhase1)) {
                 showUnlocks = true
+            }
+            if !unlocks.isEmpty {
+                SFXManager.shared.play(.dungeonUnlock)
+                HapticManager.medium()
             }
         }
 

@@ -67,7 +67,7 @@ struct EmailConfirmationView: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceSM) {
                             if isResending {
-                                ProgressView()
+                                HexPulseLoader(.compact)
                                     .tint(DarkFantasyTheme.gold)
                                     .scaleEffect(0.8)
                             }

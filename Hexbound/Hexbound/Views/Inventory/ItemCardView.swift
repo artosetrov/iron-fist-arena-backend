@@ -246,7 +246,7 @@ struct ItemCardView: View {
 
             // MARK: - Layer 3: Item image / empty slot / buying spinner
             if shopIsBuying {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             } else if isEmptySlot {
                 emptySlotPlaceholder

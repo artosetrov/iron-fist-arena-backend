@@ -17,6 +17,7 @@ struct HubView: View {
     @Environment(GameDataCache.self) private var cache
     @State private var showDungeonMap = false
     @State private var showDailyLoginSheet = false
+    @State private var hubHint: NPCHint?
 
     // Parallax + Fade transition state
     @State private var mapTransitionPhase: MapTransitionPhase = .idle
@@ -35,6 +36,101 @@ struct HubView: View {
         let tutorial = TutorialManager.shared
         // Show onboarding if hubCharacterCard hasn't been shown (first-time visit indicator)
         return tutorial.shouldShow(.hubCharacterCard) && currentOnboardingStep < onboardingSteps.count
+    }
+
+    // MARK: - Tutorial Quest Banner (NPC Quest Chain)
+
+    /// Builds the TutorialQuestBanner for the first active (incomplete or unclaimed) quest
+    @ViewBuilder
+    private var tutorialQuestBanner: some View {
+        let tutorial = TutorialManager.shared
+        let quests = tutorial.tutorialQuests
+        // Find the first quest that isn't fully claimed
+        if let activeQuest = quests.first(where: { quest in
+            let claimed = quest["rewardClaimed"] as? Bool ?? false
+            return !claimed
+        }),
+           let questId = activeQuest["questId"] as? String,
+           let title = activeQuest["title"] as? String ?? questTitle(for: questId),
+           let npcMessage = activeQuest["npcMessage"] as? String ?? questNpcMessage(for: questId) {
+            let progress = activeQuest["progress"] as? Int ?? 0
+            let target = activeQuest["target"] as? Int ?? 1
+            let isCompleted = activeQuest["isCompleted"] as? Bool ?? false
+            let rewardClaimed = activeQuest["rewardClaimed"] as? Bool ?? false
+            TutorialQuestBanner(
+                questId: questId,
+                title: title,
+                npcMessage: npcMessage,
+                progress: progress,
+                target: target,
+                isCompleted: isCompleted,
+                rewardClaimed: rewardClaimed,
+                onTap: { navigateToQuestTarget(questId) },
+                onClaim: { claimQuestReward(questId) }
+            )
+        }
+    }
+
+    /// Navigate to the building associated with a quest
+    private func navigateToQuestTarget(_ questId: String) {
+        let routeMap: [String: AppRoute] = [
+            "equip_gear": .shop,
+            "win_3_pvp": .arena,
+            "first_dungeon": .dungeonSelect,
+            "start_mining": .goldMine,
+            "try_tavern": .tavern,
+            "explore_endgame": .battlePass,
+            "join_guild": .guildHall,
+        ]
+        if let route = routeMap[questId] {
+            appState.mainPath.append(route)
+        }
+    }
+
+    /// Claim quest reward via TutorialManager
+    private func claimQuestReward(_ questId: String) {
+        guard let charId = appState.currentCharacter?.id else { return }
+        Task {
+            let result = await TutorialManager.shared.claimQuestReward(
+                characterId: charId,
+                questId: questId
+            )
+            if let gold = result?["goldAwarded"] as? Int, gold > 0 {
+                appState.showToast("Награда получена! +\(gold) золота", type: .success)
+            } else {
+                appState.showToast("Награда получена!", type: .success)
+            }
+            // Refresh character data to update currency
+            await appState.reloadCharacter()
+        }
+    }
+
+    /// Fallback quest titles (matches backend TUTORIAL_QUESTS)
+    private func questTitle(for questId: String) -> String? {
+        let titles: [String: String] = [
+            "equip_gear": "Снаряжение воина",
+            "win_3_pvp": "Боевая закалка",
+            "first_dungeon": "Тьма подземелий",
+            "start_mining": "Золотая жила",
+            "try_tavern": "Испытай удачу",
+            "explore_endgame": "Путь славы",
+            "join_guild": "Братство",
+        ]
+        return titles[questId]
+    }
+
+    /// Fallback NPC messages (matches backend TUTORIAL_QUESTS)
+    private func questNpcMessage(for questId: String) -> String? {
+        let messages: [String: String] = [
+            "equip_gear": "У тебя есть оружие, но защита хромает. Загляни в Лавку.",
+            "win_3_pvp": "Выиграй ещё 3 боя на арене чтобы набраться опыта.",
+            "first_dungeon": "Под городом скрываются подземелья. Победи босса первого этажа.",
+            "start_mining": "Шахта приносит золото, пока ты спишь. Запусти добычу.",
+            "try_tavern": "В таверне играют на золото. Попробуй разок.",
+            "explore_endgame": "Боевой пропуск хранит сокровища. Таблица лидеров покажет на что ты способен.",
+            "join_guild": "Одинокий волк далеко не уйдёт. Вступи в гильдию.",
+        ]
+        return messages[questId]
     }
 
     var body: some View {
@@ -64,6 +160,10 @@ struct HubView: View {
 
                 // Quest Reward Widget — shows when completed quests have unclaimed rewards
                 QuestRewardWidget()
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+
+                // Tutorial Quest Banner — active NPC quest for onboarding
+                tutorialQuestBanner
                     .padding(.horizontal, LayoutConstants.screenPadding)
             }
             .background(DarkFantasyTheme.bgPrimary)
@@ -110,12 +210,12 @@ struct HubView: View {
             }
             .overlay(alignment: .topTrailing) {
                 // Floating action icons — stay in place during transition
-                VStack(spacing: LayoutConstants.spaceMS) {
+                VStack(spacing: LayoutConstants.spaceSM) {
                     FloatingActionIcon(
-                        customIcon: "hud-gift",
+                        customIcon: "hud-daily-login",
                         badgeActive: appState.dailyLoginCanClaim,
                         accentColor: DarkFantasyTheme.goldBright,
-                        size: 50
+                        size: 62
                     ) {
                         showDailyLoginSheet = true
                     }
@@ -123,7 +223,7 @@ struct HubView: View {
                     .tutorialAnchor(.hubDailyLogin)
 
                     FloatingActionIcon(
-                        customIcon: "hud-quests",
+                        customIcon: "hud-daily-quests",
                         badgeActive: {
                             guard let quests = appState.cachedTypedQuests, !quests.isEmpty else { return false }
                             let hasClaimable = quests.contains(where: \.canClaim)
@@ -131,17 +231,17 @@ struct HubView: View {
                             return hasClaimable || hasIncomplete
                         }(),
                         accentColor: DarkFantasyTheme.gold,
-                        size: 50
+                        size: 62
                     ) {
                         appState.mainPath.append(AppRoute.dailyQuests)
                     }
                     .accessibilityLabel("Daily Quests")
 
                     FloatingActionIcon(
-                        systemIcon: "envelope.fill",
+                        customIcon: "hud-inbox",
                         badgeActive: appState.unreadMailCount > 0,
                         accentColor: DarkFantasyTheme.gold,
-                        size: 50
+                        size: 62
                     ) {
                         appState.mainPath.append(AppRoute.inbox)
                     }
@@ -211,9 +311,26 @@ struct HubView: View {
                 .environment(appState)
                 .environment(cache)
         }
+        .contextualHint(hubHint, onCTA: {
+            if let hint = hubHint {
+                switch hint.id {
+                case "hub_first_pvp":
+                    appState.mainPath.append(AppRoute.arena)
+                case "hub_first_dungeon":
+                    appState.mainPath.append(AppRoute.dungeonSelect)
+                case "hub_first_mine":
+                    appState.mainPath.append(AppRoute.goldMine)
+                case "hub_unclaimed_rewards":
+                    appState.mainPath.append(AppRoute.dailyQuests)
+                default:
+                    break
+                }
+            }
+        })
         .task { await checkDailyLogin() }
         .task { await fetchUnreadMailCount() }
         .onAppear {
+            updateHubHint()
             // Start BGM
             AudioManager.shared.playBGM("stray-city.mp3")
             // Reload quests if cache was invalidated (e.g., after PvP/dungeon)
@@ -245,6 +362,10 @@ struct HubView: View {
             // Background-prefetch incoming challenges for battle invite banner
             if cache.cachedIncomingChallenges() == nil {
                 Task { await prefetchIncomingChallenges() }
+            }
+            // Fetch tutorial quest state for NPC quest banner + building indicators
+            if let charId = appState.currentCharacter?.id {
+                Task { await TutorialManager.shared.fetchTutorialState(characterId: charId) }
             }
         }
     }
@@ -287,6 +408,25 @@ struct HubView: View {
         case .switching: return 0
         case .fadingIn: return showDungeonMap ? 1 : 0
         }
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateHubHint() {
+        guard let char = appState.currentCharacter else { return }
+        let totalPvpFights = char.pvpWins + char.pvpLosses
+        let dungeonProgress = cache.cachedDungeonProgress() ?? [:]
+        let totalDungeonClears = dungeonProgress.values.reduce(0, +)
+        let hasVisitedMine = cache.cachedGoldMine() != nil
+        let hasUnclaimedRewards = appState.cachedTypedQuests?.contains(where: \.canClaim) ?? false
+
+        hubHint = ContextualHintProvider.hubHint(
+            character: char,
+            totalPvpFights: totalPvpFights,
+            totalDungeonClears: totalDungeonClears,
+            hasVisitedMine: hasVisitedMine,
+            hasUnclaimedQuestRewards: hasUnclaimedRewards
+        )
     }
 
     private func triggerMapTransition(toDungeon: Bool) {
@@ -669,7 +809,7 @@ struct DailyQuestsCard: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
-            Image("hud-quests")
+            Image("hud-daily-quests")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 44, height: 44)
@@ -975,7 +1115,7 @@ struct BattleInviteBanner: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         if isAccepting {
-                            ProgressView()
+                            HexPulseLoader(.compact)
                                 .tint(DarkFantasyTheme.textOnGold)
                                 .scaleEffect(0.7)
                         } else {
@@ -995,7 +1135,7 @@ struct BattleInviteBanner: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         if isDeclining {
-                            ProgressView()
+                            HexPulseLoader(.compact)
                                 .tint(DarkFantasyTheme.textSecondary)
                                 .scaleEffect(0.7)
                         } else {
@@ -1233,7 +1373,7 @@ struct QuestRewardWidget: View {
                 claimQuest(quest)
             } label: {
                 if claimingId == quest.id {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                         .frame(width: 60)
                 } else {
@@ -1257,7 +1397,7 @@ struct QuestRewardWidget: View {
         } label: {
             HStack(spacing: LayoutConstants.spaceSM) {
                 // Quest icon
-                Image("hud-quests")
+                Image("hud-daily-quests")
                     .resizable()
                     .scaledToFit()
                     .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
@@ -1399,7 +1539,7 @@ struct DailyLoginCard: View {
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
-            Image("hud-gift")
+            Image("hud-daily-login")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 44, height: 44)
@@ -1491,61 +1631,15 @@ struct FloatingActionIcon: View {
                         Image(customIcon)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: size * 0.75, height: size * 0.75)
+                            .frame(width: size, height: size)
                     } else if let systemIcon {
                         Image(systemName: systemIcon)
                             .font(.system(size: iconSize, weight: .semibold)) // dynamic — based on component size param
                             .foregroundStyle(accentColor)
+                            .frame(width: size, height: size)
                     }
                 }
-                    .frame(width: size, height: size)
-                    .background(
-                        ZStack {
-                            Circle()
-                                .fill(DarkFantasyTheme.bgSecondary)
-                            Circle()
-                                .fill(
-                                    RadialGradient(
-                                        colors: [accentColor.opacity(0.08), .clear],
-                                        center: .center,
-                                        startRadius: 0,
-                                        endRadius: size / 2
-                                    )
-                                )
-                            // Surface lighting on circle
-                            Circle()
-                                .fill(
-                                    LinearGradient(
-                                        colors: [
-                                            DarkFantasyTheme.textPrimary.opacity(0.08),
-                                            Color.clear,
-                                            DarkFantasyTheme.bgAbyss.opacity(0.12)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                        }
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
-                    )
-                    .overlay(
-                        // Inner bevel on circle
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    colors: [DarkFantasyTheme.textPrimary.opacity(0.08), Color.clear, DarkFantasyTheme.bgAbyss.opacity(0.12)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                ),
-                                lineWidth: 1
-                            )
-                            .padding(LayoutConstants.spaceXS)
-                    )
-                    .shadow(color: accentColor.opacity(0.25), radius: 8, y: 2)
-                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 2, y: 1)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 4, y: 2)
 
                 // Notification badge — gold pulsing dot
                 if badgeActive {

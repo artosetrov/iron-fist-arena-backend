@@ -228,7 +228,7 @@ struct HubEditorDetailView: View {
             } label: {
                 HStack {
                     if isSaving {
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .progressViewStyle(CircularProgressViewStyle(tint: .textPrimary))
                             .scaleEffect(0.8)
                     } else {

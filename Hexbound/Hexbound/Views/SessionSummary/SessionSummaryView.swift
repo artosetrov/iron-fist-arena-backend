@@ -12,7 +12,7 @@ struct SessionSummaryView: View {
                 content(vm: vm)
                     .transaction { $0.animation = nil }
             } else {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
             }
         }
@@ -32,7 +32,7 @@ struct SessionSummaryView: View {
 
             if vm.isLoading {
                 Spacer()
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
                 Spacer()
             } else if let summary = vm.summary {

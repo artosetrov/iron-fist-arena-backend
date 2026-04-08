@@ -424,7 +424,7 @@ struct CharacterSelectionView: View {
     private var loadingState: some View {
         VStack(spacing: LayoutConstants.sectionGap) {
             Spacer()
-            ProgressView()
+            HexPulseLoader(.compact)
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.2)
             Text("Loading heroes...")

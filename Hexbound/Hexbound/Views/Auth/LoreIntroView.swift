@@ -383,7 +383,7 @@ struct LoreIntroView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         if isEntering {
-                            ProgressView()
+                            HexPulseLoader(.compact)
                                 .tint(DarkFantasyTheme.textOnGold)
                                 .scaleEffect(0.8)
                         }

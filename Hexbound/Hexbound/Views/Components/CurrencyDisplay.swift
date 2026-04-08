@@ -5,7 +5,7 @@ import SwiftUI
 /// Sizes:
 /// - `.standard` — Large icons (36px) + large text (28px) — shop header, GET CURRENCY balance
 /// - `.compact` — Small icons (14px) + small text — UnifiedHeroWidget, inventory header
-/// - `.mini` — Tiny icons (12px) + caption text — price tags on shop cards, item detail prices
+/// - `.mini` — Small icons (16px) + uiLabel text — price tags on shop cards, item detail prices, reward rows
 ///
 /// Currency type:
 /// - `.both` (default) — Shows gold and optionally gems
@@ -49,7 +49,7 @@ struct CurrencyDisplay: View {
             case .standard: 36
             case .widget: 18
             case .compact: 14
-            case .mini: 12
+            case .mini: 16
             }
         }
 
@@ -58,7 +58,7 @@ struct CurrencyDisplay: View {
             case .standard: DarkFantasyTheme.title
             case .widget: DarkFantasyTheme.body.bold()
             case .compact: DarkFantasyTheme.uiLabel
-            case .mini: DarkFantasyTheme.caption
+            case .mini: DarkFantasyTheme.uiLabel
             }
         }
 
@@ -67,7 +67,7 @@ struct CurrencyDisplay: View {
             case .standard: LayoutConstants.spaceXS
             case .widget: LayoutConstants.space2XS
             case .compact: LayoutConstants.space2XS
-            case .mini: LayoutConstants.space2XS
+            case .mini: LayoutConstants.spaceXS
             }
         }
 
@@ -76,7 +76,7 @@ struct CurrencyDisplay: View {
             case .standard: LayoutConstants.spaceMD
             case .widget: LayoutConstants.spaceSM
             case .compact: LayoutConstants.spaceMS
-            case .mini: LayoutConstants.spaceXS
+            case .mini: LayoutConstants.spaceSM
             }
         }
 

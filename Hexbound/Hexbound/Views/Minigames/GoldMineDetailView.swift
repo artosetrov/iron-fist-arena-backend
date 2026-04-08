@@ -4,6 +4,7 @@ struct GoldMineDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: GoldMineViewModel?
+    @State private var mineHint: NPCHint?
 
     private let columns = [
         GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
@@ -41,6 +42,7 @@ struct GoldMineDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .npcHint(.goldMine, isReady: vm != nil)
+        .contextualHint(mineHint)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 HubLogoButton()
@@ -54,7 +56,23 @@ struct GoldMineDetailView: View {
         .task {
             if vm == nil { vm = GoldMineViewModel(appState: appState, cache: cache) }
             await vm?.loadStatus()
+            updateMineHint()
         }
+    }
+
+    // MARK: - Contextual Hint
+
+    private func updateMineHint() {
+        guard let vm else { return }
+        let readySlotsCount = vm.slots.filter { ($0["status"] as? String) == "ready" }.count
+        let activeSlotsCount = vm.slots.filter { ($0["status"] as? String) == "mining" }.count
+        let allSlotsBusy = activeSlotsCount == vm.maxSlots && readySlotsCount == 0
+        let quests = appState.cachedTypedQuests ?? cache.cachedDailyQuests()?.quests ?? []
+        mineHint = ContextualHintProvider.mineHint(
+            readySlotsCount: readySlotsCount,
+            allSlotsBusy: allSlotsBusy,
+            quests: quests
+        )
     }
 
     // MARK: - Mining Output Card
@@ -359,7 +377,7 @@ private struct MineSlotCard: View {
 
             // Action button area
             if isActing {
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
                     .frame(height: 34)
             } else {

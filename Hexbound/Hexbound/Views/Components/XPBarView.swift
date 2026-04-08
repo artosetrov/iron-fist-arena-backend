@@ -60,7 +60,7 @@ struct XPBarView: View {
                     .frame(width: geo.size.width * fraction)
                     .clipShape(RoundedRectangle(cornerRadius: size.cornerRadius))
                     .shadow(
-                        color: isNearLevelUp ? DarkFantasyTheme.goldGlow : DarkFantasyTheme.purple.opacity(0.2),
+                        color: isNearLevelUp ? DarkFantasyTheme.goldGlow : DarkFantasyTheme.xpRing.opacity(0.2),
                         radius: isNearLevelUp ? 6 : 3,
                         y: 0
                     )

@@ -46,7 +46,7 @@ struct LanternGlowLayer: View {
 struct LanternGlow: View {
     let color: Color
     let radius: CGFloat
-    @State private var pulse: CGFloat = 0.55
+    @State private var pulse: CGFloat = 0.5
     @State private var isVisible = false
 
     var body: some View {
@@ -63,22 +63,22 @@ struct LanternGlow: View {
             .blendMode(.screen)
             .onAppear {
                 isVisible = true
-                // Slow, gentle breathing — like a real flame (~6-10s cycle)
+                // Very slow breathing — 15-25 second full cycle
                 withAnimation(
-                    .easeInOut(duration: Double.random(in: 6.0...10.0))
+                    .easeInOut(duration: Double.random(in: 15.0...25.0))
                     .repeatForever(autoreverses: true)
                 ) {
-                    pulse = CGFloat.random(in: 0.4...0.7)
+                    pulse = CGFloat.random(in: 0.4...0.6)
                 }
             }
             .onDisappear {
                 isVisible = false
-                pulse = 0.55
+                pulse = 0.5
             }
     }
 }
 
-// MARK: - Fog Layer (bottom, drifting)
+// MARK: - Fog Layer (bottom, barely drifting)
 
 struct FogLayer: View {
     let width: CGFloat
@@ -87,7 +87,6 @@ struct FogLayer: View {
 
     var body: some View {
         ZStack {
-            // Two fog strips that drift in opposite directions
             fogStrip(opacity: 0.25, yOffset: 0, driftAmount: drift)
             fogStrip(opacity: 0.15, yOffset: -15, driftAmount: -drift * 0.6)
         }
@@ -95,8 +94,9 @@ struct FogLayer: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .allowsHitTesting(false)
         .onAppear {
-            withAnimation(.linear(duration: 20).repeatForever(autoreverses: true)) {
-                drift = 40
+            // Very slow drift: 120 seconds to sway 25px
+            withAnimation(.linear(duration: 120).repeatForever(autoreverses: true)) {
+                drift = 25
             }
         }
         .onDisappear {
@@ -122,38 +122,38 @@ struct FogLayer: View {
 
 // MARK: - Cloud Layer (top, drifting slowly)
 
-// MARK: - Wind Particles (slow, atmospheric gusts)
+// MARK: - Wind Particles (barely perceptible atmospheric streaks)
 
 struct WindParticlesLayer: View {
     let width: CGFloat
     let height: CGFloat
 
     var body: some View {
+        // Low update rate — these move so slowly that 6fps is enough
         TimelineView(.animation(minimumInterval: 0.05)) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
-                // Glacial gust cycle (~5 min, matches leaves)
-                let gustCycle = sin(time * 0.02) * 0.5 + 0.5
-                let gustMultiplier = 0.3 + gustCycle * 0.5
+                // Glacial gust cycle (~10 min full period)
+                let gustCycle = sin(time * 0.01) * 0.5 + 0.5
+                let gustMultiplier = 0.2 + gustCycle * 0.4
 
-                for i in 0..<20 {
+                for i in 0..<15 {
                     let seed = Double(i) * 137.508
-                    let baseSpeed = 3.0 + (seed.truncatingRemainder(dividingBy: 5))
+                    let baseSpeed = 0.8 + (seed.truncatingRemainder(dividingBy: 1.5))
                     let speed = baseSpeed * gustMultiplier
                     let yBase = (seed.truncatingRemainder(dividingBy: size.height))
                     let xProgress = ((time * speed + seed * 3).truncatingRemainder(dividingBy: (size.width + 120))) - 60
 
-                    // Very gentle wobble
-                    let wobbleAmp = 4.0 * (1.1 - gustCycle * 0.3)
-                    let yWobble = sin(time * 0.08 + seed) * wobbleAmp
+                    // Imperceptible wobble
+                    let yWobble = sin(time * 0.015 + seed) * 3.0
 
-                    let length: CGFloat = CGFloat(8 + (seed.truncatingRemainder(dividingBy: 14))) * CGFloat(0.7 + gustCycle * 0.5)
-                    let alpha = (0.03 + (seed.truncatingRemainder(dividingBy: 0.05))) * (0.5 + gustCycle * 0.5)
+                    let length: CGFloat = CGFloat(10 + (seed.truncatingRemainder(dividingBy: 16))) * CGFloat(0.7 + gustCycle * 0.4)
+                    let alpha = (0.02 + (seed.truncatingRemainder(dividingBy: 0.03))) * (0.4 + gustCycle * 0.4)
 
                     var path = Path()
                     path.move(to: CGPoint(x: xProgress, y: yBase + yWobble))
-                    path.addLine(to: CGPoint(x: xProgress + length, y: yBase + yWobble - 1.5))
+                    path.addLine(to: CGPoint(x: xProgress + length, y: yBase + yWobble - 1))
 
                     context.stroke(
                         path,
@@ -170,25 +170,23 @@ struct WindParticlesLayer: View {
 
 // MARK: - Falling Leaves / Embers (atmospheric depth particles)
 //
-// Two depth planes + embers:
-//   far  — many small leaves, subtle, gentle curves
-//   near — few large leaves, bright, slow wind-swirl trajectory, size changes mid-flight
-//
-// Every leaf follows a wind-swirl path (Lissajous-like curves)
-// and changes scale during flight to simulate depth shifting.
+// Two depth planes + embers. Everything moves GLACIALLY slow.
+// A near leaf barely drifts — you have to stare to notice movement.
+// Far leaves are subtle background texture.
 
 struct FallingLeavesLayer: View {
     let width: CGFloat
     let height: CGFloat
 
     var body: some View {
+        // Low update rate — slow particles don't need 20fps
         TimelineView(.animation(minimumInterval: 0.05)) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
-                // Glacially slow gust cycle (~5 minutes full period)
-                let gustCycle = sin(time * 0.02) * 0.5 + 0.5
-                let windDrift = 0.3 + gustCycle * 0.5
+                // Glacial gust cycle (~10 min full period)
+                let gustCycle = sin(time * 0.01) * 0.5 + 0.5
+                let windDrift = 0.1 + gustCycle * 0.15
 
                 drawFarLeaves(context: &context, size: size, time: time, windDrift: windDrift)
                 drawEmbers(context: &context, size: size, time: time, windDrift: windDrift)
@@ -199,7 +197,7 @@ struct FallingLeavesLayer: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: - Far leaves (10 pcs, 4–8px, background dust)
+    // MARK: - Far leaves (10 pcs, 4–8px)
 
     private func drawFarLeaves(
         context: inout GraphicsContext,
@@ -210,19 +208,19 @@ struct FallingLeavesLayer: View {
         for i in 0..<10 {
             let seed = Double(i) * 137.508
 
-            // Extremely slow fall: 0.15–0.3 px/s (~20-45 min to cross screen)
-            let fallSpeed = 0.15 + seed.truncatingRemainder(dividingBy: 0.15)
+            // ~0.04 px/s fall — takes ~3 hours to cross screen
+            let fallSpeed = 0.03 + seed.truncatingRemainder(dividingBy: 0.03)
             let yProgress = (time * fallSpeed + seed * 5).truncatingRemainder(dividingBy: Double(size.height + 80)) - 40
 
-            // Very gentle S-curve (full wave ~3-5 min)
             let xBase = seed.truncatingRemainder(dividingBy: Double(size.width))
-            let curve1 = sin(time * 0.008 + seed * 0.4) * 12.0
-            let curve2 = sin(time * 0.013 + seed * 0.9) * 6.0
-            let xWind = (time * windDrift * 0.01 + seed).truncatingRemainder(dividingBy: Double(size.width))
+            // Full S-curve wave ~10-13 minutes
+            let curve1 = sin(time * 0.0016 + seed * 0.4) * 14.0
+            let curve2 = sin(time * 0.0025 + seed * 0.9) * 7.0
+            let xWind = (time * windDrift * 0.003 + seed).truncatingRemainder(dividingBy: Double(size.width))
             let xPos = (xBase + curve1 + curve2 + xWind).truncatingRemainder(dividingBy: Double(size.width))
 
-            // Barely rotating (~1 full turn per 10 min)
-            let rotation = Angle.degrees(time * 0.06 + seed * 20).radians
+            // ~1 full turn per 100 minutes
+            let rotation = Angle.degrees(time * 0.006 + seed * 20).radians
 
             let yNorm = yProgress / Double(size.height)
             let alpha = min(yNorm * 4.0, 1.0) * min((1.0 - yNorm) * 3.0, 1.0) * 0.15
@@ -245,7 +243,7 @@ struct FallingLeavesLayer: View {
         }
     }
 
-    // MARK: - Near leaves (3 pcs, 16–28px, wind-swirl, size breathes)
+    // MARK: - Near leaves (3 pcs, 16–28px, swirl trajectory, size breathes)
 
     private func drawNearLeaves(
         context: inout GraphicsContext,
@@ -257,35 +255,35 @@ struct FallingLeavesLayer: View {
         for i in 0..<3 {
             let seed = (Double(i) + 3000) * 137.508
 
-            // Glacially slow fall: 0.05–0.1 px/s (a near leaf takes ~1-2 HOURS to cross)
-            let fallSpeed = 0.05 + seed.truncatingRemainder(dividingBy: 0.05)
+            // 0.01 px/s — a near leaf takes ~8+ HOURS to cross the screen
+            let fallSpeed = 0.008 + seed.truncatingRemainder(dividingBy: 0.008)
             let yProgress = (time * fallSpeed + seed * 3).truncatingRemainder(dividingBy: Double(size.height + 100)) - 50
 
             let xBase = seed.truncatingRemainder(dividingBy: Double(size.width))
 
-            // Primary wind curve — full wave ~4 minutes
-            let windCurve = sin(time * 0.004 + seed * 0.5) * 45.0
+            // Primary wind curve — full wave ~25 minutes
+            let windCurve = sin(time * 0.0007 + seed * 0.5) * 50.0
 
-            // Swirl overlay — full wave ~2.5 minutes (golden ratio offset)
-            let swirlX = sin(time * 0.007 + seed * 0.7) * 20.0
-            let swirlY = cos(time * 0.011 + seed * 0.7) * 14.0
+            // Swirl — full wave ~15 minutes
+            let swirlX = sin(time * 0.0011 + seed * 0.7) * 25.0
+            let swirlY = cos(time * 0.0018 + seed * 0.7) * 16.0
 
-            // Micro-turbulence — very subtle, full wave ~40s
-            let turbX = sin(time * 0.025 + seed * 2.1) * (2.0 + gustCycle * 3.0)
-            let turbY = cos(time * 0.02 + seed * 1.7) * 1.5
+            // Micro-turbulence — full wave ~4 minutes, very subtle
+            let turbX = sin(time * 0.004 + seed * 2.1) * (1.5 + gustCycle * 2.0)
+            let turbY = cos(time * 0.003 + seed * 1.7) * 1.0
 
-            let xWind = (time * windDrift * 0.01 + seed).truncatingRemainder(dividingBy: Double(size.width))
+            let xWind = (time * windDrift * 0.002 + seed).truncatingRemainder(dividingBy: Double(size.width))
             let xPos = (xBase + windCurve + swirlX + turbX + xWind).truncatingRemainder(dividingBy: Double(size.width))
             let yOffset = swirlY + turbY
 
-            // Barely tumbling: ~1 full turn per 6 minutes
-            let tumble = time * 0.06 + seed * 20
-            // Very slow wobble (~90s cycle)
-            let wobble = sin(time * 0.011 + seed) * 30.0
+            // ~1 full turn per 100 minutes
+            let tumble = time * 0.006 + seed * 20
+            // Very slow wobble (~10 min cycle)
+            let wobble = sin(time * 0.0017 + seed) * 35.0
             let rotation = Angle.degrees(tumble + wobble).radians
 
-            // === SIZE BREATHES — cycle ~2.5 minutes ===
-            let depthPulse = sin(time * 0.007 + seed * 1.3)
+            // Size breathes — cycle ~15 minutes
+            let depthPulse = sin(time * 0.0011 + seed * 1.3)
             let baseSize: CGFloat = CGFloat(16.0 + seed.truncatingRemainder(dividingBy: 12.0))
             let scaleFactor = CGFloat(1.0 + depthPulse * 0.3) // 0.7…1.3
             let leafW = baseSize * scaleFactor
@@ -324,20 +322,20 @@ struct FallingLeavesLayer: View {
         for i in 0..<4 {
             let seed = (Double(i) + 5000) * 137.508
 
-            // Almost hovering: 0.08–0.15 px/s
-            let riseSpeed = 0.08 + seed.truncatingRemainder(dividingBy: 0.07)
+            // Almost frozen: 0.015–0.03 px/s
+            let riseSpeed = 0.015 + seed.truncatingRemainder(dividingBy: 0.015)
             let yProgress = Double(size.height) - (time * riseSpeed + seed * 4).truncatingRemainder(dividingBy: Double(size.height + 60))
 
             let xBase = seed.truncatingRemainder(dividingBy: Double(size.width))
-            let xSwirl = sin(time * 0.009 + seed * 0.7) * 16.0
-            let xWind = (time * windDrift * 0.008 + seed).truncatingRemainder(dividingBy: Double(size.width))
+            let xSwirl = sin(time * 0.0015 + seed * 0.7) * 18.0
+            let xWind = (time * windDrift * 0.001 + seed).truncatingRemainder(dividingBy: Double(size.width))
             let xPos = (xBase + xSwirl + xWind).truncatingRemainder(dividingBy: Double(size.width))
 
             let yNorm = yProgress / Double(size.height)
             let alpha = min((1.0 - yNorm) * 3.0, 1.0) * min(yNorm * 4.0, 1.0)
 
-            // Very slow pulse (~0.06 Hz, full cycle ~16s)
-            let glowPulse = sin(time * 0.06 + seed) * 0.3 + 0.7
+            // Very slow pulse (~2 min full cycle)
+            let glowPulse = sin(time * 0.009 + seed) * 0.3 + 0.7
             let emberSize: CGFloat = CGFloat(3.0 + seed.truncatingRemainder(dividingBy: 3.5))
 
             // Glow halo
@@ -360,7 +358,7 @@ struct FallingLeavesLayer: View {
     }
 }
 
-// MARK: - Chimney Smoke (rising wisps — slow, dreamy)
+// MARK: - Chimney Smoke (rising wisps — glacially slow)
 
 struct ChimneySmokeLayer: View {
     let terrainSize: CGSize
@@ -374,7 +372,7 @@ struct ChimneySmokeLayer: View {
     private let particlesPerChimney = 5
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.08)) { timeline in
+        TimelineView(.animation(minimumInterval: 0.05)) { timeline in
             Canvas { context, size in
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
@@ -385,20 +383,18 @@ struct ChimneySmokeLayer: View {
                     for i in 0..<particlesPerChimney {
                         let seed = Double(ci * 10 + i) * 137.508
 
-                        // Barely rising: 0.4-1.0 px/s
-                        let riseSpeed = 0.4 + seed.truncatingRemainder(dividingBy: 0.6)
+                        // Very slow rise: 0.1-0.25 px/s
+                        let riseSpeed = 0.1 + seed.truncatingRemainder(dividingBy: 0.15)
                         let maxRise: Double = 55.0 + seed.truncatingRemainder(dividingBy: 30.0)
                         let cycleTime = maxRise / riseSpeed
                         let phase = (time + seed * 0.7).truncatingRemainder(dividingBy: cycleTime)
                         let progress = phase / cycleTime // 0…1
 
                         let yOffset = -progress * maxRise
-                        // Very gentle horizontal drift
-                        let xDrift = sin(time * 0.02 + seed) * 5.0 + progress * 3.0
+                        // Almost imperceptible horizontal drift
+                        let xDrift = sin(time * 0.003 + seed) * 4.0 + progress * 2.0
 
-                        // Size grows as smoke expands
                         let smokeSize = CGFloat(4.0 + progress * 8.0)
-                        // Smooth fade out
                         let alpha = (1.0 - progress * progress) * 0.10
 
                         let rect = CGRect(

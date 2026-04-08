@@ -174,7 +174,7 @@ struct CombatResultDetailView: View {
             }
             // Send message to opponent after PvP
             if let enemy = combatData?.enemy {
-                buttons.append(ResultButton(title: "SEND MESSAGE", icon: "envelope.fill", style: .secondary, action: {
+                buttons.append(ResultButton(title: "SEND MESSAGE", assetIcon: "hud-inbox", style: .secondary, action: {
                     let enemyId = enemy.id
                     let enemyName = enemy.characterName
                     let enemyAvatar = enemy.avatar
@@ -196,9 +196,9 @@ struct CombatResultDetailView: View {
                     }
                 }))
             }
-            // Session stats button (ghost — saves space)
+            // Session stats button — same secondary style as Send Message
             if let charId = appState.currentCharacter?.id {
-                buttons.append(ResultButton(title: "SESSION STATS", icon: "chart.bar.fill", style: .ghost, action: {
+                buttons.append(ResultButton(title: "SESSION STATS", assetIcon: "icon-leaderboard", style: .secondary, action: {
                     appState.combatData = nil
                     appState.combatResult = nil
                     appState.invalidateCache("quests")

@@ -28,7 +28,7 @@ struct HeroIntegratedCard: View {
         VStack(spacing: 0) {
             // ═══ EQUIPMENT GRID ═══
             equipmentGrid
-                .padding(.horizontal, LayoutConstants.heroCardPadding)
+                .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.top, LayoutConstants.heroCardPadding)
                 .padding(.bottom, LayoutConstants.spaceLG)
 
@@ -62,7 +62,7 @@ struct HeroIntegratedCard: View {
 
     /// Cell width for uniform 4-column grid
     private var gridCellWidth: CGFloat {
-        let cardInnerW = UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - 2 * LayoutConstants.heroCardPadding
+        let cardInnerW = UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - 2 * LayoutConstants.spaceXS
         return floor((cardInnerW - 3 * LayoutConstants.heroSlotGap) / 4)
     }
 
@@ -107,37 +107,39 @@ struct HeroIntegratedCard: View {
     // MARK: - Data Section (below divider)
 
     private var dataSection: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            // HP bar (unified component, large size)
-            HPBarView(
-                currentHp: character.currentHp,
-                maxHp: character.maxHp,
-                size: .large,
-                label: "HP"
-            )
-
-            // XP bar (unified component, large size)
-            XPBarView(
-                currentXp: character.experience ?? 0,
-                xpNeeded: character.xpNeeded,
-                size: .large
-            )
-
-            // Stamina bar (unified component, large size)
-            StaminaBarView(
-                currentStamina: character.currentStamina,
-                maxStamina: character.maxStamina,
-                size: .large
-            )
-
-        }
+        // HP bar only — XP is now the ring around portrait, stamina moved to currency row
+        HPBarView(
+            currentHp: character.currentHp,
+            maxHp: character.maxHp,
+            size: .large,
+            label: "HP"
+        )
     }
+
+    // MARK: - XP Ring constants for hero portrait
+    private let heroXpRingWidth: CGFloat = 3.5
+    private var heroXpRingCornerRadius: CGFloat { LayoutConstants.heroSlotRadius + 2 }
 
     // MARK: - Hero Portrait
 
     @ViewBuilder
     private func heroPortrait() -> some View {
         ZStack {
+            // XP ring track (background)
+            RoundedRectangle(cornerRadius: heroXpRingCornerRadius)
+                .stroke(DarkFantasyTheme.xpRingTrack, lineWidth: heroXpRingWidth)
+
+            // XP ring fill (progress)
+            XPRingShape(ringCornerRadius: heroXpRingCornerRadius, ringLineWidth: heroXpRingWidth)
+                .trim(from: 0, to: character.xpPercentage)
+                .stroke(
+                    DarkFantasyTheme.xpRing,
+                    style: StrokeStyle(lineWidth: heroXpRingWidth, lineCap: .round)
+                )
+                .shadow(color: DarkFantasyTheme.xpRing.opacity(0.4), radius: 4)
+                .animation(.easeInOut(duration: 1.0), value: character.xpPercentage)
+
+            // Inner portrait area
             RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
                 .fill(
                     LinearGradient(
@@ -145,79 +147,102 @@ struct HeroIntegratedCard: View {
                         startPoint: .top, endPoint: .bottom
                     )
                 )
+                .padding(heroXpRingWidth + 1)
+
+            // Inner content group (inset by ring width)
+            Group {
+                AvatarImageView(
+                    skinKey: character.avatar,
+                    characterClass: character.characterClass,
+                    size: 200
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
                 .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
-                        .stroke(DarkFantasyTheme.gold.opacity(0.35), lineWidth: 2)
+                    VStack {
+                        Spacer()
+                        LinearGradient(
+                            colors: [Color.clear, DarkFantasyTheme.bgSecondary.opacity(0.6), DarkFantasyTheme.bgSecondary],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 60)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
                 )
 
-            AvatarImageView(
-                skinKey: character.avatar,
-                characterClass: character.characterClass,
-                size: 200
-            )
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
-            .overlay(
+                // Name + class overlay at bottom
                 VStack {
                     Spacer()
-                    LinearGradient(
-                        colors: [Color.clear, DarkFantasyTheme.bgSecondary.opacity(0.6), DarkFantasyTheme.bgSecondary],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 60)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
-            )
-
-            // Name + class overlay at bottom
-            VStack {
-                Spacer()
-                VStack(spacing: LayoutConstants.space2XS) {
-                    Text(character.characterName)
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    Text(character.characterClass.rawValue.uppercased())
-                        .font(DarkFantasyTheme.caption)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                .padding(.vertical, LayoutConstants.spaceXS)
-                .frame(maxWidth: .infinity)
-                .background(
-                    LinearGradient(
-                        colors: [DarkFantasyTheme.bgAbyss.opacity(0), DarkFantasyTheme.bgAbyss.opacity(0.7)],
-                        startPoint: .top, endPoint: .bottom
-                    )
-                )
-            }
-            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius))
-
-            // Badges (top corners)
-            VStack {
-                HStack {
-                    Image(character.characterClass.iconAsset)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 36, height: 36)
-                        .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3, y: 1)
-
-                    Spacer()
-
-                    Text("Lv. \(character.level)")
-                        .font(DarkFantasyTheme.badge.bold())
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .padding(.horizontal, LayoutConstants.spaceXS)
-                        .padding(.vertical, LayoutConstants.space2XS)
-                        .background(
-                            Capsule().fill(DarkFantasyTheme.gold)
+                    VStack(spacing: LayoutConstants.space2XS) {
+                        Text(character.characterName)
+                            .font(DarkFantasyTheme.section)
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        Text(character.characterClass.rawValue.uppercased())
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    }
+                    .padding(.vertical, LayoutConstants.spaceXS)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        LinearGradient(
+                            colors: [DarkFantasyTheme.bgAbyss.opacity(0), DarkFantasyTheme.bgAbyss.opacity(0.7)],
+                            startPoint: .top, endPoint: .bottom
                         )
+                    )
                 }
-                Spacer()
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius))
+
+                // Badges (top corners)
+                VStack {
+                    HStack {
+                        Image(character.characterClass.iconAsset)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 36, height: 36)
+                            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3, y: 1)
+
+                        Spacer()
+
+                        Text("Lv. \(character.level)")
+                            .font(DarkFantasyTheme.badge.bold())
+                            .foregroundStyle(DarkFantasyTheme.textOnGold)
+                            .padding(.horizontal, LayoutConstants.spaceXS)
+                            .padding(.vertical, LayoutConstants.space2XS)
+                            .background(
+                                Capsule().fill(DarkFantasyTheme.gold)
+                            )
+                    }
+                    Spacer()
+                }
+                .padding(LayoutConstants.spaceSM)
             }
-            .padding(LayoutConstants.spaceSM)
+            .padding(heroXpRingWidth + 1)
+
+            // XP label (bottom center, over the ring)
+            VStack {
+                Spacer()
+                Text("XP \(character.experience ?? 0)/\(character.xpNeeded)")
+                    .font(DarkFantasyTheme.badge.bold())
+                    .foregroundStyle(DarkFantasyTheme.xpRing)
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, LayoutConstants.space2XS)
+                    .background(
+                        Capsule()
+                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.85))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(DarkFantasyTheme.xpRing.opacity(0.4), lineWidth: 0.5)
+                    )
+                    .offset(y: LayoutConstants.space2XS)
+            }
+
+            // Corner diamond accents on the XP ring frame
+            CornerDiamondOverlay(color: DarkFantasyTheme.xpRing.opacity(0.5), size: 3)
         }
         // Low HP red pulse overlay
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
+            RoundedRectangle(cornerRadius: heroXpRingCornerRadius)
                 .stroke(DarkFantasyTheme.danger, lineWidth: 2)
                 .opacity(character.hpPercentage < 0.25 ? 0.8 : 0)
                 .glowPulse(color: DarkFantasyTheme.danger, intensity: 0.5, isActive: character.hpPercentage < 0.25)

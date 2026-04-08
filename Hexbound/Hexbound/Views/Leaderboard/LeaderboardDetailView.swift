@@ -213,7 +213,7 @@ struct LeaderboardDetailView: View {
         if vm.isSearching {
             VStack(spacing: LayoutConstants.spaceMD) {
                 Spacer()
-                ProgressView()
+                HexPulseLoader(.compact)
                     .tint(DarkFantasyTheme.gold)
                 Text("Searching...")
                     .font(DarkFantasyTheme.uiLabel)

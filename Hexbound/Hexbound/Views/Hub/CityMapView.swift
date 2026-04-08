@@ -7,6 +7,33 @@ struct CityMapView: View {
     @Environment(GameDataCache.self) private var cache
     // scrollOffset removed — position indicator pill was removed
 
+    // MARK: - Quest → Building mapping (matches backend TUTORIAL_QUESTS)
+    /// Maps quest IDs to the building they direct the player to
+    private static let questBuildingMap: [String: String] = [
+        "equip_gear": "shop",
+        "win_3_pvp": "arena",
+        "first_dungeon": "dungeon",
+        "start_mining": "gold-mine",
+        "try_tavern": "tavern",
+        "explore_endgame": "battlepass",
+        "join_guild": "guild-hall",
+    ]
+
+    /// Returns the building ID that has an active (incomplete) tutorial quest
+    private var questTargetBuildingId: String? {
+        let quests = TutorialManager.shared.tutorialQuests
+        for quest in quests {
+            let completed = quest["isCompleted"] as? Bool ?? false
+            let claimed = quest["rewardClaimed"] as? Bool ?? false
+            if !completed || !claimed,
+               let questId = quest["questId"] as? String,
+               let buildingId = Self.questBuildingMap[questId] {
+                return buildingId
+            }
+        }
+        return nil
+    }
+
     // Image native aspect ratio (4096×1738)
     private let imageAspect: CGFloat = 4096.0 / 1738.0
 
@@ -63,13 +90,27 @@ struct CityMapView: View {
                         // Layer 3: Building sprites (images only, no labels)
                         let layoutOverrides = cache.hubLayout
                         let buildings = applyOverrides(layoutOverrides)
+                        let activeQuestBuilding = questTargetBuildingId
                         ForEach(buildings) { building in
                             let locked = isBuildinglocked(building)
+                            let unlockLvl = BuildingUnlockConfig.requiredLevel(for: building.id)
                             CityBuildingView(
                                 building: building,
                                 terrainSize: terrainSize,
                                 onTap: { tapped in
-                                    if let route = tapped.route {
+                                    if locked {
+                                        if let lvl = unlockLvl {
+                                            appState.showToast(
+                                                "\(tapped.label) opens at Level \(lvl)",
+                                                type: .info
+                                            )
+                                        } else {
+                                            appState.showToast(
+                                                "\(tapped.label) — Coming Soon",
+                                                type: .info
+                                            )
+                                        }
+                                    } else if let route = tapped.route {
                                         appState.mainPath.append(route)
                                     } else {
                                         appState.showToast(
@@ -80,7 +121,8 @@ struct CityMapView: View {
                                 },
                                 badge: locked ? nil : badgeFor(building),
                                 spriteOnly: true,
-                                isLocked: locked
+                                isLocked: locked,
+                                requiredLevel: (locked && building.route != nil) ? unlockLvl : nil
                             )
                             .id(building.id)
                         }
@@ -95,7 +137,8 @@ struct CityMapView: View {
                                 text: building.label,
                                 visible: true,
                                 badge: locked ? nil : badgeFor(building),
-                                isLocked: locked
+                                isLocked: locked,
+                                hasQuest: !locked && building.id == activeQuestBuilding
                             )
                             .position(
                                 x: posX,
@@ -145,10 +188,12 @@ struct CityMapView: View {
     }
 
     /// Buildings that are locked (not yet implemented / coming soon)
-    private let lockedBuildingIDs: Set<String> = ["black-market"]
-
     private func isBuildinglocked(_ building: CityBuilding) -> Bool {
-        lockedBuildingIDs.contains(building.id)
+        // Always lock buildings without routes (Coming Soon)
+        if building.route == nil { return true }
+        // Level-based unlock from tutorial system
+        let characterLevel = appState.currentCharacter?.level ?? 1
+        return !BuildingUnlockConfig.isUnlocked(building.id, characterLevel: characterLevel)
     }
 
     private func applyOverrides(_ overrides: [String: GameDataCache.BuildingOverride]) -> [CityBuilding] {

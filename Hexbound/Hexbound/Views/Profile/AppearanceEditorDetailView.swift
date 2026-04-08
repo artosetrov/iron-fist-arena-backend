@@ -12,7 +12,7 @@ struct AppearanceEditorDetailView: View {
             if let vm {
                 Group {
                 if vm.isLoadingSkins && vm.allSkins.isEmpty {
-                    ProgressView()
+                    HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.gold)
                 } else {
                     VStack(spacing: 0) {
@@ -56,7 +56,7 @@ struct AppearanceEditorDetailView: View {
                             vm.save()
                         } label: {
                             if vm.isSaving {
-                                ProgressView().tint(DarkFantasyTheme.textOnGold)
+                                HexPulseLoader.onGold()
                             } else {
                                 HStack(spacing: LayoutConstants.spaceXS) {
                                     Text("SAVE")

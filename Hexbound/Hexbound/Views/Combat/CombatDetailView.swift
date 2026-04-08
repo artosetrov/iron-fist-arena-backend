@@ -563,7 +563,7 @@ struct CombatDetailView: View {
             } label: {
                 if vm.isNavigatingToResult {
                     HStack(spacing: LayoutConstants.spaceSM) {
-                        ProgressView()
+                        HexPulseLoader(.compact)
                             .tint(DarkFantasyTheme.textOnGold)
                         Text("LOADING...")
                     }
