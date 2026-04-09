@@ -46,9 +46,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify character ownership and user has enough gold
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-    })
+    const [character, dbUser] = await Promise.all([
+      prisma.character.findUnique({ where: { id: character_id } }),
+      prisma.user.findUnique({ where: { id: user.id }, select: { gold: true } }),
+    ])
 
     if (!character) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (character.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    if (user.gold < bet_amount) {
+    if (!dbUser || dbUser.gold < bet_amount) {
       return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
     }
 

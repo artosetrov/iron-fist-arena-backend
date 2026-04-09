@@ -153,13 +153,13 @@ export async function POST(req: NextRequest) {
     // Pre-flight currency check
     const userRecord = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { gems: true },
+      select: { gold: true, gems: true },
     })
     if (!userRecord) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (offer.currency === 'gold' && user.gold < offer.salePrice) {
+    if (offer.currency === 'gold' && userRecord.gold < offer.salePrice) {
       return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
     }
     if (offer.currency === 'gems' && userRecord.gems < offer.salePrice) {
