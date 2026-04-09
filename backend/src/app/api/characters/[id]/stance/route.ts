@@ -52,12 +52,15 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const updated = await prisma.character.update({
-      where: { id },
-      data: { combatStance: stance },
-    })
+    const [updated, wallet] = await Promise.all([
+      prisma.character.update({
+        where: { id },
+        data: { combatStance: stance },
+      }),
+      prisma.user.findUnique({ where: { id: user.id }, select: { gold: true, gems: true } }),
+    ])
 
-    return NextResponse.json({ character: updated })
+    return NextResponse.json({ character: { ...updated, gold: wallet?.gold ?? 0, gems: wallet?.gems ?? 0 } })
   } catch (error) {
     console.error('stance error:', error)
     return NextResponse.json(

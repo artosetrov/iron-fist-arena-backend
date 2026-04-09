@@ -142,7 +142,7 @@ export async function PATCH(
       return { character, gold: originChanged ? userRow.gold - APPEARANCE_CHANGE_COST : userRow.gold }
     })
 
-    return NextResponse.json({ character: updated.character, gold: updated.gold })
+    return NextResponse.json({ character: { ...updated.character, gold: updated.gold }, gold: updated.gold })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })

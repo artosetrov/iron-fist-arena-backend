@@ -27,10 +27,18 @@ export async function GET(req: NextRequest) {
 
   try {
     // User record is ensured at auth/login time — no need to upsert on every GET
-    const characters = await prisma.character.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-    })
+    const [characters, userAccount] = await Promise.all([
+      prisma.character.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.user.findUnique({
+        where: { id: user.id },
+        select: { gold: true, gems: true },
+      }),
+    ])
+    const accountGold = userAccount?.gold ?? 0
+    const accountGems = userAccount?.gems ?? 0
 
     // Apply HP + stamina regen so the list shows accurate values
     // (prevents stale "0 HP" display on character selection after a loss)
@@ -60,6 +68,8 @@ export async function GET(req: NextRequest) {
           ...char,
           currentHp: hpResult.hp,
           currentStamina: staminaResult.stamina,
+          gold: accountGold,
+          gems: accountGems,
         }
       })
     )
@@ -185,7 +195,15 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ character }, { status: 201 })
+    // Attach account-level gold/gems for iOS compatibility
+    const userWallet = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { gold: true, gems: true },
+    })
+
+    return NextResponse.json({
+      character: { ...character, gold: userWallet?.gold ?? 0, gems: userWallet?.gems ?? 0 },
+    }, { status: 201 })
   } catch (error: unknown) {
     console.error('create character error:', error)
 

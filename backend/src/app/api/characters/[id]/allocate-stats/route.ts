@@ -101,8 +101,11 @@ export async function POST(
     await invalidateSkillCache(id)
     await invalidatePassiveCache(id)
 
-    const updated = await prisma.character.findUnique({ where: { id } })
-    return NextResponse.json({ character: updated })
+    const [updated, wallet] = await Promise.all([
+      prisma.character.findUnique({ where: { id } }),
+      prisma.user.findUnique({ where: { id: user.id }, select: { gold: true, gems: true } }),
+    ])
+    return NextResponse.json({ character: { ...updated, gold: wallet?.gold ?? 0, gems: wallet?.gems ?? 0 } })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') {

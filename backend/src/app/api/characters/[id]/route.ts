@@ -22,7 +22,7 @@ export async function GET(
           consumables: true,
         },
       }),
-      prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } }),
+      prisma.user.findUnique({ where: { id: user.id }, select: { gold: true, gems: true } }),
     ])
 
     if (!character) {
@@ -69,6 +69,7 @@ export async function GET(
         ...character,
         currentStamina: staminaResult.stamina,
         currentHp: hpResult.hp,
+        gold: dbUser?.gold ?? 0,
         gems: dbUser?.gems ?? 0,
       },
     })
