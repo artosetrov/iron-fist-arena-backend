@@ -25,23 +25,43 @@ export async function GET(req: NextRequest) {
     const [byRating, byLevel, byGold] = await Promise.all([
       prisma.character.findMany({ select: baseSelect, orderBy: { pvpRating: 'desc' }, take: limit }),
       prisma.character.findMany({ select: baseSelect, orderBy: { level: 'desc' }, take: limit }),
-      prisma.character.findMany({ select: { ...baseSelect, gold: true }, orderBy: { gold: 'desc' }, take: limit }),
+      prisma.user.findMany({ select: { id: true, gold: true }, orderBy: { gold: 'desc' }, take: limit }),
     ])
 
-    const mapEntry = (c: typeof byRating[0] & { gold?: number }, i: number, valueKey: 'pvpRating' | 'level' | 'gold') => ({
+    // Fetch character data for gold leaderboard (we have user IDs)
+    const goldUserIds = byGold.map(u => u.id)
+    const goldCharacters = await prisma.character.findMany({
+      where: { userId: { in: goldUserIds } },
+      select: { id: true, characterName: true, class: true, avatar: true, level: true, userId: true },
+    })
+
+    const mapEntry = (c: typeof byRating[0] & { gold?: number }, i: number, valueKey: 'pvpRating' | 'level') => ({
       characterId: c.id,
       characterName: c.characterName,
       class: c.class,
       avatar: c.avatar,
       level: c.level,
-      value: valueKey === 'gold' ? (c as any).gold : c[valueKey as keyof typeof c],
+      value: c[valueKey as keyof typeof c],
+      rank: i + 1,
+    })
+
+    const mapGoldEntry = (user: typeof byGold[0], char: typeof goldCharacters[0] | undefined, i: number) => ({
+      characterId: char?.id || '',
+      characterName: char?.characterName || `User ${user.id.slice(0, 8)}`,
+      class: char?.class || 'unknown',
+      avatar: char?.avatar || 'default',
+      level: char?.level || 0,
+      value: user.gold,
       rank: i + 1,
     })
 
     const result = {
       rating: byRating.map((c, i) => mapEntry(c, i, 'pvpRating')),
       level: byLevel.map((c, i) => mapEntry(c, i, 'level')),
-      gold: byGold.map((c, i) => mapEntry(c, i, 'gold')),
+      gold: byGold.map((u, i) => {
+        const char = goldCharacters.find(c => c.userId === u.id)
+        return mapGoldEntry(u, char, i)
+      }),
     }
 
     await cacheSet(cacheKey, result, LEADERBOARD_CACHE_TTL)

@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
 
       // Apply reward
       if (reward.type === 'gold') {
-        await tx.character.update({
-          where: { id: character_id },
+        await tx.user.update({
+          where: { id: user.id },
           data: { gold: { increment: reward.amount } },
         })
       } else if (reward.type === 'gems') {

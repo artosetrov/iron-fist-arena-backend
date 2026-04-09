@@ -59,8 +59,8 @@ export async function POST(
       if (achievementRow.reward_claimed) throw new Error('ALREADY_CLAIMED')
 
       if (def.rewardType === 'gold') {
-        await tx.character.update({
-          where: { id: character_id },
+        await tx.user.update({
+          where: { id: user.id },
           data: { gold: { increment: def.rewardAmount } },
         })
       } else if (def.rewardType === 'gems') {

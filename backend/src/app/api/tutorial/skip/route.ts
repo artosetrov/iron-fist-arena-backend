@@ -82,7 +82,6 @@ export async function POST(req: NextRequest) {
         data: {
           tutorialStep: 3,
           tutorialSkipped: true,
-          gold: { increment: extraGold },
           currentStamina: Math.min(
             character.current_stamina + WELCOME_GIFT.staminaBonus,
             character.max_stamina + WELCOME_GIFT.staminaBonus
@@ -90,6 +89,14 @@ export async function POST(req: NextRequest) {
           referralCode: generateReferralCode(),
         },
       })
+
+      // Add referral bonus gold to user account
+      if (extraGold > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { gold: { increment: extraGold } },
+        })
+      }
 
       // Give weapon (NOT equipped)
       await tx.equipmentInventory.create({
@@ -132,7 +139,6 @@ export async function POST(req: NextRequest) {
       tutorialStep: 3,
       tutorialSkipped: true,
       isReferred: result.isReferred,
-      gold: result.character.gold,
     })
   } catch (error) {
     if (error instanceof Error) {

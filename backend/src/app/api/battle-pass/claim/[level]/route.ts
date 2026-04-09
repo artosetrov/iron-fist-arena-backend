@@ -398,15 +398,21 @@ export async function POST(
         })
       }
 
+      // Gold now lives on User
+      if (goldIncrement > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { gold: { increment: goldIncrement } },
+        })
+      }
+
       if (
-        goldIncrement > 0 ||
         xpIncrement > 0 ||
         staminaAfter !== staminaBefore
       ) {
         await tx.character.update({
           where: { id: character_id },
           data: {
-            ...(goldIncrement > 0 ? { gold: { increment: goldIncrement } } : {}),
             ...(xpIncrement > 0 ? { currentXp: { increment: xpIncrement } } : {}),
             ...(staminaAfter !== staminaBefore
               ? {

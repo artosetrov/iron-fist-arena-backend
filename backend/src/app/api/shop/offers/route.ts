@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (offer.currency === 'gold' && character.gold < offer.salePrice) {
+    if (offer.currency === 'gold' && user.gold < offer.salePrice) {
       return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
     }
     if (offer.currency === 'gems' && userRecord.gems < offer.salePrice) {
@@ -186,14 +186,14 @@ export async function POST(req: NextRequest) {
       // Re-check currency inside transaction (authoritative)
       const freshChar = await tx.character.findUnique({
         where: { id: character_id },
-        select: { gold: true },
+        select: { id: true },
       })
       const freshUser = await tx.user.findUnique({
         where: { id: user.id },
-        select: { gems: true },
+        select: { gold: true, gems: true },
       })
 
-      if (offer.currency === 'gold' && (freshChar?.gold ?? 0) < offer.salePrice) {
+      if (offer.currency === 'gold' && (freshUser?.gold ?? 0) < offer.salePrice) {
         throw new Error('INSUFFICIENT_GOLD')
       }
       if (offer.currency === 'gems' && (freshUser?.gems ?? 0) < offer.salePrice) {
@@ -202,8 +202,8 @@ export async function POST(req: NextRequest) {
 
       // 1. Deduct currency
       if (offer.currency === 'gold') {
-        await tx.character.update({
-          where: { id: character_id },
+        await tx.user.update({
+          where: { id: user.id },
           data: { gold: { decrement: offer.salePrice } },
         })
       } else {
@@ -252,8 +252,8 @@ export async function POST(req: NextRequest) {
       }
 
       if (goldGrant > 0) {
-        await tx.character.update({
-          where: { id: character_id },
+        await tx.user.update({
+          where: { id: user.id },
           data: { gold: { increment: goldGrant } },
         })
       }
@@ -284,15 +284,15 @@ export async function POST(req: NextRequest) {
       const [updatedChar, updatedUser] = await Promise.all([
         tx.character.findUnique({
           where: { id: character_id },
-          select: { gold: true, currentXp: true },
+          select: { currentXp: true },
         }),
         tx.user.findUnique({
           where: { id: user.id },
-          select: { gems: true },
+          select: { gold: true, gems: true },
         }),
       ])
 
-      return { gold: updatedChar?.gold ?? 0, gems: updatedUser?.gems ?? 0, xp: updatedChar?.currentXp ?? 0 }
+      return { gold: updatedUser?.gold ?? 0, gems: updatedUser?.gems ?? 0, xp: updatedChar?.currentXp ?? 0 }
     }, { isolationLevel: 'Serializable', timeout: 10000 })
 
     return NextResponse.json({

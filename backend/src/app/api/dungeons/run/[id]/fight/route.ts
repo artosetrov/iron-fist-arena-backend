@@ -195,10 +195,15 @@ export async function POST(
       }
       if (lockedRun.currentFloor !== currentFloor) throw new Error('DUNGEON_RUN_STALE')
 
+      // Gold now lives on User
+      await tx.user.update({
+        where: { id: userId },
+        data: { gold: { increment: goldReward } },
+      })
+
       await tx.character.update({
         where: { id: character_id },
         data: {
-          gold: { increment: goldReward },
           currentXp: { increment: xpReward },
           currentHp: playerFinalHp,
           lastHpUpdate: now,

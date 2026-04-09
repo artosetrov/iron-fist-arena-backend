@@ -16,9 +16,9 @@ export async function GET(req: NextRequest) {
       totalGems,
       totalIapGems,
       iapByProduct,
-      goldTopCharacters,
+      goldTopUsers,
     ] = await Promise.all([
-      prisma.character.aggregate({ _sum: { gold: true } }),
+      prisma.user.aggregate({ _sum: { gold: true } }),
       prisma.user.aggregate({ _sum: { gems: true } }),
       prisma.iapTransaction.aggregate({
         where: { status: 'verified' },
@@ -31,8 +31,8 @@ export async function GET(req: NextRequest) {
         _count: true,
         _sum: { gemsAwarded: true },
       }),
-      prisma.character.findMany({
-        select: { characterName: true, gold: true, level: true },
+      prisma.user.findMany({
+        select: { username: true, gold: true },
         orderBy: { gold: 'desc' },
         take: 10,
       }),
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       gold: {
         total_in_circulation: totalGold._sum.gold ?? 0,
-        top_holders: goldTopCharacters,
+        top_holders: goldTopUsers,
       },
       gems: {
         total_in_circulation: totalGems._sum.gems ?? 0,

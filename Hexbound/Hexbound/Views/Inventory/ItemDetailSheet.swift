@@ -184,7 +184,17 @@ struct ItemDetailSheet: View {
                     if item.isTwoHanded == true {
                         badgePill("Two-Handed", style: .twoHanded)
                     }
-                    badgePill(item.rarity.displayName, style: .rarity)
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        badgePill(item.rarity.displayName, style: .rarity)
+                        HStack(spacing: 1) {
+                            ForEach(0..<(item.rarity.tier + 1), id: \.self) { _ in
+                                Image(systemName: "star.fill")
+                                    .font(DarkFantasyTheme.caption)
+                                    .foregroundStyle(rarityColor)
+                            }
+                        }
+                        .accessibilityLabel("\(item.rarity.tier + 1) stars")
+                    }
                 }
                 .accessibilityLabel("\(item.itemType.displayName)\(item.isTwoHanded == true ? " two-handed" : "") \(item.rarity.displayName) rarity")
                 .accessibilityElement(children: .combine)

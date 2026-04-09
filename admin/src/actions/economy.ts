@@ -21,7 +21,7 @@ export async function getEconomySummary() {
   ] = await Promise.all([
     prisma.character.count(),
     prisma.user.count(),
-    prisma.character.aggregate({
+    prisma.user.aggregate({
       _sum: { gold: true },
       _avg: { gold: true },
       _min: { gold: true },
@@ -71,27 +71,42 @@ export async function getEconomySummary() {
 }
 
 // ---------------------------------------------------------------------------
-// Distribution by Level
+// Distribution by Level (gold is account-level, group by user's highest char level)
 // ---------------------------------------------------------------------------
 
 export async function getGoldByLevel() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const results = await prisma.character.groupBy({
-    by: ['level'],
-    _avg: { gold: true },
-    _sum: { gold: true },
-    _count: true,
-    orderBy: { level: 'asc' },
+  // Gold is now account-level — group users by their highest character level
+  const users = await prisma.user.findMany({
+    select: {
+      gold: true,
+      characters: {
+        orderBy: { level: 'desc' },
+        take: 1,
+        select: { level: true },
+      },
+    },
   })
 
-  return results.map((r) => ({
-    level: r.level,
-    avgGold: Math.round(r._avg.gold ?? 0),
-    totalGold: r._sum.gold ?? 0,
-    count: r._count,
-  }))
+  const byLevel = new Map<number, { totalGold: number; count: number }>()
+  for (const u of users) {
+    const level = u.characters[0]?.level ?? 0
+    const entry = byLevel.get(level) ?? { totalGold: 0, count: 0 }
+    entry.totalGold += u.gold
+    entry.count += 1
+    byLevel.set(level, entry)
+  }
+
+  return Array.from(byLevel.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([level, data]) => ({
+      level,
+      avgGold: data.count > 0 ? Math.round(data.totalGold / data.count) : 0,
+      totalGold: data.totalGold,
+      count: data.count,
+    }))
 }
 
 // ---------------------------------------------------------------------------
@@ -101,12 +116,16 @@ export async function getGoldByLevel() {
 export async function getTopGoldHolders(limit = 15) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
-  return prisma.character.findMany({
+  return prisma.user.findMany({
     orderBy: { gold: 'desc' },
     take: limit,
     select: {
-      id: true, characterName: true, gold: true, level: true, class: true,
-      user: { select: { id: true, username: true, email: true } },
+      id: true, username: true, email: true, gold: true,
+      characters: {
+        take: 1,
+        orderBy: { level: 'desc' },
+        select: { characterName: true, level: true, class: true },
+      },
     },
   })
 }
@@ -197,22 +216,22 @@ export async function getOfferPurchasesByOffer() {
 }
 
 // ---------------------------------------------------------------------------
-// Wealth Distribution (Gini-like buckets)
+// Wealth Distribution (Gini-like buckets — now account-level)
 // ---------------------------------------------------------------------------
 
 export async function getWealthDistribution() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  // Get all characters' gold sorted
-  const chars = await prisma.character.findMany({
+  // Gold is now account-level — get all users' gold sorted
+  const users = await prisma.user.findMany({
     select: { gold: true },
     orderBy: { gold: 'asc' },
   })
 
-  if (chars.length === 0) return { buckets: [], giniCoefficient: 0 }
+  if (users.length === 0) return { buckets: [], giniCoefficient: 0 }
 
-  const golds = chars.map((c) => c.gold)
+  const golds = users.map((u) => u.gold)
   const total = golds.reduce((a, b) => a + b, 0)
   const n = golds.length
 
@@ -250,26 +269,38 @@ export async function getWealthDistribution() {
 }
 
 // ---------------------------------------------------------------------------
-// Class Distribution (economy per class)
+// Class Distribution (economy per class — gold now from user joined through character)
 // ---------------------------------------------------------------------------
 
 export async function getEconomyByClass() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const results = await prisma.character.groupBy({
-    by: ['class'],
-    _avg: { gold: true, level: true },
-    _sum: { gold: true },
-    _count: true,
-    orderBy: { _count: { class: 'desc' } },
+  // Gold is account-level — join characters with users to compute per-class gold stats
+  const characters = await prisma.character.findMany({
+    select: {
+      class: true,
+      level: true,
+      user: { select: { gold: true } },
+    },
   })
 
-  return results.map((r) => ({
-    class: r.class,
-    count: r._count,
-    avgGold: Math.round(r._avg.gold ?? 0),
-    totalGold: r._sum.gold ?? 0,
-    avgLevel: Math.round((r._avg.level ?? 0) * 10) / 10,
-  }))
+  const byClass = new Map<string, { totalGold: number; totalLevel: number; count: number }>()
+  for (const c of characters) {
+    const entry = byClass.get(c.class) ?? { totalGold: 0, totalLevel: 0, count: 0 }
+    entry.totalGold += c.user.gold
+    entry.totalLevel += c.level
+    entry.count += 1
+    byClass.set(c.class, entry)
+  }
+
+  return Array.from(byClass.entries())
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([cls, data]) => ({
+      class: cls,
+      count: data.count,
+      avgGold: data.count > 0 ? Math.round(data.totalGold / data.count) : 0,
+      totalGold: data.totalGold,
+      avgLevel: data.count > 0 ? Math.round((data.totalLevel / data.count) * 10) / 10 : 0,
+    }))
 }

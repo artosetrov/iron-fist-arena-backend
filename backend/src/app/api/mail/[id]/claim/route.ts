@@ -97,22 +97,22 @@ export async function POST(
         }
       }
 
-      // Update character gold and xp
-      if (goldToAdd > 0 || xpToAdd > 0) {
-        await tx.character.update({
-          where: { id: character_id },
+      // Update user gold and gems
+      if (goldToAdd > 0 || gemsToAdd > 0) {
+        await tx.user.update({
+          where: { id: user.id },
           data: {
-            gold: { increment: goldToAdd },
-            currentXp: { increment: xpToAdd },
+            ...(goldToAdd > 0 ? { gold: { increment: goldToAdd } } : {}),
+            ...(gemsToAdd > 0 ? { gems: { increment: gemsToAdd } } : {}),
           },
         });
       }
 
-      // Update user gems
-      if (gemsToAdd > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: gemsToAdd } },
+      // Update character xp
+      if (xpToAdd > 0) {
+        await tx.character.update({
+          where: { id: character_id },
+          data: { currentXp: { increment: xpToAdd } },
         });
       }
 

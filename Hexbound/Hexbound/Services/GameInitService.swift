@@ -37,9 +37,12 @@ final class GameInitService {
                 }
             }
 
-            // Parse user (gems live on User, not Character)
+            // Parse user (gold and gems live on User, not Character)
             if let userDict = response["user"] as? [String: Any] {
                 appState.currentUser = userDict
+                if let gold = userDict["gold"] as? Int {
+                    appState.currentCharacter?.gold = gold
+                }
                 if let gems = userDict["gems"] as? Int {
                     appState.currentCharacter?.gems = gems
                 }

@@ -24,32 +24,41 @@ export async function POST(req: NextRequest) {
     const maxSlots = INVENTORY.BASE_SLOTS + INVENTORY.MAX_EXPANSIONS * INVENTORY.EXPAND_AMOUNT
 
     const result = await prisma.$transaction(async (tx) => {
-      const [charRow] = await tx.$queryRawUnsafe<
-        Array<{ id: string; user_id: string; inventory_slots: number; gold: number }>
-      >(
-        `SELECT id, user_id, inventory_slots, gold FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
+      // Lock user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
       )
 
-      if (!charRow) throw new Error('NOT_FOUND')
-      if (charRow.user_id !== user.id) throw new Error('FORBIDDEN')
-      if (charRow.gold < INVENTORY.EXPAND_COST_GOLD) throw new Error('NOT_ENOUGH_GOLD')
-      if (charRow.inventory_slots >= maxSlots) throw new Error('MAX_SLOTS')
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < INVENTORY.EXPAND_COST_GOLD) throw new Error('NOT_ENOUGH_GOLD')
 
-      const updated = await tx.character.update({
+      // Verify character ownership and inventory slots
+      const character = await tx.character.findUnique({
         where: { id: character_id },
-        data: {
-          gold: { decrement: INVENTORY.EXPAND_COST_GOLD },
-          inventorySlots: { increment: INVENTORY.EXPAND_AMOUNT },
-        },
+        select: { userId: true, inventorySlots: true },
       })
 
-      return updated
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
+      if (character.inventorySlots >= maxSlots) throw new Error('MAX_SLOTS')
+
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: { gold: { decrement: INVENTORY.EXPAND_COST_GOLD } },
+      })
+
+      const updatedCharacter = await tx.character.update({
+        where: { id: character_id },
+        data: { inventorySlots: { increment: INVENTORY.EXPAND_AMOUNT } },
+      })
+
+      return { updatedUser, updatedCharacter }
     })
 
     return NextResponse.json({
-      inventorySlots: result.inventorySlots,
-      gold: result.gold,
+      inventorySlots: result.updatedCharacter.inventorySlots,
+      gold: result.updatedUser.gold,
     })
   } catch (error) {
     if (error instanceof Error) {

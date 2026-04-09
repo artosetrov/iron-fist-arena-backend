@@ -46,19 +46,27 @@ export async function PATCH(
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const updated = await prisma.$transaction(async (tx) => {
+      // Lock user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
+      )
+
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < ORIGIN_CHANGE_COST) throw new Error('NOT_ENOUGH_GOLD')
+
       // Lock the character row for update
       const [charRow] = await tx.$queryRawUnsafe<Array<{
-        id: string; user_id: string; gold: number; origin: string; current_hp: number;
+        id: string; user_id: string; origin: string; current_hp: number;
         str: number; agi: number; vit: number; end: number; int: number; wis: number; luk: number; cha: number;
       }>>(
-        `SELECT id, user_id, gold, origin, current_hp, str, agi, vit, "end", "int", wis, luk, cha FROM characters WHERE id = $1 FOR UPDATE`,
+        `SELECT id, user_id, origin, current_hp, str, agi, vit, "end", "int", wis, luk, cha FROM characters WHERE id = $1 FOR UPDATE`,
         id
       )
 
       if (!charRow) throw new Error('NOT_FOUND')
       if (charRow.user_id !== user.id) throw new Error('FORBIDDEN')
       if (charRow.origin === origin) throw new Error('SAME_ORIGIN')
-      if (charRow.gold < ORIGIN_CHANGE_COST) throw new Error('NOT_ENOUGH_GOLD')
 
       // Remove old origin bonuses and apply new ones
       const oldBonuses = ORIGIN_BONUSES[charRow.origin as CharacterOrigin]
@@ -71,7 +79,13 @@ export async function PATCH(
 
       const maxHp = calculateMaxHp(newStats.vit, newStats.end)
 
-      return tx.character.update({
+      // Deduct gold from user
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: { gold: { decrement: ORIGIN_CHANGE_COST } },
+      })
+
+      const character = await tx.character.update({
         where: { id },
         data: {
           origin: origin as CharacterOrigin,
@@ -85,12 +99,13 @@ export async function PATCH(
           cha: newStats.cha,
           maxHp,
           currentHp: Math.min(charRow.current_hp, maxHp),
-          gold: { decrement: ORIGIN_CHANGE_COST },
         },
       })
+
+      return { character, gold: updatedUser.gold }
     })
 
-    return NextResponse.json({ character: updated })
+    return NextResponse.json({ character: updated.character, gold: updated.gold })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })

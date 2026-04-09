@@ -142,13 +142,17 @@ export async function POST(req: NextRequest) {
 
     if (currentRoom.type === 'shop' && action !== 'leave_shop') {
       const shopItems = generateShopItems(currentRoom.seed)
+      const userGold = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { gold: true },
+      })
       return NextResponse.json({
         type: 'shop',
         items: shopItems.map(item => ({
           ...item,
           purchased: state.shopPurchased.includes(item.slot),
         })),
-        playerGold: character.gold,
+        playerGold: userGold?.gold ?? 0,
         currentHpPercent: state.currentHpPercent,
         buffs: state.buffs,
       })
@@ -255,13 +259,18 @@ export async function POST(req: NextRequest) {
       }
 
       if (goldReward > 0 || xpReward > 0) {
-        await tx.character.update({
-          where: { id: character_id },
-          data: {
-            ...(goldReward > 0 ? { gold: { increment: goldReward } } : {}),
-            ...(xpReward > 0 ? { currentXp: { increment: xpReward } } : {}),
-          },
-        })
+        if (goldReward > 0) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { gold: { increment: goldReward } },
+          })
+        }
+        if (xpReward > 0) {
+          await tx.character.update({
+            where: { id: character_id },
+            data: { currentXp: { increment: xpReward } },
+          })
+        }
       }
 
       const updatedRooms = [...lockedState.rooms]

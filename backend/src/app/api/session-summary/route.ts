@@ -19,12 +19,19 @@ export async function GET(req: NextRequest) {
 
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { userId: true, level: true, currentXp: true, gold: true, pvpRating: true, pvpWins: true, pvpLosses: true },
+      select: { userId: true, level: true, currentXp: true, pvpRating: true, pvpWins: true, pvpLosses: true },
     })
 
     if (!character || character.userId !== user.id) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
+
+    // Get gold from user account
+    const userAccount = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { gold: true },
+    })
+    const userGold = userAccount?.gold ?? 0
 
     // Session window: last 30 minutes
     const sessionStart = new Date(Date.now() - 30 * 60 * 1000)
@@ -103,7 +110,7 @@ export async function GET(req: NextRequest) {
       character: {
         level: character.level,
         currentXp: character.currentXp,
-        gold: character.gold,
+        gold: userGold,
         rating: character.pvpRating,
         totalWins: character.pvpWins,
         totalLosses: character.pvpLosses,

@@ -89,24 +89,32 @@ export async function POST(req: NextRequest) {
 
     // TOCTOU-safe: gold check + deduction in a single transaction with FOR UPDATE
     const txResult = await prisma.$transaction(async (tx) => {
-      const [character] = await tx.$queryRawUnsafe<Array<{id: string; user_id: string; gold: number}>>(
-        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
-      )
+      // Verify character exists
+      const character = await tx.character.findUnique({
+        where: { id: character_id },
+        select: { userId: true },
+      })
       if (!character) throw new Error('NOT_FOUND')
-      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
-      if (character.gold < item.price) {
-        throw new Error(`GOLD:Not enough gold. Need ${item.price}, have ${character.gold}`)
+      // Lock user row for gold check
+      const [userRow] = await tx.$queryRawUnsafe<Array<{id: string; gold: number}>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
+      )
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+
+      if (userRow.gold < item.price) {
+        throw new Error(`GOLD:Not enough gold. Need ${item.price}, have ${userRow.gold}`)
       }
 
-      // Deduct gold
-      await tx.character.update({
-        where: { id: character_id },
+      // Deduct gold from user
+      await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: item.price } },
       })
 
-      return { remainingGold: character.gold - item.price }
+      return { remainingGold: userRow.gold - item.price }
     })
 
     // Apply purchase effect

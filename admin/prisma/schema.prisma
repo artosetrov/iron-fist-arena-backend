@@ -351,7 +351,6 @@ model Character {
   @@index([pvpRating, pvpCalibrationGames])
   @@index([level])
   @@index([level, gearScore])
-  @@index([gold])
   @@index([lastActiveAt])
   @@map("characters")
 }

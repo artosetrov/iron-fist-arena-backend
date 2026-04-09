@@ -272,6 +272,9 @@ final class DungeonRushViewModel {
         currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
         updateHpFromPercent(result)
         parseBuffs(from: result["buffs"])
+        if let newGold = result["gold"] as? Int {
+            appState.currentCharacter?.gold = newGold
+        }
 
         if let purchased = result["shopPurchased"] as? [Int] {
             shopItems = shopItems.map { item in

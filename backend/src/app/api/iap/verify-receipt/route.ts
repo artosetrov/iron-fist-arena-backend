@@ -64,14 +64,13 @@ export async function POST(req: NextRequest) {
 
     // Build dynamic update payload based on product type
     const userUpdate: Record<string, unknown> = {}
-    const characterUpdate: Record<string, unknown> = {}
 
     if (product.gems > 0) {
       userUpdate.gems = { increment: product.gems }
     }
 
     if (product.gold > 0) {
-      characterUpdate.gold = { increment: product.gold }
+      userUpdate.gold = { increment: product.gold }
     }
 
     if (product.premium) {
@@ -105,22 +104,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 3. Update character gold (if gold pack)
-    if (Object.keys(characterUpdate).length > 0) {
-      // Find user's active character
-      const character = await prisma.character.findFirst({
-        where: { userId: user.id },
-        orderBy: { lastPlayed: 'desc' },
-      })
-      if (character) {
-        operations.push(
-          prisma.character.update({
-            where: { id: character.id },
-            data: characterUpdate,
-          })
-        )
-      }
-    }
 
     // 4. Monthly Gem Card — create daily_gem_card record
     if (product.monthlyGemCard) {

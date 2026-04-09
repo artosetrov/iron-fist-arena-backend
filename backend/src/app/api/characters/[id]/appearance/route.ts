@@ -52,12 +52,20 @@ export async function PATCH(
     }
 
     const updated = await prisma.$transaction(async (tx) => {
+      // Lock user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
+      )
+
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+
       const [charRow] = await tx.$queryRawUnsafe<Array<{
-        id: string; user_id: string; gold: number; origin: string; gender: string; avatar: string;
+        id: string; user_id: string; origin: string; gender: string; avatar: string;
         str: number; agi: number; vit: number; end: number; int: number; wis: number; luk: number; cha: number;
         current_hp: number;
       }>>(
-        `SELECT id, user_id, gold, origin, gender, avatar, str, agi, vit, "end", "int", wis, luk, cha, current_hp FROM characters WHERE id = $1 FOR UPDATE`,
+        `SELECT id, user_id, origin, gender, avatar, str, agi, vit, "end", "int", wis, luk, cha, current_hp FROM characters WHERE id = $1 FOR UPDATE`,
         id
       )
 
@@ -88,7 +96,7 @@ export async function PATCH(
         : validKeys[0] ?? newAvatar
 
       const originChanged = newOrigin !== charRow.origin
-      if (originChanged && charRow.gold < APPEARANCE_CHANGE_COST) {
+      if (originChanged && userRow.gold < APPEARANCE_CHANGE_COST) {
         throw new Error('NOT_ENOUGH_GOLD')
       }
 
@@ -110,6 +118,12 @@ export async function PATCH(
 
         const maxHp = calculateMaxHp(newStats.vit, newStats.end)
 
+        // Deduct gold from user, not character
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
+          data: { gold: { decrement: APPEARANCE_CHANGE_COST } },
+        })
+
         Object.assign(data, {
           str: newStats.str,
           agi: newStats.agi,
@@ -121,14 +135,14 @@ export async function PATCH(
           cha: newStats.cha,
           maxHp,
           currentHp: Math.min(charRow.current_hp, maxHp),
-          gold: { decrement: APPEARANCE_CHANGE_COST },
         })
       }
 
-      return tx.character.update({ where: { id }, data })
+      const character = await tx.character.update({ where: { id }, data })
+      return { character, gold: originChanged ? userRow.gold - APPEARANCE_CHANGE_COST : userRow.gold }
     })
 
-    return NextResponse.json({ character: updated })
+    return NextResponse.json({ character: updated.character, gold: updated.gold })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })

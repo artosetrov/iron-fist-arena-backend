@@ -23,9 +23,20 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Lock user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
+      )
+
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < SKILLS.LEARN_GOLD_COST) {
+        throw new Error('NOT_ENOUGH_GOLD')
+      }
+
       const character = await tx.character.findUnique({
         where: { id: character_id },
-        select: { userId: true, level: true, class: true, gold: true },
+        select: { userId: true, level: true, class: true },
       })
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
@@ -49,14 +60,9 @@ export async function POST(req: NextRequest) {
       })
       if (existing) throw new Error('ALREADY_LEARNED')
 
-      // Check gold
-      if (character.gold < SKILLS.LEARN_GOLD_COST) {
-        throw new Error('NOT_ENOUGH_GOLD')
-      }
-
       // Deduct gold
-      await tx.character.update({
-        where: { id: character_id },
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: SKILLS.LEARN_GOLD_COST } },
       })
 
@@ -68,7 +74,7 @@ export async function POST(req: NextRequest) {
 
       return {
         charSkill,
-        goldRemaining: character.gold - SKILLS.LEARN_GOLD_COST,
+        goldRemaining: updatedUser.gold,
       }
     })
 

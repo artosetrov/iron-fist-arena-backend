@@ -23,9 +23,17 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // Lock user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
+      )
+
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+
       const character = await tx.character.findUnique({
         where: { id: character_id },
-        select: { userId: true, gold: true },
+        select: { userId: true },
       })
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
@@ -41,13 +49,13 @@ export async function POST(req: NextRequest) {
       }
 
       const cost = SKILLS.UPGRADE_GOLD_BASE + charSkill.rank * SKILLS.UPGRADE_GOLD_PER_RANK
-      if (character.gold < cost) {
+      if (userRow.gold < cost) {
         throw new Error('NOT_ENOUGH_GOLD')
       }
 
       // Deduct gold and upgrade rank
-      await tx.character.update({
-        where: { id: character_id },
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: cost } },
       })
 
@@ -57,7 +65,7 @@ export async function POST(req: NextRequest) {
         include: { skill: true },
       })
 
-      return { updated, cost, goldRemaining: character.gold - cost }
+      return { updated, cost, goldRemaining: updatedUser.gold }
     })
 
     // Invalidate cache

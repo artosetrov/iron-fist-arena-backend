@@ -24,8 +24,8 @@ type Props = {
   }
   goldByLevel: Array<{ level: number; avgGold: number; totalGold: number; count: number }>
   topGold: Array<{
-    id: string; characterName: string; gold: number; level: number; class: string
-    user: { id: string; username: string | null; email: string | null } | null
+    id: string; username: string | null; email: string | null; gold: number
+    characters: Array<{ characterName: string; level: number; class: string }>
   }>
   topGems: Array<{
     id: string; username: string | null; email: string | null; gems: number
@@ -308,23 +308,24 @@ export function EconomyClient(props: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topGold.map((c, i) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                      <TableCell>
-                        {c.user ? (
-                          <Link href={`/players/${c.user.id}`} className="text-primary hover:underline">
-                            {c.characterName}
+                  {topGold.map((c, i) => {
+                    const char = c.characters?.[0]
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                        <TableCell>
+                          <Link href={`/players/${c.id}`} className="text-primary hover:underline">
+                            {char?.characterName ?? c.username ?? c.email ?? 'Unknown'}
                           </Link>
-                        ) : c.characterName}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`capitalize ${classColors[c.class] ?? ''}`}>{c.class}</span>
-                      </TableCell>
-                      <TableCell>{c.level}</TableCell>
-                      <TableCell className="text-right font-medium text-amber-400">{fmt(c.gold)}</TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`capitalize ${classColors[char?.class ?? ''] ?? ''}`}>{char?.class ?? '—'}</span>
+                        </TableCell>
+                        <TableCell>{char?.level ?? '—'}</TableCell>
+                        <TableCell className="text-right font-medium text-amber-400">{fmt(c.gold)}</TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </Card>

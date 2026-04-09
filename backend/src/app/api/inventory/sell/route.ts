@@ -62,18 +62,18 @@ export async function POST(req: NextRequest) {
     const finalSellPrice = Math.floor(baseSellPrice * (1 + inventoryItem.upgradeLevel * 0.1))
 
     // Delete the inventory entry and add gold in a transaction
-    const updatedCharacter = await prisma.$transaction(async (tx) => {
+    const updatedUser = await prisma.$transaction(async (tx) => {
       await tx.equipmentInventory.delete({
         where: { id: inventory_id },
       })
 
-      return tx.character.update({
-        where: { id: character_id },
+      return tx.user.update({
+        where: { id: user.id },
         data: { gold: { increment: finalSellPrice } },
       })
     })
 
-    return NextResponse.json({ gold: updatedCharacter.gold, soldFor: finalSellPrice })
+    return NextResponse.json({ gold: updatedUser.gold, soldFor: finalSellPrice })
   } catch (error) {
     console.error('sell item error:', error)
     return NextResponse.json(

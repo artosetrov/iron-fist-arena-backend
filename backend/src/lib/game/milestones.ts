@@ -145,19 +145,14 @@ export async function checkAndAwardMilestones(
       awarded.push({ level: milestone.level, reward: milestone.reward })
     }
 
-    // Bulk award gold to character, gems to user
-    await tx.character.update({
-      where: { id: characterId },
-      data: {
-        gold: { increment: totalGold },
-      },
-    })
-    if (totalGems > 0) {
+    // Bulk award gold and gems to user (account-level currency)
+    const currencyUpdate: Record<string, { increment: number }> = {}
+    if (totalGold > 0) currencyUpdate.gold = { increment: totalGold }
+    if (totalGems > 0) currencyUpdate.gems = { increment: totalGems }
+    if (Object.keys(currencyUpdate).length > 0) {
       await tx.user.update({
         where: { id: char.userId },
-        data: {
-          gems: { increment: totalGems },
-        },
+        data: currencyUpdate,
       })
     }
   })

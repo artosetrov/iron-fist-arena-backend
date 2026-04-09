@@ -58,17 +58,19 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.$transaction([
+      prisma.user.update({
+        where: { id: character.userId },
+        data: {
+          gold: { increment: BONUS_GOLD },
+          gems: { increment: BONUS_GEMS },
+        },
+      }),
       prisma.character.update({
         where: { id: character_id },
         data: {
-          gold: { increment: BONUS_GOLD },
           currentXp: { increment: BONUS_XP },
           dailyBonusDate: new Date(),
         },
-      }),
-      prisma.user.update({
-        where: { id: character.userId },
-        data: { gems: { increment: BONUS_GEMS } },
       }),
     ])
 

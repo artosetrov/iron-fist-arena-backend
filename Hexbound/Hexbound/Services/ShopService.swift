@@ -164,9 +164,8 @@ final class ShopService {
             ]
             let response = try await APIClient.shared.postRaw(APIEndpoints.shopRepair, body: body)
             let repairCost = response["repairCost"] as? Int ?? 0
-            let character = response["character"] as? [String: Any] ?? [:]
-            let gold = character["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
-            let gems = character["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
+            let gold = response["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
+            let gems = response["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
             let inventoryItem = response["inventoryItem"] as? [String: Any] ?? [:]
             let newDurability = inventoryItem["durability"] as? Int ?? 0
             let maxDurability = inventoryItem["maxDurability"] as? Int ?? 0
@@ -218,9 +217,8 @@ final class ShopService {
             let levelLost = response["level_lost"] as? Bool ?? false
             let protectionUsed = response["protection_used"] as? Bool ?? false
             let upgradeCost = response["upgradeCost"] as? Int ?? 0
-            let character = response["character"] as? [String: Any] ?? [:]
-            let gold = character["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
-            let gems = character["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
+            let gold = response["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
+            let gems = response["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
             if var char = appState.currentCharacter {
                 char.gold = gold
                 char.gems = gems
@@ -248,10 +246,9 @@ final class ShopService {
     // MARK: - Helpers
 
     private func updateCharacter(from response: [String: Any]) {
-        if let character = response["character"] as? [String: Any],
-           var char = appState.currentCharacter {
-            if let gold = character["gold"] as? Int { char.gold = gold }
-            if let gems = character["gems"] as? Int { char.gems = gems }
+        if var char = appState.currentCharacter {
+            if let gold = response["gold"] as? Int { char.gold = gold }
+            if let gems = response["gems"] as? Int { char.gems = gems }
             appState.currentCharacter = char
             // Invalidate inventory cache since items changed (new purchase)
             appState.cachedInventory = nil

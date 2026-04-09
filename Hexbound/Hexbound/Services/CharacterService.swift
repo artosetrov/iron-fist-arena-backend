@@ -13,10 +13,28 @@ final class CharacterService {
     func loadCharacter() async {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
-            let response: CharacterResponse = try await APIClient.shared.get(
+            let response = try await APIClient.shared.getRaw(
                 APIEndpoints.character(charId)
             )
-            appState.currentCharacter = response.character
+
+            // Parse character from response
+            if let charDict = response["character"] as? [String: Any] {
+                let jsonData = try JSONSerialization.data(withJSONObject: charDict)
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                let character = try decoder.decode(Character.self, from: jsonData)
+                appState.currentCharacter = character
+            }
+
+            // Update gold from user dict if available (gold is now account-level)
+            if let userDict = response["user"] as? [String: Any] {
+                if let gold = userDict["gold"] as? Int {
+                    appState.currentCharacter?.gold = gold
+                }
+                if let gems = userDict["gems"] as? Int {
+                    appState.currentCharacter?.gems = gems
+                }
+            }
         } catch {
             appState.showToast("Failed to load character", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                 Task { @MainActor in
@@ -169,10 +187,4 @@ final class CharacterService {
             return false
         }
     }
-}
-
-// MARK: - Response Types
-
-private struct CharacterResponse: Codable {
-    let character: Character
 }

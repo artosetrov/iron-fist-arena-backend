@@ -313,10 +313,14 @@ export async function POST(req: NextRequest) {
       if (lockedRoom.resolved) throw new Error('RUSH_ROOM_RESOLVED')
       if (!isCombatRoom(lockedRoom.type)) throw new Error('RUSH_ROOM_NON_COMBAT')
 
+      // Gold now lives on User; XP, HP stay on Character
+      await tx.user.update({
+        where: { id: userId },
+        data: { gold: { increment: goldReward } },
+      })
       await tx.character.update({
         where: { id: character_id },
         data: {
-          gold: { increment: goldReward },
           currentXp: { increment: xpReward },
           currentHp: playerPostCombatHp,
           lastHpUpdate: new Date(),

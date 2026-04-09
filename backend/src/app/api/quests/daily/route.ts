@@ -217,12 +217,14 @@ export async function POST(req: NextRequest) {
           where: { id: quest_id },
           data: { completed: true },
         })
+        // Gold now lives on User, XP still on Character
+        await tx.user.update({
+          where: { id: user.id },
+          data: { gold: { increment: q.reward_gold } },
+        })
         await tx.character.update({
           where: { id: character_id },
-          data: {
-            gold: { increment: q.reward_gold },
-            currentXp: { increment: q.reward_xp },
-          },
+          data: { currentXp: { increment: q.reward_xp } },
         })
         // Award gems if quest has gem reward (gems live on User, not Character)
         if (q.reward_gems > 0) {

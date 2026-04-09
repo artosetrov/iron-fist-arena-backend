@@ -131,9 +131,6 @@ struct ItemCardView: View {
         DarkFantasyTheme.rarityColor(for: rarity)
     }
 
-    private var starCount: Int {
-        rarity.tier + 1
-    }
 
     private var isHighRarity: Bool {
         rarity == .epic || rarity == .legendary
@@ -459,23 +456,13 @@ private extension ItemCardView {
         } else if case .shop(let price, let isGem, _, _, _, let originalPrice, let discountPct) = context {
             // Shop price bar with optional discount
             shopPriceBar(price: price, isGem: isGem, originalPrice: originalPrice, discountPct: discountPct)
-        } else {
-            // Rarity stars + upgrade level
-            HStack(spacing: LayoutConstants.space2XS) {
-                ForEach(0..<starCount, id: \.self) { _ in
-                    Image(systemName: "star.fill")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.gold)
-                        .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
-                }
-                if let upg = upgradeLevel, upg > 0 {
-                    Text("+\(upg)")
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
-                }
-            }
-            .padding(.bottom, LayoutConstants.spaceXS)
+        } else if let upg = upgradeLevel, upg > 0 {
+            // Upgrade level only (rarity stars shown in detail sheet)
+            Text("+\(upg)")
+                .font(DarkFantasyTheme.caption.bold())
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
+                .padding(.bottom, LayoutConstants.spaceXS)
         }
     }
 
