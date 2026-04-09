@@ -68,13 +68,19 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Get or fetch the user to have gold available
-      let userGold = user.gold
+      // Fetch current gold from database (auth user doesn't have gold field)
+      const userRow = await tx.user.findUnique({
+        where: { id: user.id },
+        select: { gold: true },
+      })
+      let userGold = userRow?.gold ?? 0
+
       // Award gold if won
       if (won) {
         const updatedUser = await tx.user.update({
           where: { id: user.id },
           data: { gold: { increment: win_amount } },
+          select: { gold: true },
         })
         userGold = updatedUser.gold
       }
