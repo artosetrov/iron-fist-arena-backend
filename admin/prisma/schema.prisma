@@ -253,7 +253,7 @@ model Character {
   luk Int @default(10)
   cha Int @default(10)
 
-  gold              Int       @default(500)
+  gold              Int       @default(300)
   arenaTokens       Int       @default(0) @map("arena_tokens")
   maxHp             Int       @default(100) @map("max_hp")
   currentHp         Int       @default(100) @map("current_hp")

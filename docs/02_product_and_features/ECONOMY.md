@@ -1,77 +1,86 @@
-# Economy System (Source of Truth)
-*Derived from backend implementation*
+# Economy System — Economy v2 (Source of Truth)
+*Updated: 2026-04-09 — Economy v2 rebalance applied*
 
 ## Currencies
 
 ### Gold (Soft Currency)
 
-**Purpose**: Primary in-game currency, earned through gameplay, spent on progression and cosmetics.
+**Purpose**: Primary in-game currency, earned through gameplay, spent on progression.
+
+**Starting gold**: 300 (new characters)
 
 #### Earnings
 | Source | Base Amount | Modifiers |
 |--------|-------------|-----------|
-| PvP Win | 150 | Level ×10%, CHA bonus up to 50%, Win streak 10-25%, First Win 2×, Revenge 1.5× |
-| PvP Loss | 50 | — |
-| Training | 50 | — |
-| Training Loss | 20 | — |
+| PvP Win | 150 | Level ×2%, CHA bonus (diminishing, cap 125%), Win streak +20/50/100%, First Win 2×, Revenge 1.5× |
+| PvP Loss | 50 | Level ×2% |
+| Training Win | 30 | — |
+| Training Loss | 10 | — |
 | Dungeons | Difficulty-scaled | Boss bonus, floor count multiplier |
 | Daily Quests | 25-100 | Level-scaled |
-| Gold Mine | 100-250 | Per 4hr session, chest drops |
-| Shell Game | 2× bet | Win payout (fair RNG, no house edge) |
+| Gold Mine | 40-100 per 4hr session | 10% gem drop (1-3 gems) |
+| Shell Game | 2× bet | Fair RNG, no house edge |
+| Daily Login | Day 1: 150g, Day 3: 300g, Day 5: 500g | Weekly cycle |
+| Tutorial NPC Quests | ~1300g total | One-time |
 
-#### Spending
+#### Spending (Sinks)
 | Destination | Cost | Purpose |
 |-------------|------|---------|
-| Item Purchase (Shop) | 500-5000 | Gear acquisition |
-| Equipment Upgrades | Scaling | +1 → +10 enhancement |
-| Equipment Repairs | 10% of purchase | Durability restoration |
+| Equipment Purchase (Shop) | 100-8000+ | Rarity/level scaled |
+| Equipment Upgrades | 150 × 1.4^N (exponential) | +1→+10 enhancement |
+| Equipment Repairs | 80 + level×15, rarity mult | Durability restoration |
+| Consumable Potions | 150-800 | Stamina/HP recovery |
+| Gem Packs (gold) | 500-3000 | In-shop gem pack purchases |
+| Inventory Expansion | 5000 per 10 slots | Max 3 expansions |
+| Skill Learning | 200 | Per new skill |
+| Skill Upgrade | 500 + 500×rank | Per rank |
+| Passive Respec | 5000 | Alternative to gem respec |
 | Shell Game Bets | 50-1000 | Gambling mechanic |
-| Cosmetics | 200-1000 | Non-power cosmetics |
+
+#### Upgrade Cost Table (Exponential: $150 \times 1.4^N$)
+| Level | Gold Cost |
+|-------|-----------|
+| +1 | 210 |
+| +2 | 294 |
+| +3 | 412 |
+| +4 | 576 |
+| +5 | 807 |
+| +6 | 1,130 |
+| +7 | 1,582 |
+| +8 | 2,214 |
+| +9 | 3,100 |
+| +10 | 4,340 |
 
 #### Scaling Mechanics
-- **Level Scaling**: Earnings increase 10% per level (level 10 = 1.1×, level 20 = 1.2×, etc.)
-- **Charisma Bonus**: Adds up to 50% to gold earnings (10% per CHA point)
-- **Win Streak**: 10% bonus per consecutive win, up to 25% at 5+ wins
-- **First Win Bonus**: 2× gold for first battle each day
+- **Level Scaling**: +2% per level above 1 (level 50 = ~2× rewards)
+- **CHA Gold Bonus**: Diminishing returns — 0-30 CHA: +2.5%/pt, 31-60: +1%/pt, 61+: +0.5%/pt (hard cap +125%)
+- **Win Streak**: 3-win +20%, 5-win +50%, 8+ win +100%
+- **Loss Streak Protection**: 3 losses → next win +30%, 5 losses → +50%, 7+ → +80%
+- **First Win Bonus**: 2× gold + 2× XP for first PvP win each day
 - **Revenge Bonus**: 1.5× gold if fighting opponent who beat you previously
-- **Prestige Scaling**: Earnings scale with prestige level
 
 ### Gems (Premium Currency)
 
-**Purpose**: Acceleration currency, obtained through gameplay or IAP, spent on convenience and cosmetics.
+**Purpose**: Acceleration currency, obtained through gameplay or IAP.
 
-#### Earnings
+#### Earnings (F2P)
 | Source | Amount |
 |--------|--------|
-| Daily Login Day 7 | 5 |
-| Achievements | 1-10 per achievement |
-| Battle Pass (free) | 50 total across 50 levels |
-| Battle Pass (premium) | 100 total across 50 levels |
+| Daily Login Day 7 | 25 |
+| Achievements | Variable |
+| Battle Pass (free) | ~50 total across 50 levels |
+| Battle Pass (premium) | ~100 total across 50 levels |
 | Gold Mine (10% drop chance) | 1-3 per session |
-| In-App Purchase | 100-6500 per pack |
 
 #### Spending
 | Destination | Cost | Purpose |
 |-------------|------|---------|
-| Stamina Refill | 10 | Time-gating acceleration |
-| Inventory Expansion | 20 per slot | Soft cap increase (capped at 28 total) |
-| Stat Respec | 50 | Build flexibility (stat point reallocation) |
-| Passive Respec | 100 | Build flexibility (passive tree reset) |
+| Stamina Refill | 30 | Instant stamina restore |
+| Upgrade Protection Scroll | 50 | Prevents downgrade on failed +6 and above |
 | Battle Pass Premium | 500 | Premium cosmetic/reward track |
-| Gold Mine Slot Unlock | 30 | 4th/5th mining slot (if applicable) |
+| Gold Mine Slot Unlock | 50 | Additional mining slot |
 | Gold Mine Boost | 10 | Instant 4hr session completion |
-
-#### Economy Rules
-- **No gem → gold conversion** (prevents pay-to-win)
-- **No gem refunds** once spent
-- **Gem drops are rare** but meaningful (Gold Mine only, 10% chance)
-- **Balanced acquisition**: F2P players earn 5 gems/week from login + 50+ from Battle Pass/achievements
-
-### Arena Tokens (Planned)
-
-**Purpose**: Future exclusive cosmetics and limited-edition items.
-
-**Current Implementation**: Minimal — reserved for exclusive cosmetics system in later season.
+| Passive Respec | 50 | Passive tree reset |
 
 ---
 
@@ -79,192 +88,77 @@
 
 ### Gem Packs
 
-Standard gem packages with tiered pricing. Larger packs offer better value ($/gem).
-
-| Pack | Gems | Price | Rate (Gems/$) | Best For |
-|------|------|-------|---------------|----------|
-| Small | 100 | $0.99 | 101 | First-time buyer |
-| Medium | 550 | $4.99 | 110 | ⭐ Recommended tier |
-| Large | 1200 | $9.99 | 120 | Regular player |
-| Huge | 2500 | $19.99 | 125 | Committed player |
-| Mega | 6500 | $49.99 | 130 | Whale tier |
-
-**Pricing Strategy**:
-- Small pack: Entry point for hesitant buyers
-- Medium pack (⭐): Sweet spot — best value per dollar, highest conversion
-- Large+ packs: Diminishing returns, targets engaged players
+| Pack | Gems | Price | Rate (Gems/$) |
+|------|------|-------|---------------|
+| Small | 100 | $0.99 | 101 |
+| Medium | 550 | $4.99 | 110 |
+| Large | 1200 | $9.99 | 120 |
+| Huge | 2500 | $19.99 | 125 |
+| Mega | 6500 | $49.99 | 130 |
 
 ### Gold Packs
 
-Direct gold purchase (primarily for new players who need starting capital).
-
-| Pack | Gold | Price | Use Case |
-|------|------|-------|----------|
-| Starter | 500 | $0.99 | New player gear |
-| Standard | 1200 | $1.99 | Quick shop purchases |
-| Premium | 3500 | $4.99 | Equipment upgrades |
-| Deluxe | 8000 | $9.99 | Full build refresh |
-| Ultimate | 20000 | $19.99 | Major progression |
-
-**Note**: Gold packs are secondary monetization — gems are primary. Gold purchase encourages spending but doesn't lock power.
+| Pack | Gold | Price |
+|------|------|-------|
+| 500g | 500 | $0.99 |
+| 1200g | 1200 | $1.99 |
+| 3500g | 3500 | $4.99 |
+| 8000g | 8000 | $9.99 |
+| 20000g | 20000 | $19.99 |
 
 ### Subscription Products
 
-Recurring revenue with steady value delivery.
+#### Monthly Gem Card ($4.99)
+- 50 gems instant + 10 gems/day × 30 days = 350 gems total (~341% value vs packs)
 
-#### Monthly Gem Card
-- **Instant**: 50 gems on purchase
-- **Daily**: 10 gems/day for 30 days
-- **Total**: 350 gems for $4.99
-- **Value**: Equivalent to ~$17 in gem packs (341% value)
-- **ROI**: Encourages continued play (daily reminder)
+#### Starter Bundle ($2.99, one-time)
+- 200 gems + 3000 gold — best $/value in the game, creates habit
 
-#### Premium Forever
-- **One-time**: $9.99
-- **Permanent**: Unlocks permanent cosmetic/account benefit
-- **Use**: Status symbol, account-wide cosmetic effect
-- **Future use**: Could unlock exclusive shop filters, faster animations, etc.
+#### Premium Forever ($9.99, one-time)
+- Permanent account-wide cosmetic benefit
 
 ---
 
-## Monetization Points (Friction & Acceleration)
+## Economy Health — Sink Ratio Targets
 
-### 1. Stamina Refill (10 Gems)
-- **Friction**: 5-10 stamina per battle, regens 1/5min, gates PvP sessions
-- **Acceleration**: Pay gems to continue playing immediately
-- **Fair play**: Energy fully regenerates (no hard paywall)
-- **Whaling resistance**: Players will refill once/day max
+| Player Type | Target Sink Ratio | Mechanism |
+|-------------|-------------------|-----------|
+| Casual F2P (1-5 battles/day) | 55-65% | Repairs + potions eat most income |
+| Active F2P (6-10 battles/day) | 60-70% | Upgrades + repairs + potions |
+| Light Spender | 65-75% | More activity = more sinks |
+| Whale | 70-80% | Exponential upgrade costs dominate |
 
-### 2. Inventory Expansion (20 Gems per slot)
-- **Friction**: Soft cap at 8 base slots, caps at 28 total
-- **Acceleration**: Expand to farm more efficiently
-- **Fair play**: All power is equippable, expansion is convenience
-- **Whaling resistance**: Rare use case (90% players never buy)
-
-### 3. Stat/Passive Respec (50/100 Gems)
-- **Friction**: Respec locked, encourages commitment to builds
-- **Acceleration**: Pivot strategies without re-leveling
-- **Fair play**: All builds equally viable, respec unlocks flexibility
-- **Whaling resistance**: Used 1-2× per month by engaged players
-
-### 4. Battle Pass Premium (500 Gems)
-- **Friction**: Two-track system (free = slow, premium = faster)
-- **Acceleration**: Unlock cosmetic rewards and tier skips
-- **Fair play**: Free track has full progression (cosmetics only)
-- **Whaling resistance**: Cosmetic-only, no power advantage
-
-### 5. Gold Mine Slot Expansion (30 Gems)
-- **Friction**: Passive income, base 1 slot (→ 4-5 available)
-- **Acceleration**: Multiple simultaneous passive sessions
-- **Fair play**: Purely passive, no grinding required
-- **Whaling resistance**: Marginal benefit (steady 100-250 gold/4hr)
-
-### 6. Gold Mine Boost (10 Gems)
-- **Friction**: 4hr wait timer on completion
-- **Acceleration**: Instant completion, collect rewards now
-- **Fair play**: Not required for progression
-- **Whaling resistance**: Low-cost convenience
+### Key Economy v2 Changes (2026-04-09)
+- Gold rewards reduced: PvP win 200→150, loss 70→50, training 50→30
+- Starting gold: 500→300
+- Free PvP per day: 5→3 (stamina-gated after)
+- Repair costs: base 50→80, per-level 10→15
+- Upgrade formula: linear (level×100) → exponential (150×1.4^N)
+- Consumable prices: +25-35% across all potions
+- Gold mine rewards: 60-150 → 40-100
+- Daily login gold: Day 1 200→150, Day 3 500→300, Day 5 1000→500
+- Upgrade protection: 30→50 gems
 
 ---
 
-## Economy Health Principles
+## Stamina System
 
-### Fair Play Guarantee
-✓ **All power is earnable through play** — no gear or stat advantage locked behind paywall
-✓ **Gems accelerate, never restrict** — free players can reach endgame (slower)
-✓ **PvP is skill + build, not wallet** — card-based matchmaking, ELO rating
-✓ **Cosmetics only for premium** — visual differentiation, not competitive edge
-
-### Anti-Exploit Rules
-✗ **No gem → gold conversion** — prevents pay-to-win farming
-✗ **Stamina gate on PvP** — prevents whale dominance via session length
-✗ **Equipment gold sinks** — repair costs drain gold, prevent soft currency hoarding
-✗ **Level-based matchmaking** — prevents smurfing with bought gear
-
-### Economy Levers (Live Ops)
-- **Daily bonus boost** (2× gold, 3× XP) — combat dead periods
-- **Flash sales** (30-50% off cosmetics) — FOMO retention
-- **Battle pass speedup** (XP bonuses) — season closing push
-- **Event currency** (seasonal special drops) — limited-time engagement
-- **Prestige bonus scaling** — long-term player reward
+| Parameter | Value |
+|-----------|-------|
+| Max Stamina | 120 |
+| Regen Rate | 1 per 8 minutes |
+| Full Regen Time | 16 hours |
+| PvP Cost | 10 |
+| Training Cost | 5 |
+| Dungeon Easy/Normal/Hard | 15/20/25 |
+| Boss | 40 |
+| Free PvP Per Day | 3 (no stamina cost) |
 
 ---
 
-## Economy Flow Diagram
-
-```
-                    ┌─────────────────┐
-                    │   FREE PLAYERS  │
-                    └────────┬────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-         Daily Quests    PvP (150g)    Dungeons
-              │              │              │
-              └──────────────┼──────────────┘
-                             │
-                         (150-250g/day)
-                             ▼
-                    ┌─────────────────┐
-                    │   SPEND: GOLD   │ ← Equipment, Upgrades, Repairs
-                    └─────────────────┘
-
-
-                    ┌─────────────────┐
-                    │  PAID PLAYERS   │
-                    └────────┬────────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-             IAP        + Free Earnings  Gold Mine Boost
-              │              │              │
-              └──────────────┼──────────────┘
-                             │
-                    (Gems + Extra Gold)
-                             ▼
-          ┌─────────────────────────────────┐
-          │  Convenience + Cosmetics Only   │
-          │  (Stamina, Respec, Battle Pass) │
-          └─────────────────────────────────┘
-```
-
----
-
-## Economy Metrics to Track
-
-### Health Indicators
-- **Average Session Value (ASV)**: Total gem spend / total players
-- **Gem Sink Rate**: Gems spent / gems earned (target: 0.8-1.2)
-- **Gold Sink Rate**: Gold spent / gold earned (target: 0.5-0.8)
-- **Battle Pass Conversion**: Premium buyers / total players (target: 5-15%)
-- **Gem Pack Conversion**: Buyers / daily active users (target: 2-5%)
-- **Prestige Participation**: L50 resets / total players (target: 20-40%)
-
-### Risk Indicators
-⚠️ **Gem inflation** (earn > spend) → free gems devalue, reduce login gems
-⚠️ **Gold hoarding** (spend < earn) → add gold sinks (cosmetics, upgrades)
-⚠️ **Whale dominance** (top 1% control 30%+ power) → skill-based matchmaking
-⚠️ **Prestige deflation** (low participation) → increase prestige bonus scaling
-⚠️ **IAP conversion drop** → A/B test gem pack pricing, add limited-time offers
-
----
-
-## Seasonal Adjustments
-
-### Battle Pass Cadence
-- 8-week seasons
-- 50-100 XP levels per season
-- Free track: cosmetics + 50 gems
-- Premium track: cosmetics + 100 gems (cost: 500 gems)
-
-### Event Economy
-- Limited-time event currency (e.g., "Dungeon Tokens")
-- Event shops with exclusive cosmetics
-- Prevents core economy inflation
-- Drives seasonal engagement
-
-### Prestige Scaling
-- Every prestige level = +5% to gold/XP earnings
-- Prestige 1 = 1.05×, Prestige 5 = 1.25×
-- Infinite scaling encourages endgame play
-- Prevents late-game economy stagnation
+## Economy Rules
+- **No gem → gold conversion** — prevents pay-to-win
+- **Server-authoritative** — all economy calculations on backend
+- **Live-tunable** — all constants readable from GameConfig DB table
+- **Exponential upgrade costs** — endgame gold sink preventing hoarding
+- **Repair costs scale with rarity** — legendary items cost 5× common to repair
