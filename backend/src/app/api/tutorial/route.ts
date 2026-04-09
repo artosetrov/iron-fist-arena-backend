@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
       event: 'tutorial_started',
       characterId: character_id,
       isReferred: result.isReferred,
-      weaponId: result.weapon?.itemCatalogId,
+      weaponId: result.weapon?.item?.catalogId,
     })
 
     return NextResponse.json({
