@@ -227,6 +227,7 @@ model User {
   iapTransactions IapTransaction[]
   dailyGemCard  DailyGemCard?
 
+  @@index([gold])
   @@map("users")
 }
 
