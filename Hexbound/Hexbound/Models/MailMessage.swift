@@ -195,6 +195,8 @@ struct BattleResultData: Codable {
     let isWin: Bool
     let opponentName: String
     let opponentId: String
+    let opponentAvatar: String?
+    let opponentClass: String?
     let matchId: String
     let totalTurns: Int
     let ratingBefore: Int
@@ -202,6 +204,10 @@ struct BattleResultData: Codable {
     let ratingChange: Int
     let goldReward: Int
     let xpReward: Int
+
+    var opponentClassEnum: CharacterClass {
+        CharacterClass(rawValue: opponentClass ?? "warrior") ?? .warrior
+    }
 }
 
 /// Generic success response used across multiple endpoints

@@ -411,7 +411,8 @@ async function main() {
         classRestriction: item.classRestriction ?? null,
         setName: item.setName ?? null,
         dropChance: item.dropChance ?? 0,
-        imageKey: item.imageKey ?? null,
+        imageKey: item.imageKey ?? item.catalogId,
+        imageUrl: `https://gqnyozmqbhgzprsftdzp.supabase.co/storage/v1/object/public/assets/items/${item.imageKey ?? item.catalogId}.png`,
       },
     })
     itemsCreated++

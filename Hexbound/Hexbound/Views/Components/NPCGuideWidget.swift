@@ -42,6 +42,8 @@ struct NPCGuideWidget: View {
     var onSkipAll: (() -> Void)? = nil
     /// "Continue" button (tutorial mode)
     var onContinue: (() -> Void)? = nil
+    /// "Don't show again" button (contextual hint mode — dismisses only this hint, not all)
+    var onDontShowAgain: (() -> Void)? = nil
 
     // MARK: - Optional CTA Button
     /// Custom CTA button text (e.g. "Go to Shop")
@@ -67,6 +69,9 @@ struct NPCGuideWidget: View {
     var typewriterEnabled: Bool = false
     /// Speed of typewriter animation (seconds per character)
     var typewriterSpeed: Double = 0.03
+    /// Inline mode: compact layout with inline avatar (40×40), no gradient overlay, no peek-behind.
+    /// Used by ContextualHintOverlay for first-visit hints. Full mode remains for onboarding/fortune wheel.
+    var inlineMode: Bool = false
 
     // MARK: - State
     @State private var avatarBounce = false
@@ -80,28 +85,34 @@ struct NPCGuideWidget: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            // Layer 0: dark-to-transparent fade behind the whole widget
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    DarkFantasyTheme.bgAbyss.opacity(0.6),
-                    DarkFantasyTheme.bgAbyss.opacity(0.9)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .allowsHitTesting(false)
+        if inlineMode {
+            // Inline mode: compact card with inline avatar, no gradient, no peek-behind
+            inlineSpeechCard
+        } else {
+            // Full mode: gradient overlay + peek-behind NPC avatar (onboarding, fortune wheel)
+            ZStack(alignment: .bottomLeading) {
+                // Layer 0: dark-to-transparent fade behind the whole widget
+                LinearGradient(
+                    colors: [
+                        Color.clear,
+                        DarkFantasyTheme.bgAbyss.opacity(0.6),
+                        DarkFantasyTheme.bgAbyss.opacity(0.9)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .allowsHitTesting(false)
 
-            // Layer 1 (back): NPC/player image, bottom-left, peeks above card
-            HStack(alignment: .bottom) {
-                npcAvatar
-                    .offset(y: customAvatarOffset ?? LayoutConstants.npcAvatarOffset)
-                Spacer()
+                // Layer 1 (back): NPC/player image, bottom-left, peeks above card
+                HStack(alignment: .bottom) {
+                    npcAvatar
+                        .offset(y: customAvatarOffset ?? LayoutConstants.npcAvatarOffset)
+                    Spacer()
+                }
+
+                // Layer 2 (front): speech card widget
+                speechCard
             }
-
-            // Layer 2 (front): speech card widget
-            speechCard
         }
     }
 
@@ -143,18 +154,30 @@ struct NPCGuideWidget: View {
                 // Figma: State=Full → Message + Actions
 
                 // Message text (with optional typewriter animation)
-                Group {
+                // Full text is always rendered (hidden when typewriter active) to reserve layout height,
+                // preventing the widget from growing as characters appear.
+                ZStack(alignment: .topLeading) {
+                    // Hidden full text — reserves the final height
+                    Group {
+                        if let attributed = attributedMessage {
+                            Text(attributed)
+                        } else if let plain = plainMessage {
+                            Text(plain)
+                        }
+                    }
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .lineLimit(3)
+                    .opacity(typewriterEnabled ? 0 : 1)
+
+                    // Visible typewriter text — overlaid on top
                     if typewriterEnabled {
                         Text(typewriterText)
-                    } else if let attributed = attributedMessage {
-                        Text(attributed)
-                    } else if let plain = plainMessage {
-                        Text(plain)
+                            .font(DarkFantasyTheme.body)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(3)
                     }
                 }
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .lineLimit(3)
                 .id(messageId)
                 .transition(.opacity)
                 .onAppear {
@@ -174,8 +197,8 @@ struct NPCGuideWidget: View {
                     } label: {
                         Text(label)
                     }
-                    .buttonStyle(.compactPrimary)
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
+                    .transition(.opacity)
                 }
 
                 // Optional action row (tutorial mode)
@@ -199,12 +222,14 @@ struct NPCGuideWidget: View {
                 .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
         )
         .contentShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+        // Prevent card height from animating when content changes (CTA appears, text loads)
+        .transaction { t in t.animation = nil }
         .onTapGesture {
             onTapCard?()
         }
     }
 
-    // MARK: - Action Row (Skip all + Continue)
+    // MARK: - Action Row (Skip all + Continue / Don't show again)
 
     @ViewBuilder
     private var actionRow: some View {
@@ -216,10 +241,17 @@ struct NPCGuideWidget: View {
                     skipAll()
                 } label: {
                     Text("Skip all")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.compactOutline(color: DarkFantasyTheme.textSecondary))
+            }
+
+            if let dontShow = onDontShowAgain {
+                Button {
+                    dontShow()
+                } label: {
+                    Text("Don't show again")
+                }
+                .buttonStyle(.compactOutline(color: DarkFantasyTheme.textSecondary))
             }
 
             if let continueAction = onContinue {
@@ -231,6 +263,120 @@ struct NPCGuideWidget: View {
                 .buttonStyle(.compactPrimary)
             }
         }
+    }
+
+    // MARK: - Inline Speech Card (compact, no gradient/peek)
+
+    /// Compact version: inline avatar + speech card in one row, no gradient overlay.
+    @ViewBuilder
+    private var inlineSpeechCard: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+            // Header: inline avatar + NPC name + dismiss
+            HStack(spacing: LayoutConstants.spaceSM) {
+                // Inline NPC avatar (40×40)
+                inlineAvatar
+
+                Text(npcTitle.uppercased())
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .tracking(2)
+
+                Spacer()
+
+                Button {
+                    onDismiss()
+                } label: {
+                    Text("✕")
+                        .font(DarkFantasyTheme.body.bold())
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Message (no typewriter — shown immediately)
+            Group {
+                if let attributed = attributedMessage {
+                    Text(attributed)
+                } else if let plain = plainMessage {
+                    Text(plain)
+                }
+            }
+            .font(DarkFantasyTheme.body)
+            .foregroundStyle(DarkFantasyTheme.textSecondary)
+            .lineLimit(3)
+
+            // Actions row: CTA + "Don't show again"
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Spacer()
+
+                if let dontShow = onDontShowAgain {
+                    Button {
+                        dontShow()
+                    } label: {
+                        Text("Don't show again")
+                    }
+                    .buttonStyle(.compactOutline(color: DarkFantasyTheme.textSecondary))
+                }
+
+                if let label = ctaLabel, let action = onCTA {
+                    Button {
+                        action()
+                    } label: {
+                        Text(label)
+                    }
+                    .buttonStyle(.compactPrimary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, LayoutConstants.npcBarPaddingH)
+        .padding(.vertical, LayoutConstants.npcBarPaddingV)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.borderMedium, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Inline Avatar (40×40, for inline mode)
+
+    @ViewBuilder
+    private var inlineAvatar: some View {
+        Group {
+            if usesPlayerAvatar {
+                AvatarImageView(
+                    skinKey: avatarSkinKey,
+                    characterClass: avatarClass ?? .warrior,
+                    size: 40
+                )
+            } else if let imageName = npcImageName, UIImage(named: imageName) != nil {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .clipShape(Circle())
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(DarkFantasyTheme.bgTertiary)
+                        .overlay(
+                            Circle()
+                                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+                        )
+                    Image(systemName: npcFallbackIcon)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                }
+            }
+        }
+        .frame(width: 40, height: 40)
+        .clipShape(Circle())
+        .overlay(
+            Circle()
+                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // MARK: - Typewriter Animation
@@ -268,13 +414,12 @@ struct NPCGuideWidget: View {
         } label: {
             Group {
                 if usesPlayerAvatar {
-                    // Dynamic player character avatar
+                    // Dynamic player character avatar — no circle clip, peeks out like static NPCs
                     AvatarImageView(
                         skinKey: avatarSkinKey,
                         characterClass: avatarClass ?? .warrior,
                         size: customAvatarSize ?? LayoutConstants.npcAvatarSize
                     )
-                    .clipShape(Circle())
                 } else if let imageName = npcImageName, UIImage(named: imageName) != nil {
                     // Static NPC asset image
                     Image(imageName)

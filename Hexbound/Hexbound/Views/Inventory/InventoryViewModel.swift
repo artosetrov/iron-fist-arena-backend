@@ -254,7 +254,7 @@ final class InventoryViewModel {
         if result.success {
             SFXManager.shared.play(.uiUpgradeSuccess)
             HapticManager.success()
-            appState.showToast("\(item.itemName) +\(result.newLevel)!", type: .reward)
+            appState.showToast("⬆ \(item.itemName) +\(result.newLevel)!", type: .reward)
         } else if result.protectionUsed {
             appState.showToast("Protected — level kept at +\(result.newLevel)", type: .info)
         } else if result.levelLost {

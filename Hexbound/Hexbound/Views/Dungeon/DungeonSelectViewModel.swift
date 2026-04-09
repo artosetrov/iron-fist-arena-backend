@@ -30,22 +30,20 @@ final class DungeonSelectViewModel {
     // MARK: - Dungeon State
 
     func stateFor(_ dungeon: DungeonInfo) -> DungeonState {
-        // Check level lock
-        if playerLevel < dungeon.minLevel {
-            // Find the previous dungeon
-            if let idx = dungeons.firstIndex(where: { $0.id == dungeon.id }), idx > 0 {
-                let prev = dungeons[idx - 1]
-                return .locked(requirement: "Complete \(prev.name) first")
-            }
-            return .locked(requirement: "Reach Level \(dungeon.minLevel)")
-        }
-
-        // Check if previous dungeon is completed (sequential unlock)
+        // Sequential unlock: previous dungeon must be completed
+        // Completing the previous dungeon is the PRIMARY unlock condition.
+        // Level requirement is only enforced for the very first dungeon (no predecessor).
         if let idx = dungeons.firstIndex(where: { $0.id == dungeon.id }), idx > 0 {
             let prev = dungeons[idx - 1]
             let prevDefeated = dungeonProgress[prev.id] ?? 0
             if prevDefeated < prev.totalBosses {
                 return .locked(requirement: "Complete \(prev.name) first")
+            }
+            // Previous dungeon completed → this one is unlocked regardless of level
+        } else {
+            // First dungeon in the list — use level requirement as gate
+            if playerLevel < dungeon.minLevel {
+                return .locked(requirement: "Reach Level \(dungeon.minLevel)")
             }
         }
 

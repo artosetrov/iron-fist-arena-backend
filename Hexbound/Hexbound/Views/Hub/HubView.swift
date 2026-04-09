@@ -317,7 +317,7 @@ struct HubView: View {
                 case "hub_first_pvp":
                     appState.mainPath.append(AppRoute.arena)
                 case "hub_first_dungeon":
-                    appState.mainPath.append(AppRoute.dungeonSelect)
+                    appState.mainPath.append(AppRoute.dungeonMap)
                 case "hub_first_mine":
                     appState.mainPath.append(AppRoute.goldMine)
                 case "hub_unclaimed_rewards":
@@ -326,7 +326,7 @@ struct HubView: View {
                     break
                 }
             }
-        })
+        }, bottomInset: LayoutConstants.space2XL + LayoutConstants.spaceLG)
         .task { await checkDailyLogin() }
         .task { await fetchUnreadMailCount() }
         .onAppear {
@@ -365,7 +365,19 @@ struct HubView: View {
             }
             // Fetch tutorial quest state for NPC quest banner + building indicators
             if let charId = appState.currentCharacter?.id {
-                Task { await TutorialManager.shared.fetchTutorialState(characterId: charId) }
+                Task {
+                    // Fallback: if welcome gift was never claimed (tutorialStep == 0), claim it now
+                    let tutorial = TutorialManager.shared
+                    await tutorial.fetchTutorialState(characterId: charId)
+                    if tutorial.serverTutorialStep == 0 && !tutorial.tutorialSkipped {
+                        let claimed = await tutorial.initializeTutorial(characterId: charId)
+                        if claimed {
+                            // Reload game data to pick up starter weapon + potions
+                            let initService = GameInitService(appState: appState, cache: cache)
+                            await initService.loadGameData()
+                        }
+                    }
+                }
             }
         }
     }

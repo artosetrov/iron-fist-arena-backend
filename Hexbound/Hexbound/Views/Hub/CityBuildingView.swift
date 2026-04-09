@@ -52,18 +52,17 @@ struct CityBuildingView: View {
                 // Lock overlay
                 if isLocked {
                     VStack(spacing: LayoutConstants.space2XS) {
-                        Image(systemName: "lock.fill")
-                            .font(DarkFantasyTheme.section.bold())
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        Image("icon-padlock")
+                            .resizable()
+                            .interpolation(.high)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 48, height: 48)
+                            .saturation(0.4)
+                            .opacity(0.85)
                         Text(requiredLevel != nil ? "LV.\(requiredLevel!)" : "SOON")
                             .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
-                    .padding(LayoutConstants.spaceSM)
-                    .background(
-                        Circle()
-                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.7))
-                    )
                 }
             }
         }

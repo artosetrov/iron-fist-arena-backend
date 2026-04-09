@@ -28,7 +28,7 @@ struct HeroIntegratedCard: View {
         VStack(spacing: 0) {
             // ═══ EQUIPMENT GRID ═══
             equipmentGrid
-                .padding(.horizontal, LayoutConstants.heroSlotGap)
+                .padding(.horizontal, LayoutConstants.spaceMS)
                 .padding(.top, LayoutConstants.heroCardPadding)
                 .padding(.bottom, LayoutConstants.spaceLG)
 
@@ -61,20 +61,26 @@ struct HeroIntegratedCard: View {
     // MARK: - Equipment Grid (GeometryReader for precise layout)
 
     /// Aspect ratio for the equipment grid (width / height)
-    private var gridAspectRatio: CGFloat {
-        let slotGap = LayoutConstants.heroSlotGap
-        // Use reference width to compute ratio (scale-independent)
+    /// Grid = 4 cols × (3 rows top + 1 row bottom), gaps between
+    private var aspectRatioForGrid: CGFloat {
+        // Use a reference width to compute ratio (ratio is scale-independent)
         let refW: CGFloat = 400
+        let slotGap = LayoutConstants.heroSlotGap
         let cw = (refW - 3 * slotGap) / 4
-        let height = 4 * cw + 3 * slotGap  // 3 top rows + gap + 1 bottom row
+        let height = 3 * cw + 2 * slotGap + slotGap + cw // top 3 rows + gap + bottom row
         return refW / height
+    }
+
+    /// Computes cell width from actual container width
+    private func gridCellWidth(in containerWidth: CGFloat) -> CGFloat {
+        (containerWidth - 3 * LayoutConstants.heroSlotGap) / 4
     }
 
     private var equipmentGrid: some View {
         GeometryReader { geo in
             let containerW = geo.size.width
             let slotGap = LayoutConstants.heroSlotGap
-            let cw = (containerW - 3 * slotGap) / 4
+            let cw = gridCellWidth(in: containerW)
             // Portrait = exactly 2 cells + 1 gap (centered in grid)
             let portraitW = 2 * cw + slotGap
             let portraitH = 3 * cw + 2 * slotGap
@@ -109,7 +115,7 @@ struct HeroIntegratedCard: View {
                 }
             }
         }
-        .aspectRatio(gridAspectRatio, contentMode: .fit)
+        .aspectRatio(aspectRatioForGrid, contentMode: .fit)
     }
 
     // MARK: - Data Section (below divider)

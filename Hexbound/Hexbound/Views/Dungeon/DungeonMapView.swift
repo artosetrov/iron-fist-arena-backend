@@ -35,6 +35,8 @@ struct DungeonMapView: View {
 
                 ZStack {
                     // Main scrollable map — fills entire screen
+                    // Initial scroll position centers on the next available dungeon
+                    let anchorX = nextDungeon?.relativeX ?? 0
                     ScrollView(.horizontal, showsIndicators: false) {
                         ZStack(alignment: .topLeading) {
                             // Layer 0: Dark background
@@ -48,12 +50,14 @@ struct DungeonMapView: View {
 
                             // Layer 2: Dungeon buildings
                             let buildings = resolvedDungeonMapBuildings(from: cache)
+                            let nextId = nextDungeon?.id
                             ForEach(buildings) { building in
                                 DungeonMapBuildingView(
                                     building: building,
                                     terrainSize: terrainSize,
-                                    isLocked: characterLevel < building.minLevel,
+                                    isLocked: isDungeonLocked(building, in: buildings),
                                     isCompleted: isDungeonCompleted(building.id),
+                                    isNext: building.id == nextId,
                                     onTap: { tapped in
                                         navigateToDungeon(tapped)
                                     }
@@ -67,7 +71,7 @@ struct DungeonMapView: View {
                         .frame(width: terrainWidth, height: viewHeight)
                         .background(ScrollBounceDisabler())
                     }
-                    .defaultScrollAnchor(.leading)
+                    .defaultScrollAnchor(UnitPoint(x: anchorX, y: 0.5))
                 }
             }
             .ignoresSafeArea()
@@ -110,19 +114,36 @@ struct DungeonMapView: View {
     private var nextDungeon: DungeonMapBuilding? {
         let buildings = resolvedDungeonMapBuildings(from: cache).sorted { $0.sortOrder < $1.sortOrder }
         // First: find first unlocked but not completed
-        if let next = buildings.first(where: { characterLevel >= $0.minLevel && !isDungeonCompleted($0.id) }) {
+        if let next = buildings.first(where: { !isDungeonLocked($0, in: buildings) && !isDungeonCompleted($0.id) }) {
             return next
         }
         // Fallback: first locked dungeon
-        return buildings.first(where: { characterLevel < $0.minLevel })
+        return buildings.first(where: { isDungeonLocked($0, in: buildings) })
     }
 
     // MARK: - Helpers
 
+    /// Sequential unlock: a dungeon is locked only if its predecessor hasn't been completed.
+    /// The first dungeon uses level requirement as a gate.
+    private func isDungeonLocked(_ building: DungeonMapBuilding, in buildings: [DungeonMapBuilding]) -> Bool {
+        let sorted = buildings.sorted { $0.sortOrder < $1.sortOrder }
+        guard let idx = sorted.firstIndex(where: { $0.id == building.id }) else { return true }
+
+        if idx == 0 {
+            // First dungeon: only locked by level
+            return characterLevel < building.minLevel
+        }
+
+        // All others: locked until previous dungeon is completed
+        let prev = sorted[idx - 1]
+        return !isDungeonCompleted(prev.id)
+    }
+
     private func isDungeonCompleted(_ dungeonId: String) -> Bool {
         guard let defeated = progress[dungeonId] else { return false }
-        // A dungeon is completed if all 10 bosses are defeated
-        return defeated >= 10
+        // Use actual boss count from cached dungeon list, fallback to 10
+        let totalBosses = cache.cachedDungeonList()?.first(where: { $0.id == dungeonId })?.totalBosses ?? 10
+        return defeated >= totalBosses
     }
 
     private func navigateToDungeon(_ building: DungeonMapBuilding) {

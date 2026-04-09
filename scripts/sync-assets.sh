@@ -238,9 +238,9 @@ sync_category() {
     files=$(echo "$response" | python3 -c "
 import json, sys, re
 data = json.load(sys.stdin)
-# Skip patterns: loot UUIDs, raw timestamp uploads
+# Skip patterns: raw timestamp uploads, placeholders
+# NOTE: loot_* assets ARE synced — they have unique art in Storage
 SKIP_PATTERNS = [
-    re.compile(r'^loot_[0-9a-f]{8}-'),        # loot_01c8c5de-5083-...
     re.compile(r'^\d{10,}_[a-z0-9]+\.'),       # 1773839797311_90sowr.png
     re.compile(r'^\.emptyFolderPlaceholder$'),  # Supabase placeholder
 ]

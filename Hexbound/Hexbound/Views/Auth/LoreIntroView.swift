@@ -383,9 +383,7 @@ struct LoreIntroView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         if isEntering {
-                            HexPulseLoader(.compact)
-                                .tint(DarkFantasyTheme.textOnGold)
-                                .scaleEffect(0.8)
+                            HexPulseLoader.onGold()
                         }
                         Text(isEntering ? "ENTERING..." : "ENTER HEXBOUND")
                             .font(DarkFantasyTheme.buttonLabel)
@@ -493,6 +491,10 @@ struct LoreIntroView: View {
         guard !isEntering else { return }
         isEntering = true
         Task { @MainActor in
+            // Claim welcome gift (starter weapon, potions, stamina) before loading game data
+            if let charId = appState.currentCharacter?.id {
+                _ = await TutorialManager.shared.initializeTutorial(characterId: charId)
+            }
             let initService = GameInitService(appState: appState, cache: cache)
             await initService.loadGameData()
             appState.currentScreen = .game

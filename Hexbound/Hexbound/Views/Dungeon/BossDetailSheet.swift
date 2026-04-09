@@ -41,11 +41,6 @@ struct BossDetailSheet: View {
 
                     GoldDivider()
 
-                    // Stats section
-                    statsSection
-
-                    GoldDivider()
-
                     // Loot section
                     if !boss.loot.isEmpty {
                         lootSection
@@ -74,23 +69,7 @@ struct BossDetailSheet: View {
                         .ignoresSafeArea()
 
                     VStack(spacing: LayoutConstants.spaceMD) {
-                        // Pulsing boss icon
-                        Image(systemName: "bolt.shield.fill")
-                            .font(DarkFantasyTheme.cinematicTitle.bold())
-                            .foregroundStyle(DarkFantasyTheme.gold)
-                            .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
-
-                        Text("PREPARING FOR BATTLE...")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.goldBright)
-                            .tracking(2)
-
-                        // Diamond loading dots (3 animated)
-                        HStack(spacing: LayoutConstants.spaceSM) {
-                            ForEach(0..<3, id: \.self) { i in
-                                DiamondLoadingDot(delay: Double(i) * 0.25)
-                            }
-                        }
+                        HexPulseLoader(.standard, message: "PREPARING FOR BATTLE")
                     }
                     .padding(LayoutConstants.spaceLG)
                     .background(

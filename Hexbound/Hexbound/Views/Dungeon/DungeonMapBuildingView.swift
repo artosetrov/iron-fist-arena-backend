@@ -7,9 +7,12 @@ struct DungeonMapBuildingView: View {
     let terrainSize: CGSize
     let isLocked: Bool
     let isCompleted: Bool
+    /// Whether this is the next dungeon the player should tackle (pulsing highlight)
+    var isNext: Bool = false
     let onTap: (DungeonMapBuilding) -> Void
 
     @State private var isPressed = false
+    @State private var glowPulse = false
 
     private var buildingHeight: CGFloat {
         terrainSize.height * building.relativeSize
@@ -20,6 +23,16 @@ struct DungeonMapBuildingView: View {
         let posY = terrainSize.height * building.relativeY
 
         VStack(spacing: LayoutConstants.spaceXS) {
+            // Pulsing "next dungeon" indicator arrow
+            if isNext {
+                Image(systemName: "arrowtriangle.down.fill")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.8), radius: 8)
+                    .offset(y: glowPulse ? 4 : -2)
+                    .opacity(glowPulse ? 1.0 : 0.6)
+            }
+
             // Label above building
             dungeonLabel
 
@@ -29,8 +42,10 @@ struct DungeonMapBuildingView: View {
                 .shadow(
                     color: isLocked
                         ? Color.clear
-                        : building.glowColor.opacity(isPressed ? 0.6 : 0),
-                    radius: isPressed ? 16 : 0
+                        : isNext
+                            ? building.glowColor.opacity(glowPulse ? 0.7 : 0.3)
+                            : building.glowColor.opacity(isPressed ? 0.6 : 0),
+                    radius: isNext ? (glowPulse ? 20 : 10) : (isPressed ? 16 : 0)
                 )
                 .brightness(isPressed ? -0.06 : 0)
                 .opacity(isLocked ? 0.6 : 1.0)
@@ -40,7 +55,16 @@ struct DungeonMapBuildingView: View {
         .onTapGesture {
             handleTap()
         }
-        .onAppear {}
+        .onAppear {
+            if isNext {
+                withAnimation(
+                    .easeInOut(duration: 1.2)
+                    .repeatForever(autoreverses: true)
+                ) {
+                    glowPulse = true
+                }
+            }
+        }
     }
 
     // MARK: - Label
@@ -52,11 +76,7 @@ struct DungeonMapBuildingView: View {
                 .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
-            if isLocked {
-                Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            } else if isCompleted {
+            if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.success)
@@ -73,9 +93,15 @@ struct DungeonMapBuildingView: View {
                 .stroke(
                     isLocked
                         ? DarkFantasyTheme.textSecondary.opacity(0.4)
-                        : DarkFantasyTheme.gold.opacity(0.7),
-                    lineWidth: 1
+                        : isNext
+                            ? DarkFantasyTheme.gold
+                            : DarkFantasyTheme.gold.opacity(0.7),
+                    lineWidth: isNext ? 1.5 : 1
                 )
+        )
+        .shadow(
+            color: isNext ? DarkFantasyTheme.gold.opacity(glowPulse ? 0.5 : 0.2) : Color.clear,
+            radius: isNext ? 6 : 0
         )
     }
 
@@ -113,18 +139,17 @@ struct DungeonMapBuildingView: View {
             // Lock overlay for locked dungeons
             if isLocked {
                 VStack(spacing: LayoutConstants.space2XS) {
-                    Image(systemName: "lock.fill")
-                        .font(DarkFantasyTheme.section.bold())
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Image("icon-padlock")
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 32, height: 32)
+                        .saturation(0.3)
+                        .opacity(0.75)
                     Text("Lvl \(building.minLevel)")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
-                .padding(LayoutConstants.spaceSM)
-                .background(
-                    Circle()
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.7))
-                )
             }
         }
     }

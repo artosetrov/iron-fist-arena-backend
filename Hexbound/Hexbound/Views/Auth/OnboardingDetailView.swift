@@ -197,11 +197,7 @@ struct OnboardingDetailView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceMD) {
-                Image(systemName: "shield.lefthalf.filled")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                    .opacity(forgeGlow ? 1.0 : 0.4)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(forgeGlow ? 0.6 : 0.1), radius: forgeGlow ? 16 : 4)
+                HexPulseLoader(.standard)
 
                 Text("Forging Your Hero...")
                     .font(DarkFantasyTheme.section)

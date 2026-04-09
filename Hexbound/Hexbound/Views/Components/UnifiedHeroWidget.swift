@@ -5,8 +5,9 @@ import SwiftUI
 ///
 /// Layout:
 /// ┌───────────────────────────────────────────────────┐
-/// │ [Avatar]  Name           💰 18,838  💎 151  ⚡ 120/120 │
+/// │ [Avatar]  Name                         ⚡ 120/120 │
 /// │ [Lv.14]  ████████████ HP 1,030/1,030 ████████████ │
+/// │           💰 18,838  💎 151                        │
 /// └───────────────────────────────────────────────────┘
 @MainActor
 struct UnifiedHeroWidget: View {
@@ -44,11 +45,17 @@ struct UnifiedHeroWidget: View {
 
             // MARK: Right — Name, HP bar, Resources
             VStack(alignment: .leading, spacing: LayoutConstants.widgetRowGap) {
-                // Row 1: Name
-                Text(character.characterName)
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .lineLimit(1)
+                // Row 1: Name + Stamina
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Text(character.characterName)
+                        .font(DarkFantasyTheme.section)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
+
+                    staminaInlineView
+                }
 
                 // Row 2: HP bar (full width, text inside)
                 hpBarSection
@@ -225,9 +232,6 @@ struct UnifiedHeroWidget: View {
                 )
             }
 
-            // Stamina inline (always visible — it's an action resource, not a currency)
-            staminaInlineView
-
             Spacer(minLength: 0)
         }
     }
@@ -235,20 +239,20 @@ struct UnifiedHeroWidget: View {
     // MARK: - Stamina Inline Display (⚡ 85/120)
 
     private var staminaInlineView: some View {
-        HStack(spacing: LayoutConstants.space2XS) {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image("icon-stamina")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 18, height: 18)
+                .frame(width: 22, height: 22)
 
             HStack(spacing: 0) {
                 NumberTickUpText(
                     value: character.currentStamina,
                     color: isStaminaLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina,
-                    font: DarkFantasyTheme.body.bold()
+                    font: DarkFantasyTheme.section
                 )
                 Text("/\(character.maxStamina)")
-                    .font(DarkFantasyTheme.body.bold())
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(
                         (isStaminaLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
                             .opacity(0.6)

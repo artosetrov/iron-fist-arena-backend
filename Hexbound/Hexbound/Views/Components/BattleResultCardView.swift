@@ -103,8 +103,8 @@ struct BattleResultCardView: View {
             cardContent
                 .background(
                     RadialGlowBackground(
-                        baseColor: DarkFantasyTheme.bgSecondary,
-                        glowColor: DarkFantasyTheme.bgTertiary,
+                        baseColor: DarkFantasyTheme.bgPrimary,
+                        glowColor: DarkFantasyTheme.bgSecondary,
                         glowIntensity: 0.4,
                         cornerRadius: LayoutConstants.modalRadius
                     )

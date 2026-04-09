@@ -193,7 +193,8 @@ struct CharacterSelectionView: View {
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
-            .padding(.vertical, LayoutConstants.spaceSM)
+            .padding(.top, LayoutConstants.spaceLG)
+            .padding(.bottom, LayoutConstants.spaceSM)
         }
         .alert(
             "Delete Hero?",
@@ -470,12 +471,7 @@ struct CharacterSelectionView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: LayoutConstants.spaceMD) {
-                Image("hexbound-logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 64, height: 64)
-                    .opacity(enterGlow ? 1.0 : 0.5)
-                    .shadow(color: DarkFantasyTheme.gold.opacity(enterGlow ? 0.6 : 0.1), radius: enterGlow ? 16 : 4)
+                HexPulseLoader(.standard)
 
                 Text("Entering the Realm...")
                     .font(DarkFantasyTheme.title)
@@ -575,10 +571,9 @@ struct HeroSelectionCard: View {
                         .allowsHitTesting(false)
                 }
 
-                // 4. "ACTIVE HERO" ribbon at bottom when selected
+                // 4. "ACTIVE HERO" ribbon at top when selected
                 if isSelected {
                     VStack(spacing: 0) {
-                        Spacer()
                         Text("◆  ACTIVE  ◆")
                             .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
@@ -597,6 +592,7 @@ struct HeroSelectionCard: View {
                                 )
                             )
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 8)
+                        Spacer()
                     }
                     .frame(width: width, height: height)
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))

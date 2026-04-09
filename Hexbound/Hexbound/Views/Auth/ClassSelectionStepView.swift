@@ -32,10 +32,11 @@ struct ClassSelectionStepView: View {
                             }
                     )
 
-                Spacer(minLength: LayoutConstants.spaceMD)
+                Spacer()
 
                 classCarousel
-                    .padding(.bottom, LayoutConstants.spaceLG)
+
+                Spacer()
             }
         }
     }
@@ -91,9 +92,12 @@ struct ClassSelectionStepView: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
-            Text(charClass.bonuses)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSuccess)
+            // Stat bonus pills — same style as AppearanceStepView
+            HStack(spacing: LayoutConstants.spaceSM) {
+                ForEach(classBonusPairs(charClass), id: \.stat) { bonus in
+                    statBonusCell(name: bonus.stat, value: bonus.value)
+                }
+            }
 
             // Stat distribution bars
             classStatBars(charClass)
@@ -118,15 +122,10 @@ struct ClassSelectionStepView: View {
 
     private var classCarousel: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            Button { SFXManager.shared.play(.uiTap); vm.selectPreviousClass() } label: {
-                Image("ui-arrow-left")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 28, height: 28)
-                    .frame(width: 44, height: 44)
+            arrowButton(image: "ui-arrow-left", label: "Previous class") {
+                SFXManager.shared.play(.uiTap)
+                withAnimation(MotionConstants.smooth) { vm.selectPreviousClass() }
             }
-            .buttonStyle(.scalePress)
-            .accessibilityLabel("Previous class")
 
             HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(Array(CharacterClass.allCases.enumerated()), id: \.element.id) { index, charClass in
@@ -138,17 +137,33 @@ struct ClassSelectionStepView: View {
                 }
             }
 
-            Button { SFXManager.shared.play(.uiTap); vm.selectNextClass() } label: {
-                Image("ui-arrow-right")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 28, height: 28)
-                    .frame(width: 44, height: 44)
+            arrowButton(image: "ui-arrow-right", label: "Next class") {
+                SFXManager.shared.play(.uiTap)
+                withAnimation(MotionConstants.smooth) { vm.selectNextClass() }
             }
-            .buttonStyle(.scalePress)
-            .accessibilityLabel("Next class")
         }
         .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    /// Arrow button with rounded-rect backing — matches dice button style from NameStepView.
+    private func arrowButton(image: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .frame(width: 56, height: 56)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                .fill(DarkFantasyTheme.gold.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                .stroke(DarkFantasyTheme.gold.opacity(0.25), lineWidth: 1)
+        )
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     // MARK: - Class Medallion
@@ -235,6 +250,59 @@ struct ClassSelectionStepView: View {
             inset: 2,
             color: DarkFantasyTheme.classColor(for: charClass).opacity(0.08)
         )
+    }
+
+    // MARK: - Stat Bonus Cell (matches AppearanceStepView style)
+
+    private struct BonusPair {
+        let stat: String
+        let value: Int
+    }
+
+    private func classBonusPairs(_ charClass: CharacterClass) -> [BonusPair] {
+        switch charClass {
+        case .warrior: [BonusPair(stat: "Strength", value: 3), BonusPair(stat: "Vitality", value: 2)]
+        case .rogue:   [BonusPair(stat: "Agility", value: 3), BonusPair(stat: "Luck", value: 2)]
+        case .mage:    [BonusPair(stat: "Intelligence", value: 3), BonusPair(stat: "Wisdom", value: 2)]
+        case .tank:    [BonusPair(stat: "Vitality", value: 3), BonusPair(stat: "Endurance", value: 2)]
+        }
+    }
+
+    @ViewBuilder
+    private func statBonusCell(name: String, value: Int) -> some View {
+        let statType = StatType.allCases.first(where: { $0.fullName == name })
+        let accentColor = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
+
+        HStack(spacing: LayoutConstants.spaceSM) {
+            if let statType {
+                Image(statType.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+            }
+
+            Text(name)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+
+            Spacer(minLength: 4)
+
+            Text("+\(value)")
+                .font(DarkFantasyTheme.cardTitle.bold())
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+        }
+        .padding(.horizontal, LayoutConstants.spaceMS)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(accentColor.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
+        )
+        .shadow(color: accentColor.opacity(0.2), radius: 6, y: 2)
     }
 
     // MARK: - Stat Profile Data

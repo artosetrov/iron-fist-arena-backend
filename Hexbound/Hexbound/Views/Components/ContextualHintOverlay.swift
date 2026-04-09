@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - Contextual Hint Overlay
 
-/// View modifier that shows contextual NPC hints based on player state.
-/// - First visit: Full NPCGuideWidget (bottom sheet with typewriter animation)
-/// - Repeat visits: Compact inline NPCCompactHintView
+/// Unified view modifier that shows contextual NPC hints based on player state.
+/// - First visit: Inline NPC Speech Card (compact NPCGuideWidget without typewriter)
+/// - Repeat visits: Category-based ContextualHintBar
 ///
 /// Usage:
 /// ```swift
@@ -13,6 +13,8 @@ import SwiftUI
 struct ContextualHintOverlay: ViewModifier {
     let hint: NPCHint?
     var onCTA: (() -> Void)? = nil
+    /// Extra bottom padding so the hint clears floating buttons (e.g. Hub map toggle)
+    var bottomInset: CGFloat = 0
     @Environment(AppState.self) private var appState
     @State private var showCompact = false
     @State private var dismissed = false
@@ -27,7 +29,7 @@ struct ContextualHintOverlay: ViewModifier {
                     let hasSeen = hintManager.hasSeen(hint.id, for: charId)
 
                     if !hasSeen {
-                        // First visit: Full NPC widget
+                        // First visit: NPC Speech Card (no typewriter, CTA visible immediately)
                         if let active = hintManager.activeHint, active.id == hint.id {
                             NPCGuideWidget(
                                 npcTitle: active.npcName,
@@ -36,10 +38,7 @@ struct ContextualHintOverlay: ViewModifier {
                                 },
                                 npcImageName: active.npcImage,
                                 plainMessage: active.message,
-                                onSkipAll: {
-                                    hintManager.skipAll(for: charId)
-                                },
-                                onContinue: {
+                                onDontShowAgain: {
                                     hintManager.dismiss(for: charId)
                                 },
                                 ctaLabel: active.ctaLabel,
@@ -49,15 +48,15 @@ struct ContextualHintOverlay: ViewModifier {
                                         action()
                                     }
                                 },
-                                typewriterEnabled: true
+                                inlineMode: true
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                             .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.bottom, LayoutConstants.spaceSM)
+                            .padding(.bottom, LayoutConstants.spaceSM + bottomInset)
                         }
                     } else if hint.compactText != nil, showCompact {
-                        // Repeat visit: Compact widget
-                        NPCCompactHintView(
+                        // Repeat visit: Category-based compact bar
+                        ContextualHintBar(
                             hint: hint,
                             onAction: onCTA,
                             onDismiss: {
@@ -68,7 +67,7 @@ struct ContextualHintOverlay: ViewModifier {
                         )
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM)
+                        .padding(.bottom, LayoutConstants.spaceSM + bottomInset)
                     }
                 }
             }
@@ -102,9 +101,9 @@ struct ContextualHintOverlay: ViewModifier {
 
 extension View {
     /// Shows a contextual NPC hint based on player state.
-    /// First visit: full NPCGuideWidget. Repeat: compact inline widget.
+    /// First visit: NPC Speech Card. Repeat: ContextualHintBar.
     /// Pass nil hint to show nothing.
-    func contextualHint(_ hint: NPCHint?, onCTA: (() -> Void)? = nil) -> some View {
-        modifier(ContextualHintOverlay(hint: hint, onCTA: onCTA))
+    func contextualHint(_ hint: NPCHint?, onCTA: (() -> Void)? = nil, bottomInset: CGFloat = 0) -> some View {
+        modifier(ContextualHintOverlay(hint: hint, onCTA: onCTA, bottomInset: bottomInset))
     }
 }

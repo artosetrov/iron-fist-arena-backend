@@ -25,11 +25,7 @@ struct CityBuildingLabel: View {
                 .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
-            if isLocked {
-                Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            } else if let badge {
+            if !isLocked, let badge {
                 Text(badge)
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textOnGold)

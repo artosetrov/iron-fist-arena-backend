@@ -118,33 +118,8 @@ struct ArenaDetailView: View {
                         }
                     } // VStack
 
-                    // Low HP NPC Widget — overrides arena guide when HP < 30%
-                    if showLowHPGuide && isLowHP, let char = appState.currentCharacter {
-                        VStack {
-                            Spacer()
-                            NPCGuideWidget(
-                                npcTitle: "Field Medic",
-                                onDismiss: {
-                                    withAnimation(MotionConstants.snappy) {
-                                        showLowHPGuide = false
-                                    }
-                                },
-                                avatarSkinKey: char.avatar,
-                                avatarClass: char.characterClass,
-                                plainMessage: "You're critically wounded! Restore your HP before heading into battle.",
-                                onTapCard: {
-                                    appState.shopInitialTab = 3
-                                    appState.mainPath.append(AppRoute.shop)
-                                }
-                            )
-                            .padding(.horizontal, LayoutConstants.npcOuterPadding)
-                            .padding(.bottom, LayoutConstants.npcOuterPadding)
-                        }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-
                     // NPC Guide Widget — player's own avatar as arena coach (hidden when HP is critical)
-                    if showArenaGuide && !isLowHP, let char = appState.currentCharacter {
+                    if showArenaGuide && !isLowHP, appState.currentCharacter != nil {
                         VStack {
                             Spacer()
                             NPCGuideWidget(
@@ -155,10 +130,10 @@ struct ArenaDetailView: View {
                                     }
                                     arenaGuideDismissed = true
                                 },
-                                avatarSkinKey: char.avatar,
-                                avatarClass: char.characterClass,
+                                npcImageName: "rush-ui-combat-skull",
                                 plainMessage: "Your stance affects attack and defense zones. Tap to change it before battle.",
-                                onTapCard: {
+                                ctaLabel: "CHANGE STANCE",
+                                onCTA: {
                                     appState.mainPath.append(AppRoute.stanceSelector)
                                 }
                             )
@@ -255,23 +230,10 @@ struct ArenaDetailView: View {
         .onDisappear {
             AudioManager.shared.playBGM("stray-city.mp3")
         }
-        .onChange(of: isLowHP) { _, lowHP in
-            if lowHP {
-                withAnimation(.easeIn(duration: 0.25)) {
-                    showLowHPGuide = true
-                }
-            } else {
-                // HP recovered — hide the guide
-                withAnimation(MotionConstants.snappy) {
-                    showLowHPGuide = false
-                }
-            }
+        .onChange(of: isLowHP) { _, _ in
+            updateArenaHint()
         }
         .task {
-            // Show low HP guide if critically wounded
-            if isLowHP {
-                showLowHPGuide = true
-            }
             // Show arena guide NPC only on first visit (not yet dismissed)
             if !arenaGuideDismissed {
                 showArenaGuide = true
@@ -538,8 +500,10 @@ struct ArenaDetailView: View {
     private func revengeCard(_ entry: RevengeEntry, vm: ArenaViewModel) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Attacker info
-            Text(entry.attackerClass.icon)
-                .font(.system(size: 24)) // emoji — keep
+            Image(entry.attackerClass.iconAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
                 .frame(width: 40, height: 40)
                 .background(
                     RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
@@ -618,7 +582,7 @@ struct ArenaDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Win/Loss indicator
             Image(systemName: match.isWin ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 18))
+                .font(.system(size: 20))
                 .foregroundStyle(match.isWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
             // Opponent info
@@ -692,8 +656,9 @@ struct ArenaDetailView: View {
     @ViewBuilder
     private func emptyState<CTA: View>(icon: String, message: String, @ViewBuilder cta: () -> CTA = { EmptyView() }) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            Text(icon)
-                .font(.system(size: 40)) // emoji — keep
+            Image(systemName: icon)
+                .font(.system(size: 40))
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(message)
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)

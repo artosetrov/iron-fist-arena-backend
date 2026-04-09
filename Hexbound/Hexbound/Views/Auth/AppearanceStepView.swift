@@ -132,7 +132,7 @@ struct AppearanceStepView: View {
                     }
                 }
                 .padding(.horizontal, LayoutConstants.bannerPadding)
-                .padding(.vertical, LayoutConstants.spaceXS)
+                .padding(.vertical, LayoutConstants.spaceMS)
             } else {
                 Text("Select a race to see avatars")
                     .font(DarkFantasyTheme.body)

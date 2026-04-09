@@ -1,42 +1,30 @@
 import SwiftUI
 
-// MARK: - Onboarding Slide Data
+// MARK: - Comic Panel Data
 
-private struct OnboardingSlide {
-    let backgroundAsset: String
-    let accentColor: Color
+private struct ComicPanel {
+    let area: String          // Grid area name
+    let imageAsset: String    // xcassets name
+    let caption: String?      // Typewriter text below grid
+    let isWide: Bool          // Landscape (16:9+) vs portrait/square
+}
+
+private struct ComicPage {
     let title: String
-    let body: String
-    let footnote: String?
-    /// Cinematic letterbox bars height ratio (0 = no bars, 0.08 = heavy)
-    let letterbox: CGFloat
+    let accentColor: Color
+    let panels: [ComicPanel]
+    let finalText: String?    // "YOUR TURN." on last page
+    let bgmTrack: String      // AudioManager BGM filename
 }
 
 // MARK: - OnboardingCinematicView
-// Full-screen cinematic onboarding with purpose-made illustrations.
-// 10 slides telling the Hexbound story through custom art.
-// Full-bleed backgrounds, ember particles, parallax, typewriter text.
+// Comic-style 3-page onboarding with mosaic panel layout.
+// Panels reveal sequentially with typewriter captions.
+// Matches comic-onboarding-prototype-v8.jsx 1:1.
 
 struct OnboardingCinematicView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
-
-    @State private var currentSlide = 0
-    @State private var slideOffset: CGFloat = 0
-    @State private var contentOpacity: Double = 0
-    @State private var bgOpacity: Double = 0
-    @State private var bgScale: CGFloat = 1.05
-    @State private var titleOpacity: Double = 0
-    @State private var titleOffsetY: CGFloat = 20
-    @State private var bodyOpacity: Double = 0
-    @State private var footnoteOpacity: Double = 0
-    @State private var curtainOpacity: Double = 1
-    @State private var particlePhase: CGFloat = 0
-    @State private var isEntering = false
-    @State private var letterboxReveal: CGFloat = 0
-    @State private var typewriterText: String = ""
-    @State private var typewriterTask: Task<Void, Never>?
-    @State private var dragOffset: CGFloat = 0
 
     private let heroName: String
 
@@ -44,340 +32,470 @@ struct OnboardingCinematicView: View {
         self.heroName = heroName
     }
 
-    // MARK: - Slide Definitions
+    // MARK: - State
 
-    private var slides: [OnboardingSlide] {
+    @State private var currentPage = 0
+    @State private var revealedCount = 0
+    @State private var activeCaption = -1
+    @State private var justRevealed = -1
+    @State private var showFinal = false
+    @State private var finalTypedText = ""
+    @State private var finalDone = false
+    @State private var transitioning = false
+    @State private var isEntering = false
+
+    // Typewriter
+    @State private var displayedCaption = ""
+    @State private var captionDone = false
+    @State private var typewriterTask: Task<Void, Never>?
+
+    // Auto-reveal timer
+    @State private var revealTask: Task<Void, Never>?
+
+    // YOUR TURN typewriter
+    @State private var finalTask: Task<Void, Never>?
+
+    // MARK: - Pages
+
+    private var pages: [ComicPage] {
         [
-            OnboardingSlide(
-                backgroundAsset: "onboarding-city-panorama",
-                accentColor: DarkFantasyTheme.gold,
+            ComicPage(
                 title: "WELCOME TO HEXBOUND",
-                body: "A city of blades and ambition. Danger lurks in every shadow — and glory awaits those brave enough to claim it.",
-                footnote: "Your legend begins here.",
-                letterbox: 0.06
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-merchant-meet",
-                accentColor: DarkFantasyTheme.goldBright,
-                title: "MERCHANTS & OUTCASTS",
-                body: "The roads are full of wanderers selling everything from rusty swords to suspicious potions. Trust no one — but buy from everyone.",
-                footnote: nil,
-                letterbox: 0.04
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-tavern-keeper",
-                accentColor: DarkFantasyTheme.classMage,
-                title: "THE TAVERN",
-                body: "A skeleton in a purple hood serves mystery meat and potions of questionable origin. The regulars don't ask questions.",
-                footnote: "What doesn't kill you… might still give you a rash.",
-                letterbox: 0.04
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-arena-battle",
-                accentColor: DarkFantasyTheme.danger,
-                title: "THE ARENA AWAITS",
-                body: "Warriors clash for gold, glory, and bragging rights. The crowd roars. The sand runs red. It's Tuesday.",
-                footnote: "Every legend started with a first fight.",
-                letterbox: 0.06
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-defeat",
-                accentColor: DarkFantasyTheme.textSecondary,
-                title: "DEFEAT IS A TEACHER",
-                body: "You will fall. Everyone does. But the ones who get back up — they become dangerous.",
-                footnote: nil,
-                letterbox: 0.05
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-victory",
                 accentColor: DarkFantasyTheme.gold,
-                title: "VICTORY TASTES SWEET",
-                body: "Gold rains from the sky. Your enemies lie broken. The crowd chants your name. This is what you came for.",
-                footnote: "And it only gets better from here.",
-                letterbox: 0.05
+                panels: [
+                    ComicPanel(area: "city", imageAsset: "onboarding-city-panorama",
+                               caption: "HEXBOUND. A city older than regret.", isWide: true),
+                    ComicPanel(area: "street", imageAsset: "onboarding-merchant-meet",
+                               caption: "They sell swords, curses, and secondhand potions. No refunds.", isWide: false),
+                    ComicPanel(area: "npc", imageAsset: "onboarding-tavern-keeper",
+                               caption: "\u{201C}You look like easy money. Welcome.\u{201D}", isWide: false),
+                ],
+                finalText: nil,
+                bgmTrack: "main-theme.mp3"
             ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-dungeon-gate",
-                accentColor: DarkFantasyTheme.classMage,
-                title: "THINGS BELOW\nWANT YOU DEAD",
-                body: "The dungeon gate opens. Stone demons watch with glowing eyes. Bones crunch underfoot. Something moves in the dark.",
-                footnote: nil,
-                letterbox: 0.06
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-dungeon-charge",
+            ComicPage(
+                title: "BLOOD & GLORY",
                 accentColor: DarkFantasyTheme.danger,
-                title: "INTO THE FIRE",
-                body: "A wall of flame. A horde of goblins. One hero with nothing to lose. This is where cowards turn back.",
-                footnote: "You're not a coward, are you?",
-                letterbox: 0.06
+                panels: [
+                    ComicPanel(area: "arena", imageAsset: "onboarding-arena-battle",
+                               caption: "Bakers fight. Priests fight. Even the rats have a ranking.", isWide: true),
+                    ComicPanel(area: "victory", imageAsset: "onboarding-victory",
+                               caption: "Win, and they sing songs about you.", isWide: false),
+                    ComicPanel(area: "defeat", imageAsset: "onboarding-defeat",
+                               caption: "Lose, and they sing funnier ones.", isWide: false),
+                    ComicPanel(area: "dungeon", imageAsset: "onboarding-dungeon-gate",
+                               caption: "Below the city, things get worse. Much worse.", isWide: true),
+                ],
+                finalText: nil,
+                bgmTrack: "arena-pvp.mp3"
             ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-dungeon-victory",
-                accentColor: DarkFantasyTheme.goldBright,
-                title: "CLAIM YOUR SPOILS",
-                body: "Gems cascade. Gold piles high. The dungeon is conquered — and you stand atop it all.",
-                footnote: nil,
-                letterbox: 0.05
-            ),
-            OnboardingSlide(
-                backgroundAsset: "onboarding-blacksmith",
+            ComicPage(
+                title: "YOUR TURN",
                 accentColor: DarkFantasyTheme.gold,
-                title: "TIME TO RISE,\n\(heroName.uppercased())",
-                body: "The blacksmith offers your first real blade. Take it. Sharpen it. Use it to carve your name into history.",
-                footnote: "Hexbound doesn't care where you're from.\nOnly where you're going.",
-                letterbox: 0.04
+                panels: [
+                    ComicPanel(area: "hero", imageAsset: "onboarding-dungeon-charge",
+                               caption: "Every legend started broke, confused, and slightly terrified.", isWide: true),
+                    ComicPanel(area: "dvictory", imageAsset: "onboarding-dungeon-victory",
+                               caption: "The difference? They fought anyway.", isWide: false),
+                    ComicPanel(area: "forge", imageAsset: "onboarding-blacksmith",
+                               caption: nil, isWide: false),
+                ],
+                finalText: "YOUR TURN.",
+                bgmTrack: "arena-pvp.mp3"
             ),
         ]
     }
 
-    private var isLastSlide: Bool { currentSlide == slides.count - 1 }
+    private var page: ComicPage { pages[currentPage] }
+    private var totalPanels: Int { page.panels.count }
+    private var allRevealed: Bool { revealedCount >= totalPanels }
+    private var isLastPage: Bool { currentPage == pages.count - 1 }
+
+    /// Background art asset per page — atmospheric, heavily dimmed
+    private var pageBgAsset: String {
+        switch currentPage {
+        case 0: return "bg-shop"      // City/merchant vibe
+        case 1: return "bg-arena"     // Blood & glory
+        case 2: return "bg-dungeon"   // Final challenge
+        default: return "bg-hub"
+        }
+    }
+
+    // Page transition
+    @State private var curtainOpacity: Double = 0
 
     // MARK: - Body
 
     var body: some View {
         ZStack {
-            // Abyss base
             DarkFantasyTheme.bgAbyss.ignoresSafeArea()
 
-            // Full-bleed illustration with parallax
-            backgroundLayer
-
-            // Ember particles
-            particleCanvas
-
-            // Cinematic letterbox bars
-            letterboxBars
-
-            // Bottom gradient for text readability
-            bottomGradient
-
-            // Content
-            VStack(spacing: 0) {
-                skipButton
-                Spacer()
-                textContent
-                    .padding(.bottom, LayoutConstants.spaceLG)
-                bottomSection
-            }
-            .padding(.horizontal, LayoutConstants.spaceMD)
-            .padding(.top, LayoutConstants.spaceSM)
-            .padding(.bottom, LayoutConstants.spaceMD)
-
-            // Cinematic curtain
-            curtainView
-        }
-        .ignoresSafeArea()
-        .gesture(swipeGesture)
-        .onAppear {
-            AudioManager.shared.playBGM("main-theme.mp3")
-            animateSlideIn()
-            // Fade curtain out dramatically
-            withAnimation(.easeOut(duration: MotionConstants.epic)) {
-                curtainOpacity = 0
-            }
-            // Start particle loop
-            withAnimation(.linear(duration: 25).repeatForever(autoreverses: false)) {
-                particlePhase = 1
-            }
-            // Letterbox reveal
-            withAnimation(.easeOut(duration: 0.8).delay(0.3)) {
-                letterboxReveal = 1
-            }
-        }
-    }
-
-    // MARK: - Background Layer (Full-Bleed + Parallax)
-
-    private var backgroundLayer: some View {
-        GeometryReader { geo in
-            Image(slides[currentSlide].backgroundAsset)
+            // Background art — dark, atmospheric, doesn't compete with comic panels
+            Image(pageBgAsset)
                 .resizable()
-                .interpolation(.high)
+                .interpolation(.medium)
                 .aspectRatio(contentMode: .fill)
                 .frame(
-                    width: geo.size.width * 1.1,
-                    height: geo.size.height * 1.1
+                    width: UIScreen.main.bounds.width,
+                    height: UIScreen.main.bounds.height
                 )
-                .scaleEffect(bgScale)
-                // Parallax on drag
-                .offset(x: dragOffset * 0.15)
-                .position(x: geo.size.width / 2, y: geo.size.height / 2)
-                .opacity(0.85 * bgOpacity)
-                .animation(.easeInOut(duration: MotionConstants.reward), value: currentSlide)
+                .clipped()
+                .ignoresSafeArea()
+                .opacity(0.12)
+                .blur(radius: 6)
+                .animation(.easeInOut(duration: 0.5), value: currentPage)
+
+            // Vignette overlay to darken edges
+            RadialGradient(
+                colors: [Color.clear, DarkFantasyTheme.bgAbyss.opacity(0.7), DarkFantasyTheme.bgAbyss],
+                center: .center,
+                startRadius: 100,
+                endRadius: 500
+            )
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            VStack(spacing: 0) {
+                // Page dots — top
+                pageDots
+                    .padding(.top, LayoutConstants.spaceSM)
+
+                // Centered content area
+                Spacer(minLength: LayoutConstants.spaceSM)
+
+                // Page title
+                pageTitle
+                    .padding(.bottom, LayoutConstants.spaceSM)
+
+                // Comic grid with ornamental frame
+                comicGrid
+                    .padding(.horizontal, LayoutConstants.spaceMS)
+
+                // Caption area
+                captionArea
+                    .frame(minHeight: 85)
+
+                Spacer(minLength: LayoutConstants.spaceSM)
+
+                // Bottom buttons
+                bottomButtons
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+                    .padding(.bottom, LayoutConstants.space2XL)
+            }
+            .safeAreaPadding(.top)
+
+            // Page transition curtain — dramatic dark fade (not white flash)
+            DarkFantasyTheme.bgAbyss
+                .ignoresSafeArea()
+                .opacity(curtainOpacity)
+                .allowsHitTesting(false)
         }
         .ignoresSafeArea()
+        .contentShape(Rectangle())
+        .onTapGesture { handleTap() }
+        .gesture(swipeGesture)
+        .onAppear {
+            AudioManager.shared.playBGM(page.bgmTrack)
+            scheduleReveal(delay: 0.6)
+        }
+        .onDisappear {
+            revealTask?.cancel()
+            typewriterTask?.cancel()
+            finalTask?.cancel()
+        }
     }
 
-    // MARK: - Particle Canvas (Embers)
+    // MARK: - Page Dots
 
-    private var particleCanvas: some View {
-        Canvas { ctx, size in
-            let count = 40
-            for i in 0..<count {
-                let seed = Double(i) * 137.508
-                let phase = Double(particlePhase)
+    private var pageDots: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            ForEach(0..<pages.count, id: \.self) { i in
+                Capsule()
+                    .fill(
+                        i == currentPage
+                            ? page.accentColor
+                            : (i < currentPage
+                               ? DarkFantasyTheme.textTertiary.opacity(0.3)
+                               : DarkFantasyTheme.borderSubtle.opacity(0.3))
+                    )
+                    .frame(width: i == currentPage ? 20 : 5, height: 5)
+                    .shadow(
+                        color: i == currentPage ? page.accentColor.opacity(0.4) : .clear,
+                        radius: 4
+                    )
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+            }
+        }
+    }
 
-                // Float upward slowly
-                let x = (sin(seed) * 0.5 + 0.5) * size.width + sin(phase * .pi * 2 + seed * 0.5) * 30
-                let baseY = size.height - (((phase * size.height * 0.7) + seed * 13).truncatingRemainder(dividingBy: size.height))
-                let y = baseY + sin(phase * .pi * 4 + seed) * 15
+    // MARK: - Page Title
 
-                // Flicker
-                let alpha = sin(phase * .pi * 3 + seed * 0.7) * 0.25 + 0.35
-                let pSize = CGFloat(1.0 + sin(seed * 0.3) * 1.5)
+    private var pageTitle: some View {
+        Text(page.title)
+            .font(DarkFantasyTheme.body.weight(.semibold))
+            .foregroundStyle(page.accentColor)
+            .tracking(4)
+            .opacity(revealedCount > 0 ? 1 : 0)
+            .animation(.easeOut(duration: 0.5).delay(0.3), value: revealedCount)
+    }
 
-                let rect = CGRect(x: x - pSize / 2, y: y - pSize / 2, width: pSize, height: pSize)
-                let accentColor = slides[currentSlide].accentColor
-                ctx.fill(Ellipse().path(in: rect), with: .color(accentColor.opacity(alpha)))
+    // MARK: - Comic Grid
 
-                // Some embers have a glow halo
-                if i % 4 == 0 {
-                    let glowRect = CGRect(x: x - pSize * 2, y: y - pSize * 2, width: pSize * 4, height: pSize * 4)
-                    ctx.fill(Ellipse().path(in: glowRect), with: .color(accentColor.opacity(alpha * 0.15)))
+    private var comicGrid: some View {
+        ZStack {
+            // Ornamental frame
+            ornamentalFrame
+
+            // Grid content
+            gridContent
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
+        }
+        .clipped()
+    }
+
+    private var gridContent: some View {
+        let gutter: CGFloat = 3
+        return GeometryReader { geo in
+            let w = geo.size.width
+            let h = geo.size.height
+
+            ZStack {
+                DarkFantasyTheme.bgAbyss
+
+                // Layout panels based on current page
+                panelLayout(in: CGSize(width: w, height: h), gutter: gutter)
+            }
+        }
+        .aspectRatio(pageAspectRatio, contentMode: .fit)
+    }
+
+    /// Computed aspect ratio for the grid based on page layout
+    private var pageAspectRatio: CGFloat {
+        switch currentPage {
+        case 0: return 0.72  // Page 1: city wide + 2 portrait
+        case 1: return 0.85  // Page 2: arena + 2 square + dungeon
+        case 2: return 0.72  // Page 3: hero wide + 2 below
+        default: return 0.75
+        }
+    }
+
+    // MARK: - Panel Layout
+
+    @ViewBuilder
+    private func panelLayout(in size: CGSize, gutter: CGFloat) -> some View {
+        let w = size.width
+        let h = size.height
+
+        switch currentPage {
+        case 0:
+            // Page 1: city (wide top), street + npc (bottom row)
+            // Rows: 9fr 10fr
+            let topH = h * 9 / 19
+            let botH = h * 10 / 19
+            let halfW = (w - gutter) / 2
+
+            panelView(index: 0, frame: CGRect(x: 0, y: 0, width: w, height: topH - gutter / 2))
+            panelView(index: 1, frame: CGRect(x: 0, y: topH + gutter / 2, width: halfW, height: botH - gutter / 2))
+            panelView(index: 2, frame: CGRect(x: halfW + gutter, y: topH + gutter / 2, width: halfW, height: botH - gutter / 2))
+
+        case 1:
+            // Page 2: arena (wide), victory + defeat (row), dungeon (wide)
+            // Rows: 3fr 3.6fr 4fr → total 10.6
+            let r1 = h * 3 / 10.6
+            let r2 = h * 3.6 / 10.6
+            let r3 = h * 4 / 10.6
+            let halfW = (w - gutter) / 2
+
+            panelView(index: 0, frame: CGRect(x: 0, y: 0, width: w, height: r1 - gutter / 2))
+            panelView(index: 1, frame: CGRect(x: 0, y: r1 + gutter / 2, width: halfW, height: r2 - gutter))
+            panelView(index: 2, frame: CGRect(x: halfW + gutter, y: r1 + gutter / 2, width: halfW, height: r2 - gutter))
+            panelView(index: 3, frame: CGRect(x: 0, y: r1 + r2 + gutter / 2, width: w, height: r3 - gutter / 2))
+
+        case 2:
+            // Page 3: hero (wide top), dvictory + forge (bottom row)
+            // Rows: 9fr 10fr
+            let topH = h * 9 / 19
+            let botH = h * 10 / 19
+            let halfW = (w - gutter) / 2
+
+            panelView(index: 0, frame: CGRect(x: 0, y: 0, width: w, height: topH - gutter / 2))
+            panelView(index: 1, frame: CGRect(x: 0, y: topH + gutter / 2, width: halfW, height: botH - gutter / 2))
+            panelView(index: 2, frame: CGRect(x: halfW + gutter, y: topH + gutter / 2, width: halfW, height: botH - gutter / 2))
+
+        default:
+            EmptyView()
+        }
+    }
+
+    @ViewBuilder
+    private func panelView(index: Int, frame: CGRect) -> some View {
+        let visible = index < revealedCount
+        let flash = index == justRevealed
+
+        ZStack {
+            DarkFantasyTheme.bgPrimary
+
+            if visible {
+                Image(page.panels[index].imageAsset)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: frame.width, height: frame.height)
+                    .clipped()
+                    .brightness(flash ? 0.15 : 0)
+
+                // Vignette
+                LinearGradient(
+                    colors: [
+                        DarkFantasyTheme.bgAbyss.opacity(0.06),
+                        Color.clear,
+                        Color.clear,
+                        DarkFantasyTheme.bgAbyss.opacity(0.28),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                // Accent glow on reveal
+                if flash {
+                    RadialGradient(
+                        colors: [page.accentColor.opacity(0.12), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: frame.width * 0.5
+                    )
+                    .transition(.opacity)
                 }
             }
         }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
+        .frame(width: frame.width, height: frame.height)
+        .clipShape(Rectangle())
+        .opacity(visible ? 1 : 0)
+        .animation(.easeOut(duration: 0.5), value: visible)
+        .animation(.easeOut(duration: 0.8), value: flash)
+        .position(x: frame.midX, y: frame.midY)
     }
 
-    // MARK: - Cinematic Letterbox Bars
+    // MARK: - Ornamental Frame
 
-    private var letterboxBars: some View {
-        let barHeight = slides[currentSlide].letterbox
-        return ZStack {
-            // Top bar
-            VStack {
-                DarkFantasyTheme.bgAbyss
-                    .frame(height: UIScreen.main.bounds.height * barHeight * letterboxReveal)
-                Spacer()
-            }
+    private var ornamentalFrame: some View {
+        GeometryReader { _ in
+            // Outer ornamental stroke
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.borderOrnament, lineWidth: 2)
 
-            // Bottom bar
-            VStack {
-                Spacer()
-                DarkFantasyTheme.bgAbyss
-                    .frame(height: UIScreen.main.bounds.height * barHeight * letterboxReveal)
-            }
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .animation(.easeInOut(duration: 0.5), value: currentSlide)
-    }
+            // Inner bevel border
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD + 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.10),
+                            DarkFantasyTheme.borderMedium.opacity(0.35),
+                            Color.black.opacity(0.20),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 1
+                )
+                .padding(3)
 
-    // MARK: - Bottom Gradient (Text Readability)
-
-    private var bottomGradient: some View {
-        VStack {
-            Spacer()
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    DarkFantasyTheme.bgAbyss.opacity(0.5),
-                    DarkFantasyTheme.bgAbyss.opacity(0.85),
-                    DarkFantasyTheme.bgAbyss.opacity(0.95),
-                ],
-                startPoint: .init(x: 0.5, y: 0),
-                endPoint: .init(x: 0.5, y: 1)
+            // Corner brackets
+            CornerBracketOverlay(
+                color: page.accentColor,
+                length: 18,
+                thickness: 2,
+                inset: -1
             )
-            .frame(height: UIScreen.main.bounds.height * 0.45)
+
+            // Corner diamonds
+            CornerDiamondOverlay(
+                color: page.accentColor,
+                size: 6,
+                offset: 3.5
+            )
+
+            // Side diamonds
+            SideDiamondOverlay(
+                color: page.accentColor,
+                size: 5
+            )
         }
-        .ignoresSafeArea()
+        .aspectRatio(pageAspectRatio, contentMode: .fit)
         .allowsHitTesting(false)
     }
 
-    // MARK: - Curtain
+    // MARK: - Caption Area
 
-    private var curtainView: some View {
-        DarkFantasyTheme.bgAbyss
-            .ignoresSafeArea()
-            .opacity(curtainOpacity)
-            .allowsHitTesting(false)
-    }
-
-    // MARK: - Skip Button
-
-    private var skipButton: some View {
-        HStack {
-            Spacer()
-            Button {
-                HapticManager.light()
-                SFXManager.shared.play(.uiTap)
-                enterGame()
-            } label: {
-                Text("SKIP")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .tracking(0.8)
-                    .padding(.horizontal, LayoutConstants.spaceSM)
-                    .padding(.vertical, LayoutConstants.spaceXS)
-                    .background(
-                        Capsule()
-                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.5))
-                            .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
+    private var captionArea: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Ornamental divider line
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, page.accentColor.opacity(0.25), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
+                )
+                .frame(width: 44, height: 1)
+                .opacity(activeCaption >= 0 ? 1 : 0)
+                .animation(.easeOut(duration: 0.4), value: activeCaption)
+                .padding(.top, LayoutConstants.spaceSM)
+
+            // Caption text
+            if activeCaption >= 0, activeCaption < totalPanels,
+               page.panels[activeCaption].caption != nil {
+                HStack(spacing: 0) {
+                    Text(displayedCaption)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+
+                    // Blinking cursor
+                    if !captionDone {
+                        Rectangle()
+                            .fill(page.accentColor)
+                            .frame(width: 2, height: 14)
+                            .opacity(captionDone ? 0 : 1)
+                            .modifier(BlinkModifier())
+                    }
+                }
+                .frame(maxWidth: 320)
+                .transition(.opacity)
             }
-            .buttonStyle(.plain)
+
+            // YOUR TURN final text
+            if isLastPage && showFinal {
+                Text(finalTypedText)
+                    .font(DarkFantasyTheme.title)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .tracking(5)
+                    .shadow(
+                        color: DarkFantasyTheme.gold.opacity(finalDone ? 0.4 : 0.15),
+                        radius: finalDone ? 30 : 12
+                    )
+                    .animation(.easeOut(duration: 0.5), value: finalDone)
+                    .padding(.top, LayoutConstants.spaceXS)
+            }
+
+            // Tap hint
+            if captionDone && !allRevealed {
+                Text("tap to reveal")
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.4))
+                    .transition(.opacity)
+            }
         }
     }
 
-    // MARK: - Text Content (Typewriter Effect)
+    // MARK: - Bottom Buttons
 
-    private var textContent: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // Title — dramatic reveal
-            Text(slides[currentSlide].title)
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(slides[currentSlide].accentColor)
-                .tracking(3)
-                .multilineTextAlignment(.center)
-                .shadow(color: slides[currentSlide].accentColor.opacity(0.5), radius: 16)
-                .shadow(color: DarkFantasyTheme.bgAbyss, radius: 8)
-                .opacity(titleOpacity)
-                .offset(y: titleOffsetY)
-
-            // Ornamental divider
-            ScrollworkDivider(
-                color: DarkFantasyTheme.borderMedium,
-                accentColor: slides[currentSlide].accentColor
-            )
-            .padding(.horizontal, LayoutConstants.spaceXL)
-            .opacity(contentOpacity)
-
-            // Body text — typewriter
-            Text(typewriterText)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .opacity(bodyOpacity)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Footnote
-            if let footnote = slides[currentSlide].footnote {
-                Text(footnote)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-                    .padding(.horizontal, LayoutConstants.spaceMD)
-                    .opacity(footnoteOpacity)
-            }
-        }
-        .offset(x: slideOffset)
-    }
-
-    // MARK: - Bottom Section
-
-    private var bottomSection: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            // Progress dots
-            progressDots
-
-            // CTA Button
-            if isLastSlide {
+    private var bottomButtons: some View {
+        Group {
+            if isLastPage && allRevealed && finalDone {
+                // ENTER HEXBOUND — full-width gold CTA
                 Button {
                     HapticManager.heavy()
                     SFXManager.shared.play(.uiConfirm)
@@ -385,209 +503,284 @@ struct OnboardingCinematicView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         if isEntering {
-                            HexPulseLoader(.compact)
-                                .tint(DarkFantasyTheme.textOnGold)
-                                .scaleEffect(0.8)
+                            HexPulseLoader.onGold()
                         }
                         Text(isEntering ? "ENTERING..." : "ENTER HEXBOUND")
-                            .font(DarkFantasyTheme.buttonLabel)
-                            .tracking(1.5)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 56)
                 }
                 .buttonStyle(.primary)
                 .disabled(isEntering)
                 .transition(.opacity.combined(with: .offset(y: 20)))
             } else {
-                Button {
-                    HapticManager.light()
-                    SFXManager.shared.play(.uiTap)
-                    advanceSlide()
-                } label: {
-                    HStack(spacing: LayoutConstants.spaceXS) {
-                        Text("CONTINUE")
-                            .font(DarkFantasyTheme.cardTitle)
-                            .tracking(1)
-                        Image(systemName: "chevron.right")
-                            .font(DarkFantasyTheme.body.weight(.semibold))
+                // SKIP + CONTINUE — same height via .secondary + .primary
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    // Skip — secondary outlined style (matches primary height = 56)
+                    Button {
+                        HapticManager.light()
+                        SFXManager.shared.play(.uiTap)
+                        enterGame()
+                    } label: {
+                        Text("SKIP")
+                            .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
+                    .buttonStyle(.secondary)
+
+                    // Continue — full primary gold (same height = 56)
+                    Button {
+                        HapticManager.light()
+                        SFXManager.shared.play(.uiTap)
+                        handleContinue()
+                    } label: {
+                        Text("CONTINUE")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.primary)
                 }
-                .buttonStyle(.neutral)
-                .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: MotionConstants.fast), value: isLastSlide)
-    }
-
-    // MARK: - Progress Dots
-
-    private var progressDots: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            ForEach(0..<slides.count, id: \.self) { index in
-                Capsule()
-                    .fill(
-                        index == currentSlide
-                            ? slides[currentSlide].accentColor
-                            : DarkFantasyTheme.borderSubtle.opacity(0.5)
-                    )
-                    .frame(
-                        width: index == currentSlide ? 24 : 6,
-                        height: 6
-                    )
-                    .shadow(
-                        color: index == currentSlide
-                            ? slides[currentSlide].accentColor.opacity(0.5)
-                            : Color.clear,
-                        radius: 4
-                    )
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentSlide)
-            }
-        }
+        .animation(.easeInOut(duration: MotionConstants.fast), value: isLastPage && allRevealed && finalDone)
     }
 
     // MARK: - Swipe Gesture
 
     private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 40)
-            .onChanged { value in
-                dragOffset = value.translation.width
-            }
+        DragGesture(minimumDistance: 60)
             .onEnded { value in
-                dragOffset = 0
                 let dx = value.translation.width
-                if dx < -40 && currentSlide < slides.count - 1 {
-                    HapticManager.light()
-                    SFXManager.shared.play(.uiTap)
-                    advanceSlide()
-                } else if dx > 40 && currentSlide > 0 {
-                    HapticManager.light()
-                    SFXManager.shared.play(.uiTap)
-                    retreatSlide()
+                if dx < -60 && allRevealed && captionDone {
+                    goToPage(direction: 1)
+                } else if dx > 60 && currentPage > 0 {
+                    goToPage(direction: -1)
                 }
             }
     }
 
-    // MARK: - Navigation
+    // MARK: - Interaction Logic
 
-    private func advanceSlide() {
-        guard currentSlide < slides.count - 1 else { return }
-        typewriterTask?.cancel()
-        animateSlideOut(direction: -1) {
-            currentSlide += 1
-            animateSlideIn()
+    private func handleTap() {
+        guard !transitioning else { return }
+
+        if !captionDone && activeCaption >= 0 {
+            // Skip current typewriter
+            skipTypewriter()
+        } else {
+            // Reveal next panel
+            revealTask?.cancel()
+            revealNext()
         }
     }
 
-    private func retreatSlide() {
-        guard currentSlide > 0 else { return }
-        typewriterTask?.cancel()
-        animateSlideOut(direction: 1) {
-            currentSlide -= 1
-            animateSlideIn()
+    private func handleContinue() {
+        if allRevealed && captionDone && !isLastPage {
+            goToPage(direction: 1)
+        } else if allRevealed && captionDone && isLastPage && !showFinal {
+            triggerFinalText()
+        } else {
+            // Fast-forward: reveal remaining panels
+            revealTask?.cancel()
+            revealNext()
         }
     }
 
-    private func enterGame() {
-        guard !isEntering else { return }
-        isEntering = true
-        typewriterTask?.cancel()
+    // MARK: - Reveal Logic
 
-        // Dramatic fade to black before entering
-        withAnimation(.easeIn(duration: 0.6)) {
+    private func revealNext() {
+        guard revealedCount < totalPanels else {
+            // All panels revealed
+            if isLastPage && page.finalText != nil && !showFinal {
+                triggerFinalText()
+            } else if !isLastPage && captionDone {
+                goToPage(direction: 1)
+            }
+            return
+        }
+
+        let idx = revealedCount
+
+        withAnimation {
+            revealedCount = idx + 1
+            justRevealed = idx
+        }
+
+        SFXManager.shared.play(.uiTap)
+        HapticManager.light()
+
+        // Clear flash after delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if justRevealed == idx {
+                withAnimation { justRevealed = -1 }
+            }
+        }
+
+        // Start caption after panel settles
+        let panel = page.panels[idx]
+        if let caption = panel.caption {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                activeCaption = idx
+                startTypewriter(text: caption)
+            }
+        } else {
+            activeCaption = -1
+            displayedCaption = ""
+            captionDone = true
+            // Auto-continue to next if no caption
+            scheduleReveal(delay: 0.5)
+        }
+    }
+
+    private func scheduleReveal(delay: Double) {
+        revealTask?.cancel()
+        revealTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            revealNext()
+        }
+    }
+
+    // MARK: - Page Navigation
+
+    private func goToPage(direction: Int) {
+        let next = currentPage + direction
+        guard next >= 0 && next < pages.count else { return }
+        guard !transitioning else { return }
+
+        revealTask?.cancel()
+        typewriterTask?.cancel()
+        finalTask?.cancel()
+        transitioning = true
+
+        HapticManager.medium()
+
+        // Phase 1: dark curtain fades IN (cinematic wipe)
+        withAnimation(.easeIn(duration: 0.25)) {
             curtainOpacity = 1
         }
 
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(700))
-            let initService = GameInitService(appState: appState, cache: cache)
-            await initService.loadGameData()
-            appState.currentScreen = .game
-        }
-    }
+        // Phase 2: swap content while hidden behind curtain
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            currentPage = next
+            revealedCount = 0
+            activeCaption = -1
+            displayedCaption = ""
+            captionDone = false
+            showFinal = false
+            finalTypedText = ""
+            finalDone = false
+            justRevealed = -1
 
-    // MARK: - Animations
+            // Switch BGM if needed
+            AudioManager.shared.playBGM(page.bgmTrack)
 
-    private func animateSlideIn() {
-        // Reset states
-        titleOpacity = 0
-        titleOffsetY = 20
-        contentOpacity = 0
-        bodyOpacity = 0
-        footnoteOpacity = 0
-        bgOpacity = 0
-        bgScale = 1.08
-        slideOffset = 0
-        typewriterText = ""
-
-        // Background: fade in + slow zoom (Ken Burns)
-        withAnimation(.easeOut(duration: 0.6)) {
-            bgOpacity = 1
-        }
-        withAnimation(.easeOut(duration: 8)) {
-            bgScale = 1.0
-        }
-
-        // Title: dramatic rise
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.75).delay(0.15)) {
-            titleOpacity = 1
-            titleOffsetY = 0
-        }
-
-        // Divider
-        withAnimation(.easeOut(duration: 0.4).delay(0.3)) {
-            contentOpacity = 1
-        }
-
-        // Body: typewriter effect
-        withAnimation(.easeOut(duration: 0.3).delay(0.4)) {
-            bodyOpacity = 1
-        }
-        startTypewriter(text: slides[currentSlide].body, delay: 0.5)
-
-        // Footnote: gentle fade
-        if slides[currentSlide].footnote != nil {
-            withAnimation(.easeOut(duration: 0.5).delay(1.8)) {
-                footnoteOpacity = 1
+            // Phase 3: curtain fades OUT — reveals new page
+            withAnimation(.easeOut(duration: 0.4)) {
+                curtainOpacity = 0
             }
-        }
-    }
 
-    private func animateSlideOut(direction: CGFloat, completion: @escaping () -> Void) {
-        withAnimation(.easeIn(duration: 0.2)) {
-            slideOffset = direction * 60
-            titleOpacity = 0
-            contentOpacity = 0
-            bodyOpacity = 0
-            footnoteOpacity = 0
-            bgOpacity = 0
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
-            slideOffset = -direction * 60
-            completion()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                transitioning = false
+                scheduleReveal(delay: 0.5)
+            }
         }
     }
 
     // MARK: - Typewriter
 
-    private func startTypewriter(text: String, delay: Double) {
+    private func startTypewriter(text: String) {
         typewriterTask?.cancel()
-        typewriterText = ""
+        displayedCaption = ""
+        captionDone = false
 
         typewriterTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(Int(delay * 1000)))
+            try? await Task.sleep(for: .milliseconds(200))
+
             for char in text {
                 guard !Task.isCancelled else {
-                    typewriterText = text // Show full text if cancelled
+                    displayedCaption = text
+                    captionDone = true
                     return
                 }
-                typewriterText.append(char)
-                // Variable speed: punctuation gets a longer pause
-                let ms: UInt64 = char == "." || char == "," || char == "—" ? 60 : 25
+                displayedCaption.append(char)
+
+                let ms: UInt64
+                if ".!?…".contains(char) { ms = 224 }
+                else if ",;:—–".contains(char) { ms = 84 }
+                else { ms = 28 }
                 try? await Task.sleep(nanoseconds: ms * 1_000_000)
             }
+            captionDone = true
+
+            // Auto-reveal next panel after caption finishes
+            scheduleReveal(delay: 0.7)
         }
+    }
+
+    private func skipTypewriter() {
+        typewriterTask?.cancel()
+        if activeCaption >= 0, activeCaption < totalPanels,
+           let caption = page.panels[activeCaption].caption {
+            displayedCaption = caption
+        }
+        captionDone = true
+    }
+
+    // MARK: - Final Text (YOUR TURN.)
+
+    private func triggerFinalText() {
+        guard let text = page.finalText else { return }
+        showFinal = true
+        finalTypedText = ""
+        finalDone = false
+
+        SFXManager.shared.play(.uiConfirm)
+        HapticManager.medium()
+
+        finalTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            for char in text {
+                guard !Task.isCancelled else {
+                    finalTypedText = text
+                    finalDone = true
+                    return
+                }
+                finalTypedText.append(char)
+                try? await Task.sleep(nanoseconds: 60_000_000)
+            }
+            finalDone = true
+            HapticManager.heavy()
+        }
+    }
+
+    // MARK: - Enter Game
+
+    private func enterGame() {
+        guard !isEntering else { return }
+        isEntering = true
+        revealTask?.cancel()
+        typewriterTask?.cancel()
+        finalTask?.cancel()
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            let initService = GameInitService(appState: appState, cache: cache)
+            await initService.loadGameData()
+            appState.currentScreen = .game
+        }
+    }
+}
+
+// MARK: - Blink Modifier
+
+private struct BlinkModifier: ViewModifier {
+    @State private var visible = true
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(visible ? 1 : 0)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.4).repeatForever(autoreverses: true)) {
+                    visible = false
+                }
+            }
     }
 }

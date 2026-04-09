@@ -41,15 +41,8 @@ struct NPCCompactHintView: View {
             if let ctaLabel = hint.ctaLabel, let action = onAction {
                 Button(action: action) {
                     Text(ctaLabel)
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(DarkFantasyTheme.textOnGold)
-                        .padding(.horizontal, LayoutConstants.spaceSM)
-                        .padding(.vertical, LayoutConstants.spaceXS)
-                        .background(
-                            Capsule().fill(DarkFantasyTheme.gold)
-                        )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
             }
 
             // Dismiss X

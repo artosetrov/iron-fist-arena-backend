@@ -127,7 +127,7 @@ enum LayoutConstants {
 
     static let heroCardRadius: CGFloat = radiusLG          // 12
     static let heroCardPadding: CGFloat = spaceMS          // 12
-    static let heroSlotGap: CGFloat = spaceSM              // 8
+    static let heroSlotGap: CGFloat = spaceMS              // 12
     static let heroSlotRadius: CGFloat = radiusLG          // 12 — same as cardRadius
     static let heroBarHeight: CGFloat = 28                 // HP bar with text inside (unique)
     static let heroBarXpHeight: CGFloat = 24               // XP bar with text inside (unique)

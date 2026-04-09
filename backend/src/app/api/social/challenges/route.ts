@@ -381,7 +381,7 @@ async function handleAccept(character: any, body: any) {
     where: { id: challenge_id },
     include: {
       challenger: {
-        select: { characterName: true },
+        select: { characterName: true, avatar: true, class: true },
       },
     },
   })
@@ -565,6 +565,10 @@ async function handleAccept(character: any, body: any) {
       loserId,
       winnerName: challengerWon ? challenge.challenger.characterName : character.characterName,
       loserName: challengerWon ? character.characterName : challenge.challenger.characterName,
+      winnerAvatar: challengerWon ? (challenge.challenger.avatar ?? null) : (character.avatar ?? null),
+      loserAvatar: challengerWon ? (character.avatar ?? null) : (challenge.challenger.avatar ?? null),
+      winnerClass: challengerWon ? challenge.challenger.class : character.class,
+      loserClass: challengerWon ? character.class : challenge.challenger.class,
       fightType: 'challenge',
       matchId: pvpMatch.id,
       totalTurns: combatResult.totalTurns,

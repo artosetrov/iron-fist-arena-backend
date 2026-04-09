@@ -112,64 +112,20 @@ struct DailyQuestsDetailView: View {
         return "\(h)h \(m)m"
     }
 
-    // MARK: - Progress Formatting
+    // MARK: - Reward Cells Row
 
-    /// Compact progress text that never wraps. Uses K suffix for 1000+ values.
-    private func progressText(progress: Int, target: Int) -> String {
-        "\(compactNumber(progress))/\(compactNumber(target))"
-    }
-
-    private func compactNumber(_ n: Int) -> String {
-        if n >= 10_000 {
-            let k = Double(n) / 1000.0
-            return k.truncatingRemainder(dividingBy: 1) == 0
-                ? "\(Int(k))K"
-                : String(format: "%.1fK", k)
-        }
-        return "\(n)"
-    }
-
-    /// Reward label with asset icons — consistent across all quest cards.
-    private func rewardLabel(gold: Int, xp: Int, gems: Int?) -> some View {
+    /// Builds a horizontal row of loot-style reward cells for a quest.
+    @ViewBuilder
+    private func rewardCellsRow(gold: Int, xp: Int, gems: Int?) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             if gold > 0 {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    Image("icon-gold")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 14, height: 14)
-                    Text("\(gold)")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                }
+                QuestRewardCell(type: .gold, value: gold)
             }
             if xp > 0 {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    Image("icon-xp")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 14, height: 14)
-                    Text("\(xp)")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                }
+                QuestRewardCell(type: .xp, value: xp)
             }
             if let gems, gems > 0 {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    Image("icon-gems")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 14, height: 14)
-                    Text("\(gems)")
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.purple)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                }
+                QuestRewardCell(type: .gems, value: gems)
             }
         }
     }
@@ -178,39 +134,21 @@ struct DailyQuestsDetailView: View {
 
     @ViewBuilder
     private func bonusPanel(vm: DailyQuestsViewModel) -> some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
+        VStack(spacing: LayoutConstants.spaceMS) {
             Text("Complete All \(vm.quests.count) Quests")
-                .font(DarkFantasyTheme.body)
+                .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .accessibilityLabel("Daily quest completion challenge")
 
-            // Progress
-            HStack(spacing: LayoutConstants.spaceSM) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                            .fill(DarkFantasyTheme.bgTertiary)
-                        let fraction = vm.quests.isEmpty ? 0.0 : max(0, min(1, Double(vm.completedCount) / Double(vm.quests.count)))
-                        RoundedRectangle(cornerRadius: LayoutConstants.heroBarRadius)
-                            .fill(DarkFantasyTheme.gold)
-                            .frame(width: geo.size.width * fraction)
-                    }
-                }
-                .frame(height: LayoutConstants.spaceSM)
-                .accessibilityLabel("Quest completion progress")
-                .accessibilityValue("\(vm.completedCount) of \(vm.quests.count) quests complete")
+            // Segmented progress bar — 1 segment per quest
+            SegmentedProgressBar(
+                progress: vm.completedCount,
+                target: vm.quests.count,
+                isBonus: true
+            )
 
-                Text("\(vm.completedCount)/\(vm.quests.count)")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .monospacedDigit()
-                    .fixedSize(horizontal: true, vertical: false)
-                    .accessibilityElement(children: .ignore)
-            }
-
-            Text("Bonus: +500 Gold, +10 Gems")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
+            // Bonus rewards as loot cells
+            rewardCellsRow(gold: 500, xp: 0, gems: 10)
 
             if vm.bonusClaimedToday {
                 VStack(spacing: LayoutConstants.spaceXS) {
@@ -219,7 +157,7 @@ struct DailyQuestsDetailView: View {
                         .foregroundStyle(DarkFantasyTheme.success)
                     TimelineView(.periodic(from: .now, by: 60)) { _ in
                         Text("Next bonus: \(timeUntilReset())")
-                            .font(DarkFantasyTheme.body.weight(.semibold))
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -330,93 +268,78 @@ struct DailyQuestsDetailView: View {
         }
     }
 
+    // MARK: - Quest Card Body (v3 — loot cells + segmented bar)
+
     @ViewBuilder
     private func questCardBody(_ quest: Quest, vm: DailyQuestsViewModel, isClaiming: Bool, destination: AppRoute?) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            // Icon — asset image instead of emoji
-            Image(questIconAsset(for: quest.type))
-                .resizable()
-                .scaledToFill()
-                .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-                )
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // === ROW 1: Icon + Title + Chevron/Status ===
+            HStack(spacing: LayoutConstants.spaceMS) {
+                // Quest icon
+                Image(questIconAsset(for: quest.type))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                    )
 
-            // Info
-            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text(quest.title)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
-                    .lineLimit(1)
-
-                Text(quest.description)
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-                    .lineLimit(2)
-
-                // Progress bar + counter
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                .fill(DarkFantasyTheme.bgTertiary)
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                .fill(quest.completed ? DarkFantasyTheme.success : DarkFantasyTheme.cyan)
-                                .frame(width: geo.size.width * max(0, min(1, quest.progressFraction)))
-                        }
-                    }
-                    .frame(height: 6)
-
-                    Text(progressText(progress: quest.progress, target: quest.target))
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .monospacedDigit()
+                // Title + description
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(quest.title)
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(quest.rewardClaimed ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.textPrimary)
                         .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
+
+                    Text(quest.description)
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .lineLimit(2)
                 }
 
-                // Rewards
-                rewardLabel(gold: quest.rewardGold, xp: quest.rewardXp, gems: quest.rewardGems)
-            }
+                Spacer(minLength: 4)
 
-            Spacer(minLength: 4)
-
-            // Right side: Claim button or navigation chevron
-            VStack(spacing: LayoutConstants.spaceSM) {
+                // Right side: status indicator
                 if quest.rewardClaimed {
-                    Text("Done")
+                    Text("✓ Done")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.success)
-                } else if quest.canClaim {
-                    Button {
-                        HapticManager.success()
-                        SFXManager.shared.play(.uiQuestComplete)
-                        showQuestBurst = true
-                        burstQuestId = quest.id
-                        Task { await vm.claimQuest(quest) }
-                    } label: {
-                        if isClaiming {
-                            HexPulseLoader.onGold()
-                        } else {
-                            Text("Claim")
-                        }
-                    }
-                    .buttonStyle(.compactPrimary)
-                    .disabled(isClaiming)
-                }
-
-                // Navigation chevron — shows destination is tappable
-                if destination != nil && !quest.rewardClaimed && !quest.canClaim {
+                } else if destination != nil && !quest.canClaim {
                     Image(systemName: "chevron.right")
                         .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.goldDim)
                 }
             }
+
+            // === ROW 2: Loot-style reward cells ===
+            rewardCellsRow(gold: quest.rewardGold, xp: quest.rewardXp, gems: quest.rewardGems)
+
+            // === ROW 3: Segmented progress bar ===
+            SegmentedProgressBar(progress: quest.progress, target: quest.target)
+
+            // === ROW 4: Claim button (only when claimable) ===
+            if quest.canClaim {
+                Button {
+                    HapticManager.success()
+                    SFXManager.shared.play(.uiQuestComplete)
+                    showQuestBurst = true
+                    burstQuestId = quest.id
+                    Task { await vm.claimQuest(quest) }
+                } label: {
+                    if isClaiming {
+                        HexPulseLoader.onGold()
+                    } else {
+                        Text("CLAIM")
+                    }
+                }
+                .buttonStyle(.compactPrimary)
+                .disabled(isClaiming)
+            }
         }
-        .padding(LayoutConstants.spaceSM)
-        // Ornamental card system (was flat RoundedRectangle — widget audit fix)
+        .padding(LayoutConstants.spaceMS)
+        // Ornamental card system
         .background(
             RadialGlowBackground(
                 baseColor: quest.rewardClaimed ? DarkFantasyTheme.bgPrimary : DarkFantasyTheme.bgSecondary,

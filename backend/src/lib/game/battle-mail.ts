@@ -16,6 +16,10 @@ export interface BattleMailParams {
   loserId: string
   winnerName: string
   loserName: string
+  winnerAvatar: string | null
+  loserAvatar: string | null
+  winnerClass: string
+  loserClass: string
   fightType: BattleMailFightType
   matchId: string
   totalTurns: number
@@ -58,8 +62,9 @@ export async function createBattleResultMail(
   params: BattleMailParams,
 ): Promise<void> {
   const {
-    winnerId, loserId, winnerName, loserName, fightType,
-    matchId, totalTurns,
+    winnerId, loserId, winnerName, loserName,
+    winnerAvatar, loserAvatar, winnerClass, loserClass,
+    fightType, matchId, totalTurns,
     winnerRatingBefore, winnerRatingAfter, winnerGold, winnerXp,
     loserRatingBefore, loserRatingAfter, loserGold, loserXp,
   } = params
@@ -75,6 +80,8 @@ export async function createBattleResultMail(
     isWin: true,
     opponentName: loserName,
     opponentId: loserId,
+    opponentAvatar: loserAvatar,
+    opponentClass: loserClass,
     matchId,
     totalTurns,
     ratingBefore: winnerRatingBefore,
@@ -90,6 +97,8 @@ export async function createBattleResultMail(
     isWin: false,
     opponentName: winnerName,
     opponentId: winnerId,
+    opponentAvatar: winnerAvatar,
+    opponentClass: winnerClass,
     matchId,
     totalTurns,
     ratingBefore: loserRatingBefore,

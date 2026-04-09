@@ -25,10 +25,7 @@ struct NPCHintOverlay: ViewModifier {
                         },
                         npcImageName: active.npcImage,
                         plainMessage: active.message,
-                        onSkipAll: {
-                            hintManager.skipAll(for: charId)
-                        },
-                        onContinue: {
+                        onDontShowAgain: {
                             hintManager.dismiss(for: charId)
                         },
                         ctaLabel: active.ctaLabel,
@@ -38,7 +35,7 @@ struct NPCHintOverlay: ViewModifier {
                                 action()
                             }
                         },
-                        typewriterEnabled: true
+                        inlineMode: true
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.horizontal, LayoutConstants.screenPadding)

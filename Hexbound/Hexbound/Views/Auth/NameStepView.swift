@@ -49,6 +49,17 @@ struct NameStepView: View {
 
     private var heroCardWithEffects: some View {
         ZStack {
+            // Semi-transparent class icon behind the card
+            if let cls = vm.selectedClass {
+                Image(cls.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 260, height: 260)
+                    .opacity(0.06)
+                    .blur(radius: 2)
+                    .allowsHitTesting(false)
+            }
+
             // Ember particles behind card (removed from hierarchy on disappear)
             if isVisible {
                 EmberParticlesView()
@@ -201,29 +212,6 @@ struct NameStepView: View {
                 .shadow(color: DarkFantasyTheme.goldBright.opacity(0.6), radius: levelGlowRadius)
 
             Spacer()
-
-            // Origin badge
-            if let origin = vm.selectedOrigin {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Image(origin.iconAsset)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                    Text(origin.displayName.uppercased())
-                        .font(DarkFantasyTheme.body.weight(.semibold))
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                }
-                .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.space2XS)
-                .background(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                .stroke(DarkFantasyTheme.borderSubtle.opacity(0.3), lineWidth: 0.5)
-                        )
-                )
-            }
         }
     }
 

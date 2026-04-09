@@ -116,7 +116,7 @@ struct InboxRowView: View {
                             .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
                             .padding(.horizontal, LayoutConstants.spaceSM)
-                            .padding(.vertical, LayoutConstants.space2XS)
+                            .padding(.vertical, LayoutConstants.spaceXS)
                             .background(
                                 Capsule()
                                     .fill(DarkFantasyTheme.bgTertiary)
@@ -133,7 +133,7 @@ struct InboxRowView: View {
                             .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(inviteStatusColor(invite.status))
                             .padding(.horizontal, LayoutConstants.spaceSM)
-                            .padding(.vertical, LayoutConstants.space2XS)
+                            .padding(.vertical, LayoutConstants.spaceXS)
                             .background(
                                 Capsule()
                                     .fill(DarkFantasyTheme.bgTertiary)
@@ -184,29 +184,44 @@ struct InboxRowView: View {
 
     private var senderIcon: some View {
         ZStack {
-            // Icon background
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(
-                    isSystem
-                        ? LinearGradient(
-                            colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+            if message.isBattleResult, let battle = message.battleData {
+                // Battle result: show opponent avatar (tappable → profile)
+                Button {
+                    HapticManager.light()
+                    appState.mainPath.append(
+                        AppRoute.characterProfile(
+                            characterId: battle.opponentId,
+                            characterName: battle.opponentName
                         )
-                        : LinearGradient(
-                            colors: [
-                                DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgTertiary,
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                )
-                .frame(width: 40, height: 40)
+                    )
+                } label: {
+                    battleOpponentAvatar(battle)
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Default system/player icon
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(
+                        isSystem
+                            ? LinearGradient(
+                                colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [
+                                    DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgTertiary,
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                    )
+                    .frame(width: 40, height: 40)
 
-            // Icon
-            Image(systemName: senderSFSymbol)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(isSystem ? accentColor : DarkFantasyTheme.textSecondary)
+                Image(systemName: senderSFSymbol)
+                    .font(DarkFantasyTheme.cardTitle.weight(.semibold))
+                    .foregroundStyle(isSystem ? accentColor : DarkFantasyTheme.textSecondary)
+            }
 
             // Unread dot
             if !message.isRead {
@@ -220,6 +235,39 @@ struct InboxRowView: View {
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 4)
                     .offset(x: 16, y: -16)
             }
+        }
+    }
+
+    private func battleOpponentAvatar(_ battle: BattleResultData) -> some View {
+        ZStack {
+            if let avatar = battle.opponentAvatar, !avatar.isEmpty {
+                AvatarImageView(
+                    skinKey: avatar,
+                    characterClass: battle.opponentClassEnum,
+                    size: 40
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+            } else {
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(
+                        LinearGradient(
+                            colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: senderSFSymbol)
+                            .font(DarkFantasyTheme.cardTitle.weight(.semibold))
+                            .foregroundStyle(accentColor)
+                    )
+            }
+
+            // Win/loss indicator ring
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .stroke(accentColor.opacity(0.5), lineWidth: 1.5)
+                .frame(width: 40, height: 40)
         }
     }
 
@@ -249,16 +297,16 @@ struct InboxRowView: View {
     private func attachmentPills(_ attachments: [MailAttachment]) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             ForEach(Array(attachments.prefix(3).enumerated()), id: \.offset) { _, attachment in
-                HStack(spacing: LayoutConstants.space2XS) {
+                HStack(spacing: LayoutConstants.spaceXS) {
                     attachmentIcon(for: attachment.type)
-                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
 
                     Text(formatAmount(attachment.amount))
-                        .font(DarkFantasyTheme.body.weight(.semibold))
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
                 .padding(.horizontal, LayoutConstants.spaceSM)
-                .padding(.vertical, LayoutConstants.space2XS)
+                .padding(.vertical, LayoutConstants.spaceXS)
                 .background(
                     Capsule()
                         .fill(DarkFantasyTheme.bgTertiary)
@@ -271,7 +319,7 @@ struct InboxRowView: View {
 
             if attachments.count > 3 {
                 Text("+\(attachments.count - 3)")
-                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -342,7 +390,7 @@ struct InboxRowView: View {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
-                    .frame(width: LayoutConstants.iconMD)
+                    .frame(width: LayoutConstants.iconLG)
 
                 Text("Rating")
                     .font(DarkFantasyTheme.body)
@@ -351,11 +399,11 @@ struct InboxRowView: View {
                 Spacer()
 
                 Text("\(battle.ratingBefore) → \(battle.ratingAfter)")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 Text("(\(battle.ratingChange > 0 ? "+" : "")\(battle.ratingChange))")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(battle.ratingChange >= 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
             }
 
@@ -363,8 +411,8 @@ struct InboxRowView: View {
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image("icon-gold")
                     .resizable()
-                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                    .frame(width: LayoutConstants.iconMD)
+                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                    .frame(width: LayoutConstants.iconLG)
 
                 Text("Gold")
                     .font(DarkFantasyTheme.body)
@@ -373,7 +421,7 @@ struct InboxRowView: View {
                 Spacer()
 
                 Text("+\(battle.goldReward)")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
 
@@ -382,7 +430,7 @@ struct InboxRowView: View {
                 Image(systemName: "sparkles")
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.cyan)
-                    .frame(width: LayoutConstants.iconMD)
+                    .frame(width: LayoutConstants.iconLG)
 
                 Text("XP")
                     .font(DarkFantasyTheme.body)
@@ -391,7 +439,7 @@ struct InboxRowView: View {
                 Spacer()
 
                 Text("+\(battle.xpReward)")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.cyan)
             }
         }
@@ -464,7 +512,7 @@ struct InboxRowView: View {
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(invite.challengerName)
-                        .font(DarkFantasyTheme.body)
+                        .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     HStack(spacing: LayoutConstants.spaceSM) {
@@ -473,6 +521,7 @@ struct InboxRowView: View {
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text("·")
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         Text(invite.challengerClass.capitalized)
@@ -480,6 +529,7 @@ struct InboxRowView: View {
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text("·")
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                         Text("\(invite.challengerRating)")
@@ -509,7 +559,7 @@ struct InboxRowView: View {
                             Image(systemName: "swords")
                                 .font(DarkFantasyTheme.body)
                             Text("FIGHT")
-                                .font(DarkFantasyTheme.body)
+                                .font(DarkFantasyTheme.buttonLabelCompact)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -522,7 +572,7 @@ struct InboxRowView: View {
                             Image(systemName: "xmark")
                                 .font(DarkFantasyTheme.body.bold())
                             Text("DECLINE")
-                                .font(DarkFantasyTheme.body)
+                                .font(DarkFantasyTheme.buttonLabelCompact)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -532,6 +582,7 @@ struct InboxRowView: View {
                 // Resolved status
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: invite.isAccepted ? "checkmark.circle.fill" : invite.isDeclined ? "xmark.circle.fill" : "clock")
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(inviteStatusColor(invite.status))
                     Text(invite.status.capitalized)
                         .font(DarkFantasyTheme.body)
@@ -599,7 +650,7 @@ struct InboxRowView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text(attachment.type.capitalized)
-                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -625,7 +676,7 @@ struct InboxRowView: View {
                         Image(systemName: "gift.fill")
                             .font(DarkFantasyTheme.body)
                         Text("Claim Rewards")
-                            .font(DarkFantasyTheme.body)
+                            .font(DarkFantasyTheme.buttonLabelCompact)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -644,12 +695,36 @@ struct InboxRowView: View {
                 .padding(.vertical, LayoutConstants.spaceSM)
             }
 
+            // Send Message button for battle results
+            if message.isBattleResult, let battle = message.battleData {
+                Button {
+                    HapticManager.light()
+                    appState.mainPath.append(
+                        AppRoute.guildHallMessage(
+                            characterId: battle.opponentId,
+                            characterName: battle.opponentName,
+                            avatar: battle.opponentAvatar,
+                            characterClass: battle.opponentClass
+                        )
+                    )
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        Image(systemName: "scroll.fill")
+                            .font(DarkFantasyTheme.body)
+                        Text("Message")
+                            .font(DarkFantasyTheme.buttonLabelCompact)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.secondary)
+            }
+
             Button(action: deleteMail) {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "trash.fill")
                         .font(DarkFantasyTheme.body)
                     Text("Delete")
-                        .font(DarkFantasyTheme.body)
+                        .font(DarkFantasyTheme.buttonLabelCompact)
                 }
                 .frame(maxWidth: .infinity)
             }

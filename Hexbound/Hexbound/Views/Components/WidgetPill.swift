@@ -6,7 +6,7 @@ import SwiftUI
 /// Redesigned for comfortable touch targets (44pt height, 14px font, icon in circle).
 @MainActor
 struct WidgetPill: View {
-    let icon: String                    // SF Symbol name or emoji string
+    let icon: String                    // SF Symbol name (rendered as Image(systemName:))
     let text: String
     var count: String? = nil            // e.g. "×3"
     var imageAsset: String? = nil       // Asset catalog image name (replaces emoji icon)
@@ -172,8 +172,9 @@ struct WidgetPill: View {
                 .resizable().scaledToFit()
                 .frame(width: LayoutConstants.pillIconSize + 4, height: LayoutConstants.pillIconSize + 4)
         } else if !icon.isEmpty {
-            Text(icon)
+            Image(systemName: icon)
                 .font(.system(size: LayoutConstants.pillIconSize))
+                .foregroundStyle(accentColor)
         }
     }
 }
