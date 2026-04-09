@@ -38,7 +38,7 @@ struct BuyStatPointsView: View {
         ScrollView {
             VStack(spacing: LayoutConstants.spaceLG) {
                 // Screen header
-                OrnamentalTitle("BUY STAT POINTS", style: .screenTitle)
+                OrnamentalTitle("BUY STAT POINTS")
                     .padding(.top, LayoutConstants.spaceSM)
 
                 // Crystal balance
