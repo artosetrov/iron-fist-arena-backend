@@ -197,7 +197,7 @@ export async function POST(
 
       // Gold now lives on User
       await tx.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: { gold: { increment: goldReward } },
       })
 

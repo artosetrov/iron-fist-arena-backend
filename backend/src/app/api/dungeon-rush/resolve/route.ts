@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
     if (currentRoom.type === 'shop' && action !== 'leave_shop') {
       const shopItems = generateShopItems(currentRoom.seed)
       const userGold = await prisma.user.findUnique({
-        where: { id: userId },
+        where: { id: user.id },
         select: { gold: true },
       })
       return NextResponse.json({
@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
       if (goldReward > 0 || xpReward > 0) {
         if (goldReward > 0) {
           await tx.user.update({
-            where: { id: userId },
+            where: { id: user.id },
             data: { gold: { increment: goldReward } },
           })
         }
