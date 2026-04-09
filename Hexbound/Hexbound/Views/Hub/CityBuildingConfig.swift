@@ -136,9 +136,10 @@ let defaultCityBuildings: [CityBuilding] = [
 @MainActor
 func resolvedCityBuildings(from cache: GameDataCache) -> [CityBuilding] {
     let overrides = cache.hubLayout
-    guard !overrides.isEmpty else { return defaultCityBuildings }
+    let base = defaultCityBuildings.filter { $0.route != nil } // Hide Coming Soon buildings (route == nil)
+    guard !overrides.isEmpty else { return base }
 
-    return defaultCityBuildings.map { building in
+    return base.map { building in
         var b = building
         if let o = overrides[building.id] {
             b.relativeX = o.x
@@ -151,4 +152,4 @@ func resolvedCityBuildings(from cache: GameDataCache) -> [CityBuilding] {
 
 // MARK: - Convenience (for views without cache access, uses defaults)
 
-var cityBuildings: [CityBuilding] { defaultCityBuildings }
+var cityBuildings: [CityBuilding] { defaultCityBuildings.filter { $0.route != nil } }

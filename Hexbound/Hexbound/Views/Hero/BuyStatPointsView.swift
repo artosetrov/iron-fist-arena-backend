@@ -174,7 +174,7 @@ struct BuyStatPointsView: View {
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     ForEach(0..<vm.dailyLimit, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 3)
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                             .fill(
                                 i < vm.purchasesToday
                                     ? DarkFantasyTheme.textDisabled
@@ -215,7 +215,7 @@ struct BuyStatPointsView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Step indicator
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                     .fill(
                         isPurchased
                             ? DarkFantasyTheme.bgTertiary
@@ -329,10 +329,10 @@ struct BuyStatPointsView: View {
             // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.bgTertiary)
 
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(
                             LinearGradient(
                                 colors: [DarkFantasyTheme.cyan.opacity(0.8), DarkFantasyTheme.cyan],

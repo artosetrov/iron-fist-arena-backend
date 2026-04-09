@@ -582,7 +582,7 @@ struct ArenaDetailView: View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Win/Loss indicator
             Image(systemName: match.isWin ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .font(.system(size: 20))
+                .font(DarkFantasyTheme.section)
                 .foregroundStyle(match.isWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
             // Opponent info
@@ -657,7 +657,7 @@ struct ArenaDetailView: View {
     private func emptyState<CTA: View>(icon: String, message: String, @ViewBuilder cta: () -> CTA = { EmptyView() }) -> some View {
         VStack(spacing: LayoutConstants.spaceMD) {
             Image(systemName: icon)
-                .font(.system(size: 40))
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(message)
                 .font(DarkFantasyTheme.body)

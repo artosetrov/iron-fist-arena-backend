@@ -21,7 +21,7 @@ export async function POST(
 
     // Rate limit
     const rateLimitKey = `mail:claim:${user.id}`;
-    const isAllowed = await rateLimit(rateLimitKey, 10, 60); // 10 requests per minute
+    const isAllowed = await rateLimit(rateLimitKey, 10, 60_000); // 10 requests per minute
     if (!isAllowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
@@ -50,38 +50,36 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Verify mail recipient exists and belongs to character
-    const mailRecipient = await prisma.mailRecipient.findUnique({
-      where: { id },
-      include: { message: true },
-    });
-
-    if (!mailRecipient) {
-      return NextResponse.json({ error: 'Mail not found' }, { status: 404 });
-    }
-
-    if (mailRecipient.characterId !== character_id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    if (mailRecipient.isClaimed) {
-      return NextResponse.json(
-        { error: 'Mail already claimed' },
-        { status: 400 }
+    // All checks and claims inside a single transaction with row-level lock
+    // to prevent double-claim race condition
+    const claimedAttachments = await prisma.$transaction(async (tx) => {
+      // Lock the mail recipient row to prevent concurrent double-claims
+      const [mailRow] = await tx.$queryRawUnsafe<Array<{
+        id: string;
+        is_claimed: boolean;
+        character_id: string;
+        message_id: string;
+      }>>(
+        `SELECT mr.id, mr.is_claimed, mr.character_id, mr.message_id
+         FROM mail_recipients mr
+         WHERE mr.id = $1
+         FOR UPDATE`,
+        id
       );
-    }
 
-    const attachments: Attachment[] = (mailRecipient.message.attachments as Attachment[]) || [];
+      if (!mailRow) throw new Error('MAIL_NOT_FOUND');
+      if (mailRow.character_id !== character_id) throw new Error('FORBIDDEN');
+      if (mailRow.is_claimed) throw new Error('ALREADY_CLAIMED');
 
-    if (!attachments || attachments.length === 0) {
-      return NextResponse.json(
-        { error: 'No attachments to claim' },
-        { status: 400 }
-      );
-    }
+      // Fetch message attachments
+      const message = await tx.mailMessage.findUnique({
+        where: { id: mailRow.message_id },
+        select: { attachments: true },
+      });
 
-    // Use transaction to atomically process claim
-    const result = await prisma.$transaction(async (tx) => {
+      const attachments: Attachment[] = (message?.attachments as Attachment[]) || [];
+      if (!attachments || attachments.length === 0) throw new Error('NO_ATTACHMENTS');
+
       // Calculate totals for each attachment type
       let goldToAdd = 0;
       let gemsToAdd = 0;
@@ -116,8 +114,8 @@ export async function POST(
         });
       }
 
-      // Mark mail as claimed and read
-      const updated = await tx.mailRecipient.update({
+      // Mark mail as claimed and read (atomically after lock)
+      await tx.mailRecipient.update({
         where: { id },
         data: {
           isClaimed: true,
@@ -127,11 +125,17 @@ export async function POST(
         },
       });
 
-      return updated;
+      return attachments;
     });
 
-    return NextResponse.json({ success: true, claimed: attachments });
+    return NextResponse.json({ success: true, claimed: claimedAttachments });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'MAIL_NOT_FOUND') return NextResponse.json({ error: 'Mail not found' }, { status: 404 });
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      if (error.message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Mail already claimed' }, { status: 400 });
+      if (error.message === 'NO_ATTACHMENTS') return NextResponse.json({ error: 'No attachments to claim' }, { status: 400 });
+    }
     console.error('Mail claim error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -24,12 +24,14 @@ struct SettingsDetailView: View {
                             .staggeredAppear(index: 3)
                         accountSection(vm: vm)
                             .staggeredAppear(index: 4)
+                        legalSection
+                            .staggeredAppear(index: 5)
                         if appState.isAdmin {
                             devToolsSection
-                                .staggeredAppear(index: 5)
+                                .staggeredAppear(index: 6)
                         }
                         versionLabel
-                            .staggeredAppear(index: 6)
+                            .staggeredAppear(index: 7)
                     }
                     .padding(.horizontal, LayoutConstants.screenPadding)
                     .padding(.vertical, LayoutConstants.spaceMD)
@@ -322,6 +324,56 @@ struct SettingsDetailView: View {
     }
 
     // MARK: - Version
+
+    // MARK: - Legal
+
+    private var legalSection: some View {
+        settingsCard {
+            sectionHeader("Legal")
+
+            Button {
+                if let url = URL(string: "https://hexboundapp.com/privacy") {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "hand.raised.fill")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    Text("Privacy Policy")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .frame(height: LayoutConstants.buttonHeightMD)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.scalePress(0.97))
+            .accessibilityLabel("Open privacy policy")
+
+            Button {
+                if let url = URL(string: "https://hexboundapp.com/terms") {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "doc.text.fill")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    Text("Terms of Service")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .frame(height: LayoutConstants.buttonHeightMD)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.scalePress(0.97))
+            .accessibilityLabel("Open terms of service")
+        }
+    }
 
     private var versionLabel: some View {
         Text("Hexbound v1.0.0")

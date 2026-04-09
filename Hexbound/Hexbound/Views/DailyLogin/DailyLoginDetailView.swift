@@ -28,6 +28,10 @@ struct DailyLoginDetailView: View {
                 if vm.isLoading {
                     HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.gold)
+                } else if vm.loginData == nil {
+                    ErrorStateView.loadFailed {
+                        Task { await vm.loadData() }
+                    }
                 } else if let data = vm.loginData {
                     ScrollView {
                         VStack(spacing: 0) {
