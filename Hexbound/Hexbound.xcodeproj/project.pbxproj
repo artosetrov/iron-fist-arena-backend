@@ -494,6 +494,7 @@
 		69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginData.swift; sourceTree = "<group>"; };
 		6BB9546BEA21F368E3E72FA3 /* BattlePassViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassViewModel.swift; sourceTree = "<group>"; };
 		6DA3F171A26F726A5603682D /* CharacterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterViewModel.swift; sourceTree = "<group>"; };
+		15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuyStatPointsViewModel.swift; sourceTree = "<group>"; };
 		6E890783BBDDCD6E2B9EC21D /* ToastOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastOverlayView.swift; sourceTree = "<group>"; };
 		720116DA77938BB71D6534EE /* hit_rogue.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue.wav; sourceTree = "<group>"; };
 		8DBFB18E010F12630B565F22 /* hit_rogue_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_rogue_2.wav; sourceTree = "<group>"; };
@@ -624,6 +625,7 @@
 		CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterSelectionViewModel.swift; sourceTree = "<group>"; };
 		D145DE1A5F794907BB756397 /* CombatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatDetailView.swift; sourceTree = "<group>"; };
 		D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItem.swift; sourceTree = "<group>"; };
+		776542cff60cc81ecdff074b /* StatPurchase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatPurchase.swift; sourceTree = "<group>"; };
 		D3EF70965657F120803C752C /* CachedAssetImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAssetImage.swift; sourceTree = "<group>"; };
 		D4E5F6A70819BAC1D2E3F4A6 /* TutorialManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialManager.swift; sourceTree = "<group>"; };
 		D4E5F6A70819BAC1D2E3F4A8 /* TutorialTooltipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialTooltipView.swift; sourceTree = "<group>"; };
@@ -1209,6 +1211,7 @@
 		91F0EFA687D297B5AC0B79B9 /* Hero */ = {
 			isa = PBXGroup;
 			children = (
+				f258edcf70612de2b763c15f /* BuyStatPointsView.swift */,
 				20BBF308478B5B2817B50708 /* HeroDetailView.swift */,
 			);
 			path = Hero;
@@ -1259,6 +1262,7 @@
 		A1D429C87BB247EB3A3D1501 /* Hub */ = {
 			isa = PBXGroup;
 			children = (
+				15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */,
 				6DA3F171A26F726A5603682D /* CharacterViewModel.swift */,
 				C1A00001CITY00000005 /* CityBuildingConfig.swift */,
 				C1A00001CITY00000006 /* CityBuildingLabel.swift */,
@@ -1323,6 +1327,7 @@
 				CE7DEC31D96099535208BCD1 /* RevengeEntry.swift */,
 				7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */,
 				D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */,
+				776542cff60cc81ecdff074b /* StatPurchase.swift */,
 				OFFER001REF00001 /* ShopOffer.swift */,
 				62CD513D5B1711C8822F3588 /* Enums */,
 			);
@@ -1799,6 +1804,7 @@
 				1DBFF877794C9BA0839B0D1F /* GameDataCache.swift in Sources */,
 				PUSH001BLD0000000000000A /* PushNotificationService.swift in Sources */,
 				39D74F5FA6517FA9F682F63D /* GameInitService.swift in Sources */,
+				db49acc029b0de8074220c92 /* BuyStatPointsView.swift in Sources */,
 				B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */,
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
 				AC2F4A6B8C9D0E1F2A3B4C5D /* GuildHallDetailView.swift in Sources */,
