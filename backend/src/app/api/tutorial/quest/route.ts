@@ -170,7 +170,7 @@ async function handleClaim(
     if (rewards.gold) {
       goldDelta = rewards.gold
       await tx.user.update({
-        where: { id: user.id },
+        where: { id: userId },
         data: { gold: { increment: rewards.gold } },
       })
     }
