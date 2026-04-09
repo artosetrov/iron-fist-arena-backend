@@ -94,6 +94,7 @@ vi.mock('@/lib/game/balance', () => ({
   },
   chaGoldBonus: (value: number) => value,
   streakGoldMultiplier: () => 0,
+  lossStreakGoldMultiplier: () => 1,
   levelScaledReward: (value: number) => value,
 }))
 
