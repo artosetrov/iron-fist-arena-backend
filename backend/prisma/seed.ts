@@ -124,6 +124,7 @@ async function main() {
           email: `bot_${name.toLowerCase()}@arena.bot`,
           username: name,
           authProvider: 'bot',
+          gold: 500 + level * 100,
           characters: {
             create: {
               characterName: name,
@@ -138,7 +139,6 @@ async function main() {
               pvpWinStreak: randInt(0, Math.min(level, 10)),
               highestPvpRank: rating + randInt(0, 80),
               pvpCalibrationGames: 10,
-              gold: 500 + level * 100,
               ...stats,
               currentHp: stats.maxHp,
             },
