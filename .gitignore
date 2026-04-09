@@ -11,10 +11,19 @@ node_modules/
 # Dev artifacts & prototypes
 User/WIP/
 User/sprites/
+User/dange.png
 combat-fx-prototype/
 .claude/agent-bus/
+.git-backups/
 
-# Landing page (moved to separate repo)
+# Prototypes (deleted, prevent re-add)
+*.prototype.html
+*-prototype.html
+*-prototype*.jsx
+*-audit.html
+comic-proto-assets/
+
+# Landing page (separate repo: artosetrov/hexbound-landing)
 hexbound-landing/
 
 # Archived prototypes
