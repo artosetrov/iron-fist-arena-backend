@@ -156,13 +156,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Apply referral — give bonus gold to invitee
+    // Apply referral — mark on character, give bonus gold to user account
     await prisma.character.update({
       where: { id: character_id },
-      data: {
-        referredBy: code,
-        gold: { increment: REFERRAL_BONUS.extraGold },
-      },
+      data: { referredBy: code },
+    })
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { gold: { increment: REFERRAL_BONUS.extraGold } },
     })
 
     logTutorialEvent({
