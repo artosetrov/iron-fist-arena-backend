@@ -2,8 +2,9 @@ import { PrismaClient } from '@prisma/client'
 import { getGemCostsConfig } from './live-config'
 
 export const MINE_DURATION_HOURS = 4
-export const MINE_REWARD_MIN = 60
-export const MINE_REWARD_MAX = 150
+// Economy v2 — reduced to align gold mine with ~5-8% of daily income, not 15-20%
+export const MINE_REWARD_MIN = 40
+export const MINE_REWARD_MAX = 100
 export const MAX_GOLD_MINE_SLOTS = 3
 
 // Lazy getters for gem costs (read from live config)

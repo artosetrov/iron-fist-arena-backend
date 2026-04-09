@@ -6,13 +6,14 @@ import { getGameConfig } from '@/lib/game/config'
 import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
 
 // Hardcoded price fallbacks — overridden by GameConfig consumable.price.* keys
+// Economy v2 — consumable prices increased ~25-35% to create recurring gold sink pressure
 const DEFAULT_CONSUMABLE_PRICES: Record<string, number> = {
-  stamina_potion_small: 100,
-  stamina_potion_medium: 250,
-  stamina_potion_large: 500,
-  health_potion_small: 150,
-  health_potion_medium: 350,
-  health_potion_large: 700,
+  stamina_potion_small: 150,   // was 100
+  stamina_potion_medium: 300,  // was 250
+  stamina_potion_large: 600,   // was 500
+  health_potion_small: 200,    // was 150
+  health_potion_medium: 400,   // was 350
+  health_potion_large: 800,    // was 700
 }
 
 // Gem packs: required level to unlock each tier

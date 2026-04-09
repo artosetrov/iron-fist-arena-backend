@@ -13,7 +13,7 @@ export const STAMINA = {
   DUNGEON_HARD: 25,
   BOSS: 40,
   TRAINING: 5,
-  FREE_PVP_PER_DAY: 5,
+  FREE_PVP_PER_DAY: 3,       // was 5 — 3 free = hook, then stamina/gems
 } as const;
 
 // --- HP Regen ---
@@ -28,12 +28,12 @@ export function xpForLevel(level: number): number {
   return 100 * level + 20 * level * level;
 }
 
-// --- Gold rewards ---
+// --- Gold rewards (Economy v2 — reduced to fix gold hyperinflation) ---
 export const GOLD_REWARDS = {
-  PVP_WIN_BASE: 200,
-  PVP_LOSS_BASE: 70,
-  TRAINING_WIN: 50,
-  TRAINING_LOSS: 20,
+  PVP_WIN_BASE: 150,         // was 200 — sink ratio was 10%, target 55-65%
+  PVP_LOSS_BASE: 50,         // was 70 — loss shouldn't feel comfortable
+  TRAINING_WIN: 30,           // was 50 — training = practice, not income
+  TRAINING_LOSS: 10,          // was 20
   REVENGE_MULTIPLIER: 1.5,
 } as const;
 
@@ -72,12 +72,13 @@ export interface DailyLoginRewardDef {
   itemId?: string;
 }
 
+// --- Daily login rewards (Economy v2 — reduced gold days to prevent passive > active income) ---
 export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
-  { type: 'gold', amount: 200 },                                          // Day 1
+  { type: 'gold', amount: 150 },                                          // Day 1 (was 200)
   { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },      // Day 2
-  { type: 'gold', amount: 500 },                                          // Day 3
+  { type: 'gold', amount: 300 },                                          // Day 3 (was 500)
   { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },      // Day 4
-  { type: 'gold', amount: 1000 },                                         // Day 5
+  { type: 'gold', amount: 500 },                                          // Day 5 (was 1000)
   { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },      // Day 6
   { type: 'gems', amount: 25 },                                           // Day 7
 ] as const;
@@ -267,10 +268,10 @@ export function levelScaledReward(baseReward: number, level: number): number {
   return Math.floor(baseReward * (1 + (level - 1) * 0.02));
 }
 
-// --- Equipment Repair Costs (gold sink, scales with item level and rarity) ---
+// --- Equipment Repair Costs (Economy v2 — increased for meaningful sink) ---
 export const REPAIR_COSTS = {
-  BASE_COST: 50,                // Base gold per repair
-  PER_LEVEL: 10,                // +10 gold per item level
+  BASE_COST: 80,                // was 50 — repair must cost 15-25% of daily income
+  PER_LEVEL: 15,                // was 10 — scales harder at high levels
   RARITY_MULTIPLIERS: {         // Multiplier by rarity
     common: 1.0,
     uncommon: 1.5,
@@ -284,6 +285,17 @@ export const REPAIR_COSTS = {
 export function repairCost(itemLevel: number, rarity: string): number {
   const mult = (REPAIR_COSTS.RARITY_MULTIPLIERS as Record<string, number>)[rarity] ?? 1.0;
   return Math.floor((REPAIR_COSTS.BASE_COST + itemLevel * REPAIR_COSTS.PER_LEVEL) * mult);
+}
+
+// --- Equipment Upgrade Costs (Economy v2 — exponential to create endgame gold sink) ---
+export const UPGRADE_COSTS = {
+  BASE: 150,
+  EXPONENT: 1.4,
+} as const;
+
+/** Calculate gold cost for upgrading to +N. Exponential: 150 × 1.4^N */
+export function upgradeCost(plusLevel: number): number {
+  return Math.floor(UPGRADE_COSTS.BASE * Math.pow(UPGRADE_COSTS.EXPONENT, plusLevel));
 }
 
 // --- Active Skills ---
@@ -302,13 +314,14 @@ export const PASSIVES = {
   RESPEC_GOLD_COST: 5000, // Alternative gold cost for respec (gold sink)
 } as const;
 
-// --- Gem costs ---
+// --- Gem costs (Economy v2) ---
 export const GEM_COSTS = {
   STAMINA_REFILL: 30,
-  EXTRA_PVP_COMBAT: 50,
+  EXTRA_PVP_COMBAT: 50,         // kept for backward compat, prefer STAMINA_REFILL
   BATTLE_PASS_PREMIUM: 500,
   GOLD_MINE_BUY_SLOT: 50,
   GOLD_MINE_BOOST: 10,
+  UPGRADE_PROTECTION: 50,       // was 30 — protection more valuable with exponential upgrade costs
 } as const;
 
 // --- Inventory ---

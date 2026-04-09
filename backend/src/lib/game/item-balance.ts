@@ -319,9 +319,9 @@ export async function calculatePricefromPower(powerScore: number): Promise<{ sel
  */
 export async function getUpgradeCost(currentUpgradeLevel: number): Promise<number> {
   const [formula, base, exponent] = await Promise.all([
-    getGameConfig<string>('item_balance.upgrade_cost_formula', 'linear'),
-    getGameConfig<number>('item_balance.upgrade_cost_base', 100),
-    getGameConfig<number>('item_balance.upgrade_cost_exponent', 1.5),
+    getGameConfig<string>('item_balance.upgrade_cost_formula', 'exponential'),
+    getGameConfig<number>('item_balance.upgrade_cost_base', 150),
+    getGameConfig<number>('item_balance.upgrade_cost_exponent', 1.4),
   ])
 
   const level = currentUpgradeLevel + 1
@@ -351,7 +351,7 @@ export async function getUpgradeSuccessChance(currentUpgradeLevel: number): Prom
  * Get the upgrade protection scroll gem cost.
  */
 export async function getUpgradeProtectionCost(): Promise<number> {
-  return getGameConfig<number>('item_balance.upgrade_protection_gem_cost', 30)
+  return getGameConfig<number>('item_balance.upgrade_protection_gem_cost', 50)
 }
 
 /**

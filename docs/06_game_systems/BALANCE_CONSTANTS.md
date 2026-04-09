@@ -1,6 +1,7 @@
 # Game Balance Constants (Source of Truth)
 
 *Derived from backend: `src/lib/game/balance.ts`, `live-config.ts`, `loot.ts`, `gold-mine.ts`*
+*Updated: 2026-04-09 — Economy v2 rebalance*
 
 ---
 
@@ -27,10 +28,10 @@
 | Dungeon Hard | 25 | Challenging |
 | Boss Fight | 40 | High-difficulty encounter |
 | Training | 5 | Low-cost practice |
-| Free PvP | 5 per match | Max 5/day (no cost) |
+| Free PvP | 0 per match | Max 3/day (no cost) |
 | Extra PvP (Gem) | +5 stamina | Purchased with 50 gems |
 
-**Free PvP System:** Players get 5 free PvP matches per day (0 stamina), then must spend stamina or gems.
+**Free PvP System:** Players get 3 free PvP matches per day (0 stamina), then must spend stamina or gems.
 
 ### Stamina Potion Types
 
@@ -49,8 +50,8 @@
 
 | Activity | Win Reward | Loss Reward | Notes |
 |----------|-----------|-----------|-------|
-| **PvP** | 200 gold | 70 gold | Standard ranked (buffed from 150/50, 2026-03-25) |
-| **Training** | 50 gold | 20 gold | Practice mode |
+| **PvP** | 150 gold | 50 gold | Economy v2 (reduced from 200/70) |
+| **Training** | 30 gold | 10 gold | Economy v2 (reduced from 50/20) |
 
 ### PvP Gold Multipliers
 
@@ -179,6 +180,21 @@ At level 50:
 - Must prestige to level up again
 - Prestige resets level to 1, keeps XP
 
+### Stat Effects
+
+| Stat | Primary Effect | Secondary Effect |
+|------|---|---|
+| STR | Damage scaling | — |
+| AGI | Attack speed, Crit % | — |
+| VIT | Max HP scaling | — |
+| END | Armor scaling | — |
+| INT | Magic damage scaling | — |
+| WIS | Magic resist scaling | — |
+| **LUK** | **Drop rate (+0.3% per point)** | **Dodge (+0.1 per point)** |
+| CHA | Gold rewards (tiered diminishing) | — |
+
+**LUK Note:** Luck now contributes to dodge chance at 0.1 per point, providing a defensive stat synergy beyond loot drops.
+
 ---
 
 ## Prestige System
@@ -284,6 +300,7 @@ Premium currency sinks:
 |--------|------|-------|
 | Stamina Refill | 30 gems | Instant full stamina |
 | Extra PvP Combat | 50 gems | +5 stamina immediately |
+| Upgrade Protection | 50 gems | Prevents downgrade on failed +6+ upgrade |
 | Battle Pass Premium | 500 gems | Unlocks premium track (100 levels) |
 | Gold Mine Slot (buy) | 50 gems | Unlock 3rd mining slot |
 | Gold Mine Boost | 10 gems | Speed up current slot by 2 hours |
@@ -306,12 +323,12 @@ Players earn free gems from:
 |----------|-------|---------|
 | Duration per Slot | 4 hours | Timer per active mine |
 | Max Slots | 3 | Can mine simultaneously |
-| Reward Range | 60–150 gold | Per completed slot (nerfed from 100–250, 2026-03-25) |
+| Reward Range | 40–100 gold | Per completed slot (Economy v2, was 60-150) |
 | Gem Drop Chance | 10% | Per collection |
 | Gem Drop Amount | 1–3 | If gems drop |
 
 **Example (3 slots, all mining):**
-- 4 hours later → collect 3 slots → ~315 gold + (30% chance) gems
+- 4 hours later → collect 3 slots → ~210 gold + (30% chance) gems
 
 ### Boost Mechanics
 
@@ -379,15 +396,15 @@ Players earn free gems from:
 
 | Day | Reward Type | Amount | Equivalent |
 |-----|-----------|--------|-----------|
-| 1 | Gold | 200 | |
+| 1 | Gold | 150 | Economy v2 (was 200) |
 | 2 | Stamina Potion (Small) | 1 | +50 stamina |
-| 3 | Gold | 500 | |
+| 3 | Gold | 300 | Economy v2 (was 500) |
 | 4 | Stamina Potions (Small) | 2 | +100 stamina |
-| 5 | Gold | 1000 | |
+| 5 | Gold | 500 | Economy v2 (was 1000) |
 | 6 | Stamina Potion (Large) | 1 | +100 stamina |
 | 7 | Gems | 25 | Premium currency |
 
-**Weekly Total:** 1700 gold + 250 stamina + 25 gems
+**Weekly Total:** 950 gold + 250 stamina + 25 gems
 
 ### Streak System
 
@@ -479,24 +496,26 @@ BP XP for Level N = 100 + N × 50
 
 ## PvP Matchmaking Parameters
 
-Matchmaking uses a **3-phase cascade** — each phase widens the search if too few candidates are found.
+Matchmaking uses a **4-phase cascade** — each phase widens the search if too few candidates are found.
 
 | Parameter | `/pvp/opponents` | `/pvp/find-match` |
 |-----------|-------------------|-------------------|
 | Max returned | 5 | 3 |
 | Level range | ±10 | ±10 |
 | Gear score tolerance | ±80% | ±80% |
+| Rating range (Phase 1) | ±200 ELO | ±200 ELO |
 | Display (iOS) | 2 at a time (carousel) | N/A |
 
-**Phase 1:** Level ±10 AND gear score ±80% → `take: 15`
-**Phase 2 (fallback):** Level ±10 only (no gear filter) → merge without duplicates
-**Phase 3 (final fallback):** ANY character (no level/gear filter) → merge without duplicates
+**Phase 1 (tightest):** Level ±10 AND Gear score ±80% AND Rating ±200 ELO → `take: 15`
+**Phase 2:** Level ±10 AND Gear score ±80% (drops rating filter) → merge without duplicates
+**Phase 3:** Level ±10 only (drops gear filter) → merge without duplicates
+**Phase 4 (final fallback):** ANY character (no level/gear/rating filter) → merge without duplicates
 
-Sorting: closest `levelDiff` first, then closest `gearDiff`. Top N returned.
+Sorting: closest `ratingDiff` first, then closest `levelDiff`, then closest `gearDiff`. Top N returned.
 
-**Why wide range:** Early-stage player pool is small. The cascade ensures opponents are always shown, with closest matches ranked first. Tighten ranges as player base grows.
+**Why wide range:** Early-stage player pool is small. The 4-phase cascade ensures opponents are always shown, with closest matches ranked first. As player base grows, rating filtering in Phase 1 provides more balanced matchups while fallback phases guarantee selection.
 
-**Note:** Matchmaking does NOT use `pvpRating` for filtering — rating is display-only. If rating-based matchmaking is added, see archive audit for smurf/manipulation concerns.
+**Rating in Matchmaking:** Phase 1 now uses `pvpRating` (±200 ELO) for balanced early matches. Phases 2–4 drop rating filters for broader fallback pools. This prevents smurf matchups while keeping the pool diverse when needed.
 
 ---
 
@@ -518,22 +537,22 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 ## Reference Table: Gold Earning Rates
 
 **PvP (Level 1, no bonuses):**
-- Win: 200 gold
-- Loss: 70 gold
-- Avg per match: 135 gold
+- Win: 150 gold
+- Loss: 50 gold
+- Avg per match: 100 gold
 
 **PvP (Level 50, no bonuses):**
-- Win: 200 × 1.98 = 396 gold
-- Loss: 70 × 1.98 = 139 gold
-- Avg per match: 268 gold
+- Win: 150 × 1.98 = 297 gold
+- Loss: 50 × 1.98 = 99 gold
+- Avg per match: 198 gold
 
 **Training (Level 1):**
-- Win: 50 gold
-- Loss: 20 gold
-- Avg: 35 gold
+- Win: 30 gold
+- Loss: 10 gold
+- Avg: 20 gold
 
 **Gold Mine (passive):**
-- ~105 gold per 4 hours = ~26 gold/hour (nerfed from ~200/4h)
+- ~70 gold per 4 hours = ~17.5 gold/hour (Economy v2)
 
 ---
 
@@ -545,7 +564,7 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 2. **Gold Grinding:** 50–300 gold per match (PvP/Training)
 3. **Loot Farming:** 5–75% drop chance per difficulty
 4. **Daily Rewards:** 1700 gold + 250 stamina/week
-5. **Gold Mine:** 60–150 gold per 4 hours (nerfed 2026-03-25)
+5. **Gold Mine:** 40–100 gold per 4 hours (Economy v2)
 
 ### Pay-to-Accelerate Options
 
