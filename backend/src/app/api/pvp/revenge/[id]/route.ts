@@ -162,7 +162,6 @@ export async function POST(
       lastHpUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
-      gold: { increment: goldReward },
       currentXp: { increment: xpReward },
       lastPlayed: now,
     }
@@ -191,7 +190,6 @@ export async function POST(
       lastHpUpdate: now,
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
-      gold: { increment: defenderGoldReward },
       currentXp: { increment: defenderXpReward },
     }
 
@@ -208,9 +206,12 @@ export async function POST(
       defenderUpdate.pvpWinStreak = 0
     }
 
-    const [updatedAttacker, , pvpMatch] = await prisma.$transaction([
+    const [updatedAttacker, , , , pvpMatch] = await prisma.$transaction([
       prisma.character.update({ where: { id: attacker.id }, data: attackerUpdate }),
       prisma.character.update({ where: { id: defender.id }, data: defenderUpdate }),
+      // Gold rewards on user level (shared wallet)
+      prisma.user.update({ where: { id: attacker.userId }, data: { gold: { increment: goldReward } } }),
+      prisma.user.update({ where: { id: defender.userId }, data: { gold: { increment: defenderGoldReward } } }),
       prisma.pvpMatch.create({
         data: {
           player1Id: attacker.id,

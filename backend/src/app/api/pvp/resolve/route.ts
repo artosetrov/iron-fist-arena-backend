@@ -121,7 +121,6 @@ export async function POST(req: NextRequest) {
       class: true,
       origin: true,
       avatar: true,
-      gold: true,
       maxHp: true,
       pvpWins: true,
       pvpLosses: true,
@@ -222,7 +221,6 @@ export async function POST(req: NextRequest) {
       lastHpUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
-      gold: { increment: goldReward },
       currentXp: { increment: xpReward },
       lastPlayed: now,
     }
@@ -253,7 +251,6 @@ export async function POST(req: NextRequest) {
       lastHpUpdate: now,
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
-      gold: { increment: defenderGoldReward },
       currentXp: { increment: defenderXpReward },
     }
 
@@ -354,6 +351,16 @@ export async function POST(req: NextRequest) {
       await tx.character.update({
         where: { id: defender.id },
         data: defenderUpdate,
+      })
+
+      // Gold rewards on user level (shared wallet)
+      await tx.user.update({
+        where: { id: attacker.userId },
+        data: { gold: { increment: goldReward } },
+      })
+      await tx.user.update({
+        where: { id: defender.userId },
+        data: { gold: { increment: defenderGoldReward } },
       })
 
       const pvpMatch = await tx.pvpMatch.create({
@@ -583,7 +590,7 @@ async function resolveBotFight(
       lastStaminaUpdate: true, pvpRating: true, pvpCalibrationGames: true,
       freePvpToday: true, freePvpDate: true, firstWinToday: true, firstWinDate: true,
       highestPvpRank: true, cha: true, level: true, luk: true, characterName: true,
-      class: true, origin: true, gold: true, maxHp: true,
+      class: true, origin: true, maxHp: true,
       pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
     },
   })
@@ -647,7 +654,6 @@ async function resolveBotFight(
     lastHpUpdate: now,
     pvpRating: attackerNewRating,
     pvpCalibrationGames: { increment: 1 },
-    gold: { increment: goldReward },
     currentXp: { increment: xpReward },
     lastPlayed: now,
   }
@@ -710,6 +716,12 @@ async function resolveBotFight(
     const updatedAttacker = await tx.character.update({
       where: { id: attacker.id },
       data: attackerUpdate,
+    })
+
+    // Gold reward on user level (shared wallet)
+    await tx.user.update({
+      where: { id: attacker.userId },
+      data: { gold: { increment: goldReward } },
     })
 
     // Bot fight PvpMatch: self-reference for player2 since bot has no DB record.

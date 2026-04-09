@@ -231,7 +231,6 @@ export async function POST(req: NextRequest) {
         pvpWinStreak: true,
         pvpLossStreak: true,
         currentHp: true,
-        gold: true,
         avatar: true,
       },
     })
@@ -443,20 +442,20 @@ async function handleAccept(character: any, body: any) {
     prisma.character.findUnique({
       where: { id: winnerId },
       select: {
-        id: true, level: true, cha: true, luk: true,
+        id: true, userId: true, level: true, cha: true, luk: true,
         pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
         pvpRating: true, pvpCalibrationGames: true, highestPvpRank: true,
         firstWinToday: true, firstWinDate: true,
-        gold: true, currentHp: true,
+        currentHp: true,
       },
     }),
     prisma.character.findUnique({
       where: { id: loserId },
       select: {
-        id: true, level: true, cha: true,
+        id: true, userId: true, level: true, cha: true,
         pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
         pvpRating: true, pvpCalibrationGames: true, highestPvpRank: true,
-        gold: true, currentHp: true,
+        currentHp: true,
       },
     }),
   ])
@@ -516,7 +515,6 @@ async function handleAccept(character: any, body: any) {
         pvpLossStreak: 0,
         pvpCalibrationGames: { increment: 1 },
         highestPvpRank: Math.max(winner.highestPvpRank, newWinnerRating),
-        gold: { increment: winnerGold },
         currentHp: Math.max(1, winnerFinalHp),
         lastHpUpdate: new Date(),
       },
@@ -530,10 +528,18 @@ async function handleAccept(character: any, body: any) {
         pvpLossStreak: { increment: 1 },
         pvpWinStreak: 0,
         pvpCalibrationGames: { increment: 1 },
-        gold: { increment: loserGold },
         currentHp: Math.max(1, loserFinalHp),
         lastHpUpdate: new Date(),
       },
+    }),
+    // Gold rewards on user level
+    prisma.user.update({
+      where: { id: winner.userId },
+      data: { gold: { increment: winnerGold } },
+    }),
+    prisma.user.update({
+      where: { id: loser.userId },
+      data: { gold: { increment: loserGold } },
     }),
     // Complete the challenge
     prisma.challenge.update({

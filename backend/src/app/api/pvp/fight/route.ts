@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
       class: true,
       origin: true,
       avatar: true,
-      gold: true,
       maxHp: true,
       currentHp: true,
       lastHpUpdate: true,
@@ -229,7 +228,6 @@ export async function POST(req: NextRequest) {
       lastHpUpdate: now,
       pvpRating: attackerNewRating,
       pvpCalibrationGames: { increment: 1 },
-      gold: { increment: goldReward },
       currentXp: { increment: xpReward },
       lastPlayed: now,
     }
@@ -260,7 +258,6 @@ export async function POST(req: NextRequest) {
       lastHpUpdate: now,
       pvpRating: defenderNewRating,
       pvpCalibrationGames: { increment: 1 },
-      gold: { increment: defenderGoldReward },
       currentXp: { increment: defenderXpReward },
     }
 
@@ -326,6 +323,10 @@ export async function POST(req: NextRequest) {
 
       const updatedAttacker = await tx.character.update({ where: { id: attacker.id }, data: attackerUpdate })
       await tx.character.update({ where: { id: defender.id }, data: defenderUpdate })
+
+      // Gold rewards on user level (shared wallet)
+      await tx.user.update({ where: { id: attacker.userId }, data: { gold: { increment: goldReward } } })
+      await tx.user.update({ where: { id: defender.userId }, data: { gold: { increment: defenderGoldReward } } })
 
       const pvpMatch = await tx.pvpMatch.create({
         data: {

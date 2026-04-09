@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     const [character, run] = await Promise.all([
       prisma.character.findFirst({
         where: { id: character_id, userId: user.id },
-        select: { id: true, cha: true, gold: true },
+        select: { id: true, cha: true },
       }),
       prisma.dungeonRun.findFirst({
         where: {

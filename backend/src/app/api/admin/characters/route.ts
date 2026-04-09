@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const [rawCharacters, total] = await Promise.all([
       prisma.character.findMany({
         where,
-        include: { user: { select: { email: true, username: true } } },
+        include: { user: { select: { email: true, username: true, gold: true } } },
         orderBy: { pvpRating: 'desc' },
         take: limit,
         skip: offset,
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       pvpRating: c.pvpRating,
       pvpWins: c.pvpWins,
       pvpLosses: c.pvpLosses,
-      gold: c.gold,
+      gold: c.user.gold,
       createdAt: c.createdAt,
       lastPlayed: c.lastPlayed,
       user: c.user,

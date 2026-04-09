@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     const [character, offer] = await Promise.all([
       prisma.character.findUnique({
         where: { id: character_id },
-        select: { id: true, userId: true, level: true, gold: true, currentXp: true },
+        select: { id: true, userId: true, level: true, currentXp: true },
       }),
       prisma.shopOffer.findUnique({
         where: { id: offer_id },
