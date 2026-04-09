@@ -87,11 +87,11 @@ struct GuestGateView: View {
     private func benefitRow(icon: String, text: String) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: icon)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .frame(width: LayoutConstants.iconLG)
             Text(text)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
         }
     }

@@ -325,7 +325,7 @@ struct CombatResultDetailView: View {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             if let t = type {
                                 Text(t.displayName.lowercased())
-                                    .font(DarkFantasyTheme.badge)
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                                     .padding(.horizontal, LayoutConstants.spaceXS)
                                     .padding(.vertical, LayoutConstants.space2XS)
@@ -334,7 +334,7 @@ struct CombatResultDetailView: View {
                             }
 
                             Text(rarity.rawValue)
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                                 .foregroundStyle(rarityColor)
                                 .padding(.horizontal, LayoutConstants.spaceXS)
                                 .padding(.vertical, LayoutConstants.space2XS)
@@ -344,7 +344,7 @@ struct CombatResultDetailView: View {
 
                         if !isGold {
                             Text("Level \(level)")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
@@ -370,10 +370,10 @@ struct CombatResultDetailView: View {
                     VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "shield.fill")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                             Text("STATS")
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 .tracking(1.2)
                         }
@@ -381,7 +381,7 @@ struct CombatResultDetailView: View {
                         ForEach(stats.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
                             HStack {
                                 Text(Item.statLabels[key] ?? key.capitalized)
-                                    .font(DarkFantasyTheme.uiLabel)
+                                    .font(DarkFantasyTheme.body)
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                                 Spacer()
                                 Text("+\(value)")
@@ -401,10 +401,10 @@ struct CombatResultDetailView: View {
                 if let effect = specialEffect, !effect.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "sparkles")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(effect)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -434,10 +434,10 @@ struct CombatResultDetailView: View {
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                             HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "arrow.left.arrow.right")
-                                    .font(DarkFantasyTheme.caption)
+                                    .font(DarkFantasyTheme.body)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 Text(equipped != nil ? "VS. EQUIPPED" : "STAT BONUS")
-                                    .font(DarkFantasyTheme.badge)
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                                     .tracking(1.2)
                             }
@@ -477,7 +477,7 @@ struct CombatResultDetailView: View {
 
                 if let desc = description, !desc.isEmpty {
                     Text(desc)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .italic()
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -527,13 +527,13 @@ struct CombatResultDetailView: View {
             }
 
             Text(Item.statLabels[key] ?? key.capitalized)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             Spacer(minLength: 4)
 
             Text(label)
-                .font(DarkFantasyTheme.badge.weight(.bold))
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(deltaColor)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.spaceXS)

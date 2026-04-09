@@ -816,17 +816,17 @@ struct DailyQuestsCard: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("DAILY QUESTS")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.gold)
                 if appState.cachedBonusClaimedToday {
                     TimelineView(.periodic(from: .now, by: 60)) { _ in
                         Text("✓ Bonus claimed • \(timeUntilReset())")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 } else {
                     Text(total > 0 ? "\(completed)/\(total) completed" : "Loading...")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -883,10 +883,10 @@ struct BattlePassCard: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("BATTLE PASS")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Text("Season 1 • Level \(level)/\(maxLevel)")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -951,7 +951,7 @@ struct FirstWinBonusCard: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
                 }
 
@@ -964,7 +964,7 @@ struct FirstWinBonusCard: View {
                             .scaledToFit()
                             .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("×2 Gold")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .padding(.horizontal, LayoutConstants.spaceMS)
@@ -980,7 +980,7 @@ struct FirstWinBonusCard: View {
                             .scaledToFit()
                             .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                         Text("×2 XP")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                     .padding(.horizontal, LayoutConstants.spaceMS)
@@ -1052,18 +1052,18 @@ struct BattleInviteBanner: View {
             // Header row
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "swords")
-                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Text("BATTLE CHALLENGE")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.btnOrangePrimary)
 
                 Spacer()
 
                 if challenges.count > 1 {
                     Text("+\(challenges.count - 1) more")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -1096,11 +1096,11 @@ struct BattleInviteBanner: View {
 
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text("Lv.\(challenge.challenger.level)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text(challenge.challenger.rankName)
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
                 }
@@ -1120,10 +1120,10 @@ struct BattleInviteBanner: View {
                                 .scaleEffect(0.7)
                         } else {
                             Image(systemName: "swords")
-                                .font(DarkFantasyTheme.caption.bold())
+                                .font(DarkFantasyTheme.body.bold())
                         }
                         Text("FIGHT")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -1140,10 +1140,10 @@ struct BattleInviteBanner: View {
                                 .scaleEffect(0.7)
                         } else {
                             Image(systemName: "xmark")
-                                .font(DarkFantasyTheme.badge.bold())
+                                .font(DarkFantasyTheme.body.bold())
                         }
                         Text("DECLINE")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -1157,7 +1157,7 @@ struct BattleInviteBanner: View {
                         appState.mainPath.append(AppRoute.guildHall)
                     } label: {
                         Image(systemName: "list.bullet")
-                            .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                     }
                     .buttonStyle(.secondary)
                     .disabled(isAccepting || isDeclining)
@@ -1358,7 +1358,7 @@ struct QuestRewardWidget: View {
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(quest.title)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
@@ -1404,18 +1404,18 @@ struct QuestRewardWidget: View {
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("\(claimableQuests.count) REWARDS READY")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
 
                     Text("Tap to claim your quest rewards")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
 
                 Spacer(minLength: 4)
 
                 Image(systemName: "chevron.right")
-                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
             }
         }
@@ -1434,7 +1434,7 @@ struct QuestRewardWidget: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("+\(gold)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -1445,7 +1445,7 @@ struct QuestRewardWidget: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("+\(xp)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.cyan)
                 }
             }
@@ -1456,7 +1456,7 @@ struct QuestRewardWidget: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text("+\(gems)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.purple)
                 }
             }

@@ -66,7 +66,7 @@ struct ShopItem: Codable, Identifiable {
     }
 
     var typeIcon: String {
-        typeEnum?.icon ?? "📦"
+        typeEnum?.icon ?? "shippingbox.fill"
     }
 
     /// Resolves imageKey for consumables — remaps legacy "pot_" keys and fills missing keys.

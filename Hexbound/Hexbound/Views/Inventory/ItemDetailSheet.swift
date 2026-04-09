@@ -191,13 +191,13 @@ struct ItemDetailSheet: View {
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text("Level \(item.itemLevel)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .accessibilityLabel("Item level: \(item.itemLevel)")
 
                     if let qty = item.quantity, qty > 1 {
                         Text("×\(qty)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .accessibilityLabel("Quantity: \(qty)")
                     }
@@ -206,7 +206,7 @@ struct ItemDetailSheet: View {
                 if let restriction = item.classRestriction,
                    restriction != "none", !restriction.isEmpty {
                     Text("\(restriction.capitalized) only")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.goldDim)
                         .accessibilityLabel("Restricted to \(restriction)")
                 }
@@ -275,16 +275,16 @@ struct ItemDetailSheet: View {
     private func statCell(key: String, value: Int, bonus: Int) -> some View {
         HStack {
             Text(Item.statLabels[key] ?? key.capitalized)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             HStack(spacing: LayoutConstants.space2XS) {
                 Text("+\(value)")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.statColor(for: key))
                 if bonus > 0 {
                     Text("(\(bonus))")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.goldDim)
                 }
             }
@@ -316,7 +316,7 @@ struct ItemDetailSheet: View {
                     .accessibilityValue("\(item.durability ?? 0) of \(item.maxDurability ?? 0)")
 
                     Text("\(item.durability ?? 0)/\(item.maxDurability ?? 0)")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(durabilityColor)
                         .monospacedDigit()
                         .accessibilityLabel("Durability: \(item.durability ?? 0) of \(item.maxDurability ?? 0)")
@@ -325,7 +325,7 @@ struct ItemDetailSheet: View {
 
                 if isBroken {
                     Text("This item is broken and cannot be equipped. Repair it first.")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
 
@@ -363,7 +363,7 @@ struct ItemDetailSheet: View {
     private var repairButtonLabel: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: "wrench.and.screwdriver.fill")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
             Text("REPAIR")
             Text("·")
             CurrencyDisplay(gold: repairCost, size: .compact, currencyType: .gold, animated: false)
@@ -420,14 +420,14 @@ struct ItemDetailSheet: View {
             }
 
             Text(statName)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.statColor(for: key))
                 .lineLimit(1)
 
             Spacer(minLength: 4)
 
             Text(label)
-                .font(DarkFantasyTheme.badge.bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(deltaColor)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.spaceXS)
@@ -481,10 +481,10 @@ struct ItemDetailSheet: View {
                 if isTwoHanded {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "arrow.left.arrow.right")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.stamina)
                         Text("Two-Handed — occupies weapon + off-hand slot")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.stamina)
                     }
                     .accessibilityLabel("Two-handed weapon: occupies both weapon and off-hand slots")
@@ -492,20 +492,20 @@ struct ItemDetailSheet: View {
                 if let special = item.specialEffect, !special.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "sparkles")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                         Text(special)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                 }
                 if let passive = item.uniquePassive, !passive.isEmpty {
                     HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
                         Image(systemName: "bolt.fill")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.cyan)
                         Text(passive)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.cyan)
                     }
                 }
@@ -547,7 +547,7 @@ struct ItemDetailSheet: View {
                 if buy > 0 {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("Buy:")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         CurrencyDisplay(
                             gold: buy,
@@ -577,19 +577,19 @@ struct ItemDetailSheet: View {
 
                 HStack {
                     Text("Max")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                     Text("+10")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.upgradeBlue)
                     Text("(linear)")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     if currentUpgradeLevel > 0 {
                         Spacer()
                         Text("Current: +\(currentUpgradeLevel)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                     }
                 }
@@ -619,7 +619,7 @@ struct ItemDetailSheet: View {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                 if let desc = item.description, !desc.isEmpty {
                     Text(desc)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .italic()
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
@@ -630,7 +630,7 @@ struct ItemDetailSheet: View {
                             .frame(width: 10, height: 10)
                             .foregroundStyle(DarkFantasyTheme.success)
                         Text("Set: \(setName)")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 }
@@ -736,12 +736,12 @@ struct ItemDetailSheet: View {
             // Warnings
             if !shop.meetsLevel {
                 Text("Requires Level \(shop.requiredLevel) (You: Level \(playerLevel))")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.danger)
             }
             if !shop.canAfford {
                 Text(shop.isGemPurchase ? "Not enough gems" : "Not enough gold")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.danger)
             }
 
@@ -783,7 +783,7 @@ struct ItemDetailSheet: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Spacer()
                 Text("\(upgradeChance)% chance")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(upgradeChance == 100 ? DarkFantasyTheme.success : DarkFantasyTheme.textSecondary)
             }
 
@@ -794,10 +794,10 @@ struct ItemDetailSheet: View {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "shield")
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                             Text("Protection Scroll")
                         }
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         CurrencyDisplay(gold: 0, gems: 30, size: .mini, currencyType: .gems, animated: false)
                     }
@@ -848,20 +848,20 @@ struct ItemDetailSheet: View {
                 ForEach(stats.sorted(by: { $0.key < $1.key }), id: \.key) { key, currentValue in
                     HStack {
                         Text(Item.statLabels[key] ?? key.uppercased())
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.statColor(for: key))
                         Spacer()
                         Text("\(currentValue)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Text("→")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         Text("\(currentValue + 1)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.success)
                         Text("(+1)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.success.opacity(0.7))
                     }
                 }
@@ -883,10 +883,10 @@ struct ItemDetailSheet: View {
     private func sectionHeader(icon: String, title: String) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(title)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1.2)
         }
@@ -923,11 +923,11 @@ struct ItemDetailSheet: View {
         return HStack(spacing: LayoutConstants.space2XS) {
             if style == .twoHanded {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(textColor)
             }
             Text(text)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(textColor)
         }
         .padding(.horizontal, LayoutConstants.spaceXS)

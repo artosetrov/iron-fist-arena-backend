@@ -81,7 +81,7 @@ struct BossDetailSheet: View {
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12)
 
                         Text("PREPARING FOR BATTLE...")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.goldBright)
                             .tracking(2)
 
@@ -210,9 +210,9 @@ struct BossDetailSheet: View {
                     // Boss tag
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("\u{2620}")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                         Text("BOSS")
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .tracking(2)
                     }
                     .foregroundStyle(stateColor)
@@ -221,7 +221,7 @@ struct BossDetailSheet: View {
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                     Text("Level \(boss.level)")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -243,10 +243,10 @@ struct BossDetailSheet: View {
         case .defeated:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                 Text("DEFEATED")
             }
-            .font(DarkFantasyTheme.badge.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.textPrimary)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -254,7 +254,7 @@ struct BossDetailSheet: View {
 
         case .current:
             Text("READY TO FIGHT")
-                .font(DarkFantasyTheme.badge.bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.space2XS)
@@ -263,10 +263,10 @@ struct BossDetailSheet: View {
         case .locked:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                 Text("LOCKED")
             }
-            .font(DarkFantasyTheme.badge.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -279,7 +279,7 @@ struct BossDetailSheet: View {
     private var loreSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("LORE")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -309,7 +309,7 @@ struct BossDetailSheet: View {
     private var statsSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("BOSS STATS")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -327,7 +327,7 @@ struct BossDetailSheet: View {
             VStack(spacing: LayoutConstants.space2XS) {
                 HStack {
                     Text("HP")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
                     Text(
@@ -335,7 +335,7 @@ struct BossDetailSheet: View {
                             ? "0 / \(formatNumber(boss.hp))"
                             : "\(formatNumber(boss.hp)) / \(formatNumber(boss.hp))"
                     )
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .monospacedDigit()
                 }
@@ -373,11 +373,11 @@ struct BossDetailSheet: View {
     private func bossStatRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
                 .monospacedDigit()
         }
@@ -402,9 +402,9 @@ struct BossDetailSheet: View {
             HStack {
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "gift.fill")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                     Text("POSSIBLE LOOT")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .tracking(1)
                 }
                 .foregroundStyle(DarkFantasyTheme.lootGold)
@@ -459,9 +459,9 @@ struct BossDetailSheet: View {
 
                             HStack(spacing: LayoutConstants.spaceXS) {
                                 Image(systemName: "bolt.fill")
-                                    .font(DarkFantasyTheme.badge)
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                 Text("\(energyCost) Energy")
-                                    .font(DarkFantasyTheme.caption)
+                                    .font(DarkFantasyTheme.body)
                             }
                             .opacity(0.7)
                         }
@@ -472,7 +472,7 @@ struct BossDetailSheet: View {
 
                 if !hasEnergy {
                     Text("Not enough energy — \(stamina)/\(energyCost)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
             }

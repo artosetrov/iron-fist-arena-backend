@@ -188,7 +188,7 @@ struct LeaderboardPlayerDetailSheet: View {
     private func pvpStatCell(label: String, value: String, color: Color) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(value)
                 .font(DarkFantasyTheme.cardTitle)
@@ -251,7 +251,7 @@ struct LeaderboardPlayerDetailSheet: View {
     private func derivedStatsSection(_ profile: OpponentProfile) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("DERIVED STATS")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -273,11 +273,11 @@ struct LeaderboardPlayerDetailSheet: View {
     private func derivedRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
                 .monospacedDigit()
         }
@@ -336,7 +336,7 @@ struct LeaderboardPlayerDetailSheet: View {
                 Image(systemName: icon)
                     .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                 Text(label)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .textCase(.uppercase)
                     .tracking(1)
                     .lineLimit(1)
@@ -492,7 +492,7 @@ struct LeaderboardPlayerDetailSheet: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DarkFantasyTheme.uiLabel)
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .tracking(2)
             .frame(maxWidth: .infinity, alignment: .leading)

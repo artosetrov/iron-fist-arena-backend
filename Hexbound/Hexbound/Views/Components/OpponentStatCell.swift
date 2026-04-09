@@ -27,7 +27,7 @@ struct OpponentStatCell: View {
                 .frame(width: 22, height: 22)
 
             Text(stat.fullName)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(statColor)
                 .lineLimit(1)
 
@@ -80,7 +80,7 @@ struct DeltaBadge: View {
         let label = delta > 0 ? "\(arrow)+\(delta)" : "\(arrow)\(delta)"
 
         Text(label)
-            .font(DarkFantasyTheme.badge.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(deltaColor)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.spaceXS)

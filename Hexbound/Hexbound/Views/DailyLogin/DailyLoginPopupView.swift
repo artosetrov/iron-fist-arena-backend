@@ -131,7 +131,7 @@ struct DailyLoginPopupView: View {
                     .padding(.top, LayoutConstants.spaceSM)
 
                 Text(reward.description)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .padding(.top, LayoutConstants.space2XS)
             }
@@ -212,10 +212,10 @@ struct DailyLoginPopupView: View {
     private func dayBadge(day: Int) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: "flame.fill")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.gold)
             Text("DAY \(day) OF 7")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .tracking(1.5)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
         }
@@ -236,7 +236,7 @@ struct DailyLoginPopupView: View {
                 .frame(width: 6, height: 6)
                 .shadow(color: DarkFantasyTheme.success.opacity(0.9), radius: 4)
             Text("CLAIMED!")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .tracking(1.5)
                 .foregroundStyle(DarkFantasyTheme.success)
         }
@@ -385,13 +385,13 @@ struct DailyLoginPopupView: View {
             // Text info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("TODAY")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .tracking(1)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 HStack(alignment: .lastTextBaseline, spacing: LayoutConstants.space2XS) {
                     Text("+")
-                        .font(DarkFantasyTheme.uiLabel.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                     Text(reward.label.uppercased())
                         .font(DarkFantasyTheme.cardTitle)
@@ -405,7 +405,7 @@ struct DailyLoginPopupView: View {
                 }
 
                 Text(reward.description)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -413,7 +413,7 @@ struct DailyLoginPopupView: View {
 
             // Added badge
             Text("Added")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.success)
                 .padding(.horizontal, LayoutConstants.spaceSM)
                 .padding(.vertical, LayoutConstants.spaceXS)
@@ -439,11 +439,11 @@ struct DailyLoginPopupView: View {
         HStack {
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("LOGIN STREAK")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .tracking(1)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text("\(data.streak) / 7")
-                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
 
@@ -506,11 +506,19 @@ struct DailyLoginPopupView: View {
         if let nextReward = vm.nextDayReward {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("Tomorrow:")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
-                Text("\(nextReward.icon) \(nextReward.label)")
-                    .font(DarkFantasyTheme.caption.weight(.semibold))
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                HStack(spacing: LayoutConstants.space2XS) {
+                    if let asset = nextReward.assetIcon {
+                        Image(asset)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                    }
+                    Text(nextReward.label)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
             }
         }
     }

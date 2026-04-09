@@ -206,7 +206,7 @@ struct DungeonRushDetailView: View {
                             .scaledToFit()
                             .frame(width: 14, height: 14)
                         Text("3 Stamina")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.stamina)
                     }
                     .padding(.horizontal, LayoutConstants.spaceSM)
@@ -247,7 +247,7 @@ struct DungeonRushDetailView: View {
                         .scaledToFit()
                         .frame(width: 14, height: 14)
                     Text(text)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(color)
                 }
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -314,7 +314,7 @@ struct DungeonRushDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.danger)
                     .shadow(color: DarkFantasyTheme.danger.opacity(0.25), radius: 6)
                 Text("Defeat = lose all gold & XP. Escape anytime to keep rewards.")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
         }
@@ -381,7 +381,7 @@ struct DungeonRushDetailView: View {
                 .shadow(color: DarkFantasyTheme.goldGlow, radius: 8)
                 .monospacedDigit()
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
         }
@@ -590,7 +590,7 @@ struct DungeonRushDetailView: View {
                 .scaledToFit()
                 .frame(width: 14, height: 14)
             Text("\(value)")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.purple)
                 .monospacedDigit()
         }
@@ -630,7 +630,7 @@ struct DungeonRushDetailView: View {
                                     .frame(width: isCurrent ? 22 : 16, height: isCurrent ? 22 : 16)
                                     .opacity(isResolved ? 0.35 : isCurrent ? 1.0 : 0.6)
                                 Text("\(i + 1)")
-                                    .font(DarkFantasyTheme.badge)
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                     .foregroundStyle(
                                         isCurrent
                                             ? DarkFantasyTheme.gold
@@ -640,7 +640,7 @@ struct DungeonRushDetailView: View {
 
                             if isResolved {
                                 Image(systemName: "checkmark")
-                                    .font(DarkFantasyTheme.badge.bold())
+                                    .font(DarkFantasyTheme.body.bold())
                                     .foregroundStyle(DarkFantasyTheme.success)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                                     .padding(LayoutConstants.space2XS)
@@ -672,7 +672,7 @@ struct DungeonRushDetailView: View {
                             .scaledToFit()
                             .frame(width: 14, height: 14)
                         Text("+\(buff.value) \(buff.stat.uppercased())")
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.purple)
                     }
                     .padding(.horizontal, LayoutConstants.spaceXS)
@@ -737,7 +737,7 @@ struct DungeonRushDetailView: View {
         VStack(spacing: 0) {
             // Room label
             Text("ROOM \(vm.currentFloor) / \(vm.totalRooms) · \(roomType.uppercased())")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(accentColor.opacity(0.7))
                 .tracking(2)
                 .padding(.bottom, LayoutConstants.spaceSM)
@@ -768,7 +768,7 @@ struct DungeonRushDetailView: View {
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text("Level \(vm.enemyLevel)")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     if roomType != "combat" {
@@ -827,7 +827,7 @@ struct DungeonRushDetailView: View {
     @ViewBuilder
     private func typeBadge(text: String, color: Color) -> some View {
         Text(text)
-            .font(DarkFantasyTheme.caption)
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(color)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -870,7 +870,7 @@ struct DungeonRushDetailView: View {
                 vm.showAbandonConfirm = true
             } label: {
                 Text("ESCAPE (Keep Rewards)")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.stamina)
             }
             .buttonStyle(.secondary)
@@ -992,11 +992,11 @@ struct DungeonRushDetailView: View {
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(item.name.uppercased())
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .tracking(0.5)
                 Text(item.description)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(2)
             }
@@ -1007,7 +1007,7 @@ struct DungeonRushDetailView: View {
             Group {
                 if item.purchased {
                     Text("SOLD")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                 } else {
@@ -1289,7 +1289,7 @@ struct DungeonRushDetailView: View {
     private func rewardCard(vm: DungeonRushViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("REWARDS")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1.5)
 
@@ -1366,7 +1366,7 @@ struct DungeonRushDetailView: View {
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.danger)
             Text("Better luck next time.")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .padding(LayoutConstants.spaceMD)

@@ -46,14 +46,14 @@ struct BPReward: Codable, Identifiable {
 
     var icon: String {
         switch rewardType {
-        case "gold": "🪙"
-        case "gems": "💎"
-        case "item": "📦"
-        case "xp": "⭐"
-        case "chest": "🎁"
-        case "skin": "🎨"
-        case "stamina": "⚡"
-        default: "🏆"
+        case "gold": "coloncurrencysign.circle.fill"
+        case "gems": "diamond.fill"
+        case "item": "shippingbox.fill"
+        case "xp": "star.fill"
+        case "chest": "gift.fill"
+        case "skin": "paintpalette.fill"
+        case "stamina": "bolt.fill"
+        default: "trophy.fill"
         }
     }
 

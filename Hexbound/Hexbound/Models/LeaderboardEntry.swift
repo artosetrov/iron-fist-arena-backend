@@ -19,11 +19,11 @@ struct LeaderboardEntry: Codable, Identifiable {
 
     var classIcon: String {
         switch characterClass {
-        case "warrior": "⚔"
-        case "rogue": "🗡️"
-        case "mage": "🔮"
-        case "tank": "🛡️"
-        default: "👤"
+        case "warrior": "bolt.sword"
+        case "rogue": "arrow.trianglehead.up.and.arrow.trianglehead.down"
+        case "mage": "wand.and.stars"
+        case "tank": "shield.fill"
+        default: "person.fill"
         }
     }
 
@@ -54,11 +54,11 @@ struct LeaderboardSearchResult: Codable, Identifiable {
 
     var classIcon: String {
         switch characterClass {
-        case "warrior": "⚔"
-        case "rogue": "🗡️"
-        case "mage": "🔮"
-        case "tank": "🛡️"
-        default: "👤"
+        case "warrior": "bolt.sword"
+        case "rogue": "arrow.trianglehead.up.and.arrow.trianglehead.down"
+        case "mage": "wand.and.stars"
+        case "tank": "shield.fill"
+        default: "person.fill"
         }
     }
 

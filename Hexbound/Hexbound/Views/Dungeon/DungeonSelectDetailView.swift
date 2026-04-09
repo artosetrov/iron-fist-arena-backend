@@ -179,7 +179,7 @@ struct DungeonSelectDetailView: View {
                 .accessibilityValue("\(current) of \(max)")
 
                 Text("\(current)/\(max)")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.stamina)
                     .monospacedDigit()
                     .accessibilityElement(children: .ignore)
@@ -272,9 +272,9 @@ struct DungeonSelectDetailView: View {
                             if isCompleted {
                                 HStack(spacing: LayoutConstants.spaceXS) {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .font(DarkFantasyTheme.uiLabel)
+                                        .font(DarkFantasyTheme.body)
                                     Text("COMPLETED")
-                                        .font(DarkFantasyTheme.badge)
+                                        .font(DarkFantasyTheme.body.weight(.semibold))
                                 }
                                 .foregroundStyle(DarkFantasyTheme.success)
                                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -291,9 +291,9 @@ struct DungeonSelectDetailView: View {
                     if !isLocked {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "bolt.fill")
-                                .font(DarkFantasyTheme.caption.bold())
+                                .font(DarkFantasyTheme.body.bold())
                             Text("\(dungeon.energyCost)")
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                         }
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
@@ -317,7 +317,7 @@ struct DungeonSelectDetailView: View {
                                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                                     if case .locked(let req) = state {
                                         Text(req)
-                                            .font(DarkFantasyTheme.caption)
+                                            .font(DarkFantasyTheme.body)
                                             .foregroundStyle(DarkFantasyTheme.stamina)
                                     }
                                 }
@@ -337,14 +337,14 @@ struct DungeonSelectDetailView: View {
                         Spacer()
 
                         Text("Lv. \(dungeon.minLevel)–\(dungeon.maxLevel)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .accessibilityLabel("Difficulty: Level \(dungeon.minLevel) to \(dungeon.maxLevel)")
                     }
 
                     // Description
                     Text(dungeon.description)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .lineLimit(2)
 
@@ -354,7 +354,7 @@ struct DungeonSelectDetailView: View {
                     // Reward icons
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Text("Rewards:")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         ForEach(dungeon.rewardIcons, id: \.self) { icon in
                             AssetPlaceholderView(systemIcon: "cube.fill")
@@ -423,7 +423,7 @@ struct DungeonSelectDetailView: View {
 
             // Label
             Text("\(defeated)/\(total)")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(
                     fraction >= 1.0
                         ? DarkFantasyTheme.success

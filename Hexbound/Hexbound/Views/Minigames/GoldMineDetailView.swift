@@ -80,7 +80,7 @@ struct GoldMineDetailView: View {
     private func miningOutputCard(vm: GoldMineViewModel) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("MINING OUTPUT")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .tracking(1.5)
 
@@ -99,7 +99,7 @@ struct GoldMineDetailView: View {
             }
 
             Text("\(vm.activeSlotCount) Active Slots")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .accessibilityLabel("\(vm.activeSlotCount) active mining slots")
         }
@@ -365,7 +365,7 @@ private struct MineSlotCard: View {
     private var infoPanel: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("SLOT \(index + 1)")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .accessibilityLabel("Mining slot \(index + 1)")
 
@@ -395,17 +395,17 @@ private struct MineSlotCard: View {
         switch status {
         case "mining":
             Text("Mining... \(vm.timeRemaining(slot))")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         case "ready":
             Text("Ready to collect!")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.success)
         default:
             Text("Idle")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
     }
@@ -531,18 +531,18 @@ private struct LockedMineCard: View {
             // Info
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text("SLOT \(slotNumber)")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 HStack(spacing: LayoutConstants.space2XS) {
                     Text("Unlock for")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Image("icon-gems")
                         .resizable()
                         .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                     Text("50")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.cyan)
                 }
 

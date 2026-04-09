@@ -62,7 +62,7 @@ struct CharacterProfileView: View {
                 .tint(DarkFantasyTheme.gold)
                 .scaleEffect(1.3)
             Text("Loading profile...")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
     }
@@ -127,9 +127,9 @@ struct CharacterProfileView: View {
         case .requestSent:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "envelope.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                 Text("Request Sent")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
             }
             .foregroundStyle(DarkFantasyTheme.gold)
             .padding(.horizontal, LayoutConstants.spaceSM + 2)
@@ -147,9 +147,9 @@ struct CharacterProfileView: View {
         case .requestReceived:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "envelope.badge.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                 Text("Wants to be an ally")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
             }
             .foregroundStyle(DarkFantasyTheme.success)
             .padding(.horizontal, LayoutConstants.spaceSM + 2)
@@ -164,9 +164,9 @@ struct CharacterProfileView: View {
         case .friends:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "person.2.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                 Text("Ally")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
             }
             .foregroundStyle(DarkFantasyTheme.success)
             .padding(.horizontal, LayoutConstants.spaceSM + 2)
@@ -345,11 +345,11 @@ struct CharacterProfileView: View {
     private func derivedRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
                 .monospacedDigit()
         }
@@ -371,7 +371,7 @@ struct CharacterProfileView: View {
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(DarkFantasyTheme.uiLabel)
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textSecondary)
             .tracking(2)
             .frame(maxWidth: .infinity, alignment: .leading)

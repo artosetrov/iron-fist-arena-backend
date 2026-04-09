@@ -20,18 +20,18 @@ struct LeaderboardRowView: View {
             // Name + class
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(entry.characterName)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(isSelf ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text(className)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                     if let lvl = entry.level {
                         Text("Lv.\(lvl)")
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -41,7 +41,7 @@ struct LeaderboardRowView: View {
 
             // Value
             Text(formattedValue)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .frame(minWidth: 50, alignment: .trailing)
         }
@@ -73,7 +73,7 @@ struct LeaderboardRowView: View {
                     .frame(width: 28, height: 28)
             }
             Text("\(entry.rank)")
-                .font(entry.rank <= 3 ? DarkFantasyTheme.uiLabel : DarkFantasyTheme.badge)
+                .font(entry.rank <= 3 ? DarkFantasyTheme.body : DarkFantasyTheme.body)
                 .foregroundStyle(rankColor)
         }
         .frame(width: 30)

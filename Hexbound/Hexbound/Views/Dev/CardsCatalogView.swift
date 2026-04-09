@@ -90,7 +90,7 @@ struct CardsCatalogView: View {
                             .rarityCard(rarity)
 
                         Text(rarity.rawValue.uppercased())
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.rarityColor(for: rarity))
                     }
                 }
@@ -169,21 +169,21 @@ struct CardsCatalogView: View {
             VStack(spacing: LayoutConstants.spaceLG) {
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Text("Gold Divider")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     GoldDivider()
                 }
 
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Text("Ornamental Divider")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     OrnamentalDivider()
                 }
 
                 VStack(spacing: LayoutConstants.spaceXS) {
                     Text("Etched Groove")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     EtchedGroove()
                 }
@@ -254,7 +254,7 @@ struct CardsCatalogView: View {
     private func ornamentalSample<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             content()
         }
@@ -270,7 +270,7 @@ struct CardsCatalogView: View {
                         .stroke(DarkFantasyTheme.gold, lineWidth: 1)
                 )
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
     }

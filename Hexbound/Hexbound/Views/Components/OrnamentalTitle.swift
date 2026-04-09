@@ -87,7 +87,7 @@ struct OrnamentalSectionHeader: View {
                     .rotationEffect(.degrees(45))
 
                 Text(title)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(accentColor)
                     .tracking(2)
                     .textCase(.uppercase)

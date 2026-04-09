@@ -95,7 +95,7 @@ struct UpgradeGuestView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
                         Text("OR")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .fixedSize()
@@ -110,7 +110,7 @@ struct UpgradeGuestView: View {
                         // Email
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                             Text("Email")
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                             TextField("", text: $vm.email)
@@ -135,7 +135,7 @@ struct UpgradeGuestView: View {
                         // Username
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                             Text("Username")
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                             TextField("", text: $vm.username)
@@ -159,7 +159,7 @@ struct UpgradeGuestView: View {
                         // Password
                         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                             Text("Password")
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                             SecureField("", text: $vm.password)
@@ -179,7 +179,7 @@ struct UpgradeGuestView: View {
 
                             if vm.password.count > 0 && vm.password.count < 6 {
                                 Text("Minimum 6 characters")
-                                    .font(DarkFantasyTheme.caption)
+                                    .font(DarkFantasyTheme.body)
                                     .foregroundStyle(DarkFantasyTheme.danger)
                             }
                         }
@@ -189,7 +189,7 @@ struct UpgradeGuestView: View {
                     // Error message
                     if let error = vm.errorMessage {
                         Text(error)
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .padding(.horizontal, LayoutConstants.screenPadding)
                     }
@@ -215,7 +215,7 @@ struct UpgradeGuestView: View {
                             .font(DarkFantasyTheme.iconSmall)
                             .foregroundStyle(DarkFantasyTheme.textSuccess)
                         Text("All your progress will be kept")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSuccess)
                     }
                 }

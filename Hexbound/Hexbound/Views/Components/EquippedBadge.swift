@@ -5,7 +5,7 @@ import SwiftUI
 struct EquippedBadge: View {
     var body: some View {
         Text("E")
-            .font(DarkFantasyTheme.caption.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.textOnGold)
             .padding(.horizontal, LayoutConstants.spaceXS)
             .padding(.vertical, LayoutConstants.space2XS)

@@ -73,7 +73,7 @@ struct SettingsDetailView: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("Music Volume")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 HStack(spacing: LayoutConstants.spaceSM) {
@@ -87,7 +87,7 @@ struct SettingsDetailView: View {
                     .tint(DarkFantasyTheme.gold)
 
                     Text("\(Int(vm.bgmVolume))%")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .frame(width: 40)
                 }
@@ -95,7 +95,7 @@ struct SettingsDetailView: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("SFX Volume")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 HStack(spacing: LayoutConstants.spaceSM) {
@@ -109,7 +109,7 @@ struct SettingsDetailView: View {
                     .tint(DarkFantasyTheme.gold)
 
                     Text("\(Int(vm.sfxVolume))%")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .frame(width: 40)
                 }
@@ -156,7 +156,7 @@ struct SettingsDetailView: View {
                         Spacer()
                         if let name = appState.currentCharacter?.characterName {
                             Text(name)
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                         Image(systemName: "chevron.right")
@@ -185,7 +185,7 @@ struct SettingsDetailView: View {
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                         Spacer()
                         Text("\(appState.userCharacters.count)/5")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         Image(systemName: "chevron.right")
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -325,7 +325,7 @@ struct SettingsDetailView: View {
 
     private var versionLabel: some View {
         Text("Hexbound v1.0.0")
-            .font(DarkFantasyTheme.uiLabel)
+            .font(DarkFantasyTheme.body)
             .foregroundStyle(DarkFantasyTheme.textTertiary)
             .frame(maxWidth: .infinity)
             .padding(.top, LayoutConstants.spaceSM)
@@ -364,7 +364,7 @@ struct SettingsDetailView: View {
     private func toggleRow(_ label: String, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
             Text(label)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
         }
         .tint(DarkFantasyTheme.gold)

@@ -148,10 +148,10 @@ struct StanceSelectorDetailView: View {
             // Section header
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: roleIcon)
-                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(roleColor)
                 Text(title)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -199,7 +199,7 @@ struct StanceSelectorDetailView: View {
                     .frame(width: 22, height: 22)
                     .colorMultiply(isSelected ? .white : DarkFantasyTheme.textSecondary)
                 Text(zone.uppercased())
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
             }
         }
         .buttonStyle(.colorToggle(isActive: isSelected, color: color, height: LayoutConstants.touchMin))
@@ -211,13 +211,13 @@ struct StanceSelectorDetailView: View {
     private func inlineBonusPill(icon: String, label: String, value: Int, color: Color) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: icon)
-                .font(DarkFantasyTheme.badge.weight(.semibold))
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(color)
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             Text(value >= 0 ? "+\(value)%" : "\(value)%")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(color)
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
@@ -236,10 +236,10 @@ struct StanceSelectorDetailView: View {
             // Header
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "target")
-                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
                 Text("ZONE MATCHING")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
 
@@ -248,26 +248,26 @@ struct StanceSelectorDetailView: View {
                 // Match bonus
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(DarkFantasyTheme.caption.weight(.semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.success)
                     Text("Match:")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Text("+15% DEF")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.success)
                 }
 
                 // Miss bonus
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(DarkFantasyTheme.caption.weight(.semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text("Miss:")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Text("+5% OFF")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.danger)
                 }
             }

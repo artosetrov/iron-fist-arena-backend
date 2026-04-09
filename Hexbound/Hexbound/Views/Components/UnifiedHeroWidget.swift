@@ -138,7 +138,7 @@ struct UnifiedHeroWidget: View {
 
             // Level badge (bottom-left) with glow
             Text("Lv. \(character.level)")
-                .font(DarkFantasyTheme.badge.weight(.bold))
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
@@ -172,7 +172,7 @@ struct UnifiedHeroWidget: View {
         .overlay(alignment: .topTrailing) {
             if statPointsAvailable > 0 {
                 Text("+\(statPointsAvailable)")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.textOnGold)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)

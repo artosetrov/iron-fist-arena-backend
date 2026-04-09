@@ -89,7 +89,7 @@ struct HubEditorDetailView: View {
                 VStack {
                     Spacer()
                     Text(msg)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceMD)
                         .padding(.vertical, LayoutConstants.spaceMS)
@@ -113,10 +113,10 @@ struct HubEditorDetailView: View {
             }
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: LayoutConstants.spaceMS) {
-                    Button(showSkyObjects ? "☁️ On" : "☁️ Off") {
+                    Button(showSkyObjects ? "Clouds On" : "Clouds Off") {
                         withAnimation { showSkyObjects.toggle() }
                     }
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(showSkyObjects ? DarkFantasyTheme.gold : DarkFantasyTheme.textSecondary)
                     .buttonStyle(.scalePress)
 
@@ -126,7 +126,7 @@ struct HubEditorDetailView: View {
                             sizeOverrides.removeAll()
                         }
                     }
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.danger)
                     .buttonStyle(.scalePress)
                 }
@@ -178,7 +178,7 @@ struct HubEditorDetailView: View {
 
                 HStack {
                     Text(label)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Spacer()
                     Text("(\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY))) S: \(String(format: "%.2f", currentSize))")
@@ -218,7 +218,7 @@ struct HubEditorDetailView: View {
                 }
             } else {
                 Text("Tap a building to select, drag to move")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -402,7 +402,7 @@ struct DraggableEditorBuilding: View {
                                 .font(DarkFantasyTheme.section)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                             Text(building.label)
-                                .font(DarkFantasyTheme.badge.bold())
+                                .font(DarkFantasyTheme.body.bold())
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                     )

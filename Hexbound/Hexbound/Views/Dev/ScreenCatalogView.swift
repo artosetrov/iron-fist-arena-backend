@@ -49,7 +49,7 @@ struct ScreenCatalogView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceSM) {
                         Image(systemName: item.icon)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
                             .frame(width: 24)
 
@@ -61,7 +61,7 @@ struct ScreenCatalogView: View {
 
                         if item.isModal {
                             Text("MODAL")
-                                .font(DarkFantasyTheme.badge) // dev catalog label
+                                .font(DarkFantasyTheme.body.weight(.semibold)) // dev catalog label
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 .padding(.horizontal, LayoutConstants.spaceSM) // keep — dev catalog
                                 .padding(.vertical, LayoutConstants.space2XS) // keep — dev catalog
@@ -72,7 +72,7 @@ struct ScreenCatalogView: View {
                         }
 
                         Image(systemName: "chevron.right")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .padding(.vertical, LayoutConstants.spaceXS)

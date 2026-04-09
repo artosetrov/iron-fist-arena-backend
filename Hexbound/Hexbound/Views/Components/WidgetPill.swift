@@ -90,7 +90,7 @@ struct WidgetPill: View {
 
             // Label
             Text(text)
-                .font(DarkFantasyTheme.badge.weight(.semibold))
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(textColor)
                 .lineLimit(1)
 
@@ -98,7 +98,7 @@ struct WidgetPill: View {
             if let count = count {
                 Spacer(minLength: 0)
                 Text(count)
-                    .font(DarkFantasyTheme.badge.weight(.bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, LayoutConstants.space2XS)

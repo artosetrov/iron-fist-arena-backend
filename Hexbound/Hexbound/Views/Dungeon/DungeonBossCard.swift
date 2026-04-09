@@ -127,7 +127,7 @@ struct DungeonBossCard: View {
         HStack {
             // Boss number circle
             Text("\(boss.id)")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(stateColor)
                 .frame(width: 28, height: 28)
                 .background(
@@ -152,10 +152,10 @@ struct DungeonBossCard: View {
         case .defeated:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "checkmark")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
                 Text("DEFEATED")
             }
-            .font(DarkFantasyTheme.caption.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.success)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -172,10 +172,10 @@ struct DungeonBossCard: View {
         case .current:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "bolt.fill")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
                 Text("CURRENT")
             }
-            .font(DarkFantasyTheme.caption.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.goldBright)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -192,10 +192,10 @@ struct DungeonBossCard: View {
         case .locked:
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                 Text("LOCKED")
             }
-            .font(DarkFantasyTheme.caption.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(DarkFantasyTheme.lockedGray)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -227,7 +227,7 @@ struct DungeonBossCard: View {
 
             // Lore tagline
             Text(boss.description)
-                .font(DarkFantasyTheme.caption.italic())
+                .font(DarkFantasyTheme.body.italic())
                 .foregroundStyle(DarkFantasyTheme.textBossDesc)
                 .lineLimit(2)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 4)

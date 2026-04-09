@@ -49,16 +49,16 @@ struct DungeonMapBuildingView: View {
     private var dungeonLabel: some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Text(building.label.uppercased())
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             } else if isCompleted {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }
@@ -103,7 +103,7 @@ struct DungeonMapBuildingView: View {
                             .font(DarkFantasyTheme.title)
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : building.glowColor)
                         Text(building.label)
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
                     }
                 }
@@ -117,7 +117,7 @@ struct DungeonMapBuildingView: View {
                         .font(DarkFantasyTheme.section.bold())
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text("Lvl \(building.minLevel)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .padding(LayoutConstants.spaceSM)

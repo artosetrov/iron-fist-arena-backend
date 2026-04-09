@@ -64,7 +64,7 @@ struct StaminaBarView: View {
             .frame(height: 14)
 
             Text("\(currentStamina)/\(maxStamina)")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.stamina)
                 .monospacedDigit()
 
@@ -76,7 +76,7 @@ struct StaminaBarView: View {
 
             if let recoveryText, currentStamina < maxStamina {
                 Text(recoveryText)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -124,7 +124,7 @@ struct StaminaBarView: View {
             HStack {
                 Spacer()
                 Text("Stamina  \(currentStamina) / \(maxStamina)")
-                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(isLow ? DarkFantasyTheme.textWarning : DarkFantasyTheme.textPrimary)
                     .monospacedDigit()
                     .padding(.horizontal, LayoutConstants.spaceXS)

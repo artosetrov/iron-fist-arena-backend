@@ -45,7 +45,7 @@ struct AppearanceEditorDetailView: View {
                         // Error
                         if !vm.errorMessage.isEmpty {
                             Text(vm.errorMessage)
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textDanger)
                                 .multilineTextAlignment(.center)
                                 .padding(.bottom, LayoutConstants.spaceSM)
@@ -62,7 +62,7 @@ struct AppearanceEditorDetailView: View {
                                     Text("SAVE")
                                     if let cost = vm.costText {
                                         Text("(\(cost))")
-                                            .font(DarkFantasyTheme.uiLabel)
+                                            .font(DarkFantasyTheme.body)
                                             .foregroundStyle(DarkFantasyTheme.goldBright)
                                     }
                                 }
@@ -97,7 +97,7 @@ struct AppearanceEditorDetailView: View {
                     appState.currentScreen = .characterSelect
                 } label: {
                     Image(systemName: "person.2.fill")
-                        .font(DarkFantasyTheme.uiLabel.weight(.medium))
+                        .font(DarkFantasyTheme.body.weight(.medium))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -141,7 +141,7 @@ struct AppearanceEditorDetailView: View {
                             .foregroundStyle(DarkFantasyTheme.goldBright)
 
                         Text(origin.description)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .lineLimit(2)
                     }
@@ -149,7 +149,7 @@ struct AppearanceEditorDetailView: View {
                     Spacer(minLength: 0)
 
                     Text(origin.bonuses)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                         .multilineTextAlignment(.trailing)
                         .lineLimit(2)
@@ -177,13 +177,13 @@ struct AppearanceEditorDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
 
                 Text("PREMIUM AVATARS")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.premiumPink)
 
                 Spacer()
 
                 Image(systemName: vm.showPremiumSkins ? "chevron.up" : "chevron.down")
-                    .font(DarkFantasyTheme.caption.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.premiumPink.opacity(0.6))
             }
             .padding(.horizontal, LayoutConstants.spaceMD)
@@ -243,7 +243,7 @@ struct AppearanceEditorDetailView: View {
                                 .resizable()
                                 .frame(width: 8, height: 8)
                             Text("\(skin.priceGems)")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                         }
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceXS)

@@ -53,10 +53,10 @@ struct Achievement: Codable, Identifiable {
     // Legacy: kept for any code that still references it.
     var categoryIcon: String {
         switch category {
-        case "pvp": "⚔️"
-        case "progression": "📈"
-        case "ranking": "🏆"
-        default: "⭐"
+        case "pvp": "swords"
+        case "progression": "chart.line.uptrend.xyaxis"
+        case "ranking": "trophy.fill"
+        default: "star.fill"
         }
     }
 

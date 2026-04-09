@@ -175,7 +175,7 @@ struct HexPulseLoader: View {
             // Message text
             if let message {
                 Text(message)
-                    .font(size == .large ? DarkFantasyTheme.section : DarkFantasyTheme.uiLabel)
+                    .font(size == .large ? DarkFantasyTheme.section : DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(size == .large ? 4 : 2)
                     .textCase(.uppercase)

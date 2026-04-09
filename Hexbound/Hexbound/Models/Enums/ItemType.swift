@@ -21,19 +21,19 @@ enum ItemType: String, Codable, CaseIterable {
 
     var icon: String {
         switch self {
-        case .weapon: "⚔️"
-        case .helmet: "🪖"
-        case .chest: "🛡️"
-        case .gloves: "🧤"
-        case .legs: "👖"
-        case .boots: "👢"
-        case .accessory: "💍"
-        case .amulet: "📿"
-        case .belt: "🪢"
-        case .relic: "🔮"
-        case .necklace: "📿"
-        case .ring: "💍"
-        case .consumable: "🧪"
+        case .weapon: "sword"
+        case .helmet: "shield.checkered"
+        case .chest: "shield.fill"
+        case .gloves: "hand.raised.fill"
+        case .legs: "figure.walk"
+        case .boots: "shoe.fill"
+        case .accessory: "ring.circle.fill"
+        case .amulet: "seal.fill"
+        case .belt: "circle.grid.cross.fill"
+        case .relic: "sparkles"
+        case .necklace: "seal.fill"
+        case .ring: "ring.circle.fill"
+        case .consumable: "flask.fill"
         }
     }
 

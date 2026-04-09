@@ -29,7 +29,7 @@ struct NameStepView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: LayoutConstants.spaceLG) {
                 Text("Choose Your Name")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .tracking(1)
                     .padding(.top, LayoutConstants.spaceLG)
@@ -210,7 +210,7 @@ struct NameStepView: View {
                         .scaledToFit()
                         .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                     Text(origin.displayName.uppercased())
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -241,7 +241,7 @@ struct NameStepView: View {
             // Class tag pill
             if let cls = vm.selectedClass {
                 Text(cls.displayName.uppercased())
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(cardClassColor)
                     .padding(.horizontal, LayoutConstants.spaceSM)
                     .padding(.vertical, LayoutConstants.space2XS)
@@ -264,7 +264,7 @@ struct NameStepView: View {
                         .opacity(0.7)
                 } else {
                     Image(systemName: "star.fill")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 }
                 Text("NEW")
@@ -309,10 +309,10 @@ struct NameStepView: View {
     private func creationStatPill(value: String, label: String, color: Color) -> some View {
         VStack(spacing: 1) {
             Text(value)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
         }
         .frame(maxWidth: .infinity)

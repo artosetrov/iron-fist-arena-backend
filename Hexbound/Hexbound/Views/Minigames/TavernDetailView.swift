@@ -60,7 +60,7 @@ struct TavernDetailView: View {
                 VStack(spacing: LayoutConstants.spaceMD) {
                     // Header
                     Text("Welcome, traveler.\nPick your game.")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.top, LayoutConstants.spaceSM)
@@ -180,11 +180,11 @@ private struct TavernGameCard: View {
                 .minimumScaleFactor(0.8)
 
             Text(game.hostName)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(game.accentColor.opacity(0.8))
 
             Text(game.subtitle)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)

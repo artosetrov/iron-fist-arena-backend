@@ -47,7 +47,7 @@ struct DailyLoginDetailView: View {
                                     )
 
                                 Text("Keep your streak for bonus rewards!")
-                                    .font(DarkFantasyTheme.uiLabel)
+                                    .font(DarkFantasyTheme.body)
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                             }
                             .padding(.top, LayoutConstants.spaceSM)
@@ -136,11 +136,11 @@ struct DailyLoginDetailView: View {
         VStack(spacing: LayoutConstants.spaceXS) {
             HStack {
                 Text("Weekly Progress")
-                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Spacer()
                 Text("\(data.currentDay)/7")
-                    .font(DarkFantasyTheme.uiLabel.weight(.bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
 
@@ -272,7 +272,7 @@ struct DailyLoginDetailView: View {
                 }
 
                 Text(reward.label)
-                    .font(DarkFantasyTheme.caption.weight(.bold))
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(
                         isClaimed ? DarkFantasyTheme.textDisabled :
                         isCurrentDay ? DarkFantasyTheme.goldBright :
@@ -282,7 +282,7 @@ struct DailyLoginDetailView: View {
                     .minimumScaleFactor(0.7)
 
                 Text("Day \(reward.day)")
-                    .font(DarkFantasyTheme.badge.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(
                         isCurrentDay ? DarkFantasyTheme.gold.opacity(0.8) :
                         DarkFantasyTheme.textTertiary.opacity(isLocked ? 0.3 : 0.6)
@@ -331,7 +331,7 @@ struct DailyLoginDetailView: View {
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text("TODAY'S REWARD")
-                        .font(DarkFantasyTheme.badge.weight(.bold))
+                        .font(DarkFantasyTheme.body.bold())
                         .tracking(1.5)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
@@ -345,7 +345,7 @@ struct DailyLoginDetailView: View {
                 Spacer()
 
                 Text("Day \(data.currentDay)")
-                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             .padding(LayoutConstants.spaceMD)
@@ -378,7 +378,7 @@ struct DailyLoginDetailView: View {
             } label: {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Image(systemName: "checkmark")
-                        .font(DarkFantasyTheme.uiLabel.bold())
+                        .font(DarkFantasyTheme.body.bold())
                     Text("REWARD CLAIMED")
                 }
             }
@@ -411,7 +411,7 @@ struct DailyLoginDetailView: View {
                 VStack(spacing: LayoutConstants.spaceMD) {
                     VStack(spacing: LayoutConstants.spaceXS) {
                         Text("Come back tomorrow for")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                         HStack(spacing: LayoutConstants.spaceXS) {
                             rewardIcon(nextReward, size: 16)
@@ -426,7 +426,7 @@ struct DailyLoginDetailView: View {
                     } label: {
                         HStack(spacing: LayoutConstants.spaceSM) {
                             Image(systemName: "building.columns.fill")
-                                .font(DarkFantasyTheme.uiLabel.bold())
+                                .font(DarkFantasyTheme.body.bold())
                             Text("TO THE CASTLE")
                         }
                     }
@@ -439,7 +439,7 @@ struct DailyLoginDetailView: View {
                     rewardIcon(nextReward, size: 14)
                     Text(nextReward.label)
                 }
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }

@@ -66,6 +66,39 @@ final class NPCHintManager {
     }
 }
 
+// MARK: - Hint Category
+
+enum HintCategory: String, CaseIterable {
+    case combat
+    case progression
+    case economy
+    case social
+    case exploration
+    case general
+
+    var accentColor: Color {
+        switch self {
+        case .combat:      DarkFantasyTheme.danger
+        case .progression: DarkFantasyTheme.success
+        case .economy:     DarkFantasyTheme.gold
+        case .social:      DarkFantasyTheme.info
+        case .exploration: DarkFantasyTheme.stamina
+        case .general:     DarkFantasyTheme.textSecondary
+        }
+    }
+
+    var sfSymbol: String {
+        switch self {
+        case .combat:      "swords"
+        case .progression: "arrow.up.circle"
+        case .economy:     "dollarsign.circle"
+        case .social:      "person.2"
+        case .exploration: "map"
+        case .general:     "lightbulb"
+        }
+    }
+}
+
 // MARK: - Hint Definitions
 
 struct NPCHint: Identifiable, Equatable {
@@ -75,6 +108,8 @@ struct NPCHint: Identifiable, Equatable {
     let message: String
     var ctaLabel: String? = nil
     var compactText: String? = nil
+    var compactSublabel: String? = nil
+    var category: HintCategory = .general
 
     static func == (lhs: NPCHint, rhs: NPCHint) -> Bool {
         lhs.id == rhs.id
@@ -168,7 +203,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "You're going into battle... naked? Bold strategy. Might I suggest visiting the Shop before someone mistakes you for a training dummy?",
         ctaLabel: "GO TO SHOP",
-        compactText: "⚠️ Equip gear — Shop"
+        compactText: "Equip gear — Shop"
     )
 
     static let heroLowHpPotions = NPCHint(
@@ -177,7 +212,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "You look like you lost a fight with a staircase. Good news — you've got potions! Drink one before something finishes the job.",
         ctaLabel: "HEAL",
-        compactText: "❤️ Low HP — Drink potion"
+        compactText: "Low HP — Drink potion"
     )
 
     static let heroLowHpNoPotions = NPCHint(
@@ -186,7 +221,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "Barely alive AND no potions? That's not bravery, that's a death wish. The Shop has what you need. Run. Don't walk.",
         ctaLabel: "GO TO SHOP",
-        compactText: "❤️ Critical HP — Buy potions"
+        compactText: "Critical HP — Buy potions"
     )
 
     static let heroDamagedGear = NPCHint(
@@ -194,7 +229,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Blacksmith",
         npcImage: "shopkeeper",
         message: "Is that a sword or a butter knife? Your gear's falling apart! Tap an item and hit Repair before it crumbles to dust.",
-        compactText: "🔧 Repair gear"
+        compactText: "Repair gear"
     )
 
     static let heroUpgradeQuest = NPCHint(
@@ -202,7 +237,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Blacksmith",
         npcImage: "shopkeeper",
         message: "Got a quest to upgrade, eh? Pick any item, hit Upgrade, and pray to the RNG gods. I've seen grown warriors cry at this screen.",
-        compactText: "⬆️ Upgrade an item"
+        compactText: "Upgrade an item"
     )
 
     static let heroUpgradeNoItem = NPCHint(
@@ -211,7 +246,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "Can't upgrade what you don't have, genius. Pop over to the Shop, grab some gear, then come back. I'll keep the forge warm.",
         ctaLabel: "GO TO SHOP",
-        compactText: "⬆️ Buy gear to upgrade"
+        compactText: "Buy gear to upgrade"
     )
 
     static let heroStatPoints = NPCHint(
@@ -219,7 +254,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Sage",
         npcImage: "shopkeeper",
         message: "You have stat points gathering dust! Switch to the STATUS tab and make yourself less... mediocre. No offense.",
-        compactText: "✨ Allocate stat points"
+        compactText: "Allocate stat points"
     )
 
     static let heroConsumableQuest = NPCHint(
@@ -227,7 +262,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Healer",
         npcImage: "shopkeeper",
         message: "Your quest says 'use a consumable.' I know it hurts to waste a perfectly good potion, but science demands sacrifice.",
-        compactText: "🧪 Use a consumable"
+        compactText: "Use a consumable"
     )
 
     // HUB screen (6 hints)
@@ -236,7 +271,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Tavern Keeper",
         npcImage: "shopkeeper",
         message: "Exhausted already? Even my cat has more stamina. Wait for it to recover, or throw some gems at the problem in the Shop.",
-        compactText: "⚡ Stamina empty — Wait or Shop"
+        compactText: "Stamina empty — Wait or Shop"
     )
 
     static let hubFirstPvp = NPCHint(
@@ -245,7 +280,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "Hey, you! Yeah, the one who's never fought anyone. The Arena awaits! Pick someone your size and show them what you... probably can't do yet.",
         ctaLabel: "GO TO ARENA",
-        compactText: "⚔️ Try the Arena!"
+        compactText: "Try the Arena!"
     )
 
     static let hubFirstDungeon = NPCHint(
@@ -254,7 +289,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "The dungeons aren't going to clear themselves. Well, technically the monsters live there, so... they already have. But YOU haven't.",
         ctaLabel: "GO TO DUNGEON",
-        compactText: "🗺️ Try a Dungeon!"
+        compactText: "Try a Dungeon!"
     )
 
     static let hubFirstMine = NPCHint(
@@ -263,7 +298,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "Free gold, just sitting there, and you haven't visited the mine? It's like finding money on the ground and walking over it.",
         ctaLabel: "GO TO MINE",
-        compactText: "⛏️ Visit the Gold Mine"
+        compactText: "Visit the Gold Mine"
     )
 
     static let hubUnclaimedRewards = NPCHint(
@@ -271,7 +306,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Herald",
         npcImage: "shopkeeper",
         message: "You've got unclaimed rewards just... sitting there. Rotting. Gathering cobwebs. Please claim them before I have a breakdown.",
-        compactText: "🎁 Claim quest rewards"
+        compactText: "Claim quest rewards"
     )
 
     // ARENA screen (7 hints)
@@ -281,7 +316,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "Walking into the Arena at death's door? At least chug a potion first. I'm a medic, not a miracle worker.",
         ctaLabel: "HEAL",
-        compactText: "❤️ Heal before fighting"
+        compactText: "Heal before fighting"
     )
 
     static let arenaLowHpNoPotions = NPCHint(
@@ -290,7 +325,7 @@ struct NPCHint: Identifiable, Equatable {
         npcImage: "shopkeeper",
         message: "No health, no potions, still wants to fight. You're either incredibly brave or profoundly unwise. Shop's that way.",
         ctaLabel: "GO TO SHOP",
-        compactText: "❤️ Buy potions — Shop"
+        compactText: "Buy potions — Shop"
     )
 
     static let arenaFirstFight = NPCHint(
@@ -298,7 +333,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Arena Master",
         npcImage: "shopkeeper",
         message: "First blood! Pick the greenest opponent — that means weak, not literally green. Well, some ARE literally green. Orcs, you know.",
-        compactText: "⚔️ Pick your first fight!"
+        compactText: "Pick your first fight!"
     )
 
     static let arenaLossStreak = NPCHint(
@@ -306,7 +341,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Arena Master",
         npcImage: "shopkeeper",
         message: "Rough patch, eh? Try someone with a lower rating, or switch your Combat Stance. Sometimes offense IS the best defense. Or the worst. Who knows.",
-        compactText: "💪 Try a weaker opponent"
+        compactText: "Try a weaker opponent"
     )
 
     static let arenaLowStamina = NPCHint(
@@ -314,7 +349,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Arena Master",
         npcImage: "shopkeeper",
         message: "You're running on fumes! Can't fight without stamina — even legends need to rest. Or buy some energy in the Shop, like a proper pay-to-win player.",
-        compactText: "⚡ Not enough stamina"
+        compactText: "Not enough stamina"
     )
 
     static let arenaFirstWin = NPCHint(
@@ -322,7 +357,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Arena Master",
         npcImage: "shopkeeper",
         message: "PSA: Your first win today gets BONUS rewards! That's free money. Well, free-ish. You still have to win. Minor detail.",
-        compactText: "🌟 First Win Bonus available!"
+        compactText: "First Win Bonus available!"
     )
 
     // SHOP screen (5 hints)
@@ -345,7 +380,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Merchant",
         npcImage: "shopkeeper",
         message: "Empty pockets, huh? Can't help you there. Go win some Arena fights or dig up gold in the Mine. Come back when you can actually afford something.",
-        compactText: "💰 Earn gold first"
+        compactText: "Earn gold first"
     )
 
     static let shopGoldQuest = NPCHint(
@@ -353,7 +388,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Merchant",
         npcImage: "shopkeeper",
         message: "A quest to spend gold? Finally, a quest I can get behind! Buy anything — gear, potions, a nice hat. It all counts!",
-        compactText: "🛒 Spend gold for quest"
+        compactText: "Spend gold for quest"
     )
 
     // DUNGEON screen (4 hints)
@@ -362,7 +397,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Dungeon Guide",
         npcImage: "shopkeeper",
         message: "You need stamina to enter, and you're running on empty. Come back when you've recharged, or buy some in the Shop. The monsters aren't going anywhere.",
-        compactText: "⚡ Need stamina"
+        compactText: "Need stamina"
     )
 
     static let dungeonLowHp = NPCHint(
@@ -370,7 +405,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Dungeon Guide",
         npcImage: "shopkeeper",
         message: "Going into a dungeon at half health? I admire your confidence. I question your judgment. Maybe drink a potion first?",
-        compactText: "❤️ Heal before dungeon"
+        compactText: "Heal before dungeon"
     )
 
     static let dungeonQuest = NPCHint(
@@ -378,7 +413,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Dungeon Guide",
         npcImage: "shopkeeper",
         message: "Got a dungeon quest? Pick any floor and clear it. Pro tip: the difficulty tag isn't a suggestion, it's a warning.",
-        compactText: "🗺️ Complete dungeon for quest"
+        compactText: "Complete dungeon for quest"
     )
 
     // GOLD MINE (4 hints)
@@ -387,7 +422,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Mine Foreman",
         npcImage: "shopkeeper",
         message: "Your miners found gold! Tap the slot to collect before they spend it all at the tavern. Trust me, they will.",
-        compactText: "💰 Gold ready to collect!"
+        compactText: "Gold ready to collect!"
     )
 
     static let mineAllBusy = NPCHint(
@@ -402,7 +437,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Mine Foreman",
         npcImage: "shopkeeper",
         message: "Quest says collect from the mine? Start a slot if you haven't, then come back when it's done. Patience, grasshopper.",
-        compactText: "⛏️ Collect for quest"
+        compactText: "Collect for quest"
     )
 
     // BATTLE PASS (1 hint)
@@ -411,7 +446,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Herald",
         npcImage: "shopkeeper",
         message: "You've passed tiers with unclaimed rewards! That's like leaving money on the table, except the table is on fire and the money is getting crispy.",
-        compactText: "🎁 Claim BP rewards!"
+        compactText: "Claim BP rewards!"
     )
 
     // ACHIEVEMENTS (1 hint)
@@ -420,7 +455,7 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Chronicler",
         npcImage: "shopkeeper",
         message: "You've EARNED glory and you haven't COLLECTED it? That's like slaying a dragon and forgetting to loot the hoard. Tap and claim!",
-        compactText: "🏅 Claim achievement rewards!"
+        compactText: "Claim achievement rewards!"
     )
 
     // MINIGAMES (1 hint)

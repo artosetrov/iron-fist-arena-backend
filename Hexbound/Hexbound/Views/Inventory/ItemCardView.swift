@@ -393,7 +393,7 @@ private extension ItemCardView {
         case .inventory:
             if let delta = comparisonDelta {
                 Image(systemName: delta > 0 ? "arrow.up" : "arrow.down")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
                     .padding(LayoutConstants.spaceXS)
                     .background(
@@ -416,7 +416,7 @@ private extension ItemCardView {
     /// Compact "2H" badge for two-handed weapons on the card grid
     private var twoHandedBadge: some View {
         Text("2H")
-            .font(DarkFantasyTheme.badge.weight(.heavy))
+            .font(DarkFantasyTheme.body.weight(.heavy))
             .foregroundStyle(DarkFantasyTheme.stamina)
             .padding(.horizontal, LayoutConstants.spaceXS)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -442,7 +442,7 @@ private extension ItemCardView {
         } else if isBroken {
             // Broken indicator — equipment context
             Text("!")
-                .font(DarkFantasyTheme.badge.bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
                 .background(Circle().fill(DarkFantasyTheme.danger))
@@ -464,13 +464,13 @@ private extension ItemCardView {
             HStack(spacing: LayoutConstants.space2XS) {
                 ForEach(0..<starCount, id: \.self) { _ in
                     Image(systemName: "star.fill")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
                 }
                 if let upg = upgradeLevel, upg > 0 {
                     Text("+\(upg)")
-                        .font(DarkFantasyTheme.caption.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                         .shadow(color: DarkFantasyTheme.goldGlow, radius: 2)
                 }
@@ -485,7 +485,7 @@ private extension ItemCardView {
     var bottomTrailingOverlay: some View {
         if let qty = quantity, qty > 1 {
             Text("x\(qty)")
-                .font(DarkFantasyTheme.caption.bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .padding(.horizontal, LayoutConstants.spaceXS)
                 .padding(.vertical, LayoutConstants.space2XS)
@@ -539,7 +539,7 @@ private extension ItemCardView {
             // Discount badge (top-right corner of price bar)
             if let pct = discountPct, pct > 0 {
                 Text("-\(pct)%")
-                    .font(DarkFantasyTheme.caption.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, LayoutConstants.space2XS)

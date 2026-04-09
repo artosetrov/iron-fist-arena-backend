@@ -15,11 +15,11 @@ enum CharacterOrigin: String, Codable, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .human: "👤"
-        case .orc: "👹"
-        case .skeleton: "💀"
-        case .demon: "😈"
-        case .dogfolk: "🐕"
+        case .human: "person.fill"
+        case .orc: "figure.strengthtraining.traditional"
+        case .skeleton: "skull.fill"
+        case .demon: "flame.fill"
+        case .dogfolk: "pawprint.fill"
         }
     }
 

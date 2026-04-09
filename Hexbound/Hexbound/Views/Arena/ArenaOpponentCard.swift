@@ -175,7 +175,7 @@ struct ArenaOpponentCard: View {
 
     private var difficultyBadge: some View {
         Text(difficulty.label)
-            .font(DarkFantasyTheme.badge.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(difficulty.textColor)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)

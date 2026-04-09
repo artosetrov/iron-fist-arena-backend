@@ -62,7 +62,7 @@ struct CharacterSelectionView: View {
                                 Image(systemName: "chevron.left")
                                     .font(DarkFantasyTheme.body.weight(.semibold))
                                 Text("Back")
-                                    .font(DarkFantasyTheme.uiLabel)
+                                    .font(DarkFantasyTheme.body)
                             }
                             .foregroundStyle(DarkFantasyTheme.gold)
                         }
@@ -126,7 +126,7 @@ struct CharacterSelectionView: View {
                 .tracking(2)
 
             Text("Select a hero to enter the world")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .padding(.top, LayoutConstants.spaceMD)
@@ -251,12 +251,12 @@ struct CharacterSelectionView: View {
 
                     VStack(spacing: LayoutConstants.space2XS) {
                         Text("CREATE HERO")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .tracking(0.8)
 
                         Text("\(vm.slotsLeft) of 5 slots")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                 }
@@ -296,7 +296,7 @@ struct CharacterSelectionView: View {
                 VStack(spacing: LayoutConstants.space2XS) {
                     if let selected = vm.selectedCharacter, !enterPressed {
                         Text("Playing as \(selected.characterName)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
                     }
                     Text(enterPressed ? "ENTERING..." : "ENTER GAME")
@@ -339,10 +339,10 @@ struct CharacterSelectionView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Guest Account")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text("Create an account to save progress")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -353,7 +353,7 @@ struct CharacterSelectionView: View {
                 appState.authPath.append(AppRoute.register)
             } label: {
                 Text("SIGN UP")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .tracking(0.8)
             }
             .buttonStyle(.compactPrimary)
@@ -408,7 +408,7 @@ struct CharacterSelectionView: View {
                     appState.authPath.append(AppRoute.register)
                 } label: {
                     Text("Or create an account")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 .buttonStyle(.ghost)
@@ -482,7 +482,7 @@ struct CharacterSelectionView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text("Preparing your adventure...")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .padding(LayoutConstants.spaceLG)
@@ -580,7 +580,7 @@ struct HeroSelectionCard: View {
                     VStack(spacing: 0) {
                         Spacer()
                         Text("◆  ACTIVE  ◆")
-                            .font(DarkFantasyTheme.caption.bold())
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .tracking(2)
                             .frame(maxWidth: .infinity)
@@ -663,7 +663,7 @@ struct HeroSelectionCard: View {
             // Low HP badge (selection state shown by ACTIVE ribbon + edit button overlay)
             if hpPercent < 0.5 && !isSelected {
                 Text("LOW HP")
-                    .font(DarkFantasyTheme.caption.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.danger)
                     .padding(.horizontal, LayoutConstants.spaceSM)
                     .padding(.vertical, LayoutConstants.space2XS)
@@ -706,7 +706,7 @@ struct HeroSelectionCard: View {
                         .opacity(0.7)
                 } else {
                     Image(systemName: "star.fill")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 }
 
@@ -734,7 +734,7 @@ struct HeroSelectionCard: View {
                             .frame(width: 14, height: 14)
                     }
                     Text("\(character.gold)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
                 }
 
@@ -745,7 +745,7 @@ struct HeroSelectionCard: View {
                             .frame(width: 14, height: 14)
                     }
                     Text("\(character.gems ?? 0)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
                 }
             }

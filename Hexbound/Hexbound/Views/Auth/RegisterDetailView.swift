@@ -65,7 +65,7 @@ struct RegisterDetailView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
                         Text("OR")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .fixedSize()
@@ -148,7 +148,7 @@ struct RegisterDetailView: View {
                     // Error
                     if !vm.errorMessage.isEmpty {
                         Text(vm.errorMessage)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(
                                 vm.errorMessage.contains("Check your email")
                                     ? DarkFantasyTheme.textSuccess

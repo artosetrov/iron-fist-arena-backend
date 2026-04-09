@@ -11,7 +11,7 @@ struct ShopOfferBannerView: View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "flame")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                 Text("SPECIAL OFFERS")
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
@@ -51,7 +51,7 @@ private struct OfferCard: View {
             HStack {
                 if offer.hasDiscount {
                     Text("-\(offer.discountPct)%")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceXS)
                         .padding(.vertical, LayoutConstants.space2XS)
@@ -69,7 +69,7 @@ private struct OfferCard: View {
                         Image(systemName: "clock")
                             .font(DarkFantasyTheme.body)
                         Text(remaining)
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                     }
                     .foregroundStyle(DarkFantasyTheme.stamina)
                 }
@@ -77,21 +77,21 @@ private struct OfferCard: View {
 
             // Title
             Text(offer.title)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
             // Description
             if let desc = offer.description {
                 Text(desc)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .lineLimit(2)
             }
 
             // Contents summary
             Text(offer.contentsSummary)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.goldBright.opacity(0.8))
                 .lineLimit(2)
 
@@ -102,7 +102,7 @@ private struct OfferCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     if offer.hasDiscount {
                         Text(offer.displayOriginalPrice)
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .strikethrough()
                     }
@@ -115,7 +115,7 @@ private struct OfferCard: View {
 
                 if !offer.canPurchase {
                     Text("SOLD")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 } else {
                     Button {
@@ -128,7 +128,7 @@ private struct OfferCard: View {
                                 .tint(DarkFantasyTheme.textPrimary)
                         } else {
                             Text("BUY")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                         }
                     }
                     .buttonStyle(.primary)
@@ -140,7 +140,7 @@ private struct OfferCard: View {
             // Purchase limit indicator
             if offer.maxPurchases > 0 {
                 Text("\(offer.purchasesMade)/\(offer.maxPurchases) purchased")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }

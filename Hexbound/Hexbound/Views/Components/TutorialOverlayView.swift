@@ -113,7 +113,7 @@ struct TutorialOverlayView: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 Text("КАЭЛЬ")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.gold)
 
                 Text(typewriterText)
@@ -147,7 +147,7 @@ struct TutorialOverlayView: View {
             if let label = secondaryLabel, let action = onSecondary {
                 Button(action: action) {
                     Text(label)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }

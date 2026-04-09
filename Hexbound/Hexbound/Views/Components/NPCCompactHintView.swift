@@ -30,7 +30,7 @@ struct NPCCompactHintView: View {
             // Compact text
             if let compactText = hint.compactText {
                 Text(compactText)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             }
@@ -41,7 +41,7 @@ struct NPCCompactHintView: View {
             if let ctaLabel = hint.ctaLabel, let action = onAction {
                 Button(action: action) {
                     Text(ctaLabel)
-                        .font(DarkFantasyTheme.badge.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.textOnGold)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.spaceXS)
@@ -56,7 +56,7 @@ struct NPCCompactHintView: View {
             if let dismiss = onDismiss {
                 Button(action: dismiss) {
                     Image(systemName: "xmark")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .buttonStyle(.plain)

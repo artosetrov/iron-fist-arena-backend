@@ -34,19 +34,19 @@ struct ToastView: View {
                     .frame(width: 28, height: 28)
 
                 Image(systemName: toast.type.icon)
-                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(toast.type.color)
             }
 
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(toast.title)
-                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(2)
 
                 if !toast.subtitle.isEmpty {
                     Text(toast.subtitle)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .lineLimit(1)
                 }
@@ -60,7 +60,7 @@ struct ToastView: View {
                     onDismiss()
                 } label: {
                     Text(label)
-                        .font(DarkFantasyTheme.badge.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(toast.type.color)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .frame(minHeight: 32) // Touch target compliance

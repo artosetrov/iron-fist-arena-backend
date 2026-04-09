@@ -548,19 +548,19 @@ struct ArenaDetailView: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(entry.attackerName)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Text("Lv.\(entry.attackerLevel)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text("-\(entry.ratingLost) rating")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.danger)
                     Text(entry.timeAgo)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -579,7 +579,7 @@ struct ArenaDetailView: View {
                     } else {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "swords")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                             Text("REVENGE")
                         }
                     }
@@ -617,24 +617,27 @@ struct ArenaDetailView: View {
     private func historyRow(_ match: MatchHistory) -> some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             // Win/Loss indicator
-            Text(match.isWin ? "✅" : "❌")
-                .font(.system(size: 20)) // emoji — keep
+            Image(systemName: match.isWin ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(match.isWin ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
             // Opponent info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(match.opponentName)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
-                    Text(match.opponentClass.icon)
-                        .font(.system(size: 12)) // emoji — keep
+                    Image(match.opponentClass.iconAsset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
                     Text("Lv.\(match.opponentLevel)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Text(match.timeAgo)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -645,13 +648,19 @@ struct ArenaDetailView: View {
             VStack(alignment: .trailing, spacing: LayoutConstants.space2XS) {
                 let ratingText = match.ratingChange > 0 ? "+\(match.ratingChange)" : "\(match.ratingChange)"
                 Text(ratingText)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(match.ratingChange > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)
 
                 if let gold = match.goldReward, gold > 0 {
-                    Text("+\(gold) 💰")
-                        .font(DarkFantasyTheme.badge)
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Text("+\(gold)")
+                            .font(DarkFantasyTheme.body.weight(.semibold))
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                        Image("icon-gold")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 12, height: 12)
+                    }
                 }
             }
         }

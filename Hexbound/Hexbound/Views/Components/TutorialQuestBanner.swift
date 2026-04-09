@@ -40,13 +40,13 @@ struct TutorialQuestBanner: View {
 
                         VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                             Text(title.uppercased())
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.gold)
 
                             if !isExpanded {
                                 // Compact progress
                                 Text("\(progress)/\(target)")
-                                    .font(DarkFantasyTheme.caption)
+                                    .font(DarkFantasyTheme.body)
                                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                             }
                         }
@@ -55,7 +55,7 @@ struct TutorialQuestBanner: View {
 
                         // Chevron
                         Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .padding(.horizontal, LayoutConstants.spaceMD)
@@ -68,7 +68,7 @@ struct TutorialQuestBanner: View {
                     VStack(spacing: LayoutConstants.spaceSM) {
                         // NPC message
                         Text(npcMessage)
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .padding(.horizontal, LayoutConstants.spaceMD)
@@ -96,7 +96,7 @@ struct TutorialQuestBanner: View {
                             .frame(height: 6)
 
                             Text("\(progress)/\(target)")
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                                 .foregroundStyle(
                                     isCompleted
                                         ? DarkFantasyTheme.success

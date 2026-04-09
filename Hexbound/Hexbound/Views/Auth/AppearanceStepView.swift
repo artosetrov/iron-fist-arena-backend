@@ -7,7 +7,7 @@ struct AppearanceStepView: View {
     var body: some View {
         VStack(spacing: 0) {
             Text("Choose Your Appearance")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
                 .tracking(1)
                 .padding(.top, LayoutConstants.spaceMD)
@@ -39,7 +39,7 @@ struct AppearanceStepView: View {
     private var raceRow: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("Race")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textDimLabel)
 
             HStack(spacing: LayoutConstants.spaceXS) {
@@ -79,7 +79,7 @@ struct AppearanceStepView: View {
                     .shadow(color: isSelected ? DarkFantasyTheme.goldGlow : .clear, radius: 7)
 
                 Text(origin.displayName)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(isSelected ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary)
             }
         }
@@ -113,7 +113,7 @@ struct AppearanceStepView: View {
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
 
                             Text(origin.description)
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                                 .lineLimit(1)
                         }
@@ -135,7 +135,7 @@ struct AppearanceStepView: View {
                 .padding(.vertical, LayoutConstants.spaceXS)
             } else {
                 Text("Select a race to see avatars")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
         }
@@ -160,7 +160,7 @@ struct AppearanceStepView: View {
                 )
 
             Text("Choose a race above to see available avatars")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
 
@@ -356,7 +356,7 @@ struct AppearanceStepView: View {
             }
 
             Text(name)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 

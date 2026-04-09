@@ -16,7 +16,7 @@ struct TabSwitcher: View {
                     }
                 } label: {
                     Text(tabs[index])
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(
                             selectedIndex == index ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textTertiary
                         )

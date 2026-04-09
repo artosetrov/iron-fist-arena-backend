@@ -52,7 +52,7 @@ struct GlassStatPill: View {
     private var valueFont: Font {
         switch size {
         case .default: return DarkFantasyTheme.uiLabel
-        case .compact: return DarkFantasyTheme.uiLabel.bold()
+        case .compact: return DarkFantasyTheme.body.bold()
         case .large: return DarkFantasyTheme.title
         }
     }

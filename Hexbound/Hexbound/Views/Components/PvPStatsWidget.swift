@@ -93,7 +93,7 @@ struct PvPStatsWidget: View {
             // Rating — hero element
             HStack(spacing: LayoutConstants.spaceXS + 2) {
                 Image(systemName: data.pvpRank.icon)
-                    .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(data.pvpRankColor)
 
                 VStack(alignment: .leading, spacing: 0) {
@@ -103,7 +103,7 @@ struct PvPStatsWidget: View {
                         .monospacedDigit()
                         .contentTransition(.numericText())
                     Text("RATING")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .tracking(1)
                 }
@@ -124,7 +124,7 @@ struct PvPStatsWidget: View {
                         Text("\(data.pvpLosses)")
                             .foregroundStyle(DarkFantasyTheme.danger)
                     }
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                 }
             )
 
@@ -133,7 +133,7 @@ struct PvPStatsWidget: View {
             // Win Rate
             compactStat(label: "RATE") {
                 Text("\(data.pvpWinRate)%")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(data.pvpWinRateColor)
             }
 
@@ -150,7 +150,7 @@ struct PvPStatsWidget: View {
 
                 compactStat(label: "RANK") {
                     Text("#\(rank)")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -191,15 +191,15 @@ struct PvPStatsWidget: View {
             // Header: PVP STATS + Tier badge + Rank
             HStack {
                 Text("PVP")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 // Tier badge
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: data.pvpRank.icon)
-                        .font(DarkFantasyTheme.badge.weight(.semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                     Text(data.pvpRank.rawValue)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .fontWeight(.semibold)
                 }
                 .foregroundStyle(data.pvpRankColor)
@@ -216,12 +216,12 @@ struct PvPStatsWidget: View {
                 if let rank = leaderboardRank {
                     HStack(spacing: LayoutConstants.space2XS) {
                         Text("#\(rank)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .fontWeight(.semibold)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         if let total = totalPlayers {
                             Text("/ \(total)")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                         }
                     }
@@ -260,7 +260,7 @@ struct PvPStatsWidget: View {
                             Text("\(data.pvpLosses)")
                                 .foregroundStyle(DarkFantasyTheme.danger)
                         }
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                     },
                     subtitle: "\(data.pvpTotalGames) games"
                 )
@@ -269,7 +269,7 @@ struct PvPStatsWidget: View {
                     label: "WIN RATE",
                     content: {
                         Text("\(data.pvpWinRate)%")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(data.pvpWinRateColor)
                     },
                     winRateBar: true
@@ -313,7 +313,7 @@ struct PvPStatsWidget: View {
             content()
                 .lineLimit(1)
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(0.5)
         }
@@ -335,7 +335,7 @@ struct PvPStatsWidget: View {
     ) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1.5)
 
@@ -345,7 +345,7 @@ struct PvPStatsWidget: View {
 
             if let subtitle {
                 Text(subtitle)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
 
@@ -374,7 +374,7 @@ struct PvPStatsWidget: View {
         let streak = data.pvpCurrentStreak
         if streak == 0 {
             Text("—")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         } else {
             let isWin = streak > 0
@@ -384,9 +384,9 @@ struct PvPStatsWidget: View {
 
             HStack(spacing: LayoutConstants.space2XS) {
                 Image(systemName: isWin ? "arrow.up" : "arrow.down")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
                 Text("\(abs)")
-                    .font(compact ? DarkFantasyTheme.caption : DarkFantasyTheme.uiLabel)
+                    .font(compact ? DarkFantasyTheme.body : DarkFantasyTheme.body)
                 if isHot {
                     Image(systemName: "flame.fill")
                         .font(DarkFantasyTheme.iconFlame)
@@ -421,11 +421,11 @@ struct PvPStatsWidget: View {
             VStack(spacing: LayoutConstants.space2XS) {
                 HStack {
                     Text(rank.rawValue)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Spacer()
                     Text("\(nextRank.rawValue) \(rangeEnd)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.rankColor(for: nextRank.minRating).opacity(0.6))
                 }
 

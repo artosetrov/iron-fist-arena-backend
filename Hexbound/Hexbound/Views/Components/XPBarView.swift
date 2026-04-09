@@ -69,8 +69,8 @@ struct XPBarView: View {
                 if size == .large {
                     HStack {
                         Spacer()
-                        Text("XP  \(currentXp) / \(xpNeeded)\(isNearLevelUp ? " ⬆" : "")")
-                            .font(DarkFantasyTheme.uiLabel.bold())
+                        Text("XP  \(currentXp) / \(xpNeeded)\(isNearLevelUp ? " READY" : "")")
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(isNearLevelUp ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
                             .monospacedDigit()
                             .padding(.horizontal, LayoutConstants.spaceXS)

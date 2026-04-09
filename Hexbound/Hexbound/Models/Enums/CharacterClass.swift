@@ -14,10 +14,10 @@ enum CharacterClass: String, Codable, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .warrior: "⚔"
-        case .rogue: "🗡️"
-        case .mage: "🔮"
-        case .tank: "🛡️"
+        case .warrior: "bolt.sword"
+        case .rogue: "arrow.trianglehead.up.and.arrow.trianglehead.down"
+        case .mage: "wand.and.stars"
+        case .tank: "shield.fill"
         }
     }
 

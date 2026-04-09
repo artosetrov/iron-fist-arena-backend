@@ -174,11 +174,11 @@ struct ShellGameDetailView: View {
                 .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
 
             Text(label)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
 
             Text(subtitle)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(0.5)
         }
@@ -292,9 +292,9 @@ struct ShellGameDetailView: View {
                 // Plays badge
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "cup.and.saucer.fill")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                     Text("\(vm.playsRemaining)/\(vm.playsLimit)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                 }
                 .foregroundStyle(vm.playsRemaining > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
                 .padding(.horizontal, LayoutConstants.spaceSM)

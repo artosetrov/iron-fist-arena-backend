@@ -76,23 +76,23 @@ struct ClassSelectionStepView: View {
             // Main attribute pill
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("MAIN ATTRIBUTE")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text("–")
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text(charClass.mainAttribute)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
 
             Text(charClass.mainAttributeDescription)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             Text(charClass.bonuses)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSuccess)
 
             // Stat distribution bars
@@ -205,14 +205,14 @@ struct ClassSelectionStepView: View {
                         // Stat name inside the bar (left-aligned)
                         // Dark text on gold fill for WCAG AA contrast
                         Text(stat.name)
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .shadow(color: DarkFantasyTheme.textPrimary.opacity(0.08), radius: 1, x: 0, y: 1)
                             .padding(.leading, LayoutConstants.spaceSM)
 
                         // Value on the right — bright for boosted, white for base
                         Text("\(stat.value)")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(isBoosted ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .padding(.trailing, LayoutConstants.spaceSM)

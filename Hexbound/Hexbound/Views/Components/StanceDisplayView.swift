@@ -86,7 +86,7 @@ struct StanceDisplayView: View {
             // Interactive chevron indicator
             if isInteractive {
                 Image(systemName: "chevron.right")
-                    .font(DarkFantasyTheme.badge.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .padding(.trailing, LayoutConstants.spaceSM)
             }
@@ -105,11 +105,11 @@ struct StanceDisplayView: View {
             // Row 1: Role icon + role label (colored by role)
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: role.sfSymbol)
-                    .font(DarkFantasyTheme.caption.weight(.semibold))
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(role.tintColor.opacity(0.85))
 
                 Text(role.label)
-                    .font(DarkFantasyTheme.caption.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(role.tintColor.opacity(0.85))
             }
 

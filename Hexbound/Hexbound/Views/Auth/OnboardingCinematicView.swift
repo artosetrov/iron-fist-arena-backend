@@ -307,7 +307,7 @@ struct OnboardingCinematicView: View {
                 enterGame()
             } label: {
                 Text("SKIP")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .tracking(0.8)
                     .padding(.horizontal, LayoutConstants.spaceSM)
@@ -358,7 +358,7 @@ struct OnboardingCinematicView: View {
             // Footnote
             if let footnote = slides[currentSlide].footnote {
                 Text(footnote)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(3)
@@ -410,7 +410,7 @@ struct OnboardingCinematicView: View {
                             .font(DarkFantasyTheme.cardTitle)
                             .tracking(1)
                         Image(systemName: "chevron.right")
-                            .font(DarkFantasyTheme.caption.weight(.semibold))
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)

@@ -15,23 +15,23 @@ struct CityBuildingLabel: View {
             // Quest indicator
             if hasQuest && !isLocked {
                 Text("!")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
                     .frame(width: 16, height: 16)
                     .background(Circle().fill(DarkFantasyTheme.gold))
             }
 
             Text(text)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             } else if let badge {
                 Text(badge)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, LayoutConstants.barInternalPadding)

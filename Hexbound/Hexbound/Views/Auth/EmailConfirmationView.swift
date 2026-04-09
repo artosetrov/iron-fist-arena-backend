@@ -52,7 +52,7 @@ struct EmailConfirmationView: View {
                 }
 
                 Text("Tap the link in the email to verify your account. The app will open automatically.")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, LayoutConstants.spaceLG)
@@ -82,7 +82,7 @@ struct EmailConfirmationView: View {
 
                     if !resendMessage.isEmpty {
                         Text(resendMessage)
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(
                                 resendMessage.contains("sent")
                                     ? DarkFantasyTheme.textSuccess

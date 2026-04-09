@@ -58,15 +58,15 @@ struct OpponentCardView: View {
 
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("Lv.\(opponent.level)")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                         Text(opponent.characterClass.displayName)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.classColor(for: opponent.characterClass))
 
                         Text(difficultyLabel)
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(difficultyColor)
                             .padding(.horizontal, LayoutConstants.spaceXS)
                             .padding(.vertical, LayoutConstants.space2XS)
@@ -85,7 +85,7 @@ struct OpponentCardView: View {
                         .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.rankColor(for: opponent.pvpRating))
                     Image(systemName: opponent.rank.icon)
-                        .font(DarkFantasyTheme.caption.weight(.semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(opponent.rank.color)
                 }
             }
@@ -109,15 +109,15 @@ struct OpponentCardView: View {
                     } else {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "swords")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                             Text("FIGHT")
                         }
                         if staminaCost > 0 {
                             Text("(\(staminaCost) STA)")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                         } else {
                             Text("FREE")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
                                 .padding(.horizontal, LayoutConstants.spaceSM)
                                 .padding(.vertical, LayoutConstants.space2XS)

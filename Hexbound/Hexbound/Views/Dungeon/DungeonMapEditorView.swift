@@ -66,7 +66,7 @@ struct DungeonMapEditorView: View {
                 VStack {
                     Spacer()
                     Text(msg)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceMD)
                         .padding(.vertical, LayoutConstants.spaceMS)
@@ -96,7 +96,7 @@ struct DungeonMapEditorView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.danger)
             }
         }
@@ -146,7 +146,7 @@ struct DungeonMapEditorView: View {
 
                 HStack {
                     Text(building.label)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Spacer()
                     Text("(\(String(format: "%.2f", finalX)), \(String(format: "%.2f", finalY))) S: \(String(format: "%.2f", currentSize))")
@@ -186,7 +186,7 @@ struct DungeonMapEditorView: View {
                 }
             } else {
                 Text("Tap a dungeon to select, drag to move")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
 
@@ -348,7 +348,7 @@ struct DraggableEditorDungeonBuilding: View {
                                 .font(DarkFantasyTheme.section)
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                             Text(building.label)
-                                .font(DarkFantasyTheme.badge.bold())
+                                .font(DarkFantasyTheme.body.bold())
                                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                         }
                     )

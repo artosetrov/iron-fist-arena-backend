@@ -257,7 +257,7 @@ struct CityMapView: View {
                 totalRemaining += remaining
             }
             guard totalRemaining > 0 else { return nil }
-            return "⚔ \(totalRemaining)"
+            return "\(totalRemaining)"
 
         default:
             return nil

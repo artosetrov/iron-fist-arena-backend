@@ -18,7 +18,7 @@ struct ClassTagView: View {
 
     var body: some View {
         Text(displayText)
-            .font(DarkFantasyTheme.caption.bold())
+            .font(DarkFantasyTheme.body.bold())
             .foregroundStyle(classColor)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)

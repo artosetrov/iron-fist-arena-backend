@@ -95,7 +95,7 @@ struct InlineCheckmark: View {
                 .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
 
             Image(systemName: "checkmark")
-                .font(DarkFantasyTheme.badge.bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.textOnGold)
         }
         .scaleEffect(scale)

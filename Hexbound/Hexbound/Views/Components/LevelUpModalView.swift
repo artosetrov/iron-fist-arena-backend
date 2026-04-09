@@ -353,7 +353,7 @@ struct LevelUpModalView: View {
     private var unlockSection: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("NEW UNLOCKS")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .tracking(2)
 
@@ -368,7 +368,7 @@ struct LevelUpModalView: View {
     private func unlockPill(name: String) -> some View {
         HStack(spacing: LayoutConstants.spaceXS) {
             Image(systemName: "lock.open.fill")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.success)
             Text(name)
                 .font(DarkFantasyTheme.body)

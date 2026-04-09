@@ -39,12 +39,12 @@ struct EventBannerView: View {
                 // Event info
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(event.name.uppercased())
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .tracking(1)
 
                     Text(event.description)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .lineLimit(1)
                 }
@@ -54,14 +54,14 @@ struct EventBannerView: View {
                 // Timer
                 VStack(alignment: .trailing, spacing: LayoutConstants.space2XS) {
                     Text(timeRemaining)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(isUrgent ? DarkFantasyTheme.arenaRankGold : event.themeColor)
                         .monospacedDigit()
                         .contentTransition(.numericText())
                         .animation(.easeOut(duration: MotionConstants.tickUpShort), value: timeRemaining)
 
                     Image(systemName: "chevron.right")
-                        .font(DarkFantasyTheme.badge.weight(.semibold))
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }

@@ -185,7 +185,7 @@ struct CurrencyPurchaseView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(DarkFantasyTheme.danger)
                         Text(message)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                     }
                     .padding(LayoutConstants.spaceMD)
@@ -254,7 +254,7 @@ struct CurrencyPurchaseView: View {
             Text(isGold
                  ? "Gold fuels your journey — buy gear, potions, and upgrades."
                  : "Gems unlock premium content — skins, boosts, and rare items.")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, LayoutConstants.spaceLG)
@@ -280,7 +280,7 @@ struct CurrencyPurchaseView: View {
                     .fill(DarkFantasyTheme.borderSubtle)
                     .frame(height: 1)
                 Text("OR")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Rectangle()
                     .fill(DarkFantasyTheme.borderSubtle)
@@ -455,7 +455,7 @@ struct CurrencyPackageCard: View {
                     .accessibilityLabel("\(package.displayAmount) \(package.currencyType.label)")
                 if package.bonusAmount > 0 {
                     Text("+\(formatBonus(package.bonusAmount)) BONUS")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                         .fontWeight(.semibold)
                         .accessibilityLabel("Bonus: \(formatBonus(package.bonusAmount)) \(package.currencyType.label)")
@@ -531,13 +531,13 @@ struct MonthlyGemCardOffer: View {
                         .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.cyan)
                     Text("Best daily value!")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                 }
                 Spacer()
                 // Badge
                 Text("350 GEMS")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .padding(.horizontal, LayoutConstants.spaceMS)
                     .padding(.vertical, LayoutConstants.spaceXS)
@@ -553,7 +553,7 @@ struct MonthlyGemCardOffer: View {
                         .foregroundStyle(DarkFantasyTheme.cyan)
                         .font(DarkFantasyTheme.body)
                     Text("50 gems instantly upon purchase")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
                 HStack(spacing: LayoutConstants.spaceSM) {
@@ -561,7 +561,7 @@ struct MonthlyGemCardOffer: View {
                         .foregroundStyle(DarkFantasyTheme.cyan)
                         .font(DarkFantasyTheme.body)
                     Text("10 gems daily for 30 days (300 total)")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 }
                 HStack(spacing: LayoutConstants.spaceSM) {
@@ -569,7 +569,7 @@ struct MonthlyGemCardOffer: View {
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                         .font(DarkFantasyTheme.body)
                     Text("7x more value than buying gems directly!")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSuccess)
                 }
             }
@@ -621,7 +621,7 @@ struct PremiumUnlockCard: View {
                         .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
                     Text("One-time purchase — unlock forever")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
                 Spacer()
@@ -678,7 +678,7 @@ struct PremiumBenefitChip: View {
                     .font(DarkFantasyTheme.body)
             }
             Text(text)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
         }
         .foregroundStyle(DarkFantasyTheme.premiumPink)
         .padding(.horizontal, LayoutConstants.spaceSM)

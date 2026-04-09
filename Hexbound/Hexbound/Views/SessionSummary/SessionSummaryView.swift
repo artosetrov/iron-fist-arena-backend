@@ -104,11 +104,11 @@ struct SessionSummaryView: View {
                 VStack(spacing: LayoutConstants.spaceXS) {
                     HStack {
                         Text("Win Rate")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Spacer()
                         Text("\(Int(winRate * 100))%")
-                            .font(DarkFantasyTheme.caption.bold())
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.gold)
                     }
                     GeometryReader { geo in
@@ -154,10 +154,10 @@ struct SessionSummaryView: View {
             if summary.itemsGained > 0 {
                 HStack {
                     Image(systemName: "bag.fill")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                     Text("\(summary.itemsGained) items obtained")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                     Spacer()
                 }
@@ -190,7 +190,7 @@ struct SessionSummaryView: View {
                 Spacer()
                 if summary.questsCompleted == summary.questsTotal {
                     Text("ALL DONE")
-                        .font(DarkFantasyTheme.caption.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
@@ -233,7 +233,7 @@ struct SessionSummaryView: View {
 
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("Rating Change")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                 Text("\(summary.ratingChange > 0 ? "+" : "")\(summary.ratingChange)")
                     .font(DarkFantasyTheme.title)
@@ -262,7 +262,7 @@ struct SessionSummaryView: View {
     private func sectionHeader(_ title: String) -> some View {
         HStack {
             Text(title.uppercased())
-                .font(DarkFantasyTheme.caption.bold())
+                .font(DarkFantasyTheme.body.bold())
                 .foregroundStyle(DarkFantasyTheme.gold)
                 .tracking(1.5)
             Spacer()
@@ -282,7 +282,7 @@ struct SessionSummaryView: View {
                     .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                 Text(label)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             Spacer()

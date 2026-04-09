@@ -27,7 +27,7 @@ struct StatPointsBadge: View {
             bannerLayout
         case .pill:
             WidgetPill(
-                icon: "⭐",
+                icon: "star.fill",
                 text: "+\(points) Stats",
                 style: .stat,
                 isInteractive: onTap != nil,
@@ -44,7 +44,7 @@ struct StatPointsBadge: View {
         HStack {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "star.fill")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                 Text("Stat Points: \(points)")
             }
             .font(DarkFantasyTheme.cardTitle)
@@ -81,8 +81,9 @@ struct StatPointsBadge: View {
 
     private var rewardLayout: some View {
         HStack {
-            Text("⭐")
+            Image(systemName: "star.fill")
                 .font(.system(size: LayoutConstants.textCard))
+                .foregroundStyle(DarkFantasyTheme.goldBright)
             Text("Stat Points")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)

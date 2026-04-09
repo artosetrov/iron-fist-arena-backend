@@ -64,7 +64,7 @@ struct TreasureRewardOverlay: View {
                                 .scaledToFit()
                                 .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                             Text(buff.name)
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.purple)
                         }
                     }

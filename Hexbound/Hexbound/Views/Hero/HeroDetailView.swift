@@ -239,7 +239,7 @@ struct HeroDetailView: View {
             // Stat points badge floating over STATUS tab area
             if statPoints > 0 {
                 Text("+\(statPoints)")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, LayoutConstants.space2XS)
@@ -338,13 +338,13 @@ struct HeroDetailView: View {
 
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("EQUIPMENT BONUSES")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if bonuses.isEmpty {
                 Text("No equipment bonuses")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             } else {
                 LazyVGrid(
@@ -409,7 +409,7 @@ struct HeroDetailView: View {
             // Derived Stats
             VStack(spacing: LayoutConstants.spaceSM) {
                 Text("DERIVED STATS")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -469,7 +469,7 @@ struct HeroDetailView: View {
                         }
                     } label: {
                         Image(systemName: "info.circle")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.plain)
@@ -479,7 +479,7 @@ struct HeroDetailView: View {
 
                     if isClassPrimary {
                         Text(char.characterClass.displayName.uppercased())
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.gold.opacity(0.7))
                     }
 
@@ -488,7 +488,7 @@ struct HeroDetailView: View {
                     // Minus button — always reserves space to prevent layout shift
                     Button { HapticManager.light(); vm.decrement(stat) } label: {
                         Image(systemName: "minus")
-                            .font(DarkFantasyTheme.uiLabel.bold())
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.danger)
                             .frame(width: 40, height: 40)
                             .background(DarkFantasyTheme.danger.opacity(0.15))
@@ -514,7 +514,7 @@ struct HeroDetailView: View {
                     // Plus button — always reserves space when stat points exist
                     Button { HapticManager.selection(); vm.increment(stat) } label: {
                         Image(systemName: "plus")
-                            .font(DarkFantasyTheme.uiLabel.bold())
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .frame(width: 40, height: 40)
                             .background(vm.availablePoints > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.textDisabled)
@@ -590,14 +590,14 @@ struct HeroDetailView: View {
                 // ── Row 3: Derived stat + benefit pills ──
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(vm.primaryDerivedLabel(for: stat))
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(delta > 0 ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary)
 
                     if hasPoints {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             ForEach(vm.perPointBenefits(for: stat), id: \.self) { hint in
                                 Text(hint)
-                                    .font(DarkFantasyTheme.badge)
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                     .foregroundStyle(DarkFantasyTheme.textSuccess)
                                     .padding(.horizontal, LayoutConstants.spaceXS)
                                     .padding(.vertical, LayoutConstants.space2XS)
@@ -611,7 +611,7 @@ struct HeroDetailView: View {
                 // ── Row 4: Tooltip (conditional, on info tap) ──
                 if tooltipStat == stat {
                     Text(stat.description)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .padding(LayoutConstants.spaceSM)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -704,11 +704,11 @@ struct HeroDetailView: View {
     private func derivedRow(_ label: String, value: String, color: Color) -> some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             Spacer()
             Text(value)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .contentTransition(.numericText())
@@ -737,14 +737,14 @@ struct HeroDetailView: View {
 
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("RESET STATS")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if showRespecConfirm {
                 VStack(spacing: LayoutConstants.spaceSM) {
                     Text("Reset all stat points to base values? You will get all spent points back.")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .multilineTextAlignment(.center)
 
@@ -769,7 +769,7 @@ struct HeroDetailView: View {
                                         .frame(width: 14, height: 14)
                                     Text(")")
                                 }
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                             }
                         }
                         .buttonStyle(.primary)
@@ -789,13 +789,13 @@ struct HeroDetailView: View {
                 } label: {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "arrow.counterclockwise")
-                            .font(DarkFantasyTheme.uiLabel.bold())
+                            .font(DarkFantasyTheme.body.bold())
                         Text("RESPEC STATS")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                         Spacer()
                         HStack(spacing: LayoutConstants.space2XS) {
                             Text("\(gemCost)")
-                                .font(DarkFantasyTheme.uiLabel)
+                                .font(DarkFantasyTheme.body)
                             Image("icon-gems")
                                 .resizable()
                                 .frame(width: 14, height: 14)
@@ -911,10 +911,10 @@ struct HeroDetailView: View {
 
                 VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                     Text(title)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(accentColor)
                     Text(subtitle)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .lineLimit(2)
                 }
@@ -973,7 +973,7 @@ struct HeroDetailView: View {
                         .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
 
                     Text("REPAIR EQUIPMENT")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                     Spacer()
@@ -984,10 +984,10 @@ struct HeroDetailView: View {
                     // Damaged count
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.stamina)
                         Text("\(damagedItems.count) damaged")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
 
@@ -996,7 +996,7 @@ struct HeroDetailView: View {
                     // Total cost
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Text("Cost:")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         CurrencyDisplay(gold: totalCost, size: .compact)
                     }
@@ -1006,10 +1006,10 @@ struct HeroDetailView: View {
                 if !canAfford {
                     HStack(spacing: LayoutConstants.spaceXS) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.danger)
                         Text("Not enough gold")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.danger)
                         Spacer()
                     }
@@ -1088,7 +1088,7 @@ struct HeroDetailView: View {
 
                 Spacer()
                 Text("\(vm.items.count) items")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -1174,25 +1174,25 @@ struct HeroDetailView: View {
             // Search field
             HStack(spacing: LayoutConstants.spaceSM) {
                 Image(systemName: "magnifyingglass")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 TextField("", text: Binding(
                     get: { vm.searchText },
                     set: { vm.searchText = $0 }
                 ))
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .placeholder(when: vm.searchText.isEmpty) {
                     Text("Search items...")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
 
                 if !vm.searchText.isEmpty {
                     Button { vm.searchText = "" } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.scalePress)
@@ -1209,7 +1209,7 @@ struct HeroDetailView: View {
                     }
                 } label: {
                     Image(systemName: "arrow.up.arrow.down")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
                 }

@@ -39,7 +39,7 @@ struct ReferralSectionView: View {
                     ProgressView()
                         .tint(DarkFantasyTheme.gold)
                     Text("Loading...")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -62,7 +62,7 @@ struct ReferralSectionView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(DarkFantasyTheme.success)
                     Text("Referred by a friend")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
@@ -76,7 +76,7 @@ struct ReferralSectionView: View {
     private func myCodeRow(_ code: String) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             Text("Your invite code:")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             HStack(spacing: LayoutConstants.spaceSM) {
@@ -138,7 +138,7 @@ struct ReferralSectionView: View {
                 .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(color)
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
     }
@@ -148,7 +148,7 @@ struct ReferralSectionView: View {
     private var friendCodeInput: some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             Text("Have a friend's code?")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
             HStack(spacing: LayoutConstants.spaceSM) {
@@ -195,20 +195,20 @@ struct ReferralSectionView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(DarkFantasyTheme.success)
                 Text("Bonus applied! +\(gold) gold")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         case .alreadyReferred:
             Text("You already used a referral code")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         case .invalidCode:
             Text("Invalid code — check and try again")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.danger)
         case .error(let msg):
             Text(msg)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.danger)
         }
     }

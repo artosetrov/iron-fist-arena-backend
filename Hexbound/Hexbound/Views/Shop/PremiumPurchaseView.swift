@@ -162,13 +162,13 @@ struct PremiumPurchaseView: View {
             // Price pill
             HStack(spacing: LayoutConstants.spaceXS) {
                 Text("JUST")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(price)
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                 Text("ONE TIME")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             .padding(.horizontal, LayoutConstants.spaceLG)
@@ -188,22 +188,22 @@ struct PremiumPurchaseView: View {
     private var premiumComparison: some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Text("FREE VS PREMIUM")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.goldBright)
 
             VStack(spacing: 0) {
                 // Header row
                 HStack {
                     Text("Feature")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("Free")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .frame(width: 60)
                     Text("Premium")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.premiumPink)
                         .frame(width: 70)
                 }
@@ -256,7 +256,7 @@ struct PremiumPurchaseView: View {
             // Error message
             if case .failed(let message) = purchaseState {
                 Text(message)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textDanger)
                     .multilineTextAlignment(.center)
             }
@@ -280,7 +280,7 @@ struct PremiumPurchaseView: View {
 
             // Legal
             Text("One-time purchase. No subscriptions. No recurring charges.")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .multilineTextAlignment(.center)
         }
@@ -401,11 +401,11 @@ struct PremiumFeatureRow: View {
             // Text
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(feature.title)
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(feature.highlight ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textPrimary)
 
                 Text(feature.description)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineLimit(2)
             }
@@ -441,15 +441,15 @@ struct ComparisonRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(free)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .frame(width: 60)
             Text(premium)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.premiumPink)
                 .frame(width: 70)
         }

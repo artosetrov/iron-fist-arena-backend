@@ -32,7 +32,7 @@ struct LootPreviewSheet: View {
 
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Text(loot.rarity.rawValue)
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                                 .foregroundStyle(rarityColor)
                                 .padding(.horizontal, LayoutConstants.spaceXS)
                                 .padding(.vertical, LayoutConstants.space2XS)
@@ -45,7 +45,7 @@ struct LootPreviewSheet: View {
                         }
 
                         Text(loot.detail)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
 
@@ -72,18 +72,18 @@ struct LootPreviewSheet: View {
                             .scaledToFit()
                             .frame(width: 14, height: 14)
                         Text("DROP INFO")
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .tracking(1.2)
                     }
 
                     HStack {
                         Text("Amount / Chance")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Spacer()
                         Text(loot.detail)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(rarityColor)
                     }
                 }
@@ -96,7 +96,7 @@ struct LootPreviewSheet: View {
                         .frame(height: 1)
 
                     Text(lootFlavorText(for: loot))
-                        .font(DarkFantasyTheme.uiLabel.italic())
+                        .font(DarkFantasyTheme.body.italic())
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(LayoutConstants.cardPadding)

@@ -56,7 +56,7 @@ struct CityBuildingView: View {
                             .font(DarkFantasyTheme.section.bold())
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                         Text(requiredLevel != nil ? "LV.\(requiredLevel!)" : "SOON")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .padding(LayoutConstants.spaceSM)
@@ -101,7 +101,7 @@ struct CityBuildingView: View {
                         .font(DarkFantasyTheme.title)
                         .foregroundStyle(building.glowColor)
                     Text(building.label)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }

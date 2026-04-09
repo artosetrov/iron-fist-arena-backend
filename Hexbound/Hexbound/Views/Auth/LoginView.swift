@@ -55,7 +55,7 @@ struct LoginView: View {
                     // Error
                     if !vm.errorMessage.isEmpty {
                         Text(vm.errorMessage)
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textDanger)
                             .multilineTextAlignment(.center)
                             .transition(.opacity)
@@ -68,7 +68,7 @@ struct LoginView: View {
                                 .fill(DarkFantasyTheme.borderSubtle)
                                 .frame(height: 1)
                             Text("CONNECT WITH")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .tracking(1)
                                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                                 .fixedSize()

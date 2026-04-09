@@ -18,7 +18,7 @@ struct BuildingLockOverlay: View {
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                 Text("LV.\(requiredLevel)")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .padding(LayoutConstants.spaceSM)

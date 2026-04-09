@@ -134,11 +134,11 @@ struct FortuneWheelDetailView: View {
                 .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
 
             Text(label)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(color)
 
             Text("\(count) sector\(count > 1 ? "s" : "")")
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(0.5)
         }
@@ -274,9 +274,9 @@ struct FortuneWheelDetailView: View {
                 // Spins badge — Figma: capsule, bgTertiary fill, borderSubtle stroke, Inter Bold 11
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "arrow.trianglehead.2.counterclockwise.rotate.90")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                     Text("\(vm.spinsRemaining)/\(vm.spinsLimit)")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                 }
                 .foregroundStyle(vm.spinsRemaining > 0 ? DarkFantasyTheme.gold : DarkFantasyTheme.danger)
                 .padding(.horizontal, LayoutConstants.spaceSM)
@@ -645,7 +645,7 @@ struct FortuneWheelView: View {
             let labelY = labelRadius * sin(midAngle)
 
             Text(sector.label)
-                .font(sector.multiplier >= 5 ? DarkFantasyTheme.uiLabel : DarkFantasyTheme.badge)
+                .font(sector.multiplier >= 5 ? DarkFantasyTheme.body : DarkFantasyTheme.body)
                 .foregroundStyle(sector.color)
                 .shadow(color: sector.color.opacity(DarkFantasyTheme.opacityHeavy), radius: 4)
                 .offset(x: labelX, y: labelY)
@@ -683,10 +683,10 @@ struct FortuneWheelView: View {
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
                                 Text("x1.5")
-                                    .font(DarkFantasyTheme.uiLabel)
+                                    .font(DarkFantasyTheme.body)
                                     .foregroundStyle(DarkFantasyTheme.goldBright)
                                 Text("3 sectors")
-                                    .font(DarkFantasyTheme.badge)
+                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                             }
                             .frame(maxWidth: .infinity)
@@ -758,9 +758,9 @@ struct FortuneWheelView: View {
                     HStack {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Image(systemName: "arrow.trianglehead.2.counterclockwise.rotate.90")
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                             Text("8/10")
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                         }
                         .foregroundStyle(DarkFantasyTheme.gold)
                         .padding(.horizontal, LayoutConstants.spaceSM)

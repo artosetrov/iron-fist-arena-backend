@@ -15,12 +15,12 @@ struct AchievementsDetailView: View {
                     // Count + unclaimed indicator
                     HStack {
                         Text("\(vm.completedCount) / \(vm.totalCount)")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                             .accessibilityLabel("Achievements: \(vm.completedCount) of \(vm.totalCount) completed")
                         if vm.unclaimedCount > 0 {
                             Text("(\(vm.unclaimedCount) unclaimed!)")
-                                .font(DarkFantasyTheme.caption)
+                                .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.goldBright)
                                 .accessibilityLabel("\(vm.unclaimedCount) unclaimed achievements available")
                         }
@@ -113,7 +113,7 @@ struct AchievementsDetailView: View {
                     let count = vm.unclaimedCountForTab(index)
                     if count > 0 && index != vm.selectedTab {
                         Text("\(count)")
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                             .background(

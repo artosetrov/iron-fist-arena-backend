@@ -126,8 +126,8 @@ struct NPCGuideWidget: View {
                     Button {
                         onDismiss()
                     } label: {
-                        Text("✕")
-                            .font(DarkFantasyTheme.caption.bold())
+                        Image(systemName: "xmark")
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
                     .buttonStyle(.plain)
@@ -152,7 +152,7 @@ struct NPCGuideWidget: View {
                         Text(plain)
                     }
                 }
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .lineLimit(3)
                 .id(messageId)
@@ -216,7 +216,7 @@ struct NPCGuideWidget: View {
                     skipAll()
                 } label: {
                     Text("Skip all")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 .buttonStyle(.plain)

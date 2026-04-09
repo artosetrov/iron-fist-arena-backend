@@ -112,7 +112,7 @@ struct BattlePassDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Season name
             Text(vm.seasonName)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .accessibilityLabel("Season: \(vm.seasonName)")
 
@@ -124,7 +124,7 @@ struct BattlePassDetailView: View {
                     .accessibilityLabel("Battle Pass level \(vm.currentLevel)")
                 Spacer()
                 Text("\(vm.currentXp) / \(vm.xpToNext) XP")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .accessibilityLabel("Experience: \(vm.currentXp) of \(vm.xpToNext)")
             }
@@ -190,7 +190,7 @@ struct BattlePassDetailView: View {
     private func rewardTrackSection(title: String, rewards: [BPReward], vm: BattlePassViewModel) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             Text(title)
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.gold)
 
             ScrollViewReader { proxy in

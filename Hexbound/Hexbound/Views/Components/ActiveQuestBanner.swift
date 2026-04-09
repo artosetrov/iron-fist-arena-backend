@@ -60,11 +60,11 @@ struct ActiveQuestBanner: View {
             // Info
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(quest.title)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
 
                 Text(quest.description)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                     .lineLimit(1)
             }
@@ -82,7 +82,7 @@ struct ActiveQuestBanner: View {
             } else {
                 // Progress pill
                 Text("\(quest.progress)/\(quest.target)")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.cyan)
                     .monospacedDigit()
                     .lineLimit(1)

@@ -52,7 +52,7 @@ struct CelebrationBannerView: View {
 
                 if !banner.subtitle.isEmpty {
                     Text(banner.subtitle)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .lineLimit(1)
                 }

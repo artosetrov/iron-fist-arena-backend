@@ -223,7 +223,7 @@ private struct InboxConversationRow: View {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(conversation.otherCharacter.characterName)
-                        .font(hasUnread ? DarkFantasyTheme.cardTitle : DarkFantasyTheme.uiLabel)
+                        .font(hasUnread ? DarkFantasyTheme.cardTitle : DarkFantasyTheme.body)
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textSecondary
                         )
@@ -232,7 +232,7 @@ private struct InboxConversationRow: View {
                     Spacer(minLength: 4)
 
                     Text(formatDate(conversation.lastMessage.createdAt))
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.gold : DarkFantasyTheme.textTertiary
                         )
@@ -240,7 +240,7 @@ private struct InboxConversationRow: View {
 
                 HStack(spacing: LayoutConstants.spaceSM) {
                     Text(conversation.lastMessage.content)
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(
                             hasUnread ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.textTertiary
                         )
@@ -251,7 +251,7 @@ private struct InboxConversationRow: View {
                     // Badge: unread (gold) or total count (subtle)
                     if let count = badgeCount {
                         Text(count > 99 ? "99+" : "\(count)")
-                            .font(DarkFantasyTheme.badge)
+                            .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(hasUnread ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
                             .padding(.horizontal, LayoutConstants.spaceSM)
                             .padding(.vertical, LayoutConstants.space2XS)
@@ -525,7 +525,7 @@ private struct UnreadBadge: View {
 
     var body: some View {
         Text("\(count)")
-            .font(DarkFantasyTheme.badge)
+            .font(DarkFantasyTheme.body.weight(.semibold))
             .foregroundStyle(DarkFantasyTheme.textOnGold)
             .padding(.horizontal, LayoutConstants.spaceSM)
             .padding(.vertical, LayoutConstants.space2XS)
@@ -546,11 +546,11 @@ private struct ErrorBanner: View {
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(DarkFantasyTheme.uiLabel)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.danger)
 
             Text(message)
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(2)
 
@@ -559,7 +559,7 @@ private struct ErrorBanner: View {
             if let onRetry {
                 Button("Retry") { onRetry() }
                     .buttonStyle(.plain)
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.gold)
             }
         }

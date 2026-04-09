@@ -12,8 +12,8 @@ enum CharacterGender: String, Codable, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .male: "♂"
-        case .female: "♀"
+        case .male: "person.fill"
+        case .female: "person.fill"
         }
     }
 }

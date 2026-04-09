@@ -50,7 +50,7 @@ struct SeasonSummaryModalView: View {
                 if showTitle {
                     VStack(spacing: LayoutConstants.spaceXS) {
                         Text("SEASON COMPLETE")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .tracking(3)
 
@@ -156,7 +156,7 @@ struct SeasonSummaryModalView: View {
             }
 
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(1)
         }

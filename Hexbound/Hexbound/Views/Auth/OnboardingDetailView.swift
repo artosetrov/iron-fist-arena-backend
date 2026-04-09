@@ -30,7 +30,7 @@ struct OnboardingDetailView: View {
                 // Error
                 if !vm.errorMessage.isEmpty {
                     Text(vm.errorMessage)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textDanger)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, LayoutConstants.screenPadding)
@@ -118,12 +118,12 @@ struct OnboardingDetailView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(isActive ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -208,7 +208,7 @@ struct OnboardingDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
 
                 Text("Sharpening swords, polishing armor...")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
             .padding(LayoutConstants.spaceLG)

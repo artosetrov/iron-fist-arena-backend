@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "loot_8ea10124-40b9-4632-b080-49c24c27d5cc.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "sync-assets",
+    "version" : 1
+  }
+}

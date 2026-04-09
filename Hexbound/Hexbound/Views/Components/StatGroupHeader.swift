@@ -29,7 +29,7 @@ struct StatGroupHeader: View {
             }
 
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
                 .lineLimit(1)
                 .fixedSize()

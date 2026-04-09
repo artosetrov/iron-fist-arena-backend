@@ -85,7 +85,7 @@ struct DungeonRoomDetailView: View {
                             .tint(DarkFantasyTheme.gold)
                             .scaleEffect(1.4)
                         Text("Preparing for battle...")
-                            .font(DarkFantasyTheme.uiLabel)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .padding(LayoutConstants.spaceLG)
@@ -217,14 +217,14 @@ struct DungeonRoomDetailView: View {
 
                 if vm.isDungeonComplete {
                     Text("Complete!")
-                        .font(DarkFantasyTheme.badge.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(Capsule().fill(completedGreen))
                 } else {
                     Text("\(pctInt)%")
-                        .font(DarkFantasyTheme.badge.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceSM)
                         .padding(.vertical, LayoutConstants.space2XS)
@@ -235,7 +235,7 @@ struct DungeonRoomDetailView: View {
 
                 HStack(spacing: LayoutConstants.spaceXS) {
                     Image(systemName: "bolt.fill")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                     Text("Cost \(vm.dungeon?.energyCost ?? 10)")
                         .font(DarkFantasyTheme.section)
                 }
@@ -301,15 +301,15 @@ struct DungeonRoomDetailView: View {
                 switch state {
                 case .defeated:
                     Image(systemName: "checkmark")
-                        .font(DarkFantasyTheme.badge.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(completedGreen)
                 case .current:
                     Text("\(boss.id)")
-                        .font(DarkFantasyTheme.caption.bold())
+                        .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                 case .locked:
                     Text("\(boss.id)")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textDisabled)
                 }
             }
@@ -390,7 +390,7 @@ struct DungeonRoomDetailView: View {
             VStack(spacing: LayoutConstants.spaceSM) {
                 if let boss = vm?.currentBoss {
                     Text(boss.name.uppercased())
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .tracking(3)
                         .opacity(bossSlamOpacity)

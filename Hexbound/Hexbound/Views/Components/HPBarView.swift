@@ -108,7 +108,7 @@ struct HPBarView: View {
                     HStack {
                         Spacer()
                         Text(textContent)
-                            .font(size == .compact ? DarkFantasyTheme.badge : DarkFantasyTheme.uiLabel.bold())
+                            .font(size == .compact ? DarkFantasyTheme.body : DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .monospacedDigit()
                             .padding(.horizontal, LayoutConstants.spaceXS)

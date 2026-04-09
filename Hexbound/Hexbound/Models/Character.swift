@@ -41,6 +41,9 @@ struct Character: Codable, Identifiable {
     // Prestige
     var prestige: Int?
 
+    // Gear score (calculated by backend from equipped items)
+    var gearScore: Int?
+
     // Armor & derived
     var armor: Int?
     var magicResist: Int?
@@ -78,6 +81,7 @@ struct Character: Codable, Identifiable {
         case statPoints = "statPointsAvailable"     // JSON: "statPointsAvailable"
         case combatStance
         case prestige = "prestigeLevel"             // JSON: "prestigeLevel"
+        case gearScore
         case armor
         case magicResist
     }

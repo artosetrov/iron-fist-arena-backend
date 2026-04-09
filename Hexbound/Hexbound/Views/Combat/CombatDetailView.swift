@@ -371,7 +371,7 @@ struct CombatDetailView: View {
 
             // Level + Class
             Text("Lv.\(fighter.level) \(fighter.characterClass.rawValue.capitalized)")
-                .font(DarkFantasyTheme.caption)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 
             // HP Bar
@@ -380,7 +380,7 @@ struct CombatDetailView: View {
                     .accessibilityLabel("Health \(currentHp) of \(maxHp)")
 
                 Text("\(currentHp)/\(maxHp)")
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.hpBlood)
                     .contentTransition(.numericText())
                     .animation(MotionConstants.smooth, value: currentHp)
@@ -392,9 +392,9 @@ struct CombatDetailView: View {
                     ForEach(statuses) { status in
                         HStack(spacing: LayoutConstants.space2XS) {
                             Image(systemName: status.icon)
-                                .font(DarkFantasyTheme.badge)
+                                .font(DarkFantasyTheme.body.weight(.semibold))
                             Text(status.abbreviation)
-                                .font(DarkFantasyTheme.badge.weight(.bold))
+                                .font(DarkFantasyTheme.body.bold())
                         }
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceXS)
@@ -417,7 +417,7 @@ struct CombatDetailView: View {
             // Attack zone
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text("Attack")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(vm.currentAttackZone ?? "—")
                     .font(DarkFantasyTheme.cardTitle)
@@ -437,7 +437,7 @@ struct CombatDetailView: View {
             // Defend zone
             VStack(spacing: LayoutConstants.spaceXS) {
                 Text("Defend")
-                    .font(DarkFantasyTheme.caption)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Text(vm.currentDefendZone ?? "—")
                     .font(DarkFantasyTheme.cardTitle)
@@ -484,25 +484,25 @@ struct CombatDetailView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: LayoutConstants.spaceXS) {
                                     Text(entry.text)
-                                        .font(DarkFantasyTheme.caption)
+                                        .font(DarkFantasyTheme.body)
                                         .foregroundStyle(DarkFantasyTheme.textSecondary)
 
                                     Text("→")
-                                        .font(DarkFantasyTheme.caption)
+                                        .font(DarkFantasyTheme.body)
                                         .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                                     Text(entry.result)
-                                        .font(DarkFantasyTheme.caption.weight(.bold))
+                                        .font(DarkFantasyTheme.body.bold())
                                         .foregroundStyle(entry.resultColor)
 
                                     if let label = entry.damageTypeLabel, let color = entry.damageTypeColor {
                                         HStack(spacing: LayoutConstants.space2XS) {
                                             if let icon = entry.damageTypeIcon {
                                                 Image(systemName: icon)
-                                                    .font(DarkFantasyTheme.badge)
+                                                    .font(DarkFantasyTheme.body.weight(.semibold))
                                             }
                                             Text(label)
-                                                .font(DarkFantasyTheme.badge.weight(.bold))
+                                                .font(DarkFantasyTheme.body.bold())
                                         }
                                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                                         .padding(.horizontal, LayoutConstants.spaceXS)
@@ -609,7 +609,7 @@ struct CombatDetailView: View {
                     showForfeitConfirmation = true
                 } label: {
                     Image(systemName: "flag.fill")
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                 }
                 .buttonStyle(.combatForfeit)
                 .accessibilityLabel("Forfeit battle")

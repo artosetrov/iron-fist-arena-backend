@@ -150,7 +150,7 @@ struct ProgressBarsCatalogView: View {
     private func barRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             Text(label)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
             content()
         }

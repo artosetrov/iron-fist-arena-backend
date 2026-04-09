@@ -28,7 +28,7 @@ struct HeroIntegratedCard: View {
         VStack(spacing: 0) {
             // ═══ EQUIPMENT GRID ═══
             equipmentGrid
-                .padding(.horizontal, LayoutConstants.spaceXS)
+                .padding(.horizontal, LayoutConstants.heroSlotGap)
                 .padding(.top, LayoutConstants.heroCardPadding)
                 .padding(.bottom, LayoutConstants.spaceLG)
 
@@ -58,50 +58,58 @@ struct HeroIntegratedCard: View {
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroCardRadius))
     }
 
-    // MARK: - Equipment Grid (computed cell width, no GeometryReader)
+    // MARK: - Equipment Grid (GeometryReader for precise layout)
 
-    /// Cell width for uniform 4-column grid
-    private var gridCellWidth: CGFloat {
-        let cardInnerW = UIScreen.main.bounds.width - 2 * LayoutConstants.screenPadding - 2 * LayoutConstants.spaceXS
-        return floor((cardInnerW - 3 * LayoutConstants.heroSlotGap) / 4)
+    /// Aspect ratio for the equipment grid (width / height)
+    private var gridAspectRatio: CGFloat {
+        let slotGap = LayoutConstants.heroSlotGap
+        // Use reference width to compute ratio (scale-independent)
+        let refW: CGFloat = 400
+        let cw = (refW - 3 * slotGap) / 4
+        let height = 4 * cw + 3 * slotGap  // 3 top rows + gap + 1 bottom row
+        return refW / height
     }
 
     private var equipmentGrid: some View {
-        let cw = gridCellWidth
-        let slotGap = LayoutConstants.heroSlotGap
-        // Portrait = exactly 2 cells + 1 gap (centered in grid)
-        let portraitW = 2 * cw + slotGap
-        let portraitH = 3 * cw + 2 * slotGap
+        GeometryReader { geo in
+            let containerW = geo.size.width
+            let slotGap = LayoutConstants.heroSlotGap
+            let cw = (containerW - 3 * slotGap) / 4
+            // Portrait = exactly 2 cells + 1 gap (centered in grid)
+            let portraitW = 2 * cw + slotGap
+            let portraitH = 3 * cw + 2 * slotGap
 
-        return VStack(spacing: slotGap) {
-            // Top: 3 left | portrait (2-col) | 3 right
-            HStack(alignment: .top, spacing: slotGap) {
-                VStack(spacing: slotGap) {
-                    equipSlot("helmet", size: cw)
-                    equipSlot("chest", size: cw)
-                    equipSlot("legs", size: cw)
+            VStack(spacing: slotGap) {
+                // Top: 3 left | portrait (2-col) | 3 right
+                HStack(alignment: .top, spacing: slotGap) {
+                    VStack(spacing: slotGap) {
+                        equipSlot("helmet", size: cw)
+                        equipSlot("chest", size: cw)
+                        equipSlot("legs", size: cw)
+                    }
+                    .frame(width: cw)
+
+                    heroPortrait()
+                        .frame(width: portraitW, height: portraitH)
+
+                    VStack(spacing: slotGap) {
+                        equipSlot("amulet", size: cw)
+                        equipSlot("gloves", size: cw)
+                        equipSlot("boots", size: cw)
+                    }
+                    .frame(width: cw)
                 }
-                .frame(width: cw)
 
-                heroPortrait()
-                    .frame(width: portraitW, height: portraitH)
-
-                VStack(spacing: slotGap) {
-                    equipSlot("amulet", size: cw)
-                    equipSlot("gloves", size: cw)
-                    equipSlot("boots", size: cw)
+                // Bottom: Ring, Weapon, Relic, Belt
+                HStack(spacing: slotGap) {
+                    equipSlot("ring", size: cw, index: 0)
+                    equipSlot("weapon", size: cw)
+                    equipSlot("relic", size: cw)
+                    equipSlot("belt", size: cw)
                 }
-                .frame(width: cw)
-            }
-
-            // Bottom: Ring, Weapon, Relic, Belt
-            HStack(spacing: slotGap) {
-                equipSlot("ring", size: cw, index: 0)
-                equipSlot("weapon", size: cw)
-                equipSlot("relic", size: cw)
-                equipSlot("belt", size: cw)
             }
         }
+        .aspectRatio(gridAspectRatio, contentMode: .fit)
     }
 
     // MARK: - Data Section (below divider)
@@ -178,7 +186,7 @@ struct HeroIntegratedCard: View {
                             .font(DarkFantasyTheme.section)
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                         Text(character.characterClass.rawValue.uppercased())
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textSecondary)
                     }
                     .padding(.vertical, LayoutConstants.spaceXS)
@@ -204,7 +212,7 @@ struct HeroIntegratedCard: View {
                         Spacer()
 
                         Text("Lv. \(character.level)")
-                            .font(DarkFantasyTheme.badge.bold())
+                            .font(DarkFantasyTheme.body.bold())
                             .foregroundStyle(DarkFantasyTheme.textOnGold)
                             .padding(.horizontal, LayoutConstants.spaceXS)
                             .padding(.vertical, LayoutConstants.space2XS)
@@ -222,7 +230,7 @@ struct HeroIntegratedCard: View {
             VStack {
                 Spacer()
                 Text("XP \(character.experience ?? 0)/\(character.xpNeeded)")
-                    .font(DarkFantasyTheme.badge.bold())
+                    .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(DarkFantasyTheme.xpRing)
                     .padding(.horizontal, LayoutConstants.spaceXS)
                     .padding(.vertical, LayoutConstants.space2XS)

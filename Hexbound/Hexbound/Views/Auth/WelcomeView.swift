@@ -49,7 +49,7 @@ struct WelcomeView: View {
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
                         Text("OR")
-                            .font(DarkFantasyTheme.caption)
+                            .font(DarkFantasyTheme.body)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                             .fixedSize()
@@ -126,7 +126,7 @@ struct WelcomeView: View {
 
                     // Guest warning
                     Text("Guest progress may be lost. Link your account later in Settings.")
-                        .font(DarkFantasyTheme.caption)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .multilineTextAlignment(.center)
                 }
@@ -136,7 +136,7 @@ struct WelcomeView: View {
                 // Error
                 if !vm.errorMessage.isEmpty {
                     Text(vm.errorMessage)
-                        .font(DarkFantasyTheme.uiLabel)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textDanger)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, LayoutConstants.screenPadding)

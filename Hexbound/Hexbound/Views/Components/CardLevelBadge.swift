@@ -69,7 +69,7 @@ struct CardActionButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(DarkFantasyTheme.uiLabel.weight(.semibold))
+                .font(DarkFantasyTheme.body.weight(.semibold))
                 .foregroundStyle(color)
                 .frame(width: LayoutConstants.touchMin, height: LayoutConstants.touchMin)
                 .background(

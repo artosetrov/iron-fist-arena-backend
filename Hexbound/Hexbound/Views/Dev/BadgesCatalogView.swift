@@ -100,19 +100,19 @@ struct BadgesCatalogView: View {
                 VStack(spacing: LayoutConstants.spaceXS) {
                     CardLevelBadge(level: 5, accentColor: DarkFantasyTheme.gold)
                     Text("Standard")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 VStack(spacing: LayoutConstants.spaceXS) {
                     CardLevelBadge(level: 25, accentColor: DarkFantasyTheme.purple)
                     Text("High")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
                 VStack(spacing: LayoutConstants.spaceXS) {
                     CardLevelBadge(level: 99, accentColor: DarkFantasyTheme.danger)
                     Text("Max")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }
@@ -126,35 +126,35 @@ struct BadgesCatalogView: View {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceMD) {
                 HStack {
                     Text("Standard")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
                     CurrencyDisplay(gold: 14500, gems: 320, size: .standard, animated: false)
                 }
                 HStack {
                     Text("Compact")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
                     CurrencyDisplay(gold: 14500, gems: 320, size: .compact, animated: false)
                 }
                 HStack {
                     Text("Mini")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
                     CurrencyDisplay(gold: 14500, size: .mini, animated: false)
                 }
                 HStack {
                     Text("Gold Only")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
                     CurrencyDisplay(gold: 14500, size: .standard, currencyType: .gold, animated: false)
                 }
                 HStack {
                     Text("Gems Only")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .frame(width: 72, alignment: .leading)
                     CurrencyDisplay(gold: 0, gems: 320, size: .standard, currencyType: .gems, animated: false)
@@ -176,7 +176,7 @@ struct BadgesCatalogView: View {
                             EquippedBadge()
                         }
                     Text("Equipped")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }
             }

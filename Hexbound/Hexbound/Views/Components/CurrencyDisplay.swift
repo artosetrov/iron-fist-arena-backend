@@ -57,8 +57,8 @@ struct CurrencyDisplay: View {
             switch self {
             case .standard: DarkFantasyTheme.title
             case .widget: DarkFantasyTheme.body.bold()
-            case .compact: DarkFantasyTheme.uiLabel
-            case .mini: DarkFantasyTheme.uiLabel
+            case .compact: DarkFantasyTheme.body
+            case .mini: DarkFantasyTheme.body
             }
         }
 

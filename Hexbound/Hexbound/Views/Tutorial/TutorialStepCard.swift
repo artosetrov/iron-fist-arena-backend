@@ -40,7 +40,7 @@ struct TutorialStepCard: View {
             // Reward
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "gift.fill")
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.body)
                 Text(objective.rewardText)
                     .font(DarkFantasyTheme.buttonLabel)
             }
