@@ -109,11 +109,10 @@ export async function POST(req: NextRequest) {
           class: string
           current_stamina: number
           max_stamina: number
-          gold: number
           prestige_level: number
         }>
       >(
-        `SELECT id, user_id, tutorial_step, class, current_stamina, max_stamina, gold, prestige_level
+        `SELECT id, user_id, tutorial_step, class, current_stamina, max_stamina, prestige_level
          FROM characters WHERE id = $1 FOR UPDATE`,
         character_id
       )
@@ -144,15 +143,14 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Extra gold for referred players
+      // Extra gold for referred players (goes to account/user level now)
       const extraGold = isReferred ? REFERRAL_BONUS.extraGold : 0
 
-      // Update character: advance step, add stamina + gold bonus
+      // Update character: advance step, add stamina
       const updatedCharacter = await tx.character.update({
         where: { id: character_id },
         data: {
           tutorialStep: 1,
-          gold: { increment: extraGold },
           currentStamina: Math.min(
             character.current_stamina + WELCOME_GIFT.staminaBonus,
             character.max_stamina + WELCOME_GIFT.staminaBonus
@@ -160,6 +158,14 @@ export async function POST(req: NextRequest) {
           referralCode: generateReferralCode(),
         },
       })
+
+      // Add referral bonus gold to user account
+      if (extraGold > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { gold: { increment: extraGold } },
+        })
+      }
 
       // Give starter weapon
       const inventoryItem = await tx.equipmentInventory.create({
@@ -220,7 +226,6 @@ export async function POST(req: NextRequest) {
       tutorialStep: result.character.tutorialStep,
       weapon: result.weapon,
       isReferred: result.isReferred,
-      gold: result.character.gold,
       stamina: result.character.currentStamina,
     }, { status: 201 })
   } catch (error) {

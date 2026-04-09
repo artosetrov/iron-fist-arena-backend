@@ -23,15 +23,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
-    const { updatedCharacter, updatedItem, repairCost } = await prisma.$transaction(async (tx) => {
-      // Lock the character row for update
-      const [charRow] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
-        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
+    const { updatedUser, updatedItem, repairCost } = await prisma.$transaction(async (tx) => {
+      // Lock the user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number; gems: number }>>(
+        `SELECT id, gold, gems FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
       )
 
-      if (!charRow) throw new Error('NOT_FOUND')
-      if (charRow.user_id !== user.id) throw new Error('FORBIDDEN')
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+
+      // Verify character ownership
+      const character = await tx.character.findUnique({
+        where: { id: character_id },
+        select: { userId: true },
+      })
+
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
       // Get the inventory item
       const inventoryItem = await tx.equipmentInventory.findUnique({
@@ -52,10 +60,10 @@ export async function POST(req: NextRequest) {
       const rarityMult = rarityMultipliers[inventoryItem.item?.rarity ?? 'common'] ?? 1.0
       const cost = Math.ceil((inventoryItem.maxDurability - inventoryItem.durability) * 5 * rarityMult)
 
-      if (charRow.gold < cost) throw new Error('NOT_ENOUGH_GOLD')
+      if (userRow.gold < cost) throw new Error('NOT_ENOUGH_GOLD')
 
-      const updatedCharacter = await tx.character.update({
-        where: { id: character_id },
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: cost } },
       })
 
@@ -65,17 +73,14 @@ export async function POST(req: NextRequest) {
         include: { item: true },
       })
 
-      return { updatedCharacter, updatedItem, repairCost: cost }
+      return { updatedUser, updatedItem, repairCost: cost }
     })
-
-    // gems live on User, not Character
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
 
     return NextResponse.json({
       inventoryItem: updatedItem,
       character: {
-        gold: updatedCharacter.gold,
-        gems: dbUser?.gems ?? 0,
+        gold: updatedUser.gold,
+        gems: updatedUser.gems,
       },
       repairCost,
     })

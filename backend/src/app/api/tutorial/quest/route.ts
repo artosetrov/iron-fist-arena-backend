@@ -130,15 +130,22 @@ async function handleClaim(
   questDef: (typeof TUTORIAL_QUESTS)[number]
 ) {
   const result = await prisma.$transaction(async (tx) => {
-    // Lock character for gold/item updates
-    const [character] = await tx.$queryRawUnsafe<
-      Array<{ id: string; user_id: string; gold: number }>
-    >(
-      `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
-      characterId
-    )
+    // Verify character exists and ownership
+    const character = await tx.character.findUnique({
+      where: { id: characterId },
+      select: { userId: true },
+    })
     if (!character) throw new Error('NOT_FOUND')
-    if (character.user_id !== userId) throw new Error('FORBIDDEN')
+    if (character.userId !== userId) throw new Error('FORBIDDEN')
+
+    // Lock user row for gold update
+    const [userRow] = await tx.$queryRawUnsafe<
+      Array<{ id: string; gold: number }>
+    >(
+      `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+      userId
+    )
+    if (!userRow) throw new Error('USER_NOT_FOUND')
 
     const quest = await tx.tutorialQuest.findUnique({
       where: {
@@ -162,8 +169,8 @@ async function handleClaim(
 
     if (rewards.gold) {
       goldDelta = rewards.gold
-      await tx.character.update({
-        where: { id: characterId },
+      await tx.user.update({
+        where: { id: userId },
         data: { gold: { increment: rewards.gold } },
       })
     }

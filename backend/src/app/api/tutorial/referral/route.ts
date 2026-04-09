@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const limited = await rateLimit(user.id, 'tutorial_referral', 5, 60)
+  const limited = await rateLimit(`tutorial_referral:${user.id}`, 5, 60)
   if (limited) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
 
   try {

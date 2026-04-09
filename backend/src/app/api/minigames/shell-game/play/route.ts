@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Verify character ownership and user has enough gold
     const character = await prisma.character.findUnique({
       where: { id: character_id },
     })
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     if (character.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    if (character.gold < bet_amount) {
+    if (user.gold < bet_amount) {
       return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
     }
 
@@ -65,8 +66,8 @@ export async function POST(req: NextRequest) {
     const win_amount = won ? bet_amount * 2 : 0
     const goldDelta = won ? bet_amount : -bet_amount // win returns bet + profit; lose deducts bet
 
-    const updated = await prisma.character.update({
-      where: { id: character_id },
+    const updated = await prisma.user.update({
+      where: { id: user.id },
       data: { gold: { increment: goldDelta } },
       select: { gold: true },
     })

@@ -49,20 +49,18 @@ export async function POST(req: NextRequest) {
 
       const updatedUser = await tx.user.update({
         where: { id: user.id },
-        data: { gems: { decrement: gems_amount } },
+        data: {
+          gems: { decrement: gems_amount },
+          gold: { increment: goldToAdd }
+        },
       })
 
-      const updatedCharacter = await tx.character.update({
-        where: { id: character_id },
-        data: { gold: { increment: goldToAdd } },
-      })
-
-      return { updatedUser, updatedCharacter }
+      return { updatedUser }
     })
 
     return NextResponse.json({
       character: {
-        gold: result.updatedCharacter.gold,
+        gold: result.updatedUser.gold,
         gems: result.updatedUser.gems,
       },
       gemsSpent: gems_amount,

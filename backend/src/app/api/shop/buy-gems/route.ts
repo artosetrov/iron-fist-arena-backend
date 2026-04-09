@@ -35,32 +35,38 @@ export async function POST(req: NextRequest) {
     const goldCost = gems_amount * GOLD_PER_GEM
 
     const result = await prisma.$transaction(async (tx) => {
-      // Lock character row for update
-      const [charRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number; userId: string }>>(
-        `SELECT id, gold, user_id AS "userId" FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
+      // Lock user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
       )
 
-      if (!charRow) throw new Error('NOT_FOUND')
-      if (charRow.userId !== user.id) throw new Error('FORBIDDEN')
-      if (charRow.gold < goldCost) throw new Error('NOT_ENOUGH_GOLD')
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < goldCost) throw new Error('NOT_ENOUGH_GOLD')
 
-      const updatedCharacter = await tx.character.update({
+      // Verify character ownership
+      const character = await tx.character.findUnique({
         where: { id: character_id },
-        data: { gold: { decrement: goldCost } },
+        select: { userId: true },
       })
+
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
       const updatedUser = await tx.user.update({
         where: { id: user.id },
-        data: { gems: { increment: gems_amount } },
+        data: {
+          gold: { decrement: goldCost },
+          gems: { increment: gems_amount }
+        },
       })
 
-      return { updatedCharacter, updatedUser }
+      return { updatedUser }
     })
 
     return NextResponse.json({
       character: {
-        gold: result.updatedCharacter.gold,
+        gold: result.updatedUser.gold,
         gems: result.updatedUser.gems,
       },
       goldSpent: goldCost,

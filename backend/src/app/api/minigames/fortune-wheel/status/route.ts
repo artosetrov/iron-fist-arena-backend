@@ -14,10 +14,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
     }
 
-    // Verify ownership
+    // Verify character ownership
     const character = await prisma.character.findUnique({
       where: { id: characterId },
-      select: { userId: true, gold: true },
+      select: { userId: true },
     })
     if (!character) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     if (character.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       spins_today: spinsToday,
       spins_limit: DAILY_SPIN_LIMIT,
       spins_remaining: Math.max(0, DAILY_SPIN_LIMIT - spinsToday),
-      gold: character.gold,
+      gold: user.gold,
     })
   } catch (error) {
     console.error('fortune-wheel status error:', error)

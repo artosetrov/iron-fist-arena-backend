@@ -61,18 +61,26 @@ export async function POST(req: NextRequest) {
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const result = await prisma.$transaction(async (tx) => {
-      // Lock the character row for update
-      const [charRow] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
-        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
+      // Lock the user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number }>>(
+        `SELECT id, gold FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
       )
 
-      if (!charRow) throw new Error('NOT_FOUND')
-      if (charRow.user_id !== user.id) throw new Error('FORBIDDEN')
-      if (charRow.gold < totalCost) throw new Error('NOT_ENOUGH_GOLD')
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < totalCost) throw new Error('NOT_ENOUGH_GOLD')
 
-      const updatedCharacter = await tx.character.update({
+      // Verify character ownership
+      const character = await tx.character.findUnique({
         where: { id: character_id },
+        select: { userId: true },
+      })
+
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
+
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: totalCost } },
       })
 
@@ -93,17 +101,14 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      return { updatedCharacter, consumable }
+      return { updatedUser, consumable }
     })
-
-    // gems live on User, not Character
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
 
     return NextResponse.json({
       consumable: result.consumable,
       character: {
-        gold: result.updatedCharacter.gold,
-        gems: dbUser?.gems ?? 0,
+        gold: result.updatedUser.gold,
+        gems: result.updatedUser.gems,
       },
       cost: totalCost,
     })

@@ -67,20 +67,20 @@ export async function POST(req: NextRequest) {
     // Generate secret shell (0, 1, or 2)
     const correctShell = Math.floor(Math.random() * 3)
 
-    // Lock the row, re-check gold, then deduct + create session atomically
+    // Lock the user row, re-check gold, then deduct + create session atomically
     let session: Awaited<ReturnType<typeof prisma.minigameSession.create>>
     try {
       session = await prisma.$transaction(async (tx) => {
         const locked = await tx.$queryRaw<{ gold: number }[]>`
-          SELECT gold FROM "characters" WHERE id = ${character_id} FOR UPDATE
+          SELECT gold FROM "users" WHERE id = ${user.id} FOR UPDATE
         `
         const currentGold = locked[0]?.gold ?? 0
         if (currentGold < bet_amount) {
           throw Object.assign(new Error('Not enough gold'), { code: 'INSUFFICIENT_GOLD' })
         }
 
-        await tx.character.update({
-          where: { id: character_id },
+        await tx.user.update({
+          where: { id: user.id },
           data: { gold: { decrement: bet_amount } },
         })
 

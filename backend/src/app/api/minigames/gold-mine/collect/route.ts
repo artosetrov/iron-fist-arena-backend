@@ -49,34 +49,32 @@ export async function POST(req: NextRequest) {
         data: { collected: true },
       })
 
-      // Add gold to character
-      const updatedCharacter = await tx.character.update({
-        where: { id: character_id },
+      // Add gold to user
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { increment: sessionRow.reward } },
       })
 
       // Add gems to user if any
-      let updatedUser = null
+      let updatedUserWithGems = updatedUser
       if (sessionRow.gem_reward > 0) {
-        updatedUser = await tx.user.update({
+        updatedUserWithGems = await tx.user.update({
           where: { id: user.id },
           data: { gems: { increment: sessionRow.gem_reward } },
         })
       }
 
       return {
-        updatedCharacter,
-        updatedUser,
+        updatedUser: updatedUserWithGems,
         reward: sessionRow.reward,
         gemReward: sessionRow.gem_reward,
         goldMineSlots: character.goldMineSlots,
       }
     })
 
-    // Get current user gems if not updated in transaction
-    const userGems = result.updatedUser
-      ? result.updatedUser.gems
-      : (await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } }))?.gems ?? 0
+    // Get current user gems/gold from updated user
+    const userGems = result.updatedUser.gems
+    const userGold = result.updatedUser.gold
 
     // Update daily quest progress (outside transaction, non-critical)
     await updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect')
@@ -87,7 +85,7 @@ export async function POST(req: NextRequest) {
       slots,
       gold_collected: result.reward,
       gems_collected: result.gemReward,
-      gold: result.updatedCharacter.gold,
+      gold: userGold,
       gems: userGems,
     })
   } catch (error) {

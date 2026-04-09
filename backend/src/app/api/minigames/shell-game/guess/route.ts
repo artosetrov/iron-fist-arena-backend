@@ -68,16 +68,18 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      let updatedCharacter = character
+      // Get or fetch the user to have gold available
+      let userGold = user.gold
       // Award gold if won
       if (won) {
-        updatedCharacter = await tx.character.update({
-          where: { id: sessionRow.character_id },
+        const updatedUser = await tx.user.update({
+          where: { id: user.id },
           data: { gold: { increment: win_amount } },
         })
+        userGold = updatedUser.gold
       }
 
-      return { won, correctShell: secretData.correctShell, win_amount, gold: updatedCharacter.gold, characterId: sessionRow.character_id }
+      return { won, correctShell: secretData.correctShell, win_amount, gold: userGold, characterId: sessionRow.character_id }
     })
 
     // Update daily quest progress (outside transaction, non-critical)

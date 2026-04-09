@@ -94,17 +94,23 @@ export async function POST(req: NextRequest) {
 
     // Atomic transaction: deduct bet, create session, award winnings
     const result = await prisma.$transaction(async (tx) => {
+      // Verify character ownership
       const character = await tx.character.findUnique({
         where: { id: character_id },
       })
 
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
-      if (character.gold < bet_amount) throw new Error('NOT_ENOUGH_GOLD')
 
-      // Deduct bet
-      await tx.character.update({
-        where: { id: character_id },
+      // Check user has enough gold
+      const userRow = await tx.user.findUnique({
+        where: { id: user.id },
+      })
+      if (!userRow || userRow.gold < bet_amount) throw new Error('NOT_ENOUGH_GOLD')
+
+      // Deduct bet from user
+      await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: bet_amount } },
       })
 
@@ -126,10 +132,10 @@ export async function POST(req: NextRequest) {
       })
 
       // Award winnings if won
-      let finalGold = character.gold - bet_amount
+      let finalGold = userRow.gold - bet_amount
       if (won) {
-        const updated = await tx.character.update({
-          where: { id: character_id },
+        const updated = await tx.user.update({
+          where: { id: user.id },
           data: { gold: { increment: winAmount } },
         })
         finalGold = updated.gold

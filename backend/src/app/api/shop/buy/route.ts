@@ -34,23 +34,31 @@ export async function POST(req: NextRequest) {
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const result = await prisma.$transaction(async (tx) => {
-      // Lock the character row for update
-      const [character] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number; inventory_slots: number }>>(
-        `SELECT id, user_id, gold, inventory_slots FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
+      // Lock the user row for update (gold balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number; gems: number }>>(
+        `SELECT id, gold, gems FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
       )
 
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < item.buyPrice) throw new Error('NOT_ENOUGH_GOLD')
+
+      // Verify character ownership and get inventory slots
+      const character = await tx.character.findUnique({
+        where: { id: character_id },
+        select: { userId: true, inventorySlots: true },
+      })
+
       if (!character) throw new Error('NOT_FOUND')
-      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
-      if (character.gold < item.buyPrice) throw new Error('NOT_ENOUGH_GOLD')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
       const inventoryCount = await tx.equipmentInventory.count({
         where: { characterId: character_id },
       })
-      if (inventoryCount >= character.inventory_slots) throw new Error('INVENTORY_FULL')
+      if (inventoryCount >= character.inventorySlots) throw new Error('INVENTORY_FULL')
 
-      const updatedCharacter = await tx.character.update({
-        where: { id: character_id },
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: item.buyPrice } },
       })
 
@@ -66,19 +74,17 @@ export async function POST(req: NextRequest) {
         include: { item: true },
       })
 
-      return { updatedCharacter, inventoryItem }
+      return { updatedUser, inventoryItem }
     })
 
     // Update daily quest progress (outside transaction, non-critical)
     await updateDailyQuestProgress(prisma, character_id, 'gold_spent', item.buyPrice)
 
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
-
     return NextResponse.json({
       inventoryItem: result.inventoryItem,
       character: {
-        gold: result.updatedCharacter.gold,
-        gems: dbUser?.gems ?? 0,
+        gold: result.updatedUser.gold,
+        gems: result.updatedUser.gems,
       },
     })
   } catch (error) {

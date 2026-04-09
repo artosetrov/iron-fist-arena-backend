@@ -64,31 +64,31 @@ export async function POST(req: NextRequest) {
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const result = await prisma.$transaction(async (tx) => {
-      const [character] = await tx.$queryRawUnsafe<Array<{ id: string; user_id: string; gold: number }>>(
-        `SELECT id, user_id, gold FROM characters WHERE id = $1 FOR UPDATE`,
-        character_id
+      // Lock user row for update (gold and gems balance)
+      const [userRow] = await tx.$queryRawUnsafe<Array<{ id: string; gold: number; gems: number }>>(
+        `SELECT id, gold, gems FROM users WHERE id = $1 FOR UPDATE`,
+        user.id
       )
 
-      if (!character) throw new Error('NOT_FOUND')
-      if (character.user_id !== user.id) throw new Error('FORBIDDEN')
-      if (character.gold < upgradeCost) throw new Error('NOT_ENOUGH_GOLD')
+      if (!userRow) throw new Error('USER_NOT_FOUND')
+      if (userRow.gold < upgradeCost) throw new Error('NOT_ENOUGH_GOLD')
 
-      // If protection requested, lock user row and verify gems
-      let userRow: { id: string; gems: number } | null = null
-      if (use_protection) {
-        const [lockedUser] = await tx.$queryRawUnsafe<Array<{ id: string; gems: number }>>(
-          `SELECT id, gems FROM users WHERE id = $1 FOR UPDATE`,
-          user.id
-        )
-        if (!lockedUser || lockedUser.gems < protectionCost) {
-          throw new Error('NOT_ENOUGH_GEMS')
-        }
-        userRow = lockedUser
+      if (use_protection && userRow.gems < protectionCost) {
+        throw new Error('NOT_ENOUGH_GEMS')
       }
 
-      // Deduct gold
-      const updatedCharacter = await tx.character.update({
+      // Verify character ownership
+      const character = await tx.character.findUnique({
         where: { id: character_id },
+        select: { userId: true },
+      })
+
+      if (!character) throw new Error('NOT_FOUND')
+      if (character.userId !== user.id) throw new Error('FORBIDDEN')
+
+      // Deduct gold
+      let updatedUser = await tx.user.update({
+        where: { id: user.id },
         data: { gold: { decrement: upgradeCost } },
       })
 
@@ -105,9 +105,9 @@ export async function POST(req: NextRequest) {
         })
       } else {
         // Upgrade failed
-        if (use_protection && userRow) {
+        if (use_protection) {
           // Protection scroll consumed — deduct gems, level stays the same
-          await tx.user.update({
+          updatedUser = await tx.user.update({
             where: { id: user.id },
             data: { gems: { decrement: protectionCost } },
           })
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
         // If currentLevel < threshold and no protection, nothing extra happens (gold already spent)
       }
 
-      return { updatedCharacter, updatedItem, protectionUsed, levelLost }
+      return { updatedUser, updatedItem, protectionUsed, levelLost }
     })
 
     // Non-critical post-transaction work
@@ -144,8 +144,6 @@ export async function POST(req: NextRequest) {
       await invalidateSkillCache(character_id)
       await invalidatePassiveCache(character_id)
     }
-
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { gems: true } })
 
     let newLevel = currentLevel
     if (success) {
@@ -174,8 +172,8 @@ export async function POST(req: NextRequest) {
       success,
       inventoryItem: result.updatedItem,
       character: {
-        gold: result.updatedCharacter.gold,
-        gems: dbUser?.gems ?? 0,
+        gold: result.updatedUser.gold,
+        gems: result.updatedUser.gems,
       },
       upgradeCost,
       newLevel,
