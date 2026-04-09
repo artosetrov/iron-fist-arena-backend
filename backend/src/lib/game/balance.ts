@@ -324,6 +324,13 @@ export const GEM_COSTS = {
   UPGRADE_PROTECTION: 50,       // was 30 — protection more valuable with exponential upgrade costs
 } as const;
 
+// --- Stat Point Purchase (escalating daily cost) ---
+export const STAT_PURCHASE = {
+  ESCALATION: [15, 20, 30, 45, 65] as readonly number[],
+  DAILY_LIMIT: 5,
+  GLOBAL_CAP: 50,
+} as const;
+
 // --- Inventory ---
 export const INVENTORY = {
   MAX_SLOTS: 100,

@@ -81,6 +81,54 @@ final class CharacterService {
         }
     }
 
+    // MARK: - Buy Stat Points
+
+    func buyStatPoints() async -> BuyStatPointsResult? {
+        guard let charId = appState.currentCharacter?.id else { return nil }
+        do {
+            let body: [String: Any] = ["character_id": charId]
+            let response = try await APIClient.shared.postRaw(
+                APIEndpoints.buyStatPoints(charId),
+                body: body
+            )
+            // Update character if returned
+            if let charData = response["character"] as? [String: Any] {
+                let jsonData = try JSONSerialization.data(withJSONObject: charData)
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                let updated = try decoder.decode(Character.self, from: jsonData)
+                appState.currentCharacter = updated
+            }
+            // Parse purchase result
+            if let purchaseData = response["purchase"] as? [String: Any] {
+                let jsonData = try JSONSerialization.data(withJSONObject: purchaseData)
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                return try decoder.decode(BuyStatPointsResult.self, from: jsonData)
+            }
+            await loadCharacter()
+            return nil
+        } catch {
+            appState.showToast("Purchase failed", subtitle: "Check connection and try again", type: .error)
+            return nil
+        }
+    }
+
+    func getStatPurchaseStatus() async -> StatPurchaseStatus? {
+        guard let charId = appState.currentCharacter?.id else { return nil }
+        do {
+            let response = try await APIClient.shared.getRaw(
+                APIEndpoints.statPurchaseStatus(charId)
+            )
+            let jsonData = try JSONSerialization.data(withJSONObject: response)
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(StatPurchaseStatus.self, from: jsonData)
+        } catch {
+            return nil
+        }
+    }
+
     // MARK: - Set Stance
 
     func setStance(attack: String, defense: String) async -> Bool {

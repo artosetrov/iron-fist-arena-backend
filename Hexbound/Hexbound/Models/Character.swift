@@ -23,6 +23,7 @@ struct Character: Codable, Identifiable {
     var firstWinToday: Bool?
     var freePvpToday: Int?
     var inventorySlots: Int?
+    var createdAt: String?
 
     // Stats
     var strength: Int?
@@ -70,6 +71,7 @@ struct Character: Codable, Identifiable {
         case firstWinToday
         case freePvpToday
         case inventorySlots
+        case createdAt
         case strength = "str"                       // JSON: "str" (Prisma 3-letter field)
         case agility = "agi"
         case vitality = "vit"
@@ -89,6 +91,34 @@ struct Character: Codable, Identifiable {
     // Computed
     var rankName: String {
         PvPRank.fromRating(pvpRating).rawValue
+    }
+
+    /// Character age in days since creation (from createdAt ISO string)
+    var ageDays: Int? {
+        guard let dateString = createdAt else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = formatter.date(from: dateString) else {
+            // Try without fractional seconds
+            let basic = ISO8601DateFormatter()
+            basic.formatOptions = [.withInternetDateTime]
+            guard let d = basic.date(from: dateString) else { return nil }
+            return Calendar.current.dateComponents([.day], from: d, to: Date()).day
+        }
+        return Calendar.current.dateComponents([.day], from: date, to: Date()).day
+    }
+
+    /// Formatted age string: "12d", "3mo", "1yr"
+    var ageFormatted: String {
+        guard let days = ageDays else { return "" }
+        if days < 1 { return "Today" }
+        if days < 30 { return "\(days)d" }
+        if days < 365 {
+            let months = days / 30
+            return "\(months)mo"
+        }
+        let years = days / 365
+        return "\(years)yr"
     }
 
     var xpNeeded: Int {

@@ -404,6 +404,9 @@ struct HeroDetailView: View {
             // Respec Stats — directly after stat list
             respecStatsCard(vm: vm)
 
+            // Buy Stat Points — navigate to dedicated screen
+            buyStatPointsButton()
+
             GoldDivider().padding(.horizontal, LayoutConstants.screenPadding)
 
             // Derived Stats
@@ -825,6 +828,50 @@ struct HeroDetailView: View {
                 .buttonStyle(.scalePress(0.95))
             }
         }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+    }
+
+    // MARK: - Buy Stat Points Button
+
+    @ViewBuilder
+    private func buyStatPointsButton() -> some View {
+        Button {
+            HapticManager.light()
+            appState.mainPath.append(AppRoute.buyStatPoints)
+        } label: {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: "plus.circle.fill")
+                    .font(DarkFantasyTheme.body.bold())
+                Text("BUY STAT POINTS")
+                    .font(DarkFantasyTheme.body)
+                Spacer()
+                Image("icon-gems")
+                    .resizable()
+                    .frame(width: 14, height: 14)
+                Image(systemName: "chevron.right")
+                    .font(DarkFantasyTheme.caption)
+            }
+            .foregroundStyle(DarkFantasyTheme.cyan)
+            .padding(LayoutConstants.cardPadding)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.cyan.opacity(0.04),
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.12))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.cyan.opacity(0.2), lineWidth: 1)
+            )
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 12, thickness: 1.5)
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+        }
+        .buttonStyle(.scalePress(0.95))
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 

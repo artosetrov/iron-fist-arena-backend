@@ -12,13 +12,16 @@ struct ActiveQuestBanner: View {
 
     @State private var claimingId: String?
     @State private var hasLoaded = false
+    /// Preserve last-known quests so the banner stays visible during background reloads
+    @State private var lastKnownQuests: [Quest] = []
 
-    /// Matching unclaimed quests from cache
+    /// Matching unclaimed quests from cache (nil = reload in progress → use lastKnownQuests)
     private var activeQuests: [Quest] {
-        guard let quests = appState.cachedTypedQuests else { return [] }
-        return quests.filter { q in
+        guard let quests = appState.cachedTypedQuests else { return lastKnownQuests }
+        let matching = quests.filter { q in
             questTypes.contains(q.type) && !q.rewardClaimed
         }
+        return matching
     }
 
     private var needsReload: Bool {
@@ -30,14 +33,27 @@ struct ActiveQuestBanner: View {
             questBanner(quest)
         }
         .onAppear {
+            syncLastKnown()
             if needsReload {
                 Task { await reloadQuests() }
             }
         }
-        .onChange(of: needsReload) { _, isNil in
-            if isNil {
+        .onChange(of: appState.cachedTypedQuests) { _, newVal in
+            if newVal == nil {
+                // Cache invalidated — keep showing lastKnownQuests, reload in background
                 Task { await reloadQuests() }
+            } else {
+                // Fresh data arrived — update snapshot
+                syncLastKnown()
             }
+        }
+    }
+
+    /// Snapshot current matching quests so they survive cache invalidation
+    private func syncLastKnown() {
+        guard let quests = appState.cachedTypedQuests else { return }
+        lastKnownQuests = quests.filter { q in
+            questTypes.contains(q.type) && !q.rewardClaimed
         }
     }
 
@@ -134,6 +150,7 @@ struct ActiveQuestBanner: View {
         SFXManager.shared.play(.uiRewardClaim)
         appState.showToast("Quest Complete! \(quest.title)", type: .quest)
         claimingId = nil
+        syncLastKnown()
 
         // Fire API in background
         let questId = quest.id

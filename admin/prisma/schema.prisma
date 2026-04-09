@@ -272,6 +272,11 @@ model Character {
   bonusTrainingsDate DateTime? @map("bonus_trainings_date")
   bonusTrainingsBuys Int      @default(0) @map("bonus_trainings_buys")
 
+  // Stat point purchases
+  statPurchasesToday  Int       @default(0) @map("stat_purchases_today")
+  statPurchasesDate   DateTime? @map("stat_purchases_date")
+  statPurchasesTotal  Int       @default(0) @map("stat_purchases_total")
+
   // PvP
   pvpRating         Int       @default(1000) @map("pvp_rating")
   pvpWins           Int       @default(0) @map("pvp_wins")

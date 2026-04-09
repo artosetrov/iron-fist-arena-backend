@@ -286,7 +286,7 @@ struct NPCGuideWidget: View {
                 Button {
                     onDismiss()
                 } label: {
-                    Text("✕")
+                    Image(systemName: "xmark")
                         .font(DarkFantasyTheme.body.bold())
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                 }

@@ -1,6 +1,6 @@
 import Foundation
 
-struct Quest: Codable, Identifiable {
+struct Quest: Codable, Identifiable, Equatable {
     let id: String
     let type: String
     let title: String

@@ -571,35 +571,7 @@ struct HeroSelectionCard: View {
                         .allowsHitTesting(false)
                 }
 
-                // 4. "ACTIVE HERO" ribbon at top when selected
-                if isSelected {
-                    VStack(spacing: 0) {
-                        Text("◆  ACTIVE  ◆")
-                            .font(DarkFantasyTheme.body.bold())
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .tracking(2)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, LayoutConstants.spaceXS)
-                            .background(
-                                LinearGradient(
-                                    colors: [
-                                        DarkFantasyTheme.gold.opacity(0.75),
-                                        DarkFantasyTheme.goldBright.opacity(0.85),
-                                        DarkFantasyTheme.gold.opacity(0.75)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .shadow(color: DarkFantasyTheme.gold.opacity(0.4), radius: 8)
-                        Spacer()
-                    }
-                    .frame(width: width, height: height)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
-                    .allowsHitTesting(false)
-                }
-
-                // 5. Content overlay (level badge + bottom info) — above ACTIVE strip
+                // 4. Content overlay (level badge + bottom info)
                 VStack {
                     topBadges
                     Spacer()
@@ -721,36 +693,22 @@ struct HeroSelectionCard: View {
                 }
             }
 
-            // Currency row
-            HStack(spacing: LayoutConstants.spaceSM) {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    if UIImage(named: "icon-gold") != nil {
-                        Image("icon-gold")
-                            .resizable()
-                            .frame(width: 14, height: 14)
-                    }
-                    Text("\(character.gold)")
-                        .font(DarkFantasyTheme.body)
+            // Character age
+            if !character.ageFormatted.isEmpty {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: "clock")
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
-                }
-
-                HStack(spacing: LayoutConstants.space2XS) {
-                    if UIImage(named: "icon-gems") != nil {
-                        Image("icon-gems")
-                            .resizable()
-                            .frame(width: 14, height: 14)
-                    }
-                    Text("\(character.gems ?? 0)")
-                        .font(DarkFantasyTheme.body)
+                    Text(character.ageFormatted)
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
                 }
             }
 
             // Glass stat pills
             HStack(spacing: LayoutConstants.spaceXS) {
-                GlassStatPill(value: "\(character.strength ?? 0)", label: "ATK", color: DarkFantasyTheme.danger)
-                GlassStatPill(value: "\(character.vitality ?? 0)", label: "DEF", color: DarkFantasyTheme.info)
-                GlassStatPill(value: "Lv.\(character.level)", label: "Level", color: DarkFantasyTheme.gold)
+                GlassStatPill(value: "\(character.strength ?? 0)", label: "Attack", color: DarkFantasyTheme.danger)
+                GlassStatPill(value: "\(character.vitality ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

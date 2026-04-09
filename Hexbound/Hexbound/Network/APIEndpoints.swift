@@ -18,6 +18,8 @@ enum APIEndpoints {
     static func characterProfile(_ id: String) -> String { "/api/characters/\(id)/profile" }
     static func allocateStats(_ id: String) -> String { "/api/characters/\(id)/allocate-stats" }
     static func respecStats(_ id: String) -> String { "/api/characters/\(id)/respec-stats" }
+    static func buyStatPoints(_ id: String) -> String { "/api/characters/\(id)/buy-stat-points" }
+    static func statPurchaseStatus(_ id: String) -> String { "/api/characters/\(id)/buy-stat-points" }
     static func setStance(_ id: String) -> String { "/api/characters/\(id)/stance" }
     static func changeOrigin(_ id: String) -> String { "/api/characters/\(id)/origin" }
     static func changeAppearance(_ id: String) -> String { "/api/characters/\(id)/appearance" }

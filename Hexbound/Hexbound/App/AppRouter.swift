@@ -11,6 +11,7 @@ enum AppRoute: Hashable, Codable {
     case hub
     case hero
     case stanceSelector
+    case buyStatPoints
 
     // Combat
     case combat
@@ -125,6 +126,7 @@ struct MainRouterView: View {
         case .hub: HubView()
         case .hero: HeroDetailView()
         case .stanceSelector: StanceSelectorDetailView()
+        case .buyStatPoints: BuyStatPointsView()
         
         // Combat
         case .combat: CombatDetailView()
