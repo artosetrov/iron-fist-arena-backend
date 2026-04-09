@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       const updatedUser = await tx.user.update({
         where: { id: user.id },
         data: { gold: { decrement: price } },
-        include: { gems: true },
+        select: { gold: true, gems: true },
       })
 
       const consumable = await tx.consumableInventory.upsert({
