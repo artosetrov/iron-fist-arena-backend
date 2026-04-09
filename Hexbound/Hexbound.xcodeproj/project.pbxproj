@@ -1262,7 +1262,6 @@
 		A1D429C87BB247EB3A3D1501 /* Hub */ = {
 			isa = PBXGroup;
 			children = (
-				15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */,
 				6DA3F171A26F726A5603682D /* CharacterViewModel.swift */,
 				C1A00001CITY00000005 /* CityBuildingConfig.swift */,
 				C1A00001CITY00000006 /* CityBuildingLabel.swift */,
@@ -1496,6 +1495,7 @@
 		VMDL0001GRP00001 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */,
 				CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */,
 				C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */,
 			);
