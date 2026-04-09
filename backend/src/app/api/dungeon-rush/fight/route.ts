@@ -315,7 +315,7 @@ export async function POST(req: NextRequest) {
 
       // Gold now lives on User; XP, HP stay on Character
       await tx.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: { gold: { increment: goldReward } },
       })
       await tx.character.update({
