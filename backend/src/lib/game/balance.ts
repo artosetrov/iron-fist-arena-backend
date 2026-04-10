@@ -66,21 +66,39 @@ export const UPGRADE_CHANCES: readonly number[] = [
 ] as const;
 
 // --- Daily login rewards (days 1-7, repeating weekly) ---
+//
+// W1.D3 SSoT contract (2026-04-10): server is the source of truth for BOTH
+// the reward mechanics (type/amount/itemId) AND the display (displayName,
+// displayIcon). Clients must render `displayName` and map `displayIcon` to
+// their local asset catalog; they must NOT invent labels client-side.
+//
+// `displayIcon` values are asset keys understood by both the iOS xcassets
+// catalog and the admin panel. Keep the set below small and stable.
 export interface DailyLoginRewardDef {
-  type: string;
+  type: 'gold' | 'gems' | 'consumable';
   amount: number;
   itemId?: string;
+  /** Human label shown in the UI, e.g. "150 Gold" or "1 S. Potion". */
+  displayName: string;
+  /** Asset key for the UI icon (see xcassets / admin panel preview map). */
+  displayIcon:
+    | 'icon-gold'
+    | 'icon-gems'
+    | 'icon-stamina-small'
+    | 'icon-stamina-large'
+    | 'icon-hp-potion-small'
+    | 'icon-hp-potion-large';
 }
 
 // --- Daily login rewards (Economy v2 — reduced gold days to prevent passive > active income) ---
 export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
-  { type: 'gold', amount: 150 },                                          // Day 1 (was 200)
-  { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },      // Day 2
-  { type: 'gold', amount: 300 },                                          // Day 3 (was 500)
-  { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },      // Day 4
-  { type: 'gold', amount: 500 },                                          // Day 5 (was 1000)
-  { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },      // Day 6
-  { type: 'gems', amount: 25 },                                           // Day 7
+  { type: 'gold',       amount: 150, displayName: '150 Gold',    displayIcon: 'icon-gold' },                                                     // Day 1 (was 200)
+  { type: 'consumable', amount: 1,   displayName: '1 S. Potion', displayIcon: 'icon-stamina-small', itemId: 'stamina_potion_small' },             // Day 2
+  { type: 'gold',       amount: 300, displayName: '300 Gold',    displayIcon: 'icon-gold' },                                                     // Day 3 (was 500)
+  { type: 'consumable', amount: 2,   displayName: '2 S. Potions', displayIcon: 'icon-stamina-small', itemId: 'stamina_potion_small' },            // Day 4
+  { type: 'gold',       amount: 500, displayName: '500 Gold',    displayIcon: 'icon-gold' },                                                     // Day 5 (was 1000)
+  { type: 'consumable', amount: 1,   displayName: '1 L. Potion', displayIcon: 'icon-stamina-large', itemId: 'stamina_potion_large' },             // Day 6
+  { type: 'gems',       amount: 25,  displayName: '25 Gems',     displayIcon: 'icon-gems' },                                                     // Day 7
 ] as const;
 
 // --- In-App Purchase products ---

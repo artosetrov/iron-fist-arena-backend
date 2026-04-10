@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DailyLoginDetailView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @Environment(\.dismiss) private var dismiss
     @State private var vm: DailyLoginPopupViewModel?
     @State private var glowRotation: Double = 0
@@ -91,7 +92,7 @@ struct DailyLoginDetailView: View {
         .presentationBackground(DarkFantasyTheme.bgPrimary)
         .task {
             if vm == nil {
-                let viewModel = DailyLoginPopupViewModel(appState: appState)
+                let viewModel = DailyLoginPopupViewModel(appState: appState, cache: cache)
                 vm = viewModel
                 await viewModel.loadData()
             }
@@ -176,7 +177,7 @@ struct DailyLoginDetailView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Row 1: Days 1-3
             HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(DailyReward.rewards.prefix(3), id: \.day) { reward in
+                ForEach(DailyReward.rewards(from: cache).prefix(3), id: \.day) { reward in
                     dayCell(reward: reward, data: data, vm: vm)
                 }
             }
@@ -184,14 +185,14 @@ struct DailyLoginDetailView: View {
 
             // Row 2: Days 4-6
             HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(DailyReward.rewards.dropFirst(3).prefix(3), id: \.day) { reward in
+                ForEach(DailyReward.rewards(from: cache).dropFirst(3).prefix(3), id: \.day) { reward in
                     dayCell(reward: reward, data: data, vm: vm)
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 
             // Row 3: Day 7 bonus
-            if let day7 = DailyReward.rewards.last, day7.day == 7 {
+            if let day7 = DailyReward.rewards(from: cache).last, day7.day == 7 {
                 dayCell(reward: day7, data: data, vm: vm, isBonus: true)
                     .padding(.horizontal, LayoutConstants.screenPadding)
             }
@@ -301,7 +302,7 @@ struct DailyLoginDetailView: View {
 
     @ViewBuilder
     private func todayRewardCard(data: DailyLoginData, vm: DailyLoginPopupViewModel) -> some View {
-        if let reward = DailyReward.rewards.first(where: { $0.day == data.currentDay }) {
+        if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == data.currentDay }) {
             HStack(spacing: LayoutConstants.spaceMD) {
                 // Reward icon
                 ZStack {

@@ -3,6 +3,10 @@ import SwiftUI
 @MainActor @Observable
 final class DailyLoginPopupViewModel {
     let appState: AppState
+    /// Live game config source — used to resolve the 7-day reward table.
+    /// Held as a reference (not owned) so the VM stays in lockstep with the
+    /// shared `GameDataCache` without duplicating state.
+    private let cache: GameDataCache
     private let service: DailyLoginService
 
     var loginData: DailyLoginData?
@@ -14,8 +18,9 @@ final class DailyLoginPopupViewModel {
     var claimedDayBounce: Int? = nil
     var showClaimParticles = false
 
-    init(appState: AppState) {
+    init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
+        self.cache = cache
         self.service = DailyLoginService(appState: appState)
     }
 
@@ -69,7 +74,7 @@ final class DailyLoginPopupViewModel {
 
     var nextDayReward: DailyReward? {
         guard let currentDay = loginData?.currentDay, currentDay < 7 else { return nil }
-        return DailyReward.rewards.first(where: { $0.day == currentDay + 1 })
+        return DailyReward.rewards(from: cache).first(where: { $0.day == currentDay + 1 })
     }
 
     func dismiss() {

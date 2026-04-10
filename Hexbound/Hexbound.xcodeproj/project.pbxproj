@@ -101,6 +101,7 @@
 		50BDBEB825D56CF4C576F163 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8295F58FEE8531E138102512 /* WelcomeView.swift */; };
 		50EE3B465FD846F749B06FBC /* ScreenLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF81E118A6812E0F4273F368 /* ScreenLayout.swift */; };
 		5171B41A35F2E62A243FBCFE /* DailyLoginData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */; };
+		10E50C50C3B3FBD36E06DBB1 /* DailyLoginRewardDef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */; };
 		517BAE0300AC0F8E88D17AE9 /* Opponent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056220C532DB828C69C4C356 /* Opponent.swift */; };
 		51E2F782E669CC65903D964A /* InventoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */; };
 		5348E13B73781A541AFF9D78 /* item_drop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 788FD89DCB39E3F030EA5DEA /* item_drop.wav */; };
@@ -495,6 +496,7 @@
 		69222F90A75EB0B4EF5146D9 /* arena-pvp.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "arena-pvp.mp3"; sourceTree = "<group>"; };
 		6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatFXImageOverlay.swift; sourceTree = "<group>"; };
 		69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginData.swift; sourceTree = "<group>"; };
+		905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginRewardDef.swift; sourceTree = "<group>"; };
 		6BB9546BEA21F368E3E72FA3 /* BattlePassViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassViewModel.swift; sourceTree = "<group>"; };
 		6DA3F171A26F726A5603682D /* CharacterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterViewModel.swift; sourceTree = "<group>"; };
 		15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuyStatPointsViewModel.swift; sourceTree = "<group>"; };
@@ -1331,6 +1333,7 @@
 				E47BF69C872101A05B35E80C /* Character.swift */,
 				E9792A8A2127BC3038E37E96 /* CombatData.swift */,
 				69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */,
+				905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */,
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
 				218B22634BDF8DD52EFCB0D6 /* Item.swift */,
 				E188C114F17088F505906852 /* LeaderboardEntry.swift */,
@@ -1792,6 +1795,7 @@
 				10321B57C050901C03935EAA /* CurrencyDisplay.swift in Sources */,
 				236853BBCCDB12E40C142824 /* CurrencyPurchaseView.swift in Sources */,
 				5171B41A35F2E62A243FBCFE /* DailyLoginData.swift in Sources */,
+				10E50C50C3B3FBD36E06DBB1 /* DailyLoginRewardDef.swift in Sources */,
 				0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */,
 				2283DB5DD84EB4557630A37E /* DailyLoginPopupView.swift in Sources */,
 				0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */,

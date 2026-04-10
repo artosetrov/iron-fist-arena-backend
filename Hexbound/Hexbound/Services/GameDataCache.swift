@@ -554,6 +554,14 @@ struct GameConfig {
     let maxCritChance: Int
     let maxDodgeChance: Int
 
+    /// Daily login reward table, 7 entries (Day 1 → Day 7).
+    ///
+    /// W1.D3 SSoT (2026-04-10): populated from `/api/game/init` →
+    /// `config.dailyLoginRewards`. When the init payload is missing or
+    /// malformed, `GameConfig.fallbackDailyRewards` is used instead so the
+    /// UI always has exactly 7 entries.
+    let dailyLoginRewards: [DailyLoginRewardDef]
+
     init(from dict: [String: Any]) {
         staminaMax = dict["staminaMax"] as? Int ?? 120
         staminaRegenMinutes = dict["staminaRegenMinutes"] as? Int ?? 8
@@ -569,5 +577,44 @@ struct GameConfig {
         critMultiplier = dict["critMultiplier"] as? Double ?? 1.5
         maxCritChance = dict["maxCritChance"] as? Int ?? 50
         maxDodgeChance = dict["maxDodgeChance"] as? Int ?? 30
+        dailyLoginRewards = Self.parseDailyRewards(dict["dailyLoginRewards"])
     }
+
+    // MARK: - Daily login rewards parsing
+
+    private static func parseDailyRewards(_ raw: Any?) -> [DailyLoginRewardDef] {
+        guard let array = raw as? [[String: Any]], !array.isEmpty else {
+            #if DEBUG
+            print("[GameConfig] dailyLoginRewards missing — using bundled fallback")
+            #endif
+            return Self.fallbackDailyRewards
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: array),
+              let parsed = try? JSONDecoder().decode([DailyLoginRewardDef].self, from: data),
+              parsed.count == 7 else {
+            #if DEBUG
+            print("[GameConfig] dailyLoginRewards parse failed (count=\(array.count)) — using bundled fallback")
+            #endif
+            return Self.fallbackDailyRewards
+        }
+        return parsed
+    }
+
+    /// Bundled fallback mirror of `backend/src/lib/game/balance.ts`
+    /// `DAILY_LOGIN_REWARDS`. Used only when:
+    /// - App cold-starts offline (no successful `/api/game/init` yet), OR
+    /// - The init payload omits `dailyLoginRewards`, OR
+    /// - Decoding fails (count ≠ 7, malformed JSON, etc.).
+    ///
+    /// Keep in sync with the backend table. CRIT-02 (2026-04-10) taught us
+    /// that any drift here ships visible lies to the player.
+    static let fallbackDailyRewards: [DailyLoginRewardDef] = [
+        DailyLoginRewardDef(type: "gold",       amount: 150, itemId: nil,                    displayName: "150 Gold",     displayIcon: "icon-gold"),
+        DailyLoginRewardDef(type: "consumable", amount: 1,   itemId: "stamina_potion_small", displayName: "1 S. Potion",  displayIcon: "icon-stamina-small"),
+        DailyLoginRewardDef(type: "gold",       amount: 300, itemId: nil,                    displayName: "300 Gold",     displayIcon: "icon-gold"),
+        DailyLoginRewardDef(type: "consumable", amount: 2,   itemId: "stamina_potion_small", displayName: "2 S. Potions", displayIcon: "icon-stamina-small"),
+        DailyLoginRewardDef(type: "gold",       amount: 500, itemId: nil,                    displayName: "500 Gold",     displayIcon: "icon-gold"),
+        DailyLoginRewardDef(type: "consumable", amount: 1,   itemId: "stamina_potion_large", displayName: "1 L. Potion",  displayIcon: "icon-stamina-large"),
+        DailyLoginRewardDef(type: "gems",       amount: 25,  itemId: nil,                    displayName: "25 Gems",      displayIcon: "icon-gems"),
+    ]
 }

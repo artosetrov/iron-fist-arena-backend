@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DailyLoginPopupView: View {
     @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
     @State private var viewModel: DailyLoginPopupViewModel?
 
     // ── Entrance animation state ──
@@ -55,7 +56,7 @@ struct DailyLoginPopupView: View {
             }
         }
         .onAppear {
-            let vm = DailyLoginPopupViewModel(appState: appState)
+            let vm = DailyLoginPopupViewModel(appState: appState, cache: cache)
             viewModel = vm
 
             // Backdrop fades in slightly ahead of the modal
@@ -113,7 +114,7 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceXS)
 
             // Big reward icon showcase
-            if let reward = DailyReward.rewards.first(where: { $0.day == data.currentDay }) {
+            if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == data.currentDay }) {
                 bigRewardShowcase(reward: reward)
                     .padding(.top, LayoutConstants.spaceLG)
 
@@ -176,7 +177,7 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceXS)
 
             // Reward confirmation card
-            if let reward = DailyReward.rewards.first(where: { $0.day == data.currentDay }) {
+            if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == data.currentDay }) {
                 rewardConfirmCard(reward: reward)
                     .padding(.horizontal, LayoutConstants.spaceMD)
                     .padding(.top, LayoutConstants.spaceMD)

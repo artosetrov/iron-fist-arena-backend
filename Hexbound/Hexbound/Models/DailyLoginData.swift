@@ -12,25 +12,52 @@ struct DailyLoginData: Codable {
 }
 
 // MARK: - Daily Rewards Definition
+//
+// W1.D3 SSoT refactor (2026-04-10): the 7-day reward table is no longer
+// hardcoded in the client. It comes from `/api/game/init` →
+// `config.dailyLoginRewards`, is parsed by `GameConfig.parseDailyRewards`,
+// and read through `DailyReward.rewards(from:)` below. When the cache is
+// empty (cold start / offline), `GameConfig.fallbackDailyRewards` is used.
+//
+// See CRIT-02 and `docs/07_ui_ux/W1_D3_GAMECONFIG_SSOT_REVIEW.md`.
 
 struct DailyReward {
     let day: Int
-    let icon: String      // kept for backward compat — prefer assetIcon
-    let assetIcon: String? // asset name from xcassets (nil = fallback to icon emoji)
+    /// Kept for backward compat with older SF Symbol callers. Now unused —
+    /// every call site reads `assetIcon` + AssetManager.
+    let icon: String
+    /// Asset name from xcassets. Always non-nil for server-driven rewards.
+    let assetIcon: String?
     let label: String
     let description: String
+}
 
-    // NOTE: This table MUST mirror backend `DAILY_LOGIN_REWARDS` in
-    // `backend/src/lib/game/balance.ts`. When backend ships Economy v2 values,
-    // bump both sides together. See CRIT-02 (QA_FIX_PLAN_2026-04-10).
-    // TODO (W1.D3): replace with server-driven config from /api/game/init.
-    static let rewards: [DailyReward] = [
-        DailyReward(day: 1, icon: "coloncurrencysign.circle.fill", assetIcon: "icon-gold",    label: "150 Gold",        description: "A pouch of gold"),
-        DailyReward(day: 2, icon: "flask.fill",                    assetIcon: "icon-stamina", label: "1 S. Potion",     description: "Small stamina potion"),
-        DailyReward(day: 3, icon: "coloncurrencysign.circle.fill", assetIcon: "icon-gold",    label: "300 Gold",        description: "A heavier pouch"),
-        DailyReward(day: 4, icon: "flask.fill",                    assetIcon: "icon-stamina", label: "2 S. Potions",    description: "Two small stamina potions"),
-        DailyReward(day: 5, icon: "coloncurrencysign.circle.fill", assetIcon: "icon-gold",    label: "500 Gold",        description: "A hefty purse"),
-        DailyReward(day: 6, icon: "flask.fill",                    assetIcon: "icon-stamina", label: "1 L. Potion",     description: "Large stamina potion"),
-        DailyReward(day: 7, icon: "diamond.fill",                  assetIcon: "icon-gems",    label: "25 Gems",         description: "A weekly gem reward"),
-    ]
+extension DailyReward {
+    /// Build the 7-day display table from the live game config cache.
+    ///
+    /// - Parameter cache: the shared `GameDataCache` (via `@Environment`).
+    /// - Returns: 7 `DailyReward` values, day 1 → day 7.
+    ///
+    /// Resolution order:
+    /// 1. `cache.gameConfig?.dailyLoginRewards` — server-authored, fresh from
+    ///    `/api/game/init`. This is the normal case.
+    /// 2. `GameConfig.fallbackDailyRewards` — bundled mirror of `balance.ts`,
+    ///    used only on cold start before the first successful init, or when
+    ///    the server payload is missing/malformed.
+    ///
+    /// This helper is intentionally cheap (pure map, no caching) because the
+    /// screens that call it are rendered a handful of times per session.
+    static func rewards(from cache: GameDataCache) -> [DailyReward] {
+        let source = cache.gameConfig?.dailyLoginRewards
+            ?? GameConfig.fallbackDailyRewards
+        return source.enumerated().map { index, def in
+            DailyReward(
+                day: index + 1,
+                icon: "",                       // legacy — use assetIcon
+                assetIcon: def.assetName,
+                label: def.resolvedLabel,
+                description: def.resolvedLabel  // single-line descriptor for now
+            )
+        }
+    }
 }

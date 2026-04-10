@@ -108,9 +108,9 @@ struct QuestRewardCell: View {
 
             // MARK: - Layer 3: Reward asset — fills the entire cell
             Image(type.assetName)
+                .interpolation(.high)
                 .resizable()
                 .scaledToFit()
-                .interpolation(.high)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(LayoutConstants.space2XS)
                 .shadow(color: Color.black.opacity(0.5), radius: 3, y: 2)
