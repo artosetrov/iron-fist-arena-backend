@@ -51,6 +51,7 @@ enum AppConstants {
     static let keychainAccessToken = "hexbound_access_token"
     static let keychainRefreshToken = "hexbound_refresh_token"
     static let keychainIsGuest = "hexbound_is_guest"
+    static let keychainDeviceId = "hexbound_device_id"
 
     // MARK: - UserDefaults Keys
     static let udRememberMe = "remember_me"

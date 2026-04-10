@@ -46,11 +46,16 @@ struct DungeonVictoryView: View {
         }
 
         // Dungeon progress
+        // Bug #16: Training Camp is not a dungeon — use "Training Progress"
+        // and "TRAINING COMPLETE!" copy when the current track is training.
         let total = vm.dungeon?.totalBosses ?? 10
+        let isTraining = vm.dungeon?.id.contains("training") ?? false
         let dungeonProgress = DungeonProgressConfig(
             defeated: vm.defeatedCount,
             total: total,
-            isComplete: vm.isDungeonComplete
+            isComplete: vm.isDungeonComplete,
+            progressLabel: isTraining ? "Training Progress" : "Dungeon Progress",
+            completeLabel: isTraining ? "TRAINING COMPLETE!" : "DUNGEON CLEARED!"
         )
 
         // Buttons

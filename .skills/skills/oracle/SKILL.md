@@ -70,6 +70,24 @@ Before flagging `prisma.xxx` as missing:
 
 **Known past incident (2026-03-21):** Oracle falsely flagged 17 models as missing (dailyGemCard, mailRecipient, questDefinition, shopOffer, featureFlag, etc.) — they were ALL present in the schema. The scanner read only a portion of the file and didn't account for Prisma's automatic camelCase mapping.
 
+### 3b. Shared Wallet Model (CRITICAL — 2026-04-09)
+
+Gold and gems live on the **User** model, NOT on Character. This is the "shared wallet" pattern — one wallet per account, shared across all characters.
+
+**Banned patterns:**
+- `character.gold` — WRONG (field removed from Character model)
+- `character.gems` — WRONG (field removed from Character model)
+- Updating gold/gems via `prisma.character.update({ data: { gold: ... } })` — WRONG
+
+**Correct patterns:**
+- `user.gold` / `user.gems` — read from User
+- `prisma.user.update({ where: { id: user.id }, data: { gold: ... } })` — update on User
+- API responses that return character data must inject `gold`/`gems` from User for iOS decode compatibility
+
+**Known exception:** `character.goldMineSlots` is a DIFFERENT field (mine capacity, not currency) and remains on Character.
+
+**Root cause (2026-04-09):** Migration from character-level to user-level wallet caused 10+ routes to break. 6 separate fix commits were needed to clean up all references.
+
 ### 4. Server-Authoritative Rule
 
 The client must NOT calculate: combat results, reward amounts, rating changes, economy values, or balance formulas. These must be server-side only. If you see game logic that should be server-authoritative on the client side — flag it.

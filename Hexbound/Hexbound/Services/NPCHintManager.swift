@@ -13,6 +13,11 @@ final class NPCHintManager {
 
     private let defaults = UserDefaults.standard
     private let prefix = "npc_hint_seen_"
+    /// Separate namespace for "compact bar also dismissed forever" flag.
+    /// When the player dismisses the compact ContextualHintBar on a repeat
+    /// visit (or hits "Don't show again" on the first-visit widget), this
+    /// flag is written so neither form of the hint ever reappears.
+    private let compactPrefix = "npc_hint_compact_seen_"
 
     private init() {}
 
@@ -29,11 +34,15 @@ final class NPCHintManager {
         return true
     }
 
-    /// Dismiss current hint and mark as seen
+    /// Dismiss current hint and mark as seen. Also locks the compact bar
+    /// so "Don't show again" on the first-visit widget is a true "forever".
     func dismiss(for characterId: String) {
         guard let hint = activeHint else { return }
         let key = "\(prefix)\(characterId)_\(hint.id)"
         defaults.set(true, forKey: key)
+        // Bug #17: also mark compact-bar dismissed so it never auto-appears.
+        let compactKey = "\(compactPrefix)\(characterId)_\(hint.id)"
+        defaults.set(true, forKey: compactKey)
         withAnimation(.easeInOut(duration: 0.25)) {
             activeHint = nil
         }
@@ -41,10 +50,12 @@ final class NPCHintManager {
 
     /// Dismiss and skip ALL remaining hints for this character
     func skipAll(for characterId: String) {
-        // Mark all defined hints as seen
+        // Mark all defined hints as seen (both main + compact)
         for hint in NPCHint.allHints {
             let key = "\(prefix)\(characterId)_\(hint.id)"
             defaults.set(true, forKey: key)
+            let compactKey = "\(compactPrefix)\(characterId)_\(hint.id)"
+            defaults.set(true, forKey: compactKey)
         }
         withAnimation(.easeInOut(duration: 0.25)) {
             activeHint = nil
@@ -57,11 +68,29 @@ final class NPCHintManager {
         return defaults.bool(forKey: key)
     }
 
+    /// Bug #17: Has the compact ContextualHintBar been permanently dismissed
+    /// for this hint? Returns true once the player taps X on the compact bar
+    /// OR hits "Don't show again" on the first-visit widget.
+    func hasCompactBeenDismissed(_ hintId: String, for characterId: String) -> Bool {
+        let key = "\(compactPrefix)\(characterId)_\(hintId)"
+        return defaults.bool(forKey: key)
+    }
+
+    /// Bug #17: Mark the compact bar as dismissed forever for this hint.
+    /// Called from `ContextualHintOverlay` when the player dismisses the
+    /// compact repeat-visit bar.
+    func dismissCompact(_ hintId: String, for characterId: String) {
+        let key = "\(compactPrefix)\(characterId)_\(hintId)"
+        defaults.set(true, forKey: key)
+    }
+
     /// Reset all hints for a character (debug only)
     func resetAll(for characterId: String) {
         for hint in NPCHint.allHints {
             let key = "\(prefix)\(characterId)_\(hint.id)"
             defaults.removeObject(forKey: key)
+            let compactKey = "\(compactPrefix)\(characterId)_\(hint.id)"
+            defaults.removeObject(forKey: compactKey)
         }
     }
 }

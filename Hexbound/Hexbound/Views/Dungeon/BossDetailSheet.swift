@@ -186,11 +186,13 @@ struct BossDetailSheet: View {
                     .multilineTextAlignment(.center)
 
                 HStack(spacing: LayoutConstants.spaceSM) {
-                    // Boss tag
+                    // Bug #14: Training Camp practice enemies (Straw Dummy etc.)
+                    // must not wear the BOSS label. Only the floor-10 culmination
+                    // (Arena Warden) and all other dungeons keep "BOSS".
                     HStack(spacing: LayoutConstants.spaceXS) {
-                        Text("\u{2620}")
+                        Text(boss.isRealBoss ? "\u{2620}" : "\u{2694}\u{FE0F}")
                             .font(DarkFantasyTheme.body)
-                        Text("BOSS")
+                        Text(boss.isRealBoss ? "BOSS" : "ENEMY")
                             .font(DarkFantasyTheme.body.weight(.semibold))
                             .tracking(2)
                     }

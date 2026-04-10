@@ -211,6 +211,7 @@ model User {
   username      String?
   passwordHash  String?   @map("password_hash")
   authProvider  String?   @map("auth_provider")
+  deviceId      String?   @unique @map("device_id")
   gold          Int       @default(0)
   gems          Int       @default(0)
   premiumUntil  DateTime? @map("premium_until")
@@ -228,6 +229,7 @@ model User {
   dailyGemCard  DailyGemCard?
 
   @@index([gold])
+  @@index([deviceId])
   @@map("users")
 }
 

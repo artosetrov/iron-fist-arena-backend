@@ -35,10 +35,39 @@ final class KeychainManager: Sendable {
         load(for: AppConstants.keychainIsGuest) == "1"
     }
 
+    // MARK: - Device ID (for guest account persistence)
+
+    /// Stable device identifier used to restore guest progress across
+    /// session expiry / reinstall-on-same-device. Lazily generated on
+    /// first access and stored in Keychain (survives app deletion via
+    /// `kSecAttrAccessibleAfterFirstUnlock`). NEVER cleared by `clearAll()`.
+    var deviceId: String {
+        if let existing = load(for: AppConstants.keychainDeviceId), !existing.isEmpty {
+            return existing
+        }
+        let generated = UUID().uuidString.lowercased()
+        save(generated, for: AppConstants.keychainDeviceId)
+        return generated
+    }
+
+    func saveDeviceId(_ id: String) {
+        save(id, for: AppConstants.keychainDeviceId)
+    }
+
+    /// Clears tokens and guest flag but PRESERVES deviceId so guest
+    /// progress can be restored on the next `guestLogin()` call.
     func clearAll() {
         delete(for: AppConstants.keychainAccessToken)
         delete(for: AppConstants.keychainRefreshToken)
         delete(for: AppConstants.keychainIsGuest)
+        // NOTE: deviceId intentionally preserved.
+    }
+
+    /// Hard reset — clears everything including deviceId. Use only for
+    /// explicit "forget this device" flows (e.g. settings → wipe account).
+    func clearAllIncludingDevice() {
+        clearAll()
+        delete(for: AppConstants.keychainDeviceId)
     }
 
     // MARK: - Generic Keychain Operations

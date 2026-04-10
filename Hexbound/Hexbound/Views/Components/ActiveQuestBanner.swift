@@ -29,9 +29,20 @@ struct ActiveQuestBanner: View {
     }
 
     var body: some View {
-        ForEach(activeQuests) { quest in
-            questBanner(quest)
+        // Bug #21: wrap in VStack so ForEach insert/remove transitions fire
+        // cleanly and the banner has a stable layout container that fills
+        // the full available width from its parent.
+        VStack(spacing: LayoutConstants.spaceXS) {
+            ForEach(activeQuests) { quest in
+                questBanner(quest)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity.combined(with: .scale(scale: 0.96))
+                    ))
+            }
         }
+        .animation(MotionConstants.smooth, value: activeQuests.map(\.id))
+        .animation(MotionConstants.smooth, value: activeQuests.map(\.rewardClaimed))
         .onAppear {
             syncLastKnown()
             if needsReload {
@@ -117,6 +128,11 @@ struct ActiveQuestBanner: View {
                 .frame(width: 40, height: 5)
             }
         }
+        // Bug #21: force full-width so the banner spans screen edges
+        // consistently with other shop section elements. The outer
+        // .padding(.horizontal, screenPadding) in ShopDetailView handles
+        // the safe-area gap.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.vertical, LayoutConstants.spaceXS)
         .background(
@@ -134,7 +150,6 @@ struct ActiveQuestBanner: View {
                 .stroke(DarkFantasyTheme.cyan.opacity(DarkFantasyTheme.opacityStrong), lineWidth: 1.5)
         )
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(DarkFantasyTheme.opacityMedium), radius: 4, y: 2)
-        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
     // MARK: - Claim

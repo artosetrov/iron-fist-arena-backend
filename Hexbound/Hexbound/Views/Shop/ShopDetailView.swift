@@ -327,7 +327,13 @@ struct ShopDetailView: View {
                     meetsLevel: vm.meetsLevel(shopItem),
                     isBuying: vm.buyingItemId == shopItem.id,
                     requiredLevel: shopItem.requiredLevel,
-                    onBuy: { vm.requestBuy(shopItem) }
+                    // Bug #20: enable quantity stepper for stackable consumables
+                    // (gem packs are single-purchase so they stay on qty=1)
+                    isConsumable: shopItem.isConsumable
+                        && !(shopItem.consumableType?.hasPrefix("gem_pack_") ?? false)
+                        && !shopItem.isGemPurchase,
+                    playerGold: vm.gold,
+                    onBuy: { qty in vm.requestBuy(shopItem, quantity: qty) }
                 ),
                 playerLevel: vm.playerLevel
             )

@@ -38,6 +38,21 @@ enum APIError: LocalizedError {
             message
         }
     }
+
+    /// True when the error represents a 401. Screens should suppress their
+    /// local error state for this case — the global unauthorized handler
+    /// (session expired modal or guest silent re-auth) will take over.
+    var isUnauthorized: Bool {
+        if case .unauthorized = self { return true }
+        return false
+    }
+}
+
+extension Error {
+    /// Convenience — checks for `APIError.unauthorized` on any Error.
+    var isUnauthorizedAPIError: Bool {
+        (self as? APIError)?.isUnauthorized == true
+    }
 }
 
 struct APIResponse {

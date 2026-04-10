@@ -103,4 +103,27 @@ find "$TARGET" -type d -name "* 2" 2>/dev/null | \
   done
 
 echo ""
+
+# --- 5. Shared wallet violations (character.gold moved to user.gold — 2026-04-09) ---
+echo "## Shared Wallet Violations (character.gold/gems → user.gold/gems)"
+echo ""
+WALLET_HITS=0
+grep -rn --include="*.ts" --include="*.tsx" 'character\.gold\b' "$TARGET" 2>/dev/null | \
+  grep -v 'node_modules' | \
+  grep -v '\.d\.ts' | \
+  grep -v 'goldMine' | \
+  grep -v 'goldMineSlots' | \
+  while IFS= read -r line; do
+    echo "❌ [character.gold → user.gold] $line"
+    WALLET_HITS=$((WALLET_HITS + 1))
+  done
+grep -rn --include="*.ts" --include="*.tsx" 'character\.gems\b' "$TARGET" 2>/dev/null | \
+  grep -v 'node_modules' | \
+  grep -v '\.d\.ts' | \
+  while IFS= read -r line; do
+    echo "❌ [character.gems → user.gems] $line"
+    WALLET_HITS=$((WALLET_HITS + 1))
+  done
+
+echo ""
 echo "=== SCAN COMPLETE ==="

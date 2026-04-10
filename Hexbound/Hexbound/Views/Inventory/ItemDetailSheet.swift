@@ -27,12 +27,20 @@ struct ItemDetailSheet: View {
         let meetsLevel: Bool
         let isBuying: Bool
         let requiredLevel: Int
-        let onBuy: () -> Void
+        /// Bug #20: set to true for stackable consumables so the buy panel
+        /// shows a quantity stepper. Gem packs are excluded (single-purchase).
+        let isConsumable: Bool
+        /// Bug #20: player's current gold — used to clamp the stepper to what
+        /// the player can actually afford (for gold-priced consumables).
+        let playerGold: Int
+        let onBuy: (Int) -> Void
     }
 
     @State private var showUpgradeConfirm = false
     @State private var useProtection = false
     @State private var showSellConfirm = false
+    /// Bug #20: selected purchase quantity for stackable consumables in shop mode.
+    @State private var purchaseQuantity: Int = 1
 
     private var rarityColor: Color {
         DarkFantasyTheme.rarityColor(for: item.rarity)
@@ -482,7 +490,12 @@ struct ItemDetailSheet: View {
 
     @ViewBuilder
     private var effectsSection: some View {
-        let hasSpecial = item.specialEffect.map { !$0.isEmpty } ?? false
+        // Bug #12: specialEffect for consumables is stale in DB (pre-rebalance
+        // copies like "+50 stamina" while description already says "60"), and
+        // the description line already communicates the effect. Hide the
+        // specialEffect row for consumables to avoid contradiction.
+        let hasSpecial = (item.itemType != .consumable)
+            && (item.specialEffect.map { !$0.isEmpty } ?? false)
         let hasPassive = item.uniquePassive.map { !$0.isEmpty } ?? false
         let isTwoHanded = item.isTwoHanded == true
 
@@ -645,10 +658,13 @@ struct ItemDetailSheet: View {
                     }
                 }
                 #if DEBUG
+                // Bug #12: prefix with "debug:" so raw catalog keys like
+                // `stamina_potion_medium` read clearly as developer info
+                // and never get mistaken for a broken localisation string.
                 if let catalogId = item.catalogId, !catalogId.isEmpty {
-                    Text(catalogId)
+                    Text("debug: \(catalogId)")
                         .font(DarkFantasyTheme.debugMonoSmall)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.5))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.35))
                 }
                 #endif
             }
@@ -731,13 +747,36 @@ struct ItemDetailSheet: View {
         }
     }
 
+    /// Bug #20: hard cap for a single purchase. Even if the player has 100k
+    /// gold, one tap shouldn't let them buy 500 potions.
+    private static let maxPurchaseQuantity: Int = 99
+
+    /// Bug #20: compute the maximum quantity the player can afford in a single
+    /// purchase of this consumable. Gem purchases always return 1 (single-buy).
+    private func maxAffordableQuantity(_ shop: ShopContext) -> Int {
+        guard shop.isConsumable, !shop.isGemPurchase, shop.price > 0 else { return 1 }
+        let affordable = shop.playerGold / shop.price
+        let clamped = max(1, min(affordable, Self.maxPurchaseQuantity))
+        return clamped
+    }
+
     @ViewBuilder
     private func shopBuySection(_ shop: ShopContext) -> some View {
+        let showStepper = shop.isConsumable && !shop.isGemPurchase && shop.meetsLevel
+        let maxQty = maxAffordableQuantity(shop)
+        let effectiveQty = showStepper ? min(purchaseQuantity, max(1, maxQty)) : 1
+        let totalPrice = shop.price * effectiveQty
+
         VStack(spacing: LayoutConstants.spaceSM) {
-            // Price display — asset icons, no emoji
+            // Quantity stepper (Bug #20) — only for stackable consumables
+            if showStepper {
+                quantityStepper(shop: shop, maxQty: maxQty)
+            }
+
+            // Price display — dynamically multiplied by quantity
             CurrencyDisplay(
-                gold: shop.isGemPurchase ? 0 : shop.price,
-                gems: shop.isGemPurchase ? shop.price : nil,
+                gold: shop.isGemPurchase ? 0 : totalPrice,
+                gems: shop.isGemPurchase ? totalPrice : nil,
                 size: .compact,
                 currencyType: shop.isGemPurchase ? .gems : .gold,
                 animated: false
@@ -757,17 +796,21 @@ struct ItemDetailSheet: View {
 
             // BUY button — asset icons, no emoji
             Button {
-                shop.onBuy()
+                shop.onBuy(effectiveQty)
             } label: {
                 if shop.isBuying {
                     HexPulseLoader(.compact)
                         .tint(DarkFantasyTheme.textOnGold)
                 } else {
                     HStack(spacing: LayoutConstants.spaceXS) {
-                        Text("BUY")
+                        if showStepper && effectiveQty > 1 {
+                            Text("BUY \(effectiveQty)×")
+                        } else {
+                            Text("BUY")
+                        }
                         CurrencyDisplay(
-                            gold: shop.isGemPurchase ? 0 : shop.price,
-                            gems: shop.isGemPurchase ? shop.price : nil,
+                            gold: shop.isGemPurchase ? 0 : totalPrice,
+                            gems: shop.isGemPurchase ? totalPrice : nil,
                             size: .mini,
                             currencyType: shop.isGemPurchase ? .gems : .gold,
                             animated: false,
@@ -780,6 +823,119 @@ struct ItemDetailSheet: View {
             .disabled(!shop.canAfford || !shop.meetsLevel || shop.isBuying)
             .opacity(shop.canAfford && shop.meetsLevel ? 1.0 : 0.5)
         }
+        .onAppear {
+            // Reset quantity whenever the sheet opens for a new consumable.
+            purchaseQuantity = 1
+        }
+    }
+
+    /// Bug #20: compact quantity stepper for stackable consumables.
+    /// Layout: [−]  Qty × label  [+]  with quick x5/x10 preset chips.
+    @ViewBuilder
+    private func quantityStepper(shop: ShopContext, maxQty: Int) -> some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceMD) {
+                Button {
+                    if purchaseQuantity > 1 {
+                        HapticManager.light()
+                        purchaseQuantity -= 1
+                    }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .fill(DarkFantasyTheme.bgTertiary)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+                        )
+                }
+                .disabled(purchaseQuantity <= 1)
+                .opacity(purchaseQuantity <= 1 ? 0.4 : 1.0)
+                .accessibilityLabel("Decrease quantity")
+
+                VStack(spacing: 0) {
+                    Text("×\(min(purchaseQuantity, max(1, maxQty)))")
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                    Text("max \(maxQty)")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                }
+                .frame(minWidth: 72)
+                .accessibilityLabel("Quantity: \(min(purchaseQuantity, maxQty)), maximum \(maxQty)")
+
+                Button {
+                    if purchaseQuantity < maxQty {
+                        HapticManager.light()
+                        purchaseQuantity += 1
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .fill(DarkFantasyTheme.bgTertiary)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+                        )
+                }
+                .disabled(purchaseQuantity >= maxQty)
+                .opacity(purchaseQuantity >= maxQty ? 0.4 : 1.0)
+                .accessibilityLabel("Increase quantity")
+            }
+
+            // Quick preset chips — only useful when player can afford them
+            HStack(spacing: LayoutConstants.spaceXS) {
+                ForEach(quantityPresets(maxQty: maxQty), id: \.self) { preset in
+                    quantityPresetChip(preset, maxQty: maxQty)
+                }
+            }
+        }
+    }
+
+    /// Bug #20: compute unique, sorted preset quantities capped at maxQty.
+    private func quantityPresets(maxQty: Int) -> [Int] {
+        let base = [1, 5, 10]
+        var presets = base.filter { $0 <= maxQty }
+        if maxQty > 10 && !presets.contains(maxQty) {
+            presets.append(maxQty)
+        }
+        // Dedup + sort
+        return Array(Set(presets)).sorted()
+    }
+
+    @ViewBuilder
+    private func quantityPresetChip(_ value: Int, maxQty: Int) -> some View {
+        let isSelected = purchaseQuantity == value
+        let label = (value == maxQty && value > 10) ? "MAX" : "×\(value)"
+        Button {
+            HapticManager.light()
+            purchaseQuantity = min(value, maxQty)
+        } label: {
+            Text(label)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(isSelected ? DarkFantasyTheme.textOnGold : DarkFantasyTheme.textSecondary)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.space2XS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(isSelected ? DarkFantasyTheme.gold : DarkFantasyTheme.bgTertiary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(DarkFantasyTheme.gold.opacity(isSelected ? 0.0 : 0.3), lineWidth: 1)
+                )
+        }
+        .accessibilityLabel("Set quantity to \(value)")
     }
 
     // MARK: - Upgrade Confirm Panel

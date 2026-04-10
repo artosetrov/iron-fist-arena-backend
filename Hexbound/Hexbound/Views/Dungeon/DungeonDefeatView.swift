@@ -11,13 +11,17 @@ struct DungeonDefeatView: View {
         let boss = vm.dungeon?.bosses[safe: vm.selectedBossIndex] ?? vm.selectedBoss
         let subtitle = boss.map { "Defeated by \($0.name)" } ?? "You have fallen"
 
-        // Show progress earned during the run even on defeat
+        // Show progress earned during the run even on defeat.
+        // Bug #16: honour Training Camp label too.
         let dungeonProgress: DungeonProgressConfig? = {
             guard let total = vm.dungeon?.totalBosses, total > 0 else { return nil }
+            let isTraining = vm.dungeon?.id.contains("training") ?? false
             return DungeonProgressConfig(
                 defeated: vm.defeatFloorsCleared,
                 total: total,
-                isComplete: false
+                isComplete: false,
+                progressLabel: isTraining ? "Training Progress" : "Dungeon Progress",
+                completeLabel: isTraining ? "TRAINING COMPLETE!" : "DUNGEON CLEARED!"
             )
         }()
 

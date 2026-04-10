@@ -417,7 +417,8 @@ struct BattleResultCardView: View {
     private func dungeonProgressBar(_ progress: DungeonProgressConfig) -> some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             HStack {
-                Text("Dungeon Progress")
+                // Bug #16: honour per-track progress label (Training Camp etc.)
+                Text(progress.progressLabel)
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
                 Spacer()
@@ -448,7 +449,7 @@ struct BattleResultCardView: View {
             .frame(height: LayoutConstants.spaceSM)
 
             if progress.isComplete {
-                Text("DUNGEON CLEARED!")
+                Text(progress.completeLabel)
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.goldBright)
                     .padding(.top, LayoutConstants.spaceXS)
@@ -882,6 +883,11 @@ struct DungeonProgressConfig {
     let defeated: Int
     let total: Int
     let isComplete: Bool
+    /// Bug #16: Training Camp and other PvE tracks can override the "Dungeon
+    /// Progress" / "DUNGEON CLEARED!" copy with their own label. Nil = default
+    /// dungeon copy.
+    var progressLabel: String = "Dungeon Progress"
+    var completeLabel: String = "DUNGEON CLEARED!"
 
     var fraction: Double {
         Double(defeated) / Double(max(total, 1))

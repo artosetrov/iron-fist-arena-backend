@@ -26,6 +26,10 @@ struct CityBuildingLabel: View {
                 .foregroundStyle(isLocked ? DarkFantasyTheme.textSecondary : DarkFantasyTheme.goldBright)
 
             if !isLocked, let badge {
+                // Bug #22: badges with pending actions (Achievements "4",
+                // Inbox unread count, Quests claimable) must pulse so the
+                // player notices them. Reuses the same glowPulse modifier
+                // used for the FIGHT button and hero stat points.
                 Text(badge)
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(DarkFantasyTheme.textOnGold)
@@ -33,6 +37,11 @@ struct CityBuildingLabel: View {
                     .padding(.vertical, LayoutConstants.barInternalPadding)
                     .background(
                         Capsule().fill(DarkFantasyTheme.gold)
+                    )
+                    .glowPulse(
+                        color: DarkFantasyTheme.goldGlow,
+                        intensity: 0.7,
+                        isActive: visible
                     )
             }
         }

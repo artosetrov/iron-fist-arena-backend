@@ -17,11 +17,19 @@ import SwiftUI
 /// - ButtonStyles for Retry CTA
 /// - Accessibility labels included
 struct ErrorStateView: View {
+    @Environment(\.dismiss) private var dismiss
+
     var icon: String = "exclamationmark.triangle"
     var title: String = "Something Went Wrong"
     var message: String = "We couldn't load this content. Please try again."
     var retryLabel: String = "Retry"
     var retryAction: (() -> Void)? = nil
+    /// If provided, shows a Back CTA that calls this. If nil, falls back to
+    /// SwiftUI's `@Environment(\.dismiss)` so the player is never trapped.
+    var onBack: (() -> Void)? = nil
+    /// When true, always render a back button (even if onBack is nil — uses dismiss).
+    /// Defaults to true so error states never trap the player.
+    var showBackButton: Bool = true
 
     var body: some View {
         VStack(spacing: LayoutConstants.spaceLG) {
@@ -57,6 +65,24 @@ struct ErrorStateView: View {
                 .buttonStyle(.secondary)
                 .padding(.horizontal, LayoutConstants.space2XL)
                 .padding(.top, LayoutConstants.spaceSM)
+            }
+
+            // Back CTA — guarantees player can escape error state (Bug #18a)
+            if showBackButton {
+                Button {
+                    if let onBack {
+                        onBack()
+                    } else {
+                        dismiss()
+                    }
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                }
+                .buttonStyle(.ghost)
+                .padding(.horizontal, LayoutConstants.space2XL)
             }
 
             Spacer()

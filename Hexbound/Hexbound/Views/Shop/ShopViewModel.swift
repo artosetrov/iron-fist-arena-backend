@@ -240,32 +240,55 @@ final class ShopViewModel {
     }
 
     /// Gate purchases: gem items require confirmation, gold items go through directly.
-    func requestBuy(_ item: ShopItem) {
+    /// Bug #20: accepts quantity for stackable consumables (defaults to 1).
+    func requestBuy(_ item: ShopItem, quantity: Int = 1) {
         if item.isGemPurchase {
             pendingPurchaseItem = item
+            pendingPurchaseQuantity = quantity
             showPurchaseConfirm = true
         } else {
-            Task { await buy(item) }
+            Task { await buy(item, quantity: quantity) }
         }
     }
 
+    /// Bug #20: quantity captured alongside pendingPurchaseItem so gem confirmation flow
+    /// preserves the selected amount.
+    var pendingPurchaseQuantity: Int = 1
+
     func confirmPendingPurchase() {
         guard let item = pendingPurchaseItem else { return }
+        let qty = pendingPurchaseQuantity
         pendingPurchaseItem = nil
+        pendingPurchaseQuantity = 1
         showPurchaseConfirm = false
-        Task { await buy(item) }
+        Task { await buy(item, quantity: qty) }
     }
 
     func cancelPendingPurchase() {
         pendingPurchaseItem = nil
+        pendingPurchaseQuantity = 1
         showPurchaseConfirm = false
     }
 
-    func buy(_ item: ShopItem) async {
+    func buy(_ item: ShopItem, quantity: Int = 1) async {
         guard buyingItemId == nil else { return } // double-tap guard
 
-        // Validate currency
-        if !canAfford(item) {
+        // Bug #20: clamp quantity — non-consumables always buy exactly 1.
+        let qty: Int
+        if item.isConsumable && !item.isGemPurchase {
+            qty = max(1, min(quantity, 99))
+        } else {
+            qty = 1
+        }
+
+        let unitPrice = item.isGemPurchase ? item.gemPrice : item.goldPrice
+        let totalCost = unitPrice * qty
+
+        // Validate currency against total cost, not unit price
+        let hasEnoughForTotal: Bool = item.isGemPurchase
+            ? gems >= totalCost
+            : gold >= totalCost
+        if !hasEnoughForTotal {
             HapticManager.error()
             appState.showToast(
                 item.isGemPurchase ? "Not enough gems!" : "Not enough gold!",
@@ -285,11 +308,11 @@ final class ShopViewModel {
         let savedGems = appState.currentCharacter?.gems ?? 0
         let savedItems = items
 
-        // Deduct currency optimistically
+        // Deduct currency optimistically (Bug #20: total cost, not unit)
         if item.isGemPurchase {
-            appState.currentCharacter?.gems = savedGems - item.gemPrice
+            appState.currentCharacter?.gems = savedGems - totalCost
         } else {
-            appState.currentCharacter?.gold = savedGold - item.goldPrice
+            appState.currentCharacter?.gold = savedGold - totalCost
         }
 
         // Remove from list immediately (equipment only)
@@ -321,14 +344,17 @@ final class ShopViewModel {
                 }
                 success = await service.buyGems(gemsAmount: gemsAmount)
             } else if item.isConsumable, !ct.isEmpty {
-                success = await service.buyConsumable(consumableType: ct)
+                // Bug #20: pass quantity — backend /api/shop/buy-consumable
+                // already supports bulk purchase in one atomic transaction.
+                success = await service.buyConsumable(consumableType: ct, quantity: qty)
             } else {
                 let catalogId = item.catalogId ?? item.id
                 success = await service.buy(catalogId: catalogId)
             }
 
             if success {
-                appState.showToast("Item purchased!", type: .reward)
+                let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "Item purchased!"
+                appState.showToast(toastMsg, type: .reward)
             } else {
                 // Revert optimistic state
                 appState.currentCharacter?.gold = savedGold

@@ -193,6 +193,17 @@ final class InventoryService {
             }
             // Don't nil cachedInventory — caller already applied optimistic update.
             // Server confirmed success, so the optimistic state is correct.
+
+            // Bug #10: invalidate quest cache + background refetch so the
+            // Alchemist (consumable_use) daily quest progress and Claim button
+            // update across Hub widgets (QuestRewardWidget, ActiveQuestBanner)
+            // and the Daily Quests screen immediately after a consumable use.
+            appState.cachedTypedQuests = nil
+            let appStateRef = appState
+            Task { @MainActor in
+                _ = await QuestService(appState: appStateRef).loadQuests()
+            }
+
             return true
         } catch let error as APIError {
             switch error {
@@ -315,6 +326,23 @@ final class InventoryService {
         "health_potion_large": "Large Health Potion",
     ]
 
+    /// Bug #13: Consumable rarity map — must stay in sync with
+    /// `backend/prisma/migrations/20260320_seed_consumable_items/migration.sql`.
+    /// Previously all consumables showed as COMMON in inventory while Shop
+    /// correctly pulled rarity from the Items table, causing the "Shop says
+    /// RARE, Inventory says COMMON" mismatch for Large Stamina Potion etc.
+    private static let consumableRarities: [String: ItemRarity] = [
+        "stamina_potion_small":  .common,
+        "stamina_potion_medium": .uncommon,
+        "stamina_potion_large":  .rare,
+        "health_potion_small":   .common,
+        "health_potion_medium":  .uncommon,
+        "health_potion_large":   .rare,
+        "gem_pack_small":        .rare,
+        "gem_pack_medium":       .epic,
+        "gem_pack_large":        .legendary,
+    ]
+
     /// Maps consumableType → local asset key in Assets.xcassets/Items/
     private static let consumableImageKeys: [String: String] = [
         "stamina_potion_small": "stamina_potion_small",
@@ -337,12 +365,13 @@ final class InventoryService {
 
         let displayName = Self.consumableDisplayNames[consumableType] ?? consumableType.replacingOccurrences(of: "_", with: " ").capitalized
         let imageKey = Self.consumableImageKeys[consumableType]
+        let rarity = Self.consumableRarities[consumableType] ?? .common
 
         return Item(
             id: id,
             itemName: displayName,
             itemType: .consumable,
-            rarity: .common,
+            rarity: rarity,
             itemLevel: 1,
             upgradeLevel: nil,
             isEquipped: false,

@@ -27,6 +27,7 @@ struct ContextualHintOverlay: ViewModifier {
             .safeAreaInset(edge: .bottom) {
                 if !dismissed, let hint {
                     let hasSeen = hintManager.hasSeen(hint.id, for: charId)
+                    let compactDismissed = hintManager.hasCompactBeenDismissed(hint.id, for: charId)
 
                     if !hasSeen {
                         // First visit: NPC Speech Card (no typewriter, CTA visible immediately)
@@ -39,6 +40,7 @@ struct ContextualHintOverlay: ViewModifier {
                                 npcImageName: active.npcImage,
                                 plainMessage: active.message,
                                 onDontShowAgain: {
+                                    // Bug #17: dismiss() already marks both main + compact as seen
                                     hintManager.dismiss(for: charId)
                                 },
                                 ctaLabel: active.ctaLabel,
@@ -54,12 +56,16 @@ struct ContextualHintOverlay: ViewModifier {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.bottom, LayoutConstants.spaceSM + bottomInset)
                         }
-                    } else if hint.compactText != nil, showCompact {
+                    } else if hint.compactText != nil, showCompact, !compactDismissed {
                         // Repeat visit: Category-based compact bar
+                        // Bug #17: only show if compact hasn't been permanently dismissed
                         ContextualHintBar(
                             hint: hint,
                             onAction: onCTA,
                             onDismiss: {
+                                // Bug #17: persist dismissal so the bar never
+                                // reappears after navigation, not just this session.
+                                hintManager.dismissCompact(hint.id, for: charId)
                                 withAnimation(MotionConstants.smooth) {
                                     dismissed = true
                                 }
@@ -80,13 +86,15 @@ struct ContextualHintOverlay: ViewModifier {
                 dismissed = false
 
                 let hasSeen = hintManager.hasSeen(hint.id, for: charId)
+                let compactDismissed = hintManager.hasCompactBeenDismissed(hint.id, for: charId)
+
                 if !hasSeen {
                     // First visit — show full widget after delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                         hintManager.tryShow(hint, for: charId)
                     }
-                } else if hint.compactText != nil {
-                    // Repeat visit — show compact after shorter delay
+                } else if hint.compactText != nil, !compactDismissed {
+                    // Repeat visit — show compact only if not permanently dismissed
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         withAnimation(MotionConstants.smooth) {
                             showCompact = true

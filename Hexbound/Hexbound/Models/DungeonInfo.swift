@@ -11,6 +11,10 @@ struct BossInfo: Identifiable, Hashable {
     let portraitImage: String   // Asset name for portrait (head & shoulders)
     let fullImage: String       // Asset name for full body (combat pose)
     let loot: [LootPreview]
+    /// Bug #14: Training Camp floors 1–9 are practice enemies, not real bosses.
+    /// Only the floor-10 culmination (Arena Warden) should wear the BOSS label.
+    /// Defaults to true so every other dungeon keeps existing behaviour.
+    var isRealBoss: Bool = true
 
     /// Extended lore text for boss detail sheet.
     /// Uses server description if long enough, otherwise generates client-side lore.
@@ -24,6 +28,21 @@ struct BossInfo: Identifiable, Hashable {
 
     private static func clientLore(for name: String) -> String {
         let loreLookup: [String: String] = [
+            // Training Camp (Bug #15) — short, flavorful blurbs for the
+            // practice enemies on floors 1–9 plus the Arena Warden finale.
+            // Tone: wry, grounded, a little tongue-in-cheek — these are
+            // sparring targets, not legends.
+            "Straw Dummy": "Built by the first Arena fighters from whatever they could nail together: burlap, straw, a prayer. Every trainee has left bruises on it, and it still stands. Some swear they've heard it sigh when the evening wind rolls off the Stray City walls.",
+            "Rusty Golem": "An old quarry automaton that kept working for a decade after its masters died. The trainers dragged it here to teach recruits that slow doesn't mean harmless. One of its gears is a cart wheel. Another is reportedly a dinner plate.",
+            "Cave Spider": "Hatched in the cellar of the training grounds and never left. It's learned every rafter, every blind spot, every place a rookie forgets to look up. The keepers feed it table scraps so it stays just hungry enough to be interesting.",
+            "Bone Warrior": "Reassembled by a traveling necromancer as a favor — or a prank — nobody's quite sure. It holds a rusted gladius in one hand and a shield patched with burlap in the other. Its skull still wears the helm of whoever it used to be.",
+            "Fire Imp": "A minor hellion bound to a brass bell by a drunk warlock on a lost bet. It can't leave the courtyard, but inside the ring it flickers and giggles and sets the straw bales alight with cheerful enthusiasm.",
+            "Scarecrow Mage": "A straw dummy with ambitions. A passing apprentice crammed a cracked mana crystal into its chest as a joke, and now it throws sparks when struck. Nobody has the heart — or the clearance — to decommission it.",
+            "Shadow Stalker": "Not a real shadow beast — just a trainer in a cloak with a knack for stepping on the creaky boards on purpose. The illusion is charmed to move on its own when the trainer's off duty. Trainees rarely guess the trick before graduation.",
+            "Iron Guardian": "The Arena's original gate-keeper automaton, retired after it mistook a dignitary for an intruder. Still in working order, still grumpy, still refuses to fall. Fighting it is considered the first real test before the upper tiers.",
+            "Plague Bearer": "A practice effigy steeped in bog water and wrapped in herb-soaked rags to teach trainees how to hold their breath and keep their stance. Smells exactly as bad as you'd expect. The trainers find this hilarious.",
+            "Arena Warden": "The last obstacle before the Stray City's true Arena. Once a champion, now a teacher — the Warden wears the mask of every rival they've ever beaten. Defeating them isn't graduation. It's an invitation.",
+
             "Tomb Rat King": "Once a common sewer rat, it gorged on cursed alchemical runoff until it grew to monstrous size. Now it commands legions of diseased vermin from its throne of bones, spreading plague through the tunnels. Adventurers who underestimate its swarm tactics rarely return.",
             "Iron Sentinel": "Forged in the dying embers of a forgotten war, this construct still follows its last order: destroy all intruders. Its rusted joints creak with every swing, but each blow carries the weight of enchanted steel. Some say a trapped soul still screams inside its hollow chest.",
             "Broodmother Arachne": "Deep in the silk-choked caverns, she tends her thousand eggs. Her venom dissolves armor and flesh alike, and her web traps have ensnared even seasoned knights. The clicking of her mandibles echoes through the dark — a sound that haunts survivors forever.",
@@ -325,7 +344,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "50–80", imageKey: "loot-gold"),
                         LootPreview(icon: "star.fill", name: "XP", detail: "20–30", imageKey: "loot-xp"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 2, name: "Rusty Golem", level: 2, hp: 320,
                      description: "Gears grind. Rust crumbles. It still hits hard.",
                      portraitImage: "boss-rusty-golem-portrait",
@@ -333,7 +353,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "60–100", imageKey: "loot-gold"),
                         LootPreview(icon: "sword", name: "Rusty Blade", detail: "Common", imageKey: "loot-rusty-blade", rarity: .common),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 3, name: "Cave Spider", level: 3, hp: 380,
                      description: "Eight legs, venomous fangs, zero mercy.",
                      portraitImage: "boss-cave-spider-portrait",
@@ -341,7 +362,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "70–110", imageKey: "loot-gold"),
                         LootPreview(icon: "flask.fill", name: "Venom Vial", detail: "15%", imageKey: "loot-venom-vial", rarity: .uncommon, itemTypeRaw: "consumable"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 4, name: "Bone Warrior", level: 4, hp: 450,
                      description: "Reassembled from fallen fighters. Sworn to guard.",
                      portraitImage: "boss-bone-warrior-portrait",
@@ -349,7 +371,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "80–130", imageKey: "loot-gold"),
                         LootPreview(icon: "shield.fill", name: "Bone Shield", detail: "Uncommon (20%)", imageKey: "loot-bone-shield", rarity: .uncommon, itemTypeRaw: "chest"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 5, name: "Fire Imp", level: 5, hp: 500,
                      description: "Small, fast, and loves setting things on fire.",
                      portraitImage: "boss-fire-imp-portrait",
@@ -357,7 +380,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "90–150", imageKey: "loot-gold"),
                         LootPreview(icon: "scroll.fill", name: "Fire Scroll", detail: "10%", imageKey: "loot-fire-scroll", rarity: .uncommon, itemTypeRaw: "consumable"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 6, name: "Scarecrow Mage", level: 6, hp: 580,
                      description: "Waves a stick. Sparks occasionally fly.",
                      portraitImage: "boss-scarecrow-mage-portrait",
@@ -366,7 +390,8 @@ struct DungeonInfo: Identifiable {
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "100–170", imageKey: "loot-gold"),
                         LootPreview(icon: "sword", name: "Mage Wand", detail: "Rare (15%)", imageKey: "loot-mage-wand", rarity: .rare),
                         LootPreview(icon: "scroll.fill", name: "Arcane Scroll", detail: "5%", imageKey: "loot-arcane-scroll", rarity: .rare, itemTypeRaw: "consumable"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 7, name: "Shadow Stalker", level: 7, hp: 650,
                      description: "You won't see it coming. Literally.",
                      portraitImage: "boss-shadow-stalker-portrait",
@@ -374,7 +399,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "110–180", imageKey: "loot-gold"),
                         LootPreview(icon: "sword", name: "Shadow Dagger", detail: "Rare (12%)", imageKey: "loot-shadow-dagger", rarity: .rare),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 8, name: "Iron Guardian", level: 8, hp: 750,
                      description: "Built to protect. Refuses to fall.",
                      portraitImage: "boss-iron-guardian-portrait",
@@ -382,7 +408,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "120–200", imageKey: "loot-gold"),
                         LootPreview(icon: "shield.fill", name: "Iron Plate", detail: "Rare (10%)", imageKey: "loot-iron-plate", rarity: .rare, itemTypeRaw: "chest"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 9, name: "Plague Bearer", level: 9, hp: 850,
                      description: "Its breath alone can fell a kingdom.",
                      portraitImage: "boss-plague-bearer-portrait",
@@ -390,7 +417,8 @@ struct DungeonInfo: Identifiable {
                      loot: [
                         LootPreview(icon: "coloncurrencysign.circle.fill", name: "Gold", detail: "130–220", imageKey: "loot-gold"),
                         LootPreview(icon: "flask.fill", name: "Plague Elixir", detail: "Epic (5%)", imageKey: "loot-plague-elixir", rarity: .epic, itemTypeRaw: "consumable"),
-                     ]),
+                     ],
+                     isRealBoss: false),
             BossInfo(id: 10, name: "Arena Warden", level: 10, hp: 1000,
                      description: "The final test. Only the worthy may pass.",
                      portraitImage: "boss-arena-warden-portrait",

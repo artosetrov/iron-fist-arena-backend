@@ -81,8 +81,9 @@ private struct OfferCard: View {
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
-            // Description
-            if let desc = offer.description {
+            // Description — Bug #11: use scrubbed displayDescription so raw DB
+            // keys like `health_potion_large` never surface to users.
+            if let desc = offer.displayDescription {
                 Text(desc)
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)

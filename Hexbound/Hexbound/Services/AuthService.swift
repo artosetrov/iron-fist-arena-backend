@@ -94,7 +94,11 @@ final class AuthService {
 
     func guestLogin() async -> Result<Void, APIError> {
         do {
-            let result = try await APIClient.shared.postRaw(APIEndpoints.authGuestLogin)
+            // Send stable deviceId so backend can restore existing guest progress
+            // (rotates password server-side and returns a fresh session).
+            let deviceId = KeychainManager.shared.deviceId
+            let body: [String: Any] = ["device_id": deviceId]
+            let result = try await APIClient.shared.postRaw(APIEndpoints.authGuestLogin, body: body)
 
             guard let accessToken = result["access_token"] as? String,
                   let refreshToken = result["refresh_token"] as? String else {
@@ -226,14 +230,39 @@ final class AuthService {
 
     private func setupUnauthorizedHandler() {
         Task {
-            await APIClient.shared.setOnUnauthorized { [weak appState] in
+            await APIClient.shared.setOnUnauthorized { [weak self, weak appState] in
                 Task { @MainActor in
-                    // Show blocking modal instead of silent logout — user sees what happened
+                    // Guests: attempt silent re-auth via stable deviceId.
+                    // Only if that fails do we show the session expired modal.
+                    if KeychainManager.shared.isGuest, let self = self {
+                        // Re-entrancy guard: don't stack reauth attempts if one is already running
+                        if Self.guestReauthInFlight { return }
+                        Self.guestReauthInFlight = true
+                        defer { Self.guestReauthInFlight = false }
+
+                        let reauth = await self.guestLogin()
+                        switch reauth {
+                        case .success:
+                            // Tokens rotated, appState.currentScreen switched back to .game.
+                            // Silent success — no modal, progress preserved.
+                            return
+                        case .failure:
+                            // Silent re-auth failed — fall through to modal.
+                            appState?.triggerSessionExpired()
+                        }
+                        return
+                    }
+
+                    // Regular users: show blocking modal
                     appState?.triggerSessionExpired()
                 }
             }
         }
     }
+
+    /// Re-entrancy guard for guest silent re-auth so concurrent 401s don't
+    /// stack multiple reauth attempts.
+    @MainActor private static var guestReauthInFlight = false
 
     /// Load all characters for the user and determine navigation result.
     /// If exactly 1 character, auto-selects it on appState.
