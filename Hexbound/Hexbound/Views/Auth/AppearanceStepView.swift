@@ -1,37 +1,47 @@
 import SwiftUI
 
-/// Onboarding Step 2: Race + Gender + Avatar selection on a single screen.
+/// Onboarding Step 2: Race + Gender + Avatar selection with a hero-card preview.
+///
+/// The central element is an Arena-style hero card (mirrors NameStepView)
+/// — level badge, hero summary, class tag, NEW pill, and combined stat bonuses —
+/// flanked by the gender toggle + dice on top and prev/next arrows on the bottom.
+/// Arrows swap the avatar *inside* the card via a directional slide transition.
 struct AppearanceStepView: View {
     @Bindable var vm: OnboardingViewModel
 
+    // MARK: - Card Animation State
+
+    /// Gentle Y float (no scale — project rule)
+    @State private var floatOffset: CGFloat = 0
+    /// Rotation phase for angular gradient border glow
+    @State private var glowPhase: CGFloat = 0
+    /// Shadow radius pulse for level badge
+    @State private var levelGlowRadius: CGFloat = 6
+
     var body: some View {
-        VStack(spacing: 0) {
-            Text("Choose Your Appearance")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
-                .tracking(1)
-                .padding(.top, LayoutConstants.spaceMD)
-
-            if vm.selectedOrigin != nil {
-                raceBonusWidget
-                    .padding(.top, LayoutConstants.spaceSM)
-
-                thumbnailRow
-                    .padding(.top, LayoutConstants.spaceSM)
-
-                avatarArea
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: LayoutConstants.spaceMD) {
+                Text("Choose Your Appearance")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .tracking(1)
                     .padding(.top, LayoutConstants.spaceMD)
-            } else {
-                emptyState
-                    .padding(.top, LayoutConstants.spaceSM)
-                    .padding(.bottom, LayoutConstants.spaceSM)
-            }
 
-            raceRow
-                .padding(.top, LayoutConstants.spaceMD)
-                .padding(.bottom, LayoutConstants.spaceLG)
+                if vm.selectedOrigin != nil {
+                    thumbnailRow
+
+                    avatarArea
+                } else {
+                    emptyState
+                }
+
+                raceRow
+                    .padding(.bottom, LayoutConstants.spaceLG)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
         }
-        .padding(.horizontal, LayoutConstants.screenPadding)
+        .onAppear { startAnimations() }
+        .onDisappear { stopAnimations() }
     }
 
     // MARK: - Race Icons Row
@@ -86,64 +96,6 @@ struct AppearanceStepView: View {
         .buttonStyle(.scalePress(0.95))
     }
 
-    // MARK: - Race Bonus Widget
-
-    private var raceBonusWidget: some View {
-        ZStack {
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.buttonRadiusLG
-            )
-            RoundedRectangle(cornerRadius: LayoutConstants.buttonRadiusLG)
-                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1.5)
-
-            if let origin = vm.selectedOrigin {
-                VStack(spacing: LayoutConstants.spaceXS) {
-                    HStack(spacing: LayoutConstants.spaceMS) {
-                        Image(origin.iconAsset)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 36, height: 36)
-
-                        VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                            Text(origin.displayName)
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                            Text(origin.description)
-                                .font(DarkFantasyTheme.body)
-                                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                .lineLimit(2)
-                        }
-
-                        Spacer(minLength: 0)
-                    }
-
-                    // Stat bonuses inline
-                    if !vm.originBonuses.isEmpty {
-                        HStack(spacing: LayoutConstants.spaceSM) {
-                            ForEach(vm.originBonuses, id: \.stat) { bonus in
-                                statBonusCell(name: bonus.stat, value: bonus.value)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                    }
-                }
-                .padding(.horizontal, LayoutConstants.bannerPadding)
-                .padding(.vertical, LayoutConstants.spaceMS)
-            } else {
-                Text("Select a race to see avatars")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .fixedSize(horizontal: false, vertical: true)
-        .animation(MotionConstants.snappy, value: vm.selectedOrigin)
-    }
-
     // MARK: - Empty State
 
     private var emptyState: some View {
@@ -169,75 +121,97 @@ struct AppearanceStepView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Avatar Area (gender + arrows + central avatar + dice)
+    // MARK: - Avatar Area (gender + arrows + hero card + dice)
 
     private var avatarArea: some View {
-        GeometryReader { geo in
-            let spacing = LayoutConstants.spaceSM
-            let sideSize = LayoutConstants.avatarInnerSize
-            let avatarSize: CGFloat = max(min(geo.size.width - sideSize * 2 - spacing * 4, 220), 0)
+        let cardWidth: CGFloat = 200
+        let cardHeight: CGFloat = cardWidth * 1.4
+        let sideSize = LayoutConstants.avatarInnerSize
 
-            HStack(alignment: .center, spacing: spacing) {
-                // Left column: gender toggle (top) + left arrow (bottom)
-                VStack(spacing: 0) {
-                    squareButton(content: AnyView(
+        return HStack(alignment: .center, spacing: LayoutConstants.spaceSM) {
+            // Left column: gender toggle (top) + left arrow (bottom)
+            VStack(spacing: 0) {
+                squareButton(
+                    content: AnyView(
                         Image(vm.selectedGender == .male ? "ui-gender-male" : "ui-gender-female")
                             .resizable()
                             .scaledToFit()
                             .frame(width: sideSize * 0.6, height: sideSize * 0.6)
-                    ), size: sideSize, bg: DarkFantasyTheme.xpRing.opacity(0.1),
-                       border: DarkFantasyTheme.xpRing, shadow: DarkFantasyTheme.xpRing.opacity(0.2)) {
-                        SFXManager.shared.play(.uiTap)
-                        withAnimation(MotionConstants.snappy) { vm.toggleGender() }
-                    }
-                    Spacer()
-                    squareButton(content: AnyView(
+                    ),
+                    size: sideSize,
+                    bg: DarkFantasyTheme.xpRing.opacity(0.1),
+                    border: DarkFantasyTheme.xpRing,
+                    shadow: DarkFantasyTheme.xpRing.opacity(0.2)
+                ) {
+                    SFXManager.shared.play(.uiTap)
+                    withAnimation(MotionConstants.snappy) { vm.toggleGender() }
+                }
+
+                Spacer(minLength: 0)
+
+                squareButton(
+                    content: AnyView(
                         Image("ui-arrow-left")
                             .resizable()
                             .scaledToFit()
                             .frame(width: sideSize * 0.5, height: sideSize * 0.5)
-                    ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
-                       border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
-                        SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.prevAvatar() }
-                    }
+                    ),
+                    size: sideSize,
+                    bg: DarkFantasyTheme.bgDarkPanel,
+                    border: DarkFantasyTheme.bgDarkPanelBorder,
+                    shadow: .clear
+                ) {
+                    SFXManager.shared.play(.uiTap)
+                    withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.prevAvatar() }
                 }
-                .frame(width: sideSize, height: avatarSize)
+            }
+            .frame(width: sideSize, height: cardHeight)
 
-                centralAvatar(size: avatarSize)
+            heroCard(width: cardWidth, height: cardHeight)
 
-                // Right column: dice (top) + right arrow (bottom)
-                VStack(spacing: 0) {
-                    squareButton(content: AnyView(
+            // Right column: dice (top) + right arrow (bottom)
+            VStack(spacing: 0) {
+                squareButton(
+                    content: AnyView(
                         Image("ui-dice")
                             .resizable()
                             .scaledToFit()
                             .frame(width: sideSize * 0.6, height: sideSize * 0.6)
                             .rotationEffect(.degrees(vm.diceRotation))
-                    ), size: sideSize, bg: DarkFantasyTheme.gold.opacity(0.1),
-                       border: DarkFantasyTheme.gold.opacity(0.3), shadow: .clear) {
-                        SFXManager.shared.play(.uiTap)
-                        withAnimation(MotionConstants.smooth) {
-                            vm.diceRotation += 360
-                            vm.randomize()
-                        }
+                    ),
+                    size: sideSize,
+                    bg: DarkFantasyTheme.gold.opacity(0.1),
+                    border: DarkFantasyTheme.gold.opacity(0.3),
+                    shadow: .clear
+                ) {
+                    SFXManager.shared.play(.uiTap)
+                    withAnimation(MotionConstants.smooth) {
+                        vm.diceRotation += 360
+                        vm.randomize()
                     }
-                    Spacer()
-                    squareButton(content: AnyView(
+                }
+
+                Spacer(minLength: 0)
+
+                squareButton(
+                    content: AnyView(
                         Image("ui-arrow-right")
                             .resizable()
                             .scaledToFit()
                             .frame(width: sideSize * 0.5, height: sideSize * 0.5)
-                    ), size: sideSize, bg: DarkFantasyTheme.bgDarkPanel,
-                       border: DarkFantasyTheme.bgDarkPanelBorder, shadow: .clear) {
-                        SFXManager.shared.play(.uiTap)
-                        withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.nextAvatar() }
-                    }
+                    ),
+                    size: sideSize,
+                    bg: DarkFantasyTheme.bgDarkPanel,
+                    border: DarkFantasyTheme.bgDarkPanelBorder,
+                    shadow: .clear
+                ) {
+                    SFXManager.shared.play(.uiTap)
+                    withAnimation(.easeInOut(duration: MotionConstants.fast)) { vm.nextAvatar() }
                 }
-                .frame(width: sideSize, height: avatarSize)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: sideSize, height: cardHeight)
         }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Square Button Helper
@@ -260,37 +234,223 @@ struct AppearanceStepView: View {
         .buttonStyle(.scalePress)
     }
 
-    // MARK: - Central Avatar
+    // MARK: - Hero Card (mirrors NameStepView.creationHeroCard)
+
+    private var cardClassColor: Color {
+        guard let cls = vm.selectedClass else { return DarkFantasyTheme.gold }
+        return DarkFantasyTheme.classColor(for: cls)
+    }
 
     @ViewBuilder
-    private func centralAvatar(size: CGFloat) -> some View {
-        let skins = vm.availableSkins
-
+    private func heroCard(width: CGFloat, height: CGFloat) -> some View {
         ZStack {
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.radius2XL
-            )
-
-            if vm.avatarIndex < skins.count {
-                let skin = skins[vm.avatarIndex]
-                skinImage(skin)
-                    .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radius2XL))
-                    .id(skin.skinKey)
-                    .transition(avatarTransition)
+            // 1. Full-bleed avatar with slide transition on change
+            if vm.avatarIndex < vm.availableSkins.count {
+                let skin = vm.availableSkins[vm.avatarIndex]
+                CachedAssetImage(
+                    key: skin.resolvedImageKey,
+                    url: skin.imageUrl,
+                    systemIcon: "person.fill",
+                    contentMode: .fill
+                )
+                .frame(width: width, height: height)
+                .clipped()
+                .id(skin.skinKey)
+                .transition(avatarTransition)
             }
+
+            // 2. Vignette
+            heroCardVignette(width: width, height: height)
+
+            // 3. Overlay content
+            VStack {
+                heroCardTopBadges
+                Spacer()
+                heroCardBottomInfo
+            }
+            .padding(LayoutConstants.arenaCardPadding)
+            .frame(width: width, height: height)
         }
-        .frame(width: size, height: size)
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radius2XL)
-                .stroke(DarkFantasyTheme.gold, lineWidth: 3)
-        )
-        .shadow(color: DarkFantasyTheme.goldGlow, radius: 20, y: 8)
+        .frame(width: width, height: height)
+        .background(DarkFantasyTheme.bgAbyss)
+        .overlay(heroCardBorderGlow)
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius))
+        .shadow(color: cardClassColor.opacity(0.35), radius: 22, y: 3)
+        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
+        .offset(y: floatOffset)
         .animation(.easeInOut(duration: MotionConstants.fast), value: vm.avatarIndex)
     }
+
+    private func heroCardVignette(width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            RadialGradient(
+                gradient: Gradient(colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.5)]),
+                center: .init(x: 0.5, y: 0.35),
+                startRadius: width * 0.25,
+                endRadius: width * 0.85
+            )
+
+            LinearGradient(
+                colors: [
+                    .clear, .clear,
+                    DarkFantasyTheme.bgAbyss.opacity(0.4),
+                    DarkFantasyTheme.bgAbyss.opacity(0.8),
+                    DarkFantasyTheme.bgAbyss.opacity(0.95),
+                    DarkFantasyTheme.bgAbyss
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: height * 0.65)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+        .frame(width: width, height: height)
+        .allowsHitTesting(false)
+    }
+
+    private var heroCardTopBadges: some View {
+        HStack {
+            Text("1")
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
+                .background(
+                    Circle()
+                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
+                        .overlay(Circle().stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5))
+                )
+                .shadow(color: DarkFantasyTheme.goldBright.opacity(0.6), radius: levelGlowRadius)
+
+            Spacer()
+        }
+    }
+
+    private var heroCardBottomInfo: some View {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+            // Hero summary: "Female Orc Tank"
+            Text(vm.heroSummary)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
+
+            // Class tag
+            if let cls = vm.selectedClass {
+                Text(cls.displayName.uppercased())
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(cardClassColor)
+                    .padding(.horizontal, LayoutConstants.spaceSM)
+                    .padding(.vertical, LayoutConstants.space2XS)
+                    .background(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                            .fill(cardClassColor.opacity(0.12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                    .stroke(cardClassColor.opacity(0.25), lineWidth: 0.5)
+                            )
+                    )
+            }
+
+            // NEW rating badge
+            HStack(spacing: LayoutConstants.spaceXS) {
+                if UIImage(named: "icon-pvp-rating") != nil {
+                    Image("icon-pvp-rating")
+                        .resizable()
+                        .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
+                        .opacity(0.7)
+                } else {
+                    Image(systemName: "star.fill")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.gold.opacity(0.6))
+                }
+                Text("NEW")
+                    .font(DarkFantasyTheme.section)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .tracking(2)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
+            }
+
+            // Stat bonuses (combined race + class) — update when race changes
+            if !vm.combinedBonuses.isEmpty {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    ForEach(Array(vm.combinedBonuses.prefix(3).enumerated()), id: \.element.stat) { index, bonus in
+                        heroCardStatPill(
+                            value: "\(bonus.value > 0 ? "+" : "")\(bonus.value)",
+                            label: String(bonus.stat.prefix(3)).uppercased(),
+                            color: statPillColor(for: index)
+                        )
+                    }
+                }
+                .animation(MotionConstants.snappy, value: vm.selectedOrigin)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func statPillColor(for index: Int) -> Color {
+        switch index {
+        case 0:  return DarkFantasyTheme.danger
+        case 1:  return DarkFantasyTheme.info
+        default: return DarkFantasyTheme.gold
+        }
+    }
+
+    @ViewBuilder
+    private func heroCardStatPill(value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(color)
+            Text(label)
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(color.opacity(0.15), lineWidth: 0.5)
+                )
+        )
+    }
+
+    private var heroCardBorderGlow: some View {
+        RoundedRectangle(cornerRadius: LayoutConstants.arenaCardRadius)
+            .stroke(
+                AngularGradient(
+                    colors: [
+                        cardClassColor.opacity(0.4),
+                        DarkFantasyTheme.gold.opacity(0.15),
+                        cardClassColor.opacity(0.3),
+                        DarkFantasyTheme.gold.opacity(0.1),
+                        cardClassColor.opacity(0.4)
+                    ],
+                    center: .center,
+                    startAngle: .degrees(glowPhase),
+                    endAngle: .degrees(glowPhase + 360)
+                ),
+                lineWidth: 2
+            )
+            .overlay(
+                CornerBracketOverlay(
+                    color: DarkFantasyTheme.gold.opacity(0.5),
+                    length: 16,
+                    thickness: 1.5
+                )
+            )
+            .overlay(
+                CornerDiamondOverlay(
+                    color: DarkFantasyTheme.gold.opacity(0.5),
+                    size: 6
+                )
+            )
+    }
+
+    // MARK: - Avatar Transition
 
     private var avatarTransition: AnyTransition {
         switch vm.slideDirection {
@@ -303,6 +463,26 @@ struct AppearanceStepView: View {
         case .none:
             .opacity
         }
+    }
+
+    // MARK: - Animation Control
+
+    private func startAnimations() {
+        withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
+            floatOffset = -4
+        }
+        withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+            glowPhase = 360
+        }
+        withAnimation(MotionConstants.breathing) {
+            levelGlowRadius = 20
+        }
+    }
+
+    private func stopAnimations() {
+        floatOffset = 0
+        glowPhase = 0
+        levelGlowRadius = 6
     }
 
     // MARK: - Thumbnail Row
@@ -338,45 +518,6 @@ struct AppearanceStepView: View {
                 .buttonStyle(.scalePress(0.95))
             }
         }
-    }
-
-    // MARK: - Stat Bonus Cell (matches NameStepView style)
-
-    @ViewBuilder
-    private func statBonusCell(name: String, value: Int) -> some View {
-        let statType = StatType.allCases.first(where: { $0.fullName == name })
-        let accentColor = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
-
-        HStack(spacing: LayoutConstants.spaceSM) {
-            if let statType {
-                Image(statType.iconAsset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
-            }
-
-            Text(name)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-
-            Spacer(minLength: 4)
-
-            Text("\(value > 0 ? "+" : "")\(value)")
-                .font(DarkFantasyTheme.cardTitle.bold())
-                .foregroundStyle(value > 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textDanger)
-        }
-        .padding(.horizontal, LayoutConstants.spaceMS)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(accentColor.opacity(0.08))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .stroke(value > 0 ? DarkFantasyTheme.gold.opacity(0.5) : DarkFantasyTheme.borderSubtle, lineWidth: 1.5)
-        )
-        .shadow(color: accentColor.opacity(0.2), radius: 6, y: 2)
     }
 
     // MARK: - Skin Image Helper

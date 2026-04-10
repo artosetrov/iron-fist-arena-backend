@@ -1,7 +1,11 @@
-# Game Balance Constants (Source of Truth)
+# Game Balance Constants (Curated Narrative)
 
 *Derived from backend: `src/lib/game/balance.ts`, `live-config.ts`, `loot.ts`, `gold-mine.ts`*
-*Updated: 2026-04-09 — Economy v2 rebalance*
+*Updated: 2026-04-10 — W1.D4 auto-gen split*
+
+> **⚠️ SSoT for raw numbers:** [`BALANCE_CONSTANTS_AUTO.md`](BALANCE_CONSTANTS_AUTO.md) — auto-generated from `backend/src/lib/game/balance.ts` via `npm run docs:balance`. Every constant, table, and formula below that lives in `balance.ts` is mirrored there and drift-checked in pre-commit.
+>
+> This file contains the **curated narrative**: design intent, timelines, gameplay notes, and systems that live outside `balance.ts` (Shell Game, Guild Weekly Challenges, Dungeon Rush Artifacts, Item Sets, Level Milestones). When a number here disagrees with the AUTO file, the AUTO file wins — update this file to match.
 
 ---
 

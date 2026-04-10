@@ -160,6 +160,26 @@ if [ -n "$TS_FILES" ]; then
   echo ""
 fi
 
+# --- 8. Balance docs drift check (if balance.ts changed) ---
+BALANCE_CHANGED=$(echo "$CHANGED" | grep 'backend/src/lib/game/balance\.ts' || true)
+AUTO_DOC_CHANGED=$(echo "$CHANGED" | grep 'docs/06_game_systems/BALANCE_CONSTANTS_AUTO\.md' || true)
+if [ -n "$BALANCE_CHANGED" ] || [ -n "$AUTO_DOC_CHANGED" ]; then
+  echo "## Balance Docs Drift Check"
+  if [ -f "backend/package.json" ]; then
+    if (cd backend && npm run --silent docs:balance:check > /tmp/hexbound_balance_check.log 2>&1); then
+      echo "  ✅ BALANCE_CONSTANTS_AUTO.md is in sync with balance.ts"
+    else
+      echo "  ❌ BALANCE_CONSTANTS_AUTO.md is STALE — run: cd backend && npm run docs:balance"
+      cat /tmp/hexbound_balance_check.log | sed 's/^/     /'
+      BLOCKERS="$BLOCKERS\n  - BALANCE_CONSTANTS_AUTO.md out of date (run: cd backend && npm run docs:balance)"
+      VERDICT="BLOCKED"
+    fi
+  else
+    echo "  ⚠️  backend/package.json not found — skipping drift check"
+  fi
+  echo ""
+fi
+
 # --- VERDICT ---
 echo "==============================="
 if [ "$VERDICT" = "BLOCKED" ]; then

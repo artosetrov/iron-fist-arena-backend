@@ -17,7 +17,9 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:fix:battle-pass-rewards": "tsx prisma/fix-battle-pass-rewards.ts"
+    "db:fix:battle-pass-rewards": "tsx prisma/fix-battle-pass-rewards.ts",
+    "docs:balance": "tsx scripts/generate-balance-docs.ts",
+    "docs:balance:check": "tsx scripts/generate-balance-docs.ts --check"
   },
   "dependencies": {
     "@prisma/client": "^6.4.0",
