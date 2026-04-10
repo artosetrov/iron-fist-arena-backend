@@ -5,6 +5,7 @@ import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { generateDungeonFloor, getDungeonBossCount, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
@@ -238,9 +239,10 @@ export async function POST(
 
     // Non-critical post-combat work in parallel
     const lootDifficulty = isFinalBoss ? 'boss' : `dungeon_${run.difficulty}`
-    const [levelUpResult, , , lootItem, durabilityResult] = await Promise.all([
+    const [levelUpResult, , , , lootItem, durabilityResult] = await Promise.all([
       applyLevelUp(prisma, character_id),
       updateDailyQuestProgress(prisma, character_id, 'dungeons_complete'),
+      updateTutorialQuestProgress(prisma, character_id, 'first_dungeon'),
       awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR),
       rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty, character.luk),
       degradeEquipment(prisma, character_id),

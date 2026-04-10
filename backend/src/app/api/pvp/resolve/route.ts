@@ -22,6 +22,7 @@ import {
 } from '@/lib/game/balance'
 import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { degradeEquipment } from '@/lib/game/durability'
 import { cacheDeletePrefix } from '@/lib/cache'
@@ -423,6 +424,7 @@ export async function POST(req: NextRequest) {
       (async () => {
         return await Promise.all([
           attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
+          attackerWon ? updateTutorialQuestProgress(prisma, attacker.id, 'win_3_pvp') : Promise.resolve(),
           awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
         ])
       })(),

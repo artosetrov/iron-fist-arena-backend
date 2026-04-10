@@ -99,9 +99,13 @@ struct BattleResultCardView: View {
                 .animation(.easeIn(duration: 0.6), value: showCard)
                 .allowsHitTesting(false)
 
-            // Main card — content-sized, vertically centered
-            cardContent
-                .background(
+            // Main card — scrollable so buttons are always reachable
+            ScrollView(.vertical, showsIndicators: false) {
+                cardContent
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.modalRadius))
+            .background(
                     RadialGlowBackground(
                         baseColor: DarkFantasyTheme.bgPrimary,
                         glowColor: DarkFantasyTheme.bgSecondary,
@@ -120,7 +124,7 @@ struct BattleResultCardView: View {
                 .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxHeight: UIScreen.main.bounds.height * 0.88)
                 .offset(x: shakeOffset)
                 .opacity(showCard ? 1 : 0)
         }

@@ -10,6 +10,7 @@ import {
   GEM_DROP_MIN,
   GEM_DROP_MAX,
 } from '@/lib/game/gold-mine'
+import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -84,6 +85,9 @@ export async function POST(req: NextRequest) {
     })
 
     const slots = await buildSlotsArray(prisma, character_id, character.goldMineSlots)
+
+    // Tutorial quest progress (non-critical, fire-and-forget)
+    updateTutorialQuestProgress(prisma, character_id, 'start_mining').catch(() => {})
 
     return NextResponse.json({ slots })
   } catch (error) {

@@ -408,6 +408,9 @@ struct FortuneWheelDetailView: View {
                 Text(resultAmountText(vm, result: result))
                     .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.center)
                     .padding(.bottom, LayoutConstants.spaceLG)
 
                 // Dismiss button

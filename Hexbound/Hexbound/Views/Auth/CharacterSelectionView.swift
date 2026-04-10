@@ -35,6 +35,13 @@ struct CharacterSelectionView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                         .padding(.vertical, LayoutConstants.spaceXS)
 
+                    // Currency bar — shows selected hero's gold & gems + GET CURRENCY button
+                    if let selected = vm.selectedCharacter {
+                        currencyBar(for: selected)
+                            .padding(.horizontal, LayoutConstants.screenPadding)
+                            .padding(.bottom, LayoutConstants.spaceSM)
+                    }
+
                     if appState.isGuest {
                         guestBanner
                             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -83,6 +90,7 @@ struct CharacterSelectionView: View {
                 case .onboarding: OnboardingDetailView()
                 case .register: RegisterDetailView()
                 case .settings: SettingsDetailView()
+                case .currencyPurchase(let tab): CurrencyPurchaseView(initialTab: tab)
                 default: PlaceholderView()
                 }
             }
@@ -130,6 +138,44 @@ struct CharacterSelectionView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
         }
         .padding(.top, LayoutConstants.spaceMD)
+    }
+
+    // MARK: - Currency Bar
+
+    private func currencyBar(for character: Character) -> some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            CurrencyDisplay(
+                gold: character.gold,
+                gems: character.gems,
+                size: .compact,
+                currencyType: .both,
+                animated: false
+            )
+
+            Spacer()
+
+            Button {
+                HapticManager.medium()
+                SFXManager.shared.play(.uiTap)
+                appState.authPath.append(AppRoute.currencyPurchase())
+            } label: {
+                Text("GET CURRENCY")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(0.8)
+                    .frame(height: 32)
+                    .padding(.horizontal, LayoutConstants.spaceMD)
+            }
+            .buttonStyle(.compactPrimary)
+        }
+        .padding(LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.6))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                        .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 0.5)
+                )
+        )
     }
 
     // MARK: - Content Area
@@ -703,6 +749,12 @@ struct HeroSelectionCard: View {
                         .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
                 }
+            }
+
+            // HP & Stamina bars
+            VStack(spacing: LayoutConstants.space2XS) {
+                HPBarView(currentHp: character.currentHp, maxHp: character.maxHp, size: .compact)
+                StaminaBarView(currentStamina: character.currentStamina, maxStamina: character.maxStamina, size: .compact, showPlus: false)
             }
 
             // Glass stat pills

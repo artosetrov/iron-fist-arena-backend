@@ -605,7 +605,8 @@ NPC: "Добро пожаловать в Hexbound! Давай покажу го�
 
 | Кто | Бонус | Когда |
 |-----|-------|-------|
-| **Новый игрок** (пришёл по ссылке) | Welcome Gift ×1.5: 750g + Uncommon weapon (вместо Common) + 75 stamina | При создании персонажа |
+| **Любой новый игрок** | Welcome Gift: 500g + Common weapon (class-specific) + 50 stamina + 2 health potions | При POST /api/tutorial |
+| **Новый игрок** (пришёл по ссылке) | Welcome Gift + 250g бонус = 750g total | При POST /api/tutorial с referral_code |
 | **Пригласивший** | 500g + 10 gems | Когда приглашённый достигает Lv5 (proof of engagement) |
 
 **Ограничения:**
@@ -646,6 +647,7 @@ model ReferralUse {
 │ [Копировать ссылку]  [Поделиться]│
 │                                  │
 │ Друг получит: 750g + оружие      │
+│ (500g base + 250g bonus)         │
 │ Ты получишь: 500g + 10 gems      │
 │                                  │
 │ Приглашено: 3/20                 │

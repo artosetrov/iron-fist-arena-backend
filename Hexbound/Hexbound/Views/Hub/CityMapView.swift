@@ -129,10 +129,13 @@ struct CityMapView: View {
 
                         // Layer 3.5: Building labels (rendered ABOVE all sprites to prevent overlap)
                         ForEach(buildings) { building in
-                            let posX = terrainSize.width * building.relativeX
+                            let rawPosX = terrainSize.width * building.relativeX
                             let posY = terrainSize.height * building.relativeY
                             let bHeight = terrainSize.height * building.relativeSize
                             let locked = isBuildinglocked(building)
+                            // Clamp label X so it doesn't clip off left/right edges
+                            let labelMargin: CGFloat = 60
+                            let posX = min(max(rawPosX, labelMargin), terrainSize.width - labelMargin)
                             CityBuildingLabel(
                                 text: building.label,
                                 visible: true,

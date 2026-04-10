@@ -143,8 +143,10 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Extra gold for referred players (goes to account/user level now)
+      // Base welcome gold + extra for referred players
+      const baseGold = WELCOME_GIFT.baseGold
       const extraGold = isReferred ? REFERRAL_BONUS.extraGold : 0
+      const totalGold = baseGold + extraGold
 
       // Update character: advance step, add stamina
       const updatedCharacter = await tx.character.update({
@@ -159,11 +161,11 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Add referral bonus gold to user account
-      if (extraGold > 0) {
+      // Add welcome gold + referral bonus to user account
+      if (totalGold > 0) {
         await tx.user.update({
           where: { id: user.id },
-          data: { gold: { increment: extraGold } },
+          data: { gold: { increment: totalGold } },
         })
       }
 

@@ -135,7 +135,7 @@ struct LoginView: View {
                     }
 
                     // 5. Secondary actions
-                    HStack(spacing: LayoutConstants.spaceLG) {
+                    HStack(spacing: LayoutConstants.spaceSM) {
                         Button("Forgot Password?") {
                             SFXManager.shared.play(.uiTap)
                             vm.showForgotPassword = true

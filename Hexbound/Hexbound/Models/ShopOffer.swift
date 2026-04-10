@@ -56,11 +56,16 @@ struct ShopOffer: Codable, Identifiable {
             case "gold": return "\(item.quantity) Gold"
             case "gems": return "\(item.quantity) Gems"
             case "xp": return "\(item.quantity) XP"
-            case "consumable": return "\(item.quantity)x \(item.id ?? "potion")"
-            case "item": return "\(item.quantity)x \(item.id ?? "item")"
+            case "consumable": return "\(item.quantity)x \(Self.displayName(for: item.id ?? "potion"))"
+            case "item": return "\(item.quantity)x \(Self.displayName(for: item.id ?? "item"))"
             default: return "\(item.quantity)x \(item.type)"
             }
         }.joined(separator: ", ")
+    }
+
+    /// Converts internal item keys (e.g. "health_potion_large") to display names ("Health Potion Large")
+    private static func displayName(for key: String) -> String {
+        key.replacingOccurrences(of: "_", with: " ").capitalized
     }
 }
 

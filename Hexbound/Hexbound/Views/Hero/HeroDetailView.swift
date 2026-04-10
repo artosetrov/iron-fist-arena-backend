@@ -465,6 +465,7 @@ struct HeroDetailView: View {
                         .font(DarkFantasyTheme.cardTitle)
                         .foregroundStyle(color)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     Button {
                         withAnimation(MotionConstants.snappy) {

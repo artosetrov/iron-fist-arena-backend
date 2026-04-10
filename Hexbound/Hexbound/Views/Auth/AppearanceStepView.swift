@@ -115,7 +115,7 @@ struct AppearanceStepView: View {
                             Text(origin.description)
                                 .font(DarkFantasyTheme.body)
                                 .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                .lineLimit(1)
+                                .lineLimit(2)
                         }
 
                         Spacer(minLength: 0)

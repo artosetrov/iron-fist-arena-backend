@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -88,8 +89,9 @@ export async function POST(req: NextRequest) {
       return { won, correctShell: secretData.correctShell, win_amount, gold: userGold, characterId: sessionRow.character_id }
     })
 
-    // Update daily quest progress (outside transaction, non-critical)
+    // Update daily + tutorial quest progress (outside transaction, non-critical)
     await updateDailyQuestProgress(prisma, result.characterId, 'shell_game_play')
+    updateTutorialQuestProgress(prisma, result.characterId, 'try_tavern').catch(() => {})
 
     return NextResponse.json({
       won: result.won,

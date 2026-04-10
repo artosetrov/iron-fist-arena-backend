@@ -15,6 +15,8 @@ export const STARTER_WEAPON_BY_CLASS: Record<string, string> = {
 
 // ── Welcome gift amounts ──────────────────────────────────────────────
 export const WELCOME_GIFT = {
+  /** Starting gold for all new characters (enough to buy first gear) */
+  baseGold: 500,
   staminaBonus: 50,
   healthPotionCount: 2,
   healthPotionType: 'health_potion_small' as const,
@@ -121,6 +123,45 @@ export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
     rewards: { gold: 500 },
   },
 ]
+
+// ── Helper: update tutorial quest progress (fire-and-forget) ─────────
+/**
+ * Increment tutorial quest progress for a character.
+ *
+ * - Finds the TutorialQuest row matching characterId + questId.
+ * - If found and not yet completed, atomically increments progress.
+ * - Auto-marks as completed when progress >= target.
+ * - Does nothing if quest doesn't exist yet (quest auto-created at unlock level).
+ * - Silently swallows errors (non-critical path).
+ *
+ * Call this from game endpoints after the relevant action succeeds,
+ * OUTSIDE the main transaction (same pattern as updateDailyQuestProgress).
+ */
+export async function updateTutorialQuestProgress(
+  prisma: import('@prisma/client').PrismaClient,
+  characterId: string,
+  questId: string,
+  increment: number = 1,
+): Promise<void> {
+  try {
+    // Atomic increment using raw SQL to prevent race conditions
+    await prisma.$executeRawUnsafe(
+      `UPDATE "tutorial_quests"
+       SET "progress" = LEAST("progress" + $1, "target"),
+           "is_completed" = CASE WHEN LEAST("progress" + $1, "target") >= "target" THEN true ELSE false END,
+           "completed_at" = CASE WHEN LEAST("progress" + $1, "target") >= "target" AND "completed_at" IS NULL THEN NOW() ELSE "completed_at" END
+       WHERE "character_id" = $2
+         AND "quest_id" = $3
+         AND "is_completed" = false`,
+      increment,
+      characterId,
+      questId,
+    )
+  } catch (error) {
+    // Non-critical: log but don't throw
+    console.error(`tutorial quest progress error [${questId}]:`, error)
+  }
+}
 
 // ── Helper: generate referral code ────────────────────────────────────
 export function generateReferralCode(): string {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { bpXpForLevel } from '@/lib/game/balance'
+import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 
 function formatRewardName(rewardType: string): string {
   switch (rewardType) {
@@ -136,6 +137,9 @@ export async function GET(req: NextRequest) {
         amount: r.rewardAmount,
         claimed: r.claimed,
       }))
+
+    // Tutorial quest: explore_endgame (fire-and-forget)
+    updateTutorialQuestProgress(prisma, characterId, 'explore_endgame').catch(() => {})
 
     return NextResponse.json({
       season_name: activeSeason.theme ?? `Season ${activeSeason.number}`,

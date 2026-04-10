@@ -120,11 +120,15 @@ struct OnboardingDetailView: View {
                 Text(title)
                     .font(DarkFantasyTheme.body.weight(.semibold))
                     .foregroundStyle(isActive ? DarkFantasyTheme.goldBright : DarkFantasyTheme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
                 if let subtitle {
                     Text(subtitle)
                         .font(DarkFantasyTheme.body.weight(.semibold))
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
         }

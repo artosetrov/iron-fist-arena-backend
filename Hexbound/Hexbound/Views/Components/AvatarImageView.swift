@@ -37,8 +37,18 @@ struct AvatarImageView: View {
     }
 
     private var fallbackIcon: some View {
-        AssetPlaceholderView(systemIcon: "shield.fill")
-            .frame(width: size, height: size)
+        // Show class icon instead of generic shield when no avatar is available
+        ZStack {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgTertiary)
+            Image(characterClass.iconAsset)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: size * 0.5, height: size * 0.5)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+        }
+        .frame(width: size, height: size)
             .task {
                 // Try to fetch from network in background
                 let resolvedKey = cache.skinImageKey(for: skinKey)

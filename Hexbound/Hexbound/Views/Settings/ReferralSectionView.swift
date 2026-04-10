@@ -12,6 +12,7 @@ struct ReferralSectionView: View {
     @State private var qualifiedCount: Int = 0
     @State private var maxReferrals: Int = 20
     @State private var alreadyReferred: Bool = false
+    @State private var loadFailed: Bool = false
 
     @State private var friendCode: String = ""
     @State private var isApplying: Bool = false
@@ -34,6 +35,20 @@ struct ReferralSectionView: View {
             // My referral code + share
             if let code = referralCode {
                 myCodeRow(code)
+            } else if loadFailed {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("Could not load referral code")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Spacer()
+                    Button("Retry") {
+                        loadFailed = false
+                        Task { await loadReferralData() }
+                    }
+                    .buttonStyle(.ghost)
+                }
             } else {
                 HStack {
                     ProgressView()
@@ -231,6 +246,9 @@ struct ReferralSectionView: View {
             }
         } catch {
             print("Referral data load failed:", error)
+            await MainActor.run {
+                self.loadFailed = true
+            }
         }
     }
 
