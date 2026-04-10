@@ -218,7 +218,8 @@ struct CityMapView: View {
         // Arena — free PvP fights remaining
         case "arena":
             let used = appState.currentCharacter?.freePvpToday ?? 0
-            let remaining = AppConstants.freePvpPerDay - used
+            let limit = cache.gameConfig?.freePvpPerDay ?? AppConstants.freePvpPerDay
+            let remaining = limit - used
             guard remaining > 0 else { return nil }
             return "FREE \(remaining)"
 

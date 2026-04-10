@@ -68,6 +68,8 @@ enum AppConstants {
 
     // MARK: - Game
     static let maxStamina = 120
-    static let freePvpPerDay = 5
+    /// Fallback only — real value comes from `/api/game/init` via `cache.gameConfig.freePvpPerDay`.
+    /// Do NOT read directly in UI code. See `CityMapView` / `ArenaViewModel` for usage pattern.
+    static let freePvpPerDay = 3
     static let pvpStaminaCost = 10
 }

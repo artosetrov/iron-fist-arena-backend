@@ -50,11 +50,13 @@ final class ArenaViewModel {
     /// Gear score is server-computed; not returned in Character model yet
     var playerGearScore: Int { 0 }
     var rank: PvPRank { PvPRank.fromRating(pvpRating) }
-    /// Number of free PvP fights USED today (0..3)
+    /// Number of free PvP fights USED today (0..freePvpPerDayLimit)
     var freePvpUsed: Int { character?.freePvpToday ?? 0 }
+    /// Daily free PvP limit — source: `/api/game/init` (cache.gameConfig), fallback `AppConstants`.
+    var freePvpPerDayLimit: Int { cache.gameConfig?.freePvpPerDay ?? AppConstants.freePvpPerDay }
     /// Number of free PvP fights still REMAINING today
-    var freePvpRemaining: Int { AppConstants.freePvpPerDay - freePvpUsed }
-    var hasFreePvp: Bool { freePvpUsed < AppConstants.freePvpPerDay }
+    var freePvpRemaining: Int { freePvpPerDayLimit - freePvpUsed }
+    var hasFreePvp: Bool { freePvpUsed < freePvpPerDayLimit }
     var firstWinToday: Bool { character?.firstWinToday ?? false }
     var currentStamina: Int { character?.currentStamina ?? 0 }
     var maxStamina: Int { character?.maxStamina ?? 120 }
