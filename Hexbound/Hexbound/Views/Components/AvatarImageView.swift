@@ -2,13 +2,19 @@ import SwiftUI
 
 /// Reusable avatar image that resolves the character's skinKey via GameDataCache + AssetManager.
 /// Uses 3-tier resolution: bundle → disk cache → network.
-/// Falls back to the class icon when no skin image is available.
+///
+/// When `skinKey` cannot be resolved and a `deterministicSeed` is provided, the view picks a
+/// stable portrait from a per-class skin pool (deterministic via the seed hash). Only when
+/// both the primary skin and the pool fallback fail does it show the class icon fallback.
 struct AvatarImageView: View {
     @Environment(GameDataCache.self) private var cache
 
     let skinKey: String?
     let characterClass: CharacterClass
     let size: CGFloat
+    /// Stable seed (e.g. character id) used to pick a deterministic pool portrait when
+    /// the primary skinKey cannot be resolved. If nil, falls through to the class icon.
+    var deterministicSeed: String? = nil
 
     @State private var resolvedImage: UIImage?
     @State private var isLoading = false
@@ -16,12 +22,11 @@ struct AvatarImageView: View {
     var body: some View {
         let resolvedKey = cache.skinImageKey(for: skinKey)
         if let image = resolvedImage ?? AssetManager.shared.image(forKey: resolvedKey) {
-            Image(uiImage: image)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFill()
-                .frame(width: size, height: size)
-                .clipped()
+            renderedImage(image)
+        } else if let poolKey = classPoolKey,
+                  let poolImage = AssetManager.shared.image(forKey: poolKey) {
+            // Deterministic class-based pool fallback
+            renderedImage(poolImage)
         } else if isLoading {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                 .fill(DarkFantasyTheme.bgTertiary)
@@ -35,6 +40,51 @@ struct AvatarImageView: View {
             fallbackIcon
         }
     }
+
+    // MARK: - Rendered Image
+
+    private func renderedImage(_ image: UIImage) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFill()
+            .frame(width: size, height: size)
+            .clipped()
+    }
+
+    // MARK: - Class Pool Fallback
+
+    /// Resolved asset key from the per-class skin pool, picked deterministically by seed.
+    private var classPoolKey: String? {
+        guard let seed = deterministicSeed else { return nil }
+        let pool = Self.skinPool(for: characterClass)
+        guard !pool.isEmpty else { return nil }
+        let idx = Self.stableHash(seed) % pool.count
+        return pool[idx]
+    }
+
+    /// Per-class pool of existing bundled skin assets used as random-but-stable avatars
+    /// for opponents that do not have a dedicated skin.
+    private static func skinPool(for characterClass: CharacterClass) -> [String] {
+        switch characterClass {
+        case .warrior: return ["warlord", "knight", "barbarian", "valkyrie"]
+        case .rogue:   return ["shadow", "huntress"]
+        case .mage:    return ["sorceress", "enchantress"]
+        case .tank:    return ["knight", "warlord"]
+        }
+    }
+
+    /// Stable djb2 hash — unlike Swift's `String.hashValue`, this is deterministic across
+    /// process launches, so the same character always gets the same portrait.
+    private static func stableHash(_ s: String) -> Int {
+        var h = 5381
+        for scalar in s.unicodeScalars {
+            h = ((h << 5) &+ h) &+ Int(scalar.value)
+        }
+        return abs(h)
+    }
+
+    // MARK: - Class Icon Fallback
 
     private var fallbackIcon: some View {
         // Show class icon instead of generic shield when no avatar is available

@@ -251,20 +251,29 @@ export async function getGemCostsConfig() {
 }
 
 // --- Inventory ---
+// NOTE: `inventory.max_slots` removed from live-config (CRIT-04).
+// MAX_SLOTS is a DERIVED value (BASE_SLOTS + MAX_EXPANSIONS*EXPAND_AMOUNT), not
+// configurable. Per-character slot count lives on Character.inventorySlots.
+// Do not re-introduce `inventory.max_slots` in game_config — it created
+// a confusing two-source-of-truth bug where loot.ts read 100 while shop/expand
+// correctly used per-character 28..58.
 export async function getInventoryConfig() {
   const configs = await getGameConfigs({
-    'inventory.max_slots': INVENTORY.MAX_SLOTS,
     'inventory.base_slots': INVENTORY.BASE_SLOTS,
     'inventory.expand_amount': INVENTORY.EXPAND_AMOUNT,
     'inventory.expand_cost_gold': INVENTORY.EXPAND_COST_GOLD,
     'inventory.max_expansions': INVENTORY.MAX_EXPANSIONS,
   })
+  const baseSlots = configs['inventory.base_slots'] as number
+  const expandAmount = configs['inventory.expand_amount'] as number
+  const maxExpansions = configs['inventory.max_expansions'] as number
   return {
-    MAX_SLOTS: configs['inventory.max_slots'] as number,
-    BASE_SLOTS: configs['inventory.base_slots'] as number,
-    EXPAND_AMOUNT: configs['inventory.expand_amount'] as number,
+    BASE_SLOTS: baseSlots,
+    EXPAND_AMOUNT: expandAmount,
     EXPAND_COST_GOLD: configs['inventory.expand_cost_gold'] as number,
-    MAX_EXPANSIONS: configs['inventory.max_expansions'] as number,
+    MAX_EXPANSIONS: maxExpansions,
+    /** Derived hard ceiling, not read from DB. */
+    MAX_SLOTS: baseSlots + maxExpansions * expandAmount,
   }
 }
 

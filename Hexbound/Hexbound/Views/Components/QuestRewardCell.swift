@@ -32,10 +32,10 @@ enum QuestRewardType {
     }
 }
 
-/// Loot-style reward cell — 72×72 square with gradient fill, corner brackets,
-/// inner border, radial glow behind icon, and value text.
-///
-/// Inspired by `ItemCardView` inventory cells but purpose-built for currency rewards.
+/// Loot-style reward cell that mirrors `ItemCardView` (`.shop` context) layer-for-layer:
+/// gradient background → radial glow → art filling the cell → bottom vignette →
+/// corner accents → inner/outer borders → corner diamonds → rarity shadow.
+/// The value is rendered in a bottom price-bar, exactly like the shop price bar.
 ///
 /// Usage:
 /// ```
@@ -50,66 +50,124 @@ struct QuestRewardCell: View {
     private let cellSize: CGFloat = 72
 
     var body: some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            // Icon with radial glow
-            ZStack {
-                // Radial glow behind icon
-                Circle()
-                    .fill(type.borderColor)
-                    .frame(width: 48, height: 48)
-                    .blur(radius: 12)
-                    .opacity(0.25)
-                    .offset(y: -2)
-
-                Image(type.assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 28, height: 28)
-                    .shadow(color: Color.black.opacity(0.4), radius: 2, y: 1)
-            }
-
-            // Value
-            Text("\(value)")
-                .font(DarkFantasyTheme.buttonLabelCompact)
-                .foregroundStyle(type.accentColor)
-                .monospacedDigit()
-                .lineLimit(1)
-                .shadow(color: Color.black.opacity(0.6), radius: 1.5, y: 1)
-        }
-        .frame(width: cellSize, height: cellSize)
-        // Gradient background (rarity-style: accent 15% top → bgAbyss 95% bottom)
-        .background(
-            LinearGradient(
-                colors: [
-                    type.borderColor.opacity(0.15),
-                    DarkFantasyTheme.bgAbyss.opacity(0.95)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
+        cellBase
+            // MARK: - Inner bevel border (mirrors ItemCardView)
+            .innerBorder(
+                cornerRadius: LayoutConstants.cardRadius - 2,
+                inset: 2,
+                color: type.borderColor.opacity(0.15)
             )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
-        // Surface lighting overlay
-        .surfaceLighting(cornerRadius: LayoutConstants.radiusSM, topHighlight: 0.08, bottomShadow: 0.12)
-        // Inner border bevel
-        .innerBorder(
-            cornerRadius: LayoutConstants.radiusSM - 2,
-            inset: 2,
-            color: type.borderColor.opacity(0.12)
-        )
-        // Outer border
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .stroke(type.borderColor.opacity(0.5), lineWidth: 1.5)
-        )
-        // Corner brackets (L-shaped accents)
-        .cornerBrackets(
-            color: type.borderColor.opacity(0.4),
-            length: 8,
-            thickness: 1.5
-        )
-        // Glow shadow
-        .shadow(color: type.borderColor.opacity(0.15), radius: 4)
-        .shadow(color: Color.black.opacity(0.3), radius: 2, y: 1)
+            // MARK: - Inner bevel stroke (subtle)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 2)
+                    .padding(1)
+            )
+            // MARK: - Outer rarity border
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(type.borderColor.opacity(0.7), lineWidth: 2.5)
+            )
+            // MARK: - Corner diamonds (rarity-colored)
+            .cornerDiamonds(color: type.borderColor.opacity(0.5), size: 4)
+            // MARK: - Glow shadows (mirrors high-rarity item shadow)
+            .shadow(color: type.borderColor.opacity(0.25), radius: 6)
+            .shadow(color: type.borderColor.opacity(0.15), radius: 4)
+            .frame(width: cellSize, height: cellSize)
+    }
+
+    // MARK: - Cell Base (layers 1-5 — identical structure to ItemCardView.cellBase)
+
+    @ViewBuilder
+    private var cellBase: some View {
+        ZStack {
+            // MARK: - Layer 1: Gradient background
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(LinearGradient(
+                    colors: [
+                        type.borderColor.opacity(0.10),
+                        DarkFantasyTheme.bgAbyss.opacity(0.95)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+
+            // MARK: - Layer 2: Radial glow
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            type.borderColor.opacity(0.18),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 48
+                    )
+                )
+
+            // MARK: - Layer 3: Reward asset — fills the entire cell
+            Image(type.assetName)
+                .resizable()
+                .scaledToFit()
+                .interpolation(.high)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(LayoutConstants.space2XS)
+                .shadow(color: Color.black.opacity(0.5), radius: 3, y: 2)
+                .clipped()
+
+            // MARK: - Layer 4: Bottom vignette
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [
+                        Color.clear,
+                        DarkFantasyTheme.bgAbyss.opacity(0.85)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 24)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+
+            // MARK: - Layer 5: Corner accents (L-brackets)
+            CornerAccentsOverlay(
+                cornerRadius: LayoutConstants.cardRadius,
+                color: DarkFantasyTheme.borderMedium.opacity(0.6),
+                length: 8,
+                lineWidth: 1.5
+            )
+        }
+        // MARK: - Bottom price-bar overlay (mirrors ItemCardView.shopPriceBar)
+        .overlay(alignment: .bottom) {
+            valueBar
+        }
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+    }
+
+    // MARK: - Value Bar (mirrors shop price bar)
+
+    @ViewBuilder
+    private var valueBar: some View {
+        Text("\(value)")
+            .font(DarkFantasyTheme.body.bold())
+            .foregroundStyle(type.accentColor)
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .shadow(color: Color.black.opacity(0.7), radius: 1.5, y: 1)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .frame(maxWidth: .infinity)
+            .background(DarkFantasyTheme.bgAbyss.opacity(0.65))
+            .clipShape(
+                .rect(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: LayoutConstants.cardRadius,
+                    bottomTrailingRadius: LayoutConstants.cardRadius,
+                    topTrailingRadius: 0
+                )
+            )
     }
 }

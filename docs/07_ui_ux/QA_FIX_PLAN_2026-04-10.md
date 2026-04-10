@@ -115,31 +115,345 @@ grep -n "gameConfig?.freePvpPerDay" Hexbound/Hexbound/Views/Hub/CityMapView.swif
 
 ---
 
-### W1.D1 — CRIT-04: INVENTORY.MAX_SLOTS dead constant
+### W1.D1 — CRIT-04 EXPANDED: INVENTORY.MAX_SLOTS runtime bug + dead constant
 
-**Bug:** `INVENTORY.MAX_SLOTS: 100` — мёртвая константа, реальный максимум 28 + 3×10 = 58.
+> **Scope upgrade (2026-04-10):** при recon'е обнаружен реальный runtime-баг, а не только косметическая константа. Что было в плане раньше (просто замена `100` на формулу `58` в `balance.ts`) недостаточно.
 
-**Evidence:** `backend/src/lib/game/balance.ts:336`
+**Real bug:** инконсистентность между loot-path и shop/expand-path:
 
-**Files to change:**
-1. `backend/src/lib/game/balance.ts:336` — заменить на computed:
-   ```typescript
-   MAX_SLOTS: 28 + 3 * 10, // BASE + MAX_EXPANSIONS * EXPAND_AMOUNT = 58
-   ```
-2. Grep на использование `MAX_SLOTS` по всему backend — убедиться что нет кода который опирается на 100.
+| Path | Проверка лимита | Фактический лимит |
+|---|---|---|
+| `shop/buy/route.ts:59` | `inventoryCount >= character.inventorySlots` | 28–58 (per-character) ✓ |
+| `inventory/expand/route.ts:24` | `BASE_SLOTS + MAX_EXPANSIONS * EXPAND_AMOUNT` | 58 ✓ |
+| **`loot.ts:312–318` (`persistLoot`)** | `inventoryCount >= MAX_SLOTS` | **100** ✗ |
 
-**Estimate:** 30 минут
+**Последствие:** игрок с `character.inventorySlots=28` может получить дроп при 28 предметах. Лут попадает в «призрачные слоты» 29–100. Шоп/expand после этого валидны. Визуально инвентарь показывает больше, чем может вместить формально.
 
-**Acceptance criteria:**
-```bash
-# MAX_SLOTS computed, не raw 100
-grep -n "MAX_SLOTS" backend/src/lib/game/balance.ts
+**Почему баг не обнаружен раньше:** проверка идёт в двух контурах (shop vs loot), кеш live-config скрывает рассинхрон, `MAX_SLOTS` читается из БД через `getInventoryConfig()` → fallback в `balance.ts` → 100.
 
-# Нигде не используется как "hard cap 100"
-grep -rn "MAX_SLOTS" backend/src --include="*.ts"
+**Evidence:**
+- `backend/src/lib/game/loot.ts:76-79, 305-318` — `persistLoot` использует `MAX_SLOTS` вместо `character.inventorySlots`
+- `backend/src/lib/game/balance.ts:335-341` — `INVENTORY.MAX_SLOTS: 100` как raw value
+- `backend/src/lib/game/live-config.ts:254-269` — `getInventoryConfig()` возвращает `MAX_SLOTS` из live-config
+- `admin/src/actions/config.ts:181` — админка **сидит** `inventory.max_slots=100` в БД при reset-defaults
+- `admin/src/app/(dashboard)/balance/balance-client.tsx:293` — UI редактор с `defaultValue: 100`
+- `backend/src/app/api/shop/buy/route.ts:59` — корректная per-character проверка
+- `backend/src/app/api/inventory/expand/route.ts:24` — корректная формула BASE+MAX*EXPAND
+
+**Root design error:** `MAX_SLOTS` — это **derived value** (формула от `BASE_SLOTS`, `MAX_EXPANSIONS`, `EXPAND_AMOUNT`), а не настраиваемая константа. Правильно вычисляемое значение = 58. Редактировать его отдельно в live-config = source of drift.
+
+---
+
+#### 8-шаговый sub-план
+
+**Step 1 — `loot.ts` persistLoot refactor** (правильная per-character проверка):
+
+```typescript
+// loot.ts:305
+export async function persistLoot(
+  prisma: PrismaClient,
+  characterId: string,
+  drop: DroppedItem,
+  playerLevel: number,
+): Promise<LootResponseItem | null> {
+  // Check inventory capacity — per-character, NOT global MAX_SLOTS
+  const character = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { inventorySlots: true },
+  });
+  const maxSlots = character?.inventorySlots ?? INVENTORY.BASE_SLOTS;
+  const inventoryCount = await prisma.equipmentInventory.count({
+    where: { characterId },
+  });
+  if (inventoryCount >= maxSlots) {
+    return null; // Inventory full — drop is lost
+  }
+  // ... rest unchanged
+}
 ```
 
-**Risk:** низкий.
+Удалить helper `getMaxInventorySlots()` (строки 76–79) — больше не нужен.
+Импорт `getInventoryConfig` можно оставить — он всё ещё используется для других полей; а `getMaxInventorySlots()` — нет.
+
+Также убрать импорт `INVENTORY.MAX_SLOTS` использование если оно там есть — полагаться только на `INVENTORY.BASE_SLOTS` как fallback.
+
+**Step 2 — `balance.ts` INVENTORY cleanup:**
+
+```typescript
+// balance.ts:334-341
+// --- Inventory ---
+export const INVENTORY = {
+  BASE_SLOTS: 28,
+  EXPAND_AMOUNT: 10,
+  EXPAND_COST_GOLD: 5000,
+  MAX_EXPANSIONS: 3,
+  /**
+   * Derived hard cap: BASE_SLOTS + MAX_EXPANSIONS * EXPAND_AMOUNT = 58.
+   * NOT a live-config value. NOT editable via admin.
+   * Per-character actual limit lives in `Character.inventorySlots` (28-58).
+   */
+  get MAX_SLOTS() {
+    return this.BASE_SLOTS + this.MAX_EXPANSIONS * this.EXPAND_AMOUNT;
+  },
+} as const;
+```
+
+**Риск getter:** TypeScript `as const` может конфликтовать с getter. Fallback — обычное поле:
+```typescript
+export const INVENTORY = {
+  BASE_SLOTS: 28,
+  EXPAND_AMOUNT: 10,
+  EXPAND_COST_GOLD: 5000,
+  MAX_EXPANSIONS: 3,
+  MAX_SLOTS: 28 + 3 * 10, // DERIVED: BASE_SLOTS + MAX_EXPANSIONS * EXPAND_AMOUNT = 58
+} as const;
+```
++ комментарий про derived nature.
+
+**Step 3 — `live-config.ts` remove `inventory.max_slots`:**
+
+```typescript
+// live-config.ts:253-269
+export async function getInventoryConfig() {
+  const configs = await getGameConfigs({
+    // 'inventory.max_slots' REMOVED — derived value, not configurable.
+    // Use INVENTORY.MAX_SLOTS from balance.ts directly if global cap needed.
+    'inventory.base_slots': INVENTORY.BASE_SLOTS,
+    'inventory.expand_amount': INVENTORY.EXPAND_AMOUNT,
+    'inventory.expand_cost_gold': INVENTORY.EXPAND_COST_GOLD,
+    'inventory.max_expansions': INVENTORY.MAX_EXPANSIONS,
+  })
+  return {
+    MAX_SLOTS: INVENTORY.BASE_SLOTS + (configs['inventory.max_expansions'] as number) * (configs['inventory.expand_amount'] as number),
+    BASE_SLOTS: configs['inventory.base_slots'] as number,
+    EXPAND_AMOUNT: configs['inventory.expand_amount'] as number,
+    EXPAND_COST_GOLD: configs['inventory.expand_cost_gold'] as number,
+    MAX_EXPANSIONS: configs['inventory.max_expansions'] as number,
+  }
+}
+```
+
+`MAX_SLOTS` в return остаётся для back-compat (если где-то в коде читается), но вычисляется из derived-формулы, не из БД.
+
+**Step 4 — admin cleanup:**
+
+4a. `admin/src/actions/config.ts:181` — удалить строку:
+```typescript
+{ key: 'inventory.max_slots', value: 100, category: 'inventory', description: 'Absolute maximum inventory slots' },
+```
+
+4b. `admin/src/app/(dashboard)/balance/balance-client.tsx:293` — удалить UI элемент:
+```typescript
+{ key: 'inventory.max_slots', label: 'Max Slots (Hard Cap)', ... },
+```
+
+Убрать из UI окна балансного редактора, чтобы админ не мог случайно перезаписать.
+
+**Step 5 — SQL migration для stale данных:**
+
+Создать `backend/prisma/migrations/20260410_remove_inventory_max_slots/migration.sql`:
+```sql
+-- CRIT-04: MAX_SLOTS is now a derived constant, not a live-config value.
+-- Remove stale entry from game_config table to prevent drift.
+DELETE FROM game_config WHERE key = 'inventory.max_slots';
+```
+
+После миграции нужно **инвалидировать Redis кеш** — либо:
+- `await cacheDel('gameconfig:inventory.max_slots')`
+- или ждать 5 минут TTL
+- или добавить в migration script `backend/scripts/migrate-crit04.ts` который и delete, и cache clear
+
+**Рекомендую:** отдельный migration script `backend/scripts/migrate-crit04-inventory.ts` вместо SQL migration, чтобы он мог:
+1. `DELETE FROM game_config WHERE key = 'inventory.max_slots'`
+2. Инвалидировать кеш: `await cacheDel('gameconfig:inventory.max_slots')` + batch keys
+3. Логировать результат
+
+**Step 6 — Prod audit script для overflow detection:**
+
+`backend/scripts/audit-inventory-overflow.ts`:
+```typescript
+// Detect characters where equipmentInventory count > inventorySlots
+// (data left over from the old persistLoot bug using MAX_SLOTS=100)
+import { prisma } from '../src/lib/prisma';
+
+async function main() {
+  const characters = await prisma.character.findMany({
+    select: {
+      id: true,
+      name: true,
+      inventorySlots: true,
+      _count: { select: { equipmentInventory: true } },
+    },
+  });
+  const overflowed = characters.filter(
+    (c) => c._count.equipmentInventory > c.inventorySlots
+  );
+  console.log(`Found ${overflowed.length} characters with inventory overflow:`);
+  for (const c of overflowed) {
+    console.log(`  ${c.id} (${c.name}): ${c._count.equipmentInventory}/${c.inventorySlots}`);
+  }
+}
+main().then(() => process.exit(0));
+```
+
+**Поведение после фикса:** overflowed персонажи просто перестанут получать дроп (persistLoot вернёт null для них до тех пор пока они не продадут/не выбросят лишние предметы, либо не расширят инвентарь). Это **нежелательно, но не критично** — игрок увидит «Inventory full» и поймёт что делать.
+
+**Альтернатива** (если audit покажет много overflow случаев): cleanup-миграция которая либо (а) увеличивает inventorySlots до фактического count, (б) перемещает overflow-items в «дропбокс», (с) автоматически продаёт дешевые overflow-items. **Решение принимать ПОСЛЕ запуска audit скрипта.**
+
+**Step 7 — CDO grep verification:**
+```bash
+# 1. persistLoot читает per-character, не MAX_SLOTS
+grep -n "character.*inventorySlots\|inventoryCount >= maxSlots" backend/src/lib/game/loot.ts
+
+# 2. getMaxInventorySlots() удалён
+grep -n "getMaxInventorySlots" backend/src/lib/game/loot.ts
+# Expected: no matches
+
+# 3. balance.ts MAX_SLOTS derived
+grep -n "MAX_SLOTS" backend/src/lib/game/balance.ts
+# Expected: either `MAX_SLOTS: 28 + 3 * 10` or `get MAX_SLOTS()`
+
+# 4. live-config не запрашивает inventory.max_slots из БД
+grep -n "inventory.max_slots" backend/src/lib/game/live-config.ts
+# Expected: no matches (or only in comment)
+
+# 5. admin seeds не содержат inventory.max_slots
+grep -rn "inventory.max_slots" admin/src/
+# Expected: no matches
+
+# 6. Нет merge conflicts
+grep -rn "^<<<<<<<\|^=======$\|^>>>>>>>" backend/ admin/ --include="*.ts" --include="*.tsx" --include="*.sql"
+# Expected: no matches
+
+# 7. Prisma schema не трогали (должна остаться без изменений)
+git diff --stat backend/prisma/schema.prisma admin/prisma/schema.prisma
+# Expected: only new migration file, no schema changes
+```
+
+**Step 8 — Commit plan:**
+
+Два коммита для чистоты (или один, если Артем предпочтёт):
+
+**Commit A** (code refactor):
+```
+fix(CRIT-04): remove dead INVENTORY.MAX_SLOTS + fix loot per-character limit
+
+persistLoot() now reads character.inventorySlots instead of global
+MAX_SLOTS constant, matching the per-character limit used in shop/buy
+and inventory/expand. Removes drift where loot could create ghost slots
+beyond character.inventorySlots (up to MAX_SLOTS=100).
+
+balance.ts INVENTORY.MAX_SLOTS is now a derived constant (58 = BASE +
+MAX_EXPANSIONS * EXPAND_AMOUNT), not a configurable live-config value.
+live-config.ts no longer reads inventory.max_slots from DB — value is
+computed from other INVENTORY fields.
+
+admin/config.ts and balance-client.tsx remove inventory.max_slots from
+seeds and balance editor UI.
+
+Part of W1.D1 of QA_FIX_PLAN_2026-04-10.md CRIT-04 EXPANDED
+```
+
+**Commit B** (migration + audit script):
+```
+chore(CRIT-04): migration script to remove stale inventory.max_slots
+
+backend/scripts/migrate-crit04-inventory.ts deletes stale game_config
+entry and invalidates Redis cache. Run once on dev → staging → prod
+after deploying Commit A.
+
+backend/scripts/audit-inventory-overflow.ts detects characters whose
+equipmentInventory count exceeds inventorySlots (legacy data from the
+old persistLoot bug). Run before migrate to decide cleanup strategy.
+
+Part of W1.D1 of QA_FIX_PLAN_2026-04-10.md CRIT-04 EXPANDED
+```
+
+---
+
+#### Files to change (total 6 code + 2 scripts + docs)
+
+| # | File | Change |
+|---|---|---|
+| 1 | `backend/src/lib/game/loot.ts` | `persistLoot()` reads `character.inventorySlots`; remove `getMaxInventorySlots()` |
+| 2 | `backend/src/lib/game/balance.ts` | `INVENTORY.MAX_SLOTS` derived value + doc comment |
+| 3 | `backend/src/lib/game/live-config.ts` | Remove `inventory.max_slots` from `getInventoryConfig()` reads |
+| 4 | `admin/src/actions/config.ts` | Remove line 181 (`inventory.max_slots` seed) |
+| 5 | `admin/src/app/(dashboard)/balance/balance-client.tsx` | Remove line 293 (`inventory.max_slots` UI) |
+| 6 | `backend/scripts/migrate-crit04-inventory.ts` | **NEW** — DELETE stale config key + cache invalidation |
+| 7 | `backend/scripts/audit-inventory-overflow.ts` | **NEW** — audit script for legacy overflow |
+| 8 | `docs/06_game_systems/BALANCE_CONSTANTS.md` | Update INVENTORY section if it exists |
+
+**pbxproj:** не трогаем (backend only).
+**Prisma schema:** не трогаем (инвентарь уже правильно моделируется).
+
+---
+
+#### Estimate
+
+| Step | Time |
+|---|---|
+| Code refactor (Steps 1–4) | 1.5h |
+| Migration + audit scripts (Steps 5–6) | 1h |
+| Dry-run на dev + audit результаты | 30min |
+| CDO + commits + doc update | 30min |
+| **Total** | **~3.5h** |
+
+---
+
+#### Agent dispatch (по ходу)
+
+- **После Step 1–4 (code changes):** `hexbound-studio:oracle` review loot.ts diff (async correctness, type safety, Prisma queries)
+- **После Step 5 (migration):** `hexbound-studio:fortress` review SQL migration (safety, rollback)
+- **После Step 6 (audit script):** `hexbound-studio:ledger` review (economy audit correctness — посчитал ли overflow правильно)
+- **Перед commit:** `hexbound-studio:gatekeeper` preflight
+
+---
+
+#### Risk register (CRIT-04 EXPANDED)
+
+| Risk | Probability | Impact | Mitigation |
+|---|---|---|---|
+| Prod имеет overflow случаи которые аудит покажет | Medium | Medium | Запустить audit скрипт ПЕРЕД кодом; если >5 случаев — отдельный cleanup план |
+| Redis кеш не инвалидирован после migration | Low | Low | Script делает `cacheDel` напрямую, fallback — подождать 5 min TTL |
+| `getter MAX_SLOTS()` ломает `as const` | Low | Low | Использовать literal expression вместо getter |
+| Другой код (dungeon loot, BP claim) читает `MAX_SLOTS` как 100 | Medium | High | Step 7 grep verification проверяет ВСЕ usages |
+| Battle Pass claim (`bp/claim/[level]/route.ts:386`) тоже имеет баг | High | High | **Проверить в рамках Step 1** — возможно расширение scope |
+
+**Red flag к внимательной проверке:** `backend/src/app/api/battle-pass/claim/[level]/route.ts:386` уже использует `lockedCharacter.inventory_slots` (per-character) — значит там **не** баг. Но нужно grep'нуть все пути создания `equipmentInventory` чтобы найти все нерефакторенные места.
+
+**Дополнительный grep на Step 0 (до старта):**
+```bash
+grep -rn "equipmentInventory.create\|equipmentInventory\.count" backend/src --include="*.ts"
+```
+Убедиться что все creators проверяют лимит корректно.
+
+---
+
+#### Acceptance criteria (final)
+
+```bash
+# Все grep'ы из Step 7 должны пройти
+# + новые проверки:
+
+# 1. persistLoot reads character.inventorySlots
+grep -A 5 "persistLoot" backend/src/lib/game/loot.ts | grep "character?.inventorySlots\|character\.inventorySlots"
+# Expected: 1 match
+
+# 2. Нет других мест где MAX_SLOTS используется как hard cap
+grep -rn "INVENTORY\.MAX_SLOTS\|config\.MAX_SLOTS" backend/src --include="*.ts"
+# Expected: only in balance.ts declaration + safe usages
+
+# 3. Audit script запускается без ошибок
+cd backend && npx tsx scripts/audit-inventory-overflow.ts
+# Expected: prints count (may be 0)
+
+# 4. Migration script запускается без ошибок на dev
+cd backend && npx tsx scripts/migrate-crit04-inventory.ts
+# Expected: "Deleted 0 or 1 rows, cache invalidated"
+```
+
+**Уверенность в фиксе:** высокая (код); средняя (prod data) — зависит от результата audit скрипта. Если audit покажет >5 overflow персонажей, нужен отдельный cleanup план (Step 6 alternative).
 
 ---
 

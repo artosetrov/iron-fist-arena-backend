@@ -56,10 +56,13 @@ struct ArenaOpponentCard: View {
 
             ZStack {
                 // 1. Full-bleed avatar background
+                //    deterministicSeed ensures a stable class-pool portrait when
+                //    opponent.avatar is nil or cannot be resolved.
                 AvatarImageView(
                     skinKey: opponent.avatar,
                     characterClass: opponent.characterClass,
-                    size: width
+                    size: width,
+                    deterministicSeed: opponent.id
                 )
                 .frame(width: width, height: height)
                 .clipped()
@@ -149,8 +152,11 @@ struct ArenaOpponentCard: View {
                 .lineLimit(1)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
 
-            // Class tag pill
-            ClassTagView(characterClass: opponent.characterClass)
+            // Class tag pill with small class icon badge (equipment indicator)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                classIconBadge
+                ClassTagView(characterClass: opponent.characterClass)
+            }
 
             // Rating — dominant display
             Text("\(opponent.pvpRating)")
@@ -170,6 +176,28 @@ struct ArenaOpponentCard: View {
     }
 
     // MARK: - Glass Stat Pill (uses shared GlassStatPill component)
+
+    // MARK: - Class Icon Badge
+
+    /// Small circular badge showing the opponent's class icon (was the main center
+    /// icon before avatars filled the card). Uses DS tokens only.
+    private var classIconBadge: some View {
+        Image(opponent.characterClass.iconAsset)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+            .padding(LayoutConstants.spaceXS)
+            .background(
+                Circle()
+                    .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
+            )
+            .overlay(
+                Circle()
+                    .stroke(classColor.opacity(0.45), lineWidth: 1)
+            )
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 2, y: 1)
+    }
 
     // MARK: - Difficulty Badge
 

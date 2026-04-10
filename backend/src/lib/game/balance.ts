@@ -332,12 +332,16 @@ export const STAT_PURCHASE = {
 } as const;
 
 // --- Inventory ---
+// NOTE: per-character slot count lives on Character.inventorySlots (default BASE_SLOTS,
+// grows by EXPAND_AMOUNT on each expand, capped at BASE_SLOTS + MAX_EXPANSIONS*EXPAND_AMOUNT).
+// There is NO separate global cap — MAX_SLOTS is derived, not configurable. See CRIT-04.
 export const INVENTORY = {
-  MAX_SLOTS: 100,
   BASE_SLOTS: 28,
   EXPAND_AMOUNT: 10,
   EXPAND_COST_GOLD: 5000,
   MAX_EXPANSIONS: 3, // 28 + 3*10 = 58 max
+  /** Derived hard ceiling — equals the maximum any character can ever reach. */
+  MAX_SLOTS: 28 + 3 * 10, // = 58
 } as const;
 
 // --- Extra PvP combat ---

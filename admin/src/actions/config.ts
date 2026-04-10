@@ -178,7 +178,8 @@ export async function seedDefaultConfigs() {
     { key: 'gem_costs.gold_mine_boost', value: 10, category: 'gem_costs', description: 'Gems to boost gold mine (2x reward)' },
 
     // Inventory
-    { key: 'inventory.max_slots', value: 100, category: 'inventory', description: 'Absolute maximum inventory slots' },
+    // NOTE: `inventory.max_slots` removed (CRIT-04). MAX_SLOTS is derived from
+    // base_slots + max_expansions * expand_amount, not a separate configurable key.
     { key: 'inventory.base_slots', value: 28, category: 'inventory', description: 'Starting inventory slots' },
     { key: 'inventory.expand_amount', value: 10, category: 'inventory', description: 'Slots added per expansion' },
     { key: 'inventory.expand_cost_gold', value: 5000, category: 'inventory', description: 'Gold cost per inventory expansion' },

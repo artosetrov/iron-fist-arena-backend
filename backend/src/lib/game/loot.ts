@@ -7,7 +7,7 @@
 // same type+rarity that already has art uploaded.
 // =============================================================================
 
-import { getDropChancesConfig, getRarityDistributionConfig, getInventoryConfig } from './live-config';
+import { getDropChancesConfig, getRarityDistributionConfig } from './live-config';
 import { PrismaClient } from '@prisma/client';
 import { getDropTuningConfig } from './item-balance';
 
@@ -71,11 +71,6 @@ const ITEM_TYPES: ItemType[] = [
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
-}
-
-async function getMaxInventorySlots(): Promise<number> {
-  const config = await getInventoryConfig();
-  return config.MAX_SLOTS;
 }
 
 /**
@@ -308,13 +303,21 @@ export async function persistLoot(
   drop: DroppedItem,
   playerLevel: number,
 ): Promise<LootResponseItem | null> {
-  // Check inventory capacity
-  const maxSlots = await getMaxInventorySlots();
+  // Check inventory capacity against PER-CHARACTER slot limit, not a global cap.
+  // Previously this used a global MAX_SLOTS (100) which allowed loot to exceed
+  // the player's actual inventorySlots (28-58), creating "ghost slots". See CRIT-04.
+  const character = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { inventorySlots: true },
+  });
+  if (!character) {
+    return null; // Character not found
+  }
   const inventoryCount = await prisma.equipmentInventory.count({
     where: { characterId },
   });
-  if (inventoryCount >= maxSlots) {
-    return null; // Inventory full — drop is lost
+  if (inventoryCount >= character.inventorySlots) {
+    return null; // Inventory full — drop is lost (player must sell/drop or expand)
   }
 
   // Find a matching catalog item

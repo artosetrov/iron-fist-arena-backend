@@ -288,9 +288,11 @@ const BALANCE_TABS: TabDef[] = [
       {
         id: 'inventory',
         title: 'Inventory',
-        description: 'Inventory capacity and expansion',
+        // Max inventory = base_slots + max_expansions * expand_amount (derived, not a separate field).
+        // Previously an `inventory.max_slots` field existed here but it was a second source of truth
+        // that allowed loot drops to exceed the per-character slot limit. Removed in CRIT-04.
+        description: 'Inventory capacity and expansion (max = base + max_expansions × expand_amount)',
         fields: [
-          { key: 'inventory.max_slots', label: 'Max Slots (Hard Cap)', description: 'Absolute maximum inventory slots', defaultValue: 100, step: 10, min: 1 },
           { key: 'inventory.base_slots', label: 'Base Slots', description: 'Starting inventory slots', defaultValue: 28, step: 1, min: 1 },
           { key: 'inventory.expand_amount', label: 'Expand Amount', description: 'Slots added per expansion', defaultValue: 10, step: 1, min: 1 },
           { key: 'inventory.expand_cost_gold', label: 'Expand Cost', description: 'Gold cost per inventory expansion', defaultValue: 5000, unit: 'gold', step: 500, min: 0 },

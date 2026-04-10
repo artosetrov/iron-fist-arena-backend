@@ -38,11 +38,12 @@ struct OpponentCardView: View {
         VStack(spacing: LayoutConstants.spaceSM) {
             // Top row: class icon + name + level
             HStack {
-                // Avatar
+                // Avatar — deterministicSeed falls back to a stable class-pool portrait
                 AvatarImageView(
                     skinKey: opponent.avatar,
                     characterClass: opponent.characterClass,
-                    size: 44
+                    size: 44,
+                    deterministicSeed: opponent.id
                 )
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
                 .overlay(
