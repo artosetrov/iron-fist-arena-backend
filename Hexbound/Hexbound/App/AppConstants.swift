@@ -66,10 +66,24 @@ enum AppConstants {
     static let udNPCMerchantDismissed = "npc_merchant_dismissed"
     static let udNPCArenaGuideDismissed = "npc_arena_guide_dismissed"
 
-    // MARK: - Game
+    // MARK: - Game (DEPRECATED fallbacks)
+    //
+    // ⚠️ These constants are DEPRECATED fallbacks only. The real values come from
+    // `/api/game/init` → `cache.gameConfig.*` and must be read cache-first with these
+    // as last-resort fallbacks (see `CityMapView`, `ArenaViewModel` for pattern).
+    //
+    // Do NOT add new hardcoded game constants here. The `check_ios_backend_drift.sh`
+    // preflight guard will block any new `static let` additions matching the forbidden
+    // name pattern. New game constants belong in `backend/src/lib/game/balance.ts` and
+    // must be exposed via `GameConfig` → `/api/game/init`.
+    //
+    // W4 Polish will remove these entirely once the SSoT migration is disk-persisted
+    // and version-gated.
+
+    // DEPRECATED: use cache.gameConfig.maxStamina — unused fallback, pending W4 removal
     static let maxStamina = 120
-    /// Fallback only — real value comes from `/api/game/init` via `cache.gameConfig.freePvpPerDay`.
-    /// Do NOT read directly in UI code. See `CityMapView` / `ArenaViewModel` for usage pattern.
+    // DEPRECATED: use cache.gameConfig.freePvpPerDay — migrated 2026-04-09 (W1.D3), kept as fallback
     static let freePvpPerDay = 3
+    // DEPRECATED: use cache.gameConfig.pvpStaminaCost — pending full migration in W4
     static let pvpStaminaCost = 10
 }

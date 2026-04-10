@@ -180,6 +180,25 @@ if [ -n "$BALANCE_CHANGED" ] || [ -n "$AUTO_DOC_CHANGED" ]; then
   echo ""
 fi
 
+# --- 9. iOS/backend constant drift (if AppConstants.swift or any iOS .swift changed) ---
+IOS_SWIFT_CHANGED=$(echo "$CHANGED" | grep -E '^Hexbound/Hexbound/.*\.swift$' || true)
+if [ -n "$IOS_SWIFT_CHANGED" ]; then
+  echo "## iOS ↔ Backend Constant Drift"
+  if [ -x "scripts/check_ios_backend_drift.sh" ]; then
+    if bash scripts/check_ios_backend_drift.sh > /tmp/hexbound_drift_check.log 2>&1; then
+      echo "  ✅ No iOS/backend game-constant drift"
+    else
+      echo "  ❌ Drift detected — see details:"
+      cat /tmp/hexbound_drift_check.log | sed 's/^/     /'
+      BLOCKERS="$BLOCKERS\n  - iOS hardcoded game constants (run: bash scripts/check_ios_backend_drift.sh)"
+      VERDICT="BLOCKED"
+    fi
+  else
+    echo "  ⚠️  scripts/check_ios_backend_drift.sh not found — skipping"
+  fi
+  echo ""
+fi
+
 # --- VERDICT ---
 echo "==============================="
 if [ "$VERDICT" = "BLOCKED" ]; then

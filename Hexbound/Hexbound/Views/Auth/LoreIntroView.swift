@@ -535,3 +535,11 @@ struct LoreIntroView: View {
         }
     }
 }
+
+// MARK: - Preview
+
+#Preview("LoreIntro — Hero") {
+    LoreIntroView(heroName: "ARTEM")
+        .environment(AppState())
+        .environment(GameDataCache())
+}

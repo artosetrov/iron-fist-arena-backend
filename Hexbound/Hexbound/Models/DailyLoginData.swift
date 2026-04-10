@@ -47,6 +47,10 @@ extension DailyReward {
     ///
     /// This helper is intentionally cheap (pure map, no caching) because the
     /// screens that call it are rendered a handful of times per session.
+    ///
+    /// Marked `@MainActor` because `GameDataCache` is main-actor-isolated —
+    /// its `gameConfig` property can't be touched from a nonisolated context.
+    @MainActor
     static func rewards(from cache: GameDataCache) -> [DailyReward] {
         let source = cache.gameConfig?.dailyLoginRewards
             ?? GameConfig.fallbackDailyRewards
