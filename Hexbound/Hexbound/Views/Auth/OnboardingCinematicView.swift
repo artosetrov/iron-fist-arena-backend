@@ -15,6 +15,12 @@ private struct ComicPage {
     let panels: [ComicPanel]
     let finalText: String?    // "YOUR TURN." on last page
     let bgmTrack: String      // AudioManager BGM filename
+    let voiceTrack: String?   // Narration track played over BGM (nil = no voice)
+    /// Seconds allocated per panel for reveal + caption typewriter, summing close
+    /// to the voice track's duration so the narrator and the visual cues stay in sync.
+    let panelDurations: [Double]
+    /// Seconds allocated to the final YOUR TURN. text (only last page).
+    let finalTextDuration: Double
 }
 
 // MARK: - OnboardingCinematicView
@@ -71,7 +77,11 @@ struct OnboardingCinematicView: View {
                                caption: "\u{201C}You look like easy money. Welcome.\u{201D}", isWide: false),
                 ],
                 finalText: nil,
-                bgmTrack: "main-theme.mp3"
+                bgmTrack: "main-theme.mp3",
+                voiceTrack: "onboarding-voice-welcome.mp3",
+                // Voice track = 15.12s. Distributed roughly by caption length.
+                panelDurations: [4.4, 6.2, 4.5],
+                finalTextDuration: 0
             ),
             ComicPage(
                 title: "BLOOD & GLORY",
@@ -87,7 +97,11 @@ struct OnboardingCinematicView: View {
                                caption: "Below the city, things get worse. Much worse.", isWide: true),
                 ],
                 finalText: nil,
-                bgmTrack: "arena-pvp.mp3"
+                bgmTrack: "arena-pvp.mp3",
+                voiceTrack: "onboarding-voice-blood-glory.mp3",
+                // Voice track = 15.67s. 4 panels — distributed by caption length.
+                panelDurations: [4.8, 3.3, 3.1, 4.3],
+                finalTextDuration: 0
             ),
             ComicPage(
                 title: "YOUR TURN",
@@ -101,7 +115,11 @@ struct OnboardingCinematicView: View {
                                caption: nil, isWide: false),
                 ],
                 finalText: "YOUR TURN.",
-                bgmTrack: "arena-pvp.mp3"
+                bgmTrack: "arena-pvp.mp3",
+                voiceTrack: "onboarding-voice-your-turn.mp3",
+                // Voice track = 11.52s. Final "YOUR TURN." is embedded inside the voice clip.
+                panelDurations: [4.6, 2.8, 1.6],
+                finalTextDuration: 2.5
             ),
         ]
     }
@@ -196,12 +214,28 @@ struct OnboardingCinematicView: View {
         .gesture(swipeGesture)
         .onAppear {
             AudioManager.shared.playBGM(page.bgmTrack)
+            startPageVoice()
             scheduleReveal(delay: 0.6)
         }
         .onDisappear {
             revealTask?.cancel()
             typewriterTask?.cancel()
             finalTask?.cancel()
+            AudioManager.shared.stopVoice(fadeOut: true)
+        }
+    }
+
+    // MARK: - Voice
+
+    private func startPageVoice() {
+        guard let track = page.voiceTrack else { return }
+        let pageIndex = currentPage
+        // Small delay so voice kicks in together with the first panel reveal (~0.6s).
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(550))
+            // Abort if user navigated away or the view is transitioning between pages.
+            guard !Task.isCancelled, currentPage == pageIndex, !transitioning else { return }
+            AudioManager.shared.playVoice(track)
         }
     }
 
@@ -615,18 +649,40 @@ struct OnboardingCinematicView: View {
 
         // Start caption after panel settles
         let panel = page.panels[idx]
+        let panelDuration = idx < page.panelDurations.count ? page.panelDurations[idx] : 3.5
         if let caption = panel.caption {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            // 0.35s lead for panel settle, ~0.35s tail before next reveal.
+            let leadDelay: Double = 0.35
+            let tailDelay: Double = 0.35
+            let typeWindow = max(0.8, panelDuration - leadDelay - tailDelay)
+            let msPerChar = typewriterMsPerChar(for: caption, window: typeWindow)
+            DispatchQueue.main.asyncAfter(deadline: .now() + leadDelay) {
                 activeCaption = idx
-                startTypewriter(text: caption)
+                startTypewriter(text: caption, msPerChar: msPerChar, tailDelay: tailDelay)
             }
         } else {
             activeCaption = -1
             displayedCaption = ""
             captionDone = true
-            // Auto-continue to next if no caption
-            scheduleReveal(delay: 0.5)
+            // Auto-continue to next after panel's allotted duration (for image-only panels)
+            scheduleReveal(delay: max(0.5, panelDuration))
         }
+    }
+
+    /// Compute per-character delay so the caption types out over roughly `window` seconds.
+    /// Uses light punctuation weighting (period/? counts as 2 chars, comma counts as 1.5)
+    /// so natural pauses still exist, but the overall tempo is driven by the voice track.
+    private func typewriterMsPerChar(for caption: String, window: Double) -> UInt64 {
+        let weighted = caption.reduce(0.0) { acc, c in
+            if ".!?…".contains(c) { return acc + 2.0 }
+            if ",;:—–".contains(c) { return acc + 1.5 }
+            return acc + 1.0
+        }
+        guard weighted > 0 else { return 28 }
+        let msPerUnit = (window * 1000.0) / weighted
+        // Clamp: fast enough to stay crisp, slow enough to sync with narration.
+        let clamped = max(28.0, min(140.0, msPerUnit))
+        return UInt64(clamped)
     }
 
     private func scheduleReveal(delay: Double) {
@@ -648,6 +704,8 @@ struct OnboardingCinematicView: View {
         revealTask?.cancel()
         typewriterTask?.cancel()
         finalTask?.cancel()
+        // Fade out current narration so the next page starts clean.
+        AudioManager.shared.stopVoice(fadeOut: true)
         transitioning = true
 
         HapticManager.medium()
@@ -671,6 +729,8 @@ struct OnboardingCinematicView: View {
 
             // Switch BGM if needed
             AudioManager.shared.playBGM(page.bgmTrack)
+            // Kick off the new page's voice narration
+            startPageVoice()
 
             // Phase 3: curtain fades OUT — reveals new page
             withAnimation(.easeOut(duration: 0.4)) {
@@ -686,7 +746,7 @@ struct OnboardingCinematicView: View {
 
     // MARK: - Typewriter
 
-    private func startTypewriter(text: String) {
+    private func startTypewriter(text: String, msPerChar: UInt64 = 28, tailDelay: Double = 0.7) {
         typewriterTask?.cancel()
         displayedCaption = ""
         captionDone = false
@@ -694,6 +754,8 @@ struct OnboardingCinematicView: View {
         typewriterTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
 
+            // Punctuation uses a 2x / 1.5x multiplier of the base speed, so natural
+            // pauses still exist even when the base rate is tuned to the voice track.
             for char in text {
                 guard !Task.isCancelled else {
                     displayedCaption = text
@@ -703,15 +765,15 @@ struct OnboardingCinematicView: View {
                 displayedCaption.append(char)
 
                 let ms: UInt64
-                if ".!?…".contains(char) { ms = 224 }
-                else if ",;:—–".contains(char) { ms = 84 }
-                else { ms = 28 }
+                if ".!?…".contains(char) { ms = msPerChar * 2 }
+                else if ",;:—–".contains(char) { ms = UInt64(Double(msPerChar) * 1.5) }
+                else { ms = msPerChar }
                 try? await Task.sleep(nanoseconds: ms * 1_000_000)
             }
             captionDone = true
 
             // Auto-reveal next panel after caption finishes
-            scheduleReveal(delay: 0.7)
+            scheduleReveal(delay: tailDelay)
         }
     }
 
@@ -735,6 +797,11 @@ struct OnboardingCinematicView: View {
         SFXManager.shared.play(.uiConfirm)
         HapticManager.medium()
 
+        // Sync the on-screen typing of "YOUR TURN." with the narrator's delivery
+        // of the same phrase at the end of the voice clip.
+        let duration = max(1.0, page.finalTextDuration)
+        let perCharMs = UInt64((duration * 1000.0) / Double(max(1, text.count)))
+
         finalTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(400))
             for char in text {
@@ -744,7 +811,7 @@ struct OnboardingCinematicView: View {
                     return
                 }
                 finalTypedText.append(char)
-                try? await Task.sleep(nanoseconds: 60_000_000)
+                try? await Task.sleep(nanoseconds: perCharMs * 1_000_000)
             }
             finalDone = true
             HapticManager.heavy()
@@ -759,6 +826,7 @@ struct OnboardingCinematicView: View {
         revealTask?.cancel()
         typewriterTask?.cancel()
         finalTask?.cancel()
+        AudioManager.shared.stopVoice(fadeOut: true)
 
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(400))

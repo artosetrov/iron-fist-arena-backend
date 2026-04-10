@@ -24,82 +24,106 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 interface OverflowRow {
-  characterId: string
-  characterName: string
-  userId: string
-  inventorySlots: number
-  inventoryCount: number
+  character_id: string
+  character_name: string
+  user_id: string
+  inventory_slots: number
+  inventory_count: number
   overflow: number
+}
+
+interface SummaryRow {
+  total_characters: number
+  overflowed: number
+  total_ghost_items: number
+  max_overflow: number
+  max_inventory_count_any_char: number
 }
 
 async function main() {
   console.log('Scanning characters for inventory overflow...\n')
 
-  const characters = await prisma.character.findMany({
-    select: {
-      id: true,
-      name: true,
-      userId: true,
-      inventorySlots: true,
-      _count: { select: { equipmentInventory: true } },
-    },
-  })
+  // Single aggregated summary query — runs one pass over the DB.
+  const summaryResult = await prisma.$queryRaw<SummaryRow[]>`
+    WITH counts AS (
+      SELECT
+        c.id,
+        c.inventory_slots,
+        COUNT(ei.id)::int AS inventory_count
+      FROM characters c
+      LEFT JOIN equipment_inventory ei ON ei.character_id = c.id
+      GROUP BY c.id, c.inventory_slots
+    )
+    SELECT
+      (SELECT COUNT(*) FROM characters)::int AS total_characters,
+      (SELECT COUNT(*) FROM counts WHERE inventory_count > inventory_slots)::int AS overflowed,
+      (SELECT COALESCE(SUM(inventory_count - inventory_slots), 0)::int FROM counts WHERE inventory_count > inventory_slots) AS total_ghost_items,
+      (SELECT COALESCE(MAX(inventory_count - inventory_slots), 0)::int FROM counts WHERE inventory_count > inventory_slots) AS max_overflow,
+      (SELECT COALESCE(MAX(inventory_count), 0)::int FROM counts) AS max_inventory_count_any_char
+  `
+  const summary = summaryResult[0]
 
-  const total = characters.length
-  console.log(`Total characters: ${total}`)
+  console.log(`Total characters:           ${summary.total_characters}`)
+  console.log(`Max inventory count (any):  ${summary.max_inventory_count_any_char}`)
 
-  const overflowed: OverflowRow[] = []
-  for (const c of characters) {
-    const count = c._count.equipmentInventory
-    if (count > c.inventorySlots) {
-      overflowed.push({
-        characterId: c.id,
-        characterName: c.name,
-        userId: c.userId,
-        inventorySlots: c.inventorySlots,
-        inventoryCount: count,
-        overflow: count - c.inventorySlots,
-      })
-    }
-  }
-
-  if (overflowed.length === 0) {
+  if (summary.overflowed === 0) {
     console.log('\n✓ No overflow detected. Safe to ship CRIT-04 code fix with no cleanup.')
     return
   }
 
-  // Sort by overflow size descending
-  overflowed.sort((a, b) => b.overflow - a.overflow)
+  // Fetch top-20 overflowed characters with names (only if there ARE overflowed ones)
+  const rows = await prisma.$queryRaw<OverflowRow[]>`
+    WITH counts AS (
+      SELECT
+        c.id AS character_id,
+        c.character_name,
+        c.user_id,
+        c.inventory_slots,
+        COUNT(ei.id)::int AS inventory_count
+      FROM characters c
+      LEFT JOIN equipment_inventory ei ON ei.character_id = c.id
+      GROUP BY c.id, c.character_name, c.user_id, c.inventory_slots
+    )
+    SELECT
+      character_id,
+      character_name,
+      user_id,
+      inventory_slots,
+      inventory_count,
+      (inventory_count - inventory_slots)::int AS overflow
+    FROM counts
+    WHERE inventory_count > inventory_slots
+    ORDER BY overflow DESC
+    LIMIT 20
+  `
 
-  const totalOverflow = overflowed.reduce((s, r) => s + r.overflow, 0)
-  const maxOverflow = overflowed[0].overflow
-  const pctOverflowed = ((overflowed.length / total) * 100).toFixed(2)
+  const pctOverflowed = ((summary.overflowed / summary.total_characters) * 100).toFixed(2)
 
   console.log(`\n⚠ Overflow detected:`)
-  console.log(`  Characters affected:  ${overflowed.length} / ${total} (${pctOverflowed}%)`)
-  console.log(`  Total ghost items:    ${totalOverflow}`)
-  console.log(`  Max overflow:         ${maxOverflow} items (one character)`)
+  console.log(`  Characters affected:  ${summary.overflowed} / ${summary.total_characters} (${pctOverflowed}%)`)
+  console.log(`  Total ghost items:    ${summary.total_ghost_items}`)
+  console.log(`  Max overflow:         ${summary.max_overflow} items (one character)`)
 
   console.log('\nTop 20 affected characters:')
   console.log('  Character                        | Slots | Count | Overflow')
   console.log('  ---------------------------------|-------|-------|---------')
-  for (const row of overflowed.slice(0, 20)) {
-    const name = row.characterName.padEnd(32).slice(0, 32)
-    const slots = String(row.inventorySlots).padStart(5)
-    const count = String(row.inventoryCount).padStart(5)
+  for (const row of rows) {
+    const name = (row.character_name ?? '<unnamed>').padEnd(32).slice(0, 32)
+    const slots = String(row.inventory_slots).padStart(5)
+    const count = String(row.inventory_count).padStart(5)
     const over = String(row.overflow).padStart(8)
     console.log(`  ${name} | ${slots} | ${count} | ${over}`)
   }
 
-  if (overflowed.length > 20) {
-    console.log(`  ... and ${overflowed.length - 20} more`)
+  if (summary.overflowed > 20) {
+    console.log(`  ... and ${summary.overflowed - 20} more`)
   }
 
   // Recommendation
   console.log('\nRecommendation:')
-  if (overflowed.length <= 5) {
+  if (summary.overflowed <= 5) {
     console.log('  ≤ 5 affected — ship code fix + in-game notification, let players resolve manually.')
-  } else if (overflowed.length <= 50) {
+  } else if (summary.overflowed <= 50) {
     console.log('  6-50 affected — consider scripted inventory expansion (bump inventorySlots to match count)')
     console.log('  or move excess items to a "recovery box" table.')
   } else {

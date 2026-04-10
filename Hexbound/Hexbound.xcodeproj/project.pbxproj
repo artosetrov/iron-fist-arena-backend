@@ -30,6 +30,9 @@
 		0EC076CD23D49AF8714BF568 /* SeasonSummaryModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E939633E61C30A96B8DEA640 /* SeasonSummaryModalView.swift */; };
 		10321B57C050901C03935EAA /* CurrencyDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74E92AABAC8A1B5D421A01F1 /* CurrencyDisplay.swift */; };
 		11DF803A7BBA3E64FE6A9260 /* main-theme.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8A933FE01392FF1908BB0C9A /* main-theme.mp3 */; };
+		9E53737295B5E84D82D6C1C2 /* onboarding-voice-welcome.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = CA8EAC4A4FAB49DDD6BCC0EC /* onboarding-voice-welcome.mp3 */; };
+		F6C73BF38E24A42D5BCBA3A5 /* onboarding-voice-blood-glory.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FE1211D68B3A99F2D2DDA67C /* onboarding-voice-blood-glory.mp3 */; };
+		007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 71623A5993B071B645C6E562 /* onboarding-voice-your-turn.mp3 */; };
 		133BCF6F5AF0C4039402EE8C /* CharacterProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2DC92408DE4EFDCC992B0A /* CharacterProfileView.swift */; };
 		16A08B71E27755812F6FD690 /* CharacterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A5811B35D2599327C7F9CE /* CharacterService.swift */; };
 		16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 776542cff60cc81ecdff074b /* StatPurchase.swift */; };
@@ -529,6 +532,9 @@
 		88B8909F01E03E455694F1AA /* EquipmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentViewModel.swift; sourceTree = "<group>"; };
 		8A0D2E4F6A8B9C0D1E2F3A4C /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialService.swift; sourceTree = "<group>"; };
 		8A933FE01392FF1908BB0C9A /* main-theme.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "main-theme.mp3"; sourceTree = "<group>"; };
+		CA8EAC4A4FAB49DDD6BCC0EC /* onboarding-voice-welcome.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "onboarding-voice-welcome.mp3"; sourceTree = "<group>"; };
+		FE1211D68B3A99F2D2DDA67C /* onboarding-voice-blood-glory.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "onboarding-voice-blood-glory.mp3"; sourceTree = "<group>"; };
+		71623A5993B071B645C6E562 /* onboarding-voice-your-turn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "onboarding-voice-your-turn.mp3"; sourceTree = "<group>"; };
 		8A9B0C1D2E3F4A5B6C7D8E9F /* SessionExpiredModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExpiredModalView.swift; sourceTree = "<group>"; };
 		8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShimmerModifier.swift; sourceTree = "<group>"; };
 		8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellGameDetailView.swift; sourceTree = "<group>"; };
@@ -1175,8 +1181,19 @@
 			children = (
 				A3EE7F82954230491888E126 /* BGM */,
 				1D449A3516530C16CEC35B1C /* SFX */,
+				4A263CB963FA763A7BC76EBD /* Voice */,
 			);
 			path = Audio;
+			sourceTree = "<group>";
+		};
+		4A263CB963FA763A7BC76EBD /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				FE1211D68B3A99F2D2DDA67C /* onboarding-voice-blood-glory.mp3 */,
+				CA8EAC4A4FAB49DDD6BCC0EC /* onboarding-voice-welcome.mp3 */,
+				71623A5993B071B645C6E562 /* onboarding-voice-your-turn.mp3 */,
+			);
+			path = Voice;
 			sourceTree = "<group>";
 		};
 		8CC96B4D6D1076D4BE1AE847 /* Views */ = {
@@ -1657,6 +1674,9 @@
 				5348E13B73781A541AFF9D78 /* item_drop.wav in Resources */,
 				4EF2ECBFEC10704C85A5EA08 /* Inter-Regular.ttf in Resources */,
 				11DF803A7BBA3E64FE6A9260 /* main-theme.mp3 in Resources */,
+				F6C73BF38E24A42D5BCBA3A5 /* onboarding-voice-blood-glory.mp3 in Resources */,
+				9E53737295B5E84D82D6C1C2 /* onboarding-voice-welcome.mp3 in Resources */,
+				007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */,
 				E5119F4CEF457CC49A78BC1C /* Oswald-Regular.ttf in Resources */,
 				L10N002BLD000000000000A3 /* Localizable.strings in Resources */,
 				F6A962CDDC5012C80BB0D815 /* stray-city.mp3 in Resources */,

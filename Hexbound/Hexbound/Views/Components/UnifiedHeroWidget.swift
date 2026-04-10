@@ -3,7 +3,15 @@ import SwiftUI
 /// Unified hero widget replacing HubCharacterCard, StaminaBarView header, and currency displays.
 /// Adapts layout and actions based on context (Hub, Arena, Dungeon, Hero).
 ///
-/// Layout:
+/// Layout (hub — CRIT-03 fix, 2026-04-10):
+/// ┌───────────────────────────────────────────────────┐
+/// │ [Avatar]  Name                         ⚡ 120/120 │
+/// │ [Lv.14]  ████████ LEVEL 14 · 420/800 XP ████████ │  ← primary progress
+/// │           [HP 820/1030  (only when injured)]      │  ← reserved space
+/// │           💰 18,838  💎 151                        │
+/// └───────────────────────────────────────────────────┘
+///
+/// Layout (arena / dungeon / hero — unchanged):
 /// ┌───────────────────────────────────────────────────┐
 /// │ [Avatar]  Name                         ⚡ 120/120 │
 /// │ [Lv.14]  ████████████ HP 1,030/1,030 ████████████ │
@@ -29,6 +37,7 @@ struct UnifiedHeroWidget: View {
 
     private var hpPercent: Double { character.hpPercentage }
     private var isCriticalHP: Bool { hpPercent < 0.25 }
+    private var isInjured: Bool { character.currentHp < character.maxHp }
     private var isStaminaLow: Bool { character.maxStamina > 0 && Double(character.currentStamina) / Double(character.maxStamina) < 0.15 }
     private var statPointsAvailable: Int { character.statPoints ?? 0 }
 
@@ -57,8 +66,15 @@ struct UnifiedHeroWidget: View {
                     staminaInlineView
                 }
 
-                // Row 2: HP bar (full width, text inside)
-                hpBarSection
+                // Row 2: Primary progress bar
+                // - Hub: XP bar (primary) + conditional HP bar below (reserved space)
+                // - Arena/Dungeon/Hero: HP bar (existing behaviour)
+                if context == .hub {
+                    xpBarSection
+                    hubHpRow
+                } else {
+                    hpBarSection
+                }
 
                 // Row 3: Resources (gold + gems + stamina)
                 resourcesRow
@@ -272,6 +288,43 @@ struct UnifiedHeroWidget: View {
             size: .widget,
             pulseOnCritical: isCriticalHP
         )
+    }
+
+    // MARK: - Row 2: XP Bar (hub primary — CRIT-03, 2026-04-10)
+
+    private var xpBarSection: some View {
+        XPBarView(
+            currentXp: character.experience ?? 0,
+            xpNeeded: character.xpNeeded,
+            size: .widget,
+            levelLabel: "LEVEL \(character.level)"
+        )
+    }
+
+    // MARK: - Row 2.5: Hub HP Row (conditional, reserved space)
+    //
+    // Shows HP bar ONLY when the character is injured (`currentHp < maxHp`).
+    // Uses a fixed-height container so the widget does not jump when HP
+    // disappears after a heal. Reserved height matches one widget bar + gap.
+    private var hubHpRow: some View {
+        Group {
+            if isInjured {
+                HPBarView(
+                    currentHp: character.currentHp,
+                    maxHp: character.maxHp,
+                    size: .widget,
+                    pulseOnCritical: isCriticalHP
+                )
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .accessibilityHint("Wounded — use a health potion to recover")
+            } else {
+                // Reserved space — keeps the widget a constant height.
+                Color.clear
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(height: LayoutConstants.widgetBarHeight)
+        .animation(MotionConstants.smooth, value: isInjured)
     }
 
     // Pills removed — contextual actions now shown via NPC widget
