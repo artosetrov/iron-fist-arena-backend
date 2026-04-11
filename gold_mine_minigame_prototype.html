@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gold Mine — Mini-game Prototype (Hexbound)</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0A14;
+  --bg-panel: #15151F;
+  --gold: #D4A537;
+  --gold-light: #F4C967;
+  --gold-dark: #8F6F1C;
+  --text: #F5F5F5;
+  --text-dim: #A0A0B0;
+  --gem: #C74AE8;
+  --spark: #FF6B3D;
+  --danger: #E63946;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  background: radial-gradient(ellipse at center, #1a1328 0%, #0A0A14 60%);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+.phone-frame {
+  width: 375px;
+  height: 780px;
+  max-height: 95vh;
+  background: var(--bg);
+  border: 2px solid var(--gold-dark);
+  border-radius: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(212, 165, 55, 0.2), 0 20px 60px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(212,165,55,0.1) 0%, transparent 45%),
+    radial-gradient(circle at 70% 70%, rgba(199,74,232,0.06) 0%, transparent 40%);
+  pointer-events: none;
+}
+.bg-layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 100%);
+}
+.bg-stones {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 10% 40%, rgba(255,255,255,0.03) 0%, transparent 2%),
+    radial-gradient(circle at 85% 65%, rgba(255,255,255,0.04) 0%, transparent 2%),
+    radial-gradient(circle at 50% 85%, rgba(255,255,255,0.03) 0%, transparent 2%),
+    radial-gradient(circle at 25% 75%, rgba(255,255,255,0.02) 0%, transparent 1.5%);
+  pointer-events: none;
+}
+
+/* HUD */
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 18px 16px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 20;
+}
+.counters { display: flex; gap: 6px; flex-direction: column; }
+.counter {
+  background: rgba(21, 21, 31, 0.88);
+  border: 1px solid var(--gold-dark);
+  border-radius: 8px;
+  padding: 6px 12px 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.counter-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5);
+}
+.icon-gold { background: radial-gradient(circle at 30% 30%, #FFE08A, #8F6F1C); color: #2a1a00; }
+.icon-gem { background: radial-gradient(circle at 30% 30%, #E89EFF, #6B1F85); color: #fff; }
+.icon-spark { background: radial-gradient(circle at 30% 30%, #FFB56B, #8F3A0E); color: #fff; }
+.counter-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gold-light);
+  letter-spacing: 0.5px;
+}
+.counter.flash {
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(212,165,55,0.6);
+}
+.counter.flash-gem { border-color: var(--gem); box-shadow: 0 0 14px rgba(199,74,232,0.6); }
+.counter.flash-spark { border-color: var(--spark); box-shadow: 0 0 14px rgba(255,107,61,0.7); }
+
+.timer {
+  background: rgba(21, 21, 31, 0.88);
+  border: 1px solid var(--gold-dark);
+  border-radius: 8px;
+  padding: 8px 16px;
+  text-align: center;
+  min-width: 72px;
+  backdrop-filter: blur(8px);
+}
+.timer-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.timer-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.timer.critical .timer-value { color: var(--danger); }
+.timer.critical { border-color: var(--danger); }
+
+.timer-bar {
+  position: absolute;
+  top: 110px;
+  left: 16px;
+  right: 16px;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  z-index: 15;
+}
+.timer-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  box-shadow: 0 0 10px var(--gold);
+  transform-origin: left center;
+}
+
+/* Hero avatar */
+.hero {
+  position: absolute;
+  bottom: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 128px;
+  height: 128px;
+  z-index: 4;
+  pointer-events: none;
+}
+.hero-glow {
+  position: absolute;
+  inset: -24px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,165,55,0.22) 0%, transparent 65%);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.hero-circle {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #4a3424 0%, #1a1010 80%);
+  border: 3px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 24px rgba(212,165,55,0.35),
+    inset 0 0 20px rgba(0,0,0,0.7),
+    inset 0 2px 4px rgba(255,255,255,0.1);
+}
+.hero-circle::before {
+  content: '⛏';
+  font-size: 60px;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
+}
+.hero-label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.ground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.8));
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Drops */
+#play-area {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+.drop {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  will-change: transform, top;
+  user-select: none;
+  touch-action: manipulation;
+  pointer-events: auto;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+}
+.drop.coin { color: var(--gold-light); font-size: 26px; }
+.drop.bag { color: var(--gold); font-size: 32px; }
+.drop.gem { color: var(--gem); font-size: 28px; }
+.drop.spark {
+  color: var(--spark);
+  font-size: 30px;
+  filter: drop-shadow(0 0 14px var(--spark));
+}
+.drop::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: radial-gradient(circle, currentColor 0%, transparent 55%);
+  opacity: 0.22;
+  pointer-events: none;
+}
+.drop.spark::after {
+  animation: sparkGlow 0.7s ease-in-out infinite;
+}
+@keyframes sparkGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Overlays */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,20,0.93);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+}
+.overlay.hidden { display: none; }
+.overlay-kicker {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--gold);
+  margin-bottom: 8px;
+  opacity: 0.75;
+}
+.overlay-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--gold-light);
+  margin-bottom: 16px;
+  text-shadow: 0 0 24px rgba(212,165,55,0.45);
+}
+.overlay-subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+  max-width: 280px;
+  line-height: 1.6;
+}
+.overlay-subtitle strong { color: var(--gold-light); }
+
+.btn {
+  background: linear-gradient(180deg, #F4C967 0%, #D4A537 48%, #8F6F1C 100%);
+  border: 2px solid #5a4410;
+  color: #1a1000;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 14px 44px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -2px 4px rgba(0,0,0,0.3),
+    0 4px 14px rgba(0,0,0,0.6);
+  transition: opacity 0.12s;
+  position: relative;
+}
+.btn:active { opacity: 0.85; }
+
+.btn-ghost {
+  background: transparent;
+  border: 1.5px solid var(--gold-dark);
+  color: var(--gold-light);
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 10px 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 14px;
+  transition: opacity 0.12s;
+}
+.btn-ghost:active { opacity: 0.7; }
+
+/* Results */
+.result-rows { width: 100%; max-width: 290px; }
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.result-row:last-child { border-bottom: none; }
+.result-label {
+  font-size: 13px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.result-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gold-light);
+}
+.result-value.muted { color: var(--text-dim); }
+.result-total {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gold-dark);
+}
+.result-total .result-label {
+  color: var(--text);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.result-total .result-value { font-size: 26px; }
+.accuracy {
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 14px 0 22px;
+  letter-spacing: 1px;
+}
+.accuracy strong { color: var(--gold-light); }
+
+/* Feedback */
+.tap-burst {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 30;
+  background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(212,165,55,0.5) 30%, transparent 70%);
+  animation: burst 0.45s ease-out forwards;
+  transform: translate(-50%,-50%);
+}
+.tap-burst.gem { background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(199,74,232,0.55) 30%, transparent 70%); }
+.tap-burst.spark { background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,107,61,0.7) 30%, transparent 70%); }
+@keyframes burst {
+  0% { transform: translate(-50%,-50%) scale(0.4); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
+}
+.float-text {
+  position: absolute;
+  font-family: 'Oswald', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold-light);
+  pointer-events: none;
+  z-index: 31;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+  animation: floatUp 0.85s ease-out forwards;
+  white-space: nowrap;
+}
+.float-text.gem { color: #E89EFF; }
+.float-text.spark { color: #FFB56B; }
+@keyframes floatUp {
+  0% { transform: translate(-50%,0); opacity: 1; }
+  100% { transform: translate(-50%,-36px); opacity: 0; }
+}
+
+/* Side note */
+.note {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  max-width: 280px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.65;
+  pointer-events: none;
+}
+.note strong { color: var(--gold-light); font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 1px; }
+.note ul { margin: 8px 0 0 0; padding-left: 16px; }
+.note li { margin-bottom: 3px; }
+@media (max-width: 800px) { .note { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="note">
+  <strong>GOLD MINE — PROTOTYPE A</strong><br>
+  Skill-based мини-игра, 15 сек. Падают золото, мешки, кристаллы, редкие sparks. Тапай, чтобы поймать. Пропущенные объекты исчезают.
+  <ul>
+    <li>Drop table: 70% coin / 18% bag / 10% gem / 2% spark</li>
+    <li>Max bonus capped at +15% of passive</li>
+    <li>Accuracy = caught / spawned</li>
+    <li>Passive gold в прототипе = 3400 (для примера)</li>
+  </ul>
+</div>
+
+<div class="phone-frame">
+  <div class="bg-layer"></div>
+  <div class="bg-stones"></div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="counters">
+      <div class="counter" id="counter-gold">
+        <div class="counter-icon icon-gold">G</div>
+        <div class="counter-value">0</div>
+      </div>
+      <div class="counter" id="counter-gem">
+        <div class="counter-icon icon-gem">◆</div>
+        <div class="counter-value">0</div>
+      </div>
+      <div class="counter" id="counter-spark">
+        <div class="counter-icon icon-spark">✦</div>
+        <div class="counter-value">0</div>
+      </div>
+    </div>
+    <div class="timer" id="timer">
+      <div class="timer-label">Time</div>
+      <div class="timer-value">15</div>
+    </div>
+  </div>
+
+  <div class="timer-bar"><div class="timer-bar-fill" id="timer-bar-fill"></div></div>
+
+  <div id="play-area"></div>
+
+  <div class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-circle"></div>
+    <div class="hero-label">Miner Hero</div>
+  </div>
+
+  <div class="ground"></div>
+
+  <!-- Start overlay -->
+  <div class="overlay" id="start-overlay">
+    <div class="overlay-kicker">Sesion Bonus</div>
+    <div class="overlay-title">Gold Mine</div>
+    <div class="overlay-subtitle">
+      Шахта накопала <strong>3,400 gold</strong>.<br>
+      Поймай падающую добычу — до <strong>+15%</strong> сверху, плюс редкие кристаллы и sparks.
+    </div>
+    <button class="btn" id="start-btn">Начать</button>
+  </div>
+
+  <!-- End overlay -->
+  <div class="overlay hidden" id="end-overlay">
+    <div class="overlay-kicker">Session Complete</div>
+    <div class="overlay-title">Добыча!</div>
+    <div class="accuracy" id="accuracy-text">Точность: <strong>0%</strong> • 0 / 0</div>
+    <div class="result-rows">
+      <div class="result-row">
+        <div class="result-label">Пассивная добыча</div>
+        <div class="result-value muted" id="res-passive">+3,400</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label"><div class="counter-icon icon-gold">G</div>Бонус gold</div>
+        <div class="result-value" id="res-gold">+0</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label"><div class="counter-icon icon-gem">◆</div>Бонус gems</div>
+        <div class="result-value" id="res-gems">+0</div>
+      </div>
+      <div class="result-row">
+        <div class="result-label"><div class="counter-icon icon-spark">✦</div>Sparks</div>
+        <div class="result-value" id="res-sparks">+0</div>
+      </div>
+      <div class="result-row result-total">
+        <div class="result-label">Всего gold</div>
+        <div class="result-value" id="res-total">+3,400</div>
+      </div>
+    </div>
+    <button class="btn" id="restart-btn" style="margin-top:24px;">Снова</button>
+    <button class="btn-ghost" id="autocollect-btn">Auto-collect (s = 0.5)</button>
+  </div>
+</div>
+
+<script>
+const PASSIVE_GOLD = 3400;
+const BASE_CAP_FRACTION = 0.15;
+const DURATION_MS = 15000;
+
+// Drop table — must match spec
+const DROPS = [
+  { type: 'coin',  weight: 70, icon: '●', gold: 15, gems: 0, sparks: 0 },
+  { type: 'bag',   weight: 18, icon: '◉', gold: 60, gems: 0, sparks: 0 },
+  { type: 'gem',   weight: 10, icon: '◆', gold: 0,  gems: 1, sparks: 0 },
+  { type: 'spark', weight: 2,  icon: '✦', gold: 0,  gems: 0, sparks: 1 },
+];
+
+const playArea = document.getElementById('play-area');
+const timerEl = document.getElementById('timer');
+const timerBarFill = document.getElementById('timer-bar-fill');
+const startOverlay = document.getElementById('start-overlay');
+const endOverlay = document.getElementById('end-overlay');
+const startBtn = document.getElementById('start-btn');
+const restartBtn = document.getElementById('restart-btn');
+const autocollectBtn = document.getElementById('autocollect-btn');
+const counterGoldEl = document.getElementById('counter-gold');
+const counterGemEl = document.getElementById('counter-gem');
+const counterSparkEl = document.getElementById('counter-spark');
+const phoneFrame = document.querySelector('.phone-frame');
+
+let state = null;
+
+function pickDrop() {
+  const total = DROPS.reduce((s, d) => s + d.weight, 0);
+  let r = Math.random() * total;
+  for (const d of DROPS) {
+    if ((r -= d.weight) < 0) return d;
+  }
+  return DROPS[0];
+}
+
+function spawnDrop() {
+  if (!state || !state.running) return;
+  const drop = pickDrop();
+  const el = document.createElement('div');
+  el.className = `drop ${drop.type}`;
+  el.textContent = drop.icon;
+
+  const frame = phoneFrame.getBoundingClientRect();
+  const x = 18 + Math.random() * (frame.width - 82);
+  const fallDuration = 2700 + Math.random() * 1100;
+
+  el.style.left = x + 'px';
+  el.style.top = '-54px';
+  el.style.transition = `top ${fallDuration}ms linear, opacity 0.15s, transform 0.45s cubic-bezier(0.5, -0.2, 0.2, 1)`;
+
+  playArea.appendChild(el);
+  state.spawned++;
+
+  requestAnimationFrame(() => {
+    el.style.top = (frame.height - 20) + 'px';
+  });
+
+  let caught = false;
+  const tryCollect = (cx, cy) => {
+    if (caught) return;
+    caught = true;
+    collectDrop(el, drop, cx, cy);
+  };
+
+  el.addEventListener('click', (e) => {
+    tryCollect(e.clientX, e.clientY);
+  });
+  el.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    tryCollect(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  setTimeout(() => {
+    if (!caught) {
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 200);
+    }
+  }, fallDuration);
+}
+
+function collectDrop(el, drop, cx, cy) {
+  state.caught++;
+  state.gold += drop.gold;
+  state.gems += drop.gems;
+  state.sparks += drop.sparks;
+
+  const frame = phoneFrame.getBoundingClientRect();
+  const lx = cx - frame.left;
+  const ly = cy - frame.top;
+
+  // Tap burst
+  const burst = document.createElement('div');
+  burst.className = 'tap-burst ' + drop.type;
+  burst.style.left = lx + 'px';
+  burst.style.top = ly + 'px';
+  playArea.appendChild(burst);
+  setTimeout(() => burst.remove(), 450);
+
+  // Float text
+  const ft = document.createElement('div');
+  ft.className = 'float-text ' + drop.type;
+  if (drop.gold > 0) ft.textContent = `+${drop.gold}`;
+  else if (drop.gems > 0) ft.textContent = `+1 ◆`;
+  else if (drop.sparks > 0) ft.textContent = `+1 ✦`;
+  ft.style.left = lx + 'px';
+  ft.style.top = (ly - 12) + 'px';
+  playArea.appendChild(ft);
+  setTimeout(() => ft.remove(), 850);
+
+  // Animate element to counter
+  const targetEl = drop.gems > 0 ? counterGemEl : drop.sparks > 0 ? counterSparkEl : counterGoldEl;
+  const targetRect = targetEl.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const dx = targetRect.left + targetRect.width / 2 - elRect.left - elRect.width / 2;
+  const dy = targetRect.top + targetRect.height / 2 - elRect.top - elRect.height / 2;
+
+  // Lock current top to prevent jump on transform change
+  el.style.top = (elRect.top - frame.top) + 'px';
+  el.style.transition = 'transform 0.45s cubic-bezier(0.45, -0.15, 0.25, 1), opacity 0.45s';
+  requestAnimationFrame(() => {
+    el.style.transform = `translate(${dx}px, ${dy}px) rotate(240deg)`;
+    el.style.opacity = '0';
+  });
+
+  setTimeout(() => {
+    el.remove();
+    // Update counter values
+    if (drop.gold > 0) {
+      counterGoldEl.querySelector('.counter-value').textContent = state.gold;
+      flashCounter(counterGoldEl, 'flash');
+    }
+    if (drop.gems > 0) {
+      counterGemEl.querySelector('.counter-value').textContent = state.gems;
+      flashCounter(counterGemEl, 'flash-gem');
+    }
+    if (drop.sparks > 0) {
+      counterSparkEl.querySelector('.counter-value').textContent = state.sparks;
+      flashCounter(counterSparkEl, 'flash-spark');
+    }
+  }, 450);
+}
+
+function flashCounter(el, cls) {
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 280);
+}
+
+function startGame() {
+  state = {
+    running: true,
+    start: performance.now(),
+    spawned: 0,
+    caught: 0,
+    gold: 0,
+    gems: 0,
+    sparks: 0,
+  };
+  counterGoldEl.querySelector('.counter-value').textContent = '0';
+  counterGemEl.querySelector('.counter-value').textContent = '0';
+  counterSparkEl.querySelector('.counter-value').textContent = '0';
+  startOverlay.classList.add('hidden');
+  endOverlay.classList.add('hidden');
+  playArea.innerHTML = '';
+  timerBarFill.style.width = '100%';
+
+  function scheduleNext() {
+    if (!state.running) return;
+    const elapsed = performance.now() - state.start;
+    const t = Math.min(1, elapsed / DURATION_MS);
+    const interval = 700 - t * 350;
+    spawnDrop();
+    state.spawnTimer = setTimeout(scheduleNext, interval);
+  }
+  scheduleNext();
+
+  function tick() {
+    if (!state.running) return;
+    const elapsed = performance.now() - state.start;
+    const remaining = Math.max(0, DURATION_MS - elapsed);
+    const secs = Math.ceil(remaining / 1000);
+    timerEl.querySelector('.timer-value').textContent = secs;
+    timerEl.classList.toggle('critical', secs <= 5);
+    timerBarFill.style.width = (remaining / DURATION_MS * 100) + '%';
+    if (remaining <= 0) {
+      endGame();
+      return;
+    }
+    state.timerRAF = requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function endGame() {
+  state.running = false;
+  clearTimeout(state.spawnTimer);
+  if (state.timerRAF) cancelAnimationFrame(state.timerRAF);
+
+  const cap = Math.floor(PASSIVE_GOLD * BASE_CAP_FRACTION);
+  const goldBonus = Math.min(state.gold, cap);
+  const accuracy = state.spawned > 0 ? Math.round(state.caught / state.spawned * 100) : 0;
+  const total = PASSIVE_GOLD + goldBonus;
+
+  document.getElementById('accuracy-text').innerHTML = `Точность: <strong>${accuracy}%</strong> • ${state.caught} / ${state.spawned}`;
+  document.getElementById('res-passive').textContent = `+${PASSIVE_GOLD.toLocaleString()}`;
+  document.getElementById('res-gold').textContent = `+${goldBonus.toLocaleString()}${state.gold > cap ? ' (cap)' : ''}`;
+  document.getElementById('res-gems').textContent = `+${state.gems}`;
+  document.getElementById('res-sparks').textContent = `+${state.sparks}`;
+  document.getElementById('res-total').textContent = `+${total.toLocaleString()}`;
+
+  endOverlay.classList.remove('hidden');
+
+  // Clean lingering drops
+  setTimeout(() => {
+    if (!state.running) playArea.innerHTML = '';
+  }, 800);
+}
+
+function autoCollect() {
+  // Simulate s = 0.5 — средний результат
+  const expectedSpawns = 26;
+  const avgGoldPerDrop = 0.70 * 15 + 0.18 * 60; // 10.5 + 10.8 = 21.3
+  const expectedGold = Math.floor(expectedSpawns * avgGoldPerDrop * 0.5);
+  const cap = Math.floor(PASSIVE_GOLD * BASE_CAP_FRACTION);
+  const goldBonus = Math.min(expectedGold, cap);
+  const expectedGems = Math.round(expectedSpawns * 0.10 * 0.5);
+  const expectedSparks = Math.random() < 0.25 ? 0 : 0; // почти никогда в avg прогоне
+
+  state = { spawned: expectedSpawns, caught: Math.round(expectedSpawns * 0.5), gold: expectedGold, gems: expectedGems, sparks: expectedSparks, running: false };
+
+  const total = PASSIVE_GOLD + goldBonus;
+  startOverlay.classList.add('hidden');
+  document.getElementById('accuracy-text').innerHTML = `Auto-collect • <strong>s = 0.5</strong>`;
+  document.getElementById('res-passive').textContent = `+${PASSIVE_GOLD.toLocaleString()}`;
+  document.getElementById('res-gold').textContent = `+${goldBonus.toLocaleString()}`;
+  document.getElementById('res-gems').textContent = `+${expectedGems}`;
+  document.getElementById('res-sparks').textContent = `+${expectedSparks}`;
+  document.getElementById('res-total').textContent = `+${total.toLocaleString()}`;
+  endOverlay.classList.remove('hidden');
+}
+
+startBtn.addEventListener('click', startGame);
+restartBtn.addEventListener('click', startGame);
+autocollectBtn.addEventListener('click', autoCollect);
+</script>
+</body>
+</html>

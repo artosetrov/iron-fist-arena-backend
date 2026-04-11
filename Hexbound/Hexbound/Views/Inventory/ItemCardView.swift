@@ -4,8 +4,15 @@ import SwiftUI
 
 /// Defines what additional overlays/behavior ItemCardView shows per screen.
 enum ItemCardContext {
-    /// Inventory grid — comparison arrows, equipped badge, quantity, durability
-    case inventory(equippedItem: Item?)
+    /// Inventory grid — comparison arrows, equipped badge, quantity, durability.
+    /// BUG-63: `canEquip` mirrors server equip validation (level + class).
+    /// When `false`, the card is dimmed + outlined in danger-red and a small
+    /// lock indicator replaces the comparison delta arrow, so players can see
+    /// "can't wear this yet" at a glance without opening the detail sheet.
+    /// Swift enums can't have default values on associated properties, so
+    /// all callers must pass `canEquip:` explicitly — pass `true` when the
+    /// caller has no character context (e.g. preview, catalog).
+    case inventory(equippedItem: Item?, canEquip: Bool)
     /// Shop grid — price bar at bottom, affordability/level dimming, buying spinner
     /// originalPrice + discountPct are optional (nil = no sale)
     case shop(price: Int, isGem: Bool, canAfford: Bool, meetsLevel: Bool, isBuying: Bool, originalPrice: Int? = nil, discountPct: Int? = nil)
@@ -26,7 +33,7 @@ enum ItemCardContext {
 ///
 /// Usage:
 /// ```
-/// ItemCardView(item: myItem, context: .inventory(equippedItem: equipped)) { handleTap() }
+/// ItemCardView(item: myItem, context: .inventory(equippedItem: equipped, canEquip: true)) { handleTap() }
 /// ItemCardView(shopItem: shopItem, context: .shop(...)) { handleBuy() }
 /// ItemCardView(rarity: .epic, imageKey: "sword-01", fallbackIcon: "shippingbox", context: .loot) { }
 /// ```
@@ -150,12 +157,24 @@ struct ItemCardView: View {
 
     /// Comparison delta (inventory context only)
     private var comparisonDelta: Int? {
-        guard case .inventory(let equippedItem) = context,
+        guard case .inventory(let equippedItem, _) = context,
               !isEquipped,
               itemType != .consumable,
               let equipped = equippedItem else { return nil }
         let diff = totalPower - equipped.totalPower
         return diff != 0 ? diff : nil
+    }
+
+    /// BUG-63: inventory-specific — can the player equip this item right now?
+    /// Mirrors server validation; used by the cell modifier to dim + red-outline
+    /// cards for items the player can't yet wear (wrong level / wrong class).
+    /// Always `true` for non-inventory contexts so shop / equipment / loot tiles
+    /// are unaffected.
+    private var inventoryCanEquip: Bool {
+        if case .inventory(_, let canEquip) = context {
+            return canEquip
+        }
+        return true
     }
 
     /// Whether this is an empty equipment slot
@@ -203,6 +222,7 @@ struct ItemCardView: View {
                 hasDurability: hasDurability,
                 durabilityFraction: durabilityFraction,
                 shopCanInteract: shopCanInteract,
+                inventoryCanEquip: inventoryCanEquip,
                 rarityColor: rarityColor,
                 rarity: rarity
             ))
@@ -317,6 +337,7 @@ private struct CellOrnamentalsModifier: ViewModifier {
     let hasDurability: Bool
     let durabilityFraction: Double
     let shopCanInteract: Bool
+    let inventoryCanEquip: Bool
     let rarityColor: Color
     let rarity: ItemRarity
 
@@ -335,6 +356,10 @@ private struct CellOrnamentalsModifier: ViewModifier {
                     .padding(isEmptySlot ? 0 : 1)
             )
             // MARK: - Outer rarity border
+            // BUG-63: ineligible inventory items (wrong level/class) get a danger-red
+            // outer stroke so players can spot "can't wear this yet" at a glance.
+            // Broken still wins, equipped still wins; otherwise ineligible overrides
+            // the rarity color.
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                     .stroke(
@@ -342,7 +367,9 @@ private struct CellOrnamentalsModifier: ViewModifier {
                             ? DarkFantasyTheme.borderSubtle
                             : (isBroken
                                 ? DarkFantasyTheme.danger
-                                : rarityColor.opacity(isEquipped ? 1.0 : 0.7)),
+                                : (!inventoryCanEquip
+                                    ? DarkFantasyTheme.danger.opacity(0.8)
+                                    : rarityColor.opacity(isEquipped ? 1.0 : 0.7))),
                         lineWidth: isEmptySlot ? 1 : (isEquipped ? 3 : 2.5)
                     )
             )
@@ -366,8 +393,11 @@ private struct CellOrnamentalsModifier: ViewModifier {
                 color: isHighRarity && !isEmptySlot ? rarityColor.opacity(0.25) : Color.clear,
                 radius: 4
             )
-            // MARK: - Shop affordability dimming
-            .opacity(shopCanInteract ? 1.0 : 0.5)
+            // MARK: - Shop affordability / inventory eligibility dimming
+            // BUG-63: non-equippable inventory items dim to 0.55 (same feel as
+            // unaffordable shop items, kept slightly brighter so the art is still
+            // readable). Shop dim wins if both apply.
+            .opacity(shopCanInteract ? (inventoryCanEquip ? 1.0 : 0.55) : 0.5)
     }
 }
 
@@ -396,7 +426,27 @@ private extension ItemCardView {
     var topLeadingOverlay: some View {
         switch context {
         case .inventory:
-            if let delta = comparisonDelta {
+            // BUG-63: ineligible items (wrong level/class) show a red lock badge
+            // in the top-leading corner. Uses the shared `icon-padlock` asset
+            // (same one as BuildingUnlockCeremony / DungeonMapBuildingView) so
+            // the visual language is consistent across the game. Takes priority
+            // over comparison arrows (no point comparing stats for an item you
+            // can't wear) and over the two-handed pill.
+            if !inventoryCanEquip && !isEquipped {
+                Image("icon-padlock")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .padding(LayoutConstants.spaceXS)
+                    .background(
+                        Circle()
+                            .fill(DarkFantasyTheme.danger.opacity(0.9))
+                    )
+                    .shadow(color: DarkFantasyTheme.danger.opacity(0.6), radius: 4)
+                    .padding(LayoutConstants.spaceXS)
+            } else if let delta = comparisonDelta {
                 Image(systemName: delta > 0 ? "arrow.up" : "arrow.down")
                     .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(delta > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger)

@@ -76,6 +76,12 @@ struct DungeonMapView: View {
             }
             .ignoresSafeArea()
 
+            // Dungeon unlock ceremony — plays "X UNSEALED" reveal when a
+            // new dungeon on the overland map just became available after
+            // the player cleared the previous one.
+            DungeonUnlockCeremonyHost()
+                .allowsHitTesting(!appState.pendingDungeonUnlocks.isEmpty)
+
             // CASTLE button — when pushed on mainPath (no onBack), show a floating back button
             if onBack == nil {
                 VStack {

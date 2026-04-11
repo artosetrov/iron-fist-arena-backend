@@ -6,6 +6,17 @@ struct GoldMineDetailView: View {
     @State private var vm: GoldMineViewModel?
     @State private var mineHint: NPCHint?
 
+    /// Captured global center points of the currency icons inside
+    /// `MineResourceHeader`. Used as `targetPoint` for live-tick coin flies.
+    @State private var resourceAnchors: [MineAnchorRole: CGPoint] = [:]
+    /// Captured global center points of each active mine slot card. Used as
+    /// `sourcePoint` for live-tick coin flies.
+    @State private var slotAnchors: [Int: CGPoint] = [:]
+    /// Live in-flight coin/gem particle instances driven by `vm.advanceLiveTick`.
+    @State private var liveFlights: [LiveMineFlight] = []
+    /// Last tick timestamp so we can pass real elapsed time to the VM.
+    @State private var lastTick: Date = Date()
+
     private let columns = [
         GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
         GridItem(.flexible(), spacing: LayoutConstants.spaceSM)
@@ -27,6 +38,13 @@ struct GoldMineDetailView: View {
                     } else {
                         ScrollView {
                             VStack(spacing: LayoutConstants.spaceMD) {
+                                MineResourceHeader(
+                                    visualGold: vm.visualGold,
+                                    visualGems: vm.visualGems,
+                                    goldPerHour: vm.currentGoldPerHour,
+                                    gemsPerHour: vm.currentGemsPerHour,
+                                    activeSlotCount: vm.miningSlotCount
+                                )
                                 ActiveQuestBanner(questTypes: ["gold_mine_collect"])
                                 miningOutputCard(vm: vm)
                                 slotsGrid(vm: vm)
@@ -37,7 +55,25 @@ struct GoldMineDetailView: View {
                     }
                 }
                 .transaction { $0.animation = nil }
+                // Capture icon anchors from MineResourceHeader
+                .onPreferenceChange(GoldMineAnchorPreferenceKey.self) { entries in
+                    var next: [MineAnchorRole: CGPoint] = [:]
+                    for entry in entries { next[entry.role] = entry.point }
+                    resourceAnchors = next
+                }
+                // Capture slot center anchors from each MineSlotCard
+                .onPreferenceChange(MineSlotAnchorPreferenceKey.self) { entries in
+                    var next: [Int: CGPoint] = [:]
+                    for entry in entries { next[entry.slotIndex] = entry.point }
+                    slotAnchors = next
+                }
             }
+
+            // Live-tick coin/gem particle overlay — rendered above everything.
+            // Must ignore safe area so its coordinate space matches the
+            // global window coords published by the anchor preference keys.
+            liveFlightsOverlay
+                .ignoresSafeArea()
         }
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
@@ -57,7 +93,85 @@ struct GoldMineDetailView: View {
             if vm == nil { vm = GoldMineViewModel(appState: appState, cache: cache) }
             await vm?.loadStatus()
             updateMineHint()
+            lastTick = Date()
         }
+        // Drive live-tick counter + coin-fly emission. 1 Hz is plenty — real
+        // mining rate is ~17 gold/hr/slot so fractional accumulator handles
+        // the sub-second granularity; we just need a steady pulse.
+        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { now in
+            advanceLiveTick(now: now)
+        }
+    }
+
+    // MARK: - Live Tick
+
+    /// Pulled from the 1 Hz timer. Calls `vm.advanceLiveTick` and, for every
+    /// coin / gem that "arrived" this tick, spawns a `LiveMineFlight` from the
+    /// corresponding mining slot anchor to the resource-header icon anchor.
+    private func advanceLiveTick(now: Date) {
+        guard let vm else { return }
+        let elapsed = max(0, min(5, now.timeIntervalSince(lastTick)))
+        lastTick = now
+        guard elapsed > 0 else { return }
+
+        let delta = vm.advanceLiveTick(elapsedSec: elapsed)
+        guard delta.coinsPerSlot > 0 || delta.gems > 0 else { return }
+
+        // Fire flights from each currently-mining slot.
+        let activeIndices = (0..<vm.slots.count).filter { idx in
+            vm.slotStatus(vm.slots[idx]) == "mining"
+        }
+        guard !activeIndices.isEmpty else { return }
+
+        // Gold: one flight per active slot per coin tick.
+        if delta.coinsPerSlot > 0, let goldTarget = resourceAnchors[.gold] {
+            for slotIdx in activeIndices {
+                guard let source = slotAnchors[slotIdx] else { continue }
+                for _ in 0..<delta.coinsPerSlot {
+                    liveFlights.append(LiveMineFlight(
+                        style: .gold,
+                        source: source,
+                        target: goldTarget
+                    ))
+                }
+            }
+        }
+
+        // Gems are rarer — emit from a single random active slot.
+        if delta.gems > 0, let gemTarget = resourceAnchors[.gem] {
+            if let sourceIdx = activeIndices.randomElement(),
+               let source = slotAnchors[sourceIdx] {
+                for _ in 0..<delta.gems {
+                    liveFlights.append(LiveMineFlight(
+                        style: .gems,
+                        source: source,
+                        target: gemTarget
+                    ))
+                }
+            }
+        }
+    }
+
+    // MARK: - Live Flights Overlay
+
+    /// Full-screen overlay that renders all in-flight coin / gem particles
+    /// currently travelling from mining slots to the resource header.
+    @ViewBuilder
+    private var liveFlightsOverlay: some View {
+        ZStack {
+            ForEach(liveFlights) { flight in
+                CoinFlyAnimationView(
+                    style: flight.style,
+                    count: 1,
+                    sourcePoint: flight.source,
+                    targetPoint: flight.target,
+                    onComplete: {
+                        liveFlights.removeAll { $0.id == flight.id }
+                    }
+                )
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     // MARK: - Contextual Hint
@@ -206,7 +320,6 @@ private struct MineSlotCard: View {
     let vm: GoldMineViewModel
 
     @State private var showCollectBurst = false
-    @State private var showCoinFly = false
     @State private var previousStatus: String = ""
     @State private var progressTick: Date = Date()
 
@@ -264,23 +377,23 @@ private struct MineSlotCard: View {
                 }
             }
         }
-        .overlay {
-            if showCoinFly {
-                GeometryReader { geo in
-                    let sourcePoint = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
-                    // Target is top-right corner (approximately where currency display would be)
-                    let targetPoint = CGPoint(x: UIScreen.main.bounds.width - 20, y: 60)
-                    CoinFlyAnimationView(
-                        style: .gold,
-                        count: 6,
-                        sourcePoint: sourcePoint,
-                        targetPoint: targetPoint,
-                        onComplete: { showCoinFly = false }
+        // Publish slot center (in global coord space) so the parent
+        // GoldMineDetailView can use it as a coin-fly source point.
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .preference(
+                        key: MineSlotAnchorPreferenceKey.self,
+                        value: [MineSlotAnchorEntry(
+                            slotIndex: index,
+                            point: CGPoint(
+                                x: geo.frame(in: .global).midX,
+                                y: geo.frame(in: .global).midY
+                            )
+                        )]
                     )
-                    .allowsHitTesting(false)
-                }
             }
-        }
+        )
         .onAppear {
             previousStatus = status
         }
@@ -294,7 +407,6 @@ private struct MineSlotCard: View {
             if previousStatus == "ready" && newVal == "idle" {
                 HapticManager.success()
                 showCollectBurst = true
-                showCoinFly = true
             }
             previousStatus = newVal
         }
@@ -364,10 +476,12 @@ private struct MineSlotCard: View {
 
     private var infoPanel: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
-            Text("SLOT \(index + 1)")
+            Text(GoldMineViewModel.mineName(for: index).uppercased())
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .accessibilityLabel("Mining slot \(index + 1)")
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .accessibilityLabel("\(GoldMineViewModel.mineName(for: index)) slot")
 
             statusLabel
 
@@ -637,4 +751,33 @@ private struct MineParticleSeed {
     let size: CGFloat
     let speed: Double
     let phaseOffset: Double
+}
+
+// MARK: - Slot Anchor Preference Key
+
+/// Published by each `MineSlotCard` — global center point of the card.
+/// Consumed by `GoldMineDetailView` to position live coin-fly source points.
+struct MineSlotAnchorEntry: Equatable {
+    let slotIndex: Int
+    let point: CGPoint
+}
+
+struct MineSlotAnchorPreferenceKey: PreferenceKey {
+    static var defaultValue: [MineSlotAnchorEntry] = []
+
+    static func reduce(value: inout [MineSlotAnchorEntry], nextValue: () -> [MineSlotAnchorEntry]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+// MARK: - Live Flight (coin / gem particle in transit)
+
+/// A single in-flight coin or gem particle from an active mine to the
+/// resource header. Added by the live-tick timer in `GoldMineDetailView`,
+/// removed when its `CoinFlyAnimationView.onComplete` fires.
+struct LiveMineFlight: Identifiable, Equatable {
+    let id = UUID()
+    let style: CoinStyle
+    let source: CGPoint
+    let target: CGPoint
 }

@@ -14,6 +14,10 @@ struct ActiveQuestBanner: View {
     @State private var hasLoaded = false
     /// Preserve last-known quests so the banner stays visible during background reloads
     @State private var lastKnownQuests: [Quest] = []
+    /// 0...1 fill for the Claim button loader. Animated from 0 → 1 while the
+    /// claim API call is in flight, giving visible feedback without faking
+    /// completion before the server confirms.
+    @State private var claimProgress: CGFloat = 0
 
     /// Matching unclaimed quests from cache (nil = reload in progress → use lastKnownQuests)
     private var activeQuests: [Quest] {
@@ -102,12 +106,27 @@ struct ActiveQuestBanner: View {
 
             // Progress / Claim
             if quest.canClaim {
+                let isClaimingThis = claimingId == quest.id
                 Button {
                     claimQuest(quest)
                 } label: {
-                    Text("Claim")
+                    ZStack(alignment: .leading) {
+                        // Progress-fill loader — visible only while API call
+                        // is in flight. Drawn inside the button label so it
+                        // clips to the button shape automatically.
+                        GeometryReader { geo in
+                            Rectangle()
+                                .fill(Color.white.opacity(0.22))
+                                .frame(width: geo.size.width * (isClaimingThis ? claimProgress : 0))
+                        }
+                        .allowsHitTesting(false)
+
+                        Text("Claim")
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .buttonStyle(.compactPrimary)
+                .disabled(claimingId != nil)
             } else {
                 // Progress pill
                 Text("\(quest.progress)/\(quest.target)")
@@ -166,17 +185,36 @@ struct ActiveQuestBanner: View {
         guard claimingId == nil else { return }
         claimingId = quest.id
         let questId = quest.id
+
+        // Progress-fill loader — start at 0, animate to 1 over ~0.9s. This
+        // gives immediate feedback that the tap was registered without
+        // faking completion. If the API finishes earlier we snap to 1 and
+        // the banner fades away; if it takes longer, the fill simply
+        // holds at 100% until the server responds.
+        claimProgress = 0
+        withAnimation(.easeInOut(duration: 0.9)) {
+            claimProgress = 1
+        }
+
         Task {
             let service = QuestService(appState: self.appState)
             let result = await service.claimQuest(questId: questId)
             claimingId = nil
 
             guard let result = result else {
+                // Reset loader on failure so the button returns to idle.
+                withAnimation(.easeOut(duration: 0.2)) {
+                    claimProgress = 0
+                }
                 self.appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error)
                 return
             }
 
             // ── Commit on confirmed success ──
+            // Snap progress to 100% first so the loader never disappears
+            // mid-flight, then the banner itself fades out via the quest
+            // list transition.
+            claimProgress = 1
             if let idx = self.appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
                 withAnimation(.easeOut(duration: 0.3)) {
                     self.appState.cachedTypedQuests?[idx].rewardClaimed = true

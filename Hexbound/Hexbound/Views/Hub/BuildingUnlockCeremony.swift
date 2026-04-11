@@ -173,17 +173,18 @@ struct UnlockCeremony: View {
     private var lockBadge: some View {
         ZStack {
             Circle()
-                .fill(DarkFantasyTheme.gold.opacity(0.18))
-                .frame(width: 92, height: 92)
-                .blur(radius: 14)
+                .fill(DarkFantasyTheme.gold.opacity(0.09))
+                .frame(width: 128, height: 128)
+                .blur(radius: 18)
 
             Image("icon-padlock")
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 72, height: 72)
-                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 6, y: 3)
+                .frame(width: 112, height: 112)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.55), radius: 8, y: 4)
         }
+        .opacity(0.5)
     }
 
     // MARK: - Animation
@@ -363,5 +364,79 @@ struct BossUnlockCeremony: View {
         if UIImage(named: boss.fullImage) != nil { return boss.fullImage }
         if UIImage(named: boss.portraitImage) != nil { return boss.portraitImage }
         return nil
+    }
+}
+
+// MARK: - Dungeon Unlock Ceremony (typed wrapper)
+
+/// Ceremony that plays when a new dungeon on the overland dungeon map just
+/// became available (usually because the previous one was cleared). Reuses
+/// `UnlockCeremony` with a payload built from `DungeonMapBuilding`.
+struct DungeonUnlockCeremony: View {
+    let building: DungeonMapBuilding
+    let onDismiss: () -> Void
+
+    var body: some View {
+        UnlockCeremony(
+            payload: UnlockCeremonyPayload(
+                assetName: UIImage(named: building.imageName) != nil ? building.imageName : nil,
+                fallbackIcon: building.fallbackIcon,
+                headline: "\(building.label.uppercased()) UNSEALED",
+                barkline: "A new depth awakens on the map. Prepare your blade.",
+                accent: building.glowColor,
+                accessibilityKind: "Dungeon"
+            ),
+            onDismiss: onDismiss
+        )
+    }
+}
+
+// MARK: - Ceremony Queue Host (dungeons)
+
+/// Host view that consumes `appState.pendingDungeonUnlocks` one at a time
+/// and plays a `DungeonUnlockCeremony` for each. Attach as an overlay on
+/// `DungeonMapView` so the ceremonies appear above the terrain.
+struct DungeonUnlockCeremonyHost: View {
+    @Environment(AppState.self) private var appState
+    @Environment(GameDataCache.self) private var cache
+    @State private var currentDungeonId: String?
+
+    var body: some View {
+        ZStack {
+            if let id = currentDungeonId, let building = building(for: id) {
+                DungeonUnlockCeremony(building: building, onDismiss: advance)
+                    .transition(.opacity)
+                    .id(id) // force re-mount per dungeon
+            }
+        }
+        .onAppear(perform: primeIfNeeded)
+        .onChange(of: appState.pendingDungeonUnlocks) { _, new in
+            if currentDungeonId == nil && !new.isEmpty {
+                primeIfNeeded()
+            }
+        }
+    }
+
+    private func building(for id: String) -> DungeonMapBuilding? {
+        resolvedDungeonMapBuildings(from: cache).first { $0.id == id }
+    }
+
+    private func primeIfNeeded() {
+        guard currentDungeonId == nil else { return }
+        guard !appState.pendingDungeonUnlocks.isEmpty else { return }
+        let next = appState.pendingDungeonUnlocks.removeFirst()
+        withAnimation(.easeOut(duration: 0.35)) {
+            currentDungeonId = next
+        }
+    }
+
+    private func advance() {
+        withAnimation(.easeIn(duration: 0.3)) {
+            currentDungeonId = nil
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            primeIfNeeded()
+        }
     }
 }

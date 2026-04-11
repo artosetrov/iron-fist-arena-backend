@@ -23,21 +23,15 @@ struct WelcomeView: View {
                 // 2. Actions — hug the bottom
                 VStack(spacing: LayoutConstants.spaceLG) {
                     // PLAY — hero CTA. One tap = in the game.
-                    VStack(spacing: LayoutConstants.spaceXS) {
-                        Button {
-                            SFXManager.shared.play(.uiConfirm)
-                            Task { await vm.guestLogin(appState: appState) }
-                        } label: {
-                            Text("PLAY")
-                        }
-                        .buttonStyle(.primary(enabled: !vm.isLoading))
-                        .disabled(vm.isLoading)
-                        .accessibilityLabel("Play now, no account needed")
-
-                        Text("No account needed · start in 1 tap")
-                            .font(DarkFantasyTheme.caption)
-                            .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Button {
+                        SFXManager.shared.play(.uiConfirm)
+                        Task { await vm.guestLogin(appState: appState) }
+                    } label: {
+                        Text("PLAY")
                     }
+                    .buttonStyle(.primary(enabled: !vm.isLoading))
+                    .disabled(vm.isLoading)
+                    .accessibilityLabel("Play now, no account needed")
 
                     // Social divider
                     HStack(spacing: LayoutConstants.spaceMD) {
@@ -130,7 +124,7 @@ struct WelcomeView: View {
                     .padding(.top, LayoutConstants.spaceXS)
 
                     // Guest warning
-                    Text("Guest progress links to any account later in Settings.")
+                    Text("сделано в Osetrov Design")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .multilineTextAlignment(.center)

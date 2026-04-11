@@ -221,7 +221,7 @@ struct DailyQuestsDetailView: View {
         case "pvp_wins":
             return .arena
         case "dungeons_complete":
-            return .dungeonSelect
+            return .dungeonMap
         case "gold_spent":
             return .shop
         case "consumable_use", "item_upgrade":
@@ -312,7 +312,7 @@ struct DailyQuestsDetailView: View {
                     Text(quest.description)
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .lineLimit(2)
+                        .lineLimit(2, reservesSpace: true)
                 }
 
                 Spacer(minLength: 4)

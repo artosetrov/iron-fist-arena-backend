@@ -312,11 +312,35 @@ final class ShopViewModel {
         let savedGems = appState.currentCharacter?.gems ?? 0
         let savedItems = items
 
-        // Deduct currency optimistically (Bug #20: total cost, not unit)
-        if item.isGemPurchase {
-            appState.currentCharacter?.gems = savedGems - totalCost
-        } else {
-            appState.currentCharacter?.gold = savedGold - totalCost
+        // Gem packs add gems while spending gold — they're the one consumable
+        // with a bidirectional balance effect. All other items just spend.
+        let ct = item.consumableType ?? item.catalogId ?? ""
+        let isGemPack = ct.hasPrefix("gem_pack_")
+        let gemPackGemsAmount: Int = {
+            switch ct {
+            case "gem_pack_small": return 10
+            case "gem_pack_medium": return 50
+            case "gem_pack_large": return 100
+            default: return 0
+            }
+        }()
+
+        // Deduct currency optimistically (Bug #20: total cost, not unit).
+        // Use a fresh struct copy + reassignment so @Observable reliably
+        // notifies every view reading `currentCharacter.gold/gems` — optional
+        // chain mutation on a struct property has been flaky in practice.
+        if var char = appState.currentCharacter {
+            if item.isGemPurchase {
+                char.gems = savedGems - totalCost
+            } else {
+                char.gold = savedGold - totalCost
+                if isGemPack {
+                    // Credit the gems immediately — server response will overwrite
+                    // with authoritative values a moment later.
+                    char.gems = savedGems + gemPackGemsAmount
+                }
+            }
+            appState.currentCharacter = char
         }
 
         // Remove from list immediately (equipment only)
@@ -333,20 +357,12 @@ final class ShopViewModel {
         appState.invalidateCache("quests")
 
         // ── Fire API in background ──
-        let ct = item.consumableType ?? item.catalogId ?? ""
         Task { [weak self] in
             guard let self else { return }
             defer { buyingItemId = nil }
             let success: Bool
-            if ct.hasPrefix("gem_pack_") {
-                let gemsAmount: Int
-                switch ct {
-                case "gem_pack_small": gemsAmount = 10
-                case "gem_pack_medium": gemsAmount = 50
-                case "gem_pack_large": gemsAmount = 100
-                default: gemsAmount = 10
-                }
-                success = await service.buyGems(gemsAmount: gemsAmount)
+            if isGemPack {
+                success = await service.buyGems(catalogId: ct)
             } else if item.isConsumable, !ct.isEmpty {
                 // Bug #20: pass quantity — backend /api/shop/buy-consumable
                 // already supports bulk purchase in one atomic transaction.
@@ -360,9 +376,13 @@ final class ShopViewModel {
                 let toastMsg = qty > 1 ? "\(qty)× \(item.itemName) purchased!" : "Item purchased!"
                 appState.showToast(toastMsg, type: .reward)
             } else {
-                // Revert optimistic state
-                appState.currentCharacter?.gold = savedGold
-                appState.currentCharacter?.gems = savedGems
+                // Revert optimistic state using a fresh struct copy for the
+                // same @Observable-reliable notification reason as the deduct.
+                if var char = appState.currentCharacter {
+                    char.gold = savedGold
+                    char.gems = savedGems
+                    appState.currentCharacter = char
+                }
                 items = savedItems
                 lastPurchasedItemId = nil
                 appState.showToast("Purchase failed", subtitle: "Gold refunded", type: .error)

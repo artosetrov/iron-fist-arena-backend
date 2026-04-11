@@ -84,6 +84,12 @@ final class AppState {
     /// by the hub via BuildingUnlockCeremony on first mount.
     var pendingBuildingUnlocks: [String] = []
 
+    /// Pending dungeon unlocks (slugs) — enqueued by `DungeonRoomViewModel`
+    /// when the player clears a dungeon and the next one in the sequence
+    /// just became available. Consumed by `DungeonUnlockCeremonyHost`
+    /// attached on top of `DungeonMapView`.
+    var pendingDungeonUnlocks: [String] = []
+
     // MARK: - UI State
     var isLoading = false
     var toasts: [ToastMessage] = []

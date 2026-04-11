@@ -12,13 +12,114 @@ final class GoldMineViewModel {
     var isBuyingSlot = false
     private var activeActionSlots: Set<Int> = []  // prevents double-tap per slot
 
-    init(appState: AppState, cache: GameDataCache) {
-        self.appState = appState
-        self.cache = cache
+    // MARK: - Mine Names (canonical — docs/08_prompts/mine-card-prompts.md)
+
+    /// Thematic mine names per slot index. Used instead of "SLOT N" labels.
+    static let mineNames: [String] = [
+        "Amethyst Cavern",   // 0 — purple
+        "Emerald Vein",      // 1 — green
+        "Molten Forge",      // 2 — orange
+        "Frozen Depths",     // 3 — cyan/ice
+        "Blood Quarry",      // 4 — crimson
+        "King's Treasury"    // 5 — gold
+    ]
+
+    static func mineName(for index: Int) -> String {
+        guard index >= 0 && index < mineNames.count else { return "Mine \(index + 1)" }
+        return mineNames[index]
     }
+
+    // MARK: - Mining Economics (mirrors backend/src/lib/game/gold-mine.ts)
+
+    /// Average gold reward per 4h session per slot (backend: 40–100, avg ~70).
+    static let averageGoldPerSession: Double = 70
+    /// Session duration in seconds (4 hours).
+    static let sessionDurationSec: Double = 4 * 3600
+    /// Average gold per second per actively mining slot (~0.00486).
+    static var goldPerSecondPerSlot: Double {
+        averageGoldPerSession / sessionDurationSec
+    }
+    /// Gem drop: 10% chance, 1–3 gems → average ~0.2 gems per session (~4h).
+    static var gemsPerSecondPerSlot: Double {
+        0.2 / sessionDurationSec
+    }
+
+    // MARK: - Live counters (visual-only, server remains authoritative)
+
+    /// Visual gold value for tick-up counter. Re-synced to server on every response.
+    var visualGold: Int = 0
+    /// Visual gems value for tick-up counter.
+    var visualGems: Int = 0
+    /// Fractional accumulator so slow rates (1 gold / 200s) can still tick integer coins.
+    private var goldAccumulator: Double = 0
+    private var gemAccumulator: Double = 0
 
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
     var gems: Int { appState.currentCharacter?.gems ?? 0 }
+
+    /// Number of slots currently in "mining" status (not ready, not idle).
+    var miningSlotCount: Int {
+        slots.filter { slotStatus($0) == "mining" }.count
+    }
+
+    /// Current gold per hour from active mining slots (for the rate label).
+    var currentGoldPerHour: Int {
+        Int(Double(miningSlotCount) * Self.goldPerSecondPerSlot * 3600)
+    }
+
+    /// Current gems per hour (fractional, so display as 0.0 precision).
+    var currentGemsPerHour: Double {
+        Double(miningSlotCount) * Self.gemsPerSecondPerSlot * 3600
+    }
+
+    /// Sync visual counters to server-authoritative values. Call after any API update.
+    func syncVisualCounters() {
+        visualGold = gold
+        visualGems = gems
+        goldAccumulator = 0
+        gemAccumulator = 0
+    }
+
+    /// Advance visual counters by one tick (called from a Timer in the view).
+    /// Returns a `LiveTickDelta` describing how many coins/gems "arrived" this tick
+    /// so the view can schedule fly-particles from each active slot.
+    func advanceLiveTick(elapsedSec: Double) -> LiveTickDelta {
+        let activeCount = miningSlotCount
+        guard activeCount > 0 else { return LiveTickDelta(coinsPerSlot: 0, gems: 0) }
+
+        let goldPerSec = Double(activeCount) * Self.goldPerSecondPerSlot
+        goldAccumulator += goldPerSec * elapsedSec
+
+        let gemPerSec = Double(activeCount) * Self.gemsPerSecondPerSlot
+        gemAccumulator += gemPerSec * elapsedSec
+
+        // Cap visual counter against server ceiling (never show more than real).
+        let maxVisualGold = gold
+        let maxVisualGems = gems
+
+        var coinsEmittedPerSlot = 0
+        if goldAccumulator >= 1.0 {
+            let coinsTotal = Int(goldAccumulator.rounded(.down))
+            goldAccumulator -= Double(coinsTotal)
+            // Split across slots (coin flies from each active mine).
+            coinsEmittedPerSlot = max(1, coinsTotal / max(1, activeCount))
+            visualGold = min(maxVisualGold, visualGold + coinsTotal)
+        }
+
+        var gemsEmitted = 0
+        if gemAccumulator >= 1.0 {
+            gemsEmitted = Int(gemAccumulator.rounded(.down))
+            gemAccumulator -= Double(gemsEmitted)
+            visualGems = min(maxVisualGems, visualGems + gemsEmitted)
+        }
+
+        return LiveTickDelta(coinsPerSlot: coinsEmittedPerSlot, gems: gemsEmitted)
+    }
+
+    struct LiveTickDelta {
+        let coinsPerSlot: Int
+        let gems: Int
+    }
 
     var activeSlots: [[String: Any]] {
         slots.filter { ($0["status"] as? String) != nil }
@@ -48,6 +149,7 @@ final class GoldMineViewModel {
             slots = data["slots"] as? [[String: Any]] ?? []
             maxSlots = data["max_slots"] as? Int ?? 3
             cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+            syncVisualCounters()
             isLoading = false
         } catch {
             isLoading = false
@@ -117,10 +219,14 @@ final class GoldMineViewModel {
         }()
 
         withAnimation(MotionConstants.smooth) {
-            // Mark slot as mining (reset status)
+            // Mark slot idle until server confirms and returns fresh session data.
+            // Previously we set status = "mining" but kept old started_at/ends_at,
+            // which made the progress bar render stuck at 100%.
             if slotIndex < slots.count {
                 var slot = slots[slotIndex]
-                slot["status"] = "mining"
+                slot["status"] = "idle"
+                slot["started_at"] = nil
+                slot["ends_at"] = nil
                 slot["gold_accumulated"] = 0
                 slot["gold_mined"] = 0
                 slots[slotIndex] = slot
@@ -128,6 +234,7 @@ final class GoldMineViewModel {
             appState.currentCharacter?.gold = (savedGold ?? 0) + estimatedGold
             actionSlotId = nil
         }
+        syncVisualCounters()
         HapticManager.success()
 
         // Background: actual API call
@@ -144,7 +251,11 @@ final class GoldMineViewModel {
                 if let newGold = data["gold"] as? Int {
                     appState.currentCharacter?.gold = newGold
                 }
+                if let newGems = data["gems"] as? Int {
+                    appState.currentCharacter?.gems = newGems
+                }
             }
+            syncVisualCounters()
             appState.invalidateCache("quests")
         } catch {
             // Revert on failure
@@ -186,6 +297,7 @@ final class GoldMineViewModel {
                 if let newGems = data["gems"] as? Int {
                     appState.currentCharacter?.gems = newGems
                 }
+                syncVisualCounters()
             } catch {
                 // Revert gems on failure
                 appState.currentCharacter?.gems = prevGems

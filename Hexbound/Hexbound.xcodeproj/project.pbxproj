@@ -227,6 +227,7 @@
 		AC2F4A6B8C9D0E1F2A3B4C5D /* GuildHallDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2F4A6B8C9D0E1F2A3B4C5E /* GuildHallDetailView.swift */; };
 		B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6DF2AB4A5F6FDC34209975 /* SettingsViewModel.swift */; };
 		B1FD7C06AD25A6CD94815611 /* RevengeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7DEC31D96099535208BCD1 /* RevengeEntry.swift */; };
+		5B34EB72B2B1DF29098C8BE5 /* MineResourceHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CC572483AAC29065E209C11 /* MineResourceHeader.swift */; };
 		B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */; };
 		B2C3D4E5F60718A9B0C1D2E3 /* OfflineBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718A9B0C1D2E4 /* OfflineBannerView.swift */; };
 		B2C3D4E5F60718A9B0C1D2E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718A9B0C1D2E6 /* NetworkMonitor.swift */; };
@@ -572,6 +573,7 @@
 		9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPurchaseView.swift; sourceTree = "<group>"; };
 		9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardPlayerDetailSheet.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineDetailView.swift; sourceTree = "<group>"; };
+		8CC572483AAC29065E209C11 /* MineResourceHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineResourceHeader.swift; sourceTree = "<group>"; };
 		9c81fbfec3c7f5bf18396ab5 /* XPRingShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPRingShape.swift; sourceTree = "<group>"; };
 		A0394C602F688BD400860F7B /* HexboundProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = HexboundProducts.storekit; path = Hexbound/Resources/HexboundProducts.storekit; sourceTree = "<group>"; };
 		A094F944FD85BA00BAF09F40 /* DungeonSelectViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectViewModel.swift; sourceTree = "<group>"; };
@@ -1284,6 +1286,7 @@
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
 				9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */,
 				A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */,
+				8CC572483AAC29065E209C11 /* MineResourceHeader.swift */,
 				8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */,
 				C8812C4317B938859A4087AC /* ShellGameViewModel.swift */,
 				D7B837363250403614BE1A4F /* TavernDetailView.swift */,
@@ -1891,6 +1894,7 @@
 				16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */,
 				B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */,
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
+				5B34EB72B2B1DF29098C8BE5 /* MineResourceHeader.swift in Sources */,
 				AC2F4A6B8C9D0E1F2A3B4C5D /* GuildHallDetailView.swift in Sources */,
 				9B1E3F5A7B8C9D0E1F2A3B4C /* GuildHallViewModel.swift in Sources */,
 				55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */,

@@ -103,17 +103,21 @@ final class ShopService {
 
     // MARK: - Buy Gems (gold → gems)
 
-    func buyGems(gemsAmount: Int) async -> Bool {
+    /// Buys a gem pack by its catalog id (`gem_pack_small`/`medium`/`large`).
+    /// Price and gems amount are resolved server-side from the shared
+    /// `gem-packs.ts` table — clients never send the gold cost.
+    func buyGems(catalogId: String) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
             let body: [String: Any] = [
                 "character_id": charId,
-                "gems_amount": gemsAmount
+                "catalog_id": catalogId
             ]
             let response = try await APIClient.shared.postRaw(
                 APIEndpoints.shopBuyGems,
                 body: body
             )
+            // Flat response: { gold, gems, goldSpent, gemsReceived, catalogId }
             updateCharacter(from: response)
             return true
         } catch let error as APIError {

@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor @Observable
 final class DungeonRoomViewModel {
-    private let appState: AppState
+    let appState: AppState
     private let service: DungeonService
     private let characterService: CharacterService
 
@@ -24,6 +24,12 @@ final class DungeonRoomViewModel {
     var victoryItems: [[String: Any]] = []
     /// HP fraction after battle (0.0–1.0) for star rating. nil if unknown.
     var hpFractionAfterBattle: Double?
+    /// Whether this fight levelled the hero up. Consumed by `DungeonVictoryView`
+    /// to run the arena-style XP bar fill + LEVEL UP! flash animation and
+    /// defer `triggerLevelUpModal` until the bar finishes filling.
+    var victoryLeveledUp = false
+    var victoryNewLevel: Int?
+    var victoryStatPointsAwarded: Int = 0
 
     // Defeat overlay
     var showDefeat = false
@@ -38,18 +44,8 @@ final class DungeonRoomViewModel {
 
     // XP bar: snapshot taken just before fight to detect level-up
     var preFightLevel: Int = 0
+    var preFightXP: Int = 0
     var preFightXPProgress: Double = 0
-
-    /// XP bar config for the victory screen — built from current character state.
-    var victoryXPBarConfig: XPBarConfig? {
-        guard let char = appState.currentCharacter else { return nil }
-        let leveledUp = char.level > preFightLevel
-        return XPBarConfig(
-            displayLevel: char.level,
-            progress: CGFloat(char.xpPercentage),
-            leveledUp: leveledUp
-        )
-    }
 
     private let cache: GameDataCache
 
@@ -192,6 +188,7 @@ final class DungeonRoomViewModel {
         isFighting = true
         // Capture XP snapshot before fight to detect level-up on victory screen
         preFightLevel = appState.currentCharacter?.level ?? 0
+        preFightXP = appState.currentCharacter?.experience ?? 0
         preFightXPProgress = appState.currentCharacter?.xpPercentage ?? 0
 
         #if DEBUG
@@ -282,6 +279,17 @@ final class DungeonRoomViewModel {
                 ?? 0
             victoryItems = result["loot"] as? [[String: Any]] ?? []
 
+            // Extract level-up metadata — consumed by DungeonVictoryView to
+            // animate the XP bar and trigger the level-up modal in sync with
+            // the bar finishing its fill (mirrors arena/pvp flow).
+            let resultData = result["result"] as? [String: Any]
+            let leveledUp = (resultData?["leveled_up"] as? Bool) ?? false
+            let newLevel = resultData?["new_level"] as? Int
+            let statPoints = resultData?["stat_points_awarded"] as? Int ?? 3
+            victoryLeveledUp = leveledUp
+            victoryNewLevel = newLevel
+            victoryStatPointsAwarded = leveledUp ? statPoints : 0
+
             // HP fraction for star rating (server sends playerHpPercent or we compute from character)
             if let hpPct = result["playerHpPercent"] as? Double {
                 hpFractionAfterBattle = hpPct
@@ -293,6 +301,32 @@ final class DungeonRoomViewModel {
                 if let char = appState.currentCharacter {
                     hpFractionAfterBattle = Double(char.currentHp) / Double(max(char.maxHp, 1))
                 }
+            }
+
+            // Optimistic character update so DungeonVictoryView can snapshot
+            // the XP transition the same way CombatResultDetailView does for
+            // arena/pvp. Single write-back (struct) to avoid @Observable
+            // re-entrant exclusive-access violations. Background loadCharacter()
+            // below reconciles against authoritative server state afterwards.
+            if var char = appState.currentCharacter {
+                if victoryXP > 0 {
+                    char.experience = (char.experience ?? 0) + victoryXP
+                }
+                if victoryGold > 0 {
+                    char.gold += victoryGold
+                }
+                if leveledUp, let newLvl = newLevel {
+                    let prevXpNeeded = Self.xpNeededForLevel(newLvl - 1)
+                    char.level = newLvl
+                    let totalXp = char.experience ?? 0
+                    if totalXp >= prevXpNeeded {
+                        char.experience = totalXp - prevXpNeeded
+                    }
+                    if statPoints > 0 {
+                        char.statPoints = (char.statPoints ?? 0) + statPoints
+                    }
+                }
+                appState.currentCharacter = char
             }
 
             defeatedCount += 1
@@ -328,12 +362,9 @@ final class DungeonRoomViewModel {
             Task { [characterService] in
                 await characterService.loadCharacter()
             }
-            let resultData = result["result"] as? [String: Any]
-            if let leveledUp = resultData?["leveled_up"] as? Bool, leveledUp,
-               let newLevel = resultData?["new_level"] as? Int {
-                let statPoints = resultData?["stat_points_awarded"] as? Int ?? 3
-                appState.triggerLevelUpModal(newLevel: newLevel, statPoints: statPoints)
-            }
+            // NOTE: level-up modal trigger is now deferred to
+            // DungeonVictoryView.runXpBarAnimation() so it pops AFTER the
+            // XP bar finishes filling (identical to arena/pvp flow).
         } else {
             // Defeat — run is deleted server-side
             runId = ""
@@ -383,6 +414,10 @@ final class DungeonRoomViewModel {
             // Go back to dungeon select
             appState.showCelebration(.dungeonClear, title: "Dungeon Complete!", subtitle: "All bosses defeated")
             appState.invalidateCache("quests")
+            // Queue a "next dungeon unsealed" ceremony on the dungeon map,
+            // if the player's clear unlocked the following dungeon in the
+            // sequence. Played by `DungeonUnlockCeremonyHost` on mount.
+            queueNextDungeonUnlockIfAny()
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
         } else {
             // Select next boss
@@ -405,6 +440,21 @@ final class DungeonRoomViewModel {
         pendingBossUnlock = boss
     }
 
+    /// Enqueue a dungeon-map unlock ceremony when the player clears the
+    /// current dungeon and the next one in the overland sort order becomes
+    /// available. Consumed by `DungeonUnlockCeremonyHost` on `DungeonMapView`.
+    private func queueNextDungeonUnlockIfAny() {
+        guard let currentId = dungeon?.id else { return }
+        let all = resolvedDungeonMapBuildings(from: cache)
+            .sorted { $0.sortOrder < $1.sortOrder }
+        guard let idx = all.firstIndex(where: { $0.id == currentId }),
+              idx + 1 < all.count else { return }
+        let nextId = all[idx + 1].id
+        if !appState.pendingDungeonUnlocks.contains(nextId) {
+            appState.pendingDungeonUnlocks.append(nextId)
+        }
+    }
+
     func dismissBossUnlock() {
         pendingBossUnlock = nil
     }
@@ -422,5 +472,16 @@ final class DungeonRoomViewModel {
 
     func selectBoss(at index: Int) {
         selectedBossIndex = index
+    }
+
+    // MARK: - XP Curve
+
+    /// XP required to finish `level` (i.e. reach `level + 1`). Mirrors the
+    /// formula used by `CombatResultDetailView.xpNeededForLevel(_:)` and the
+    /// backend `xpRequired()` helper. Kept in one place so the dungeon
+    /// victory animation and the optimistic level-up update agree.
+    static func xpNeededForLevel(_ level: Int) -> Int {
+        let next = level + 1
+        return 100 * next + 20 * next * next
     }
 }

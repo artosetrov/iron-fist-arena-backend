@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { ItemType, Rarity } from '@prisma/client'
 import { getGameConfig } from '@/lib/game/config'
 import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
+import { GEM_PACKS, isGemPackCatalogId } from '@/lib/game/gem-packs'
 
 // Hardcoded price fallbacks — overridden by GameConfig consumable.price.* keys
 // Economy v2 — consumable prices increased ~25-35% to create recurring gold sink pressure
@@ -16,19 +17,15 @@ const DEFAULT_CONSUMABLE_PRICES: Record<string, number> = {
   health_potion_large: 800,    // was 700
 }
 
-// Gem packs: required level to unlock each tier
-const GEM_PACK_REQUIRED_LEVELS: Record<string, number> = {
-  gem_pack_small: 1,
-  gem_pack_medium: 5,
-  gem_pack_large: 10,
-}
-
-// Gem pack fallback gold prices — used when buyPrice = 0 in DB
-const GEM_PACK_FALLBACK_PRICES: Record<string, number> = {
-  gem_pack_small: 500,
-  gem_pack_medium: 1200,
-  gem_pack_large: 3000,
-}
+// Gem pack required levels and fallback prices are now the single source of truth
+// in @/lib/game/gem-packs — shared with /api/shop/buy-gems so listing and transaction
+// agree on amounts and prices. Do NOT duplicate these values here.
+const GEM_PACK_REQUIRED_LEVELS: Record<string, number> = Object.fromEntries(
+  Object.values(GEM_PACKS).map((p) => [p.catalogId, p.requiredLevel])
+)
+const GEM_PACK_FALLBACK_PRICES: Record<string, number> = Object.fromEntries(
+  Object.values(GEM_PACKS).map((p) => [p.catalogId, p.goldPrice])
+)
 
 // Calculate fallback price for equipment items with buyPrice = 0
 function calculateFallbackPrice(rarity: string, level: number): number {
@@ -206,9 +203,12 @@ export async function GET(req: NextRequest) {
           goldPrice = consumablePriceMap.get(catalogId)!
         }
 
-        // Gem packs: fallback price if buyPrice is 0
-        if (isGemPack && goldPrice <= 0) {
-          goldPrice = GEM_PACK_FALLBACK_PRICES[catalogId] ?? 500
+        // Gem packs: ALWAYS use the canonical value from GEM_PACKS, ignore DB.
+        // /api/shop/buy-gems trusts GEM_PACKS as the single source of truth — if the
+        // listing used a different price from DB, clients would deduct X gold
+        // optimistically while the server actually charges Y. Keep them aligned.
+        if (isGemPack && isGemPackCatalogId(catalogId)) {
+          goldPrice = GEM_PACKS[catalogId].goldPrice
         }
 
         // Safety net: no item should ever cost 0 gold

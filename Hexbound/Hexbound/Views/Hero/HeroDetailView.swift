@@ -1232,9 +1232,16 @@ struct HeroDetailView: View {
                 ) {
                     ForEach(slots) { slot in
                         if let item = slot.item {
+                            // BUG-63: pass `canEquip` so the card dims + gets a
+                            // red lock badge for items this character can't yet
+                            // wear (level too low / wrong class). Mirror of the
+                            // server's equip validation — see InventoryViewModel.
                             ItemCardView(
                                 item: item,
-                                context: .inventory(equippedItem: equipped[item.equipSlot])
+                                context: .inventory(
+                                    equippedItem: equipped[item.equipSlot],
+                                    canEquip: vm.canEquip(item)
+                                )
                             ) {
                                 vm.selectItem(item)
                             }

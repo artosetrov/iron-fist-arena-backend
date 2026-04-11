@@ -67,24 +67,15 @@ struct CharacterSelectionView: View {
                 }
             }
             .toolbar {
-                // Back button — only when no heroes (prevents dead-end)
+                // Back button — only when no heroes (prevents dead-end).
+                // Uses the shared HubLogoButton so the arrow style matches Settings
+                // and every other screen exactly (same asset, same size, same hit area).
                 if !vm.isLoading && vm.characters.isEmpty {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button {
+                        HubLogoButton {
                             HapticManager.light()
                             appState.logout()
-                        } label: {
-                            HStack(spacing: LayoutConstants.spaceXS) {
-                                Image("ui-arrow-left")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
-                                Text("Back")
-                                    .font(DarkFantasyTheme.body)
-                                    .foregroundStyle(DarkFantasyTheme.gold)
-                            }
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -171,8 +162,8 @@ struct CharacterSelectionView: View {
                 appState.authPath.append(AppRoute.currencyPurchase())
             } label: {
                 Image(systemName: "plus")
-                    .font(DarkFantasyTheme.buttonLabel)
-                    .frame(width: 44, height: 44)
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.compactPrimary)
             .accessibilityLabel("Get currency")

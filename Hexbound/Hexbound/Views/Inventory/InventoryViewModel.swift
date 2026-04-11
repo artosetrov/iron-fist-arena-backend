@@ -70,6 +70,34 @@ final class InventoryViewModel {
         return map
     }
 
+    // BUG-63: mirror of the server's equip validation
+    // (backend/src/app/api/inventory/equip/route.ts) so the inventory grid
+    // can pre-dim items that this character can't wear yet (level too low
+    // or wrong class). The detail sheet has its own copy of this logic so
+    // both layers stay consistent without a shared dependency.
+
+    /// Whether the currently-viewed character can equip this item right now.
+    /// Returns `true` for consumables, already-equipped items, and any item
+    /// inside shop/view flows — those contexts have their own gating.
+    func canEquip(_ item: Item) -> Bool {
+        guard item.itemType != .consumable else { return true }
+        guard item.isEquipped != true else { return true }
+        guard let char = appState.currentCharacter else { return true }
+
+        // Level check
+        if char.level < item.itemLevel { return false }
+
+        // Class restriction check
+        if let restriction = item.classRestriction?.lowercased(),
+           !restriction.isEmpty,
+           restriction != "none",
+           restriction != char.characterClass.rawValue.lowercased() {
+            return false
+        }
+
+        return true
+    }
+
     /// Grid slots: items + empty placeholders up to totalSlots
     var gridSlots: [InventorySlot] {
         let sorted = sortedItems

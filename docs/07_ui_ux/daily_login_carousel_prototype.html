@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daily Login — Carousel Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* DarkFantasyTheme tokens (from Hexbound/Theme/DarkFantasyTheme.swift) */
+    --bg-abyss:       #0A0510;
+    --bg-primary:     #120820;
+    --bg-secondary:   #1A0E2E;
+    --bg-tertiary:    #241438;
+    --bg-elevated:    #2D1A45;
+
+    --gold:           #D4A537;
+    --gold-bright:    #F5C842;
+    --gold-glow:      rgba(212,165,55,0.45);
+
+    --text-primary:   #F5F5F5;
+    --text-secondary: #A0A0B0;
+    --text-tertiary:  #6B6B7D;
+    --text-on-gold:   #1A1A2E;
+
+    --success:        #4ADE80;
+    --danger:         #E63946;
+
+    /* rarity */
+    --rarity-common:    #9CA3AF;
+    --rarity-uncommon:  #4ADE80;
+    --rarity-rare:      #60A5FA;
+    --rarity-epic:      #C084FC;
+    --rarity-legendary: #FBBF24;
+
+    /* spacing */
+    --space-2xs: 2px; --space-xs: 4px; --space-sm: 8px; --space-ms: 12px;
+    --space-md: 16px; --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px;
+
+    --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px;
+    --radius-card: 14px; --radius-modal: 22px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(ellipse at center top, #1F0E35 0%, var(--bg-abyss) 70%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 80px;
+    gap: 24px;
+  }
+
+  h1.page-title {
+    font-family: 'Oswald', sans-serif;
+    color: var(--gold-bright);
+    letter-spacing: 2px;
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .page-subtitle {
+    color: var(--text-tertiary);
+    font-size: 13px;
+    margin-top: -16px;
+    max-width: 420px;
+    text-align: center;
+  }
+
+  /* ──────────── Phone frame ──────────── */
+  .phone {
+    width: 393px;
+    max-width: 100%;
+    background: var(--bg-primary);
+    border-radius: 44px;
+    border: 2px solid rgba(212,165,55,0.25);
+    box-shadow:
+      0 0 0 6px #000,
+      0 0 40px rgba(212,165,55,0.15),
+      0 30px 80px rgba(0,0,0,0.8);
+    padding: 24px 0 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .phone::before {
+    content: '';
+    position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 28px;
+    background: #000;
+    border-radius: 20px;
+  }
+
+  .screen {
+    position: relative;
+    padding: 44px 0 0;
+  }
+
+  /* ──────────── Header ──────────── */
+  .header {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 20px;
+    position: relative;
+  }
+  .header-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--gold-bright);
+    letter-spacing: 1.5px;
+  }
+  .close-btn {
+    position: absolute; right: 20px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-secondary);
+    display: grid; place-items: center;
+    cursor: pointer;
+    font-size: 16px;
+    border: none;
+  }
+
+  /* ──────────── Streak block ──────────── */
+  .streak-block {
+    text-align: center;
+    margin-top: 8px;
+  }
+  .streak-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.5px;
+    line-height: 1.05;
+  }
+  .streak-subtitle {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  /* ──────────── Weekly progress ──────────── */
+  .progress-block {
+    margin: 24px 20px 0;
+  }
+  .progress-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .progress-label {
+    font-size: 14px; font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .progress-value {
+    font-size: 15px; font-weight: 700;
+    color: var(--gold-bright);
+  }
+  .progress-track {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-bright), var(--gold));
+    box-shadow: 0 0 12px var(--gold-glow);
+    border-radius: 6px;
+  }
+
+  /* ──────────── Section label ──────────── */
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 28px;
+    text-transform: uppercase;
+  }
+
+  /* ──────────── Carousel ──────────── */
+  .carousel-wrap {
+    position: relative;
+    margin-top: 10px;
+    /* fade edges */
+    mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+  }
+  .carousel {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 16px 140px 28px;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+  .carousel::-webkit-scrollbar { display: none; }
+
+  /* ──────────── Reward card (ItemCardView clone) ──────────── */
+  .reward-card {
+    flex: 0 0 auto;
+    width: 96px;
+    scroll-snap-align: center;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px;
+    transition: opacity 120ms;
+  }
+  .reward-card:active { opacity: 0.75; }
+
+  .reward-card .cell {
+    width: 96px; height: 96px;
+    position: relative;
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    background: linear-gradient(to bottom, rgba(156,163,175,0.10), rgba(10,5,16,0.95));
+    border: 2px solid rgba(156,163,175,0.65);
+    box-shadow: 0 0 14px rgba(156,163,175,0.25);
+  }
+  .reward-card .cell::before {
+    /* corner brackets (simplified) */
+    content: '';
+    position: absolute; inset: 3px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: calc(var(--radius-card) - 2px);
+    pointer-events: none;
+  }
+  .reward-card .cell::after {
+    /* bottom vignette */
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
+    background: linear-gradient(to bottom, transparent, rgba(10,5,16,0.9));
+    pointer-events: none;
+  }
+  .reward-card .icon {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-size: 42px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+  }
+  .reward-card .amount {
+    position: absolute; bottom: 6px; left: 0; right: 0;
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px; font-weight: 700;
+    color: var(--gold-bright);
+    text-shadow: 0 1px 2px #000, 0 0 6px rgba(212,165,55,0.6);
+    letter-spacing: 0.5px;
+  }
+  .reward-card .day-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+  }
+
+  /* rarity variants */
+  .rarity-common    .cell { border-color: var(--rarity-common);    box-shadow: 0 0 14px rgba(156,163,175,0.3); }
+  .rarity-uncommon  .cell { border-color: var(--rarity-uncommon);  box-shadow: 0 0 14px rgba(74,222,128,0.35); background: linear-gradient(to bottom, rgba(74,222,128,0.10), rgba(10,5,16,0.95)); }
+  .rarity-rare      .cell { border-color: var(--rarity-rare);      box-shadow: 0 0 14px rgba(96,165,250,0.40); background: linear-gradient(to bottom, rgba(96,165,250,0.10), rgba(10,5,16,0.95)); }
+  .rarity-epic      .cell { border-color: var(--rarity-epic);      box-shadow: 0 0 18px rgba(192,132,252,0.50); background: linear-gradient(to bottom, rgba(192,132,252,0.12), rgba(10,5,16,0.95)); }
+  .rarity-legendary .cell { border-color: var(--rarity-legendary); box-shadow: 0 0 22px rgba(251,191,36,0.55); background: linear-gradient(to bottom, rgba(251,191,36,0.14), rgba(10,5,16,0.95)); }
+
+  /* ── state: today (current) ── */
+  .reward-card.today {
+    width: 124px;
+  }
+  .reward-card.today .cell {
+    width: 124px; height: 124px;
+    border-width: 2.5px;
+    border-color: var(--gold-bright);
+    box-shadow:
+      0 0 26px var(--gold-glow),
+      0 0 50px rgba(212,165,55,0.25);
+    animation: pulseGlow 2.6s ease-in-out infinite;
+  }
+  .reward-card.today .cell::before {
+    /* rotating angular glow ring */
+    content: '';
+    position: absolute; inset: -3px;
+    border-radius: calc(var(--radius-card) + 1px);
+    background: conic-gradient(
+      from 0deg,
+      var(--gold-bright),
+      rgba(212,165,55,0.15),
+      var(--gold-bright)
+    );
+    opacity: 0.6;
+    z-index: -1;
+    animation: rotateRing 4s linear infinite;
+  }
+  .reward-card.today .icon { font-size: 58px; }
+  .reward-card.today .amount { font-size: 16px; bottom: 8px; }
+  .reward-card.today .day-label {
+    color: var(--gold-bright);
+    font-size: 12px;
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 26px var(--gold-glow), 0 0 50px rgba(212,165,55,0.25); }
+    50%      { box-shadow: 0 0 36px rgba(245,200,66,0.6), 0 0 70px rgba(212,165,55,0.4); }
+  }
+  @keyframes rotateRing {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── state: claimed ── */
+  .reward-card.claimed { opacity: 0.55; filter: saturate(0.5); }
+  .reward-card.claimed .cell {
+    border-color: var(--success);
+    box-shadow: none;
+  }
+  .reward-card.claimed .icon { opacity: 0.3; }
+  .reward-card.claimed .amount { opacity: 0.4; }
+  .reward-card.claimed .day-label { color: var(--success); opacity: 0.8; }
+  .reward-card.claimed .check {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-size: 42px; color: var(--success);
+    text-shadow: 0 0 14px rgba(74,222,128,0.6);
+  }
+
+  /* ── state: locked ── */
+  .reward-card.locked { opacity: 0.75; }
+  .reward-card.locked .cell { filter: brightness(0.6) saturate(0.4); }
+  .reward-card.locked .lock {
+    position: absolute; bottom: 6px; right: 6px;
+    width: 22px; height: 22px;
+    background: var(--bg-abyss);
+    border: 1px solid var(--text-tertiary);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 11px;
+  }
+
+  /* ──────────── Claim button ──────────── */
+  .claim-wrap {
+    margin: 4px 20px 0;
+  }
+  .claim-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color: var(--text-on-gold);
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    position: relative;
+    box-shadow:
+      0 0 24px rgba(212,165,55,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.4),
+      inset 0 -2px 0 rgba(0,0,0,0.2);
+    text-transform: uppercase;
+  }
+  .claim-btn:hover { filter: brightness(1.08); }
+  .claim-btn:active { opacity: 0.85; }
+  /* corner brackets */
+  .claim-btn::before, .claim-btn::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border: 2px solid var(--text-on-gold);
+    pointer-events: none;
+  }
+  .claim-btn::before {
+    top: 4px; left: 4px;
+    border-right: none; border-bottom: none;
+  }
+  .claim-btn::after {
+    bottom: 4px; right: 4px;
+    border-left: none; border-top: none;
+  }
+
+  .tomorrow-hint {
+    text-align: center;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+  .tomorrow-hint b { color: var(--text-secondary); font-weight: 600; }
+
+  /* ──────────── Modal (RewardDetailSheet) ──────────── */
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,5,16,0.85);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 42px;
+    padding: 24px;
+  }
+  .modal-backdrop.open {
+    display: flex;
+    animation: fadeIn 200ms ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    width: 100%;
+    background: radial-gradient(ellipse at top, #2A1848 0%, var(--bg-secondary) 70%);
+    border-radius: var(--radius-modal);
+    border: 1.5px solid rgba(212,165,55,0.5);
+    box-shadow:
+      0 0 0 3px rgba(212,165,55,0.1),
+      0 0 40px rgba(212,165,55,0.2),
+      0 30px 80px rgba(0,0,0,0.8);
+    padding: 20px 20px 22px;
+    position: relative;
+  }
+  .modal::before, .modal::after,
+  .modal .corner-tl, .modal .corner-tr {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(245,200,66,0.55);
+    pointer-events: none;
+  }
+  .modal::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+  .modal::after { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+  .modal .corner-tl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+  .modal .corner-tr { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .modal-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .modal-close {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .modal-hero {
+    display: flex; justify-content: center;
+    padding: 20px 0 12px;
+  }
+  .hero-card {
+    width: 140px; height: 140px;
+    border-radius: var(--radius-card);
+    position: relative;
+    overflow: hidden;
+    display: grid; place-items: center;
+    font-size: 68px;
+  }
+  .hero-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(to bottom, rgba(251,191,36,0.18), rgba(10,5,16,0.95));
+    z-index: -1;
+  }
+  .modal-main-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .modal-sub {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .modal-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212,165,55,0.4), transparent);
+    margin: 18px 0;
+  }
+  .modal-desc {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+    text-align: center;
+    padding: 0 8px;
+  }
+
+  .modal-cta {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color: var(--text-on-gold);
+    font-family: 'Oswald', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-transform: uppercase;
+    margin-top: 18px;
+    box-shadow:
+      0 0 20px rgba(212,165,55,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .modal-cta.neutral {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    box-shadow: none;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .modal-cta.disabled {
+    background: #333340;
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* ──────────── Controls ──────────── */
+  .variants {
+    display: flex; gap: 10px;
+    margin-top: 8px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .variants button {
+    padding: 8px 14px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid rgba(212,165,55,0.3);
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .variants button.active {
+    background: var(--gold);
+    color: var(--text-on-gold);
+    border-color: var(--gold-bright);
+    font-weight: 700;
+  }
+
+  .legend {
+    max-width: 420px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(212,165,55,0.15);
+  }
+  .legend b { color: var(--text-secondary); }
+
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Daily Login — Carousel Redesign</h1>
+<div class="page-subtitle">
+  Inventory-sized scrollable reward carousel · Each card tappable → RewardDetailSheet.
+  Scroll horizontally on the phone frame. Tap any card to open the detail sheet.
+</div>
+
+<div class="variants">
+  <button class="active" onclick="setDay(3)">Day 3 · current</button>
+  <button onclick="setDay(1)">Day 1</button>
+  <button onclick="setDay(5)">Day 5</button>
+  <button onclick="setDay(7)">Day 7</button>
+</div>
+
+<div class="phone">
+  <div class="screen">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">DAILY LOGIN</div>
+      <button class="close-btn" title="Close">✕</button>
+    </div>
+
+    <!-- Streak -->
+    <div class="streak-block">
+      <div class="streak-title" id="streak-title">Day 3 Streak</div>
+      <div class="streak-subtitle">Keep your streak for bonus rewards!</div>
+    </div>
+
+    <!-- Weekly progress -->
+    <div class="progress-block">
+      <div class="progress-row">
+        <span class="progress-label">Weekly Progress</span>
+        <span class="progress-value" id="progress-value">3 / 7</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width: 43%;"></div>
+      </div>
+    </div>
+
+    <!-- Section label -->
+    <div class="section-label">This Week's Rewards</div>
+
+    <!-- Carousel -->
+    <div class="carousel-wrap">
+      <div class="carousel" id="carousel"></div>
+    </div>
+
+    <!-- Claim button -->
+    <div class="claim-wrap">
+      <button class="claim-btn">Claim Reward</button>
+    </div>
+
+    <div class="tomorrow-hint">
+      Tomorrow: <b>⚡ 2 S. Potions</b>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-backdrop" id="modal">
+      <div class="modal">
+        <span class="corner-tl"></span>
+        <span class="corner-tr"></span>
+        <div class="modal-header">
+          <span class="modal-title" id="modal-title">Daily Login · Day 3</span>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-hero">
+          <div class="hero-card" id="hero-card"><span id="hero-icon">💰</span></div>
+        </div>
+        <div class="modal-main-title" id="modal-main">300 Gold</div>
+        <div class="modal-sub" id="modal-sub">Day 3 reward</div>
+        <div class="modal-divider"></div>
+        <div class="modal-desc" id="modal-desc">
+          A pouch of gold coins to spend on gear, upgrades, and consumables in the shop.
+        </div>
+        <button class="modal-cta" id="modal-cta">Claim Reward</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="legend">
+  <b>Legend:</b> Day 3 (centered, large, gold glow) = <b>current</b>, tap → claim sheet.
+  Days 1–2 (dimmed, check mark) = <b>claimed</b>, tap → "already claimed" sheet.
+  Days 4–7 (muted, lock badge) = <b>locked</b>, tap → "come back later" sheet.
+  All cards are horizontally scrollable.
+</div>
+
+<script>
+  const REWARDS = [
+    { day: 1, rarity: 'common',    icon: '💰', label: '150 Gold',       desc: 'A small pouch of gold coins for your journey.' },
+    { day: 2, rarity: 'common',    icon: '⚡',  label: '1 S. Potion',    desc: 'Restore a chunk of your stamina.' },
+    { day: 3, rarity: 'uncommon',  icon: '💰', label: '300 Gold',       desc: 'A pouch of gold coins to spend on gear, upgrades, and consumables in the shop.' },
+    { day: 4, rarity: 'rare',      icon: '⚡',  label: '2 S. Potions',   desc: 'A pair of stamina elixirs — keep grinding without rest.' },
+    { day: 5, rarity: 'rare',      icon: '💎',  label: '20 Gems',        desc: 'A handful of gems — the premium currency for special items.' },
+    { day: 6, rarity: 'epic',      icon: '💰', label: '600 Gold',       desc: 'A hefty chest of gold — enough to buy several upgrades.' },
+    { day: 7, rarity: 'legendary', icon: '👑', label: 'Legendary Chest', desc: 'A mystery chest with guaranteed legendary loot. Your weekly milestone reward.' },
+  ];
+
+  let CURRENT_DAY = 3;
+
+  function render() {
+    const root = document.getElementById('carousel');
+    root.innerHTML = '';
+    REWARDS.forEach((r) => {
+      const isToday = r.day === CURRENT_DAY;
+      const isClaimed = r.day < CURRENT_DAY;
+      const isLocked = r.day > CURRENT_DAY;
+      const state = isToday ? 'today' : (isClaimed ? 'claimed' : (isLocked ? 'locked' : ''));
+      const cell = document.createElement('div');
+      cell.className = `reward-card rarity-${r.rarity} ${state}`;
+      cell.onclick = () => openModal(r, state);
+      cell.innerHTML = `
+        <div class="cell">
+          <div class="icon">${r.icon}</div>
+          <div class="amount">${r.label.split(' ').slice(0, 2).join(' ')}</div>
+          ${isClaimed ? '<div class="check">✓</div>' : ''}
+          ${isLocked ? '<div class="lock">🔒</div>' : ''}
+        </div>
+        <div class="day-label">D${r.day}</div>
+      `;
+      root.appendChild(cell);
+    });
+    // scroll to current
+    setTimeout(() => {
+      const node = root.children[CURRENT_DAY - 1];
+      if (node) node.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }, 50);
+
+    // streak + progress
+    document.getElementById('streak-title').textContent = `Day ${CURRENT_DAY} Streak`;
+    document.getElementById('progress-value').textContent = `${CURRENT_DAY} / 7`;
+    document.getElementById('progress-fill').style.width = `${(CURRENT_DAY / 7) * 100}%`;
+  }
+
+  function openModal(r, state) {
+    document.getElementById('hero-icon').textContent = r.icon;
+    const heroCard = document.getElementById('hero-card');
+    heroCard.className = `hero-card rarity-${r.rarity}`;
+    // recolor hero border via inline style
+    const colors = {
+      common:    '#9CA3AF',
+      uncommon:  '#4ADE80',
+      rare:      '#60A5FA',
+      epic:      '#C084FC',
+      legendary: '#FBBF24',
+    };
+    heroCard.style.border = `2.5px solid ${colors[r.rarity]}`;
+    heroCard.style.boxShadow = `0 0 30px ${colors[r.rarity]}66`;
+
+    document.getElementById('modal-title').textContent = `Daily Login · Day ${r.day}`;
+    document.getElementById('modal-main').textContent = r.label;
+    document.getElementById('modal-sub').textContent =
+      state === 'claimed' ? 'Already claimed ✓' :
+      state === 'locked'  ? `Unlocks on Day ${r.day}` :
+      `Day ${r.day} reward`;
+    document.getElementById('modal-desc').textContent = r.desc;
+
+    const cta = document.getElementById('modal-cta');
+    cta.classList.remove('neutral', 'disabled');
+    if (state === 'today') {
+      cta.textContent = 'Claim Reward';
+    } else if (state === 'claimed') {
+      cta.textContent = 'Close';
+      cta.classList.add('neutral');
+    } else {
+      cta.textContent = `Come Back on Day ${r.day}`;
+      cta.classList.add('disabled');
+    }
+    cta.onclick = closeModal;
+
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function setDay(d) {
+    CURRENT_DAY = d;
+    document.querySelectorAll('.variants button').forEach((b, i) => {
+      b.classList.toggle('active', [3, 1, 5, 7][i] === d);
+    });
+    render();
+  }
+
+  render();
+</script>
+
+</body>
+</html>
