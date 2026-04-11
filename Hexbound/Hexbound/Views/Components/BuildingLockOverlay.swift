@@ -52,23 +52,24 @@ struct BuildingLockOverlay: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    // MARK: - Padlock badge (circular gold disc with SF Symbol)
+    // MARK: - Padlock badge (ornamental lock asset with soft gold glow)
 
     private var padlockBadge: some View {
         ZStack {
+            // Soft gold halo behind the lock — lifts it off the sprite
+            // without redrawing a flat disc.
             Circle()
-                .fill(DarkFantasyTheme.gold)
-                .frame(width: padlockSize, height: padlockSize)
-                .shadow(color: DarkFantasyTheme.goldGlow, radius: 4, y: 0)
+                .fill(DarkFantasyTheme.gold.opacity(0.22))
+                .frame(width: padlockSize * 1.6, height: padlockSize * 1.6)
+                .blur(radius: padlockSize * 0.22)
 
-            Image(systemName: "lock.fill")
-                .font(DarkFantasyTheme.section.weight(.bold))
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
+            Image("icon-padlock")
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: padlockSize, height: padlockSize)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 4, y: 2)
         }
-        .overlay(
-            Circle()
-                .stroke(DarkFantasyTheme.bgAbyss.opacity(0.5), lineWidth: 1.5)
-        )
     }
 
     // MARK: - Level pill (gold capsule under the padlock)

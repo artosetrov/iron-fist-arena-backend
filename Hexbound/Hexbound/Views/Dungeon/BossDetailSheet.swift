@@ -433,9 +433,15 @@ struct BossDetailSheet: View {
                     } else {
                         VStack(spacing: LayoutConstants.space2XS) {
                             HStack(spacing: LayoutConstants.spaceSM) {
-                                Image(systemName: "bolt.shield.fill")
+                                // BUG-42 (QA 2026-04-10): Training Camp practice
+                                // enemies (Straw Dummy, etc.) should not be called
+                                // "FIGHT BOSS" — they're labeled ENEMY in the header
+                                // (see line 195), so the CTA must match. Only real
+                                // bosses (floor-10 culminations) keep the shield icon
+                                // and "FIGHT BOSS" copy.
+                                Image(systemName: boss.isRealBoss ? "bolt.shield.fill" : "bolt.fill")
                                     .font(DarkFantasyTheme.cardTitle.bold())
-                                Text("FIGHT BOSS")
+                                Text(boss.isRealBoss ? "FIGHT BOSS" : "FIGHT ENEMY")
                             }
 
                             HStack(spacing: LayoutConstants.spaceXS) {

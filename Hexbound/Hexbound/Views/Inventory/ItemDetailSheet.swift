@@ -15,8 +15,13 @@ struct ItemDetailSheet: View {
 
     // Shop mode (optional)
     var shopMode: ShopContext? = nil
-    /// Player's current level — used to show "You: Level X" in shop mode
+    /// Player's current level — used for both shop level gating and inventory
+    /// equip eligibility (BUG-63: shows required level in red + disables EQUIP
+    /// when `playerLevel < item.itemLevel`).
     var playerLevel: Int = 1
+    /// Player's class — used to check `item.classRestriction` client-side
+    /// so the EQUIP button disables BEFORE we hit the server's CLASS_RESTRICTED.
+    var playerClass: CharacterClass? = nil
     /// View-only mode — hides economy, upgrade, and action buttons (used for opponent item inspection)
     var viewMode: Bool = false
 
@@ -48,6 +53,59 @@ struct ItemDetailSheet: View {
 
     private var isEquipped: Bool {
         item.isEquipped ?? false
+    }
+
+    // MARK: - Equip eligibility (BUG-63)
+    //
+    // Mirrors the server-side checks in `backend/src/app/api/inventory/equip/route.ts`:
+    //   - character.level < item.itemLevel → LEVEL_TOO_LOW
+    //   - classRestriction && classRestriction !== character.class → CLASS_RESTRICTED
+    //   - broken (durability == 0) → cannot equip
+    //
+    // Doing the check client-side lets us paint the item level red and disable
+    // the EQUIP button BEFORE the user taps it, instead of surfacing an error
+    // toast after a round-trip to the server.
+
+    /// Whether we should show equip-eligibility hints at all. Shop mode has
+    /// its own level gate; view mode (opponent inspection) is read-only;
+    /// consumables don't "equip" and already-equipped items obviously passed
+    /// the check at some point so we don't want to paint them red.
+    private var shouldCheckEquipEligibility: Bool {
+        !viewMode && shopMode == nil && item.itemType != .consumable && !isEquipped
+    }
+
+    private var levelMet: Bool {
+        guard shouldCheckEquipEligibility else { return true }
+        return playerLevel >= item.itemLevel
+    }
+
+    private var classMet: Bool {
+        guard shouldCheckEquipEligibility else { return true }
+        guard let restriction = item.classRestriction?.lowercased(),
+              !restriction.isEmpty,
+              restriction != "none" else { return true }
+        guard let playerClass else { return true }
+        return restriction == playerClass.rawValue.lowercased()
+    }
+
+    /// Overall: can this item be equipped right now?
+    private var canEquipNow: Bool {
+        levelMet && classMet && !isBroken
+    }
+
+    /// Human-readable reason the EQUIP button is disabled (shown above buttons).
+    private var equipBlockedReason: String? {
+        guard shouldCheckEquipEligibility else { return nil }
+        if !levelMet {
+            return "Requires Level \(item.itemLevel) (You: Level \(playerLevel))"
+        }
+        if !classMet, let restriction = item.classRestriction {
+            return "\(restriction.capitalized) class only"
+        }
+        if isBroken {
+            return "Item is broken — repair it first"
+        }
+        return nil
     }
 
     private var currentUpgradeLevel: Int { item.upgradeLevel ?? 0 }
@@ -208,10 +266,19 @@ struct ItemDetailSheet: View {
                 .accessibilityElement(children: .combine)
 
                 HStack(spacing: LayoutConstants.spaceXS) {
+                    // BUG-63: level text glows red + bold when player level
+                    // is below item's required level. Accompanied by the
+                    // disabled EQUIP button below.
                     Text("Level \(item.itemLevel)")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        .accessibilityLabel("Item level: \(item.itemLevel)")
+                        .font(levelMet ? DarkFantasyTheme.body : DarkFantasyTheme.body.bold())
+                        .foregroundStyle(levelMet ? DarkFantasyTheme.textTertiary : DarkFantasyTheme.danger)
+                        .shadow(
+                            color: levelMet ? Color.clear : DarkFantasyTheme.danger.opacity(0.6),
+                            radius: levelMet ? 0 : 4
+                        )
+                        .accessibilityLabel(levelMet
+                            ? "Item level: \(item.itemLevel)"
+                            : "Requires level \(item.itemLevel), you are level \(playerLevel)")
 
                     if let qty = item.quantity, qty > 1 {
                         Text("×\(qty)")
@@ -221,12 +288,22 @@ struct ItemDetailSheet: View {
                     }
                 }
 
+                // BUG-63: class restriction also turns danger-red + bold when
+                // the player's class doesn't match. Kept gold-dim in the
+                // "restriction exists but matches" case so players still see
+                // what class the item is tagged for.
                 if let restriction = item.classRestriction,
                    restriction != "none", !restriction.isEmpty {
                     Text("\(restriction.capitalized) only")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.goldDim)
-                        .accessibilityLabel("Restricted to \(restriction)")
+                        .font(classMet ? DarkFantasyTheme.body : DarkFantasyTheme.body.bold())
+                        .foregroundStyle(classMet ? DarkFantasyTheme.goldDim : DarkFantasyTheme.danger)
+                        .shadow(
+                            color: classMet ? Color.clear : DarkFantasyTheme.danger.opacity(0.6),
+                            radius: classMet ? 0 : 4
+                        )
+                        .accessibilityLabel(classMet
+                            ? "Restricted to \(restriction)"
+                            : "Wrong class: this item is \(restriction) only")
                 }
             }
 
@@ -691,6 +768,19 @@ struct ItemDetailSheet: View {
                         }
                     }
                 } else {
+                    // BUG-63: reason line shown ABOVE the button row when the
+                    // item can't currently be equipped (level too low, wrong
+                    // class, or broken). Mirrors the shop's "Requires Level X"
+                    // warning so players know WHY the button is greyed out.
+                    if let reason = equipBlockedReason {
+                        Text(reason)
+                            .font(DarkFantasyTheme.body.bold())
+                            .foregroundStyle(DarkFantasyTheme.danger)
+                            .frame(maxWidth: .infinity)
+                            .multilineTextAlignment(.center)
+                            .accessibilityLabel("Cannot equip: \(reason)")
+                    }
+
                     HStack(spacing: LayoutConstants.spaceSM) {
                         if !isBroken {
                             Button("EQUIP") {
@@ -699,6 +789,10 @@ struct ItemDetailSheet: View {
                                 onEquip()
                             }
                             .buttonStyle(.secondary)
+                            // BUG-63: SwiftUI `.disabled()` greys the button
+                            // via the standard disabled environment — matches
+                            // the shop's "can't buy" state for visual parity.
+                            .disabled(!canEquipNow)
                         }
                         // Sell with confirmation for rare+ items
                         Button("SELL") {

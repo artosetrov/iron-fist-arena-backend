@@ -170,13 +170,12 @@ struct CharacterSelectionView: View {
                 SFXManager.shared.play(.uiTap)
                 appState.authPath.append(AppRoute.currencyPurchase())
             } label: {
-                Text("GET CURRENCY")
-                    .font(DarkFantasyTheme.buttonLabelCompact)
-                    .tracking(0.8)
-                    .frame(height: 32)
-                    .padding(.horizontal, LayoutConstants.spaceMD)
+                Image(systemName: "plus")
+                    .font(DarkFantasyTheme.buttonLabel)
+                    .frame(width: 44, height: 44)
             }
             .buttonStyle(.compactPrimary)
+            .accessibilityLabel("Get currency")
         }
         .padding(LayoutConstants.spaceSM)
         .background(

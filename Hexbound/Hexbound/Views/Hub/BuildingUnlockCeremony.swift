@@ -166,22 +166,23 @@ struct UnlockCeremony: View {
         }
     }
 
-    /// Gold padlock disc — copy of the one used in `BuildingLockOverlay` so
-    /// the ceremony's locked state matches the hub padlock 1:1.
+    /// Ornamental padlock — uses the shared `icon-padlock` asset (the one
+    /// we authored for the hub lock system). A soft gold glow sits behind
+    /// it so the lock stays readable against darker artwork, and a small
+    /// gold ring grounds it on the composition.
     private var lockBadge: some View {
         ZStack {
             Circle()
-                .fill(DarkFantasyTheme.gold)
-                .frame(width: 56, height: 56)
-                .shadow(color: DarkFantasyTheme.goldGlow, radius: 4)
-                .overlay(
-                    Circle()
-                        .stroke(DarkFantasyTheme.bgAbyss.opacity(0.5), lineWidth: 1.5)
-                )
+                .fill(DarkFantasyTheme.gold.opacity(0.18))
+                .frame(width: 92, height: 92)
+                .blur(radius: 14)
 
-            Image(systemName: "lock.fill")
-                .font(DarkFantasyTheme.section.weight(.bold))
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
+            Image("icon-padlock")
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 72, height: 72)
+                .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.7), radius: 6, y: 3)
         }
     }
 

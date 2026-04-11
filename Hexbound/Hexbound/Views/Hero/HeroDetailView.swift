@@ -47,7 +47,12 @@ struct HeroDetailView: View {
                         onUse: { let _ = Task { await vm.useItem(item) } },
                         onUpgrade: { useProtection in let _ = Task { await vm.upgrade(item, useProtection: useProtection) } },
                         onRepair: { vm.repair(item) },
-                        onClose: { vm.showItemDetail = false }
+                        onClose: { vm.showItemDetail = false },
+                        // BUG-63: pass player level + class so the sheet can
+                        // paint the required-level / class-restriction red and
+                        // disable EQUIP before the user taps it.
+                        playerLevel: char.level,
+                        playerClass: char.characterClass
                     )
                     .transition(.opacity)
                 }
