@@ -4,24 +4,17 @@ const {
   mockGetAuthUser,
   mockRateLimit,
   mockUpdateDailyQuestProgress,
+  mockUpdateWeeklyChallengeProgress,
+  mockUpdateTutorialQuestProgress,
   prismaMock,
 } = vi.hoisted(() => ({
   mockGetAuthUser: vi.fn(),
   mockRateLimit: vi.fn(() => true),
   mockUpdateDailyQuestProgress: vi.fn(),
+  mockUpdateWeeklyChallengeProgress: vi.fn(),
+  mockUpdateTutorialQuestProgress: vi.fn(),
   prismaMock: {
     item: {
-      findUnique: vi.fn(),
-    },
-    character: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    equipmentInventory: {
-      count: vi.fn(),
-      create: vi.fn(),
-    },
-    user: {
       findUnique: vi.fn(),
     },
     $transaction: vi.fn(),
@@ -44,13 +37,64 @@ vi.mock('@/lib/game/daily-quests', () => ({
   updateDailyQuestProgress: mockUpdateDailyQuestProgress,
 }))
 
+vi.mock('@/lib/game/weekly-challenges', () => ({
+  updateWeeklyChallengeProgress: mockUpdateWeeklyChallengeProgress,
+}))
+
+vi.mock('@/lib/game/tutorial', () => ({
+  updateTutorialQuestProgress: mockUpdateTutorialQuestProgress,
+}))
+
 import { POST } from '@/app/api/shop/buy/route'
+
+/**
+ * Build a fake `tx` object mirroring the current shape used by
+ * `POST /api/shop/buy` (see `backend/src/app/api/shop/buy/route.ts`):
+ *
+ *   1. `tx.$queryRawUnsafe` → row-level lock on `users` (returns { id, gold, gems })
+ *   2. `tx.character.findUnique` → ownership + inventorySlots check
+ *   3. `tx.equipmentInventory.count` → inventory capacity check
+ *   4. `tx.user.update` → decrement user.gold (account-level)
+ *   5. `tx.equipmentInventory.create` → spawn the purchased item
+ */
+function makeTx(overrides: {
+  userRow?: { id: string; gold: number; gems: number } | null
+  character?: { userId: string; inventorySlots: number } | null
+  inventoryCount?: number
+  updatedUser?: { gold: number; gems: number }
+  inventoryItem?: any
+}) {
+  const {
+    userRow = null,
+    character = null,
+    inventoryCount = 0,
+    updatedUser = { gold: 0, gems: 0 },
+    inventoryItem = null,
+  } = overrides
+
+  return {
+    $queryRawUnsafe: vi.fn(async () => (userRow ? [userRow] : [])),
+    character: {
+      findUnique: vi.fn(async () => character),
+    },
+    equipmentInventory: {
+      count: vi.fn(async () => inventoryCount),
+      create: vi.fn(async () => inventoryItem),
+    },
+    user: {
+      update: vi.fn(async () => updatedUser),
+    },
+  }
+}
 
 describe('POST /api/shop/buy', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
     mockRateLimit.mockResolvedValue(true)
+    mockUpdateDailyQuestProgress.mockResolvedValue(undefined)
+    mockUpdateWeeklyChallengeProgress.mockResolvedValue(undefined)
+    mockUpdateTutorialQuestProgress.mockResolvedValue(undefined)
   })
 
   it('returns 401 when unauthorized', async () => {
@@ -93,18 +137,11 @@ describe('POST /api/shop/buy', () => {
       sellPrice: 500,
     })
 
-    const tx = {
-      $queryRawUnsafe: vi.fn(async () => [
-        {
-          id: 'char-1',
-          user_id: 'user-1',
-          gold: 500, // Not enough for 1000
-          inventory_slots: 20,
-        },
-      ]),
-    }
-
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    const tx = makeTx({
+      userRow: { id: 'user-1', gold: 500, gems: 0 }, // Not enough for 1000
+      character: { userId: 'user-1', inventorySlots: 20 },
+    })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/shop/buy', {
@@ -127,21 +164,12 @@ describe('POST /api/shop/buy', () => {
       sellPrice: 250,
     })
 
-    const tx = {
-      $queryRawUnsafe: vi.fn(async () => [
-        {
-          id: 'char-1',
-          user_id: 'user-1',
-          gold: 1000,
-          inventory_slots: 20,
-        },
-      ]),
-      equipmentInventory: {
-        count: vi.fn(async () => 20), // Full
-      },
-    }
-
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    const tx = makeTx({
+      userRow: { id: 'user-1', gold: 1000, gems: 0 },
+      character: { userId: 'user-1', inventorySlots: 20 },
+      inventoryCount: 20, // Full
+    })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/shop/buy', {
@@ -166,12 +194,6 @@ describe('POST /api/shop/buy', () => {
 
     prismaMock.item.findUnique.mockResolvedValue(item)
 
-    const updatedCharacter = {
-      id: 'char-1',
-      gold: 500, // 1000 - 500
-      maxStamina: 120,
-    }
-
     const inventoryItem = {
       id: 'inv-item-1',
       characterId: 'char-1',
@@ -183,30 +205,14 @@ describe('POST /api/shop/buy', () => {
       item,
     }
 
-    const tx = {
-      $queryRawUnsafe: vi.fn(async () => [
-        {
-          id: 'char-1',
-          user_id: 'user-1',
-          gold: 1000,
-          inventory_slots: 20,
-        },
-      ]),
-      equipmentInventory: {
-        count: vi.fn(async () => 5),
-        create: vi.fn(async () => inventoryItem),
-      },
-      character: {
-        update: vi.fn(async () => updatedCharacter),
-      },
-    }
-
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
-
-    prismaMock.user.findUnique.mockResolvedValue({
-      id: 'user-1',
-      gems: 100,
+    const tx = makeTx({
+      userRow: { id: 'user-1', gold: 1000, gems: 100 },
+      character: { userId: 'user-1', inventorySlots: 20 },
+      inventoryCount: 5,
+      updatedUser: { gold: 500, gems: 100 }, // 1000 - 500
+      inventoryItem,
     })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/shop/buy', {
@@ -228,6 +234,10 @@ describe('POST /api/shop/buy', () => {
         isEquipped: false,
       }),
     })
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { gold: { decrement: 500 } },
+    })
     expect(mockUpdateDailyQuestProgress).toHaveBeenCalledWith(
       prismaMock,
       'char-1',
@@ -244,18 +254,11 @@ describe('POST /api/shop/buy', () => {
       sellPrice: 250,
     })
 
-    const tx = {
-      $queryRawUnsafe: vi.fn(async () => [
-        {
-          id: 'char-1',
-          user_id: 'different-user', // Not the current user
-          gold: 1000,
-          inventory_slots: 20,
-        },
-      ]),
-    }
-
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    const tx = makeTx({
+      userRow: { id: 'user-1', gold: 1000, gems: 0 },
+      character: { userId: 'different-user', inventorySlots: 20 }, // Not the current user
+    })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/shop/buy', {

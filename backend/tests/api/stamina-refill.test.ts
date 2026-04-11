@@ -206,7 +206,12 @@ describe('POST /api/stamina/refill', () => {
     })
     expect(tx.character.update).toHaveBeenCalledWith({
       where: { id: 'char-1' },
-      data: { currentStamina: 120, lastStaminaUpdate: expect.any(Date) },
+      data: {
+        currentStamina: 120,
+        lastStaminaUpdate: expect.any(Date),
+        staminaRefillsDate: expect.any(Date),
+        staminaRefillsToday: 1,
+      },
     })
   })
 

@@ -8,14 +8,6 @@ const {
   mockGetAuthUser: vi.fn(),
   mockRateLimit: vi.fn(() => true),
   prismaMock: {
-    character: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    equipmentInventory: {
-      findUnique: vi.fn(),
-      delete: vi.fn(),
-    },
     $transaction: vi.fn(),
   },
 }))
@@ -33,6 +25,54 @@ vi.mock('@/lib/rate-limit', () => ({
 }))
 
 import { POST } from '@/app/api/inventory/sell/route'
+
+/**
+ * Build a fake `tx` object that mirrors the current shape used by
+ * `POST /api/inventory/sell` (see `backend/src/app/api/inventory/sell/route.ts`):
+ *
+ *   1. `tx.$queryRawUnsafe` → row-level lock on equipment_inventory
+ *   2. `tx.character.findUnique` → ownership check
+ *   3. `tx.item.findUnique` → sell price lookup
+ *   4. `tx.equipmentInventory.delete` → remove the item
+ *   5. `tx.user.update` → increment user.gold (account-level, not character-level)
+ *
+ * Each call-site in the test overrides only the pieces it needs.
+ */
+function makeTx(overrides: {
+  invRow?: {
+    id: string
+    character_id: string
+    is_equipped: boolean
+    upgrade_level: number
+    item_id: string
+  } | null
+  character?: { userId: string } | null
+  item?: { sellPrice: number } | null
+  updatedUserGold?: number
+}) {
+  const {
+    invRow = null,
+    character = null,
+    item = null,
+    updatedUserGold = 0,
+  } = overrides
+
+  return {
+    $queryRawUnsafe: vi.fn(async () => (invRow ? [invRow] : [])),
+    character: {
+      findUnique: vi.fn(async () => character),
+    },
+    item: {
+      findUnique: vi.fn(async () => item),
+    },
+    equipmentInventory: {
+      delete: vi.fn(async () => ({})),
+    },
+    user: {
+      update: vi.fn(async () => ({ id: 'user-1', gold: updatedUserGold })),
+    },
+  }
+}
 
 describe('POST /api/inventory/sell', () => {
   beforeEach(() => {
@@ -58,22 +98,18 @@ describe('POST /api/inventory/sell', () => {
   })
 
   it('returns 400 when item is equipped', async () => {
-    prismaMock.character.findUnique.mockResolvedValue({
-      id: 'char-1',
-      userId: 'user-1',
-    })
-
-    prismaMock.equipmentInventory.findUnique.mockResolvedValue({
-      id: 'inv-1',
-      characterId: 'char-1',
-      itemId: 'item-1',
-      isEquipped: true,
-      upgradeLevel: 0,
-      item: {
-        id: 'item-1',
-        sellPrice: 500,
+    const tx = makeTx({
+      invRow: {
+        id: 'inv-1',
+        character_id: 'char-1',
+        is_equipped: true,
+        upgrade_level: 0,
+        item_id: 'item-1',
       },
+      character: { userId: 'user-1' },
+      item: { sellPrice: 500 },
     })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/inventory/sell', {
@@ -89,12 +125,8 @@ describe('POST /api/inventory/sell', () => {
   })
 
   it('returns 404 when item not found', async () => {
-    prismaMock.character.findUnique.mockResolvedValue({
-      id: 'char-1',
-      userId: 'user-1',
-    })
-
-    prismaMock.equipmentInventory.findUnique.mockResolvedValue(null)
+    const tx = makeTx({ invRow: null })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/inventory/sell', {
@@ -110,41 +142,21 @@ describe('POST /api/inventory/sell', () => {
   })
 
   it('returns 200 and adds gold on successful sell', async () => {
-    prismaMock.character.findUnique.mockResolvedValue({
-      id: 'char-1',
-      userId: 'user-1',
+    // baseSellPrice * (1 + upgradeLevel * 0.1) = 500 * (1 + 2 * 0.1) = 500 * 1.2 = 600
+    // Starting user gold = 1000 → after increment = 1600
+    const tx = makeTx({
+      invRow: {
+        id: 'inv-1',
+        character_id: 'char-1',
+        is_equipped: false,
+        upgrade_level: 2,
+        item_id: 'item-1',
+      },
+      character: { userId: 'user-1' },
+      item: { sellPrice: 500 },
+      updatedUserGold: 1600,
     })
-
-    const inventoryItem = {
-      id: 'inv-1',
-      characterId: 'char-1',
-      itemId: 'item-1',
-      isEquipped: false,
-      upgradeLevel: 2,
-      item: {
-        id: 'item-1',
-        sellPrice: 500,
-      },
-    }
-
-    prismaMock.equipmentInventory.findUnique.mockResolvedValue(inventoryItem)
-
-    const updatedCharacter = {
-      id: 'char-1',
-      userId: 'user-1',
-      gold: 1600, // 1000 + 600
-    }
-
-    const tx = {
-      equipmentInventory: {
-        delete: vi.fn(async () => inventoryItem),
-      },
-      character: {
-        update: vi.fn(async () => updatedCharacter),
-      },
-    }
-
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/inventory/sell', {
@@ -155,19 +167,18 @@ describe('POST /api/inventory/sell', () => {
 
     expect(response.status).toBe(200)
     const data = await response.json()
-    // baseSellPrice * (1 + upgradeLevel * 0.1) = 500 * (1 + 2 * 0.1) = 500 * 1.2 = 600
     expect(data).toMatchObject({
       gold: 1600,
       soldFor: 600,
     })
+    expect(tx.equipmentInventory.delete).toHaveBeenCalledWith({ where: { id: 'inv-1' } })
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { gold: { increment: 600 } },
+    })
   })
 
   it('applies correct sell price formula with upgrade level', async () => {
-    prismaMock.character.findUnique.mockResolvedValue({
-      id: 'char-1',
-      userId: 'user-1',
-    })
-
     const testCases = [
       { upgradeLevel: 0, baseSellPrice: 100, expected: 100 }, // 100 * (1 + 0 * 0.1) = 100
       { upgradeLevel: 1, baseSellPrice: 100, expected: 110 }, // 100 * (1 + 1 * 0.1) = 110
@@ -181,41 +192,19 @@ describe('POST /api/inventory/sell', () => {
       mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
       mockRateLimit.mockResolvedValue(true)
 
-      prismaMock.character.findUnique.mockResolvedValue({
-        id: 'char-1',
-        userId: 'user-1',
+      const tx = makeTx({
+        invRow: {
+          id: 'inv-1',
+          character_id: 'char-1',
+          is_equipped: false,
+          upgrade_level: testCase.upgradeLevel,
+          item_id: 'item-1',
+        },
+        character: { userId: 'user-1' },
+        item: { sellPrice: testCase.baseSellPrice },
+        updatedUserGold: 1000 + testCase.expected,
       })
-
-      const inventoryItem = {
-        id: 'inv-1',
-        characterId: 'char-1',
-        itemId: 'item-1',
-        isEquipped: false,
-        upgradeLevel: testCase.upgradeLevel,
-        item: {
-          id: 'item-1',
-          sellPrice: testCase.baseSellPrice,
-        },
-      }
-
-      prismaMock.equipmentInventory.findUnique.mockResolvedValue(inventoryItem)
-
-      const updatedCharacter = {
-        id: 'char-1',
-        userId: 'user-1',
-        gold: 1000 + testCase.expected,
-      }
-
-      const tx = {
-        equipmentInventory: {
-          delete: vi.fn(async () => inventoryItem),
-        },
-        character: {
-          update: vi.fn(async () => updatedCharacter),
-        },
-      }
-
-      prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+      prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
       const response = await POST(
         new Request('http://localhost/api/inventory/sell', {
@@ -231,10 +220,18 @@ describe('POST /api/inventory/sell', () => {
   })
 
   it('verifies character ownership before selling', async () => {
-    prismaMock.character.findUnique.mockResolvedValue({
-      id: 'char-1',
-      userId: 'different-user', // Not the current user
+    const tx = makeTx({
+      invRow: {
+        id: 'inv-1',
+        character_id: 'char-1',
+        is_equipped: false,
+        upgrade_level: 0,
+        item_id: 'item-1',
+      },
+      character: { userId: 'different-user' }, // Not the current user
+      item: { sellPrice: 500 },
     })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/inventory/sell', {
@@ -250,22 +247,18 @@ describe('POST /api/inventory/sell', () => {
   })
 
   it('verifies item belongs to character before selling', async () => {
-    prismaMock.character.findUnique.mockResolvedValue({
-      id: 'char-1',
-      userId: 'user-1',
-    })
-
-    prismaMock.equipmentInventory.findUnique.mockResolvedValue({
-      id: 'inv-1',
-      characterId: 'char-2', // Not this character
-      itemId: 'item-1',
-      isEquipped: false,
-      upgradeLevel: 0,
-      item: {
-        id: 'item-1',
-        sellPrice: 500,
+    const tx = makeTx({
+      invRow: {
+        id: 'inv-1',
+        character_id: 'char-2', // Not this character
+        is_equipped: false,
+        upgrade_level: 0,
+        item_id: 'item-1',
       },
+      character: { userId: 'user-1' },
+      item: { sellPrice: 500 },
     })
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const response = await POST(
       new Request('http://localhost/api/inventory/sell', {

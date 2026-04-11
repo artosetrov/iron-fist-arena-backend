@@ -1,8 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockGetAuthUser, mockRateLimit, prismaMock } = vi.hoisted(() => ({
+const {
+  mockGetAuthUser,
+  mockRateLimit,
+  mockGetBattlePassConfig,
+  mockIncrementGuildChallenge,
+  mockGoldBonusMultiplier,
+  prismaMock,
+} = vi.hoisted(() => ({
   mockGetAuthUser: vi.fn(),
   mockRateLimit: vi.fn(() => true),
+  mockGetBattlePassConfig: vi.fn(async () => ({
+    BP_XP_PER_PVP: 20,
+    BP_XP_PER_DUNGEON_FLOOR: 30,
+    BP_XP_PER_QUEST: 50,
+    BP_XP_PER_ACHIEVEMENT: 100,
+  })),
+  mockIncrementGuildChallenge: vi.fn(async () => undefined),
+  mockGoldBonusMultiplier: vi.fn(() => 1),
   prismaMock: {
     character: {
       findFirst: vi.fn(),
@@ -28,13 +43,19 @@ vi.mock('@/lib/rate-limit', () => ({
 }))
 
 vi.mock('@/lib/game/balance', () => ({
-  BATTLE_PASS: {
-    BP_XP_PER_PVP: 20,
-    BP_XP_PER_DUNGEON_FLOOR: 30,
-    BP_XP_PER_QUEST: 50,
-    BP_XP_PER_ACHIEVEMENT: 100,
-  },
   chaGoldBonus: (value: number) => value,
+}))
+
+vi.mock('@/lib/game/live-config', () => ({
+  getBattlePassConfig: mockGetBattlePassConfig,
+}))
+
+vi.mock('@/lib/game/guild-challenge', () => ({
+  incrementGuildChallenge: mockIncrementGuildChallenge,
+}))
+
+vi.mock('@/lib/game/premium', () => ({
+  goldBonusMultiplier: mockGoldBonusMultiplier,
 }))
 
 import { POST } from '@/app/api/dungeon-rush/resolve/route'
@@ -43,6 +64,7 @@ describe('POST /api/dungeon-rush/resolve', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
+    mockGoldBonusMultiplier.mockReturnValue(1)
   })
 
   it('rejects stale room resolves after the room has already been consumed under lock', async () => {
@@ -68,6 +90,9 @@ describe('POST /api/dungeon-rush/resolve', () => {
       state: structuredClone(staleState),
     }
 
+    // Account-level gold moved from Character → User in the
+    // `20260409_migrate_gold_to_account_level` migration. The route now writes
+    // to `tx.user.update` instead of `tx.character.update` for gold.
     const playerState = {
       gold: 500,
       xp: 0,
@@ -76,7 +101,9 @@ describe('POST /api/dungeon-rush/resolve', () => {
     prismaMock.character.findFirst.mockResolvedValue({
       id: 'char-1',
       cha: 10,
-      gold: playerState.gold,
+      // W3.D5 — route selects `user: { select: { premiumUntil: true } }`
+      // to feed into `goldBonusMultiplier`.
+      user: { premiumUntil: null },
     })
 
     // Always return the original unresolved snapshot to simulate a retried request
@@ -90,6 +117,7 @@ describe('POST /api/dungeon-rush/resolve', () => {
     }))
 
     const tx = {
+      // Called via `lockDungeonRunForUpdate(tx, runId)` helper.
       $queryRawUnsafe: vi.fn(async () => [
         {
           id: liveRun.id,
@@ -101,10 +129,15 @@ describe('POST /api/dungeon-rush/resolve', () => {
         },
       ]),
       character: {
-        update: vi.fn(async ({ data }: { data: { gold?: { increment: number }; currentXp?: { increment: number } } }) => {
-          playerState.gold += data.gold?.increment ?? 0
+        update: vi.fn(async ({ data }: { data: { currentXp?: { increment: number } } }) => {
           playerState.xp += data.currentXp?.increment ?? 0
           return { id: 'char-1' }
+        }),
+      },
+      user: {
+        update: vi.fn(async ({ data }: { data: { gold?: { increment: number } } }) => {
+          playerState.gold += data.gold?.increment ?? 0
+          return { id: 'user-1', gold: playerState.gold }
         }),
       },
       dungeonRun: {
@@ -117,7 +150,7 @@ describe('POST /api/dungeon-rush/resolve', () => {
       },
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx))
+    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
 
     const request = new Request('http://localhost/api/dungeon-rush/resolve', {
       method: 'POST',
@@ -131,6 +164,7 @@ describe('POST /api/dungeon-rush/resolve', () => {
     expect(firstResponse.status).toBe(200)
     expect(playerState.gold).toBeGreaterThan(500)
     expect(liveRun.state.currentRoomIndex).toBe(1)
+    expect(tx.user.update).toHaveBeenCalledTimes(1)
 
     const secondResponse = await POST(
       new Request('http://localhost/api/dungeon-rush/resolve', {
@@ -147,6 +181,7 @@ describe('POST /api/dungeon-rush/resolve', () => {
       error: 'This dungeon rush room was already resolved. Refresh and continue.',
     })
     expect(playerState.gold).toBeGreaterThan(500)
-    expect(tx.character.update).toHaveBeenCalledTimes(1)
+    // Gold was incremented exactly once despite two resolve attempts.
+    expect(tx.user.update).toHaveBeenCalledTimes(1)
   })
 })
