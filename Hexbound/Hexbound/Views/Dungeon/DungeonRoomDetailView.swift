@@ -65,6 +65,18 @@ struct DungeonRoomDetailView: View {
                         DungeonDefeatView(vm: vm)
                             .transition(.opacity)
                     }
+
+                    // Boss unlock ceremony — plays after the victory modal
+                    // closes, when a new boss has just become available in
+                    // the dungeon. Reuses the same reveal animation as hub
+                    // building unlocks (locked → glow → revealed).
+                    if let boss = vm.pendingBossUnlock {
+                        BossUnlockCeremony(boss: boss) {
+                            vm.dismissBossUnlock()
+                        }
+                        .transition(.opacity)
+                        .zIndex(100)
+                    }
                 }
                 }
                 .transaction { $0.animation = nil }

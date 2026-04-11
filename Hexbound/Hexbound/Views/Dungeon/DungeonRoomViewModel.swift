@@ -31,6 +31,11 @@ final class DungeonRoomViewModel {
     var defeatTotalXP = 0
     var defeatFloorsCleared = 0
 
+    // Boss unlock ceremony — shown AFTER the victory screen is dismissed,
+    // when defeating a boss unlocks the next one in the dungeon. Same
+    // reveal animation as building unlocks on the hub.
+    var pendingBossUnlock: BossInfo?
+
     // XP bar: snapshot taken just before fight to detect level-up
     var preFightLevel: Int = 0
     var preFightXPProgress: Double = 0
@@ -382,12 +387,26 @@ final class DungeonRoomViewModel {
         } else {
             // Select next boss
             selectedBossIndex = currentBossIndex
+            queueBossUnlockIfAny()
         }
     }
 
     func proceedToNextBoss() {
         showVictory = false
         selectedBossIndex = currentBossIndex
+        queueBossUnlockIfAny()
+    }
+
+    /// Trigger the boss unlock ceremony if a new boss just became available.
+    /// Called after the victory overlay closes so the player sees rewards
+    /// first, then the "next challenger awakens" reveal.
+    private func queueBossUnlockIfAny() {
+        guard !isDungeonComplete, let boss = currentBoss else { return }
+        pendingBossUnlock = boss
+    }
+
+    func dismissBossUnlock() {
+        pendingBossUnlock = nil
     }
 
     func dismissDefeat() {

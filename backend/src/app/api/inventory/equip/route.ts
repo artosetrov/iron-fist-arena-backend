@@ -51,12 +51,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Capture into const so the narrowed `string` type survives across the
+    // `await prisma.$transaction(async (tx) => { ... })` closure boundary.
+    // The outer `let character_id: string | null` loses its narrowing inside
+    // the closure because TS can't prove the let hasn't been reassigned by
+    // the time the callback actually runs. Keep the hoisted `let`s for the
+    // catch-block ALREADY_EQUIPPED recovery path.
+    const charId: string = character_id
+    const invId: string = inventory_id
+
     // Atomic read-validate-write in interactive transaction with FOR UPDATE
     // Prevents TOCTOU race: double-slot exploit, broken item equip, stale occupancy
     await prisma.$transaction(async (tx) => {
       // Step 1: Lock character + verify ownership
       const character = await tx.character.findUnique({
-        where: { id: character_id },
+        where: { id: charId },
         select: { userId: true, level: true, class: true },
       })
 
@@ -73,12 +82,12 @@ export async function POST(req: NextRequest) {
          JOIN items i ON ei.item_id = i.id
          WHERE ei.id = $1
          FOR UPDATE`,
-        inventory_id
+        invId
       )
 
       const inventoryItem = lockedItems[0]
       if (!inventoryItem) throw new Error('ITEM_NOT_FOUND')
-      if (inventoryItem.characterId !== character_id) throw new Error('ITEM_NOT_OWNED')
+      if (inventoryItem.characterId !== charId) throw new Error('ITEM_NOT_OWNED')
 
       // Validate: broken, level, class
       if (inventoryItem.durability === 0) throw new Error('ITEM_BROKEN')
@@ -100,7 +109,7 @@ export async function POST(req: NextRequest) {
          FROM equipment_inventory
          WHERE character_id = $1 AND is_equipped = true
          FOR UPDATE`,
-        character_id
+        charId
       )
 
       const occupiedSlots = new Set(equippedRows.map((r: any) => r.equippedSlot))
@@ -144,7 +153,7 @@ export async function POST(req: NextRequest) {
       if (isTwoHanded) {
         await tx.equipmentInventory.updateMany({
           where: {
-            characterId: character_id,
+            characterId: charId,
             equippedSlot: 'relic',
             isEquipped: true,
           },
@@ -156,7 +165,7 @@ export async function POST(req: NextRequest) {
       if (mainHandIsTwoHanded) {
         await tx.equipmentInventory.updateMany({
           where: {
-            characterId: character_id,
+            characterId: charId,
             equippedSlot: 'weapon',
             isEquipped: true,
           },
@@ -167,7 +176,7 @@ export async function POST(req: NextRequest) {
       // Unequip current item in target slot
       await tx.equipmentInventory.updateMany({
         where: {
-          characterId: character_id,
+          characterId: charId,
           equippedSlot: slot,
           isEquipped: true,
         },
@@ -176,7 +185,7 @@ export async function POST(req: NextRequest) {
 
       // Equip the new item
       await tx.equipmentInventory.update({
-        where: { id: inventory_id },
+        where: { id: invId },
         data: {
           isEquipped: true,
           equippedSlot: slot as EquippedSlot,
@@ -191,12 +200,12 @@ export async function POST(req: NextRequest) {
     // + inventorySlots). The client used to merge a consumable-less
     // response and silently lost potions.
     await Promise.all([
-      recalculateDerivedStats(character_id),
-      invalidateSkillCache(character_id),
-      invalidatePassiveCache(character_id),
+      recalculateDerivedStats(charId),
+      invalidateSkillCache(charId),
+      invalidatePassiveCache(charId),
     ])
 
-    const inventoryResponse = await buildInventoryResponse(character_id)
+    const inventoryResponse = await buildInventoryResponse(charId)
     return NextResponse.json(inventoryResponse)
   } catch (error: any) {
     // Sentinel errors from interactive transaction → granular HTTP responses

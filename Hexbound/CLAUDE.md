@@ -442,6 +442,24 @@ When an overlay/modal needs local `@State` for animation (scale bounce, count-up
 - Pass data + `onDismiss` closure, keep animation state internal
 - Before writing custom animation — check existing toolkit: `RewardBurstView`, `NumberTickUpView`, `HapticManager.coinCascade`, `MotionConstants.springBouncy`
 
+## Root-Level Overlays — Survive `currentScreen` Transitions
+
+If an overlay must stay visible while `appState.currentScreen` changes (loading while destination view mounts, cross-fade between onboarding steps, daily login over any screen), it **must live at app root** in `HexboundApp.swift` and be driven by an `AppState` flag.
+
+**Do NOT** mount a `.loading`/`.forging`/`.celebration` overlay inside a screen that is the *source* of a `currentScreen` transition. When `currentScreen` changes, `HexboundApp` cross-fades the old view out (with `.animation(.easeInOut(0.3), value: currentScreen)`) and the overlay goes with it — the destination view then synchronously decodes its backdrop assets on the main thread, leaving the user staring at near-black `bgAbyss` for 1–3 seconds with no loading UI.
+
+**Pattern (BUG-53 Daily Login, BUG-08 Hero Forge):**
+1. Add a `Bool` flag on `AppState` — e.g. `var isForgingHero = false`
+2. Create a reusable `XxxOverlayView` under `Views/Auth/` or `Views/Components/` (never inline in `HexboundApp`)
+3. Mount at root: `.overlay { if appState.isXxx { XxxOverlayView().transition(.opacity).zIndex(N) } }`
+4. Add `.animation(.easeInOut(duration: 0.3), value: appState.isXxx)` next to the existing `currentScreen` animation
+5. ViewModel raises the flag **before** the API call, lowers it **after** `Task.sleep(for: .milliseconds(~350))` so the destination screen gets time to paint its first frame under the overlay
+6. Wrap the VM state with `defer { isCreating = false }` — never rely on view unmount to clean up `isLoading`/`isCreating`/`isSubmitting` flags, SwiftUI View structs have no deinit guarantee and the success path typically routes away from the View
+
+zIndex layers currently in use (keep ordered): Loading 100, LevelUp 120, DailyLogin 150, HeroForge 200, SessionExpired 250.
+
+**Reference root overlays** (`HexboundApp.swift`): `OfflineBanner`, `CelebrationBannerOverlay`, `ToastOverlayView`, `LoadingOverlay`, `LevelUpModalView`, Daily Login popup, `SessionExpiredModalView`, `HeroForgeOverlayView`. All follow this pattern.
+
 ## UI/UX Design Rules
 
 - **3-second rule** — player understands screen instantly
