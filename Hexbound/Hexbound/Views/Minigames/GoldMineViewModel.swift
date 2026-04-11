@@ -12,6 +12,11 @@ final class GoldMineViewModel {
     var isBuyingSlot = false
     private var activeActionSlots: Set<Int> = []  // prevents double-tap per slot
 
+    init(appState: AppState, cache: GameDataCache) {
+        self.appState = appState
+        self.cache = cache
+    }
+
     // MARK: - Mine Names (canonical — docs/08_prompts/mine-card-prompts.md)
 
     /// Thematic mine names per slot index. Used instead of "SLOT N" labels.
