@@ -134,8 +134,15 @@ export async function grantGold(characterId: string, amount: number) {
   if (!admin) throw new Error('Unauthorized')
   validateUUID(characterId, 'characterId')
   validatePositiveInt(amount, 'Amount')
-  await prisma.character.update({
+  // Gold is account-level (User.gold), not per-character. Look up the owning
+  // user via the character and increment there.
+  const character = await prisma.character.findUnique({
     where: { id: characterId },
+    select: { userId: true },
+  })
+  if (!character) throw new Error('Character not found')
+  await prisma.user.update({
+    where: { id: character.userId },
     data: { gold: { increment: amount } },
   })
   auditLog(admin, 'grant_gold', `character/${characterId}`, { amount })
