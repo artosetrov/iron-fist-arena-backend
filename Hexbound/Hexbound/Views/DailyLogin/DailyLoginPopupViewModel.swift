@@ -18,6 +18,16 @@ final class DailyLoginPopupViewModel {
     var claimedDayBounce: Int? = nil
     var showClaimParticles = false
 
+    // BUG-23 (QA 2026-04-10): backend stores `currentDay` as
+    // "next day to claim" and advances it post-claim (newDay → (newDay % 7) + 1).
+    // Client UI treats the displayed day as "the reward being claimed/just claimed",
+    // which drifts 1 day ahead after a successful claim.
+    //
+    // `justClaimedDay` snapshots the day the player is actually seeing so that
+    // the confirmation modal / progress bar / day strip keep pointing at the
+    // correct cell even after the server advances `currentDay`.
+    var justClaimedDay: Int? = nil
+
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
@@ -31,6 +41,15 @@ final class DailyLoginPopupViewModel {
         isLoading = false
         let canClaim = data?.canClaim ?? false
         hasClaimed = !canClaim
+        // BUG-23: if we load into an already-claimed state (e.g. modal reopened
+        // mid-cooldown), the backend's `currentDay` is *tomorrow's* slot. Roll
+        // it back one position in the 7-day cycle so the confirmation UI shows
+        // the reward the player actually received, not tomorrow's preview.
+        if !canClaim, let currentDay = data?.currentDay {
+            justClaimedDay = currentDay == 1 ? 7 : currentDay - 1
+        } else {
+            justClaimedDay = nil
+        }
         // Sync hub badge state with fresh server data
         appState.dailyLoginCanClaim = canClaim
     }
@@ -39,6 +58,10 @@ final class DailyLoginPopupViewModel {
         guard loginData?.canClaim == true, !isClaiming else { return }
         let currentDay = loginData?.currentDay ?? 0
         isClaiming = true
+
+        // BUG-23: freeze the "day shown" before we flip hasClaimed — this
+        // snapshot survives the server pushing `loginData.currentDay` forward.
+        justClaimedDay = currentDay
 
         // Optimistic UI: show claimed state INSTANTLY
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
@@ -60,6 +83,7 @@ final class DailyLoginPopupViewModel {
             } else {
                 // Revert on failure
                 hasClaimed = false
+                justClaimedDay = nil
                 appState.dailyLoginCanClaim = true
                 appState.showToast("Claim failed", subtitle: "Try again", type: .error)
             }
@@ -72,9 +96,33 @@ final class DailyLoginPopupViewModel {
         }
     }
 
+    // MARK: - BUG-23 display helpers
+    //
+    // Single bridge between backend semantics ("currentDay = next to claim")
+    // and UI semantics ("currentDay = the cell being shown"). All views should
+    // reach for `displayDay` / `tomorrowDay` / `claimedCount` instead of
+    // touching `loginData.currentDay` directly.
+
+    /// The day the player is looking at in the modal — the reward currently
+    /// being claimed (pre-claim) or just claimed (post-claim).
+    var displayDay: Int {
+        if let claimed = justClaimedDay { return claimed }
+        return loginData?.currentDay ?? 1
+    }
+
+    /// Next day in the 7-day cycle (wraps from 7 → 1).
+    var tomorrowDay: Int {
+        (displayDay % 7) + 1
+    }
+
+    /// Number of completed (claimed) days in the current 7-day cycle.
+    /// Drives the weekly progress bar fill.
+    var claimedCount: Int {
+        hasClaimed ? displayDay : max(0, displayDay - 1)
+    }
+
     var nextDayReward: DailyReward? {
-        guard let currentDay = loginData?.currentDay, currentDay < 7 else { return nil }
-        return DailyReward.rewards(from: cache).first(where: { $0.day == currentDay + 1 })
+        DailyReward.rewards(from: cache).first(where: { $0.day == tomorrowDay })
     }
 
     func dismiss() {

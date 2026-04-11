@@ -21,29 +21,36 @@ struct DailyQuestsDetailView: View {
                         .padding(.top, LayoutConstants.spaceSM)
                         .accessibilityLabel("Daily quests reset: \(vm.resetTimeText)")
 
-                    if !vm.hasLoadedOnce {
-                        // Skeleton state — shown until the first network load finishes.
-                        // Prevents the "All Done!" flash caused by (quests == [] && isLoading == false)
-                        // during the brief window before .task fires loadQuests().
-                        ScrollView {
-                            LazyVStack(spacing: LayoutConstants.spaceSM) {
-                                ForEach(0..<4, id: \.self) { _ in
-                                    SkeletonQuestCard()
+                    if vm.quests.isEmpty {
+                        // No data to show. Decide between skeleton and error:
+                        // - If we have a real errorMessage → show the themed
+                        //   error state with the hud-daily-quests asset.
+                        // - Otherwise → skeleton (covers first-load and the
+                        //   window before `.task` fires loadQuests()).
+                        if vm.errorMessage != nil {
+                            ErrorStateView(
+                                assetIcon: "hud-daily-quests",
+                                assetUsesOriginalColor: true,
+                                title: "Failed to Load",
+                                message: "We couldn't load today's quests. Tap retry to try again.",
+                                retryAction: { Task { await vm.loadQuests() } }
+                            )
+                        } else {
+                            ScrollView {
+                                LazyVStack(spacing: LayoutConstants.spaceSM) {
+                                    ForEach(0..<4, id: \.self) { _ in
+                                        SkeletonQuestCard()
+                                    }
                                 }
+                                .padding(.horizontal, LayoutConstants.screenPadding)
+                                .padding(.vertical, LayoutConstants.spaceSM)
                             }
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.vertical, LayoutConstants.spaceSM)
                         }
-                    } else if vm.errorMessage != nil {
-                        ErrorStateView.loadFailed { Task { await vm.loadQuests() } }
                     } else if vm.allClaimed && vm.bonusClaimedToday {
                         // "All Done!" ceremony — only when every quest is claimed
                         // AND the bonus is already collected for today.
                         allDoneCeremony(vm: vm)
                             .transition(.opacity)
-                    } else if vm.quests.isEmpty {
-                        // Defensive fallback — server returned empty list post-load.
-                        ErrorStateView.loadFailed { Task { await vm.loadQuests() } }
                     } else {
                         ScrollView {
                             LazyVStack(spacing: LayoutConstants.spaceSM) {

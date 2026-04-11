@@ -337,8 +337,11 @@ struct DungeonInfo: Identifiable {
         description: "On the outskirts of the Stray City lies an old training ground, built by the first Arena fighters.",
         minLevel: 1, maxLevel: 10, energyCost: 10,
         bosses: [
-            BossInfo(id: 1, name: "Straw Dummy", level: 1, hp: 250,
-                     description: "A lifeless target — until the wind picks up.",
+            // BUG-44/45/46 (QA 2026-04-10): HP lowered 250 → 120 and description
+            // now says "won't fight back" to match the new server-side passive
+            // behaviour. Straw Dummy is a tutorial target, not a boss fight.
+            BossInfo(id: 1, name: "Straw Dummy", level: 1, hp: 120,
+                     description: "A lifeless training target. Won't fight back — strike it as long as you want.",
                      portraitImage: "boss-straw-dummy-portrait",
                      fullImage: "boss-straw-dummy-full",
                      loot: [

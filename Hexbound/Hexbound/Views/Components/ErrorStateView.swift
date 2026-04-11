@@ -36,6 +36,11 @@ struct ErrorStateView: View {
     /// Optional Assets.xcassets image name. When set, renders the art asset
     /// instead of an SF Symbol — preferred per design system (art > system icons).
     var assetIcon: String? = nil
+    /// When `true`, the asset is drawn with its original colors (no template
+    /// tint). Use for full-color HUD illustrations like `hud-daily-quests`.
+    /// When `false` (default), the asset is tinted with `DarkFantasyTheme.danger`,
+    /// matching the legacy monochrome error glyph behaviour (e.g. `rush-ui-combat-skull`).
+    var assetUsesOriginalColor: Bool = false
     var title: String = "Something Went Wrong"
     var message: String = "We couldn't load this content. Please try again."
     var retryLabel: String = "Retry"
@@ -105,12 +110,25 @@ struct ErrorStateView: View {
     @ViewBuilder
     private var errorIcon: some View {
         if let assetIcon, UIImage(named: assetIcon) != nil {
-            Image(assetIcon)
-                .resizable()
-                .renderingMode(.template)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                .foregroundStyle(DarkFantasyTheme.danger)
+            if assetUsesOriginalColor {
+                // Full-color HUD illustration — render as-is, larger so
+                // the art reads clearly at a glance.
+                Image(assetIcon)
+                    .resizable()
+                    .renderingMode(.original)
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 120, height: 120)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 12, y: 6)
+            } else {
+                // Monochrome glyph — tinted danger red, matches SF Symbol path.
+                Image(assetIcon)
+                    .resizable()
+                    .renderingMode(.template)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                    .foregroundStyle(DarkFantasyTheme.danger)
+            }
         } else {
             Image(systemName: icon)
                 .font(DarkFantasyTheme.cinematicTitle.weight(.thin))

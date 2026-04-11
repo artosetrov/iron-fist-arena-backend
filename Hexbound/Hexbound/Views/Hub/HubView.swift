@@ -16,7 +16,6 @@ struct HubView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var showDungeonMap = false
-    @State private var showDailyLoginSheet = false
     @State private var hubHint: NPCHint?
 
     // Parallax + Fade transition state
@@ -217,7 +216,13 @@ struct HubView: View {
                         accentColor: DarkFantasyTheme.goldBright,
                         size: 62
                     ) {
-                        showDailyLoginSheet = true
+                        // BUG-53: route manual opens through the shared modal
+                        // queue so Daily Login and Level Up can't stack, and
+                        // mark "shown today" so a cold restart on the same day
+                        // won't re-auto-open. Previously this bypassed both
+                        // the queue and the shown-today guard.
+                        appState.markDailyLoginShownToday()
+                        appState.enqueueModal(.dailyLogin)
                     }
                     .accessibilityLabel("Daily Login")
                     .tutorialAnchor(.hubDailyLogin)
@@ -289,11 +294,11 @@ struct HubView: View {
                 .allowsHitTesting(!appState.pendingBuildingUnlocks.isEmpty)
                 .zIndex(200)
         }
-        .overlay(alignment: .bottom) {
+        .overlay {
             // Onboarding NPCGuideWidget overlay (first-time visit)
+            // NPCGuideOverlay handles full-screen dim + tap-block + bottom placement.
             if shouldShowOnboarding, let char = appState.currentCharacter {
-                VStack(spacing: 0) {
-                    Spacer()
+                NPCGuideOverlay(onBackdropTap: { dismissOnboarding() }) {
                     NPCGuideWidget(
                         npcTitle: onboardingSteps[currentOnboardingStep].title,
                         onDismiss: { dismissOnboarding() },
@@ -303,21 +308,12 @@ struct HubView: View {
                         onContinue: { advanceOnboarding() },
                         messageId: currentOnboardingStep  // Animate message transitions
                     )
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.screenPadding + LayoutConstants.safeAreaBottom)
                 }
-                .background(DarkFantasyTheme.bgAbyss.opacity(0.5))
-                .ignoresSafeArea(edges: .bottom)
                 .transition(.opacity)
                 .zIndex(100)
             }
         }
         .tutorialOverlay(steps: [.hubStamina, .hubCharacterCard, .hubCityMap, .hubDailyLogin])
-        .sheet(isPresented: $showDailyLoginSheet) {
-            DailyLoginDetailView()
-                .environment(appState)
-                .environment(cache)
-        }
         .contextualHint(hubHint, onCTA: {
             if let hint = hubHint {
                 switch hint.id {
@@ -345,7 +341,10 @@ struct HubView: View {
                 }
             }
         }, bottomInset: LayoutConstants.space2XL + LayoutConstants.spaceLG)
-        .task { await checkDailyLogin() }
+        // BUG-53: daily login is no longer polled from Hub. GameInitService
+        // enqueues the modal at app/character-select boot and is the single
+        // decision point. Hub only mirrors `appState.dailyLoginCanClaim` for
+        // the tile badge and routes manual taps through the modal queue.
         .task { await fetchUnreadMailCount() }
         .onAppear {
             updateHubHint()
@@ -496,58 +495,21 @@ struct HubView: View {
         appState.unreadMailCount = vm.totalUnreadCount
     }
 
-    private func checkDailyLogin() async {
-        try? await Task.sleep(for: .seconds(0.5))
-        // If game/init hasn't run yet (manual login path), run it now
-        if !cache.isInitLoaded {
-            let initService = GameInitService(appState: appState, cache: cache)
-            // Parallelize game/init with login check
-            async let gameInit: Void = initService.loadGameData()
-            async let loginCheck: Void = checkLogin()
-            _ = await (gameInit, loginCheck)
-            // Quest data comes from game/init, but load if still missing
-            if appState.cachedTypedQuests == nil {
-                await loadQuests()
-            }
-        } else if appState.cachedTypedQuests == nil {
-            // game/init already done — load quests + login in parallel
-            async let questLoad: Void = loadQuests()
-            async let loginCheck: Void = checkLogin()
-            _ = await (questLoad, loginCheck)
-        } else {
-            await checkLogin()
-        }
-    }
+    // BUG-53: `checkDailyLogin` / `checkLogin` were removed. The auto-open
+    // decision was moved to `GameInitService.loadGameData()` so it runs once
+    // per session at game boot, unaffected by NavigationStack pop-back or any
+    // subsequent `.task` re-fire on the Hub view. Tile taps now call
+    // `appState.enqueueModal(.dailyLogin)` directly. All login paths
+    // (auto-login, manual login, character select, onboarding) are
+    // responsible for invoking `GameInitService.loadGameData()` before
+    // HubView appears; Hub itself is now a passive consumer of
+    // `appState.cachedDailyLogin` / `dailyLoginCanClaim`.
 
     private func loadQuests() async {
         let service = QuestService(appState: appState)
-        _ = await service.loadQuests()
-    }
-
-    private func checkLogin() async {
-        var canClaim = false
-
-        // Use cached daily login from /game/init if available
-        if let cached = appState.cachedDailyLogin,
-           let claim = cached["canClaim"] as? Bool {
-            canClaim = claim
-        } else {
-            // Fallback to API call
-            let service = DailyLoginService(appState: appState)
-            if let data = await service.getStatus() {
-                canClaim = data.canClaim
-            }
-        }
-
-        await MainActor.run {
-            appState.dailyLoginCanClaim = canClaim
-
-            // Auto-show daily login sheet once per session
-            if canClaim && !appState.hasAutoShownDailyLogin {
-                appState.hasAutoShownDailyLogin = true
-                showDailyLoginSheet = true
-            }
-        }
+        // Fire-and-forget refresh — Hub widgets read from appState.cachedTypedQuests,
+        // so failure here is silent; the next open will retry.
+        _ = try? await service.loadQuests()
     }
 
     private func prefetchOpponents() async {
@@ -1498,37 +1460,51 @@ struct QuestRewardWidget: View {
     private func claimQuest(_ quest: Quest) {
         claimingId = quest.id
 
-        // Optimistic: mark claimed instantly
-        if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == quest.id }) {
-            withAnimation(.easeOut(duration: 0.3)) {
-                appState.cachedTypedQuests?[idx].rewardClaimed = true
-            }
-        }
-
-        HapticManager.success()
-        SFXManager.shared.play(.uiRewardClaim)
-        appState.showToast("Quest Complete! \(quest.title)", type: .quest)
-        claimingId = nil
-
-        // Fire API in background
+        // BUG-51 (QA 2026-04-10): do NOT pre-show the "Quest Complete!" toast
+        // or mark the quest rewardClaimed before the API confirms — the
+        // previous version did this optimistically and then NEVER awaited
+        // `refreshCharacter()`, so gold/XP stayed stale even on success and
+        // the toast fired on failure. Fire API first, commit state after.
         let questId = quest.id
         Task {
             let service = QuestService(appState: appState)
-            let success = await service.claimQuest(questId: questId)
-            if !success {
-                // Revert on failure
-                if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        appState.cachedTypedQuests?[idx].rewardClaimed = false
-                    }
-                }
-                appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error,
-                                   actionLabel: "Retry", action: {
-                    if let q = appState.cachedTypedQuests?.first(where: { $0.id == questId && $0.canClaim }) {
-                        claimQuest(q)
-                    }
-                })
+            let result = await service.claimQuest(questId: questId)
+            claimingId = nil
+
+            guard let result = result else {
+                appState.showToast(
+                    "Failed to claim quest",
+                    subtitle: "Please try again",
+                    type: .error,
+                    actionLabel: "Retry",
+                    action: {
+                        if let q = appState.cachedTypedQuests?.first(where: { $0.id == questId && $0.canClaim }) {
+                            claimQuest(q)
+                        }
+                    },
+                )
+                return
             }
+
+            // Commit claimed state now that the server confirmed. The service
+            // has already awaited refreshCharacter(), so gold/XP on the HUD
+            // are already up-to-date by the time we land here.
+            if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    appState.cachedTypedQuests?[idx].rewardClaimed = true
+                }
+            }
+
+            HapticManager.success()
+            SFXManager.shared.play(.uiRewardClaim)
+
+            // Show the REAL rewards from the server, not the stale Quest model.
+            var parts: [String] = []
+            if result.rewardGold > 0 { parts.append("+\(result.rewardGold)g") }
+            if result.rewardXp > 0 { parts.append("+\(result.rewardXp) XP") }
+            if result.rewardGems > 0 { parts.append("+\(result.rewardGems) gems") }
+            let subtitle = parts.isEmpty ? quest.title : parts.joined(separator: "  ")
+            appState.showToast("Quest Complete!", subtitle: subtitle, type: .quest)
         }
     }
 }

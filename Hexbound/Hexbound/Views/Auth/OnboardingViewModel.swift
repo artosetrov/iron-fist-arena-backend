@@ -359,6 +359,22 @@ final class OnboardingViewModel {
         isCreating = true
         errorMessage = ""
 
+        // BUG-08: Raise the root-level "Forging Your Hero..." overlay BEFORE
+        // the API call. It stays up across the subsequent `currentScreen`
+        // cross-fade, covering the window during which the destination view
+        // (OnboardingCinematicView / CharacterSelectionView) is synchronously
+        // decoding its backdrop assets. Cleared after a short settle delay
+        // once the destination screen has had time to paint its first frame.
+        appState.isForgingHero = true
+
+        defer {
+            // Whatever happens — success, parse fallback, or thrown error —
+            // never leave the VM stuck in the "creating" state, and never
+            // leave the root overlay stranded if an exception bypasses the
+            // explicit success path below.
+            isCreating = false
+        }
+
         do {
             let body: [String: Any] = [
                 "character_name": characterName,
@@ -394,12 +410,14 @@ final class OnboardingViewModel {
                 if !allSkins.isEmpty {
                     cache.cacheSkins(allSkins)
                 }
-                // W2.D2 R1 — onboarding reorder. First hero flow is now:
-                //   cinematicOpen → scriptedTutorial → tutorialVictory → loreIntro → game
-                // Additional heroes skip the whole onboarding tunnel.
+                // 2026-04-10 — scripted tutorial tunnel disabled (was broken).
+                // Skip cinematicOpen → scriptedTutorial → tutorialVictory, go straight to loreIntro.
+                // First hero flow is now:
+                //   loreIntro → game
+                // Additional heroes skip the whole onboarding tunnel as before.
                 if appState.userCharacters.count <= 1 {
-                    // First hero — kick off the new reordered onboarding tunnel
-                    appState.currentScreen = .cinematicOpen(heroName: character.characterName)
+                    // First hero — straight to lore cinematic, skipping the broken tutorial fight
+                    appState.currentScreen = .loreIntro(heroName: character.characterName)
                 } else {
                     // Additional hero — go to selection screen
                     appState.currentScreen = .characterSelect
@@ -413,8 +431,19 @@ final class OnboardingViewModel {
                 appState.currentScreen = .characterSelect
                 appState.authPath = NavigationPath()
             }
+
+            // BUG-08: give the destination view ~350 ms to mount + paint its
+            // first frame under the overlay. 300 ms matches the currentScreen
+            // cross-fade; the extra ~50 ms buys one frame of decode headroom
+            // on older devices. Overlay fades out cleanly over its own
+            // `.animation(.easeInOut(duration: 0.3), value: isForgingHero)`
+            // binding in HexboundApp.
+            try? await Task.sleep(for: .milliseconds(350))
+            appState.isForgingHero = false
         } catch {
-            isCreating = false
+            // Drop the overlay so the user can see the error message we're
+            // about to set on the onboarding form.
+            appState.isForgingHero = false
             if let apiError = error as? APIError {
                 errorMessage = apiError.localizedDescription
             } else {

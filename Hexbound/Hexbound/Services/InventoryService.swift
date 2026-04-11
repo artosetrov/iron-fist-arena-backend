@@ -201,7 +201,9 @@ final class InventoryService {
             appState.cachedTypedQuests = nil
             let appStateRef = appState
             Task { @MainActor in
-                _ = await QuestService(appState: appStateRef).loadQuests()
+                // Fire-and-forget: if the refresh fails, the next screen
+                // appearance will retry. No UI surface here to show an error.
+                _ = try? await QuestService(appState: appStateRef).loadQuests()
             }
 
             return true

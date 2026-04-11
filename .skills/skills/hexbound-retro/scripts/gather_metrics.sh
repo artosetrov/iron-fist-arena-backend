@@ -66,17 +66,24 @@ $(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | grep -oP 'static var \
   EXTENSION_EXCLUDE=$(echo "$EXTENSION_TOKENS" | tr '\n' '|' | sed 's/|$//')
 fi
 
-# Count ALL bare theme tokens (not system colors, not DarkFantasyTheme.xxx)
+# Count ALL bare theme tokens (not system colors, not DarkFantasyTheme.xxx).
+# 2026-04-10: previous regex `\.\(\.?(white|...)` missed `.foregroundStyle(.white)`
+# because the `(` is preceded by a letter, not a dot. Now matches `(.white`
+# anywhere after the modifier. Also excludes Material tokens (ultraThinMaterial etc.)
+SYSCOLORS='white|black|red|blue|green|gray|orange|yellow|pink|purple|cyan|mint|indigo|brown|clear|primary|secondary'
+MATERIALS='ultraThinMaterial|thinMaterial|regularMaterial|thickMaterial|ultraThickMaterial|bar'
 BARE_TOTAL=$(grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|tint|shadow)\(\.' "$ROOT/Hexbound/Hexbound/Views/" 2>/dev/null | \
   grep -v 'DarkFantasyTheme' | grep -v '^\s*//' | \
-  grep -vE '\.\(\.?(white|black|red|blue|green|gray|orange|yellow|pink|purple|cyan|mint|indigo|brown|clear|primary|secondary)\b' | \
+  grep -vE "\(\.?($SYSCOLORS)\b" | \
+  grep -vE "\(\.?($MATERIALS)\b" | \
   wc -l | tr -d ' ')
 echo "Bare theme tokens total: $BARE_TOTAL"
 
 if [ -n "$EXTENSION_EXCLUDE" ]; then
   BARE_SAFE=$(grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|tint|shadow)\(\.' "$ROOT/Hexbound/Hexbound/Views/" 2>/dev/null | \
     grep -v 'DarkFantasyTheme' | grep -v '^\s*//' | \
-    grep -vE '\.\(\.?(white|black|red|blue|green|gray|orange|yellow|pink|purple|cyan|mint|indigo|brown|clear|primary|secondary)\b' | \
+    grep -vE "\(\.?($SYSCOLORS)\b" | \
+    grep -vE "\(\.?($MATERIALS)\b" | \
     grep -E "\.($EXTENSION_EXCLUDE)" | wc -l | tr -d ' ')
   BARE_UNSAFE=$((BARE_TOTAL - BARE_SAFE))
   echo "  - extension-covered (safe): $BARE_SAFE"
@@ -97,9 +104,16 @@ echo "Buttons: $BUTTONS_TOTAL total, $BUTTONS_STYLED with .buttonStyle()"
 A11Y_LABELS=$(grep -rn --include="*.swift" 'accessibilityLabel' "$ROOT/Hexbound/Hexbound/Views/" 2>/dev/null | wc -l | tr -d ' ')
 echo "accessibilityLabel count: $A11Y_LABELS"
 
-# Junk files (limit search depth to avoid slow traversal)
-JUNK=$(find "$ROOT/Hexbound" "$ROOT/backend" "$ROOT/admin" -maxdepth 5 \( -name "* 2.*" -o -name "* 2" \) 2>/dev/null | wc -l | tr -d ' ')
-echo "Junk files (* 2*): $JUNK"
+# Junk files (exclude node_modules/.next/build artifacts — those are not our junk)
+# 2026-04-10: prior retro flagged 96 junk files, but all were in backend/node_modules
+# and backend/.next — that's not project churn, it's pnpm dedup/esbuild output.
+JUNK=$(find "$ROOT/Hexbound" "$ROOT/backend" "$ROOT/admin" \
+  -not -path '*/node_modules/*' \
+  -not -path '*/.next/*' \
+  -not -path '*/build/*' \
+  -not -path '*/DerivedData/*' \
+  -maxdepth 5 \( -name "* 2.*" -o -name "* 2" \) 2>/dev/null | wc -l | tr -d ' ')
+echo "Junk files (* 2*, excl. node_modules/.next): $JUNK"
 
 # Prisma sync check
 if [ -f "$ROOT/backend/prisma/schema.prisma" ] && [ -f "$ROOT/admin/prisma/schema.prisma" ]; then

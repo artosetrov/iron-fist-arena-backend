@@ -53,6 +53,8 @@ final class ShopService {
             )
             // Update character currency from response
             updateCharacter(from: response)
+            // BUG-58: server incremented Big Spender (gold_spent) quest — refresh.
+            refreshDailyQuestsAfterGoldSpend()
             return true
         } catch let error as APIError {
             if case .clientError(_, let message) = error {
@@ -82,6 +84,9 @@ final class ShopService {
                 body: body
             )
             updateCharacter(from: response)
+            // BUG-58: consumable purchase now tracks gold_spent on the server —
+            // invalidate the quest cache so Big Spender counter updates live.
+            refreshDailyQuestsAfterGoldSpend()
             return true
         } catch let error as APIError {
             if case .clientError(_, let message) = error {
@@ -138,10 +143,28 @@ final class ShopService {
                 body: body
             )
             updateCharacter(from: response)
+            // BUG-58: legacy potion purchase also tracks gold_spent now.
+            refreshDailyQuestsAfterGoldSpend()
             return true
         } catch {
             appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             return false
+        }
+    }
+
+    // MARK: - Daily Quest Cache Invalidation
+
+    /// BUG-58 (QA 2026-04-10): After any gold-spending shop action, invalidate
+    /// the typed quest cache and kick off a background reload so the Big Spender
+    /// (`gold_spent`) daily quest progress and Claim state propagate to every
+    /// widget reading from `appState.cachedTypedQuests` (Hub banner, Daily
+    /// Quests screen, ActiveQuestBanner). Same pattern as Bug #10 fix in
+    /// InventoryService for consumable_use.
+    private func refreshDailyQuestsAfterGoldSpend() {
+        appState.cachedTypedQuests = nil
+        let appStateRef = appState
+        Task { @MainActor in
+            _ = try? await QuestService(appState: appStateRef).loadQuests()
         }
     }
 

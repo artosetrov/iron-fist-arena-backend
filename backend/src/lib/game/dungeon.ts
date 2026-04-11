@@ -25,6 +25,12 @@ export interface Enemy {
   isBoss: boolean;
   abilities?: BossAbility[];
   damageType?: 'physical' | 'magical' | 'poison';
+  /**
+   * BUG-44/45/46 (QA 2026-04-10) — passive training target (e.g. Straw Dummy).
+   * Enemy receives damage but never attacks. Used for tutorial practice where
+   * lore describes the target as a "lifeless target" / mannequin.
+   */
+  isPassive?: boolean;
 }
 
 export type RoomType = 'combat' | 'treasure' | 'trap' | 'shrine' | 'merchant' | 'rest';
@@ -63,9 +69,14 @@ const DIFFICULTY_MULTIPLIERS: Record<string, number> = {
 
 // Boss data per dungeon, matching iOS client definitions exactly.
 // Each dungeon has 10 bosses. floor 1 = boss[0], floor 2 = boss[1], etc.
-const DUNGEON_BOSSES: Record<string, Array<{ name: string; level: number; hp: number }>> = {
+// BUG-44/45/46 (QA 2026-04-10): `isPassive` marks tutorial targets that never
+// fight back. Straw Dummy is a lifeless training mannequin — the player should
+// be able to practice auto-attacks + skills on it without dying.
+const DUNGEON_BOSSES: Record<string, Array<{ name: string; level: number; hp: number; isPassive?: boolean }>> = {
   training_camp: [
-    { name: 'Straw Dummy', level: 1, hp: 250 },
+    // Straw Dummy: passive mannequin. 120 HP lets a fresh Lv.1-2 warrior clear
+    // it in 4-8 turns without risk (old 250 HP + active attacks killed Lv.2).
+    { name: 'Straw Dummy', level: 1, hp: 120, isPassive: true },
     { name: 'Rusty Golem', level: 2, hp: 320 },
     { name: 'Cave Spider', level: 3, hp: 380 },
     { name: 'Bone Warrior', level: 4, hp: 450 },
@@ -197,17 +208,23 @@ function generateBossForDungeon(
   if (bosses && bossIndex < bosses.length) {
     const boss = bosses[bossIndex];
     const abilities = BOSS_ABILITIES[dungeonId]?.[bossIndex] ?? [];
+    // BUG-44/45/46: passive targets get zeroed offensive stats as a belt-and-
+    // suspenders guard — `runCombat` already skips their attack turn, but if a
+    // future refactor routes damage through a different path, a 0-str dummy
+    // still can't meaningfully hurt the player.
+    const isPassive = boss.isPassive === true;
     return {
       id: generateId(),
       name: boss.name,
       level: boss.level,
       maxHp: Math.round(boss.hp * difficultyMult),
-      str: Math.round((10 + boss.level * 2.5) * difficultyMult),
-      agi: Math.round((8 + boss.level * 1.8) * difficultyMult),
+      str: isPassive ? 0 : Math.round((10 + boss.level * 2.5) * difficultyMult),
+      agi: isPassive ? 0 : Math.round((8 + boss.level * 1.8) * difficultyMult),
       armor: Math.round((6 + boss.level * 2) * difficultyMult),
       magicResist: Math.round((5 + boss.level * 1.5) * difficultyMult),
       isBoss: true,
       abilities: abilities.length > 0 ? abilities : undefined,
+      isPassive: isPassive || undefined,
     };
   }
 
@@ -299,17 +316,25 @@ export async function generateDungeonFloorFromDB(
       });
 
       if (boss) {
+        // BUG-44/45/46 (QA 2026-04-10): Training Camp floor 1 is the tutorial
+        // dummy. Whatever value the admin panel has in the DB, force passive
+        // + capped HP so we can't accidentally brick onboarding from a data
+        // tweak. Hardcoded list in DUNGEON_BOSSES is the same story.
+        const isTutorialDummy = dungeonSlug === 'training_camp' && floor === 1;
         return {
           enemies: [{
             id: generateId(),
             name: boss.name,
             level: Math.round(boss.level * diffMult),
-            maxHp: Math.round(boss.hp * diffMult),
-            str: Math.round((boss.damage ?? 15) * diffMult),
-            agi: Math.round((boss.speed ?? 10) * diffMult),
+            maxHp: isTutorialDummy
+              ? Math.min(Math.round(boss.hp * diffMult), 120)
+              : Math.round(boss.hp * diffMult),
+            str: isTutorialDummy ? 0 : Math.round((boss.damage ?? 15) * diffMult),
+            agi: isTutorialDummy ? 0 : Math.round((boss.speed ?? 10) * diffMult),
             armor: Math.round((boss.defense ?? 10) * diffMult),
             magicResist: Math.round(((boss.defense ?? 10) * 0.7) * diffMult),
             isBoss: true,
+            isPassive: isTutorialDummy || undefined,
           }],
           isBoss: true,
         };

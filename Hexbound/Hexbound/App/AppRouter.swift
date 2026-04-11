@@ -164,7 +164,7 @@ struct MainRouterView: View {
         case .inbox: InboxDetailView()
 
         // Quests & Achievements
-        case .dailyLogin: DailyLoginDetailView() // NOTE: now shown as sheet from HubView, this route is unused
+        case .dailyLogin: DailyLoginDetailView() // BUG-53: route is legacy — modal is now a root overlay driven by appState.showDailyLoginPopup. Keep the case for the dev screen catalog.
         case .dailyQuests: DailyQuestsDetailView()
         case .achievements: AchievementsDetailView()
         

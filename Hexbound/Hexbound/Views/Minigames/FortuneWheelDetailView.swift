@@ -196,7 +196,6 @@ struct FortuneWheelDetailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 96, height: 120)
-                        .rotationEffect(.degrees(30))
                         .shadow(color: DarkFantasyTheme.gold, radius: 10)
                         .offset(y: -2)
                     Spacer()
@@ -636,7 +635,6 @@ struct FortuneWheelView: View {
                 width: sector.isLose ? 56 : 80,
                 height: sector.isLose ? 56 : 80
             )
-            .opacity(sector.isLose ? DarkFantasyTheme.opacityHeavy : 1.0)
             .shadow(color: sector.color.opacity(sector.isLose ? 0 : 1.0), radius: 6)
             .offset(x: iconX, y: iconY)
             .rotationEffect(.degrees(Double(sector.id) * sectorAngle + sectorAngle / 2.0))

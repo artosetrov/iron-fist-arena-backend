@@ -132,7 +132,9 @@ struct HPBarView: View {
         case .large:
             "\(label)  \(currentHp) / \(maxHp)"
         case .widget:
-            "\(currentHp)/\(maxHp)"
+            // BUG-30 (QA 2026-04-10): prefix with "HP" so the hub header
+            // can't be confused with stamina (⚡ 120/120) at a glance.
+            "\(label) \(currentHp)/\(maxHp)"
         case .compact:
             "\(currentHp) / \(maxHp)"
         }

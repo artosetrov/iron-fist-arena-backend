@@ -63,15 +63,23 @@ struct AvatarImageView: View {
         return pool[idx]
     }
 
-    /// Per-class pool of existing bundled skin assets used as random-but-stable avatars
-    /// for opponents that do not have a dedicated skin.
+    /// Unified pool of bundled hero portraits used as random-but-stable avatars for
+    /// opponents that do not have a dedicated skin. Sourced from `Assets.xcassets/Skins/`
+    /// (`hero_portrait_01` … `hero_portrait_16`) — see `docs/07_ui_ux/ASSET_CONSISTENCY_AUDIT.md`.
+    ///
+    /// The pool is class-agnostic by design: backend bots often don't carry a gender/
+    /// class-appropriate skin key, and deterministic seed-hash picking keeps the same
+    /// opponent id → same portrait across sessions, so varying per class adds no value.
     private static func skinPool(for characterClass: CharacterClass) -> [String] {
-        switch characterClass {
-        case .warrior: return ["warlord", "knight", "barbarian", "valkyrie"]
-        case .rogue:   return ["shadow", "huntress"]
-        case .mage:    return ["sorceress", "enchantress"]
-        case .tank:    return ["knight", "warlord"]
-        }
+        heroPortraitPool
+    }
+
+    /// Shared hero portrait pool. 16 portraits is enough for visual variety on any
+    /// single Arena/Leaderboard screen (≤ 6 opponents visible) while keeping bundle
+    /// size small. If you grow this, bump the last index here and add matching
+    /// imagesets under `Assets.xcassets/Skins/`.
+    private static let heroPortraitPool: [String] = (1...16).map {
+        String(format: "hero_portrait_%02d", $0)
     }
 
     /// Stable djb2 hash — unlike Swift's `String.hashValue`, this is deterministic across

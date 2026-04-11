@@ -402,16 +402,89 @@ final class CombatViewModel {
         speedMode = speedMode == 0 ? 1 : 0
     }
 
+    /// BUG-19 (QA 2026-04-10): Previously `finishCombat` committed the
+    /// VICTORY/DEFEAT label from `combatData.result.isWin` — the CLIENT-side
+    /// simulation verdict. `goToResult()` then merged the SERVER verdict into
+    /// `combatData.result.isWin` via `resolveResult.serverWinnerId`, and if the
+    /// two disagreed, the combat screen animated "VICTORY!" but the rewards
+    /// screen showed "DEFEAT, -15 rating". Classic server-authoritative
+    /// violation: the client never should have rendered a verdict the server
+    /// hadn't confirmed.
+    ///
+    /// New flow: for server-authoritative sources (pvp/arena/challenge) we
+    /// show a neutral "RESOLVING..." label and poll `appState.resolveResult`
+    /// (max ~5s). As soon as it lands we render the SERVER verdict. Dungeon
+    /// sources keep the old instant-label behavior because dungeon combat
+    /// results come from the initial `/dungeons/fight` response and there is
+    /// no separate resolve step that can diverge.
     private func finishCombat() {
         isFinished = true
         isPlaying = false
         SFXManager.shared.play(.combatDeath)
+
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            currentAttackZone = nil
+            currentDefendZone = nil
+        }
+
+        if isServerAuthoritativeSource {
+            // If the server resolve has already landed (fast network), apply
+            // it immediately. Otherwise show a neutral label and wait.
+            if let resolve = appState.resolveResult {
+                applyServerVerdict(resolve)
+            } else {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                    turnLabel = "RESOLVING..."
+                    turnLabelColor = DarkFantasyTheme.textSecondary
+                }
+                Task { [weak self] in
+                    guard let self else { return }
+                    // Poll up to ~5s — 10 × 500ms. This matches the 1.5s wait
+                    // loop in goToResult() but with extra headroom because we
+                    // commit to a visible label, not just a navigation decision.
+                    for _ in 0..<10 {
+                        try? await Task.sleep(for: .milliseconds(500))
+                        if let resolve = self.appState.resolveResult {
+                            self.applyServerVerdict(resolve)
+                            return
+                        }
+                    }
+                    // Hard timeout — server never responded. Fall back to the
+                    // client sim so the screen isn't stuck on "RESOLVING...".
+                    // goToResult() will still try to reconcile via its own
+                    // wait loop before navigating; on permanent failure the
+                    // rewards screen shows the optimistic client verdict and
+                    // the next refresh corrects any server-side side effects.
+                    self.applyClientFallbackVerdict()
+                }
+            }
+        } else {
+            // Dungeon / legacy flows — label is authoritative from the
+            // initial combat response, no async resolve involved.
+            applyClientFallbackVerdict()
+        }
+    }
+
+    private var isServerAuthoritativeSource: Bool {
+        switch combatData.source {
+        case "pvp", "arena", "challenge": true
+        default: false
+        }
+    }
+
+    private func applyServerVerdict(_ resolve: ResolveResult) {
+        let serverIsWin = resolve.serverWinnerId == combatData.player.id
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            turnLabel = serverIsWin ? "VICTORY!" : "DEFEAT"
+            turnLabelColor = serverIsWin ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger
+        }
+    }
+
+    private func applyClientFallbackVerdict() {
         let isWin = combatData.result.isWin
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             turnLabel = isWin ? "VICTORY!" : "DEFEAT"
             turnLabelColor = isWin ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger
-            currentAttackZone = nil
-            currentDefendZone = nil
         }
     }
 

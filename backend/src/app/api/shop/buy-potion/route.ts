@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 const POTION_PRICES: Record<string, number> = {
   stamina_potion_small: 100,
@@ -78,6 +80,13 @@ export async function POST(req: NextRequest) {
 
       return { updatedUser, consumable }
     })
+
+    // BUG-58 (QA 2026-04-10): track gold_spent for Big Spender daily quest and
+    // weekly BP Spendthrift challenge on legacy potion purchases too.
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'gold_spent', price),
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_spent', price),
+    ])
 
     return NextResponse.json({
       consumable: result.consumable,

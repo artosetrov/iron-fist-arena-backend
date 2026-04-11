@@ -268,15 +268,12 @@ struct ShopDetailView: View {
                     shopItemCard(vm: vm, item: item, index: index)
                 }
             } header: {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    Text(section.icon)
-                        .font(.system(size: 14)) // emoji — keep
-                    Text(section.title.uppercased())
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(DarkFantasyTheme.goldBright)
-                    Spacer()
-                }
-                .padding(.top, LayoutConstants.spaceSM)
+                // BUG-37 (QA 2026-04-10): Replaced leading Text(section.icon)
+                // (which rendered the literal strings "swords" / "shield" /
+                // "pills" / "diamond" as if they were emoji) with the
+                // brand-aligned OrnamentalSectionHeader.
+                OrnamentalSectionHeader(title: section.title)
+                    .padding(.top, LayoutConstants.spaceSM)
             }
         }
     }
@@ -349,10 +346,15 @@ struct ShopDetailView: View {
 
     @ViewBuilder
     private func merchantOverlay() -> some View {
-        // NPC Guide Widget — equal padding like UnifiedHeroWidget
+        // NPC Guide Widget — presented via NPCGuideOverlay so the shop UI behind
+        // is dimmed and tap-blocked while the merchant is talking.
         if showMerchant {
-            VStack {
-                Spacer()
+            NPCGuideOverlay(onBackdropTap: {
+                withAnimation(MotionConstants.snappy) {
+                    showMerchant = false
+                }
+                merchantDismissed = true
+            }) {
                 NPCGuideWidget(
                     npcTitle: "Merchant",
                     onDismiss: {
@@ -366,10 +368,9 @@ struct ShopDetailView: View {
                     onTapCard: { tipProvider.nextTip() },
                     messageId: AnyHashable(tipProvider.currentTip)
                 )
-                .padding(.horizontal, LayoutConstants.npcOuterPadding)
-                .padding(.bottom, LayoutConstants.npcOuterPadding)
             }
-            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .transition(.opacity)
+            .zIndex(100)
         }
 
         // Collapsed merchant mini avatar

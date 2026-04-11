@@ -104,13 +104,11 @@ struct LeaderboardRowView: View {
     // MARK: - Helpers
 
     private var className: String {
-        switch entry.characterClass {
-        case "warrior": "Warrior"
-        case "rogue": "Rogue"
-        case "mage": "Mage"
-        case "tank": "Tank"
-        default: entry.characterClass.capitalized
-        }
+        // BUG-28 (QA 2026-04-10): Route through CharacterClass.displayName
+        // so Leaderboard matches Arena / Comparison / Hero Detail fantasy
+        // names (Assassin / Guardian) instead of raw rogue / tank labels.
+        CharacterClass(rawValue: entry.characterClass)?.displayName
+            ?? entry.characterClass.capitalized
     }
 
     private var rankColor: Color {

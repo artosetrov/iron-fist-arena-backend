@@ -62,46 +62,93 @@ final class DailyQuestsViewModel {
 
     // MARK: - Load
 
+    /// Loads daily quests with cache-first strategy.
+    ///
+    /// Rules:
+    /// - `isLoading` is true for the entire network call so the view can
+    ///   show a skeleton instead of a transient "Failed to Load" flash.
+    /// - Stale `quests` from the previous successful load are **kept on
+    ///   screen** during a refresh — never blanked out pre-emptively.
+    /// - `errorMessage` is set ONLY on a real thrown failure. A silent
+    ///   refresh failure with cached data on screen does not surface an
+    ///   error UI; the user keeps seeing their quests.
+    /// - `hasLoadedOnce` flips to true only on success, so a first-open
+    ///   failure without cache correctly shows the error state (not an
+    ///   infinite skeleton).
     func loadQuests() async {
-        // Cache-first: show cached data instantly, only show spinner if empty
+        // Cache-first: show cached data instantly
         if let cached = cache.cachedDailyQuests() {
             quests = cached.quests
             bonusClaimedToday = cached.bonusClaimed
-        } else if quests.isEmpty {
-            isLoading = true
         }
+        isLoading = true
         errorMessage = nil
-        let result = await service.loadQuests()
-        quests = result.quests
-        bonusClaimedToday = result.bonusClaimed
-        cache.cacheDailyQuests(result.quests, bonusClaimed: result.bonusClaimed)
+        do {
+            let result = try await service.loadQuests()
+            quests = result.quests
+            bonusClaimedToday = result.bonusClaimed
+            cache.cacheDailyQuests(result.quests, bonusClaimed: result.bonusClaimed)
+            hasLoadedOnce = true
+        } catch {
+            // Keep stale `quests` on screen — the view will ignore
+            // errorMessage if it has data to show. errorMessage only
+            // surfaces when there is nothing to display (empty list).
+            errorMessage = "Could not load today's quests. Tap retry."
+        }
         isLoading = false
-        hasLoadedOnce = true
     }
 
     // MARK: - Claim
 
+    /// Claims a daily quest reward.
+    ///
+    /// BUG-51 (QA 2026-04-10) fix: the previous implementation showed the
+    /// "Quest Complete!" celebration + success haptic BEFORE awaiting the API,
+    /// which meant the banner fired on server failure too. It also never
+    /// awaited the character refresh, so the gold/XP HUD stayed stale for
+    /// seconds after the claim (user reported gold 1,643 → 1,643 and XP
+    /// 71/480 → 71/480 despite the celebration).
+    ///
+    /// New flow:
+    /// 1. Show a subtle in-flight state (`claimingQuestId`) only.
+    /// 2. Await the server — `QuestService.claimQuest` now awaits the
+    ///    character refresh internally, so on return `appState.currentCharacter`
+    ///    already holds the new gold/XP.
+    /// 3. On success: commit optimistic `rewardClaimed`, haptic, celebration
+    ///    with the REAL reward values from the server ("+150g  +80 XP").
+    /// 4. On failure: keep state untouched, show error toast.
     func claimQuest(_ quest: Quest) async {
         guard claimingQuestId == nil else { return } // prevent double-tap
         claimingQuestId = quest.id
 
-        // ── Optimistic UI: mark claimed instantly ──
+        // ── Fire API first — no optimistic celebration ──
+        let result = await service.claimQuest(questId: quest.id)
+        claimingQuestId = nil
+
+        guard let result = result else {
+            appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
+            return
+        }
+
+        // ── Commit local state now that the server confirmed ──
         if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
             quests[idx].rewardClaimed = true
         }
-        HapticManager.success()
-        appState.showCelebration(.questComplete, title: "Quest Complete!", subtitle: quest.title)
+        // Keep the on-disk cache consistent with the new claimed state so a
+        // navigate-away-and-back doesn't flash the quest as un-claimed again.
+        cache.cacheDailyQuests(quests, bonusClaimed: bonusClaimedToday)
 
-        // ── Fire API — keep claimingQuestId until done ──
-        let success = await service.claimQuest(questId: quest.id)
-        claimingQuestId = nil
-        if !success {
-            // Revert on failure
-            if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
-                quests[idx].rewardClaimed = false
-            }
-            appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
-        }
+        HapticManager.success()
+
+        // Build a reward subtitle from SERVER values, not the local Quest.
+        // Format: "+150g  +80 XP  +3 gems" (omit zero components).
+        var parts: [String] = []
+        if result.rewardGold > 0 { parts.append("+\(result.rewardGold)g") }
+        if result.rewardXp > 0 { parts.append("+\(result.rewardXp) XP") }
+        if result.rewardGems > 0 { parts.append("+\(result.rewardGems) gems") }
+        let subtitle = parts.isEmpty ? quest.title : parts.joined(separator: "  ")
+
+        appState.showCelebration(.questComplete, title: "Quest Complete!", subtitle: subtitle)
     }
 
     func claimBonus() async {

@@ -35,17 +35,26 @@ struct CharacterSelectionView: View {
                         .padding(.horizontal, LayoutConstants.screenPadding)
                         .padding(.vertical, LayoutConstants.spaceXS)
 
-                    // Currency bar — shows selected hero's gold & gems + GET CURRENCY button
-                    if let selected = vm.selectedCharacter {
+                    // Currency bar — hidden for guests (no real ownership + removes competing gold accent)
+                    if let selected = vm.selectedCharacter, !appState.isGuest {
                         currencyBar(for: selected)
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.bottom, LayoutConstants.spaceSM)
                     }
 
+                    // Single gating point for guests — replaces inline guestBanner
                     if appState.isGuest {
-                        guestBanner
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.bottom, LayoutConstants.spaceSM)
+                        GuestGateCTA(
+                            variant: .prominent,
+                            hasProgress: vm.characters.contains { $0.level >= 2 },
+                            onSignUp: {
+                                HapticManager.medium()
+                                SFXManager.shared.play(.uiTap)
+                                appState.authPath.append(AppRoute.register)
+                            }
+                        )
+                        .padding(.horizontal, LayoutConstants.screenPadding)
+                        .padding(.bottom, LayoutConstants.spaceSM)
                     }
 
                     contentArea
@@ -66,12 +75,14 @@ struct CharacterSelectionView: View {
                             appState.logout()
                         } label: {
                             HStack(spacing: LayoutConstants.spaceXS) {
-                                Image(systemName: "chevron.left")
-                                    .font(DarkFantasyTheme.body.weight(.semibold))
+                                Image("ui-arrow-left")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: LayoutConstants.iconMD, height: LayoutConstants.iconMD)
                                 Text("Back")
                                     .font(DarkFantasyTheme.body)
+                                    .foregroundStyle(DarkFantasyTheme.gold)
                             }
-                            .foregroundStyle(DarkFantasyTheme.gold)
                         }
                         .buttonStyle(.plain)
                     }
@@ -147,7 +158,7 @@ struct CharacterSelectionView: View {
             CurrencyDisplay(
                 gold: character.gold,
                 gems: character.gems,
-                size: .compact,
+                size: .standard,
                 currencyType: .both,
                 animated: false
             )
@@ -370,63 +381,17 @@ struct CharacterSelectionView: View {
         )
     }
 
-    // MARK: - Guest Banner
-
-    private var guestBanner: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.gold)
-                .frame(width: LayoutConstants.iconXL, height: LayoutConstants.iconXL)
-                .background(
-                    Circle()
-                        .fill(DarkFantasyTheme.gold.opacity(0.1))
-                        .overlay(Circle().stroke(DarkFantasyTheme.gold.opacity(0.2), lineWidth: 1))
-                )
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Guest Account")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                Text("Create an account to save progress")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-
-            Spacer()
-
-            Button {
-                HapticManager.medium()
-                appState.authPath.append(AppRoute.register)
-            } label: {
-                Text("SIGN UP")
-                    .font(DarkFantasyTheme.body)
-                    .tracking(0.8)
-            }
-            .buttonStyle(.compactPrimary)
-        }
-        .padding(LayoutConstants.spaceSM)
-        .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.gold.opacity(0.05),
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
-        )
-        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.gold.opacity(0.1))
-        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
-    }
-
     // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(spacing: LayoutConstants.sectionGap) {
             Spacer()
 
-            Image(systemName: "person.badge.plus")
-                .font(DarkFantasyTheme.title)
-                .foregroundStyle(DarkFantasyTheme.gold.opacity(0.4))
+            Image("icon-switch-char")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                .opacity(0.4)
 
             Text("No Heroes Yet")
                 .font(DarkFantasyTheme.cardTitle)
@@ -569,11 +534,6 @@ struct HeroSelectionCard: View {
         isSelected ? DarkFantasyTheme.gold : classColor
     }
 
-    private var hpPercent: Double {
-        guard character.maxHp > 0 else { return 1 }
-        return Double(character.currentHp) / Double(character.maxHp)
-    }
-
     var body: some View {
         Button(action: onSelect) {
             cardContent
@@ -666,22 +626,9 @@ struct HeroSelectionCard: View {
 
             Spacer()
 
-            // Low HP badge (selection state shown by ACTIVE ribbon + edit button overlay)
-            if hpPercent < 0.5 && !isSelected {
-                Text("LOW HP")
-                    .font(DarkFantasyTheme.body.bold())
-                    .foregroundStyle(DarkFantasyTheme.danger)
-                    .padding(.horizontal, LayoutConstants.spaceSM)
-                    .padding(.vertical, LayoutConstants.space2XS)
-                    .background(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                            .fill(DarkFantasyTheme.danger.opacity(0.12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                                    .stroke(DarkFantasyTheme.danger.opacity(0.25), lineWidth: 0.5)
-                            )
-                    )
-            }
+            // Top-right is reserved for the delete/edit CardActionButton overlay
+            // added by the grid parent on the selected card. HP + Energy rings
+            // now live horizontally above the stat pills (see bottomInfoStack).
         }
     }
 
@@ -743,10 +690,17 @@ struct HeroSelectionCard: View {
                 }
             }
 
-            // HP & Stamina bars
-            VStack(spacing: LayoutConstants.space2XS) {
-                HPBarView(currentHp: character.currentHp, maxHp: character.maxHp, size: .compact)
-                StaminaBarView(currentStamina: character.currentStamina, maxStamina: character.maxStamina, size: .compact, showPlus: false)
+            // HP + Energy rings, sitting just above the stat pills as part of
+            // the "health / energy / attributes" cluster. Right-aligned so the
+            // row reads: (space) → rings.
+            HStack {
+                Spacer()
+                PortraitStatRings(
+                    hpPercentage: character.hpPercentage,
+                    staminaPercentage: character.staminaPercentage,
+                    orientation: .horizontal,
+                    ringSize: 30
+                )
             }
 
             // Glass stat pills

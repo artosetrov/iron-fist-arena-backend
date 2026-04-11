@@ -112,8 +112,8 @@ struct ShellGameDetailView: View {
                         // Cups stage — moved up, no status text header
                         cupsSection(vm)
 
-                        // Spacer for NPC widget clearance
-                        Spacer().frame(height: 280)
+                        // Spacer for NPC widget clearance (bigger NPC = more clearance)
+                        Spacer().frame(height: 380)
                     }
                 }
             }
@@ -246,8 +246,9 @@ struct ShellGameDetailView: View {
             .frame(width: 110, height: 130)
         }
         .buttonStyle(.plain)
-        .disabled(gamePhase != .guessing)
-        .opacity(1.0)
+        // NOTE: use allowsHitTesting instead of .disabled — .disabled auto-dims
+        // the button and makes the cup look semi-transparent in idle/shuffle phases.
+        .allowsHitTesting(gamePhase == .guessing)
         // Pulsing gold glow when cups are pickable
         .shadow(
             color: gamePhase == .guessing
@@ -277,8 +278,8 @@ struct ShellGameDetailView: View {
             npcImageName: "npc-shell-master",
             plainMessage: vm.npcSpeech,
             wheelContent: AnyView(shellWagerSection(vm)),
-            customAvatarSize: 280,
-            customAvatarOffset: -180
+            customAvatarSize: 380,
+            customAvatarOffset: -240
         )
     }
 

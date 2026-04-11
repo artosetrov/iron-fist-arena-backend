@@ -301,30 +301,23 @@ struct UnifiedHeroWidget: View {
         )
     }
 
-    // MARK: - Row 2.5: Hub HP Row (conditional, reserved space)
+    // MARK: - Row 2.5: Hub HP Row (always visible — BUG-30/52 fix)
     //
-    // Shows HP bar ONLY when the character is injured (`currentHp < maxHp`).
-    // Uses a fixed-height container so the widget does not jump when HP
-    // disappears after a heal. Reserved height matches one widget bar + gap.
+    // Previously rendered HP bar only when `isInjured` to reduce clutter,
+    // but QA 2026-04-10 (BUG-13/30/52) proved the opposite: with HP hidden
+    // at full health, players saw only the ⚡ stamina pill and mistook
+    // stamina values for HP ("HP 120/120"). Always showing the HP bar
+    // gives a permanent visual anchor and the "HP" text prefix (see
+    // HPBarView .widget) removes all ambiguity between HP and stamina.
     private var hubHpRow: some View {
-        Group {
-            if isInjured {
-                HPBarView(
-                    currentHp: character.currentHp,
-                    maxHp: character.maxHp,
-                    size: .widget,
-                    pulseOnCritical: isCriticalHP
-                )
-                .transition(.opacity.combined(with: .move(edge: .top)))
-                .accessibilityHint("Wounded — use a health potion to recover")
-            } else {
-                // Reserved space — keeps the widget a constant height.
-                Color.clear
-                    .accessibilityHidden(true)
-            }
-        }
+        HPBarView(
+            currentHp: character.currentHp,
+            maxHp: character.maxHp,
+            size: .widget,
+            pulseOnCritical: isCriticalHP
+        )
         .frame(height: LayoutConstants.widgetBarHeight)
-        .animation(MotionConstants.smooth, value: isInjured)
+        .accessibilityHint(isInjured ? "Wounded — use a health potion to recover" : "Health at full")
     }
 
     // Pills removed — contextual actions now shown via NPC widget

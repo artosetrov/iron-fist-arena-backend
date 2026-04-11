@@ -125,5 +125,18 @@ grep -rn --include="*.ts" --include="*.tsx" 'character\.gems\b' "$TARGET" 2>/dev
     WALLET_HITS=$((WALLET_HITS + 1))
   done
 
+# 2026-04-10: admin grantGold shipped with prisma.character.update({data:{gold}})
+# TypeScript caught it at Vercel build (TS2353) — but a scanner pre-commit would
+# have caught it locally. Pattern: prisma.character.update containing gold/gems
+# in the same statement. Multiline tolerant via -A3.
+grep -rn --include="*.ts" --include="*.tsx" -A3 'prisma\.character\.update' "$TARGET" 2>/dev/null | \
+  grep -v 'node_modules' | \
+  grep -v '\.d\.ts' | \
+  grep -E '\b(gold|gems)\s*:' | \
+  while IFS= read -r line; do
+    echo "❌ [prisma.character.update writes gold/gems — move to user.update] $line"
+    WALLET_HITS=$((WALLET_HITS + 1))
+  done
+
 echo ""
 echo "=== SCAN COMPLETE ==="

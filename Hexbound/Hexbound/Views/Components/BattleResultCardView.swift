@@ -11,7 +11,7 @@ import SwiftUI
 ///  • Staggered reward counters with tick-up
 ///  • Inline loot cards (scale-in with per-item haptics)
 ///  • Shake + haptic on defeat
-///  • FIGHT AGAIN: gold glowPulse + shimmer (victory) / red glowPulse (defeat)
+///  • Primary CTA: gold glowPulse + shimmer (victory) / red glowPulse (defeat)
 ///  • HapticManager integration throughout ceremony
 struct BattleResultCardView: View {
 

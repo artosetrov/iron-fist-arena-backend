@@ -631,14 +631,7 @@ struct ItemDetailSheet: View {
     private var descriptionSection: some View {
         let hasDesc = (item.description ?? "").isEmpty == false
         let hasSet = (item.setName ?? "").isEmpty == false
-        let hasCatalogDebug: Bool = {
-            #if DEBUG
-            return (item.catalogId ?? "").isEmpty == false
-            #else
-            return false
-            #endif
-        }()
-        if hasDesc || hasSet || hasCatalogDebug {
+        if hasDesc || hasSet {
             VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
                 if let desc = item.description, !desc.isEmpty {
                     Text(desc)
@@ -657,16 +650,10 @@ struct ItemDetailSheet: View {
                             .foregroundStyle(DarkFantasyTheme.success)
                     }
                 }
-                #if DEBUG
-                // Bug #12: prefix with "debug:" so raw catalog keys like
-                // `stamina_potion_medium` read clearly as developer info
-                // and never get mistaken for a broken localisation string.
-                if let catalogId = item.catalogId, !catalogId.isEmpty {
-                    Text("debug: \(catalogId)")
-                        .font(DarkFantasyTheme.debugMonoSmall)
-                        .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.35))
-                }
-                #endif
+                // BUG-39 (QA 2026-04-10): debug catalog-key line removed.
+                // Previously showed "debug: loot_<uuid>" under item description —
+                // unprofessional in simulator/TestFlight builds and leaked the
+                // internal data model. Use LLDB `po item.catalogId` if you need it.
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, LayoutConstants.cardPadding)

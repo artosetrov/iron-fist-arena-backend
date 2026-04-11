@@ -6,6 +6,7 @@ import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
 import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
+import { buildInventoryResponse } from '@/lib/game/inventory-response'
 
 // Map item types to possible equipment slots (priority order).
 // Universal slots: amulet accepts necklace, relic accepts accessory + weapon (off-hand).
@@ -33,9 +34,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
+  // Hoisted outside the try so the ALREADY_EQUIPPED recovery path can
+  // still build the authoritative inventory snapshot for the client.
+  let character_id: string | null = null
+  let inventory_id: string | null = null
+
   try {
     const body = await req.json()
-    const { character_id, inventory_id } = body
+    character_id = body.character_id
+    inventory_id = body.inventory_id
 
     if (!character_id || !inventory_id) {
       return NextResponse.json(
@@ -177,26 +184,20 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    // Recalculate derived stats + invalidate caches + fetch updated inventory — all in parallel
-    // Previously sequential (3 awaits = ~150-200ms extra); now parallel saves that time.
-    const [equipment] = await Promise.all([
-      prisma.equipmentInventory.findMany({
-        where: { characterId: character_id },
-        include: { item: true },
-        orderBy: { acquiredAt: 'desc' },
-      }),
+    // Recalculate derived stats + invalidate caches — in parallel.
+    // BUG-62 (2026-04-11): inventory fetch moved into the shared
+    // `buildInventoryResponse` helper so equip/unequip return the same
+    // full snapshot shape as GET /api/inventory (equipment + consumables
+    // + inventorySlots). The client used to merge a consumable-less
+    // response and silently lost potions.
+    await Promise.all([
       recalculateDerivedStats(character_id),
       invalidateSkillCache(character_id),
       invalidatePassiveCache(character_id),
     ])
 
-    // Enrich equipment with isTwoHanded flag (same as GET /api/inventory)
-    const enrichedEquipment = equipment.map(eq => ({
-      ...eq,
-      isTwoHanded: eq.item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(eq.item.catalogId),
-    }))
-
-    return NextResponse.json({ equipment: enrichedEquipment })
+    const inventoryResponse = await buildInventoryResponse(character_id)
+    return NextResponse.json(inventoryResponse)
   } catch (error: any) {
     // Sentinel errors from interactive transaction → granular HTTP responses
     if (error.message === 'CHARACTER_NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
@@ -207,7 +208,18 @@ export async function POST(req: NextRequest) {
     if (error.message === 'LEVEL_TOO_LOW') return NextResponse.json({ error: 'Character level too low for this item' }, { status: 400 })
     if (error.message === 'CLASS_RESTRICTED') return NextResponse.json({ error: 'This item is class-restricted' }, { status: 400 })
     if (error.message === 'NOT_EQUIPPABLE') return NextResponse.json({ error: 'Item cannot be equipped' }, { status: 400 })
-    if (error.message === 'ALREADY_EQUIPPED') return NextResponse.json({ message: 'Item is already equipped' })
+    if (error.message === 'ALREADY_EQUIPPED') {
+      // BUG-62: return the full inventory snapshot (HTTP 200) instead of
+      // just `{ message }`. Previously the client parsed this as a failure
+      // (no `equipment` key → nil) and rolled back its optimistic state,
+      // making the item visually bounce back to the inventory grid. Uses
+      // the hoisted character_id so we don't re-consume the request body.
+      if (character_id) {
+        const snapshot = await buildInventoryResponse(character_id).catch(() => null)
+        if (snapshot) return NextResponse.json(snapshot)
+      }
+      return NextResponse.json({ message: 'Item is already equipped' })
+    }
 
     console.error('equip item error:', error)
     return NextResponse.json(

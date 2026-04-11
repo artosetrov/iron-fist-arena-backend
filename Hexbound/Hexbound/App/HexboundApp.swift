@@ -42,8 +42,37 @@ struct HexboundApp: App {
             .overlay(alignment: .bottom) { ToastOverlayView().environment(appState) }
             .overlay { if appState.isLoading { LoadingOverlay() } }
             .overlay { if appState.showLevelUpModal { LevelUpModalView().environment(appState) } }
+            .overlay {
+                // BUG-53: Daily Login lives at root level so its lifetime is
+                // decoupled from HubView's NavigationStack. Pop-backs from
+                // Arena/Dungeon no longer re-fire `.task` that used to reopen
+                // the modal — there is no `.task` to fire. State is driven
+                // purely by `appState.showDailyLoginPopup`, flipped once by
+                // `GameInitService.loadGameData()` and only re-flipped on an
+                // explicit tile tap in the hub.
+                if appState.showDailyLoginPopup {
+                    DailyLoginDetailView()
+                        .environment(appState)
+                        .environment(cache)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .zIndex(150)
+                }
+            }
             .overlay { if appState.showSessionExpiredModal { SessionExpiredModalView().environment(appState) } }
+            .overlay {
+                // BUG-08: Hero forge loading overlay owned at root so it
+                // survives the `.loreIntro` / `.characterSelect` transition.
+                // Previously lived inside OnboardingDetailView and was torn
+                // down with it mid-cross-fade, leaving a 2–3s black gap
+                // while OnboardingCinematicView decoded its backdrop assets.
+                if appState.isForgingHero {
+                    HeroForgeOverlayView()
+                        .transition(.opacity)
+                        .zIndex(200)
+                }
+            }
             .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)
+            .animation(.easeInOut(duration: 0.3), value: appState.isForgingHero)
             .animation(.easeInOut(duration: 0.3), value: isCheckingAuth)
             .task {
                 // Wire push service into AppDelegate for token forwarding

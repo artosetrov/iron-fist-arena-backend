@@ -3,7 +3,6 @@ import SwiftUI
 struct ShopSection: Identifiable {
     let id: String
     let title: String
-    let icon: String
     let items: [ShopItem]
 }
 
@@ -84,17 +83,22 @@ final class ShopViewModel {
         }
 
         var sections: [ShopSection] = []
+        // BUG-37 (QA 2026-04-10): previously passed plain-text icon keys
+        // ("swords", "shield", "pills", "diamond") that were rendered as
+        // raw Text in the section header — surfacing literal "swords WEAPONS"
+        // strings to players. Headers now use OrnamentalSectionHeader which
+        // carries the brand ornament visual language instead of an icon.
         if !weapons.isEmpty {
-            sections.append(ShopSection(id: "weapons", title: "Weapons", icon: "swords", items: weapons))
+            sections.append(ShopSection(id: "weapons", title: "Weapons", items: weapons))
         }
         if !equipment.isEmpty {
-            sections.append(ShopSection(id: "equipment", title: "Equipment", icon: "shield", items: equipment))
+            sections.append(ShopSection(id: "equipment", title: "Equipment", items: equipment))
         }
         if !potions.isEmpty {
-            sections.append(ShopSection(id: "potions", title: "Potions", icon: "pills", items: potions))
+            sections.append(ShopSection(id: "potions", title: "Potions", items: potions))
         }
         if !gemPacks.isEmpty {
-            sections.append(ShopSection(id: "gems", title: "Gems", icon: "diamond", items: gemPacks))
+            sections.append(ShopSection(id: "gems", title: "Gems", items: gemPacks))
         }
         return sections
     }

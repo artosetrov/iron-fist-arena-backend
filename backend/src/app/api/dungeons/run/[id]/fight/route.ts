@@ -55,6 +55,9 @@ function enemyToCharacterStats(enemy: Enemy): CharacterStats {
     maxHp: enemy.maxHp,
     armor: enemy.armor,
     magicResist: enemy.magicResist,
+    // BUG-44/45/46 (QA 2026-04-10): carry the passive-target flag through to
+    // combat so runCombat can skip the dummy's counter-attack turn.
+    isPassiveTarget: enemy.isPassive === true,
   }
 }
 

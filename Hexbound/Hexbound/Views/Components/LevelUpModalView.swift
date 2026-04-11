@@ -36,12 +36,19 @@ struct LevelUpModalView: View {
     // TODO: Add when backend returns these fields
     private var passivePoints: Int { 1 }
     private var staminaRefill: Int { 120 }
+
+    /// Lightweight row describing a single newly-unlocked building for the modal.
+    private struct UnlockRow: Identifiable {
+        let id: String        // CityBuilding.id
+        let label: String     // display name
+    }
+
     /// Buildings unlocked at this exact level (e.g. Lv3 → Dungeon, Lv5 → Gold Mine)
-    private var unlocks: [String] {
+    private var unlocks: [UnlockRow] {
         BuildingUnlockConfig.levels
             .filter { $0.value == newLevel }
-            .map { buildingDisplayName($0.key) }
-            .sorted()
+            .map { UnlockRow(id: $0.key, label: buildingDisplayName($0.key)) }
+            .sorted { $0.label < $1.label }
     }
 
     private func buildingDisplayName(_ id: String) -> String {
@@ -358,31 +365,71 @@ struct LevelUpModalView: View {
                 .tracking(2)
 
             HStack(spacing: LayoutConstants.spaceSM) {
-                ForEach(unlocks, id: \.self) { unlock in
-                    unlockPill(name: unlock)
+                ForEach(unlocks) { unlock in
+                    unlockPill(entry: unlock)
                 }
             }
         }
     }
 
-    private func unlockPill(name: String) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            Image(systemName: "lock.open.fill")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.success)
-            Text(name)
-                .font(DarkFantasyTheme.body)
+    /// Vertical card: building asset on top, label below. Falls back to the
+    /// catalog SF-Symbol if no PNG asset is shipped for the building id.
+    private func unlockPill(entry: UnlockRow) -> some View {
+        let assetName = "building-\(entry.id)"
+        let hasAsset = UIImage(named: assetName) != nil
+        let catalogEntry = BuildingUnlockCatalog.entry(for: entry.id, fallbackLabel: entry.label)
+
+        return VStack(spacing: LayoutConstants.spaceXS) {
+            ZStack {
+                // Radial gold glow behind the asset to sell the "new unlock" moment
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                DarkFantasyTheme.gold.opacity(0.25),
+                                DarkFantasyTheme.gold.opacity(0.05),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 4,
+                            endRadius: 38
+                        )
+                    )
+                    .frame(width: 72, height: 72)
+
+                if hasAsset {
+                    Image(assetName)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 60, height: 60)
+                        .shadow(color: DarkFantasyTheme.goldBright.opacity(0.35), radius: 6)
+                } else {
+                    // Non-building fallback: show the catalog feature icon
+                    Image(systemName: catalogEntry.icon)
+                        .font(DarkFantasyTheme.title)
+                        .foregroundStyle(catalogEntry.accent)
+                        .frame(width: 60, height: 60)
+                }
+            }
+
+            Text(entry.label.uppercased())
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .tracking(1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
-        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.vertical, LayoutConstants.spaceSM)
+        .frame(minWidth: 88)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(DarkFantasyTheme.success.opacity(0.08))
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.6))
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .stroke(DarkFantasyTheme.success.opacity(0.2), lineWidth: 1)
+                .stroke(DarkFantasyTheme.gold.opacity(0.35), lineWidth: 1)
         )
     }
 

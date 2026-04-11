@@ -46,24 +46,25 @@ struct CityBuildingView: View {
                             : building.glowColor.opacity(isPressed ? 0.6 : 0),
                         radius: isPressed ? 16 : 0
                     )
-                    .brightness(isPressed ? -0.06 : 0)
-                    .opacity(isLocked ? 0.6 : 1.0)
-                    .saturation(isLocked ? 0.3 : 1.0)
+                    .brightness(isLocked ? -0.25 : (isPressed ? -0.06 : 0))
+                    // BUG-57: locked sprite is fully grayscale + dimmed
+                    // ~45%. Previous 0.6/0.3 felt identical to an open
+                    // building at a glance. `saturation(0)` kills all
+                    // colour so only the structured `BuildingLockOverlay`
+                    // above it reads as a signal.
+                    .opacity(isLocked ? 0.45 : 1.0)
+                    .saturation(isLocked ? 0.0 : 1.0)
 
-                // Lock overlay
+                // Lock overlay — BUG-57: swapped the bare padlock icon +
+                // tiny "LV.4" text for a reusable `BuildingLockOverlay`
+                // with vignette, gold padlock disc and LV pill. Sits
+                // above the dimmed sprite inside the same ZStack so it
+                // inherits the building's position but its own sizing.
                 if isLocked {
-                    VStack(spacing: LayoutConstants.space2XS) {
-                        Image("icon-padlock")
-                            .resizable()
-                            .interpolation(.high)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 48, height: 48)
-                            .saturation(0.4)
-                            .opacity(0.85)
-                        Text(requiredLevel != nil ? "LV.\(requiredLevel!)" : "SOON")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
+                    BuildingLockOverlay(
+                        requiredLevel: requiredLevel,
+                        spriteHeight: buildingHeight
+                    )
                 }
             }
         }

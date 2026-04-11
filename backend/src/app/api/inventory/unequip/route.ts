@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
-import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
+import { buildInventoryResponse } from '@/lib/game/inventory-response'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -53,6 +53,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (!inventoryItem.isEquipped) {
+      // BUG-62 (2026-04-11): return the full inventory snapshot (HTTP 200)
+      // instead of an error. Previously the client parsed this as failure
+      // and rolled back its optimistic state — the item "bounced" back
+      // to the equipment slot. Returning the authoritative snapshot lets
+      // the optimistic/server states converge cleanly.
+      const snapshot = await buildInventoryResponse(character_id).catch(() => null)
+      if (snapshot) return NextResponse.json(snapshot)
       return NextResponse.json({ error: 'Item is not equipped' }, { status: 400 })
     }
 
@@ -65,26 +72,20 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Recalculate derived stats + invalidate caches + fetch updated inventory — all in parallel
-    // Previously sequential (3 awaits = ~150-200ms extra); now parallel saves that time.
-    const [equipment] = await Promise.all([
-      prisma.equipmentInventory.findMany({
-        where: { characterId: character_id },
-        include: { item: true },
-        orderBy: { acquiredAt: 'desc' },
-      }),
+    // Recalculate derived stats + invalidate caches — in parallel.
+    // BUG-62 (2026-04-11): inventory fetch moved into the shared
+    // `buildInventoryResponse` helper so equip/unequip return the same
+    // full snapshot shape as GET /api/inventory (equipment + consumables
+    // + inventorySlots). The client used to merge a consumable-less
+    // response and silently lost potions.
+    await Promise.all([
       recalculateDerivedStats(character_id),
       invalidateSkillCache(character_id),
       invalidatePassiveCache(character_id),
     ])
 
-    // Enrich equipment with isTwoHanded flag (same as GET /api/inventory)
-    const enrichedEquipment = equipment.map(eq => ({
-      ...eq,
-      isTwoHanded: eq.item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(eq.item.catalogId),
-    }))
-
-    return NextResponse.json({ equipment: enrichedEquipment })
+    const inventoryResponse = await buildInventoryResponse(character_id)
+    return NextResponse.json(inventoryResponse)
   } catch (error) {
     console.error('unequip item error:', error)
     return NextResponse.json(

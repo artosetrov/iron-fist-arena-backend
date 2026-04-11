@@ -4,7 +4,6 @@ struct OnboardingDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm = OnboardingViewModel()
-    @State private var forgeGlow = false
 
     var body: some View {
         ZStack {
@@ -41,11 +40,9 @@ struct OnboardingDetailView: View {
                 bottomButton
                     .animation(nil, value: vm.step)
             }
-
-            // Hero creation overlay
-            if vm.isCreating {
-                heroCreationOverlay
-            }
+            // BUG-08: hero creation overlay was moved to HexboundApp root so
+            // it survives the cross-fade to `.loreIntro` / `.characterSelect`.
+            // See `HeroForgeOverlayView` and `appState.isForgingHero`.
         }
         .navigationBarHidden(true)
         .onAppear {
@@ -193,52 +190,9 @@ struct OnboardingDetailView: View {
         .padding(.bottom, LayoutConstants.spaceLG)
     }
 
-    // MARK: - Hero Creation Overlay
-
-    private var heroCreationOverlay: some View {
-        ZStack {
-            DarkFantasyTheme.bgAbyss.opacity(0.85)
-                .ignoresSafeArea()
-
-            VStack(spacing: LayoutConstants.spaceMD) {
-                HexPulseLoader(.standard)
-
-                Text("Forging Your Hero...")
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-
-                Text("Sharpening swords, polishing armor...")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-            }
-            .padding(LayoutConstants.spaceLG)
-            .background(
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: DarkFantasyTheme.gold.opacity(0.15),
-                    glowIntensity: 0.5,
-                    cornerRadius: LayoutConstants.modalRadius
-                )
-            )
-            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
-            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: DarkFantasyTheme.gold.opacity(0.1))
-            .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.5), length: 18, thickness: 2.0)
-            .cornerDiamonds(color: DarkFantasyTheme.gold.opacity(0.4), size: 6)
-            .compositingGroup()
-            .shadow(color: DarkFantasyTheme.gold.opacity(0.18), radius: 10)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 32, y: 8)
-        }
-        .transition(.opacity)
-        .onAppear {
-            SFXManager.shared.play(.uiUpgradeSuccess)
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                forgeGlow = true
-            }
-        }
-        .onDisappear {
-            forgeGlow = false
-        }
-    }
+    // BUG-08: Hero forge overlay moved to `HeroForgeOverlayView` and
+    // mounted at app root in `HexboundApp`. Do not reintroduce an inline
+    // overlay here — it will be torn down with this view mid-transition.
 }
 
 // MARK: - Placeholder Extension

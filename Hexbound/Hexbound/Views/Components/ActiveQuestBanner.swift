@@ -72,7 +72,9 @@ struct ActiveQuestBanner: View {
 
     private func reloadQuests() async {
         let service = QuestService(appState: appState)
-        _ = await service.loadQuests()
+        // Silent refresh for the Hub banner — failure here just leaves the
+        // previous cached banner on screen until the next successful load.
+        _ = try? await service.loadQuests()
     }
 
     // MARK: - Banner
@@ -154,33 +156,44 @@ struct ActiveQuestBanner: View {
 
     // MARK: - Claim
 
+    /// BUG-51 (QA 2026-04-10): previously did an optimistic commit + fired the
+    /// "Quest Complete!" toast BEFORE awaiting the API — so on server failure
+    /// the toast had already fired, and because the character refresh was a
+    /// detached background Task the gold/XP HUD stayed stale. New flow mirrors
+    /// DailyQuestsViewModel: API first, commit after, celebration uses real
+    /// server reward values.
     private func claimQuest(_ quest: Quest) {
-        // Optimistic: mark claimed instantly
-        if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == quest.id }) {
-            withAnimation(.easeOut(duration: 0.3)) {
-                appState.cachedTypedQuests?[idx].rewardClaimed = true
-            }
-        }
-        HapticManager.success()
-        SFXManager.shared.play(.uiRewardClaim)
-        appState.showToast("Quest Complete! \(quest.title)", type: .quest)
-        claimingId = nil
-        syncLastKnown()
-
-        // Fire API in background
+        guard claimingId == nil else { return }
+        claimingId = quest.id
         let questId = quest.id
         Task {
             let service = QuestService(appState: self.appState)
-            let success = await service.claimQuest(questId: questId)
-            if !success {
-                // Revert on failure
-                if let idx = self.appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        self.appState.cachedTypedQuests?[idx].rewardClaimed = false
-                    }
-                }
+            let result = await service.claimQuest(questId: questId)
+            claimingId = nil
+
+            guard let result = result else {
                 self.appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error)
+                return
             }
+
+            // ── Commit on confirmed success ──
+            if let idx = self.appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    self.appState.cachedTypedQuests?[idx].rewardClaimed = true
+                }
+            }
+            syncLastKnown()
+
+            HapticManager.success()
+            SFXManager.shared.play(.uiRewardClaim)
+
+            // Build subtitle from SERVER reward values
+            var parts: [String] = []
+            if result.rewardGold > 0 { parts.append("+\(result.rewardGold)g") }
+            if result.rewardXp > 0 { parts.append("+\(result.rewardXp) XP") }
+            if result.rewardGems > 0 { parts.append("+\(result.rewardGems) gems") }
+            let subtitle = parts.isEmpty ? quest.title : parts.joined(separator: "  ")
+            self.appState.showToast("Quest Complete!", subtitle: subtitle, type: .quest)
         }
     }
 }

@@ -97,7 +97,9 @@ struct DailyLoginPopupView: View {
         VStack(spacing: 0) {
 
             // Day badge
-            dayBadge(day: data.currentDay)
+            // BUG-23: route through vm.displayDay so the badge stays on the
+            // reward being claimed, not on backend's "next day" pointer.
+            dayBadge(day: vm.displayDay)
                 .padding(.top, LayoutConstants.spaceLG)
 
             // Title
@@ -114,7 +116,9 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceXS)
 
             // Big reward icon showcase
-            if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == data.currentDay }) {
+            // BUG-23: look up by vm.displayDay (the reward the player is
+            // actually claiming), not by raw backend currentDay.
+            if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == vm.displayDay }) {
                 bigRewardShowcase(reward: reward)
                     .padding(.top, LayoutConstants.spaceLG)
 
@@ -138,7 +142,8 @@ struct DailyLoginPopupView: View {
             }
 
             // 7-day streak dots
-            streakDots(currentDay: data.currentDay)
+            // BUG-23: highlight vm.displayDay, not backend's "next day" pointer.
+            streakDots(currentDay: vm.displayDay)
                 .padding(.top, LayoutConstants.spaceMD)
 
             // Divider
@@ -177,7 +182,10 @@ struct DailyLoginPopupView: View {
                 .padding(.top, LayoutConstants.spaceXS)
 
             // Reward confirmation card
-            if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == data.currentDay }) {
+            // BUG-23: confirmation must show the reward the player just
+            // claimed (vm.displayDay = justClaimedDay snapshot), not the
+            // server-advanced "next day to claim" stored in data.currentDay.
+            if let reward = DailyReward.rewards(from: cache).first(where: { $0.day == vm.displayDay }) {
                 rewardConfirmCard(reward: reward)
                     .padding(.horizontal, LayoutConstants.spaceMD)
                     .padding(.top, LayoutConstants.spaceMD)

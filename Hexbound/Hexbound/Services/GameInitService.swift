@@ -74,6 +74,14 @@ final class GameInitService {
                 appState.cachedDailyLogin = dailyLogin
             }
 
+            // BUG-53: auto-open the Daily Login modal at most once per local
+            // calendar day. Decision happens here — the exact moment we know
+            // fresh server state — so subsequent NavigationStack pop-backs,
+            // re-entries, or `.task` re-fires can never retrigger the popup.
+            // `maybeEnqueueDailyLogin` also syncs `dailyLoginCanClaim` for the
+            // hub badge, so HubView no longer needs its own daily-login probe.
+            appState.maybeEnqueueDailyLogin()
+
             // Parse game config
             if let config = response["config"] as? [String: Any] {
                 cache.gameConfig = GameConfig(from: config)

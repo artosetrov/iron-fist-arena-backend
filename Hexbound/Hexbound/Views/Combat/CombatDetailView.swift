@@ -369,8 +369,10 @@ struct CombatDetailView: View {
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .lineLimit(1)
 
-            // Level + Class
-            Text("Lv.\(fighter.level) \(fighter.characterClass.rawValue.capitalized)")
+            // Level + Class — BUG-28: use displayName (fantasy name) for
+            // consistency with onboarding / Arena / Comparison (Assassin /
+            // Guardian instead of raw Rogue / Tank).
+            Text("Lv.\(fighter.level) \(fighter.characterClass.displayName)")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
 

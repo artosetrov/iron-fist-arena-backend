@@ -16,30 +16,40 @@ struct NPCHintOverlay: ViewModifier {
         let charId = appState.currentCharacter?.id ?? ""
 
         content
-            .safeAreaInset(edge: .bottom) {
+            // NPCGuideOverlay — full-screen dim + tap-blocked presentation.
+            // Switched from safeAreaInset (inline push) to overlay so the hint
+            // reads as a modal coach, matching the Arena Master pattern.
+            .overlay {
                 if let active = hintManager.activeHint, active.id == hint.id {
-                    NPCGuideWidget(
-                        npcTitle: active.npcName,
-                        onDismiss: {
-                            hintManager.dismiss(for: charId)
-                        },
-                        npcImageName: active.npcImage,
-                        plainMessage: active.message,
-                        onDontShowAgain: {
-                            hintManager.dismiss(for: charId)
-                        },
-                        ctaLabel: active.ctaLabel,
-                        onCTA: onCTA.map { action in
-                            {
+                    NPCGuideOverlay(onBackdropTap: {
+                        hintManager.dismiss(for: charId)
+                    }) {
+                        NPCGuideWidget(
+                            npcTitle: active.npcName,
+                            onDismiss: {
                                 hintManager.dismiss(for: charId)
-                                action()
-                            }
-                        },
-                        inlineMode: true
-                    )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.horizontal, LayoutConstants.screenPadding)
-                    .padding(.bottom, LayoutConstants.spaceSM)
+                            },
+                            npcImageName: active.npcImage,
+                            plainMessage: active.message,
+                            onDontShowAgain: {
+                                hintManager.dismiss(for: charId)
+                            },
+                            ctaLabel: active.ctaLabel,
+                            onCTA: onCTA.map { action in
+                                {
+                                    hintManager.dismiss(for: charId)
+                                    action()
+                                }
+                            },
+                            // Hint cards are short (~140pt). Default offset -140 leaves the NPC
+                            // floating above the plate with a gap. These values guarantee a
+                            // peek-from-behind look matching the minigame widgets.
+                            customAvatarSize: 320,
+                            customAvatarOffset: -60
+                        )
+                    }
+                    .transition(.opacity)
+                    .zIndex(100)
                 }
             }
             .onChange(of: isReady) { _, ready in

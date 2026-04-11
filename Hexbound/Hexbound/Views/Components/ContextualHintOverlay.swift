@@ -24,57 +24,69 @@ struct ContextualHintOverlay: ViewModifier {
         let charId = appState.currentCharacter?.id ?? ""
 
         content
-            .safeAreaInset(edge: .bottom) {
-                if !dismissed, let hint {
-                    let hasSeen = hintManager.hasSeen(hint.id, for: charId)
-                    let compactDismissed = hintManager.hasCompactBeenDismissed(hint.id, for: charId)
-
-                    if !hasSeen {
-                        // First visit: NPC Speech Card (no typewriter, CTA visible immediately)
-                        if let active = hintManager.activeHint, active.id == hint.id {
-                            NPCGuideWidget(
-                                npcTitle: active.npcName,
-                                onDismiss: {
-                                    hintManager.dismiss(for: charId)
-                                },
-                                npcImageName: active.npcImage,
-                                plainMessage: active.message,
-                                onDontShowAgain: {
-                                    // Bug #17: dismiss() already marks both main + compact as seen
-                                    hintManager.dismiss(for: charId)
-                                },
-                                ctaLabel: active.ctaLabel,
-                                onCTA: onCTA.map { action in
-                                    {
-                                        hintManager.dismiss(for: charId)
-                                        action()
-                                    }
-                                },
-                                inlineMode: true
-                            )
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .padding(.horizontal, LayoutConstants.screenPadding)
-                            .padding(.bottom, LayoutConstants.spaceSM + bottomInset)
-                        }
-                    } else if hint.compactText != nil, showCompact, !compactDismissed {
-                        // Repeat visit: Category-based compact bar
-                        // Bug #17: only show if compact hasn't been permanently dismissed
-                        ContextualHintBar(
-                            hint: hint,
-                            onAction: onCTA,
+            // First-visit full NPC Speech Card — presented as a modal coach
+            // via NPCGuideOverlay (full-screen dim + taps blocked).
+            .overlay {
+                if !dismissed, let hint,
+                   !hintManager.hasSeen(hint.id, for: charId),
+                   let active = hintManager.activeHint, active.id == hint.id {
+                    NPCGuideOverlay(onBackdropTap: {
+                        hintManager.dismiss(for: charId)
+                    }) {
+                        NPCGuideWidget(
+                            npcTitle: active.npcName,
                             onDismiss: {
-                                // Bug #17: persist dismissal so the bar never
-                                // reappears after navigation, not just this session.
-                                hintManager.dismissCompact(hint.id, for: charId)
-                                withAnimation(MotionConstants.smooth) {
-                                    dismissed = true
+                                hintManager.dismiss(for: charId)
+                            },
+                            npcImageName: active.npcImage,
+                            plainMessage: active.message,
+                            onDontShowAgain: {
+                                // Bug #17: dismiss() already marks both main + compact as seen
+                                hintManager.dismiss(for: charId)
+                            },
+                            ctaLabel: active.ctaLabel,
+                            onCTA: onCTA.map { action in
+                                {
+                                    hintManager.dismiss(for: charId)
+                                    action()
                                 }
-                            }
+                            },
+                            // Hint cards are short (title + message + optional CTA ≈ 130–180pt),
+                            // so the default offset of -140 leaves the NPC floating above the
+                            // plate with a visible gap. These values guarantee the NPC peeks
+                            // from BEHIND the card like in the minigame widgets.
+                            // Rule: overlap = cardHeight − |offset|. cardHeight ≈ 140 + |offset|=60 → ~80pt overlap.
+                            customAvatarSize: 320,
+                            customAvatarOffset: -60
                         )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .padding(.horizontal, LayoutConstants.screenPadding)
-                        .padding(.bottom, LayoutConstants.spaceSM + bottomInset)
                     }
+                    .transition(.opacity)
+                    .zIndex(100)
+                }
+            }
+            // Repeat-visit compact bar — stays inline (safeAreaInset) because
+            // it's a small non-modal reminder, not a coach.
+            .safeAreaInset(edge: .bottom) {
+                if !dismissed, let hint,
+                   hintManager.hasSeen(hint.id, for: charId),
+                   hint.compactText != nil,
+                   showCompact,
+                   !hintManager.hasCompactBeenDismissed(hint.id, for: charId) {
+                    ContextualHintBar(
+                        hint: hint,
+                        onAction: onCTA,
+                        onDismiss: {
+                            // Bug #17: persist dismissal so the bar never
+                            // reappears after navigation, not just this session.
+                            hintManager.dismissCompact(hint.id, for: charId)
+                            withAnimation(MotionConstants.smooth) {
+                                dismissed = true
+                            }
+                        }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.horizontal, LayoutConstants.screenPadding)
+                    .padding(.bottom, LayoutConstants.spaceSM + bottomInset)
                 }
             }
             .onChange(of: hint?.id) { _, _ in

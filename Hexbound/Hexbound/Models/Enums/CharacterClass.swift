@@ -8,8 +8,19 @@ enum CharacterClass: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// BUG-28 (QA 2026-04-10): Previously returned `rawValue.capitalized`
+    /// (Warrior / Rogue / Mage / Tank), which ClassTagView then uppercased
+    /// into raw enum names (`ROGUE`, `TANK`) on Arena opponent cards — while
+    /// Character Creation used `sfName` (Assassin / Guardian). Unify on the
+    /// fantasy names so every surface — Arena, Comparison, Hero Detail,
+    /// ClassTagView — matches onboarding.
     var displayName: String {
-        rawValue.capitalized
+        switch self {
+        case .warrior: "Warrior"
+        case .rogue: "Assassin"
+        case .mage: "Mage"
+        case .tank: "Guardian"
+        }
     }
 
     var icon: String {

@@ -449,7 +449,52 @@ struct HeroDetailView: View {
             // Equipment bonuses
             equipmentBonusesCard(inventoryVM?.items.filter { $0.isEquipped == true } ?? [])
 
+            // Session Stats — opens the session summary screen
+            sessionStatsButton(charId: char.id)
+
         }
+    }
+
+    // MARK: - Session Stats Button
+
+    @ViewBuilder
+    private func sessionStatsButton(charId: String) -> some View {
+        Button {
+            HapticManager.light()
+            appState.mainPath.append(AppRoute.sessionSummary(characterId: charId))
+        } label: {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image("icon-leaderboard")
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                Text("SESSION STATS")
+                    .font(DarkFantasyTheme.body)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(DarkFantasyTheme.caption)
+            }
+            .foregroundStyle(DarkFantasyTheme.gold)
+            .padding(LayoutConstants.cardPadding)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.gold.opacity(0.04),
+                    glowIntensity: 0.3,
+                    cornerRadius: LayoutConstants.panelRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
+            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.12))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(DarkFantasyTheme.gold.opacity(0.2), lineWidth: 1)
+            )
+            .cornerBrackets(color: DarkFantasyTheme.borderMedium.opacity(0.3), length: 12, thickness: 1.5)
+            .compositingGroup()
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 2, y: 1)
+        }
+        .buttonStyle(.scalePress(0.95))
+        .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
     // MARK: - Stat Cell (icon-left layout, no GeometryReader)
@@ -1162,20 +1207,31 @@ struct HeroDetailView: View {
                 inventoryLoadingGrid()
             } else {
                 // Content state (shows empty slots when no items)
-                // Cache computed properties once to avoid O(n log n) per cell
-                let sorted = vm.sortedItems
+                // Cache computed properties once to avoid O(n log n) per cell.
+                //
+                // BUG-61 (2026-04-11): grid MUST use stable identity
+                // (`InventorySlot.id` — item.id for filled slots, "empty_N"
+                // for empty ones). Previously this was `ForEach(0..<count, id: \.self)`,
+                // which identified cells by POSITION. On any equip/unequip,
+                // `sortedItems` shrinks by 1 and every item shifts left —
+                // SwiftUI diffs this as "cell 0 changed from A to B, cell 1
+                // from B to C, …" and re-renders the entire grid, making
+                // items visually "jump" between inventory and equipment.
+                // With stable IDs, SwiftUI correctly recognises "item A
+                // removed, others unchanged" and does a single clean diff.
                 let equipped = vm.equippedBySlot
+                let slots = vm.gridSlots
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.inventoryGap), count: LayoutConstants.inventoryCols),
                     spacing: LayoutConstants.inventoryGap
                 ) {
-                    ForEach(0..<max(vm.totalSlots, 28), id: \.self) { index in
-                        if index < sorted.count {
+                    ForEach(slots) { slot in
+                        if let item = slot.item {
                             ItemCardView(
-                                item: sorted[index],
-                                context: .inventory(equippedItem: equipped[sorted[index].equipSlot])
+                                item: item,
+                                context: .inventory(equippedItem: equipped[item.equipSlot])
                             ) {
-                                vm.selectItem(sorted[index])
+                                vm.selectItem(item)
                             }
                         } else {
                             // Empty slot — same structure as SkeletonInventoryItem

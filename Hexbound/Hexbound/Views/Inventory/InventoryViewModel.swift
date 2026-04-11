@@ -114,14 +114,16 @@ final class InventoryViewModel {
         appState.showToast("Equipped \(item.displayName)", type: .reward)
 
         if let updated = await service.equip(inventoryId: item.id) {
-            // Only apply server response if equipped set differs from optimistic prediction.
-            // This prevents a second redundant re-render when optimistic was already correct.
-            let optimisticEquipped = Set(items.filter { $0.isEquipped == true }.map(\.id))
-            let serverEquipped = Set(updated.filter { $0.isEquipped == true }.map(\.id))
-            if optimisticEquipped != serverEquipped {
-                items = updated
-                appState.cachedInventory = updated
-            }
+            // BUG-62 (2026-04-11): merge only the equipment slice from
+            // the server response — the /api/inventory/equip endpoint
+            // returns `{ equipment: [...] }` (NO consumables). Previously
+            // we replaced `items = updated` outright whenever the
+            // equipped-id set disagreed with the optimistic prediction,
+            // which silently erased every consumable (potions, gems…)
+            // from inventory until the next full `loadInventory()`.
+            // Now we keep existing consumables and replace only the
+            // equipment part.
+            mergeEquipmentResponse(updated)
         } else {
             // Rollback on failure
             items = previousItems
@@ -139,18 +141,43 @@ final class InventoryViewModel {
         appState.showToast("Unequipped \(item.displayName)", type: .info)
 
         if let updated = await service.unequip(inventoryId: item.id) {
-            // Only apply server response if equipped set differs from optimistic prediction.
-            let optimisticEquipped = Set(items.filter { $0.isEquipped == true }.map(\.id))
-            let serverEquipped = Set(updated.filter { $0.isEquipped == true }.map(\.id))
-            if optimisticEquipped != serverEquipped {
-                items = updated
-                appState.cachedInventory = updated
-            }
+            // BUG-62: merge only the equipment slice (see note in equip).
+            mergeEquipmentResponse(updated)
         } else {
             items = previousItems
             appState.cachedInventory = previousItems
             appState.showToast("Failed to unequip", subtitle: "Inventory may be full", type: .error)
         }
+    }
+
+    /// Merge an equipment-only server response into `items`, preserving
+    /// consumables. Skipped when the equipped-id set already matches the
+    /// optimistic prediction AND the equipment rows are byte-equivalent —
+    /// that's the happy path (most equips), and a no-op avoids a pointless
+    /// full-grid re-render.
+    private func mergeEquipmentResponse(_ serverEquipment: [Item]) {
+        let consumables = items.filter { $0.itemType == .consumable }
+        let currentEquipment = items.filter { $0.itemType != .consumable }
+
+        // Fast equality: same count + same (id, isEquipped, equippedSlot,
+        // durability, upgradeLevel) per id. Anything else means the server
+        // changed something (auto-swap of two-handed weapon, corrected
+        // ring slot, durability tick, upgrade, …) and we must apply it.
+        let serverEquippedSet = Set(serverEquipment.filter { $0.isEquipped == true }.map(\.id))
+        let optimisticEquippedSet = Set(currentEquipment.filter { $0.isEquipped == true }.map(\.id))
+
+        if serverEquippedSet == optimisticEquippedSet &&
+           serverEquipment.count == currentEquipment.count {
+            // Optimistic prediction matches — skip the re-render entirely.
+            appState.cachedInventory = items
+            return
+        }
+
+        // Server disagreed with optimistic prediction: apply equipment
+        // slice verbatim, keep consumables intact.
+        let merged = serverEquipment + consumables
+        items = merged
+        appState.cachedInventory = merged
     }
 
     func sell(_ item: Item) async {
@@ -362,13 +389,25 @@ final class InventoryViewModel {
     // MARK: - Optimistic Helpers
 
     private func applyOptimisticEquip(_ item: Item) {
-        // Unequip any existing item in the same slot, equip the new one
+        // Unequip any existing item in the same slot, equip the new one.
+        //
+        // BUG-59 (QA 2026-04-10): also assign `equippedSlot` to the
+        // canonical primary slot for the item's type. Without this the
+        // render layer (IntegratedCharacterCard.findEquippedItem) fell
+        // back to matching by accepted-types, and a weapon with a nil
+        // slot appeared in BOTH the weapon slot and the "relic" universal
+        // off-hand slot, duplicating the item visually.
+        let canonicalSlot = Self.canonicalPrimarySlot(for: item.itemType.rawValue)
         items = items.map { existing in
             var updated = existing
             if existing.id == item.id {
                 updated.isEquipped = true
+                if updated.equippedSlot == nil, let canonicalSlot {
+                    updated.equippedSlot = canonicalSlot
+                }
             } else if existing.isEquipped == true && existing.itemType == item.itemType {
                 updated.isEquipped = false
+                updated.equippedSlot = nil
             }
             return updated
         }
@@ -379,9 +418,24 @@ final class InventoryViewModel {
             var updated = existing
             if existing.id == item.id {
                 updated.isEquipped = false
+                updated.equippedSlot = nil
             }
             return updated
         }
+    }
+
+    /// Mirror of `IntegratedCharacterCard.canonicalPrimarySlot` — picks
+    /// the first slot in `EquipmentViewModel.slotOrder` that accepts the
+    /// given item type. Kept local so the view model doesn't depend on
+    /// the view layer.
+    private static func canonicalPrimarySlot(for itemType: String) -> String? {
+        for candidate in EquipmentViewModel.slotOrder {
+            let accepted = EquipmentViewModel.slotAccepts[candidate] ?? [candidate]
+            if accepted.contains(itemType) {
+                return candidate
+            }
+        }
+        return nil
     }
 }
 

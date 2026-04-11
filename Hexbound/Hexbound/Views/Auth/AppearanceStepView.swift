@@ -19,26 +19,35 @@ struct AppearanceStepView: View {
     @State private var levelGlowRadius: CGFloat = 6
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: LayoutConstants.spaceMD) {
-                Text("Choose Your Appearance")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .tracking(1)
-                    .padding(.top, LayoutConstants.spaceMD)
+        GeometryReader { geo in
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: LayoutConstants.spaceMD) {
+                    Text("Choose Your Appearance")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .tracking(1)
+                        .padding(.top, LayoutConstants.spaceMD)
 
-                if vm.selectedOrigin != nil {
-                    thumbnailRow
+                    if vm.selectedOrigin != nil {
+                        thumbnailRow
 
-                    avatarArea
-                } else {
-                    emptyState
+                        Spacer(minLength: LayoutConstants.spaceMD)
+
+                        avatarArea
+
+                        statBonusesRow
+
+                        Spacer(minLength: LayoutConstants.spaceMD)
+                    } else {
+                        emptyState
+                    }
+
+                    raceRow
+                        .padding(.bottom, LayoutConstants.spaceLG)
                 }
-
-                raceRow
-                    .padding(.bottom, LayoutConstants.spaceLG)
+                .padding(.horizontal, LayoutConstants.screenPadding)
+                .frame(minHeight: geo.size.height)
             }
-            .padding(.horizontal, LayoutConstants.screenPadding)
         }
         .onAppear { startAnimations() }
         .onDisappear { stopAnimations() }
@@ -370,52 +379,64 @@ struct AppearanceStepView: View {
                     .tracking(2)
                     .shadow(color: DarkFantasyTheme.gold.opacity(0.3), radius: 8)
             }
-
-            // Stat bonuses (combined race + class) — update when race changes
-            if !vm.combinedBonuses.isEmpty {
-                HStack(spacing: LayoutConstants.spaceXS) {
-                    ForEach(Array(vm.combinedBonuses.prefix(3).enumerated()), id: \.element.stat) { index, bonus in
-                        heroCardStatPill(
-                            value: "\(bonus.value > 0 ? "+" : "")\(bonus.value)",
-                            label: String(bonus.stat.prefix(3)).uppercased(),
-                            color: statPillColor(for: index)
-                        )
-                    }
-                }
-                .animation(MotionConstants.snappy, value: vm.selectedOrigin)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func statPillColor(for index: Int) -> Color {
-        switch index {
-        case 0:  return DarkFantasyTheme.danger
-        case 1:  return DarkFantasyTheme.info
-        default: return DarkFantasyTheme.gold
+    // MARK: - Stat Bonus Cells (full-name planks, mirrors ClassSelectionStepView)
+
+    @ViewBuilder
+    private var statBonusesRow: some View {
+        if !vm.combinedBonuses.isEmpty {
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
+                          GridItem(.flexible(), spacing: LayoutConstants.spaceSM)],
+                spacing: LayoutConstants.spaceSM
+            ) {
+                ForEach(vm.combinedBonuses.prefix(4), id: \.stat) { bonus in
+                    statBonusCell(name: bonus.stat, value: bonus.value)
+                }
+            }
+            .animation(MotionConstants.snappy, value: vm.selectedOrigin)
         }
     }
 
     @ViewBuilder
-    private func heroCardStatPill(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
+    private func statBonusCell(name: String, value: Int) -> some View {
+        let statType = StatType.allCases.first(where: { $0.fullName == name })
+        let accentColor = value > 0 ? DarkFantasyTheme.statBoosted : DarkFantasyTheme.textDanger
+
+        HStack(spacing: LayoutConstants.spaceSM) {
+            if let statType {
+                Image(statType.iconAsset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
+            }
+
+            Text(name)
                 .font(DarkFantasyTheme.body)
-                .foregroundStyle(color)
-            Text(label)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiaryAA)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Spacer(minLength: 4)
+
+            Text("\(value > 0 ? "+" : "")\(value)")
+                .font(DarkFantasyTheme.cardTitle.bold())
+                .foregroundStyle(DarkFantasyTheme.goldBright)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, LayoutConstants.spaceXS)
+        .padding(.horizontal, LayoutConstants.spaceMS)
+        .padding(.vertical, LayoutConstants.spaceSM)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgAbyss.opacity(0.65))
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(color.opacity(0.15), lineWidth: 0.5)
-                )
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(accentColor.opacity(0.08))
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1.5)
+        )
+        .shadow(color: accentColor.opacity(0.2), radius: 6, y: 2)
     }
 
     private var heroCardBorderGlow: some View {

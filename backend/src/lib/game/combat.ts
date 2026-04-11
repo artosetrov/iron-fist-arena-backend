@@ -42,6 +42,14 @@ export interface CharacterStats {
   combatStance?: Record<string, unknown> | null;
   equippedSkills?: SkillDefinition[];
   passiveBonuses?: PassiveBonuses;
+  /**
+   * BUG-44/45/46 (QA 2026-04-10) — tutorial targets (e.g. Straw Dummy).
+   * When true in `runCombat`, the character never takes an attack turn: they
+   * only receive damage from the opponent. Used for "lifeless target" enemies
+   * where lore says they shouldn't fight back (Training Camp stage 1).
+   * NOT to be confused with stun/CC effects, which are per-turn and temporary.
+   */
+  isPassiveTarget?: boolean;
 }
 
 export interface Turn {
@@ -599,7 +607,11 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
     }
 
     // --- First character attacks second ---
-    {
+    // BUG-44/45/46 (QA 2026-04-10): if `first` is a passive target (Straw Dummy
+    // went first because of agi), skip its swing. Defensive guard — with
+    // `str/agi = 0` the dummy currently becomes `second`, but we don't want the
+    // rule to silently break if a future tuning pass gives dummies speed.
+    if (!first.isPassiveTarget) {
       const result = resolveAttack(
         t, first, second, hpSecond,
         stanceFirst, stanceSecond,
@@ -623,7 +635,11 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
     }
 
     // --- Second character attacks first ---
-    {
+    // BUG-44/45/46 (QA 2026-04-10): passive targets (Straw Dummy) never swing back.
+    // Skip the counter-attack entirely so the player can practice combat on a
+    // lifeless dummy without risk. They can still die to battle fatigue timeout
+    // if they refuse to attack, but not from dummy damage.
+    if (!second.isPassiveTarget) {
       const result = resolveAttack(
         t, second, first, hpFirst,
         stanceSecond, stanceFirst,

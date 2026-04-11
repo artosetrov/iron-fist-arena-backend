@@ -88,9 +88,60 @@ final class AppState {
     var isLoading = false
     var toasts: [ToastMessage] = []
     var showDailyLoginPopup = false
-    var hasAutoShownDailyLogin = false  // prevents auto-popup on every hub visit
     var dailyLoginCanClaim = false       // drives the hub widget badge
     var unreadMailCount = 0               // drives the inbox badge on hub
+
+    // MARK: - Hero Forge Overlay (BUG-08)
+    //
+    // Root-level "Forging Your Hero..." loading overlay owned by HexboundApp.
+    // Driven by OnboardingViewModel.createCharacter() — raised before the API
+    // call, lowered after the destination screen (`.loreIntro` / `.characterSelect`)
+    // has had a chance to mount its first frame. Lives at root so the loading
+    // UI persists across the cross-fade between OnboardingDetailView and the
+    // destination view, eliminating the black gap where the old inline overlay
+    // used to disappear mid-transition.
+    var isForgingHero = false
+
+    // MARK: - Daily Login "shown today" (BUG-53)
+    //
+    // Persisted in UserDefaults by calendar day so auto-open survives every
+    // `.task` re-fire path that exists — NavigationStack pop-back, hot reload,
+    // multiple GameInitService calls, etc. The previous `hasAutoShownDailyLogin`
+    // bool lived only in memory and was trivially bypassed by any code path
+    // that bypassed `checkLogin()`.
+    //
+    // Decision rule: auto-open once per *local calendar day*. Manual taps on
+    // the hub tile also mark "shown today" so a subsequent app relaunch on the
+    // same day doesn't reopen automatically.
+    private static let dailyLoginShownKey = "dailyLoginAutoShownDate"
+
+    var dailyLoginShownToday: Bool {
+        guard let date = UserDefaults.standard.object(forKey: Self.dailyLoginShownKey) as? Date else {
+            return false
+        }
+        return Calendar.current.isDateInToday(date)
+    }
+
+    func markDailyLoginShownToday() {
+        UserDefaults.standard.set(Date(), forKey: Self.dailyLoginShownKey)
+    }
+
+    /// Enqueue the Daily Login modal iff the server says a reward is claimable
+    /// AND the player hasn't already been shown the modal today. Single source
+    /// of truth for "should we open it?" logic — called from GameInitService
+    /// after /game/init populates `cachedDailyLogin`.
+    func maybeEnqueueDailyLogin() {
+        guard let cached = cachedDailyLogin,
+              let canClaim = cached["canClaim"] as? Bool,
+              canClaim else {
+            dailyLoginCanClaim = false
+            return
+        }
+        dailyLoginCanClaim = true
+        guard !dailyLoginShownToday else { return }
+        markDailyLoginShownToday()
+        enqueueModal(.dailyLogin)
+    }
 
     // MARK: - Celebration Banner (Layer 3 — milestone events)
     var celebrationBanner: CelebrationBanner?
@@ -305,7 +356,7 @@ final class AppState {
         cachedAchievements = nil
         cachedDailyLogin = nil
         cachedBonusClaimedToday = false
-        hasAutoShownDailyLogin = false
+        UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
         dailyLoginCanClaim = false
         selectedTab = .hub
         authPath = NavigationPath()

@@ -80,16 +80,32 @@ struct CombatResultDetailView: View {
             // Optimistically update character XP/level/gold from combat result
             // BEFORE taking XP snapshot — loadCharacter() is async and won't
             // complete in time for the snapshot to read updated values.
+            //
+            // BUG-20 (QA 2026-04-10): For arena/pvp sources, ArenaViewModel.
+            // applyResolveToCharacter() already added goldReward + xpReward to
+            // the character BEFORE navigation. Adding them again here created
+            // a DOUBLE increment (e.g. a 50g loss showed as +100g in the hero
+            // counter) until the background loadCharacter() reconciled it —
+            // which QA read as "defeat gives same rewards as victory".
+            //
+            // Challenge source (GuildHallViewModel / HubView) does NOT call
+            // applyResolveToCharacter, so the optimistic update here is the
+            // only path that updates the counter → keep it for challenge.
+            // Dungeon source has its own reward flow via DungeonRoomViewModel
+            // and never lands on this screen.
+            let alreadyApplied = (source == "arena" || source == "pvp")
             if let res = result {
                 let xpReward = res.xpReward ?? 0
                 let goldReward = res.goldReward ?? 0
-                if xpReward > 0 {
-                    let oldXp = appState.currentCharacter?.experience ?? 0
-                    appState.currentCharacter?.experience = oldXp + xpReward
-                }
-                if goldReward > 0 {
-                    let oldGold = appState.currentCharacter?.gold ?? 0
-                    appState.currentCharacter?.gold = oldGold + goldReward
+                if !alreadyApplied {
+                    if xpReward > 0 {
+                        let oldXp = appState.currentCharacter?.experience ?? 0
+                        appState.currentCharacter?.experience = oldXp + xpReward
+                    }
+                    if goldReward > 0 {
+                        let oldGold = appState.currentCharacter?.gold ?? 0
+                        appState.currentCharacter?.gold = oldGold + goldReward
+                    }
                 }
                 if res.leveledUp == true, let newLvl = res.newLevel {
                     appState.currentCharacter?.level = newLvl
@@ -156,7 +172,7 @@ struct CombatResultDetailView: View {
         var buttons: [ResultButton] = []
 
         if source == "arena" || source == "pvp" || source == "challenge" {
-            // "Fight Again" for arena, "Back to Guild Hall" for challenges
+            // "Back to Arena" for arena/pvp, "Guild Hall" for challenges
             if source == "challenge" {
                 buttons.append(ResultButton(title: "GUILD HALL", icon: "building.columns.fill", style: .primary, action: {
                     appState.combatData = nil
@@ -168,7 +184,7 @@ struct CombatResultDetailView: View {
                     }
                 }))
             } else {
-                buttons.append(ResultButton(title: "FIGHT AGAIN", icon: "swords", style: .primary, action: {
+                buttons.append(ResultButton(title: "BACK TO ARENA", icon: "swords", style: .primary, action: {
                     goBack()
                 }))
             }
@@ -196,18 +212,13 @@ struct CombatResultDetailView: View {
                     }
                 }))
             }
-            // Session stats button — same secondary style as Send Message
-            if let charId = appState.currentCharacter?.id {
-                buttons.append(ResultButton(title: "SESSION STATS", assetIcon: "icon-leaderboard", style: .secondary, action: {
-                    appState.combatData = nil
-                    appState.combatResult = nil
-                    appState.invalidateCache("quests")
-                    appState.mainPath = NavigationPath()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
-                        appState.mainPath.append(AppRoute.sessionSummary(characterId: charId))
-                    }
-                }))
-            }
+            // Back to Castle — resets navigation to Hub (main screen)
+            buttons.append(ResultButton(title: "BACK TO CASTLE", icon: "house.fill", style: .secondary, action: {
+                appState.combatData = nil
+                appState.combatResult = nil
+                appState.invalidateCache("quests")
+                appState.mainPath = NavigationPath()
+            }))
         } else {
             buttons.append(ResultButton(title: "CONTINUE", icon: nil, style: .primary, action: {
                 if let charId = appState.currentCharacter?.id {

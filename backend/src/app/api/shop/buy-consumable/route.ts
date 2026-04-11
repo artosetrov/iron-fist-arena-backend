@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
 import { rateLimit } from '@/lib/rate-limit'
 import { getGameConfig } from '@/lib/game/config'
+import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 // Hardcoded fallbacks — overridden by GameConfig consumable.price.* keys
 const DEFAULT_CONSUMABLE_PRICES: Record<ConsumableType, number> = {
@@ -103,6 +105,15 @@ export async function POST(req: NextRequest) {
 
       return { updatedUser, consumable }
     })
+
+    // BUG-58 (QA 2026-04-10): track gold_spent for Big Spender daily quest and
+    // weekly BP Spendthrift challenge. Previously only shop/buy and shop/upgrade
+    // tracked gold spend, so consumable purchases were "free" from the quest
+    // system's POV. Outside the tx — non-critical to the purchase result.
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'gold_spent', totalCost),
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_spent', totalCost),
+    ])
 
     return NextResponse.json({
       consumable: result.consumable,

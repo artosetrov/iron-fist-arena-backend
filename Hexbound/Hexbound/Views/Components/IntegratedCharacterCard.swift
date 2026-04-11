@@ -339,7 +339,6 @@ struct IntegratedCharacterCard<Display: CharacterDisplay, PortraitInfo: View, Fo
     // MARK: - Equipment Slot
 
     private func findEquippedItem(slot: String, index: Int = 0) -> Item? {
-        let accepted = EquipmentViewModel.slotAccepts[slot] ?? [slot]
         switch slot {
         case "ring":
             let rings = equippedItems.filter {
@@ -348,10 +347,33 @@ struct IntegratedCharacterCard<Display: CharacterDisplay, PortraitInfo: View, Fo
             return index < rings.count ? rings[index] : nil
         default:
             return equippedItems.first { item in
-                if item.equippedSlot == slot { return true }
-                return accepted.contains(item.itemType.rawValue) && (item.equippedSlot == slot || item.equippedSlot == nil)
+                // Backend is the source of truth when it's set.
+                if let explicit = item.equippedSlot {
+                    return explicit == slot
+                }
+                // Fallback for items with nil equippedSlot (e.g. fresh
+                // optimistic equip before the server response lands):
+                // match ONLY the canonical primary slot for this item
+                // type. BUG-59 (QA 2026-04-10): previously a weapon with
+                // nil slot matched both "weapon" and "relic" (universal
+                // off-hand accepts "weapon"), so one equip rendered two
+                // identical swords.
+                return Self.canonicalPrimarySlot(for: item.itemType.rawValue) == slot
             }
         }
+    }
+
+    /// Walks `EquipmentViewModel.slotOrder` and returns the first slot
+    /// whose `slotAccepts` list contains the given item type. Used as
+    /// the single "home" slot for items whose `equippedSlot` is nil.
+    private static func canonicalPrimarySlot(for itemType: String) -> String? {
+        for candidate in EquipmentViewModel.slotOrder {
+            let accepted = EquipmentViewModel.slotAccepts[candidate] ?? [candidate]
+            if accepted.contains(itemType) {
+                return candidate
+            }
+        }
+        return nil
     }
 
     @ViewBuilder
