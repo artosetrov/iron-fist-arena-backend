@@ -40,12 +40,9 @@ struct NPCHintOverlay: ViewModifier {
                                     hintManager.dismiss(for: charId)
                                     action()
                                 }
-                            },
-                            // Hint cards are short (~140pt). Default offset -140 leaves the NPC
-                            // floating above the plate with a gap. These values guarantee a
-                            // peek-from-behind look matching the minigame widgets.
-                            customAvatarSize: 320,
-                            customAvatarOffset: -60
+                            }
+                            // overlapCardPx defaults to 8 — NPC peeks from BEHIND the card
+                            // with only 8pt visible overlap, regardless of card height.
                         )
                     }
                     .transition(.opacity)

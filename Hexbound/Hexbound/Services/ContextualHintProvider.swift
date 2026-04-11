@@ -71,11 +71,18 @@ enum ContextualHintProvider {
     // MARK: - HUB Screen
 
     /// Returns the highest-priority contextual hint for the Hub screen.
+    ///
+    /// Mine hint rules (actionable-only):
+    /// - `mineReadySlots > 0` → `.hubMineReady` (collect gold now)
+    /// - `!hasVisitedMine && mineIdleSlots > 0` → `.hubFirstMine` (start mining)
+    /// - otherwise → no mine hint (all slots busy mining, nothing to do)
     static func hubHint(
         character: Character,
         totalPvpFights: Int,
         totalDungeonClears: Int,
         hasVisitedMine: Bool,
+        mineReadySlots: Int,
+        mineIdleSlots: Int,
         hasUnclaimedQuestRewards: Bool
     ) -> NPCHint? {
         // Priority 1: Stamina depleted
@@ -93,10 +100,17 @@ enum ContextualHintProvider {
             return .hubFirstDungeon
         }
 
-        // Priority 4: Never visited mine
-        if !hasVisitedMine {
+        // Priority 4a: Gold ready at the mine — actionable, highest mine priority
+        if mineReadySlots > 0 {
+            return .hubMineReady
+        }
+
+        // Priority 4b: Never visited mine AND there's a slot to start — nudge onboarding
+        if !hasVisitedMine && mineIdleSlots > 0 {
             return .hubFirstMine
         }
+
+        // No mine hint when all slots are actively mining (nothing to do)
 
         // Priority 5: Unclaimed quest rewards
         if hasUnclaimedQuestRewards {

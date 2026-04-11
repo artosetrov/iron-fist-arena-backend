@@ -8,6 +8,8 @@ interface ItemPreviewModalProps {
   form: ItemFormData
   open: boolean
   onOpenChange: (open: boolean) => void
+  fallbackImageUrl?: string | null
+  fallbackImageKey?: string | null
 }
 
 /**
@@ -17,7 +19,13 @@ interface ItemPreviewModalProps {
  * Usage:
  *   <ItemPreviewModal form={itemData} open={showModal} onOpenChange={setShowModal} />
  */
-export function ItemPreviewModal({ form, open, onOpenChange }: ItemPreviewModalProps) {
+export function ItemPreviewModal({
+  form,
+  open,
+  onOpenChange,
+  fallbackImageUrl = null,
+  fallbackImageKey = null,
+}: ItemPreviewModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
@@ -32,6 +40,8 @@ export function ItemPreviewModal({ form, open, onOpenChange }: ItemPreviewModalP
           <ItemPreviewCard
             form={form}
             onClose={() => onOpenChange(false)}
+            fallbackImageUrl={fallbackImageUrl}
+            fallbackImageKey={fallbackImageKey}
           />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

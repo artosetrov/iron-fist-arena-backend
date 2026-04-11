@@ -1,10 +1,18 @@
 import { prisma } from '@/lib/prisma'
+import { resolveImagesForItems } from '@/lib/item-image-resolver'
 import { ItemsClient } from './items-client'
 
 async function getItems() {
-  return prisma.item.findMany({
+  const raw = await prisma.item.findMany({
     orderBy: [{ rarity: 'desc' }, { itemLevel: 'desc' }, { itemName: 'asc' }],
   })
+
+  // Borrow art from siblings of the same itemType+rarity for items that have
+  // no own imageKey/imageUrl. The flag `imageBorrowed` lets the UI badge them
+  // so admins can tell what still needs real art uploaded.
+  const resolved = await resolveImagesForItems(prisma, raw)
+
+  return resolved
 }
 
 export default async function ItemsPage() {

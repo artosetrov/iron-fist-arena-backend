@@ -46,7 +46,19 @@ struct GoldMineDetailView: View {
                                     activeSlotCount: vm.miningSlotCount
                                 )
                                 ActiveQuestBanner(questTypes: ["gold_mine_collect"])
+                                if let shaft = vm.activeShaft {
+                                    ActiveShaftBanner(
+                                        shaft: shaft,
+                                        onTap: vm.readySlotsCount > 0
+                                            ? { Task { await vm.collectAll() } }
+                                            : nil,
+                                        isDisabled: vm.isCollectingAll || vm.readySlotsCount == 0
+                                    )
+                                }
                                 miningOutputCard(vm: vm)
+                                if vm.readySlotsCount >= 2 {
+                                    collectAllButton(vm: vm)
+                                }
                                 slotsGrid(vm: vm)
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -66,6 +78,37 @@ struct GoldMineDetailView: View {
                     var next: [Int: CGPoint] = [:]
                     for entry in entries { next[entry.slotIndex] = entry.point }
                     slotAnchors = next
+                }
+                // MARK: Variant D mini-game presentation
+                .sheet(isPresented: Binding(
+                    get: { vm.showShaftPicker },
+                    set: { vm.showShaftPicker = $0 }
+                )) {
+                    ShaftPickerSheet(
+                        unlockedShafts: vm.unlockedShafts,
+                        currentSlotLevel: vm.goldMineSlots,
+                        onPick: { vm.pickShaft($0) },
+                        onCancel: { vm.showShaftPicker = false }
+                    )
+                }
+                .fullScreenCover(item: Binding(
+                    get: { vm.pendingMinigameSession },
+                    set: { vm.pendingMinigameSession = $0 }
+                )) { session in
+                    GoldMineMiniGameView(
+                        session: session,
+                        character: appState.currentCharacter,
+                        onFinish: { payload in vm.applySlotMinigameResult(payload) },
+                        onSkip: { vm.cancelMinigameSession() }
+                    )
+                }
+                .overlay {
+                    if let clearedKey = vm.clearedShaftKey {
+                        ShaftClearedOverlay(
+                            clearedShaftKey: clearedKey,
+                            onDismiss: { vm.dismissClearedOverlay() }
+                        )
+                    }
                 }
             }
 
@@ -238,6 +281,28 @@ struct GoldMineDetailView: View {
         .cardShadow()
     }
 
+    // MARK: - Collect All Button (Variant D)
+
+    /// Shown above the slot grid when the player has 2+ ready slots. Fires
+    /// POST /collect-all which either opens the shaft picker (first time) or
+    /// drains all ready slots and launches the mini-game session.
+    private func collectAllButton(vm: GoldMineViewModel) -> some View {
+        Button {
+            HapticManager.medium()
+            Task { await vm.collectAll() }
+        } label: {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Text("COLLECT ALL (\(vm.readySlotsCount))")
+                Image("icon-gold")
+                    .resizable()
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.primary)
+        .disabled(vm.isCollectingAll)
+    }
+
     // MARK: - Slots Grid
 
     private func slotsGrid(vm: GoldMineViewModel) -> some View {
@@ -394,6 +459,24 @@ private struct MineSlotCard: View {
                     )
             }
         )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Whole-card tap for ready slots. Variant D Phase 2 split:
+            //   • unplayed → open the per-slot bonus minigame on THIS slot
+            //   • played   → trigger Collect All (drains every played-ready
+            //                slot in one shot)
+            // Mining / idle cards keep their inner buttons (BOOST / MINE).
+            guard status == "ready" else { return }
+            if vm.isSlotMinigamePlayed(slot) {
+                guard !vm.isCollectingAll else { return }
+                HapticManager.medium()
+                Task { await vm.collectAll() }
+            } else {
+                guard !vm.isStartingSlotMinigame else { return }
+                HapticManager.medium()
+                Task { await vm.startSlotMinigame(slotIndex: index) }
+            }
+        }
         .onAppear {
             previousStatus = status
         }
@@ -467,9 +550,69 @@ private struct MineSlotCard: View {
             default:
                 EmptyView()
             }
+
+            // Variant D Phase 2 — per-slot bonus minigame badge. Pinned to
+            // top-trailing so the player can scan which slots are "armed".
+            //   • unplayed → gold "BONUS" pill (call-to-play)
+            //   • played   → green "BONUS ✓" pill (ready to collect)
+            if status == "mining" || status == "ready" {
+                VStack {
+                    HStack {
+                        Spacer()
+                        bonusStateBadge
+                    }
+                    Spacer()
+                }
+                .padding(LayoutConstants.spaceXS)
+            }
         }
         .frame(height: 110)
         .clipped()
+    }
+
+    /// Small top-trailing badge that mirrors the per-slot bonus minigame
+    /// gate. Drives the whole-card tap affordance. Pure tokens.
+    @ViewBuilder
+    private var bonusStateBadge: some View {
+        if vm.isSlotMinigamePlayed(slot) {
+            HStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: "checkmark")
+                    .font(DarkFantasyTheme.badge)
+                Text("BONUS")
+                    .font(DarkFantasyTheme.badge)
+                    .tracking(1.0)
+            }
+            .foregroundStyle(DarkFantasyTheme.textPrimary)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.success.opacity(0.85))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .stroke(DarkFantasyTheme.success, lineWidth: 1)
+            )
+        } else {
+            HStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: "sparkles")
+                    .font(DarkFantasyTheme.badge)
+                Text("BONUS")
+                    .font(DarkFantasyTheme.badge)
+                    .tracking(1.0)
+            }
+            .foregroundStyle(DarkFantasyTheme.textOnGold)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.goldGradient)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .stroke(DarkFantasyTheme.goldBright, lineWidth: 1)
+            )
+        }
     }
 
     // MARK: - Info Panel
@@ -565,33 +708,72 @@ private struct MineSlotCard: View {
             .buttonStyle(.compactPrimary)
 
         case "mining":
-            Button {
-                vm.boost(slotIndex: index)
-            } label: {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    Text("BOOST")
-                    Image("icon-gems")
-                        .resizable()
-                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+            // Variant D Phase 2: while mining, the player can EITHER tap
+            // BOOST (spend gems to speed up) OR play the bonus minigame in
+            // advance. If the minigame is already played, the slot just
+            // waits — the BOOST button stays available.
+            if vm.isSlotMinigamePlayed(slot) {
+                Button {
+                    vm.boost(slotIndex: index)
+                } label: {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Text("BOOST")
+                        Image("icon-gems")
+                            .resizable()
+                            .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
+            } else {
+                Button {
+                    HapticManager.medium()
+                    Task { await vm.startSlotMinigame(slotIndex: index) }
+                } label: {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Text("BONUS")
+                        Image(systemName: "sparkles")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
+                .disabled(vm.isStartingSlotMinigame)
             }
-            .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
 
         case "ready":
-            Button {
-                HapticManager.medium()
-                Task { await vm.collect(slotIndex: index) }
-            } label: {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    Text("COLLECT")
-                    Image("icon-gold")
-                        .resizable()
-                        .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+            // Variant D Phase 2: collection is GATED by the per-slot bonus
+            // minigame. If played → tap drains all ready played slots. If
+            // not played → the button becomes PLAY BONUS and opens the
+            // minigame on THIS slot.
+            if vm.isSlotMinigamePlayed(slot) {
+                Button {
+                    HapticManager.medium()
+                    Task { await vm.collectAll() }
+                } label: {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Text("COLLECT")
+                        Image("icon-gold")
+                            .resizable()
+                            .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.compactPrimary)
+                .disabled(vm.isCollectingAll)
+            } else {
+                Button {
+                    HapticManager.medium()
+                    Task { await vm.startSlotMinigame(slotIndex: index) }
+                } label: {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Text("PLAY BONUS")
+                        Image(systemName: "sparkles")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.compactPrimary)
+                .disabled(vm.isStartingSlotMinigame)
             }
-            .buttonStyle(.compactPrimary)
 
         default:
             EmptyView()

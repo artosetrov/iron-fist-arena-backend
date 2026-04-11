@@ -61,8 +61,15 @@ struct NPCGuideWidget: View {
     var npcFallbackIcon: String = "person.crop.circle.fill"
     /// Custom avatar size override (default: LayoutConstants.npcAvatarSize)
     var customAvatarSize: CGFloat? = nil
-    /// Custom avatar vertical offset override (default: LayoutConstants.npcAvatarOffset)
+    /// Custom avatar vertical offset override (default: LayoutConstants.npcAvatarOffset).
+    /// NOTE: ignored when `overlapCardPx` is provided (new positioning mode).
     var customAvatarOffset: CGFloat? = nil
+    /// How many pixels the avatar overlaps into the speech card from its top edge.
+    /// When set (default: 8), the avatar is rendered as a background of the speech
+    /// card — layered BEHIND the card — with offset so only `overlapCardPx` bottom
+    /// pixels sit inside the card region (hidden). Pass nil to use legacy ZStack
+    /// mode with `customAvatarOffset` from ZStack bottom.
+    var overlapCardPx: CGFloat? = 8
     /// Unique ID for message transition animation
     var messageId: AnyHashable? = nil
     /// Enable typewriter text animation (characters appear one by one)
@@ -98,15 +105,32 @@ struct NPCGuideWidget: View {
             )
             .allowsHitTesting(false)
 
-            // Layer 1 (back): NPC/player image, bottom-left, peeks above card
-            HStack(alignment: .bottom) {
-                npcAvatar
-                    .offset(y: customAvatarOffset ?? LayoutConstants.npcAvatarOffset)
-                Spacer()
-            }
+            if let overlap = overlapCardPx {
+                // New mode: avatar lives in speech card's .background — rendered
+                // BEHIND the card. With offset(y: -(size - overlap)), the avatar
+                // visually extends upward, and only `overlap` px of its bottom
+                // sits inside the card region (hidden behind the card).
+                speechCard
+                    .background(alignment: .topLeading) {
+                        let size = customAvatarSize ?? LayoutConstants.npcAvatarSize
+                        HStack {
+                            npcAvatar
+                                .offset(y: -(size - overlap))
+                            Spacer()
+                        }
+                    }
+            } else {
+                // Legacy mode: avatar offset from ZStack bottom
+                // Layer 1 (back): NPC/player image, bottom-left, peeks above card
+                HStack(alignment: .bottom) {
+                    npcAvatar
+                        .offset(y: customAvatarOffset ?? LayoutConstants.npcAvatarOffset)
+                    Spacer()
+                }
 
-            // Layer 2 (front): speech card widget
-            speechCard
+                // Layer 2 (front): speech card widget
+                speechCard
+            }
         }
     }
 

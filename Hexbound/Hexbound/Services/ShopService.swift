@@ -57,7 +57,7 @@ final class ShopService {
             refreshDailyQuestsAfterGoldSpend()
             return true
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
@@ -89,7 +89,7 @@ final class ShopService {
             refreshDailyQuestsAfterGoldSpend()
             return true
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
@@ -121,7 +121,7 @@ final class ShopService {
             updateCharacter(from: response)
             return true
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
@@ -206,7 +206,7 @@ final class ShopService {
                 newDurability: newDurability, maxDurability: maxDurability
             )
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Repair failed", subtitle: "Check your gold and try again", type: .error)
@@ -258,7 +258,7 @@ final class ShopService {
                 gold: gold, gems: gems
             )
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Upgrade failed", subtitle: "Check your gold and try again", type: .error)

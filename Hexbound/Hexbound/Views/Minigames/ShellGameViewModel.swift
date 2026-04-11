@@ -146,7 +146,7 @@ final class ShellGameViewModel {
             switch error {
             case .rateLimited(let message):
                 appState.showToast(message, type: .error)
-            case .clientError(_, let message):
+            case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
             default:
                 appState.showToast("Shell game unavailable", subtitle: "Try again later", type: .error)

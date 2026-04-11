@@ -214,7 +214,7 @@ final class FortuneWheelViewModel {
             case .rateLimited:
                 npcSpeech = "The wheel needs rest... come back tomorrow."
                 spinsRemaining = 0
-            case .clientError(_, let message):
+            case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
             default:
                 appState.showToast("Fortune Wheel unavailable", subtitle: "Try again later", type: .error)

@@ -20,7 +20,7 @@ actor SupabaseAuthClient {
 
     func refreshToken(_ refreshToken: String) async throws -> (accessToken: String, refreshToken: String, expiresIn: Int) {
         guard let url = URL(string: "\(authURL)/token?grant_type=refresh_token") else {
-            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL", body: nil)
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -51,7 +51,7 @@ actor SupabaseAuthClient {
 
     func getUser(accessToken: String) async throws -> [String: Any] {
         guard let url = URL(string: "\(authURL)/user") else {
-            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL", body: nil)
         }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -74,7 +74,7 @@ actor SupabaseAuthClient {
 
     func resendConfirmation(email: String) async throws {
         guard let url = URL(string: "\(authURL)/resend") else {
-            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL", body: nil)
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -88,7 +88,7 @@ actor SupabaseAuthClient {
         let (_, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
-            throw APIError.clientError(statusCode: 400, message: "Failed to resend confirmation")
+            throw APIError.clientError(statusCode: 400, message: "Failed to resend confirmation", body: nil)
         }
     }
 
@@ -96,7 +96,7 @@ actor SupabaseAuthClient {
 
     func signInAnonymous() async throws -> (accessToken: String, refreshToken: String, user: [String: Any]) {
         guard let url = URL(string: "\(authURL)/signup") else {
-            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL")
+            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL", body: nil)
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -110,7 +110,7 @@ actor SupabaseAuthClient {
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
-            throw APIError.clientError(statusCode: 400, message: "Anonymous sign-in failed")
+            throw APIError.clientError(statusCode: 400, message: "Anonymous sign-in failed", body: nil)
         }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],

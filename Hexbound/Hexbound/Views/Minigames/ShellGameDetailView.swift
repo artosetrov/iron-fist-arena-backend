@@ -112,8 +112,8 @@ struct ShellGameDetailView: View {
                         // Cups stage — moved up, no status text header
                         cupsSection(vm)
 
-                        // Spacer for NPC widget clearance (bigger NPC = more clearance)
-                        Spacer().frame(height: 380)
+                        // Spacer for NPC widget clearance (matches npcAvatarSize)
+                        Spacer().frame(height: LayoutConstants.npcAvatarSize)
                     }
                 }
             }
@@ -278,8 +278,7 @@ struct ShellGameDetailView: View {
             npcImageName: "npc-shell-master",
             plainMessage: vm.npcSpeech,
             wheelContent: AnyView(shellWagerSection(vm)),
-            customAvatarSize: 380,
-            customAvatarOffset: -240
+            overlapCardPx: 8
         )
     }
 

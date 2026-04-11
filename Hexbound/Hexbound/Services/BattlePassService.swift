@@ -53,7 +53,7 @@ final class BattlePassService {
             Task { [weak self] in await self?.refreshCharacter() }
         } catch let error as APIError {
             switch error {
-            case .clientError(let code, let msg):
+            case .clientError(let code, let msg, _):
                 if code == 400 && msg.contains("already claimed") {
                     throw BattlePassClaimError.alreadyClaimed
                 } else if code == 400 && msg.contains("not yet reached") {

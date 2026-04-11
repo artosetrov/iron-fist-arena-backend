@@ -388,6 +388,18 @@ struct NPCHint: Identifiable, Equatable {
         iconAsset: "building-gold-mine"
     )
 
+    static let hubMineReady = NPCHint(
+        id: "hub_mine_ready",
+        npcName: "Mine Foreman",
+        npcImage: "shopkeeper",
+        message: "Your miners struck pay-dirt! There's gold ready to collect at the mine. Get it before someone else notices.",
+        ctaLabel: "COLLECT",
+        compactText: "Gold ready at the mine",
+        compactSublabel: "Tap to collect your gains",
+        category: .reward,
+        iconAsset: "building-gold-mine"
+    )
+
     static let hubUnclaimedRewards = NPCHint(
         id: "hub_unclaimed_rewards",
         npcName: "Herald",
@@ -598,9 +610,9 @@ struct NPCHint: Identifiable, Equatable {
         // HERO screen (8)
         .heroNoGear, .heroLowHpPotions, .heroLowHpNoPotions, .heroDamagedGear,
         .heroUpgradeQuest, .heroUpgradeNoItem, .heroStatPoints, .heroConsumableQuest,
-        // HUB screen (6)
+        // HUB screen (7)
         .hubNoStamina, .hubFirstPvp, .hubFirstDungeon, .hubFirstMine,
-        .hubUnclaimedRewards,
+        .hubMineReady, .hubUnclaimedRewards,
         // ARENA screen (7)
         .arenaLowHpPotions, .arenaLowHpNoPotions, .arenaFirstFight,
         .arenaLossStreak, .arenaLowStamina, .arenaFirstWin,

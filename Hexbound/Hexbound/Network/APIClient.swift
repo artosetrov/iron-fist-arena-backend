@@ -143,7 +143,14 @@ actor APIClient {
             throw APIError.rateLimited(message: message)
         case 400..<500:
             let message = extractErrorMessage(from: data) ?? "Client error"
-            throw APIError.clientError(statusCode: httpResponse.statusCode, message: message)
+            // Attach parsed JSON body (if any) so callers can inspect typed
+            // server codes like NO_PLAYABLE_SLOTS without re-parsing.
+            let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            throw APIError.clientError(
+                statusCode: httpResponse.statusCode,
+                message: message,
+                body: body
+            )
         case 500...:
             let message = extractErrorMessage(from: data) ?? "Server error"
             throw APIError.serverError(statusCode: httpResponse.statusCode, message: message)

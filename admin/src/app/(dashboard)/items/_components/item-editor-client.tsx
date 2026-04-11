@@ -46,7 +46,19 @@ type DbItem = {
   upgradeConfig: unknown
 }
 
-export function ItemEditorClient({ item }: { item: DbItem | null }) {
+interface ItemEditorClientProps {
+  item: DbItem | null
+  /** Borrowed image URL used only for preview when the item has no own art. */
+  fallbackImageUrl?: string | null
+  /** Borrowed image key used only for preview when the item has no own art. */
+  fallbackImageKey?: string | null
+}
+
+export function ItemEditorClient({
+  item,
+  fallbackImageUrl = null,
+  fallbackImageKey = null,
+}: ItemEditorClientProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState<ItemFormData>(EMPTY_FORM)
@@ -644,7 +656,11 @@ export function ItemEditorClient({ item }: { item: DbItem | null }) {
       <div className="w-[340px] shrink-0 hidden lg:block">
         <div className="sticky top-6">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Live Preview</p>
-          <ItemPreviewCard form={form} />
+          <ItemPreviewCard
+            form={form}
+            fallbackImageUrl={fallbackImageUrl}
+            fallbackImageKey={fallbackImageKey}
+          />
         </div>
       </div>
     </div>

@@ -341,16 +341,17 @@ struct CharacterSelectionView: View {
                     )
                 }
             } label: {
-                VStack(spacing: LayoutConstants.space2XS) {
-                    if let selected = vm.selectedCharacter, !enterPressed {
-                        Text("Playing as \(selected.characterName)")
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.7))
+                Group {
+                    if enterPressed {
+                        Text("ENTERING...")
+                    } else if let selected = vm.selectedCharacter {
+                        Text("PLAYING AS \(selected.characterName.uppercased())")
+                    } else {
+                        Text("SELECT A HERO")
                     }
-                    Text(enterPressed ? "ENTERING..." : "ENTER GAME")
-                        .font(DarkFantasyTheme.buttonLabel)
-                        .tracking(1.5)
                 }
+                .font(DarkFantasyTheme.buttonLabel)
+                .tracking(1.5)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
             }

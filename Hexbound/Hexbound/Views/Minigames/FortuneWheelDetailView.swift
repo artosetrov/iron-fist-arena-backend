@@ -86,8 +86,8 @@ struct FortuneWheelDetailView: View {
                         // The Wheel
                         wheelSection(vm)
 
-                        // Spacer for NPC widget clearance (accounts for larger NPC avatar)
-                        Spacer().frame(height: 320)
+                        // Spacer for NPC widget clearance (matches npcAvatarSize)
+                        Spacer().frame(height: LayoutConstants.npcAvatarSize)
                     }
                 }
             }
@@ -256,8 +256,7 @@ struct FortuneWheelDetailView: View {
             npcImageName: "lady-fortuna",
             plainMessage: vm.npcSpeech,
             wheelContent: AnyView(wheelWagerSection(vm)),
-            customAvatarSize: 320,
-            customAvatarOffset: -210
+            overlapCardPx: 8
         )
     }
 
@@ -742,7 +741,7 @@ struct FortuneWheelView: View {
                     }
                     .aspectRatio(0.95, contentMode: .fit)
 
-                    Spacer().frame(height: 320)
+                    Spacer().frame(height: LayoutConstants.npcAvatarSize)
                 }
             }
         }
@@ -812,8 +811,7 @@ struct FortuneWheelView: View {
                     .buttonStyle(.primary)
                 }
             ),
-            customAvatarSize: 320,
-            customAvatarOffset: -210
+            overlapCardPx: 8
         )
     }
     .preferredColorScheme(.dark)

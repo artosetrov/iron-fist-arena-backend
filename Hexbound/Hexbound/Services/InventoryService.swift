@@ -81,7 +81,7 @@ final class InventoryService {
             HapticManager.light()
             return parseInventoryResponse(response)
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Equip failed", subtitle: "Item may have class or level restrictions", type: .error)
@@ -209,7 +209,9 @@ final class InventoryService {
             return true
         } catch let error as APIError {
             switch error {
-            case .clientError(_, let message), .serverError(_, let message):
+            case .clientError(_, let message, _):
+                appState.showToast(message, type: .error)
+            case .serverError(_, let message):
                 appState.showToast(message, type: .error)
             default:
                 appState.showToast("Failed to use item", subtitle: "Item may be on cooldown", type: .error)
@@ -244,7 +246,7 @@ final class InventoryService {
             }
             return nil
         } catch let error as APIError {
-            if case .clientError(_, let message) = error {
+            if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
             } else {
                 appState.showToast("Failed to expand inventory", subtitle: "Check your gold balance", type: .error)

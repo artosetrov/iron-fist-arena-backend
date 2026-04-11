@@ -12,6 +12,39 @@ final class GoldMineViewModel {
     var isBuyingSlot = false
     private var activeActionSlots: Set<Int> = []  // prevents double-tap per slot
 
+    // MARK: - Mini-game / Shaft state (Variant D)
+
+    /// Active expedition shaft, if any. Nil when the player must pick one.
+    var activeShaft: ActiveShaft?
+    /// Pending mini-game session. Variant D Phase 2: opened per slot via
+    /// `startSlotMinigame(slotIndex:)`. When non-nil the view presents
+    /// `GoldMineMiniGameView` as a fullScreenCover.
+    var pendingMinigameSession: MinigameSessionInfo?
+    /// True while a /slot-minigame/start call is in flight — blocks the UI
+    /// from double-opening the bonus cover.
+    var isStartingSlotMinigame: Bool = false
+    /// Unlocked shaft keys, exposed so the picker sheet can filter rows.
+    var unlockedShafts: [ShaftKey] = []
+    /// True when the backend responded with `needs_shaft_pick` and the view
+    /// should present the picker sheet.
+    var showShaftPicker: Bool = false
+    /// Set after /minigame-bonus responds with `shaft_completed: true`.
+    /// The view renders `ShaftClearedOverlay` while this is non-nil.
+    var clearedShaftKey: ShaftKey?
+    /// Prevents concurrent /collect-all calls.
+    var isCollectingAll: Bool = false
+
+    /// Current gold-mine slot level — proxied from `maxSlots` (the number of
+    /// slots the player has unlocked). Used by the picker sheet to label
+    /// locked rows. Server remains authoritative on actual shaft gating.
+    var goldMineSlots: Int { maxSlots }
+
+    /// Number of slots whose server-side status is "ready" (timer elapsed +
+    /// backend confirmed). Used to decide whether to show the Collect All CTA.
+    var readySlotsCount: Int {
+        slots.filter { slotStatus($0) == "ready" }.count
+    }
+
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
@@ -271,6 +304,292 @@ final class GoldMineViewModel {
             appState.showToast("Failed to collect", subtitle: "Check connection and try again", type: .error)
         }
         activeActionSlots.remove(slotIndex)
+    }
+
+    // MARK: - Collect All (Variant D Phase 2 — played slots only)
+
+    /// Drain all ready AND played slots in one call. Unplayed ready slots
+    /// are left behind — the player must open their per-slot bonus minigame
+    /// via `startSlotMinigame(slotIndex:)` first.
+    ///
+    /// Branches:
+    ///   - `needs_shaft_pick` → sets `showShaftPicker = true`
+    ///   - 409 `NO_PLAYABLE_SLOTS` → toast + auto-open minigame on the
+    ///     first unplayed ready slot, so the player flows straight into it
+    ///   - success → update slots, gold, gems, active shaft
+    func collectAll(pickedShaftKey: ShaftKey? = nil) async {
+        guard !isCollectingAll else { return }
+        guard let charId = appState.currentCharacter?.id else { return }
+        isCollectingAll = true
+        defer { isCollectingAll = false }
+
+        var body: [String: Any] = ["character_id": charId]
+        if let pickedShaftKey {
+            body["picked_shaft_key"] = pickedShaftKey.rawValue
+        }
+
+        do {
+            let data = try await APIClient.shared.postRaw(
+                APIEndpoints.goldMineCollectAll,
+                body: body
+            )
+
+            // Branch 1: server wants us to show the picker.
+            if let needs = data["needs_shaft_pick"] as? Bool, needs {
+                let unlockedRaw = (data["unlocked_shafts"] as? [String]) ?? []
+                unlockedShafts = unlockedRaw.compactMap { ShaftKey(rawValue: $0) }
+                showShaftPicker = true
+                return
+            }
+
+            // Branch 2: success — update slots, gold, active shaft.
+            if let updatedSlots = data["slots"] as? [[String: Any]] {
+                withAnimation(MotionConstants.smooth) { slots = updatedSlots }
+            }
+            if let newGold = data["gold"] as? Int {
+                appState.currentCharacter?.gold = newGold
+            }
+            if let newGems = data["gems"] as? Int {
+                appState.currentCharacter?.gems = newGems
+            }
+            syncVisualCounters()
+            appState.invalidateCache("quests")
+
+            // Active shaft — may be nil if this cycle cleared the shaft.
+            if let shaftDict = data["active_shaft"] as? [String: Any],
+               let keyRaw = shaftDict["key"] as? String,
+               let key = ShaftKey(rawValue: keyRaw),
+               let progress = shaftDict["progress"] as? Int,
+               let total = shaftDict["total"] as? Int {
+                let previousKey = activeShaft?.key
+                let nextShaft = ActiveShaft(key: key, progress: progress, total: total)
+                activeShaft = nextShaft
+                // If the shaft key flipped under us mid-cycle, treat as
+                // completion celebration for the previous shaft.
+                if let previousKey, previousKey != key {
+                    clearedShaftKey = previousKey
+                }
+            } else {
+                // Shaft cleared this cycle — remember it for the overlay,
+                // reset active so the picker opens on next call.
+                if let previousKey = activeShaft?.key {
+                    clearedShaftKey = previousKey
+                }
+                activeShaft = nil
+            }
+
+            HapticManager.success()
+        } catch let apiError as APIError {
+            // NO_PLAYABLE_SLOTS → server returns 409 with payload telling us
+            // which slots are ready-but-unplayed. Auto-route the player into
+            // the first one's bonus minigame so the flow stays one-tap.
+            if apiError.statusCode == 409,
+               let payload = apiError.responsePayload,
+               let code = payload["code"] as? String,
+               code == "NO_PLAYABLE_SLOTS" {
+                // Keep the slots snapshot the server sent so the board
+                // reflects reality.
+                if let updatedSlots = payload["slots"] as? [[String: Any]] {
+                    withAnimation(MotionConstants.smooth) { slots = updatedSlots }
+                }
+                let unplayed = (payload["unplayed_ready_slot_indices"] as? [Int]) ?? []
+                if let firstUnplayed = unplayed.first {
+                    appState.showToast(
+                        "Finish the bonus round",
+                        subtitle: "Play the bonus on a ready slot before collecting.",
+                        type: .info
+                    )
+                    await startSlotMinigame(slotIndex: firstUnplayed)
+                } else {
+                    appState.showToast(
+                        "No playable slots",
+                        subtitle: "Play a slot's bonus round to enable collect.",
+                        type: .info
+                    )
+                }
+                return
+            }
+            appState.showToast(
+                "Failed to collect",
+                subtitle: "Check connection and try again",
+                type: .error
+            )
+        } catch {
+            appState.showToast(
+                "Failed to collect",
+                subtitle: "Check connection and try again",
+                type: .error
+            )
+        }
+    }
+
+    // MARK: - Per-Slot Bonus Minigame (Variant D Phase 2)
+
+    /// Opens a per-slot bonus minigame session. Idempotent on the server
+    /// side — if a session is already in flight it comes back as-is.
+    /// Sets `pendingMinigameSession` on success so the view presents the
+    /// fullScreenCover.
+    func startSlotMinigame(slotIndex: Int, pickedShaftKey: ShaftKey? = nil) async {
+        guard !isStartingSlotMinigame else { return }
+        guard let charId = appState.currentCharacter?.id else { return }
+        isStartingSlotMinigame = true
+        defer { isStartingSlotMinigame = false }
+
+        var body: [String: Any] = [
+            "character_id": charId,
+            "slot_index": slotIndex,
+        ]
+        if let pickedShaftKey {
+            body["picked_shaft_key"] = pickedShaftKey.rawValue
+        }
+
+        do {
+            let data = try await APIClient.shared.postRaw(
+                APIEndpoints.goldMineSlotMinigameStart,
+                body: body
+            )
+
+            // Shaft picker branch.
+            if let needs = data["needs_shaft_pick"] as? Bool, needs {
+                let unlockedRaw = (data["unlocked_shafts"] as? [String]) ?? []
+                unlockedShafts = unlockedRaw.compactMap { ShaftKey(rawValue: $0) }
+                showShaftPicker = true
+                return
+            }
+
+            if let updatedSlots = data["slots"] as? [[String: Any]] {
+                withAnimation(MotionConstants.smooth) { slots = updatedSlots }
+            }
+            if let shaftDict = data["active_shaft"] as? [String: Any],
+               let keyRaw = shaftDict["key"] as? String,
+               let key = ShaftKey(rawValue: keyRaw),
+               let progress = shaftDict["progress"] as? Int,
+               let total = shaftDict["total"] as? Int {
+                activeShaft = ActiveShaft(key: key, progress: progress, total: total)
+            }
+
+            if let sessionDict = data["minigame_session"] as? [String: Any],
+               let session = Self.decodeMinigameSession(from: sessionDict) {
+                pendingMinigameSession = session
+                HapticManager.medium()
+            }
+        } catch {
+            appState.showToast(
+                "Failed to open bonus round",
+                subtitle: "Check connection and try again",
+                type: .error
+            )
+        }
+    }
+
+    /// Applies the raw response dict from /slot-minigame/submit. The view
+    /// calls this via its `onFinish` callback once the 15s round ends or
+    /// the player skips. No shaft update happens here — shaft progress is
+    /// owned by /collect-all and /collect.
+    func applySlotMinigameResult(_ data: [String: Any]) {
+        let bonusGold = (data["bonus_gold"] as? Int) ?? 0
+        let bonusGems = (data["bonus_gems"] as? Int) ?? 0
+
+        withAnimation(MotionConstants.smooth) {
+            if let newGold = data["gold"] as? Int {
+                appState.currentCharacter?.gold = newGold
+            }
+            if let newGems = data["gems"] as? Int {
+                appState.currentCharacter?.gems = newGems
+            }
+            if let updatedSlots = data["slots"] as? [[String: Any]] {
+                slots = updatedSlots
+            }
+            pendingMinigameSession = nil
+        }
+        syncVisualCounters()
+
+        if bonusGold > 0 || bonusGems > 0 {
+            let parts: [String] = [
+                bonusGold > 0 ? "+\(bonusGold) gold" : nil,
+                bonusGems > 0 ? "+\(bonusGems) gem" : nil,
+            ].compactMap { $0 }
+            appState.showToast(
+                "Bonus secured!",
+                subtitle: parts.joined(separator: " · "),
+                type: .reward
+            )
+        }
+    }
+
+    /// Slot dict accessor — true once the per-slot bonus minigame has been
+    /// completed (server-side `minigame_played_at != null`).
+    func isSlotMinigamePlayed(_ slot: [String: Any]) -> Bool {
+        return (slot["minigame_played"] as? Bool) ?? false
+    }
+
+    /// Slot dict accessor — true when a minigame session is currently in
+    /// flight for this slot (player backgrounded mid-round).
+    func hasInFlightMinigameSession(_ slot: [String: Any]) -> Bool {
+        guard let id = slot["minigame_session_id"] as? String else { return false }
+        return !id.isEmpty
+    }
+
+    /// Called by `ShaftPickerSheet` when the player confirms a shaft. Dismisses
+    /// the sheet and retries `collectAll` with the picked key.
+    func pickShaft(_ key: ShaftKey) {
+        showShaftPicker = false
+        Task { await collectAll(pickedShaftKey: key) }
+    }
+
+    /// Called by `GoldMineMiniGameView` via its `onFinish` callback once the
+    /// player completes (or skips) the 15s round. Server is authoritative —
+    /// this just wires the bonus into local state.
+    func applyBonusResult(_ result: MinigameBonusResult) {
+        // Capture the shaft key BEFORE we clear the pending session — the
+        // overlay needs it to render the cleared banner.
+        let sessionShaftKey = pendingMinigameSession?.shaftKey
+        withAnimation(MotionConstants.smooth) {
+            appState.currentCharacter?.gold = result.gold
+            appState.currentCharacter?.gems = result.gems
+            activeShaft = result.activeShaft
+            pendingMinigameSession = nil
+        }
+        syncVisualCounters()
+
+        if result.shaftCompleted, let cleared = sessionShaftKey ?? result.activeShaft?.key {
+            clearedShaftKey = cleared
+        }
+
+        if result.bonusGold > 0 || result.bonusGems > 0 {
+            let parts: [String] = [
+                result.bonusGold > 0 ? "+\(result.bonusGold) gold" : nil,
+                result.bonusGems > 0 ? "+\(result.bonusGems) gem" : nil,
+            ].compactMap { $0 }
+            appState.showToast(
+                "Bonus secured!",
+                subtitle: parts.joined(separator: " · "),
+                type: .reward
+            )
+        }
+    }
+
+    /// Called when the player taps Skip + confirms, or the server rejects the
+    /// bonus call. Cleans up local state without applying any reward.
+    func cancelMinigameSession() {
+        withAnimation(MotionConstants.smooth) {
+            pendingMinigameSession = nil
+        }
+    }
+
+    /// Dismisses the shaft-cleared celebration overlay.
+    func dismissClearedOverlay() {
+        clearedShaftKey = nil
+    }
+
+    // Decodes the nested `minigame_session` dict returned by /collect-all
+    // into a typed `MinigameSessionInfo`. Uses JSONSerialization +
+    // JSONDecoder round-trip so CodingKeys drive field mapping.
+    private static func decodeMinigameSession(from dict: [String: Any]) -> MinigameSessionInfo? {
+        guard let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try? decoder.decode(MinigameSessionInfo.self, from: data)
     }
 
     // MARK: - Boost

@@ -15,14 +15,32 @@ interface ItemPreviewCardProps {
   onClose?: () => void
   /** Additional className for the card wrapper */
   className?: string
+  /**
+   * Borrowed image URL to show in the preview when `form.imageUrl` is empty.
+   * Renders with reduced opacity and a "borrowed art" badge so admins know
+   * the image belongs to a sibling, not this item.
+   */
+  fallbackImageUrl?: string | null
+  /** Borrowed image key (for display hint only; not used to render) */
+  fallbackImageKey?: string | null
 }
 
-export function ItemPreviewCard({ form, onClose, className }: ItemPreviewCardProps) {
+export function ItemPreviewCard({
+  form,
+  onClose,
+  className,
+  fallbackImageUrl = null,
+  fallbackImageKey: _fallbackImageKey = null,
+}: ItemPreviewCardProps) {
   const nonZeroStats = STAT_KEYS.filter(s => (form.stats[s.key] ?? 0) > 0)
   const hasEffects = form.specialEffect || form.uniquePassive
   const hasEconomy = form.buyPrice > 0 || form.sellPrice > 0 || form.dropChance > 0
   const hasUpgrade = form.maxUpgradeLevel > 0
   const borderColor = RARITY_BORDER_COLORS[form.rarity] ?? 'border-border'
+
+  // Use own image if set; otherwise fall back to a borrowed sibling image.
+  const displayImageUrl = form.imageUrl || fallbackImageUrl || ''
+  const isBorrowed = !form.imageUrl && !!fallbackImageUrl
 
   return (
     <Card className={`w-full ${borderColor} border-2 bg-card/80 backdrop-blur ${className ?? ''}`}>
@@ -39,14 +57,24 @@ export function ItemPreviewCard({ form, onClose, className }: ItemPreviewCardPro
         )}
         {/* Item Image + Info */}
         <div className="flex items-start gap-3">
-          <div className={`w-20 h-20 rounded-lg border-2 ${borderColor} bg-muted flex items-center justify-center overflow-hidden shrink-0`}>
-            {form.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={form.imageUrl}
-                alt={form.itemName || 'Item'}
-                className="w-full h-full object-cover"
-              />
+          <div className={`relative w-20 h-20 rounded-lg border-2 ${borderColor} bg-muted flex items-center justify-center overflow-hidden shrink-0`}>
+            {displayImageUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={displayImageUrl}
+                  alt={form.itemName || 'Item'}
+                  className={`w-full h-full object-cover ${isBorrowed ? 'opacity-50' : ''}`}
+                />
+                {isBorrowed && (
+                  <div
+                    className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-[8px] font-bold text-center uppercase tracking-wider text-black px-1 py-0.5"
+                    title="Borrowed from a sibling item — upload real art"
+                  >
+                    Borrowed
+                  </div>
+                )}
+              </>
             ) : (
               <Sword className="h-8 w-8 text-muted-foreground/50" />
             )}

@@ -3,26 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Gold Mine — Mini-game Prototype (Hexbound)</title>
+<title>Gold Mine — Mini-game Prototype v2 (Hexbound)</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0A0A14;
-  --bg-panel: #15151F;
+  --bg-abyss: #0A0A14;
+  --bg-card: #15151F;
+  --bg-card-2: #1C1C28;
+  --border-subtle: #2A2A38;
   --gold: #D4A537;
   --gold-light: #F4C967;
   --gold-dark: #8F6F1C;
-  --text: #F5F5F5;
-  --text-dim: #A0A0B0;
+  --gold-xp: #FFD966;
+  --text-primary: #F5F5F5;
+  --text-secondary: #A0A0B0;
+  --text-on-gold: #1A1A2E;
   --gem: #C74AE8;
-  --spark: #FF6B3D;
+  --gem-light: #E89EFF;
   --danger: #E63946;
+  --mage: #7B4FE8;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body {
   background: radial-gradient(ellipse at center, #1a1328 0%, #0A0A14 60%);
   font-family: 'Inter', system-ui, sans-serif;
-  color: var(--text);
+  color: var(--text-primary);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -32,129 +37,143 @@ html, body {
 }
 .phone-frame {
   width: 375px;
-  height: 780px;
-  max-height: 95vh;
-  background: var(--bg);
+  height: 812px;
+  max-height: 96vh;
+  background: var(--bg-abyss);
   border: 2px solid var(--gold-dark);
-  border-radius: 32px;
+  border-radius: 36px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 60px rgba(212, 165, 55, 0.2), 0 20px 60px rgba(0,0,0,0.6);
+  box-shadow: 0 0 60px rgba(212, 165, 55, 0.22), 0 20px 60px rgba(0,0,0,0.6);
   flex-shrink: 0;
 }
-.bg-layer {
-  position: absolute;
-  inset: 0;
+
+/* ────────────────────────────────────────
+   BACKGROUND — cave interior
+   ──────────────────────────────────────── */
+.bg-cave {
+  position: absolute; inset: 0;
   background:
-    radial-gradient(circle at 30% 20%, rgba(212,165,55,0.1) 0%, transparent 45%),
-    radial-gradient(circle at 70% 70%, rgba(199,74,232,0.06) 0%, transparent 40%);
-  pointer-events: none;
+    radial-gradient(ellipse at 50% 20%, rgba(212,165,55,0.14) 0%, transparent 55%),
+    radial-gradient(ellipse at 30% 70%, rgba(199,74,232,0.05) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 80%, rgba(212,165,55,0.05) 0%, transparent 40%),
+    linear-gradient(180deg, #0a0a14 0%, #15101c 40%, #0a0814 100%);
 }
-.bg-layer::before {
+.bg-stones::before, .bg-stones::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 100%);
-}
-.bg-stones {
-  position: absolute;
-  inset: 0;
   background-image:
-    radial-gradient(circle at 10% 40%, rgba(255,255,255,0.03) 0%, transparent 2%),
-    radial-gradient(circle at 85% 65%, rgba(255,255,255,0.04) 0%, transparent 2%),
-    radial-gradient(circle at 50% 85%, rgba(255,255,255,0.03) 0%, transparent 2%),
-    radial-gradient(circle at 25% 75%, rgba(255,255,255,0.02) 0%, transparent 1.5%);
+    radial-gradient(circle at 8% 12%, rgba(255,215,120,0.05) 0%, transparent 0.8%),
+    radial-gradient(circle at 22% 30%, rgba(255,255,255,0.02) 0%, transparent 0.6%),
+    radial-gradient(circle at 88% 22%, rgba(255,215,120,0.06) 0%, transparent 0.9%),
+    radial-gradient(circle at 75% 45%, rgba(199,74,232,0.08) 0%, transparent 0.7%),
+    radial-gradient(circle at 12% 60%, rgba(255,215,120,0.04) 0%, transparent 0.8%),
+    radial-gradient(circle at 92% 70%, rgba(255,255,255,0.02) 0%, transparent 0.6%);
   pointer-events: none;
 }
+.bg-stones { position: absolute; inset: 0; }
 
-/* HUD */
+/* ────────────────────────────────────────
+   HUD — top counters + timer
+   ──────────────────────────────────────── */
 .hud {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 18px 16px 12px;
+  top: 0; left: 0; right: 0;
+  padding: 18px 16px 14px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   z-index: 20;
 }
-.counters { display: flex; gap: 6px; flex-direction: column; }
+.counters { display: flex; gap: 8px; flex-direction: column; }
 .counter {
-  background: rgba(21, 21, 31, 0.88);
-  border: 1px solid var(--gold-dark);
-  border-radius: 8px;
-  padding: 6px 12px 6px 8px;
+  background: rgba(21, 21, 31, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 7px 14px 7px 8px;
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 100px;
-  backdrop-filter: blur(8px);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 110px;
+  backdrop-filter: blur(10px);
+  transition: border-color 0.2s, box-shadow 0.25s;
+  position: relative;
+}
+.counter::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(212,165,55,0.4), rgba(143,111,28,0.15));
+  z-index: -1;
+  opacity: 0.6;
 }
 .counter-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
-  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5);
 }
-.icon-gold { background: radial-gradient(circle at 30% 30%, #FFE08A, #8F6F1C); color: #2a1a00; }
-.icon-gem { background: radial-gradient(circle at 30% 30%, #E89EFF, #6B1F85); color: #fff; }
-.icon-spark { background: radial-gradient(circle at 30% 30%, #FFB56B, #8F3A0E); color: #fff; }
+.counter-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7));
+}
 .counter-value {
   font-family: 'Oswald', sans-serif;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--gold-light);
   letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
 }
+.counter.gem .counter-value { color: var(--gem-light); }
 .counter.flash {
   border-color: var(--gold);
   box-shadow: 0 0 14px rgba(212,165,55,0.6);
 }
 .counter.flash-gem { border-color: var(--gem); box-shadow: 0 0 14px rgba(199,74,232,0.6); }
-.counter.flash-spark { border-color: var(--spark); box-shadow: 0 0 14px rgba(255,107,61,0.7); }
 
 .timer {
-  background: rgba(21, 21, 31, 0.88);
-  border: 1px solid var(--gold-dark);
-  border-radius: 8px;
+  background: rgba(21, 21, 31, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
   padding: 8px 16px;
   text-align: center;
-  min-width: 72px;
-  backdrop-filter: blur(8px);
+  min-width: 76px;
+  backdrop-filter: blur(10px);
+  position: relative;
 }
 .timer-label {
   font-family: 'Inter', sans-serif;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   margin-bottom: 2px;
 }
 .timer-value {
   font-family: 'Oswald', sans-serif;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text-primary);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .timer.critical .timer-value { color: var(--danger); }
-.timer.critical { border-color: var(--danger); }
+.timer.critical { border-color: var(--danger); box-shadow: 0 0 12px rgba(230,57,70,0.4); }
 
 .timer-bar {
   position: absolute;
-  top: 110px;
+  top: 116px;
   left: 16px;
   right: 16px;
   height: 3px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.07);
   border-radius: 2px;
   overflow: hidden;
   z-index: 15;
@@ -162,77 +181,69 @@ html, body {
 .timer-bar-fill {
   height: 100%;
   width: 100%;
-  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-light));
   box-shadow: 0 0 10px var(--gold);
-  transform-origin: left center;
 }
 
-/* Hero avatar */
-.hero {
+/* Cap-bar — shows how close to 15% cap */
+.cap-meter {
   position: absolute;
-  bottom: 58px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 128px;
-  height: 128px;
-  z-index: 4;
-  pointer-events: none;
-}
-.hero-glow {
-  position: absolute;
-  inset: -24px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(212,165,55,0.22) 0%, transparent 65%);
-  animation: pulse 2.4s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-.hero-circle {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #4a3424 0%, #1a1010 80%);
-  border: 3px solid var(--gold);
+  top: 128px;
+  left: 16px;
+  right: 16px;
+  z-index: 14;
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 0 24px rgba(212,165,55,0.35),
-    inset 0 0 20px rgba(0,0,0,0.7),
-    inset 0 2px 4px rgba(255,255,255,0.1);
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(21,21,31,0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
 }
-.hero-circle::before {
-  content: '⛏';
-  font-size: 60px;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
+.cap-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
 }
-.hero-label {
-  position: absolute;
-  bottom: -22px;
-  left: 50%;
-  transform: translateX(-50%);
+.cap-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cap-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  transition: width 0.25s ease-out;
+  box-shadow: 0 0 8px var(--gold);
+}
+.cap-fill.full {
+  background: linear-gradient(90deg, var(--gold-light), #fff, var(--gold-light));
+  animation: capGlow 1.2s ease-in-out infinite;
+}
+@keyframes capGlow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+.cap-value {
   font-family: 'Oswald', sans-serif;
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--text-dim);
-  white-space: nowrap;
+  font-weight: 700;
+  color: var(--gold-light);
+  min-width: 34px;
+  text-align: right;
 }
 
-.ground {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 90px;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.8));
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* Drops */
+/* ────────────────────────────────────────
+   PLAY AREA — falling drops
+   ──────────────────────────────────────── */
 #play-area {
   position: absolute;
   inset: 0;
@@ -241,50 +252,233 @@ html, body {
 }
 .drop {
   position: absolute;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
   will-change: transform, top;
   user-select: none;
   touch-action: manipulation;
   pointer-events: auto;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.65));
 }
-.drop.coin { color: var(--gold-light); font-size: 26px; }
-.drop.bag { color: var(--gold); font-size: 32px; }
-.drop.gem { color: var(--gem); font-size: 28px; }
-.drop.spark {
-  color: var(--spark);
-  font-size: 30px;
-  filter: drop-shadow(0 0 14px var(--spark));
+.drop img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
+.drop.coin { width: 42px; height: 42px; }
+.drop.bag  { width: 60px; height: 60px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 12px rgba(255,215,120,0.35)); }
+.drop.gem  { width: 50px; height: 50px; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.7)) drop-shadow(0 0 16px rgba(199,74,232,0.55)); }
+
+/* soft halo behind each drop */
 .drop::after {
   content: '';
   position: absolute;
-  inset: -2px;
+  inset: -6px;
   border-radius: 50%;
   background: radial-gradient(circle, currentColor 0%, transparent 55%);
-  opacity: 0.22;
+  opacity: 0.18;
   pointer-events: none;
+  z-index: -1;
 }
-.drop.spark::after {
-  animation: sparkGlow 0.7s ease-in-out infinite;
+.drop.coin { color: #FFE08A; }
+.drop.bag  { color: #FFD966; }
+.drop.gem  {
+  color: var(--gem-light);
 }
-@keyframes sparkGlow {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
+.drop.gem::after {
+  animation: gemPulse 1.3s ease-in-out infinite;
+}
+@keyframes gemPulse {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
 }
 
-/* Overlays */
+/* ────────────────────────────────────────
+   HERO CARD — bottom (simplified IntegratedCharacterCard)
+   ──────────────────────────────────────── */
+.hero-card {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 4;
+  pointer-events: none;
+}
+.hero-card-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 12px 12px;
+  background: linear-gradient(180deg, rgba(28,28,40,0.92) 0%, rgba(15,15,24,0.95) 100%);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+/* animated gold glow border */
+.hero-card-inner::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 15px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(212,165,55,0.6),
+    rgba(255,215,120,0.2),
+    rgba(212,165,55,0.45),
+    rgba(255,215,120,0.15),
+    rgba(212,165,55,0.6)
+  );
+  z-index: -1;
+  animation: glowRotate 5s linear infinite;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 1px;
+}
+@keyframes glowRotate {
+  100% { transform: rotate(360deg); }
+}
+/* corner brackets (matching SwiftUI CornerBracketOverlay) */
+.hero-card-inner::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 11px;
+  background:
+    /* top-left */
+    linear-gradient(90deg, var(--gold) 0 14px, transparent 14px) 0 0 / 14px 1.5px no-repeat,
+    linear-gradient(180deg, var(--gold) 0 14px, transparent 14px) 0 0 / 1.5px 14px no-repeat,
+    /* top-right */
+    linear-gradient(-90deg, var(--gold) 0 14px, transparent 14px) 100% 0 / 14px 1.5px no-repeat,
+    linear-gradient(180deg, var(--gold) 0 14px, transparent 14px) 100% 0 / 1.5px 14px no-repeat,
+    /* bottom-left */
+    linear-gradient(90deg, var(--gold) 0 14px, transparent 14px) 0 100% / 14px 1.5px no-repeat,
+    linear-gradient(0deg, var(--gold) 0 14px, transparent 14px) 0 100% / 1.5px 14px no-repeat,
+    /* bottom-right */
+    linear-gradient(-90deg, var(--gold) 0 14px, transparent 14px) 100% 100% / 14px 1.5px no-repeat,
+    linear-gradient(0deg, var(--gold) 0 14px, transparent 14px) 100% 100% / 1.5px 14px no-repeat;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.hero-portrait {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(circle at 40% 30%, #4a3850 0%, #1a1420 80%);
+  border: 2px solid var(--gold);
+  box-shadow:
+    0 0 18px rgba(212,165,55,0.35),
+    inset 0 0 22px rgba(0,0,0,0.65),
+    inset 0 2px 4px rgba(255,255,255,0.1);
+}
+.hero-portrait img {
+  position: absolute;
+  inset: 12%;
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+}
+/* portrait vignette */
+.hero-portrait::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+}
+/* level badge */
+.hero-level {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(180deg, #F4C967 0%, #D4A537 55%, #8F6F1C 100%);
+  border: 1.5px solid #5a4410;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Oswald', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-on-gold);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.45);
+  z-index: 2;
+}
+
+.hero-info {
+  flex: 1;
+  min-width: 0;
+}
+.hero-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+}
+.class-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  background: rgba(123,79,232,0.15);
+  border: 1px solid rgba(123,79,232,0.4);
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--mage);
+  margin-bottom: 6px;
+}
+.class-tag::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mage);
+  box-shadow: 0 0 5px var(--mage);
+}
+.hero-session {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+.hero-session strong {
+  color: var(--gold-light);
+  font-family: 'Oswald', sans-serif;
+  font-size: 11px;
+}
+
+/* ────────────────────────────────────────
+   OVERLAYS — start & end
+   ──────────────────────────────────────── */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(10,10,20,0.93);
-  backdrop-filter: blur(12px);
+  background: rgba(10,10,20,0.94);
+  backdrop-filter: blur(14px);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -310,22 +504,40 @@ html, body {
   text-transform: uppercase;
   letter-spacing: 3px;
   color: var(--gold-light);
-  margin-bottom: 16px;
-  text-shadow: 0 0 24px rgba(212,165,55,0.45);
+  margin-bottom: 14px;
+  text-shadow: 0 0 26px rgba(212,165,55,0.5);
 }
 .overlay-subtitle {
   font-size: 13px;
-  color: var(--text-dim);
-  margin-bottom: 28px;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
   max-width: 280px;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 .overlay-subtitle strong { color: var(--gold-light); }
+
+.how-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(21,21,31,0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  width: 100%;
+  max-width: 290px;
+}
+.how-row img { width: 22px; height: 22px; object-fit: contain; }
+.how-row strong { color: var(--gold-light); }
+.how-row.gem strong { color: var(--gem-light); }
 
 .btn {
   background: linear-gradient(180deg, #F4C967 0%, #D4A537 48%, #8F6F1C 100%);
   border: 2px solid #5a4410;
-  color: #1a1000;
+  color: var(--text-on-gold);
   font-family: 'Oswald', sans-serif;
   font-size: 18px;
   font-weight: 700;
@@ -340,22 +552,22 @@ html, body {
     0 4px 14px rgba(0,0,0,0.6);
   transition: opacity 0.12s;
   position: relative;
+  margin-top: 16px;
 }
 .btn:active { opacity: 0.85; }
-
 .btn-ghost {
   background: transparent;
   border: 1.5px solid var(--gold-dark);
   color: var(--gold-light);
   font-family: 'Oswald', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  padding: 10px 28px;
+  padding: 10px 26px;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 14px;
+  margin-top: 12px;
   transition: opacity 0.12s;
 }
 .btn-ghost:active { opacity: 0.7; }
@@ -372,40 +584,45 @@ html, body {
 .result-row:last-child { border-bottom: none; }
 .result-label {
   font-size: 13px;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 10px;
 }
+.result-label img { width: 18px; height: 18px; object-fit: contain; }
 .result-value {
   font-family: 'Oswald', sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: var(--gold-light);
+  font-variant-numeric: tabular-nums;
 }
-.result-value.muted { color: var(--text-dim); }
+.result-value.muted { color: var(--text-secondary); }
+.result-value.gem { color: var(--gem-light); }
 .result-total {
   margin-top: 10px;
   padding-top: 14px;
   border-top: 1px solid var(--gold-dark);
 }
 .result-total .result-label {
-  color: var(--text);
+  color: var(--text-primary);
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-.result-total .result-value { font-size: 26px; }
+.result-total .result-value { font-size: 28px; }
 .accuracy {
   font-family: 'Oswald', sans-serif;
   font-size: 14px;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   margin: 14px 0 22px;
   letter-spacing: 1px;
 }
 .accuracy strong { color: var(--gold-light); }
 
-/* Feedback */
+/* ────────────────────────────────────────
+   FEEDBACK — tap burst + float text
+   ──────────────────────────────────────── */
 .tap-burst {
   position: absolute;
   width: 50px;
@@ -413,12 +630,11 @@ html, body {
   border-radius: 50%;
   pointer-events: none;
   z-index: 30;
-  background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(212,165,55,0.5) 30%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(212,165,55,0.55) 30%, transparent 70%);
   animation: burst 0.45s ease-out forwards;
   transform: translate(-50%,-50%);
 }
-.tap-burst.gem { background: radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(199,74,232,0.55) 30%, transparent 70%); }
-.tap-burst.spark { background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,107,61,0.7) 30%, transparent 70%); }
+.tap-burst.gem { background: radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(199,74,232,0.6) 30%, transparent 70%); }
 @keyframes burst {
   0% { transform: translate(-50%,-50%) scale(0.4); opacity: 1; }
   100% { transform: translate(-50%,-50%) scale(2.4); opacity: 0; }
@@ -435,60 +651,57 @@ html, body {
   animation: floatUp 0.85s ease-out forwards;
   white-space: nowrap;
 }
-.float-text.gem { color: #E89EFF; }
-.float-text.spark { color: #FFB56B; }
+.float-text.gem { color: var(--gem-light); }
 @keyframes floatUp {
   0% { transform: translate(-50%,0); opacity: 1; }
-  100% { transform: translate(-50%,-36px); opacity: 0; }
+  100% { transform: translate(-50%,-40px); opacity: 0; }
 }
 
-/* Side note */
+/* ────────────────────────────────────────
+   SIDE NOTE (desktop only)
+   ──────────────────────────────────────── */
 .note {
   position: fixed;
   top: 24px;
   left: 24px;
   max-width: 280px;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--text-secondary);
   line-height: 1.65;
   pointer-events: none;
 }
-.note strong { color: var(--gold-light); font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 1px; }
+.note strong { color: var(--gold-light); font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 1px; display: block; margin-bottom: 4px; }
 .note ul { margin: 8px 0 0 0; padding-left: 16px; }
 .note li { margin-bottom: 3px; }
-@media (max-width: 800px) { .note { display: none; } }
+@media (max-width: 860px) { .note { display: none; } }
 </style>
 </head>
 <body>
 
 <div class="note">
-  <strong>GOLD MINE — PROTOTYPE A</strong><br>
-  Skill-based мини-игра, 15 сек. Падают золото, мешки, кристаллы, редкие sparks. Тапай, чтобы поймать. Пропущенные объекты исчезают.
+  <strong>GOLD MINE — PROTOTYPE v2</strong>
+  Skill-based мини-игра, 15 сек. Падают реальные ассеты золота и кристаллов. Тапай, чтобы поймать. Cap: +15% к пассивной добыче.
   <ul>
-    <li>Drop table: 70% coin / 18% bag / 10% gem / 2% spark</li>
-    <li>Max bonus capped at +15% of passive</li>
-    <li>Accuracy = caught / spawned</li>
-    <li>Passive gold в прототипе = 3400 (для примера)</li>
+    <li>Passive gold (Collect All 3 slots) = <b>210</b></li>
+    <li>Drop table: 76% coin (+1g) / 20% bag (+3g) / 4% gem (+1 ◆, max 1/session)</li>
+    <li>Perfect play ≈ +14.8% gold, avg player ≈ +8.4%</li>
+    <li>Cap enforced server-side (клиент не считает награду)</li>
   </ul>
 </div>
 
 <div class="phone-frame">
-  <div class="bg-layer"></div>
+  <div class="bg-cave"></div>
   <div class="bg-stones"></div>
 
   <!-- HUD -->
   <div class="hud">
     <div class="counters">
       <div class="counter" id="counter-gold">
-        <div class="counter-icon icon-gold">G</div>
+        <div class="counter-icon"><img src="figma-assets/04_Icons/icon-gold.png" alt="gold"></div>
         <div class="counter-value">0</div>
       </div>
-      <div class="counter" id="counter-gem">
-        <div class="counter-icon icon-gem">◆</div>
-        <div class="counter-value">0</div>
-      </div>
-      <div class="counter" id="counter-spark">
-        <div class="counter-icon icon-spark">✦</div>
+      <div class="counter gem" id="counter-gem">
+        <div class="counter-icon"><img src="figma-assets/04_Icons/icon-gems.png" alt="gems"></div>
         <div class="counter-value">0</div>
       </div>
     </div>
@@ -500,23 +713,45 @@ html, body {
 
   <div class="timer-bar"><div class="timer-bar-fill" id="timer-bar-fill"></div></div>
 
-  <div id="play-area"></div>
-
-  <div class="hero">
-    <div class="hero-glow"></div>
-    <div class="hero-circle"></div>
-    <div class="hero-label">Miner Hero</div>
+  <!-- Cap meter — honest indicator of how close bonus is to the +15% ceiling -->
+  <div class="cap-meter" id="cap-meter">
+    <div class="cap-label">Bonus cap</div>
+    <div class="cap-track"><div class="cap-fill" id="cap-fill"></div></div>
+    <div class="cap-value" id="cap-value">0 / 31</div>
   </div>
 
-  <div class="ground"></div>
+  <div id="play-area"></div>
+
+  <!-- Hero card — simplified IntegratedCharacterCard -->
+  <div class="hero-card">
+    <div class="hero-card-inner">
+      <div class="hero-portrait">
+        <img src="figma-assets/04_Icons/icon-mage.png" alt="hero">
+        <div class="hero-level">42</div>
+      </div>
+      <div class="hero-info">
+        <div class="hero-name">Artem the Arcane</div>
+        <div class="class-tag">Mage</div>
+        <div class="hero-session">Session bonus: <strong>+15% cap</strong></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Start overlay -->
   <div class="overlay" id="start-overlay">
-    <div class="overlay-kicker">Sesion Bonus</div>
+    <div class="overlay-kicker">Collect All</div>
     <div class="overlay-title">Gold Mine</div>
     <div class="overlay-subtitle">
-      Шахта накопала <strong>3,400 gold</strong>.<br>
-      Поймай падающую добычу — до <strong>+15%</strong> сверху, плюс редкие кристаллы и sparks.
+      Шахты накопали <strong>210 gold</strong>.<br>
+      Поймай падающую добычу — до <strong>+15%</strong> сверху и шанс на кристалл.
+    </div>
+    <div class="how-row">
+      <img src="figma-assets/04_Icons/icon-gold.png" alt="">
+      Монета — <strong>+1 gold</strong>, мешок — <strong>+3 gold</strong>
+    </div>
+    <div class="how-row gem">
+      <img src="figma-assets/04_Icons/icon-gems.png" alt="">
+      Редкий кристалл — <strong>+1 gem</strong> (макс. 1 за сессию)
     </div>
     <button class="btn" id="start-btn">Начать</button>
   </div>
@@ -528,44 +763,50 @@ html, body {
     <div class="accuracy" id="accuracy-text">Точность: <strong>0%</strong> • 0 / 0</div>
     <div class="result-rows">
       <div class="result-row">
-        <div class="result-label">Пассивная добыча</div>
-        <div class="result-value muted" id="res-passive">+3,400</div>
+        <div class="result-label"><img src="figma-assets/04_Icons/icon-gold.png" alt="">Пассивная добыча</div>
+        <div class="result-value muted" id="res-passive">+210</div>
       </div>
       <div class="result-row">
-        <div class="result-label"><div class="counter-icon icon-gold">G</div>Бонус gold</div>
+        <div class="result-label"><img src="figma-assets/04_Icons/icon-gold.png" alt="">Бонус gold</div>
         <div class="result-value" id="res-gold">+0</div>
       </div>
       <div class="result-row">
-        <div class="result-label"><div class="counter-icon icon-gem">◆</div>Бонус gems</div>
-        <div class="result-value" id="res-gems">+0</div>
-      </div>
-      <div class="result-row">
-        <div class="result-label"><div class="counter-icon icon-spark">✦</div>Sparks</div>
-        <div class="result-value" id="res-sparks">+0</div>
+        <div class="result-label"><img src="figma-assets/04_Icons/icon-gems.png" alt="">Бонус gems</div>
+        <div class="result-value gem" id="res-gems">+0</div>
       </div>
       <div class="result-row result-total">
         <div class="result-label">Всего gold</div>
-        <div class="result-value" id="res-total">+3,400</div>
+        <div class="result-value" id="res-total">+210</div>
       </div>
     </div>
-    <button class="btn" id="restart-btn" style="margin-top:24px;">Снова</button>
-    <button class="btn-ghost" id="autocollect-btn">Auto-collect (s = 0.5)</button>
+    <button class="btn" id="restart-btn">Снова</button>
+    <button class="btn-ghost" id="autocollect-btn">Auto-collect (simulate s=0.5)</button>
   </div>
 </div>
 
 <script>
-const PASSIVE_GOLD = 3400;
-const BASE_CAP_FRACTION = 0.15;
+// ────────────────────────────────────────
+// BALANCE CONSTANTS
+// Mirror backend/src/lib/game/gold-mine.ts + GoldMineViewModel.swift
+// ────────────────────────────────────────
+const PASSIVE_GOLD = 210;           // avg 3-slot Collect All (3 × 70g)
+const BASE_CAP_FRACTION = 0.15;     // max bonus = 15% of passive
+const GEM_CAP_PER_SESSION = 1;      // hard cap — max 1 gem bonus per mini-game
 const DURATION_MS = 15000;
 
-// Drop table — must match spec
+// Drop table (weights sum to 100). Matches BALANCE_CONSTANTS.md Phase 1.
 const DROPS = [
-  { type: 'coin',  weight: 70, icon: '●', gold: 15, gems: 0, sparks: 0 },
-  { type: 'bag',   weight: 18, icon: '◉', gold: 60, gems: 0, sparks: 0 },
-  { type: 'gem',   weight: 10, icon: '◆', gold: 0,  gems: 1, sparks: 0 },
-  { type: 'spark', weight: 2,  icon: '✦', gold: 0,  gems: 0, sparks: 1 },
+  { type: 'coin', weight: 76, gold: 1, gems: 0, img: 'figma-assets/04_Icons/icon-gold.png' },
+  { type: 'bag',  weight: 20, gold: 3, gems: 0, img: 'figma-assets/04_Icons/icon-gold.png' },
+  { type: 'gem',  weight: 4,  gold: 0, gems: 1, img: 'figma-assets/04_Icons/icon-gems.png' },
 ];
 
+// Derived reference values (for cap + display)
+const CAP_GOLD = Math.floor(PASSIVE_GOLD * BASE_CAP_FRACTION);  // 31
+
+// ────────────────────────────────────────
+// DOM refs
+// ────────────────────────────────────────
 const playArea = document.getElementById('play-area');
 const timerEl = document.getElementById('timer');
 const timerBarFill = document.getElementById('timer-bar-fill');
@@ -576,11 +817,17 @@ const restartBtn = document.getElementById('restart-btn');
 const autocollectBtn = document.getElementById('autocollect-btn');
 const counterGoldEl = document.getElementById('counter-gold');
 const counterGemEl = document.getElementById('counter-gem');
-const counterSparkEl = document.getElementById('counter-spark');
+const capFillEl = document.getElementById('cap-fill');
+const capValueEl = document.getElementById('cap-value');
 const phoneFrame = document.querySelector('.phone-frame');
+
+capValueEl.textContent = `0 / ${CAP_GOLD}`;
 
 let state = null;
 
+// ────────────────────────────────────────
+// GAME LOGIC
+// ────────────────────────────────────────
 function pickDrop() {
   const total = DROPS.reduce((s, d) => s + d.weight, 0);
   let r = Math.random() * total;
@@ -592,24 +839,37 @@ function pickDrop() {
 
 function spawnDrop() {
   if (!state || !state.running) return;
+
+  // Gem suppression: once player already caught max gems, remaining gems
+  // still visually drop but won't count. Alternatively skip entirely to
+  // avoid visual "dead drop". We keep them visible — catching them still
+  // plays feedback but adds no gems. Honest & not demoralising since the
+  // counter already shows "1" = cap hit.
   const drop = pickDrop();
+
   const el = document.createElement('div');
   el.className = `drop ${drop.type}`;
-  el.textContent = drop.icon;
+  const img = document.createElement('img');
+  img.src = drop.img;
+  img.draggable = false;
+  el.appendChild(img);
 
   const frame = phoneFrame.getBoundingClientRect();
-  const x = 18 + Math.random() * (frame.width - 82);
+  const dropSize = drop.type === 'bag' ? 60 : drop.type === 'gem' ? 50 : 42;
+  const x = 18 + Math.random() * (frame.width - 36 - dropSize);
   const fallDuration = 2700 + Math.random() * 1100;
 
   el.style.left = x + 'px';
-  el.style.top = '-54px';
+  el.style.top = '-60px';
   el.style.transition = `top ${fallDuration}ms linear, opacity 0.15s, transform 0.45s cubic-bezier(0.5, -0.2, 0.2, 1)`;
 
   playArea.appendChild(el);
   state.spawned++;
+  if (drop.type === 'gem') state.gemsSpawned++;
 
   requestAnimationFrame(() => {
-    el.style.top = (frame.height - 20) + 'px';
+    // Fall down to just above the hero card
+    el.style.top = (frame.height - 140) + 'px';
   });
 
   let caught = false;
@@ -619,9 +879,7 @@ function spawnDrop() {
     collectDrop(el, drop, cx, cy);
   };
 
-  el.addEventListener('click', (e) => {
-    tryCollect(e.clientX, e.clientY);
-  });
+  el.addEventListener('click', (e) => tryCollect(e.clientX, e.clientY));
   el.addEventListener('touchstart', (e) => {
     const t = e.touches[0];
     tryCollect(t.clientX, t.clientY);
@@ -638,9 +896,22 @@ function spawnDrop() {
 
 function collectDrop(el, drop, cx, cy) {
   state.caught++;
-  state.gold += drop.gold;
-  state.gems += drop.gems;
-  state.sparks += drop.sparks;
+
+  // Gold: accumulate but cap at CAP_GOLD (soft cap — extra caught gold
+  // still counts for "gold caught" stat, but displayed counter cannot
+  // exceed the cap. Final reward will be Math.min(caught, cap) anyway.)
+  if (drop.gold > 0) {
+    state.goldCaught += drop.gold;
+    state.goldShown = Math.min(state.goldCaught, CAP_GOLD);
+  }
+
+  // Gems: hard cap per session
+  if (drop.gems > 0 && state.gemsShown < GEM_CAP_PER_SESSION) {
+    state.gemsCaught += drop.gems;
+    state.gemsShown = Math.min(state.gemsCaught, GEM_CAP_PER_SESSION);
+  } else if (drop.gems > 0) {
+    state.gemsCaught += drop.gems;  // still counted for stats, not rewarded
+  }
 
   const frame = phoneFrame.getBoundingClientRect();
   const lx = cx - frame.left;
@@ -648,7 +919,7 @@ function collectDrop(el, drop, cx, cy) {
 
   // Tap burst
   const burst = document.createElement('div');
-  burst.className = 'tap-burst ' + drop.type;
+  burst.className = 'tap-burst ' + (drop.gems > 0 ? 'gem' : '');
   burst.style.left = lx + 'px';
   burst.style.top = ly + 'px';
   playArea.appendChild(burst);
@@ -656,23 +927,20 @@ function collectDrop(el, drop, cx, cy) {
 
   // Float text
   const ft = document.createElement('div');
-  ft.className = 'float-text ' + drop.type;
-  if (drop.gold > 0) ft.textContent = `+${drop.gold}`;
-  else if (drop.gems > 0) ft.textContent = `+1 ◆`;
-  else if (drop.sparks > 0) ft.textContent = `+1 ✦`;
+  ft.className = 'float-text' + (drop.gems > 0 ? ' gem' : '');
+  ft.textContent = drop.gold > 0 ? `+${drop.gold}` : `+1 ◆`;
   ft.style.left = lx + 'px';
   ft.style.top = (ly - 12) + 'px';
   playArea.appendChild(ft);
   setTimeout(() => ft.remove(), 850);
 
   // Animate element to counter
-  const targetEl = drop.gems > 0 ? counterGemEl : drop.sparks > 0 ? counterSparkEl : counterGoldEl;
+  const targetEl = drop.gems > 0 ? counterGemEl : counterGoldEl;
   const targetRect = targetEl.getBoundingClientRect();
   const elRect = el.getBoundingClientRect();
   const dx = targetRect.left + targetRect.width / 2 - elRect.left - elRect.width / 2;
   const dy = targetRect.top + targetRect.height / 2 - elRect.top - elRect.height / 2;
 
-  // Lock current top to prevent jump on transform change
   el.style.top = (elRect.top - frame.top) + 'px';
   el.style.transition = 'transform 0.45s cubic-bezier(0.45, -0.15, 0.25, 1), opacity 0.45s';
   requestAnimationFrame(() => {
@@ -682,20 +950,27 @@ function collectDrop(el, drop, cx, cy) {
 
   setTimeout(() => {
     el.remove();
-    // Update counter values
     if (drop.gold > 0) {
-      counterGoldEl.querySelector('.counter-value').textContent = state.gold;
+      counterGoldEl.querySelector('.counter-value').textContent = state.goldShown;
       flashCounter(counterGoldEl, 'flash');
+      updateCapMeter();
     }
     if (drop.gems > 0) {
-      counterGemEl.querySelector('.counter-value').textContent = state.gems;
+      counterGemEl.querySelector('.counter-value').textContent = state.gemsShown;
       flashCounter(counterGemEl, 'flash-gem');
     }
-    if (drop.sparks > 0) {
-      counterSparkEl.querySelector('.counter-value').textContent = state.sparks;
-      flashCounter(counterSparkEl, 'flash-spark');
-    }
   }, 450);
+}
+
+function updateCapMeter() {
+  const pct = Math.min(100, (state.goldShown / CAP_GOLD) * 100);
+  capFillEl.style.width = pct + '%';
+  capValueEl.textContent = `${state.goldShown} / ${CAP_GOLD}`;
+  if (state.goldShown >= CAP_GOLD) {
+    capFillEl.classList.add('full');
+  } else {
+    capFillEl.classList.remove('full');
+  }
 }
 
 function flashCounter(el, cls) {
@@ -709,13 +984,17 @@ function startGame() {
     start: performance.now(),
     spawned: 0,
     caught: 0,
-    gold: 0,
-    gems: 0,
-    sparks: 0,
+    goldCaught: 0,    // raw gold caught (uncapped)
+    goldShown: 0,     // displayed / rewarded gold (capped)
+    gemsSpawned: 0,
+    gemsCaught: 0,
+    gemsShown: 0,
   };
   counterGoldEl.querySelector('.counter-value').textContent = '0';
   counterGemEl.querySelector('.counter-value').textContent = '0';
-  counterSparkEl.querySelector('.counter-value').textContent = '0';
+  capFillEl.style.width = '0%';
+  capFillEl.classList.remove('full');
+  capValueEl.textContent = `0 / ${CAP_GOLD}`;
   startOverlay.classList.add('hidden');
   endOverlay.classList.add('hidden');
   playArea.innerHTML = '';
@@ -725,6 +1004,7 @@ function startGame() {
     if (!state.running) return;
     const elapsed = performance.now() - state.start;
     const t = Math.min(1, elapsed / DURATION_MS);
+    // Ramp-up: 700ms → 350ms. Expected total ≈ 26 spawns per session.
     const interval = 700 - t * 350;
     spawnDrop();
     state.spawnTimer = setTimeout(scheduleNext, interval);
@@ -753,46 +1033,43 @@ function endGame() {
   clearTimeout(state.spawnTimer);
   if (state.timerRAF) cancelAnimationFrame(state.timerRAF);
 
-  const cap = Math.floor(PASSIVE_GOLD * BASE_CAP_FRACTION);
-  const goldBonus = Math.min(state.gold, cap);
+  const goldBonus = state.goldShown;  // already capped
+  const gemsBonus = state.gemsShown;
   const accuracy = state.spawned > 0 ? Math.round(state.caught / state.spawned * 100) : 0;
   const total = PASSIVE_GOLD + goldBonus;
 
-  document.getElementById('accuracy-text').innerHTML = `Точность: <strong>${accuracy}%</strong> • ${state.caught} / ${state.spawned}`;
-  document.getElementById('res-passive').textContent = `+${PASSIVE_GOLD.toLocaleString()}`;
-  document.getElementById('res-gold').textContent = `+${goldBonus.toLocaleString()}${state.gold > cap ? ' (cap)' : ''}`;
-  document.getElementById('res-gems').textContent = `+${state.gems}`;
-  document.getElementById('res-sparks').textContent = `+${state.sparks}`;
-  document.getElementById('res-total').textContent = `+${total.toLocaleString()}`;
+  document.getElementById('accuracy-text').innerHTML =
+    `Точность: <strong>${accuracy}%</strong> • ${state.caught} / ${state.spawned}`;
+  document.getElementById('res-passive').textContent = `+${PASSIVE_GOLD}`;
+  document.getElementById('res-gold').textContent =
+    `+${goldBonus}${state.goldCaught > CAP_GOLD ? ' (cap)' : ''}`;
+  document.getElementById('res-gems').textContent = `+${gemsBonus}`;
+  document.getElementById('res-total').textContent = `+${total}`;
 
   endOverlay.classList.remove('hidden');
 
-  // Clean lingering drops
   setTimeout(() => {
     if (!state.running) playArea.innerHTML = '';
   }, 800);
 }
 
 function autoCollect() {
-  // Simulate s = 0.5 — средний результат
+  // Simulate s=0.5 (среднестатистический игрок): половина дропов собрана.
   const expectedSpawns = 26;
-  const avgGoldPerDrop = 0.70 * 15 + 0.18 * 60; // 10.5 + 10.8 = 21.3
-  const expectedGold = Math.floor(expectedSpawns * avgGoldPerDrop * 0.5);
-  const cap = Math.floor(PASSIVE_GOLD * BASE_CAP_FRACTION);
-  const goldBonus = Math.min(expectedGold, cap);
-  const expectedGems = Math.round(expectedSpawns * 0.10 * 0.5);
-  const expectedSparks = Math.random() < 0.25 ? 0 : 0; // почти никогда в avg прогоне
-
-  state = { spawned: expectedSpawns, caught: Math.round(expectedSpawns * 0.5), gold: expectedGold, gems: expectedGems, sparks: expectedSparks, running: false };
+  const avgGoldPerDrop = 0.76 * 1 + 0.20 * 3; // 0.76 + 0.60 = 1.36
+  const expectedGold = Math.floor(expectedSpawns * avgGoldPerDrop * 0.5); // ~17
+  const goldBonus = Math.min(expectedGold, CAP_GOLD);
+  // Gems: 4% × 26 = 1.04 spawned, s=0.5 → ~0.5 caught → round to 1
+  const expectedGems = Math.min(GEM_CAP_PER_SESSION, 1);
 
   const total = PASSIVE_GOLD + goldBonus;
   startOverlay.classList.add('hidden');
-  document.getElementById('accuracy-text').innerHTML = `Auto-collect • <strong>s = 0.5</strong>`;
-  document.getElementById('res-passive').textContent = `+${PASSIVE_GOLD.toLocaleString()}`;
-  document.getElementById('res-gold').textContent = `+${goldBonus.toLocaleString()}`;
+  document.getElementById('accuracy-text').innerHTML =
+    `Auto-collect • <strong>s = 0.5</strong> — статистический прогон`;
+  document.getElementById('res-passive').textContent = `+${PASSIVE_GOLD}`;
+  document.getElementById('res-gold').textContent = `+${goldBonus}`;
   document.getElementById('res-gems').textContent = `+${expectedGems}`;
-  document.getElementById('res-sparks').textContent = `+${expectedSparks}`;
-  document.getElementById('res-total').textContent = `+${total.toLocaleString()}`;
+  document.getElementById('res-total').textContent = `+${total}`;
   endOverlay.classList.remove('hidden');
 }
 

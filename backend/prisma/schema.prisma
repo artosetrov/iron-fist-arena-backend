@@ -297,6 +297,15 @@ model Character {
   staminaRefillsToday Int       @default(0) @map("stamina_refills_today")
   staminaRefillsDate  DateTime? @map("stamina_refills_date")
 
+  // Loot Relevance v1 — gear-aware pity + shard fallback
+  // Pity: trash_loot_streak bumps rarity at 5/10/15 consecutive irrelevant drops.
+  // Shards: currency awarded when all loot filters reject the roll.
+  trashLootStreak   Int @default(0) @map("trash_loot_streak")
+  shardsCommon      Int @default(0) @map("shards_common")
+  shardsRare        Int @default(0) @map("shards_rare")
+  shardsEpic        Int @default(0) @map("shards_epic")
+  shardsLegendary   Int @default(0) @map("shards_legendary")
+
   // PvP
   pvpRating         Int       @default(1000) @map("pvp_rating")
   pvpWins           Int       @default(0) @map("pvp_wins")
@@ -314,6 +323,11 @@ model Character {
   goldMineSlots     Int       @default(1) @map("gold_mine_slots")
   inventorySlots    Int       @default(28) @map("inventory_slots")
   dailyBonusDate    DateTime? @map("daily_bonus_date")
+
+  // Gold Mine — Active expedition shaft (Variant D mini-game)
+  activeShaftKey    String?   @map("active_shaft_key")
+  shaftProgress     Int       @default(0) @map("shaft_progress")
+  shaftTotal        Int       @default(5) @map("shaft_total")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
   lastPlayed        DateTime? @map("last_played")
@@ -563,6 +577,14 @@ model GoldMineSession {
   boosted     Boolean   @default(false)
   createdAt   DateTime  @default(now()) @map("created_at")
 
+  // Per-slot bonus mini-game (Variant D Phase 2 — per-slot).
+  // When the player opens the falling-coins minigame for a specific slot, we
+  // track the linked MinigameSession id here. Once submitted, we clear the id
+  // and stamp `minigamePlayedAt`. Collect/-all refuses to pay out on a slot
+  // whose `minigamePlayedAt` is NULL — bonus must be played first.
+  minigameSessionId String?   @map("minigame_session_id")
+  minigamePlayedAt  DateTime? @map("minigame_played_at")
+
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId])
@@ -581,11 +603,23 @@ model MinigameSession {
   result      Json?
   createdAt   DateTime  @default(now()) @map("created_at")
 
+  // Gold Mine mini-game (Variant D) — nullable, only populated when gameType = "gold_mine_rush"
+  shaftKey           String?   @map("shaft_key")
+  passiveGoldAmount  Int?      @map("passive_gold_amount")
+  capGold            Int?      @map("cap_gold")
+  expiresAt          DateTime? @map("expires_at")
+  claimedGold        Int?      @map("claimed_gold")
+  claimedGems        Int?      @map("claimed_gems")
+  caughtCount        Int?      @map("caught_count")
+  spawnedCount       Int?      @map("spawned_count")
+  claimedAt          DateTime? @map("claimed_at")
+
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@index([characterId])
   @@index([characterId, status])
   @@index([characterId, gameType, status])
+  @@index([expiresAt])
   @@map("minigame_sessions")
 }
 

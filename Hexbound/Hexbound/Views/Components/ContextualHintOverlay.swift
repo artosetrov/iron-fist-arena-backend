@@ -50,14 +50,9 @@ struct ContextualHintOverlay: ViewModifier {
                                     hintManager.dismiss(for: charId)
                                     action()
                                 }
-                            },
-                            // Hint cards are short (title + message + optional CTA ≈ 130–180pt),
-                            // so the default offset of -140 leaves the NPC floating above the
-                            // plate with a visible gap. These values guarantee the NPC peeks
-                            // from BEHIND the card like in the minigame widgets.
-                            // Rule: overlap = cardHeight − |offset|. cardHeight ≈ 140 + |offset|=60 → ~80pt overlap.
-                            customAvatarSize: 320,
-                            customAvatarOffset: -60
+                            }
+                            // overlapCardPx defaults to 8 — NPC peeks from BEHIND the card
+                            // with only 8pt visible overlap, regardless of card height.
                         )
                     }
                     .transition(.opacity)

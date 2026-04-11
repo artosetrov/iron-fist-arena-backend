@@ -5,7 +5,10 @@ enum APIError: LocalizedError {
     case unauthorized
     case rateLimited(message: String)
     case serverError(statusCode: Int, message: String)
-    case clientError(statusCode: Int, message: String)
+    /// 4xx error from the server. `body` carries the parsed JSON payload
+    /// when one was returned — useful for callers that need error `code`,
+    /// hints, or typed fields (e.g. NO_PLAYABLE_SLOTS + unplayed indices).
+    case clientError(statusCode: Int, message: String, body: [String: Any]?)
     case decodingError(Error)
     case networkError(Error)
     case noData
@@ -26,7 +29,7 @@ enum APIError: LocalizedError {
             message
         case .serverError(_, let message):
             message
-        case .clientError(_, let message):
+        case .clientError(_, let message, _):
             message
         case .decodingError(let error):
             "Data error: \(error.localizedDescription)"
@@ -45,6 +48,14 @@ enum APIError: LocalizedError {
     var isUnauthorized: Bool {
         if case .unauthorized = self { return true }
         return false
+    }
+
+    /// Parsed JSON body from a 4xx response (when present). Lets callers
+    /// branch on server-supplied error codes and typed hints without
+    /// re-parsing the error message.
+    var responsePayload: [String: Any]? {
+        if case .clientError(_, _, let body) = self { return body }
+        return nil
     }
 }
 

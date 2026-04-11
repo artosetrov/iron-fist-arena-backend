@@ -15,10 +15,17 @@ struct ContextualHintBar: View {
     var onAction: (() -> Void)? = nil
     var onDismiss: (() -> Void)? = nil
 
+    /// Size of the inline asset thumbnail when `iconAsset` is set.
+    /// Intentionally larger than `icon2XL` (48) so the illustration reads
+    /// clearly as the hint's visual anchor — no framed background.
+    private let assetIconSize: CGFloat = 56
+
     var body: some View {
         HStack(spacing: LayoutConstants.spaceSM) {
-            // Category icon — colored rounded square
-            categoryIcon
+            // Icon slot — iconAsset hints render the asset inline (no frame,
+            // no background box). Category hints fall back to an SF symbol
+            // thumbnail with a tinted rounded square.
+            iconSlot
 
             // Text content
             VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
@@ -68,43 +75,23 @@ struct ContextualHintBar: View {
             RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
                 .fill(DarkFantasyTheme.bgSecondary)
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                .stroke(hint.category.accentColor.opacity(0.2), lineWidth: 1)
-        )
     }
 
-    // MARK: - Category Icon
+    // MARK: - Icon Slot
 
     @ViewBuilder
-    private var categoryIcon: some View {
+    private var iconSlot: some View {
         if let assetName = hint.iconAsset {
-            // Rounded square asset thumbnail (e.g. boss portrait for dungeon hints)
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(hint.category.accentColor.opacity(0.15))
-                    .frame(
-                        width: LayoutConstants.iconXL,
-                        height: LayoutConstants.iconXL
-                    )
-
-                Image(assetName)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFill()
-                    .frame(
-                        width: LayoutConstants.iconXL,
-                        height: LayoutConstants.iconXL
-                    )
-                    .clipShape(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    )
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(hint.category.accentColor.opacity(0.35), lineWidth: 1)
-            )
+            // Inline, frameless asset thumbnail. No background box, no stroke,
+            // no peek-portrait — just the illustration, sized larger than the
+            // default iconXL slot so it reads as the hint's visual anchor.
+            Image(assetName)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFit()
+                .frame(width: assetIconSize, height: assetIconSize)
         } else {
+            // Category SF symbol thumbnail (no peek portrait for these)
             ZStack {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .fill(hint.category.accentColor.opacity(0.15))

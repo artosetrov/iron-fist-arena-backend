@@ -44,9 +44,9 @@ final class DungeonService {
             )
         } catch let error as APIError {
             switch error {
-            case .clientError(409, _):
+            case .clientError(409, _, _):
                 appState.showToast("Active run exists — continue or abandon first", type: .error)
-            case .clientError(_, let message):
+            case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
             default:
                 appState.showToast("Failed to enter dungeon", subtitle: "Check connection and try again", type: .error)
@@ -69,7 +69,7 @@ final class DungeonService {
             )
         } catch let error as APIError {
             switch error {
-            case .clientError(_, let message):
+            case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
             default:
                 appState.showToast("Fight failed", subtitle: "Check connection and try again", type: .error)
@@ -100,7 +100,7 @@ final class DungeonService {
             )
         } catch let error as APIError {
             switch error {
-            case .clientError(_, let message):
+            case .clientError(_, let message, _):
                 appState.showToast(message, type: .error)
             default:
                 appState.showToast("Failed to start rush", subtitle: "Check connection and try again", type: .error)

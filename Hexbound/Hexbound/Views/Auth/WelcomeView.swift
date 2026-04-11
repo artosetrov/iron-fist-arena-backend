@@ -38,7 +38,7 @@ struct WelcomeView: View {
                         Rectangle()
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
-                        Text("OR CONTINUE WITH")
+                        Text("OR")
                             .font(DarkFantasyTheme.body)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -123,8 +123,7 @@ struct WelcomeView: View {
                     }
                     .padding(.top, LayoutConstants.spaceXS)
 
-                    // Guest warning
-                    Text("сделано в Osetrov Design")
+                    Text("Made by Osetrov Design")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .multilineTextAlignment(.center)

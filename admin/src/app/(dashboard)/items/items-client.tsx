@@ -26,6 +26,9 @@ type Item = {
   sellPrice: number
   imageUrl: string | null
   imageKey: string | null
+  // Borrowed-art flags from resolveImagesForItems (server side)
+  imageBorrowed?: boolean
+  imageBorrowedFromId?: string | null
   // Full data for preview
   baseStats: Record<string, number> | null
   specialEffect: string | null
@@ -51,6 +54,10 @@ export function ItemsClient({ items }: { items: Item[] }) {
 
   function itemToFormData(item: Item): ItemFormData {
     const cfg = (item.upgradeConfig ?? {}) as Record<string, unknown>
+    // If the item image is borrowed, don't put it in form.imageUrl — we want
+    // the preview card to render it via fallbackImageUrl with a "Borrowed" pill.
+    const ownImageUrl = item.imageBorrowed ? '' : item.imageUrl ?? ''
+    const ownImageKey = item.imageBorrowed ? item.catalogId : item.imageKey ?? item.catalogId
     return {
       catalogId: item.catalogId,
       itemName: item.itemName,
@@ -69,8 +76,8 @@ export function ItemsClient({ items }: { items: Item[] }) {
       buyPrice: item.buyPrice,
       sellPrice: item.sellPrice,
       dropChance: item.dropChance ?? 0,
-      imageUrl: item.imageUrl ?? '',
-      imageKey: item.imageKey ?? item.catalogId,
+      imageUrl: ownImageUrl,
+      imageKey: ownImageKey,
       imagePrompt: '',
       imageStyle: '',
       imageSize: '',
@@ -192,10 +199,30 @@ export function ItemsClient({ items }: { items: Item[] }) {
                   onClick={() => router.push(`/items/${item.id}/edit`)}
                 >
                   <td className="px-4 py-2">
-                    <div className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center overflow-hidden ${item.imageUrl ? 'border-green-600/40 bg-muted' : 'border-dashed border-red-500/30 bg-red-500/5'}`}>
+                    <div
+                      className={`relative w-10 h-10 rounded-lg border-2 flex items-center justify-center overflow-hidden ${
+                        item.imageUrl
+                          ? item.imageBorrowed
+                            ? 'border-dashed border-amber-500/60 bg-amber-500/5'
+                            : 'border-green-600/40 bg-muted'
+                          : 'border-dashed border-red-500/30 bg-red-500/5'
+                      }`}
+                      title={item.imageBorrowed ? 'Borrowed art — upload real image' : undefined}
+                    >
                       {item.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.imageUrl}
+                            alt=""
+                            className={`w-full h-full object-cover ${item.imageBorrowed ? 'opacity-60' : ''}`}
+                          />
+                          {item.imageBorrowed && (
+                            <span className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-[7px] font-bold text-center uppercase tracking-wider text-black leading-none py-[1px]">
+                              Borrowed
+                            </span>
+                          )}
+                        </>
                       ) : (
                         <Sword className="h-4 w-4 text-red-400/40" />
                       )}
@@ -255,6 +282,11 @@ export function ItemsClient({ items }: { items: Item[] }) {
 
       <p className="text-sm text-muted-foreground">
         Showing {filtered.length} of {items.length} items
+        {items.filter((i) => i.imageBorrowed).length > 0 && (
+          <span className="ml-2 text-amber-500">
+            &middot; {items.filter((i) => i.imageBorrowed).length} using borrowed art
+          </span>
+        )}
       </p>
 
       {/* Delete Confirmation Dialog */}
@@ -283,6 +315,8 @@ export function ItemsClient({ items }: { items: Item[] }) {
           form={itemToFormData(previewItem)}
           open={!!previewItem}
           onOpenChange={(open) => { if (!open) setPreviewItem(null) }}
+          fallbackImageUrl={previewItem.imageBorrowed ? previewItem.imageUrl : null}
+          fallbackImageKey={previewItem.imageBorrowed ? previewItem.imageKey : null}
         />
       )}
     </>

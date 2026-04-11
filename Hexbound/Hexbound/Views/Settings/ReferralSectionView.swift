@@ -273,7 +273,7 @@ struct ReferralSectionView: View {
             }
         } catch let error as APIError {
             switch error {
-            case .clientError(_, let message):
+            case .clientError(_, let message, _):
                 if message.lowercased().contains("already referred") {
                     applyResult = .alreadyReferred
                     alreadyReferred = true

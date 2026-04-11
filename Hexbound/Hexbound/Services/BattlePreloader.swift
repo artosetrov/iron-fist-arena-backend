@@ -125,7 +125,7 @@ final class BattlePreloader {
                 if showErrors {
                     await MainActor.run { [weak self] in
                         switch error {
-                        case .clientError(_, let message):
+                        case .clientError(_, let message, _):
                             // Server returned specific error (e.g. "Not enough stamina", "Not enough HP")
                             self?.appState.showToast(message, type: .error)
                         case .serverError(_, let message):

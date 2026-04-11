@@ -1,0 +1,298 @@
+import SwiftUI
+
+// MARK: - Active Shaft Banner
+//
+// Shown at the top of the Gold Mine screen once the player has picked a
+// shaft. Displays the shaft thumb, name, progress label (e.g. "3 / 5"),
+// and a thin gold progress bar. Locked look — no change button here
+// (Variant D rule: you can't change shafts mid-cycle).
+
+struct ActiveShaftBanner: View {
+    let shaft: ActiveShaft
+    /// Optional tap handler. When set, the whole banner becomes tappable —
+    /// used in Gold Mine to trigger Collect All + mini-game from the shaft
+    /// banner. `nil` = purely decorative banner.
+    var onTap: (() -> Void)? = nil
+    var isDisabled: Bool = false
+
+    var body: some View {
+        Button {
+            guard !isDisabled, let onTap else { return }
+            HapticManager.medium()
+            onTap()
+        } label: {
+            bannerContent
+        }
+        .buttonStyle(.plain)
+        .disabled(onTap == nil || isDisabled)
+        .opacity(isDisabled ? 0.6 : 1.0)
+    }
+
+    private var bannerContent: some View {
+        HStack(spacing: LayoutConstants.spaceMD) {
+            // Thumb
+            Image(shaft.key.thumbAssetName)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 56, height: 56)
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1)
+                )
+
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                HStack {
+                    Text("ACTIVE SHAFT")
+                        .font(DarkFantasyTheme.badge)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .tracking(1.2)
+                    Spacer()
+                    Text(shaft.progressLabel)
+                        .font(DarkFantasyTheme.badge)
+                        .foregroundStyle(DarkFantasyTheme.goldBright)
+                        .contentTransition(.numericText())
+                        .animation(MotionConstants.smooth, value: shaft.progress)
+                }
+                Text(shaft.key.displayName.uppercased())
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .lineLimit(1)
+                progressBar
+            }
+        }
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .contentShape(Rectangle())
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.85))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private var progressBar: some View {
+        ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                .fill(DarkFantasyTheme.bgTertiary)
+                .frame(height: 5)
+            GeometryReader { proxy in
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.goldGradient)
+                    .frame(width: proxy.size.width * CGFloat(shaft.fraction), height: 5)
+                    .animation(MotionConstants.smooth, value: shaft.fraction)
+            }
+            .frame(height: 5)
+        }
+        .frame(height: 5)
+    }
+}
+
+// MARK: - Shaft Picker Sheet
+//
+// Presented as a sheet when the backend responds with
+// `needs_shaft_pick: true` from /collect-all. The player picks one
+// unlocked shaft; only unlocked shafts are tappable. The sheet calls
+// back with the chosen shaft key and the parent view re-fires
+// /collect-all with `picked_shaft_key`.
+
+struct ShaftPickerSheet: View {
+    let unlockedShafts: [ShaftKey]
+    let currentSlotLevel: Int
+    let onPick: (ShaftKey) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.spaceLG) {
+            header
+            shaftList
+            Button {
+                onCancel()
+            } label: {
+                Text("CANCEL")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
+            .padding(.horizontal, LayoutConstants.spaceMD)
+        }
+        .padding(.vertical, LayoutConstants.spaceLG)
+        .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea())
+    }
+
+    private var header: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Text("CHOOSE YOUR SHAFT")
+                .font(DarkFantasyTheme.section)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .tracking(1.5)
+            Text("Commit to one shaft for the full expedition cycle.")
+                .font(DarkFantasyTheme.body)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, LayoutConstants.spaceLG)
+        }
+    }
+
+    private var shaftList: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            ForEach(ShaftKey.allCases) { key in
+                let isUnlocked = unlockedShafts.contains(key)
+                ShaftPickerRow(
+                    shaft: key,
+                    isUnlocked: isUnlocked,
+                    currentSlotLevel: currentSlotLevel
+                ) {
+                    guard isUnlocked else { return }
+                    HapticManager.medium()
+                    onPick(key)
+                }
+            }
+        }
+        .padding(.horizontal, LayoutConstants.spaceMD)
+    }
+}
+
+/// Single row in the shaft picker. Tappable when unlocked; dimmed +
+/// "Requires slot level X" label when locked. No scale animation — per
+/// project rule, opacity is the only press feedback.
+private struct ShaftPickerRow: View {
+    let shaft: ShaftKey
+    let isUnlocked: Bool
+    let currentSlotLevel: Int
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: LayoutConstants.spaceMD) {
+                Image(shaft.thumbAssetName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                            .stroke(DarkFantasyTheme.gold.opacity(isUnlocked ? 0.5 : 0.15), lineWidth: 1)
+                    )
+
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(shaft.displayName.uppercased())
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(isUnlocked ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textDisabled)
+                        .lineLimit(1)
+                    if isUnlocked {
+                        Text("Commit for \(5) extractions")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    } else {
+                        Text("Requires slot level \(shaft.unlockSlotLevel)")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.danger)
+                    }
+                }
+                Spacer()
+                if isUnlocked {
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                } else {
+                    Image(systemName: "lock.fill")
+                        .foregroundStyle(DarkFantasyTheme.textDisabled)
+                }
+            }
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceMS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .fill(DarkFantasyTheme.bgSecondary.opacity(isUnlocked ? 0.85 : 0.5))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(
+                        isUnlocked ? DarkFantasyTheme.gold.opacity(0.3) : DarkFantasyTheme.borderSubtle,
+                        lineWidth: 1
+                    )
+            )
+            .opacity(isUnlocked ? 1.0 : 0.55)
+        }
+        .buttonStyle(.plain)
+        .disabled(!isUnlocked)
+    }
+}
+
+// MARK: - Shaft Cleared Overlay
+//
+// Shown for ~2.5s when /minigame-bonus returns `shaft_completed: true`.
+// Celebration moment after clearing the full shaft cycle. Dismisses on
+// tap or timer, then the parent view re-shows the picker on next
+// /collect-all.
+
+struct ShaftClearedOverlay: View {
+    let clearedShaftKey: ShaftKey
+    let onDismiss: () -> Void
+
+    @State private var appeared = false
+
+    var body: some View {
+        ZStack {
+            DarkFantasyTheme.bgPrimary.opacity(0.85)
+                .ignoresSafeArea()
+                .onTapGesture { onDismiss() }
+
+            VStack(spacing: LayoutConstants.spaceLG) {
+                Text("SHAFT CLEARED")
+                    .font(DarkFantasyTheme.cinematicTitle)
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                    .tracking(2)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(MotionConstants.smooth.delay(0.1), value: appeared)
+
+                Image(clearedShaftKey.thumbAssetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 140, height: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)
+                            .stroke(DarkFantasyTheme.gold, lineWidth: 2)
+                    )
+                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 24)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(MotionConstants.smooth.delay(0.2), value: appeared)
+
+                Text(clearedShaftKey.displayName.uppercased())
+                    .font(DarkFantasyTheme.title)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(MotionConstants.smooth.delay(0.3), value: appeared)
+
+                Text("You may pick a new shaft on your next collect.")
+                    .font(DarkFantasyTheme.body)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, LayoutConstants.spaceXL)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(MotionConstants.smooth.delay(0.4), value: appeared)
+
+                Button {
+                    onDismiss()
+                } label: {
+                    Text("CONTINUE")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.compactPrimary)
+                .padding(.horizontal, LayoutConstants.spaceXL)
+                .opacity(appeared ? 1 : 0)
+                .animation(MotionConstants.smooth.delay(0.5), value: appeared)
+            }
+        }
+        .onAppear {
+            HapticManager.success()
+            appeared = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                onDismiss()
+            }
+        }
+    }
+}

@@ -332,7 +332,7 @@ struct HubView: View {
                     } else {
                         appState.mainPath.append(AppRoute.dungeonMap)
                     }
-                case "hub_first_mine":
+                case "hub_first_mine", "hub_mine_ready":
                     appState.mainPath.append(AppRoute.goldMine)
                 case "hub_unclaimed_rewards":
                     appState.mainPath.append(AppRoute.dailyQuests)
@@ -371,6 +371,13 @@ struct HubView: View {
             // Background-prefetch battle pass for badge + instant screen open
             if cache.cachedBattlePass() == nil {
                 Task { await prefetchBattlePass() }
+            }
+            // Background-prefetch gold mine so the contextual hint can decide
+            // whether there's actually something to do (ready slots / idle
+            // slots) instead of nagging the player with a stale "visit the
+            // mine" widget when all slots are already productively mining.
+            if cache.cachedGoldMine() == nil {
+                Task { await prefetchGoldMine() }
             }
             // Background-prefetch social status for Guild Hall badge
             if cache.cachedSocialStatus() == nil {
@@ -446,7 +453,12 @@ struct HubView: View {
         let totalPvpFights = char.pvpWins + char.pvpLosses
         let dungeonProgress = cache.cachedDungeonProgress() ?? [:]
         let totalDungeonClears = dungeonProgress.values.reduce(0, +)
-        let hasVisitedMine = cache.cachedGoldMine() != nil
+        let mineCache = cache.cachedGoldMine()
+        let hasVisitedMine = mineCache != nil
+        // Derive actionable mine state from cached slots. A slot is "ready"
+        // once its timer has elapsed server-side, "idle" when unused. We only
+        // nudge the player when there's something to do.
+        let (readySlots, idleSlots) = Self.mineSlotCounts(from: mineCache)
         let hasUnclaimedRewards = appState.cachedTypedQuests?.contains(where: \.canClaim) ?? false
 
         hubHint = ContextualHintProvider.hubHint(
@@ -454,8 +466,45 @@ struct HubView: View {
             totalPvpFights: totalPvpFights,
             totalDungeonClears: totalDungeonClears,
             hasVisitedMine: hasVisitedMine,
+            mineReadySlots: readySlots,
+            mineIdleSlots: idleSlots,
             hasUnclaimedQuestRewards: hasUnclaimedRewards
         )
+    }
+
+    /// Extract (ready, idle) slot counts from the cached gold-mine payload.
+    /// Matches the client-side logic in `GoldMineViewModel.slotStatus`:
+    /// a slot is "ready" if `status == ready` OR it's "mining" with an
+    /// elapsed `ends_at` timestamp.
+    private static func mineSlotCounts(
+        from cache: (slots: [[String: Any]], maxSlots: Int)?
+    ) -> (ready: Int, idle: Int) {
+        guard let cache else { return (0, 0) }
+        var ready = 0
+        var idle = 0
+        let now = Date()
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let fallback = ISO8601DateFormatter()
+        fallback.formatOptions = [.withInternetDateTime]
+        for slot in cache.slots {
+            let raw = slot["status"] as? String ?? "idle"
+            if raw == "ready" {
+                ready += 1
+            } else if raw == "mining", let endStr = slot["ends_at"] as? String {
+                let end = formatter.date(from: endStr) ?? fallback.date(from: endStr)
+                if let end, now >= end {
+                    ready += 1
+                }
+            } else if raw == "idle" {
+                idle += 1
+            }
+        }
+        // Account for unlocked-but-unused slots that may not appear in the
+        // slots array (e.g. maxSlots=3 but only 2 entries returned).
+        let missing = max(0, cache.maxSlots - cache.slots.count)
+        idle += missing
+        return (ready, idle)
     }
 
     private func triggerMapTransition(toDungeon: Bool) {
@@ -558,6 +607,27 @@ struct HubView: View {
         let bpService = BattlePassService(appState: appState)
         guard let data = await bpService.loadBattlePass() else { return }
         cache.cacheBattlePass(data)
+    }
+
+    /// Prefetch gold-mine status so the contextual hint has real slot state
+    /// (ready / idle / mining) rather than guessing from "cache empty".
+    /// Refreshes `hubHint` after the fetch completes.
+    private func prefetchGoldMine() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        do {
+            let data = try await APIClient.shared.getRaw(
+                APIEndpoints.goldMineStatus,
+                params: ["character_id": charId]
+            )
+            let slots = data["slots"] as? [[String: Any]] ?? []
+            let maxSlots = data["max_slots"] as? Int ?? 3
+            await MainActor.run {
+                cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+                updateHubHint()
+            }
+        } catch {
+            // Silent — hint stays nil, which is the right default here.
+        }
     }
 
     private func prefetchSocialStatus() async {
