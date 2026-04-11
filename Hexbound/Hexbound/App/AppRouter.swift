@@ -221,8 +221,8 @@ struct AuthRouterView: View {
             WelcomeView()
                 .navigationDestination(for: AppRoute.self) { route in
                     switch route {
-                    case .login: LoginView()
-                    case .register: RegisterDetailView()
+                    case .login: AuthView(initialMode: .signin)
+                    case .register: AuthView(initialMode: .signup)
                     case .onboarding: OnboardingDetailView()
                     default: WelcomeView()
                     }

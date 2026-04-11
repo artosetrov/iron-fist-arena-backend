@@ -11,27 +11,39 @@ struct CardLevelBadge: View {
     let accentColor: Color
 
     enum Size {
-        case standard   // 48×48, font 18 — matches CardActionButton, default for selection / arena cards
-        case compact    // 36×36, font 15 — for tighter layouts
+        /// 38×38 — portrait cards (Arena, Hero selection, Boss)
+        /// Shows number + "LVL" micro-label for unambiguous readability
+        case standard
+        /// 32×32 — compact layouts (grid thumbnails, inline refs)
+        /// Shows number only to save space
+        case compact
 
         var diameter: CGFloat {
             switch self {
-            case .standard: return LayoutConstants.touchMin // 48
-            case .compact: return 36
+            case .standard: return LayoutConstants.cardLvlBadgeSize  // 38
+            case .compact:  return 32
             }
         }
 
-        var font: CGFloat {
+        var numberFont: CGFloat {
             switch self {
-            case .standard: return 18
-            case .compact: return 15
+            case .standard: return 14
+            case .compact:  return 13
             }
         }
 
         var strokeWidth: CGFloat {
             switch self {
             case .standard: return 2.0
-            case .compact: return 1.5
+            case .compact:  return 1.5
+            }
+        }
+
+        /// Whether to show the "LVL" micro-label below the number
+        var showsLabel: Bool {
+            switch self {
+            case .standard: return true
+            case .compact:  return false
             }
         }
     }
@@ -39,20 +51,38 @@ struct CardLevelBadge: View {
     var size: Size = .standard
 
     var body: some View {
-        Text("\(level)")
-            .font(DarkFantasyTheme.buttonLabel)
-            .foregroundStyle(DarkFantasyTheme.textOnGold)
-            .frame(width: size.diameter, height: size.diameter)
-            .background(
-                Circle()
-                    .fill(accentColor)
-            )
-            .overlay(
-                Circle()
-                    .stroke(accentColor.opacity(0.3), lineWidth: size.strokeWidth + 2)
-                    .blur(radius: 3)
-            )
-            .shadow(color: accentColor.opacity(0.4), radius: 6, y: 2)
+        ZStack {
+            Circle()
+                .fill(accentColor)
+            Circle()
+                .stroke(accentColor.opacity(0.3), lineWidth: size.strokeWidth + 2)
+                .blur(radius: 3)
+
+            if size.showsLabel {
+                // Number + "LVL" — standard portrait badge
+                VStack(spacing: 0) {
+                    Text("\(level)")
+                        .font(.system(size: size.numberFont, weight: .bold, design: .default))
+                        .foregroundStyle(DarkFantasyTheme.textOnGold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Text("LVL")
+                        .font(.system(size: 7, weight: .semibold, design: .default))
+                        .foregroundStyle(DarkFantasyTheme.textOnGold.opacity(0.65))
+                        .tracking(0.3)
+                }
+            } else {
+                // Number only — compact badge
+                Text("\(level)")
+                    .font(.system(size: size.numberFont, weight: .bold, design: .default))
+                    .foregroundStyle(DarkFantasyTheme.textOnGold)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+        }
+        .frame(width: size.diameter, height: size.diameter)
+        .shadow(color: accentColor.opacity(0.4), radius: 6, y: 2)
     }
 }
 
@@ -90,8 +120,16 @@ struct CardActionButton: View {
     ZStack {
         DarkFantasyTheme.bgAbyss.ignoresSafeArea()
         VStack(spacing: LayoutConstants.spaceLG) {
-            CardLevelBadge(level: 16, accentColor: DarkFantasyTheme.gold)
-            CardLevelBadge(level: 3, accentColor: DarkFantasyTheme.info, size: .compact)
+            HStack(spacing: LayoutConstants.spaceMD) {
+                CardLevelBadge(level: 7,  accentColor: DarkFantasyTheme.classWarrior)
+                CardLevelBadge(level: 19, accentColor: DarkFantasyTheme.classTank)
+                CardLevelBadge(level: 4,  accentColor: DarkFantasyTheme.classRogue)
+                CardLevelBadge(level: 12, accentColor: DarkFantasyTheme.classMage)
+            }
+            HStack(spacing: LayoutConstants.spaceMD) {
+                CardLevelBadge(level: 7,  accentColor: DarkFantasyTheme.classWarrior, size: .compact)
+                CardLevelBadge(level: 99, accentColor: DarkFantasyTheme.gold,         size: .compact)
+            }
             CardActionButton(icon: "trash", color: DarkFantasyTheme.danger) {}
         }
     }

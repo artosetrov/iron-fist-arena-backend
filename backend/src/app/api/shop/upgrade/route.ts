@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getUpgradeChancesConfig } from '@/lib/game/live-config'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { recalculateDerivedStats } from '@/lib/game/equipment-stats'
 import { invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
 import { rateLimit } from '@/lib/rate-limit'
@@ -127,9 +128,14 @@ export async function POST(req: NextRequest) {
       return { updatedUser, updatedItem, protectionUsed, levelLost }
     })
 
-    // Non-critical post-transaction work
-    await updateDailyQuestProgress(prisma, character_id, 'item_upgrade')
-    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', upgradeCost)
+    // Non-critical post-transaction work — daily + weekly quest progress
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'item_upgrade'),
+      updateDailyQuestProgress(prisma, character_id, 'gold_spent', upgradeCost),
+      // W3.D5 — Weekly BP challenges: Master Smith + Spendthrift slots
+      updateWeeklyChallengeProgress(prisma, character_id, 'item_upgrade'),
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_spent', upgradeCost),
+    ])
     if (success) {
       incrementGuildChallenge(prisma, 'items_upgraded', 1).catch(() => {})
     }

@@ -286,8 +286,12 @@ export async function POST(req: NextRequest) {
         crit_per_agi: COMBAT.CRIT_PER_AGI,
         dodge_per_agi: COMBAT.DODGE_PER_AGI,
         dodge_per_luk: COMBAT.DODGE_PER_LUK,
-        cha_intimidation_per_point: COMBAT.CHA_INTIMIDATION_PER_POINT,
-        cha_intimidation_cap: COMBAT.CHA_INTIMIDATION_CAP,
+        // W3.D1 — CHA miss chance replaces intimidation damage reduction
+        cha_miss_per_point: COMBAT.CHA_MISS_PER_POINT,
+        cha_miss_cap: COMBAT.CHA_MISS_CAP,
+        // W3.D2 — Rogue Execute
+        rogue_execute_hp_threshold: COMBAT.ROGUE_EXECUTE_HP_THRESHOLD,
+        rogue_execute_damage_bonus: COMBAT.ROGUE_EXECUTE_DAMAGE_BONUS,
         // Zone stance constants
         stance_attack_zones: STANCE_ZONES.ATTACK_ZONE,
         stance_defense_zones: STANCE_ZONES.DEFENSE_ZONE,

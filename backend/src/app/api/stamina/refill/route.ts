@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { getStaminaConfig, getGemCostsConfig } from '@/lib/game/live-config'
+import { staminaRefillGemCost, STAMINA_REFILL_DR } from '@/lib/game/balance'
+import { currentDailyValue } from '@/lib/game/daily-counter'
 
 /**
  * POST /api/stamina/refill
@@ -23,7 +25,7 @@ export async function POST(req: NextRequest) {
       getStaminaConfig(),
       getGemCostsConfig(),
     ])
-    const GEMS_PER_REFILL = GEM_COSTS.STAMINA_REFILL
+    const BASE_GEMS_PER_REFILL = GEM_COSTS.STAMINA_REFILL
 
     const body = await req.json()
     const { character_id } = body
@@ -42,9 +44,12 @@ export async function POST(req: NextRequest) {
 
       const [character] = await tx.$queryRawUnsafe<Array<{
         id: string; user_id: string; current_stamina: number;
-        max_stamina: number; last_stamina_update: Date | null
+        max_stamina: number; last_stamina_update: Date | null;
+        stamina_refills_today: number; stamina_refills_date: Date | null;
       }>>(
-        `SELECT id, user_id, current_stamina, max_stamina, last_stamina_update FROM characters WHERE id = $1 FOR UPDATE`,
+        `SELECT id, user_id, current_stamina, max_stamina, last_stamina_update,
+                stamina_refills_today, stamina_refills_date
+         FROM characters WHERE id = $1 FOR UPDATE`,
         character_id
       )
 
@@ -58,36 +63,62 @@ export async function POST(req: NextRequest) {
       )
 
       if (staminaResult.stamina >= STAMINA.MAX) throw new Error('STAMINA_FULL')
-      if (!userRecord || userRecord.gems < GEMS_PER_REFILL) throw new Error('NOT_ENOUGH_GEMS')
 
       const now = new Date()
 
+      // W3.D4 — stamina refill diminishing returns + hard daily cap.
+      // Lazy reset: if the stored date is not today, the counter is effectively 0.
+      const refillsUsedToday = currentDailyValue(
+        character.stamina_refills_today,
+        character.stamina_refills_date,
+        now,
+      )
+
+      const dynamicCost = staminaRefillGemCost(BASE_GEMS_PER_REFILL, refillsUsedToday)
+      if (dynamicCost === null) throw new Error('REFILL_CAP_REACHED')
+      if (!userRecord || userRecord.gems < dynamicCost) throw new Error('NOT_ENOUGH_GEMS')
+
       await tx.user.update({
         where: { id: user.id },
-        data: { gems: { decrement: GEMS_PER_REFILL } },
+        data: { gems: { decrement: dynamicCost } },
       })
 
       await tx.character.update({
         where: { id: character_id },
-        data: { currentStamina: STAMINA.MAX, lastStaminaUpdate: now },
+        data: {
+          currentStamina: STAMINA.MAX,
+          lastStaminaUpdate: now,
+          staminaRefillsToday: refillsUsedToday + 1,
+          staminaRefillsDate: now,
+        },
       })
 
       return {
         staminaBefore: staminaResult.stamina,
-        gemsRemaining: userRecord.gems - GEMS_PER_REFILL,
+        gemsRemaining: userRecord.gems - dynamicCost,
+        refillIndex: refillsUsedToday + 1,
+        cost: dynamicCost,
       }
     })
 
     return NextResponse.json({
       stamina: { before: result.staminaBefore, after: STAMINA.MAX, max: STAMINA.MAX },
-      gems_spent: GEMS_PER_REFILL,
+      gems_spent: result.cost,
       gems_remaining: result.gemsRemaining,
+      refill_index: result.refillIndex,
+      daily_cap: STAMINA_REFILL_DR.DAILY_CAP,
     })
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       if (error.message === 'STAMINA_FULL') return NextResponse.json({ error: 'Stamina is already full' }, { status: 400 })
+      if (error.message === 'REFILL_CAP_REACHED') {
+        return NextResponse.json(
+          { error: 'Daily refill cap reached', cap: STAMINA_REFILL_DR.DAILY_CAP },
+          { status: 429 },
+        )
+      }
       if (error.message === 'NOT_ENOUGH_GEMS') {
         try {
           const GEM_COSTS = await getGemCostsConfig()

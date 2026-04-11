@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Hero Integrated Card: equipment-first layout with portrait, HP/XP bars inside, resources, action pills.
-/// Replaces UnifiedHeroWidget + equipmentSection + stanceSummaryCard on Hero page.
+/// Hero Integrated Card: equipment-first layout with arena-style portrait,
+/// HP bar below, action pills — mirrors the premium ArenaOpponentCard feel.
 @MainActor
 struct HeroIntegratedCard: View {
     let character: Character
@@ -13,6 +13,10 @@ struct HeroIntegratedCard: View {
     var onRefillStamina: (() -> Void)? = nil
 
     @Environment(AppState.self) private var appState
+
+    // Portrait animation state
+    @State private var glowPhase: CGFloat = 0
+    @State private var shimmerOffset: CGFloat = -1.2
 
     // MARK: - Computed
 
@@ -61,17 +65,14 @@ struct HeroIntegratedCard: View {
     // MARK: - Equipment Grid (GeometryReader for precise layout)
 
     /// Aspect ratio for the equipment grid (width / height)
-    /// Grid = 4 cols × (3 rows top + 1 row bottom), gaps between
     private var aspectRatioForGrid: CGFloat {
-        // Use a reference width to compute ratio (ratio is scale-independent)
         let refW: CGFloat = 400
         let slotGap = LayoutConstants.heroSlotGap
         let cw = (refW - 3 * slotGap) / 4
-        let height = 3 * cw + 2 * slotGap + slotGap + cw // top 3 rows + gap + bottom row
+        let height = 3 * cw + 2 * slotGap + slotGap + cw
         return refW / height
     }
 
-    /// Computes cell width from actual container width
     private func gridCellWidth(in containerWidth: CGFloat) -> CGFloat {
         (containerWidth - 3 * LayoutConstants.heroSlotGap) / 4
     }
@@ -121,7 +122,6 @@ struct HeroIntegratedCard: View {
     // MARK: - Data Section (below divider)
 
     private var dataSection: some View {
-        // HP bar only — XP is now the ring around portrait, stamina moved to currency row
         HPBarView(
             currentHp: character.currentHp,
             maxHp: character.maxHp,
@@ -130,145 +130,198 @@ struct HeroIntegratedCard: View {
         )
     }
 
-    // MARK: - XP Ring constants for hero portrait
-    private let heroXpRingWidth: CGFloat = 3.5
-    private var heroXpRingCornerRadius: CGFloat { LayoutConstants.heroSlotRadius + 2 }
-
-    // MARK: - Hero Portrait
+    // MARK: - Hero Portrait (Arena-style full-bleed)
 
     @ViewBuilder
     private func heroPortrait() -> some View {
         ZStack {
-            // XP ring track (background)
-            RoundedRectangle(cornerRadius: heroXpRingCornerRadius)
-                .stroke(DarkFantasyTheme.xpRingTrack, lineWidth: heroXpRingWidth)
+            // 1. Full-bleed avatar background
+            AvatarImageView(
+                skinKey: character.avatar,
+                characterClass: character.characterClass,
+                size: 200
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
 
-            // XP ring fill (progress)
-            XPRingShape(ringCornerRadius: heroXpRingCornerRadius, ringLineWidth: heroXpRingWidth)
-                .trim(from: 0, to: character.xpPercentage)
-                .stroke(
-                    DarkFantasyTheme.xpRing,
-                    style: StrokeStyle(lineWidth: heroXpRingWidth, lineCap: .round)
-                )
-                .shadow(color: DarkFantasyTheme.xpRing.opacity(0.4), radius: 4)
-                .animation(.easeInOut(duration: 1.0), value: character.xpPercentage)
+            // 2. Vignette: top tint + radial + bottom fade
+            portraitVignette
 
-            // Inner portrait area
+            // 3. Overlaid info content
+            VStack(spacing: 0) {
+                // Top row: class icon badge (left) + level badge (right)
+                HStack(alignment: .top) {
+                    Image(character.characterClass.iconAsset)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                        .padding(LayoutConstants.spaceXS)
+                        .background(Circle().fill(DarkFantasyTheme.bgAbyss.opacity(0.65)))
+                        .overlay(
+                            Circle().stroke(DarkFantasyTheme.gold.opacity(0.35), lineWidth: 1)
+                        )
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 2, y: 1)
+
+                    Spacer()
+
+                    CardLevelBadge(level: character.level, accentColor: DarkFantasyTheme.gold)
+                }
+
+                Spacer()
+
+                // Bottom: name + class tag + XP bar
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text(character.characterName)
+                        .font(DarkFantasyTheme.body.bold())
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.9), radius: 6, y: 2)
+
+                    ClassTagView(characterClass: character.characterClass)
+
+                    // XP label
+                    Text("XP \(character.experience ?? 0)/\(character.xpNeeded)")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.xpRing)
+                        .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.8), radius: 3)
+
+                    // XP thin progress bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(DarkFantasyTheme.xpRingTrack)
+                                .frame(height: 3)
+                            Capsule()
+                                .fill(DarkFantasyTheme.xpRing)
+                                .frame(width: geo.size.width * character.xpPercentage, height: 3)
+                                .shadow(color: DarkFantasyTheme.xpRing.opacity(0.5), radius: 3)
+                                .animation(.easeInOut(duration: 1.0), value: character.xpPercentage)
+                        }
+                    }
+                    .frame(height: 3)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(LayoutConstants.spaceSM)
+
+            // 4. Animated angular glow border + corner ornaments
+            portraitGlowBorder
+
+            // 5. Shimmer sweep
             RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
                 .fill(
                     LinearGradient(
-                        colors: [DarkFantasyTheme.bgTertiary, DarkFantasyTheme.bgSecondary],
-                        startPoint: .top, endPoint: .bottom
+                        colors: [.clear, DarkFantasyTheme.arenaShimmerColor, .clear],
+                        startPoint: UnitPoint(x: shimmerOffset, y: 0.3),
+                        endPoint: UnitPoint(x: shimmerOffset + 0.4, y: 0.7)
                     )
                 )
-                .padding(heroXpRingWidth + 1)
+                .allowsHitTesting(false)
 
-            // Inner content group (inset by ring width)
-            Group {
-                AvatarImageView(
-                    skinKey: character.avatar,
-                    characterClass: character.characterClass,
-                    size: 200
-                )
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
-                .overlay(
-                    VStack {
-                        Spacer()
-                        LinearGradient(
-                            colors: [Color.clear, DarkFantasyTheme.bgSecondary.opacity(0.6), DarkFantasyTheme.bgSecondary],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        .frame(height: 60)
-                    }
-                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius - 4))
-                )
-
-                // Name + class overlay at bottom
-                VStack {
-                    Spacer()
-                    VStack(spacing: LayoutConstants.space2XS) {
-                        Text(character.characterName)
-                            .font(DarkFantasyTheme.section)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        Text(character.characterClass.rawValue.uppercased())
-                            .font(DarkFantasyTheme.body)
-                            .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    }
-                    .padding(.vertical, LayoutConstants.spaceXS)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.bgAbyss.opacity(0), DarkFantasyTheme.bgAbyss.opacity(0.7)],
-                            startPoint: .top, endPoint: .bottom
-                        )
-                    )
-                }
-                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius))
-
-                // Badges (top corners)
-                VStack {
-                    HStack {
-                        Image(character.characterClass.iconAsset)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 36, height: 36)
-                            .shadow(color: DarkFantasyTheme.bgAbyss, radius: 3, y: 1)
-
-                        Spacer()
-
-                        Text("Lv. \(character.level)")
-                            .font(DarkFantasyTheme.body.bold())
-                            .foregroundStyle(DarkFantasyTheme.textOnGold)
-                            .padding(.horizontal, LayoutConstants.spaceXS)
-                            .padding(.vertical, LayoutConstants.space2XS)
-                            .background(
-                                Capsule().fill(DarkFantasyTheme.gold)
-                            )
-                    }
-                    Spacer()
-                }
-                .padding(LayoutConstants.spaceSM)
-            }
-            .padding(heroXpRingWidth + 1)
-
-            // XP label (bottom center, over the ring)
-            VStack {
-                Spacer()
-                Text("XP \(character.experience ?? 0)/\(character.xpNeeded)")
-                    .font(DarkFantasyTheme.body.bold())
-                    .foregroundStyle(DarkFantasyTheme.xpRing)
-                    .padding(.horizontal, LayoutConstants.spaceXS)
-                    .padding(.vertical, LayoutConstants.space2XS)
-                    .background(
-                        Capsule()
-                            .fill(DarkFantasyTheme.bgAbyss.opacity(0.85))
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(DarkFantasyTheme.xpRing.opacity(0.4), lineWidth: 0.5)
-                    )
-                    .offset(y: LayoutConstants.space2XS)
-            }
-
-            // Corner diamond accents on the XP ring frame
-            CornerDiamondOverlay(color: DarkFantasyTheme.xpRing.opacity(0.5), size: 3)
-        }
-        // Low HP red pulse overlay
-        .overlay(
-            RoundedRectangle(cornerRadius: heroXpRingCornerRadius)
+            // 6. Low HP danger pulse ring
+            RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
                 .stroke(DarkFantasyTheme.danger, lineWidth: 2)
                 .opacity(character.hpPercentage < 0.25 ? 0.8 : 0)
                 .glowPulse(color: DarkFantasyTheme.danger, intensity: 0.5, isActive: character.hpPercentage < 0.25)
-        )
+        }
+        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius))
         .contentShape(Rectangle())
+        .onAppear { startPortraitAnimations() }
+        .onDisappear { stopPortraitAnimations() }
         .onTapGesture { onTapPortrait?() }
+    }
+
+    // MARK: - Portrait Vignette
+
+    private var portraitVignette: some View {
+        ZStack {
+            // Top dark tint (softens avatar top)
+            LinearGradient(
+                colors: [DarkFantasyTheme.bgAbyss.opacity(0.35), .clear],
+                startPoint: .top,
+                endPoint: .init(x: 0.5, y: 0.35)
+            )
+
+            // Radial edge darkening
+            RadialGradient(
+                gradient: Gradient(colors: [.clear, DarkFantasyTheme.bgAbyss.opacity(0.45)]),
+                center: .init(x: 0.5, y: 0.3),
+                startRadius: 40,
+                endRadius: 130
+            )
+
+            // Bottom strong fade for text readability
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        DarkFantasyTheme.bgAbyss.opacity(0.5),
+                        DarkFantasyTheme.bgAbyss.opacity(0.85),
+                        DarkFantasyTheme.bgAbyss
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 100)
+            }
+        }
+    }
+
+    // MARK: - Animated Glow Border
+
+    private var portraitGlowBorder: some View {
+        RoundedRectangle(cornerRadius: LayoutConstants.heroSlotRadius)
+            .stroke(
+                AngularGradient(
+                    colors: [
+                        DarkFantasyTheme.gold.opacity(0.55),
+                        DarkFantasyTheme.xpRing.opacity(0.2),
+                        DarkFantasyTheme.gold.opacity(0.35),
+                        DarkFantasyTheme.xpRing.opacity(0.15),
+                        DarkFantasyTheme.gold.opacity(0.55)
+                    ],
+                    center: .center,
+                    startAngle: .degrees(glowPhase),
+                    endAngle: .degrees(glowPhase + 360)
+                ),
+                lineWidth: 1.5
+            )
+            .overlay(
+                CornerBracketOverlay(
+                    color: DarkFantasyTheme.gold.opacity(0.5),
+                    length: 14,
+                    thickness: 1.5
+                )
+            )
+            .overlay(
+                CornerDiamondOverlay(
+                    color: DarkFantasyTheme.gold.opacity(0.4),
+                    size: 5
+                )
+            )
+    }
+
+    // MARK: - Portrait Animations
+
+    private func startPortraitAnimations() {
+        withAnimation(.linear(duration: 5).repeatForever(autoreverses: false)) {
+            glowPhase = 360
+        }
+        withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+            shimmerOffset = 1.5
+        }
+    }
+
+    private func stopPortraitAnimations() {
+        glowPhase = 0
+        shimmerOffset = -1.2
     }
 
     // MARK: - Equipment Slot
 
     private func findEquippedItem(slot: String, index: Int = 0) -> Item? {
-        // Universal slot logic
         let accepted = EquipmentViewModel.slotAccepts[slot] ?? [slot]
         switch slot {
         case "ring":
@@ -276,9 +329,7 @@ struct HeroIntegratedCard: View {
             return index < rings.count ? rings[index] : nil
         default:
             return equippedItems.first { item in
-                // Check by equipped slot name
                 if item.equippedSlot == slot { return true }
-                // Check by accepted item types
                 return accepted.contains(item.itemType.rawValue) && (item.equippedSlot == slot || item.equippedSlot == nil)
             }
         }
@@ -298,7 +349,6 @@ struct HeroIntegratedCard: View {
             }
             .frame(width: size, height: size)
         } else {
-            // Empty slot — uses ItemCardView with equipment context
             ItemCardView(
                 rarity: .common,
                 imageKey: nil,

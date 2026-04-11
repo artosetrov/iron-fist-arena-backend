@@ -29,6 +29,8 @@ import { cacheDeletePrefix } from '@/lib/cache'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { createBattleResultMail } from '@/lib/game/battle-mail'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -127,6 +129,8 @@ export async function POST(req: NextRequest) {
       pvpLosses: true,
       pvpWinStreak: true,
       pvpLossStreak: true,
+      // W3.D5 — include user.premiumUntil for Premium Forever gold multiplier
+      user: { select: { premiumUntil: true } },
     } as const
 
     const [attacker, defender] = await Promise.all([
@@ -210,6 +214,10 @@ export async function POST(req: NextRequest) {
       goldReward = goldReward * FIRST_WIN_BONUS.GOLD_MULT
       xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
     }
+
+    // W3.D5 — Premium Forever +10% gold (applied LAST so it doesn't compound
+    // with the CHA cap established in W3.D3 — protects sink ratio).
+    goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
 
     const now = new Date()
     const attackerNewRating = attackerWon ? newWinnerRating : newLoserRating
@@ -424,6 +432,8 @@ export async function POST(req: NextRequest) {
       (async () => {
         return await Promise.all([
           attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
+          // W3.D5 — Weekly BP challenges (pvp_wins is one of the goal types)
+          attackerWon ? updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
           attackerWon ? updateTutorialQuestProgress(prisma, attacker.id, 'win_3_pvp') : Promise.resolve(),
           awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
         ])
@@ -594,6 +604,8 @@ async function resolveBotFight(
       highestPvpRank: true, cha: true, level: true, luk: true, characterName: true,
       class: true, origin: true, maxHp: true,
       pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
+      // W3.D5 — Premium Forever gold multiplier source
+      user: { select: { premiumUntil: true } },
     },
   })
 
@@ -641,6 +653,9 @@ async function resolveBotFight(
     goldReward = goldReward * FIRST_WIN_BONUS.GOLD_MULT
     xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
   }
+
+  // W3.D5 — Premium Forever +10% gold (applied LAST — see main resolve path)
+  goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
 
   const now = new Date()
   // Bot fights give minimal ELO change to the player (calibration still counts)
@@ -751,9 +766,11 @@ async function resolveBotFight(
   })
 
   // Post-transaction side effects
-  const [levelUpResult, , , lootItem, durabilityResult] = await Promise.all([
+  const [levelUpResult, , , , lootItem, durabilityResult] = await Promise.all([
     applyLevelUp(prisma, attacker.id),
     attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
+    // W3.D5 — Weekly BP challenges
+    attackerWon ? updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
     awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
     attackerWon
       ? rollAndPersistLoot(prisma, attacker.id, attacker.level, 'pvp', attacker.luk)

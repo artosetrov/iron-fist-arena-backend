@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Unified Card System v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-abyss: #0D0D1A;
+  --bg-secondary: #12121F;
+  --bg-card: #16162A;
+  --bg-panel: #1A1A2E;
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-medium: rgba(255,255,255,0.12);
+
+  --gold: #D4A537;
+  --gold-bright: #F0C050;
+  --gold-glow: rgba(212,165,55,0.3);
+
+  --text-primary: #F5F5F5;
+  --text-secondary: #A0A0B0;
+  --text-on-gold: #1A1A2E;
+  --text-disabled: #555566;
+
+  --danger:  #E63946;
+  --success: #4CAF84;
+  --info:    #4A9FD4;
+  --stamina: #F08040;
+  --warning: #F0A030;
+  --boss-purple: #9B59B6;
+  --locked:  #444455;
+
+  --warrior: #E8A030;
+  --rogue:   #60C070;
+  --mage:    #7A5CD6;
+  --tank:    #4A9FD4;
+
+  --diff-easy:   #4CAF84;
+  --diff-medium: #F0A030;
+  --diff-hard:   #E63946;
+
+  /* Card dimensions — 2-col on 375pt phone = 165pt wide */
+  --card-w: 160px;
+  --card-h: 224px;  /* 160 × 1.4 */
+  --card-r: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-abyss);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  padding: 32px 24px 64px;
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────────────────────────
+   TYPOGRAPHY HELPERS
+───────────────────────────────────────────────── */
+.h-page  { font-family:'Oswald',sans-serif; font-size:28px; font-weight:700; color:var(--gold); letter-spacing:3px; text-transform:uppercase; }
+.h-sec   { font-family:'Oswald',sans-serif; font-size:18px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text-secondary); border-bottom:1px solid var(--border-subtle); padding-bottom:12px; margin-bottom:28px; }
+.h-sec span { color:var(--gold); }
+.h-sub   { font-family:'Oswald',sans-serif; font-size:13px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px; }
+
+.tag {
+  display:inline-flex; align-items:center;
+  font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1px;
+  padding:2px 7px; border-radius:3px; text-transform:uppercase;
+  white-space:nowrap;
+}
+.tag-bad  { background:rgba(230,57,70,.1);  color:var(--danger);  border:1px solid rgba(230,57,70,.25); }
+.tag-good { background:rgba(76,175,132,.1); color:var(--success); border:1px solid rgba(76,175,132,.25); }
+.tag-warn { background:rgba(240,160,48,.1); color:var(--warning); border:1px solid rgba(240,160,48,.25); }
+.tag-info { background:rgba(74,159,212,.1); color:var(--info);    border:1px solid rgba(74,159,212,.25); }
+
+/* ─────────────────────────────────────────────────
+   LAYOUT
+───────────────────────────────────────────────── */
+.section  { margin-bottom:56px; }
+.sep      { height:1px; background:linear-gradient(to right,transparent,var(--border-subtle),transparent); margin:32px 0; }
+.row      { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+.col      { display:flex; flex-direction:column; gap:10px; align-items:center; }
+.col-label { font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; text-align:center; }
+.col-label.bad  { color:var(--danger); }
+.col-label.good { color:var(--success); }
+.col-label.neu  { color:var(--text-secondary); }
+
+.page-header { text-align:center; margin-bottom:52px; }
+.page-header h1 { margin-bottom:8px; }
+.page-header p  { color:var(--text-secondary); font-size:14px; }
+
+/* ─────────────────────────────────────────────────
+   INFO BOXES
+───────────────────────────────────────────────── */
+.box {
+  border-radius:10px; padding:16px 18px; margin-bottom:14px;
+}
+.box-gold   { background:rgba(212,165,55,.06);  border:1px solid rgba(212,165,55,.2); }
+.box-bad    { background:rgba(230,57,70,.05);   border:1px solid rgba(230,57,70,.2); }
+.box-good   { background:rgba(76,175,132,.05);  border:1px solid rgba(76,175,132,.2); }
+.box h4 { font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; }
+.box-gold h4 { color:var(--gold); }
+.box-bad h4  { color:var(--danger); }
+.box-good h4 { color:var(--success); }
+.box p, .box li { font-size:13px; color:var(--text-secondary); line-height:1.7; }
+.box ul { padding-left:16px; }
+.box li { margin-bottom:4px; }
+
+/* ─────────────────────────────────────────────────
+   AUDIT GRID
+───────────────────────────────────────────────── */
+.audit-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:12px;
+  margin-bottom:16px;
+}
+@media(max-width:700px){ .audit-grid { grid-template-columns:1fr 1fr; } }
+.audit-item {
+  background:var(--bg-panel);
+  border:1px solid var(--border-subtle);
+  border-radius:10px;
+  padding:14px;
+}
+.audit-item.bad    { border-color:rgba(230,57,70,.25); }
+.audit-item.solved { border-color:rgba(76,175,132,.25); }
+.audit-item h3 { font-family:'Oswald',sans-serif; font-size:12px; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.audit-item.bad h3    { color:var(--danger); }
+.audit-item.solved h3 { color:var(--success); }
+.audit-item p { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+
+/* ─────────────────────────────────────────────────
+   ═══ UNIFIED PORTRAIT CARD ═══
+───────────────────────────────────────────────── */
+
+/* Base card */
+.ucard {
+  width: var(--card-w);
+  position: relative;
+  border-radius: var(--card-r);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  transition: transform .18s, filter .18s;
+  user-select: none;
+}
+.ucard:active { transform:translateY(-3px); filter:brightness(.93); }
+
+/* Portrait zone (top portion: full-bleed art) */
+.ucard-portrait {
+  width: 100%;
+  aspect-ratio: 1 / 1.25;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  background: var(--bg-secondary);
+}
+
+/* Vignette on portrait */
+.ucard-portrait::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    to bottom,
+    transparent 45%,
+    rgba(13,13,26,.35) 65%,
+    rgba(13,13,26,.85) 90%,
+    rgba(13,13,26,1) 100%
+  );
+  pointer-events:none;
+}
+
+/* Info zone (below portrait, NOT overlaid) */
+.ucard-info {
+  background: var(--bg-panel);
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Top badge row: absolutely positioned on portrait */
+.ucard-top {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 2;
+}
+
+/* ─── LEVEL BADGE (NEW) ─── */
+.lvl-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.lvl-badge .ln { font-family:'Oswald',sans-serif; font-size:15px; font-weight:700; color:var(--text-on-gold); line-height:1; margin-bottom:1px; }
+.lvl-badge .ll { font-family:'Oswald',sans-serif; font-size:8px; font-weight:600; letter-spacing:0.3px; color:rgba(26,26,46,.7); text-transform:uppercase; line-height:1; }
+
+/* ─── RIGHT BADGES ─── */
+.ctx-badge {
+  font-family:'Oswald',sans-serif;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1px;
+  padding:3px 8px;
+  border-radius:5px;
+  text-transform:uppercase;
+}
+
+/* ─── CARD BORDER GLOW ─── */
+.ucard-glow {
+  position:absolute;
+  inset:0;
+  border-radius:var(--card-r);
+  pointer-events:none;
+  border:1.5px solid;
+  z-index:3;
+}
+
+/* ─── BOTTOM OVERLAY (name+class floats over portrait bottom) ─── */
+.ucard-overlay-bottom {
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:8px 10px 10px;
+  z-index:2;
+}
+
+/* ─── INFO FIELDS ─── */
+.ucard-name {
+  font-family:'Inter',sans-serif;
+  font-size:13px;
+  font-weight:500;
+  color:var(--text-primary);
+  text-shadow:0 1px 6px rgba(13,13,26,.9);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  line-height:1.2;
+}
+
+.ucard-meta {
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin-top:2px;
+}
+
+.class-tag {
+  font-family:'Oswald',sans-serif;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:1px;
+  padding:2px 6px;
+  border-radius:3px;
+  text-transform:uppercase;
+  line-height:1.2;
+}
+
+/* Main metric (big rating number) */
+.ucard-rating {
+  font-family:'Oswald',sans-serif;
+  font-size:20px;
+  font-weight:700;
+  color:var(--text-primary);
+  text-shadow:0 0 12px currentColor;
+  line-height:1;
+}
+
+/* Stat pills row */
+.pills-row { display:flex; gap:4px; flex-wrap:wrap; }
+.pill {
+  display:flex; flex-direction:column; align-items:center;
+  background:rgba(13,13,26,.65);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:5px;
+  padding:3px 6px;
+  backdrop-filter:blur(4px);
+  min-width:44px;
+}
+.pill .pv { font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; line-height:1; }
+.pill .pl { font-family:'Inter',sans-serif; font-size:8px; color:var(--text-secondary); line-height:1; margin-top:1px; }
+
+/* HP/Stamina bars */
+.bar-wrap { display:flex; flex-direction:column; gap:2px; }
+.bar-row-labels { display:flex; justify-content:space-between; }
+.bar-row-labels span { font-size:9px; color:var(--text-secondary); }
+.bar-track { height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:2px; }
+
+/* ─── CARD OVERLAYS / STATES ─── */
+.ucard-locked { opacity:.55; }
+.ucard-locked .ucard-portrait { filter:grayscale(.7); }
+
+.locked-overlay {
+  position:absolute; inset:0;
+  background:rgba(13,13,26,.5);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:5;
+  border-radius:var(--card-r);
+}
+.locked-overlay .lock-icon {
+  width:44px; height:44px;
+  border-radius:50%;
+  background:rgba(13,13,26,.8);
+  border:1px solid rgba(255,255,255,.1);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px;
+}
+
+.win-streak {
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+  border-radius:var(--card-r) var(--card-r) 0 0;
+}
+
+/* Selected/active ring */
+.selected-ring {
+  position:absolute; inset:-2px;
+  border-radius:calc(var(--card-r) + 2px);
+  border:2px solid var(--gold);
+  box-shadow:0 0 12px var(--gold-glow), inset 0 0 8px rgba(212,165,55,.1);
+  pointer-events:none;
+  z-index:10;
+}
+
+/* Action strip — outside the card, below it */
+.action-strip {
+  width:var(--card-w);
+  background:linear-gradient(135deg,#D4A537,#B8861C);
+  border-radius:0 0 var(--card-r) var(--card-r);
+  padding:7px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+  transition:filter .15s;
+}
+.action-strip:hover { filter:brightness(1.1); }
+.action-strip .as-label {
+  font-family:'Oswald',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:2px;
+  color:var(--text-on-gold);
+}
+.action-strip .as-cost {
+  font-family:'Oswald',sans-serif;
+  font-size:11px;
+  color:rgba(26,26,46,.75);
+  background:rgba(26,26,46,.2);
+  padding:2px 6px;
+  border-radius:3px;
+}
+
+/* Card + action strip combined */
+.ucard-with-action {
+  display:flex;
+  flex-direction:column;
+  width:var(--card-w);
+  border-radius:var(--card-r);
+  overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.ucard-with-action .ucard {
+  border-radius:0;
+  box-shadow:none;
+  width:100%;
+}
+
+/* ─────────────────────────────────────────────────
+   GRID LAYOUT DEMO (2-col phone)
+───────────────────────────────────────────────── */
+.phone-frame {
+  width:375px;
+  background:var(--bg-abyss);
+  border-radius:28px;
+  border:2px solid var(--border-medium);
+  overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,.6);
+}
+.phone-screen {
+  padding:16px;
+}
+.phone-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+  padding:0 4px;
+}
+.phone-header h2 {
+  font-family:'Oswald',sans-serif;
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text-primary);
+}
+.phone-header .tab-row {
+  display:flex;
+  gap:8px;
+}
+.phone-tab {
+  font-family:'Oswald',sans-serif;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:6px;
+  cursor:pointer;
+  color:var(--text-secondary);
+}
+.phone-tab.active {
+  background:rgba(212,165,55,.12);
+  color:var(--gold);
+  border:1px solid rgba(212,165,55,.3);
+}
+.cards-grid-2col {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+/* In 2-col, card width is fluid */
+.cards-grid-2col .ucard-with-action,
+.cards-grid-2col .ucard {
+  width:100%;
+}
+.cards-grid-2col .ucard-portrait { aspect-ratio:1 / 1.2; }
+.cards-grid-2col .action-strip { width:100%; }
+
+/* ─────────────────────────────────────────────────
+   ANATOMY DIAGRAM
+───────────────────────────────────────────────── */
+.anatomy-wrap {
+  display:flex;
+  gap:32px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+.anatomy-card {
+  width:160px;
+  border-radius:14px;
+  overflow:visible;
+  position:relative;
+  flex-shrink:0;
+}
+.anatomy-zone {
+  position:relative;
+  border:2px dashed;
+  margin:-1px;
+}
+.anatomy-zone-label {
+  position:absolute;
+  left:-130px;
+  top:50%;
+  transform:translateY(-50%);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;
+}
+.anatomy-line {
+  width:100px;
+  height:1px;
+  background:var(--border-medium);
+}
+.anatomy-text { font-size:11px; color:var(--text-secondary); }
+
+.anatomy-notes {
+  flex:1;
+  min-width:220px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.anatomy-note {
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  background:var(--bg-panel);
+  border:1px solid var(--border-subtle);
+  border-radius:8px;
+}
+.anatomy-note-num {
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:rgba(212,165,55,.15);
+  border:1px solid rgba(212,165,55,.3);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Oswald',sans-serif;
+  font-size:11px;
+  font-weight:700;
+  color:var(--gold);
+  flex-shrink:0;
+}
+.anatomy-note p { font-size:12px; color:var(--text-secondary); line-height:1.5; }
+.anatomy-note strong { color:var(--text-primary); font-weight:600; }
+
+/* ─────────────────────────────────────────────────
+   PROBLEM → SOLUTION TABLE
+───────────────────────────────────────────────── */
+.ps-table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  margin-bottom:16px;
+}
+.ps-table th {
+  text-align:left;
+  font-family:'Oswald',sans-serif;
+  font-size:10px;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:var(--text-secondary);
+  padding:8px 12px;
+  border-bottom:1px solid var(--border-subtle);
+}
+.ps-table td {
+  padding:10px 12px;
+  border-bottom:1px solid var(--border-subtle);
+  vertical-align:top;
+  color:var(--text-secondary);
+  line-height:1.5;
+}
+.ps-table td:first-child {
+  color:var(--text-primary);
+  font-weight:500;
+  white-space:nowrap;
+}
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<div class="page-header">
+  <h1 class="h-page">Hexbound — Unified Card v2</h1>
+  <p>Все карточки = вертикальные прямоугольники · Единый компонент · Глубокий аудит</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     01 — ГЛУБОКИЙ АУДИТ
+════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">01 — <span>Полный аудит: 9 проблем</span></div>
+
+  <div class="audit-grid">
+    <div class="audit-item bad">
+      <h3>❶ Level badge = цифра без смысла</h3>
+      <p>"1" в круге — уровень? номер карточки? размер команды? Пользователь должен выучить. Нужен якорь.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❷ Горизонтальная list-карта</h3>
+      <p>OpponentCardView — горизонтальный ряд. Это ДРУГОЙ паттерн среди вертикальных карточек. Нет унификации.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❸ 3 дублированных кода</h3>
+      <p>ArenaOpponentCard + DungeonBossCard = идентичная структура, два файла. Hero card = ещё один вариант.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❹ Attack+Defense = шум</h3>
+      <p>В арена-карте: Attack pill + Defense pill. Но Difficulty badge уже суммирует всё это. Дубль → перегруз.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❺ W/L + WR% = дубль</h3>
+      <p>В list-карте: показываем и "12/8 W/L" и "60% WR". Одно и то же. Оставить только WR%.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❻ Boss "1" в кружке = ???</h3>
+      <p>bossNumberBadge — просто число в круге. Без контекста "STAGE" пользователь не понимает что это порядковый номер стадии.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❼ Нет WIN/LOSS в истории</h3>
+      <p>В History и Revenge вкладках карточки не показывают результат боя. Пользователь не видит "я победил или проиграл?"</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❽ Tap-ambiguity: fight vs view</h3>
+      <p>Тап по карточке = ? Открыть профиль или начать бой? Нет явной affordance. Текущий подход (тап = carousel select) неоднозначен.</p>
+    </div>
+    <div class="audit-item bad">
+      <h3>❾ Нет injured state у героев</h3>
+      <p>Герой с 5% HP выглядит как герой с 100% HP в списке выбора персонажа. Нет визуального сигнала "нужно зелье".</p>
+    </div>
+  </div>
+
+  <div class="audit-grid">
+    <div class="audit-item solved">
+      <h3>✅ Решение ❶ + ❻</h3>
+      <p>LevelBadge → добавить "LVL" микро-лейбл. Boss → заменить на StageBadge с "STAGE" подписью.</p>
+    </div>
+    <div class="audit-item solved">
+      <h3>✅ Решение ❷ + ❸</h3>
+      <p>Единый CharacterCard (вертикальный портрет) для всех контекстов. List view → 2-колоночный grid из вертикальных карт.</p>
+    </div>
+    <div class="audit-item solved">
+      <h3>✅ Решение ❹ + ❺</h3>
+      <p>Убрать Attack/Defense pills. Убрать W/L. Оставить только WR% как единственный доп. сигнал.</p>
+    </div>
+    <div class="audit-item solved">
+      <h3>✅ Решение ❼</h3>
+      <p>History карта: top-right badge = WIN (зелёный) / LOSS (красный). Простой цветовой сигнал результата.</p>
+    </div>
+    <div class="audit-item solved">
+      <h3>✅ Решение ❽</h3>
+      <p>Карта + отдельная ActionStrip снизу. Тап по карточке = профиль/детали. ActionStrip "⚔ FIGHT" = бой. Намерения разделены.</p>
+    </div>
+    <div class="audit-item solved">
+      <h3>✅ Решение ❾</h3>
+      <p>HP bar на героях: если HP < 30% → красная рамка (danger glow) + иконка потиона как overlay.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     02 — АНАТОМИЯ ЕДИНОЙ КАРТОЧКИ
+════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">02 — <span>Анатомия CharacterCard</span></div>
+
+  <div class="anatomy-wrap">
+    <!-- Anatomy card visual -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0;margin-left:140px;">
+
+      <!-- ZONE A: portrait -->
+      <div style="width:160px;height:130px;background:linear-gradient(165deg,#1A1030,#2A1A40,#1A0A1A);border-radius:14px 14px 0 0;position:relative;overflow:hidden;border:2px dashed rgba(212,165,55,.4);border-bottom:none;display:flex;align-items:center;justify-content:center;font-size:60px;">
+        🧙‍♂️
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(13,13,26,1) 100%);"></div>
+        <!-- LVL badge -->
+        <div style="position:absolute;top:8px;left:8px;width:36px;height:36px;border-radius:50%;background:var(--mage);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;">
+          <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-on-gold);line-height:1;">17</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:7px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+        </div>
+        <!-- Context badge -->
+        <div style="position:absolute;top:8px;right:8px;background:rgba(240,160,48,.15);border:1px solid rgba(240,160,48,.3);color:var(--diff-medium);font-family:'Oswald',sans-serif;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;z-index:2;">MEDIUM</div>
+        <!-- Name overlay -->
+        <div style="position:absolute;bottom:6px;left:10px;right:10px;z-index:2;">
+          <div style="font-family:'Inter',sans-serif;font-size:12px;color:var(--text-primary);text-shadow:0 1px 6px rgba(13,13,26,.9);">Darkmaw</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:10px;background:rgba(122,92,214,.15);color:var(--mage);padding:1px 5px;border-radius:2px;display:inline-block;margin-top:2px;">MAGE</div>
+        </div>
+        <!-- Glow border -->
+        <div style="position:absolute;inset:0;border-radius:14px 14px 0 0;border:1.5px solid rgba(122,92,214,.4);pointer-events:none;"></div>
+        <!-- Annotations -->
+        <div style="position:absolute;top:18px;right:-110px;display:flex;align-items:center;gap:6px;z-index:10;">
+          <div style="width:80px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;">① LVL badge</span>
+        </div>
+        <div style="position:absolute;top:18px;left:-110px;display:flex;align-items:center;gap:6px;z-index:10;flex-direction:row-reverse;">
+          <div style="width:60px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;text-align:right;">② Context badge</span>
+        </div>
+        <div style="position:absolute;top:50%;right:-110px;display:flex;align-items:center;gap:6px;z-index:10;">
+          <div style="width:80px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;">③ Art (full-bleed)</span>
+        </div>
+        <div style="position:absolute;bottom:22px;right:-110px;display:flex;align-items:center;gap:6px;z-index:10;">
+          <div style="width:80px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;">④ Name + Class</span>
+        </div>
+      </div>
+
+      <!-- ZONE B: info strip -->
+      <div style="width:160px;background:var(--bg-panel);border:2px dashed rgba(74,159,212,.4);border-top:none;border-bottom:none;padding:6px 10px;position:relative;">
+        <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);">1,250</div>
+        <div style="font-size:9px;color:var(--text-secondary);margin-top:1px;">PVP RATING</div>
+        <div style="position:absolute;right:-110px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;">
+          <div style="width:80px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;">⑤ Primary metric</span>
+        </div>
+      </div>
+
+      <!-- ZONE C: secondary info -->
+      <div style="width:160px;background:var(--bg-panel);border:2px dashed rgba(76,175,132,.4);border-top:1px solid var(--border-subtle);padding:6px 10px;position:relative;">
+        <div style="display:flex;gap:4px;">
+          <div style="flex:1;background:rgba(13,13,26,.65);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:3px 4px;text-align:center;">
+            <div style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--success);">64%</div>
+            <div style="font-size:8px;color:var(--text-secondary);">WR</div>
+          </div>
+        </div>
+        <div style="position:absolute;right:-110px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;">
+          <div style="width:80px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;">⑥ Secondary (max 2)</span>
+        </div>
+      </div>
+
+      <!-- ZONE D: action -->
+      <div style="width:160px;background:linear-gradient(135deg,#D4A537,#B8861C);border-radius:0 0 14px 14px;border:2px dashed rgba(212,165,55,.5);border-top:none;padding:7px 10px;position:relative;cursor:pointer;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--text-on-gold);">⚔ FIGHT</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:10px;color:rgba(26,26,46,.7);background:rgba(26,26,46,.15);padding:2px 6px;border-radius:3px;">5 STA</span>
+        </div>
+        <div style="position:absolute;right:-110px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;">
+          <div style="width:80px;height:1px;background:var(--border-medium);"></div>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap;">⑦ Action strip</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="anatomy-notes" style="margin-top:0;">
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">①</div>
+        <p><strong>LVL Badge</strong> — всегда top-left. Цвет = classColor. Число + "LVL" микро-лейбл. Единственное место где показываем уровень.</p>
+      </div>
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">②</div>
+        <p><strong>Context Badge</strong> — всегда top-right. Меняется по контексту: EASY/MEDIUM/HARD (arena), CURRENT/LOCKED (boss), WIN/LOSS (history), пусто (own hero).</p>
+      </div>
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">③</div>
+        <p><strong>Portrait Art</strong> — full-bleed, верхняя часть карты. Нижний край = виньетка до полной темноты. Основа эмоционального восприятия.</p>
+      </div>
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">④</div>
+        <p><strong>Name + Class Tag</strong> — overlay на нижнем крае портрета. Всегда присутствуют. Boss — без Class (он босс, не класс).</p>
+      </div>
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">⑤</div>
+        <p><strong>Primary Metric</strong> — под портретом. Arena: PvP Rating. Boss: HP. Hero: PvP Rating. Одна главная цифра.</p>
+      </div>
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">⑥</div>
+        <p><strong>Secondary (max 2 pills)</strong> — Arena: WR% только. Boss: Drops. Hero: HP bar + STA bar.</p>
+      </div>
+      <div class="anatomy-note">
+        <div class="anatomy-note-num">⑦</div>
+        <p><strong>Action Strip</strong> — только в arena/history. Gold background. "⚔ FIGHT + стоимость". Тап по карте = профиль, тап по strip = бой.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     03 — ВСЕ 4 КОНТЕКСТА
+════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">03 — <span>Все 4 контекста единой карты</span></div>
+
+  <div class="row" style="gap:20px;align-items:flex-start;">
+
+    <!-- 3.1 ARENA (with fight button) -->
+    <div class="col">
+      <div class="col-label good">Arena Opponent</div>
+      <div class="ucard-with-action" style="border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(240,160,48,.2);">
+        <div class="ucard" style="border-radius:0;">
+          <div class="ucard-portrait" style="background:linear-gradient(165deg,#2A1A0D,#4A2810);">
+            🧙‍♂️
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+            <!-- LVL badge -->
+            <div class="ucard-top" style="top:8px;left:8px;right:8px;position:absolute;z-index:2;">
+              <div class="lvl-badge" style="background:var(--warrior);box-shadow:0 0 10px rgba(232,160,48,.4);">
+                <span class="ln">7</span><span class="ll">LVL</span>
+              </div>
+              <div class="ctx-badge" style="background:rgba(240,160,48,.15);color:var(--diff-medium);border:1px solid rgba(240,160,48,.3);">MEDIUM</div>
+            </div>
+            <!-- Name overlay -->
+            <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+              <div class="ucard-name">Warbane</div>
+              <div class="ucard-meta">
+                <div class="class-tag" style="background:rgba(232,160,48,.15);color:var(--warrior);">WARRIOR</div>
+              </div>
+            </div>
+            <div class="ucard-glow" style="border-color:rgba(240,160,48,.35);position:absolute;inset:0;border-radius:0;"></div>
+          </div>
+          <div class="ucard-info">
+            <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">963</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-bottom:2px;">PVP RATING</div>
+            <div class="pills-row">
+              <div class="pill"><span class="pv" style="color:var(--success);">0%</span><span class="pl">Winrate</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="action-strip" style="border-radius:0;width:100%;">
+          <span class="as-label">⚔ FIGHT</span>
+          <span class="as-cost">5 STA</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-secondary);text-align:center;max-width:160px;line-height:1.5;">Тап по карте → профиль<br>Тап по strip → бой</div>
+    </div>
+
+    <!-- 3.2 BOSS -->
+    <div class="col">
+      <div class="col-label good">Boss (Current)</div>
+      <div class="ucard" style="box-shadow:0 4px 24px rgba(155,89,182,.3);">
+        <div class="ucard-portrait" style="background:linear-gradient(165deg,#1A0A1A,#2A1035);">
+          💀
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+          <div class="ucard-top" style="position:absolute;top:8px;left:8px;right:8px;z-index:2;">
+            <!-- No class badge for boss → state badge replaces it -->
+            <div class="ctx-badge" style="background:rgba(76,175,132,.15);color:var(--success);border:1px solid rgba(76,175,132,.3);">⚡ CURRENT</div>
+            <!-- Stage badge (REPLACES old plain circle) -->
+            <div style="display:flex;flex-direction:column;align-items:center;background:rgba(13,13,26,.75);border:1px solid rgba(255,255,255,.15);border-radius:7px;padding:3px 8px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);line-height:1;">1</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:7px;letter-spacing:0.5px;color:var(--text-secondary);text-transform:uppercase;line-height:1;margin-top:1px;">STAGE</span>
+            </div>
+          </div>
+          <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+            <div class="ucard-name" style="text-transform:uppercase;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;font-weight:700;">STRAW DUMMY</div>
+          </div>
+          <div class="ucard-glow" style="border-color:rgba(155,89,182,.5);position:absolute;inset:0;border-radius:0;"></div>
+        </div>
+        <div class="ucard-info">
+          <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--danger);line-height:1;">250</div>
+          <div style="font-size:9px;color:var(--text-secondary);margin-bottom:2px;">HP</div>
+          <div class="pills-row">
+            <div class="pill"><span class="pv" style="color:var(--gold);">2</span><span class="pl">Drops</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.3 BOSS LOCKED -->
+    <div class="col">
+      <div class="col-label neu">Boss (Locked)</div>
+      <div class="ucard ucard-locked" style="position:relative;">
+        <div class="ucard-portrait" style="background:linear-gradient(165deg,#111118,#1A1A28);">
+          🤖
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+          <div class="ucard-top" style="position:absolute;top:8px;left:8px;right:8px;z-index:2;">
+            <div class="ctx-badge" style="background:rgba(68,68,85,.2);color:var(--locked);border:1px solid rgba(68,68,85,.4);">🔒 LOCKED</div>
+            <div style="display:flex;flex-direction:column;align-items:center;background:rgba(13,13,26,.6);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:3px 8px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-secondary);line-height:1;">2</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:7px;letter-spacing:0.5px;color:var(--text-disabled);text-transform:uppercase;line-height:1;margin-top:1px;">STAGE</span>
+            </div>
+          </div>
+          <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+            <div class="ucard-name" style="text-transform:uppercase;font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:1px;font-weight:700;color:var(--text-secondary);">RUSTY GOLEM</div>
+          </div>
+          <div class="ucard-glow" style="border-color:rgba(68,68,85,.3);position:absolute;inset:0;border-radius:0;"></div>
+        </div>
+        <div class="ucard-info" style="opacity:.6;">
+          <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-disabled);line-height:1;">320</div>
+          <div style="font-size:9px;color:var(--text-disabled);margin-bottom:2px;">HP</div>
+          <div class="pills-row">
+            <div class="pill" style="opacity:.5;"><span class="pv" style="color:var(--text-disabled);">2</span><span class="pl">Drops</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.4 OWN HERO - healthy -->
+    <div class="col">
+      <div class="col-label good">Own Hero (Healthy)</div>
+      <div class="ucard" style="box-shadow:0 4px 24px rgba(122,92,214,.2);">
+        <div class="ucard-portrait" style="background:linear-gradient(165deg,#180A28,#2A1A40);">
+          🧙
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+          <div class="ucard-top" style="position:absolute;top:8px;left:8px;right:8px;z-index:2;">
+            <div class="lvl-badge" style="background:var(--mage);box-shadow:0 0 10px rgba(122,92,214,.4);">
+              <span class="ln">17</span><span class="ll">LVL</span>
+            </div>
+            <!-- Selected = gold ring, no badge in top-right -->
+          </div>
+          <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+            <div class="ucard-name">Degon</div>
+            <div class="ucard-meta">
+              <div class="class-tag" style="background:rgba(122,92,214,.15);color:var(--mage);">MAGE</div>
+            </div>
+          </div>
+          <div class="ucard-glow" style="border-color:rgba(122,92,214,.4);position:absolute;inset:0;border-radius:0;"></div>
+        </div>
+        <div class="ucard-info">
+          <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">1,720</div>
+          <div style="font-size:9px;color:var(--text-secondary);margin-bottom:4px;">PVP RATING</div>
+          <div class="bar-wrap">
+            <div class="bar-row-labels"><span style="color:var(--danger);">HP</span><span>1,500/1,720</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:87%;background:linear-gradient(to right,var(--danger),#FF6B6B);"></div></div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-row-labels"><span style="color:var(--stamina);">STA</span><span>90/120</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(to right,var(--stamina),#FFB060);"></div></div>
+          </div>
+        </div>
+        <div class="selected-ring"></div>
+      </div>
+      <div style="font-size:11px;color:var(--gold);text-align:center;">Выбранный герой</div>
+    </div>
+
+    <!-- 3.5 OWN HERO - injured -->
+    <div class="col">
+      <div class="col-label bad">Own Hero (Injured ❤️)</div>
+      <div class="ucard" style="box-shadow:0 4px 24px rgba(230,57,70,.25);">
+        <div class="ucard-portrait" style="background:linear-gradient(165deg,#180A28,#2A1A40);">
+          🧙
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+          <!-- Danger pulse overlay -->
+          <div style="position:absolute;inset:0;background:rgba(230,57,70,.08);border-radius:0;pointer-events:none;"></div>
+          <div class="ucard-top" style="position:absolute;top:8px;left:8px;right:8px;z-index:2;">
+            <div class="lvl-badge" style="background:var(--mage);">
+              <span class="ln">17</span><span class="ll">LVL</span>
+            </div>
+            <!-- Injured badge -->
+            <div class="ctx-badge" style="background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.35);">❤️ LOW HP</div>
+          </div>
+          <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+            <div class="ucard-name">Degon</div>
+            <div class="ucard-meta">
+              <div class="class-tag" style="background:rgba(122,92,214,.15);color:var(--mage);">MAGE</div>
+            </div>
+          </div>
+          <!-- Danger glow border -->
+          <div class="ucard-glow" style="border-color:rgba(230,57,70,.5);box-shadow:inset 0 0 16px rgba(230,57,70,.15);position:absolute;inset:0;border-radius:0;"></div>
+        </div>
+        <div class="ucard-info">
+          <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">1,720</div>
+          <div style="font-size:9px;color:var(--text-secondary);margin-bottom:4px;">PVP RATING</div>
+          <div class="bar-wrap">
+            <div class="bar-row-labels"><span style="color:var(--danger);">HP</span><span style="color:var(--danger);">120/1,720 ⚠</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:7%;background:var(--danger);"></div></div>
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-row-labels"><span style="color:var(--stamina);">STA</span><span>90/120</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(to right,var(--stamina),#FFB060);"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.6 History WIN card -->
+    <div class="col">
+      <div class="col-label good">History (WIN)</div>
+      <div class="ucard-with-action" style="border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(76,175,132,.2);">
+        <div class="win-streak" style="background:var(--success);height:3px;width:100%;border-radius:0;"></div>
+        <div class="ucard" style="border-radius:0;">
+          <div class="ucard-portrait" style="background:linear-gradient(165deg,#0A1A10,#1A3020);">
+            🐗
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+            <div class="ucard-top" style="position:absolute;top:8px;left:8px;right:8px;z-index:2;">
+              <div class="lvl-badge" style="background:var(--rogue);box-shadow:0 0 10px rgba(96,192,112,.4);">
+                <span class="ln">12</span><span class="ll">LVL</span>
+              </div>
+              <div class="ctx-badge" style="background:rgba(76,175,132,.15);color:var(--success);border:1px solid rgba(76,175,132,.35);">✓ WIN</div>
+            </div>
+            <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+              <div class="ucard-name">Nightfang</div>
+              <div class="ucard-meta">
+                <div class="class-tag" style="background:rgba(96,192,112,.15);color:var(--rogue);">ROGUE</div>
+              </div>
+            </div>
+            <div class="ucard-glow" style="border-color:rgba(76,175,132,.3);position:absolute;inset:0;border-radius:0;"></div>
+          </div>
+          <div class="ucard-info">
+            <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">1,050</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-bottom:2px;">PVP RATING</div>
+            <div class="pills-row">
+              <div class="pill"><span class="pv" style="color:var(--success);">58%</span><span class="pl">WR</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="action-strip" style="border-radius:0;width:100%;">
+          <span class="as-label">⚔ REVENGE</span>
+          <span class="as-cost">5 STA</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3.7 History LOSS card -->
+    <div class="col">
+      <div class="col-label bad">History (LOSS)</div>
+      <div class="ucard-with-action" style="border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(230,57,70,.15);">
+        <div class="win-streak" style="background:var(--danger);height:3px;width:100%;border-radius:0;"></div>
+        <div class="ucard" style="border-radius:0;">
+          <div class="ucard-portrait" style="background:linear-gradient(165deg,#1A0A0D,#301A20);">
+            👹
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(13,13,26,.4) 65%,rgba(13,13,26,.95) 100%);pointer-events:none;"></div>
+            <div class="ucard-top" style="position:absolute;top:8px;left:8px;right:8px;z-index:2;">
+              <div class="lvl-badge" style="background:var(--warrior);">
+                <span class="ln">19</span><span class="ll">LVL</span>
+              </div>
+              <div class="ctx-badge" style="background:rgba(230,57,70,.12);color:var(--danger);border:1px solid rgba(230,57,70,.3);">✗ LOSS</div>
+            </div>
+            <div class="ucard-overlay-bottom" style="position:absolute;bottom:0;left:0;right:0;padding:6px 10px 8px;z-index:2;">
+              <div class="ucard-name">Bloodfist</div>
+              <div class="ucard-meta">
+                <div class="class-tag" style="background:rgba(232,160,48,.15);color:var(--warrior);">WARRIOR</div>
+              </div>
+            </div>
+            <div class="ucard-glow" style="border-color:rgba(230,57,70,.25);position:absolute;inset:0;border-radius:0;"></div>
+          </div>
+          <div class="ucard-info">
+            <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">1,840</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-bottom:2px;">PVP RATING</div>
+            <div class="pills-row">
+              <div class="pill"><span class="pv" style="color:var(--danger);">71%</span><span class="pl">WR</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="action-strip" style="border-radius:0;width:100%;">
+          <span class="as-label">⚔ REVENGE</span>
+          <span class="as-cost">5 STA</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     04 — PHONE GRID DEMO
+════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">04 — <span>2-колоночный Grid (iPhone 375pt)</span></div>
+
+  <div class="box box-gold" style="margin-bottom:24px;">
+    <h4>Почему grid, а не список</h4>
+    <p>Карточки — это <em>визуальные объекты</em> (портрет персонажа). Ценность приходит от арта, не от текста. 2-колоночный grid на 375pt даёт карточки ~165pt шириной — достаточно для читаемого арта. Это то, как работают Clash Royale, AFK Arena, Mobile Legends — все card-based мобильные игры. Horizontal scroll carousel → grid upgrade.</p>
+  </div>
+
+  <div class="row" style="gap:40px;align-items:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:16px;">
+
+    <!-- Phone 1: Arena Opponents -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="col-label good">Arena → Opponents</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <h2>Arena</h2>
+            <div class="phone-tab active">Opponents</div>
+          </div>
+          <div class="cards-grid-2col">
+            <!-- Card 1 -->
+            <div style="display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 3px 12px rgba(240,160,48,.15);">
+              <div style="position:relative;aspect-ratio:1/1.1;background:linear-gradient(165deg,#2A1A0D,#4A2810);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:50px;">
+                🧙‍♂️
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,26,.95) 100%);"></div>
+                <div style="position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;align-items:flex-start;z-index:2;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--warrior);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-on-gold);line-height:1;">7</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+                  </div>
+                  <div style="background:rgba(240,160,48,.15);color:var(--diff-medium);border:1px solid rgba(240,160,48,.3);font-family:'Oswald',sans-serif;font-size:9px;padding:2px 5px;border-radius:3px;">MED</div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:5px 8px 6px;z-index:2;">
+                  <div style="font-size:11px;color:var(--text-primary);font-weight:500;text-shadow:0 1px 4px rgba(13,13,26,.9);">Warbane</div>
+                  <div style="font-family:'Oswald',sans-serif;font-size:9px;background:rgba(232,160,48,.15);color:var(--warrior);padding:1px 4px;border-radius:2px;display:inline-block;margin-top:1px;">WAR</div>
+                </div>
+                <div style="position:absolute;inset:0;border:1.5px solid rgba(240,160,48,.3);border-radius:0;pointer-events:none;"></div>
+              </div>
+              <div style="background:var(--bg-panel);padding:6px 8px 0;">
+                <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);">963</div>
+                <div style="font-size:8px;color:var(--text-secondary);margin-bottom:4px;">RATING</div>
+                <div style="display:flex;gap:3px;margin-bottom:0;">
+                  <div style="background:rgba(13,13,26,.65);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;align-items:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:10px;color:var(--success);">42%</span>
+                    <span style="font-size:7px;color:var(--text-secondary);">WR</span>
+                  </div>
+                </div>
+              </div>
+              <div style="background:linear-gradient(135deg,#D4A537,#B8861C);padding:6px 8px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text-on-gold);">⚔ FIGHT</span>
+                <span style="font-family:'Oswald',sans-serif;font-size:9px;color:rgba(26,26,46,.7);background:rgba(26,26,46,.15);padding:1px 5px;border-radius:2px;">5 STA</span>
+              </div>
+            </div>
+            <!-- Card 2 -->
+            <div style="display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 3px 12px rgba(76,175,132,.15);">
+              <div style="position:relative;aspect-ratio:1/1.1;background:linear-gradient(165deg,#0A1A10,#1A3020);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:50px;">
+                🐗
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,26,.95) 100%);"></div>
+                <div style="position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;align-items:flex-start;z-index:2;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--rogue);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-on-gold);line-height:1;">5</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+                  </div>
+                  <div style="background:rgba(76,175,132,.15);color:var(--diff-easy);border:1px solid rgba(76,175,132,.3);font-family:'Oswald',sans-serif;font-size:9px;padding:2px 5px;border-radius:3px;">EASY</div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:5px 8px 6px;z-index:2;">
+                  <div style="font-size:11px;color:var(--text-primary);font-weight:500;text-shadow:0 1px 4px rgba(13,13,26,.9);">Nightfang</div>
+                  <div style="font-family:'Oswald',sans-serif;font-size:9px;background:rgba(96,192,112,.15);color:var(--rogue);padding:1px 4px;border-radius:2px;display:inline-block;margin-top:1px;">ROG</div>
+                </div>
+                <div style="position:absolute;inset:0;border:1.5px solid rgba(76,175,132,.3);border-radius:0;pointer-events:none;"></div>
+              </div>
+              <div style="background:var(--bg-panel);padding:6px 8px 0;">
+                <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);">820</div>
+                <div style="font-size:8px;color:var(--text-secondary);margin-bottom:4px;">RATING</div>
+                <div style="display:flex;gap:3px;">
+                  <div style="background:rgba(13,13,26,.65);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:2px 5px;display:flex;flex-direction:column;align-items:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:10px;color:var(--success);">55%</span>
+                    <span style="font-size:7px;color:var(--text-secondary);">WR</span>
+                  </div>
+                </div>
+              </div>
+              <div style="background:linear-gradient(135deg,#D4A537,#B8861C);padding:6px 8px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--text-on-gold);">⚔ FIGHT</span>
+                <span style="font-family:'Oswald',sans-serif;font-size:9px;color:rgba(26,26,46,.7);background:rgba(26,26,46,.15);padding:1px 5px;border-radius:2px;">FREE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone 2: Hero Selection -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="col-label good">Hero Selection</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <h2>My Heroes</h2>
+          </div>
+          <div class="cards-grid-2col">
+            <!-- Hero 1: selected -->
+            <div style="position:relative;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 0 0 2px var(--gold),0 4px 16px rgba(212,165,55,.3);">
+              <div style="position:relative;aspect-ratio:1/1.1;background:linear-gradient(165deg,#180A28,#2A1A40);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:50px;">
+                🧙
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,26,.95) 100%);"></div>
+                <div style="position:absolute;top:6px;left:6px;right:6px;display:flex;z-index:2;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--mage);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-on-gold);line-height:1;">17</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+                  </div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:5px 8px 6px;z-index:2;">
+                  <div style="font-size:11px;color:var(--text-primary);font-weight:500;">Degon</div>
+                  <div style="font-family:'Oswald',sans-serif;font-size:9px;background:rgba(122,92,214,.15);color:var(--mage);padding:1px 4px;border-radius:2px;display:inline-block;margin-top:1px;">MAGE</div>
+                </div>
+              </div>
+              <div style="background:var(--bg-panel);padding:6px 8px;">
+                <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:3px;">1,720</div>
+                <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:2px;">
+                  <div style="height:100%;width:87%;background:linear-gradient(to right,var(--danger),#FF6B6B);"></div>
+                </div>
+                <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">
+                  <div style="height:100%;width:75%;background:linear-gradient(to right,var(--stamina),#FFB060);"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Hero 2: injured -->
+            <div style="display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1.5px rgba(230,57,70,.5),0 4px 12px rgba(230,57,70,.2);">
+              <div style="position:relative;aspect-ratio:1/1.1;background:linear-gradient(165deg,#180A28,#2A1A40);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:50px;">
+                🧝
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,26,.95) 100%);"></div>
+                <div style="position:absolute;inset:0;background:rgba(230,57,70,.07);"></div>
+                <div style="position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;align-items:flex-start;z-index:2;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--tank);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-on-gold);line-height:1;">9</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+                  </div>
+                  <div style="background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.3);font-family:'Oswald',sans-serif;font-size:8px;padding:2px 4px;border-radius:3px;">❤️ LOW</div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:5px 8px 6px;z-index:2;">
+                  <div style="font-size:11px;color:var(--text-primary);font-weight:500;">Ironwall</div>
+                  <div style="font-family:'Oswald',sans-serif;font-size:9px;background:rgba(74,159,212,.15);color:var(--tank);padding:1px 4px;border-radius:2px;display:inline-block;margin-top:1px;">TANK</div>
+                </div>
+              </div>
+              <div style="background:var(--bg-panel);padding:6px 8px;">
+                <div style="font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:3px;">890</div>
+                <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:2px;">
+                  <div style="height:100%;width:6%;background:var(--danger);"></div>
+                </div>
+                <div style="height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;">
+                  <div style="height:100%;width:100%;background:linear-gradient(to right,var(--stamina),#FFB060);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone 3: History grid -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="col-label neu">Arena → History</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-header" style="flex-direction:column;align-items:flex-start;gap:8px;">
+            <h2>Arena</h2>
+            <div class="phone-tab-row" style="display:flex;gap:6px;">
+              <div class="phone-tab" style="font-size:10px;padding:3px 8px;">Opponents</div>
+              <div class="phone-tab active" style="font-size:10px;padding:3px 8px;">Revenge</div>
+              <div class="phone-tab" style="font-size:10px;padding:3px 8px;">History</div>
+            </div>
+          </div>
+          <div class="cards-grid-2col">
+            <!-- WIN card -->
+            <div style="display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(76,175,132,.15);">
+              <div style="height:2px;background:var(--success);"></div>
+              <div style="position:relative;aspect-ratio:1/1.1;background:linear-gradient(165deg,#0A1A10,#1A3020);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:50px;">
+                🐗
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,26,.95) 100%);"></div>
+                <div style="position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;z-index:2;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--rogue);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-on-gold);line-height:1;">12</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+                  </div>
+                  <div style="background:rgba(76,175,132,.15);color:var(--success);border:1px solid rgba(76,175,132,.3);font-family:'Oswald',sans-serif;font-size:9px;padding:2px 5px;border-radius:3px;">✓ WIN</div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:5px 8px 6px;z-index:2;">
+                  <div style="font-size:11px;color:var(--text-primary);font-weight:500;">Nightfang</div>
+                </div>
+              </div>
+              <div style="background:var(--bg-panel);padding:5px 8px 0;font-family:'Oswald',sans-serif;font-size:13px;color:var(--text-primary);">1,050</div>
+              <div style="background:linear-gradient(135deg,#D4A537,#B8861C);padding:5px 8px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-on-gold);">⚔ REVENGE</span>
+              </div>
+            </div>
+            <!-- LOSS card -->
+            <div style="display:flex;flex-direction:column;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(230,57,70,.1);">
+              <div style="height:2px;background:var(--danger);"></div>
+              <div style="position:relative;aspect-ratio:1/1.1;background:linear-gradient(165deg,#1A0A0D,#301A20);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:50px;">
+                👹
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(13,13,26,.95) 100%);"></div>
+                <div style="position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;z-index:2;">
+                  <div style="width:32px;height:32px;border-radius:50%;background:var(--warrior);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-on-gold);line-height:1;">19</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:rgba(26,26,46,.7);text-transform:uppercase;line-height:1;">LVL</span>
+                  </div>
+                  <div style="background:rgba(230,57,70,.12);color:var(--danger);border:1px solid rgba(230,57,70,.3);font-family:'Oswald',sans-serif;font-size:9px;padding:2px 5px;border-radius:3px;">✗ LOSS</div>
+                </div>
+                <div style="position:absolute;bottom:0;left:0;right:0;padding:5px 8px 6px;z-index:2;">
+                  <div style="font-size:11px;color:var(--text-primary);font-weight:500;">Bloodfist</div>
+                </div>
+              </div>
+              <div style="background:var(--bg-panel);padding:5px 8px 0;font-family:'Oswald',sans-serif;font-size:13px;color:var(--text-primary);">1,840</div>
+              <div style="background:linear-gradient(135deg,#D4A537,#B8861C);padding:5px 8px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--text-on-gold);">⚔ REVENGE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     05 — IMPLEMENTATION CHECKLIST
+════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">05 — <span>Что менять в коде (по приоритету)</span></div>
+
+  <table class="ps-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Компонент / файл</th><th>Изменение</th><th>Приоритет</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>CardLevelBadge.swift</td>
+        <td>Заменить <code>Text("\(level)")</code> на VStack { number + "LVL" label }. Font для LVL: .badge (9px). Color: textOnGold.opacity(0.65).</td>
+        <td><span class="tag tag-bad">CRITICAL</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>DungeonBossCard.swift</td>
+        <td>Заменить <code>bossNumberBadge</code> (Circle + число) на StageBadge (RoundedRectangle + число + "STAGE" текст). Убрать Best pill если нет рекорда.</td>
+        <td><span class="tag tag-bad">CRITICAL</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>ArenaOpponentCard.swift</td>
+        <td>Убрать GlassStatPill(Attack) и GlassStatPill(Defense). Оставить только GlassStatPill(WinRate).</td>
+        <td><span class="tag tag-warn">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>OpponentCardView.swift (список)</td>
+        <td>Удалить как компонент. Заменить на единый вертикальный CharacterCard в grid layout. Или: переделать под portrait card + action strip.</td>
+        <td><span class="tag tag-warn">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>ArenaDetailView.swift (Revenge/History tabs)</td>
+        <td>Заменить горизонтальный список OpponentCardView → 2-col LazyVGrid из ArenaOpponentCard с Action Strip. Добавить WIN/LOSS badge через CardContext.</td>
+        <td><span class="tag tag-warn">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>HeroSelectionCard / CharacterSelectionView</td>
+        <td>Унифицировать под те же portrait card правила: LVL badge, HP+STA bars, Rating. Добавить injured state (LOW HP badge + red glow).</td>
+        <td><span class="tag tag-info">MEDIUM</span></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>CardStyles.swift (новый компонент)</td>
+        <td>Создать <code>CharacterCardActionStrip</code> — reusable gold strip с label + cost. Использовать в arena + history.</td>
+        <td><span class="tag tag-info">MEDIUM</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box box-gold">
+    <h4>Единая структура данных для CharacterCard</h4>
+    <p>
+      Предлагаю добавить <code>enum CharacterCardContext</code> в CardLevelBadge.swift (или новый CardContext.swift):<br><br>
+      <code>arena(difficulty: OpponentDifficulty)</code> — right badge = difficulty, primary = rating, secondary = WR%<br>
+      <code>dungeonBoss(state: BossState, stage: Int)</code> — right badge = stage, primary = HP, secondary = drops<br>
+      <code>heroManagement(isSelected: Bool)</code> — right badge = nil, primary = rating, secondary = HP+STA bars<br>
+      <code>battleHistory(result: BattleResult)</code> — right badge = WIN/LOSS, primary = rating, secondary = WR%<br><br>
+      Один компонент, четыре контекста.
+    </p>
+  </div>
+</div>
+
+<div style="text-align:center;padding:32px 0;color:var(--text-disabled);font-size:11px;letter-spacing:1px;font-family:'Oswald',sans-serif;">
+  HEXBOUND — CARD SYSTEM AUDIT v2 — FLOW AGENT — 2026-04-10
+</div>
+
+</body>
+</html>

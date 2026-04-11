@@ -288,13 +288,26 @@ struct HeroDetailView: View {
                     switch selectedTab {
                     case .equipment:
                         // Hero card only on Inventory tab
-                        HeroIntegratedCard(
-                            character: char,
+                        IntegratedCharacterCard(
+                            display: char,
                             equippedItems: equippedItems,
                             onTapPortrait: { appState.mainPath.append(AppRoute.appearanceEditor) },
                             onTapSlot: { item in inventoryVM?.selectItem(item) },
-                            onUseHealthPotion: { let _ = Task { await useHealthPotion() } },
-                            onRefillStamina: { appState.mainPath.append(AppRoute.shop) }
+                            portraitInfo: {
+                                CharacterPortraitXPInfo(
+                                    experience: char.experience ?? 0,
+                                    xpNeeded: char.xpNeeded,
+                                    xpPercentage: char.xpPercentage
+                                )
+                            },
+                            footer: {
+                                HPBarView(
+                                    currentHp: char.currentHp,
+                                    maxHp: char.maxHp,
+                                    size: .large,
+                                    label: "HP"
+                                )
+                            }
                         )
 
                         // ── Repair Equipment widget ──

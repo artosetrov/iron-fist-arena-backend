@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Auth Flow Redesign Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a12;
+    --panel: #111120;
+    --panel-2: #1a1f35;
+    --gold: #D4A537;
+    --gold-dim: #a07d1f;
+    --gold-bright: #EBC14D;
+    --text: #F5F5F5;
+    --text-2: #A0A0B0;
+    --text-3: #555566;
+    --border: #2a2a40;
+    --danger: #E63946;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #060609; color: var(--text); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+  body { padding: 32px 24px 64px; }
+
+  .header { max-width: 1400px; margin: 0 auto 24px; }
+  .header h1 { font-family: 'Oswald', sans-serif; font-size: 28px; letter-spacing: 1px; color: var(--gold); }
+  .header p { color: var(--text-2); margin-top: 8px; font-size: 14px; max-width: 800px; line-height: 1.6; }
+
+  .tabs { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+  .tabs button {
+    background: var(--panel); color: var(--text-2); border: 1px solid var(--border);
+    padding: 12px 18px; border-radius: 6px; cursor: pointer; font-family: 'Oswald', sans-serif;
+    font-size: 13px; letter-spacing: 1px; text-transform: uppercase; transition: all 0.2s;
+  }
+  .tabs button:hover { color: var(--text); border-color: var(--gold-dim); }
+  .tabs button.active {
+    background: var(--gold); color: #1A1A2E; border-color: var(--gold-bright);
+    box-shadow: 0 0 20px rgba(212, 165, 55, 0.3);
+  }
+
+  .stage { max-width: 1400px; margin: 0 auto; display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+
+  .phone {
+    width: 340px; min-height: 700px; background: var(--bg); border-radius: 40px;
+    border: 8px solid #1a1a25; padding: 20px 16px 24px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+  }
+  .phone::before {
+    content: ''; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 24px; background: #000; border-radius: 12px;
+  }
+  .phone-label {
+    position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+    font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 2px;
+    color: var(--text-2); text-transform: uppercase; white-space: nowrap;
+  }
+  .status-bar { height: 32px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text); padding: 0 16px; margin-bottom: 8px; }
+
+  .back-btn {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--panel);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    color: var(--text); font-size: 16px; border: 1px solid var(--border);
+  }
+
+  .screen-content { flex: 1; display: flex; flex-direction: column; padding: 8px 8px 0; }
+
+  .logo-box {
+    text-align: center; margin: 16px 0 24px;
+  }
+  .logo-hex {
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 32px;
+    color: var(--gold); letter-spacing: 2px; text-shadow: 0 2px 8px rgba(212,165,55,0.3);
+  }
+  .logo-sub { font-family: 'Oswald', sans-serif; font-size: 11px; color: var(--gold-dim); letter-spacing: 3px; margin-top: 4px; }
+  .title {
+    font-family: 'Oswald', sans-serif; font-size: 22px; color: var(--gold); text-align: center;
+    letter-spacing: 1.5px; margin-bottom: 4px;
+  }
+  .subtitle { text-align: center; color: var(--text-2); font-size: 12px; margin-bottom: 20px; }
+
+  .input {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; color: var(--text-2); font-size: 13px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .input .icon { color: var(--gold-dim); font-size: 14px; }
+
+  .btn {
+    padding: 13px 16px; border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 14px;
+    letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; text-align: center;
+    border: none; margin-bottom: 10px; transition: all 0.15s; font-weight: 500;
+    position: relative;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, #EBC14D 0%, #D4A537 50%, #a07d1f 100%);
+    color: #1A1A2E; font-weight: 700; border: 1px solid var(--gold-bright);
+    box-shadow: 0 0 20px rgba(212, 165, 55, 0.25);
+  }
+  .btn-primary::before, .btn-primary::after {
+    content: '◆'; position: absolute; top: 50%; transform: translateY(-50%);
+    color: var(--gold-bright); font-size: 10px;
+  }
+  .btn-primary::before { left: 6px; }
+  .btn-primary::after { right: 6px; }
+  .btn-outline {
+    background: transparent; color: var(--text); border: 1px solid var(--border);
+  }
+  .btn-outline-gold {
+    background: transparent; color: var(--gold); border: 1px solid var(--gold-dim);
+  }
+  .btn-social {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+    text-transform: none; letter-spacing: 0;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:hover { filter: brightness(1.1); }
+
+  .divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .divider span { color: var(--text-2); font-size: 10px; letter-spacing: 2px; }
+
+  .social-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .social-row .btn { margin-bottom: 0; }
+
+  .footer-link {
+    text-align: center; color: var(--text-2); font-size: 11px; margin-top: 12px;
+    letter-spacing: 1px; cursor: pointer;
+  }
+  .footer-link strong { color: var(--gold); }
+  .footer-link.dim { color: var(--text-3); }
+
+  .tab-toggle {
+    display: flex; background: var(--panel); border-radius: 6px; padding: 3px;
+    margin-bottom: 18px; border: 1px solid var(--border);
+  }
+  .tab-toggle button {
+    flex: 1; padding: 9px; background: transparent; border: none; color: var(--text-2);
+    font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; border-radius: 4px;
+  }
+  .tab-toggle button.active { background: var(--gold); color: #1A1A2E; font-weight: 700; }
+
+  .hint {
+    color: var(--text-3); font-size: 10px; text-align: center; margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  .variant { display: none; width: 100%; }
+  .variant.active { display: block; }
+  .variant-notes {
+    max-width: 1400px; margin: 32px auto 0; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px;
+  }
+  .variant-notes h3 {
+    font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 16px;
+    letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase;
+  }
+  .variant-notes ul { list-style: none; }
+  .variant-notes li { padding: 6px 0; color: var(--text-2); font-size: 13px; line-height: 1.5; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .variant-notes li::before { content: '→ '; color: var(--gold); }
+  .variant-notes .good { color: #8dd98d; }
+  .variant-notes .bad { color: #e88; }
+
+  .stage-row { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; padding-top: 32px; }
+  .screen-group { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .screen-group .hint-below { color: var(--text-3); font-size: 11px; max-width: 340px; text-align: center; line-height: 1.4; margin-top: 8px; }
+
+  .cta-count {
+    display: inline-block; background: var(--gold); color: #1A1A2E; padding: 2px 8px;
+    border-radius: 10px; font-size: 11px; font-weight: 700; margin-left: 8px;
+  }
+  .cta-count.bad { background: var(--danger); color: white; }
+
+  .screen { display: none; width: 100%; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .dim { opacity: 0.5; filter: grayscale(0.3); }
+
+  .arrow-flow { color: var(--gold); font-size: 24px; align-self: center; }
+
+  .guest-link {
+    text-align: center; color: var(--text-3); font-size: 11px; margin-top: auto;
+    padding-top: 16px; text-decoration: underline; cursor: pointer;
+  }
+
+  .bg-dungeon {
+    background: radial-gradient(ellipse at center top, #2a1a35 0%, var(--bg) 70%);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>HEXBOUND — AUTH FLOW REDESIGN</h1>
+  <p><strong style="color:var(--gold)">Решение:</strong> Guest-first — моментальный вход в игру это приоритет. Пользователь видит PLAY первым же экраном, одним тапом попадает в игру. Аккаунт/соц-логин — доступны, но вторичны.</p>
+  <p style="margin-top:6px;">Сравнение текущего флоу (3 экрана, 14 CTA с дубликатами) и финального направления (2 экрана, 7 CTA, PLAY as hero). Переключай вкладки — CTA кликабельны, между экранами внутри варианта можно навигировать.</p>
+
+  <div class="tabs">
+    <button data-variant="current">Current — 3 Screens<span class="cta-count bad">14 CTA</span></button>
+    <button data-variant="a" class="active">Recommended — Guest-first<span class="cta-count">7 CTA</span></button>
+  </div>
+</div>
+
+<!-- ============ CURRENT ============ -->
+<div class="variant" data-variant="current">
+  <div class="stage-row">
+
+    <div class="screen-group">
+      <div class="phone bg-dungeon">
+        <span class="phone-label">WELCOME</span>
+        <div class="status-bar"><span>5:16</span><span>📶 🔋</span></div>
+        <div class="back-btn" style="position:absolute; top:56px; left:20px;">←</div>
+        <div class="screen-content" style="padding-top: 32px;">
+          <div class="logo-box">
+            <div class="logo-hex">HEXBOUND</div>
+            <div class="logo-sub">FORGE YOUR FATE</div>
+          </div>
+          <div class="btn btn-primary">PLAY AS GUEST</div>
+          <div class="btn btn-outline-gold">LOG IN</div>
+          <div class="divider"><span>OR</span></div>
+          <div class="social-row">
+            <div class="btn btn-social">🍎 Apple</div>
+            <div class="btn btn-social">G Google</div>
+          </div>
+          <div class="btn btn-outline" style="margin-top: 12px;">CREATE ACCOUNT</div>
+          <div class="hint">Guest progress may be lost. Link your account later i…</div>
+        </div>
+      </div>
+      <div class="hint-below">← Stray back button. 5 CTAs of equal weight. "Create Account" duplicates social auth.</div>
+    </div>
+
+    <div class="screen-group">
+      <div class="phone">
+        <span class="phone-label">LOGIN</span>
+        <div class="status-bar"><span>5:16</span><span>📶 🔋</span></div>
+        <div class="back-btn" style="position:absolute; top:56px; left:20px;">←</div>
+        <div class="screen-content" style="padding-top: 32px;">
+          <div class="logo-box">
+            <div class="logo-hex" style="font-size: 26px;">HEXBOUND</div>
+            <div class="logo-sub">FORGE YOUR FATE</div>
+          </div>
+          <div class="input"><span class="icon">✉</span> Email</div>
+          <div class="input"><span class="icon">🔒</span> Password</div>
+          <div class="btn btn-primary">LOG IN</div>
+          <div class="divider"><span>CONNECT WITH</span></div>
+          <div class="social-row">
+            <div class="btn btn-social">🍎 Apple</div>
+            <div class="btn btn-social">G Google</div>
+          </div>
+          <div class="footer-link" style="margin-top: auto; padding-top: 20px;">FORGOT PASSWORD? · SIGN UP</div>
+        </div>
+      </div>
+      <div class="hint-below">"Connect with" wording wrong — implies linking existing account. Apple/Google duplicated.</div>
+    </div>
+
+    <div class="screen-group">
+      <div class="phone">
+        <span class="phone-label">CREATE ACCOUNT</span>
+        <div class="status-bar"><span>5:16</span><span>📶 🔋</span></div>
+        <div class="back-btn" style="position:absolute; top:56px; left:20px;">←</div>
+        <div class="screen-content" style="padding-top: 48px;">
+          <div class="title">CREATE ACCOUNT</div>
+          <div class="subtitle">Join the Arena</div>
+          <div class="input"><span class="icon">✉</span> Email</div>
+          <div class="input"><span class="icon">🔒</span> Password (6+ chars)</div>
+          <div class="input"><span class="icon">🔒</span> Confirm Password</div>
+          <div class="btn btn-primary" style="margin-top: 4px;">CREATE ACCOUNT</div>
+          <div class="divider"><span>OR</span></div>
+          <div class="social-row">
+            <div class="btn btn-social">🍎 Apple</div>
+            <div class="btn btn-social">G Google</div>
+          </div>
+          <div class="btn btn-outline" style="margin-top: 14px; font-size: 12px;">ALREADY HAVE AN ACCOUNT? LOG IN</div>
+        </div>
+      </div>
+      <div class="hint-below">Social buttons AFTER form = wasted form fill. Third occurrence of Apple/Google.</div>
+    </div>
+
+  </div>
+
+  <div class="variant-notes">
+    <h3>Issues with Current Flow</h3>
+    <ul>
+      <li><span class="bad">5 equal CTAs on Welcome</span> — paradox of choice. Eye doesn't know where to start.</li>
+      <li><span class="bad">Apple/Google repeated 3 times</span> across screens. Redundant and dilutes the value of reaching Login/Signup.</li>
+      <li><span class="bad">Back arrow on Welcome</span> — where does it go? Welcome is the root.</li>
+      <li><span class="bad">"Connect with"</span> on Login is semantically wrong for authentication.</li>
+      <li><span class="bad">Social buttons AFTER form</span> on Create Account — confusing placement.</li>
+      <li><span class="bad">PLAY AS GUEST is #1 CTA</span> + dim warning below = contradiction. We push to the path we warn against.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ RECOMMENDED: Guest-first ============ -->
+<div class="variant active" data-variant="a">
+  <div class="stage-row">
+
+    <div class="screen-group">
+      <div class="phone bg-dungeon" id="phoneA">
+        <span class="phone-label">WELCOME (A)</span>
+        <div class="status-bar"><span>5:16</span><span>📶 🔋</span></div>
+
+        <div class="screen active" data-screen="welcome">
+          <div class="screen-content" style="padding-top: 40px;">
+            <div class="logo-box">
+              <div class="logo-hex">HEXBOUND</div>
+              <div class="logo-sub">FORGE YOUR FATE</div>
+            </div>
+            <div style="flex: 1;"></div>
+            <div class="btn btn-primary" onclick="alert('→ Home (guest session created in 1 tap)')" style="padding: 18px 16px; font-size: 16px; margin-bottom: 4px;">PLAY</div>
+            <div class="hint" style="margin-bottom: 16px; margin-top: 2px;">No account needed · start in 1 tap</div>
+            <div class="divider"><span>OR CONTINUE WITH</span></div>
+            <div class="social-row">
+              <div class="btn btn-social" onclick="alert('→ Native Apple Sign-in')">🍎 Apple</div>
+              <div class="btn btn-social" onclick="alert('→ Native Google Sign-in')">G Google</div>
+            </div>
+            <div class="footer-link" onclick="goto('A','auth','signup')" style="margin-top: 14px;">
+              Sign up with <strong>email</strong> →
+            </div>
+            <div class="footer-link" onclick="goto('A','auth','signin')" style="margin-top: 6px;">
+              Already have an account? <strong>Log in</strong>
+            </div>
+            <div class="hint" style="margin-top: 12px;">Guest progress links to any account later.</div>
+          </div>
+        </div>
+
+        <div class="screen" data-screen="auth">
+          <div class="back-btn" style="position:absolute; top:56px; left:20px;" onclick="goto('A','welcome')">←</div>
+          <div class="screen-content" style="padding-top: 48px;">
+            <div class="title" data-auth-title>SIGN UP</div>
+            <div class="subtitle" data-auth-sub>Join the arena</div>
+            <div class="tab-toggle">
+              <button class="active" data-mode="signin" onclick="setMode('A','signin')">Log in</button>
+              <button data-mode="signup" onclick="setMode('A','signup')">Sign up</button>
+            </div>
+            <div class="input"><span class="icon">✉</span> Email</div>
+            <div class="input"><span class="icon">🔒</span> Password</div>
+            <div class="input signup-only"><span class="icon">🔒</span> Confirm password</div>
+            <div class="btn btn-primary" onclick="alert('→ Home')" data-auth-cta>CONTINUE</div>
+            <div class="footer-link signin-only" style="margin-top: 10px;">Forgot password?</div>
+            <div style="flex:1"></div>
+            <div class="hint">By continuing you agree to Terms & Privacy.</div>
+          </div>
+        </div>
+      </div>
+      <div class="hint-below"><strong style="color:var(--gold)">Guest-first.</strong> Один жирный PLAY — один тап, и ты в игре. Социалки — вторичный ряд. Email и Log in — тонкие текстовые ссылки внизу. Кто хочет играть — играет за секунду.</div>
+    </div>
+
+    <div class="arrow-flow">→</div>
+
+    <div class="screen-group">
+      <div class="phone">
+        <span class="phone-label">AUTH — Sign Up mode</span>
+        <div class="status-bar"><span>5:16</span><span>📶 🔋</span></div>
+        <div class="back-btn" style="position:absolute; top:56px; left:20px;">←</div>
+        <div class="screen-content" style="padding-top: 48px;">
+          <div class="title">SIGN UP</div>
+          <div class="subtitle">Join the arena</div>
+          <div class="tab-toggle">
+            <button>Log in</button>
+            <button class="active">Sign up</button>
+          </div>
+          <div class="input"><span class="icon">✉</span> Email</div>
+          <div class="input"><span class="icon">🔒</span> Password (6+ chars)</div>
+          <div class="input"><span class="icon">🔒</span> Confirm password</div>
+          <div class="btn btn-primary">CONTINUE</div>
+          <div style="flex:1"></div>
+          <div class="hint">By continuing you agree to Terms & Privacy.</div>
+        </div>
+      </div>
+      <div class="hint-below">One screen, two modes. No social buttons here — already offered on Welcome.</div>
+    </div>
+  </div>
+
+  <div class="variant-notes">
+    <h3>Option A — Guest-first</h3>
+    <ul>
+      <li><span class="good">1 primary CTA</span> — Play as Guest. Zero-friction entry, perfect for curious users.</li>
+      <li><span class="good">Social auth once</span>, right below, as the "serious" path.</li>
+      <li><span class="good">Email auth as text link</span> — available but doesn't compete visually with Play and social.</li>
+      <li><span class="good">Unified Sign in / Sign up screen</span> with tab toggle — user can switch without going back.</li>
+      <li><span class="good">7 CTAs total</span> across 2 screens (vs 14 across 3).</li>
+      <li><strong>Trade-off:</strong> optimizes for first-session retention. Lower account creation rate day-1.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="variant-notes" style="margin-top: 32px;">
+  <h3>Before / After</h3>
+  <ul>
+    <li><strong>Current:</strong> 3 screens · 14 CTAs · Apple/Google × 3 · "Play as Guest" primary with warning below</li>
+    <li><strong>Recommended:</strong> 2 screens · 7 CTAs · Apple/Google × 1 · "PLAY AS GUEST" = the hero of the first screen</li>
+    <li><strong>Saved:</strong> 1 screen, 7 CTAs, 2 duplicate social-button pairs, 1 stray back arrow</li>
+    <li><strong>Kept:</strong> all three auth paths (guest / social / email) — just with a clear hierarchy</li>
+  </ul>
+</div>
+
+<script>
+  // Variant tabs
+  document.querySelectorAll('.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = btn.dataset.variant;
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+      document.querySelectorAll('.variant').forEach(el => el.classList.toggle('active', el.dataset.variant === v));
+    });
+  });
+
+  // Navigate screens inside a phone (variant A/B)
+  function goto(variant, screen, mode) {
+    const phone = document.getElementById('phone' + variant);
+    if (!phone) return;
+    phone.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.dataset.screen === screen));
+    if (mode) setMode(variant, mode);
+  }
+
+  function setMode(variant, mode) {
+    const phone = document.getElementById('phone' + variant);
+    if (!phone) return;
+    const title = phone.querySelector('[data-auth-title]');
+    const sub = phone.querySelector('[data-auth-sub]');
+    const cta = phone.querySelector('[data-auth-cta]');
+    phone.querySelectorAll('.tab-toggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    phone.querySelectorAll('.signup-only').forEach(el => el.style.display = mode === 'signup' ? '' : 'none');
+    phone.querySelectorAll('.signin-only').forEach(el => el.style.display = mode === 'signin' ? '' : 'none');
+    if (mode === 'signup') { title.textContent = 'SIGN UP'; sub.textContent = 'Join the arena'; cta.textContent = 'CREATE ACCOUNT'; }
+    else { title.textContent = 'LOG IN'; sub.textContent = 'Welcome back, warrior'; cta.textContent = 'CONTINUE'; }
+  }
+</script>
+
+</body>
+</html>

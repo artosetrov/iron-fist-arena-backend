@@ -2,12 +2,22 @@ import SwiftUI
 
 @MainActor @Observable
 final class AppState {
-    // MARK: - App Screen (3-state navigation)
+    // MARK: - App Screen (onboarding-reordered navigation)
+    //
+    // W2.D2 R1 — onboarding flow reorder (tutorial BEFORE cinematic):
+    //   characterSelect → cinematicOpen → scriptedTutorial → tutorialVictory → loreIntro → game
+    //
+    // Rationale: Epic Seven pattern. Cinematic lore is a reward for earning your
+    // first victory, not an unskippable gate between creation and gameplay.
+    // See: docs/07_ui_ux/W2_D2_REALITY_CHECK.md
     enum AppScreen: Equatable {
-        case auth             // not logged in → AuthRouterView
-        case characterSelect  // logged in, hero not chosen → CharacterSelectionView
-        case loreIntro(heroName: String) // first hero just created → LoreIntroView
-        case game             // logged in, hero chosen → MainRouterView
+        case auth                              // not logged in → AuthRouterView
+        case characterSelect                   // logged in, hero not chosen → CharacterSelectionView
+        case cinematicOpen(heroName: String)   // W2.D2 R2 — 10-15s cold-open (typewriter + ambient SFX)
+        case scriptedTutorial(heroName: String) // W2.D3 — scripted first fight (guaranteed win)
+        case tutorialVictory(heroName: String) // W2.D3 — victory overlay with reward reveal
+        case loreIntro(heroName: String)       // existing — OnboardingCinematicView (now AFTER victory)
+        case game                              // logged in, hero chosen → MainRouterView
     }
 
     var currentScreen: AppScreen = .auth
@@ -65,6 +75,15 @@ final class AppState {
     // MARK: - FTUE
     var shouldCheckFTUE = false  // set true after first login to trigger tutorial check
 
+    // MARK: - Scripted Tutorial (W2.D3)
+    /// Rewards payload from the scripted tutorial fight, parked here so
+    /// VictoryOverlayView can read it across the screen transition.
+    /// Cleared when the player enters the hub.
+    var tutorialRewards: TutorialRewardsPayload?
+    /// Pending building unlocks queued from level up during tutorial — consumed
+    /// by the hub via BuildingUnlockCeremony on first mount.
+    var pendingBuildingUnlocks: [String] = []
+
     // MARK: - UI State
     var isLoading = false
     var toasts: [ToastMessage] = []
@@ -113,7 +132,30 @@ final class AppState {
     func triggerLevelUpModal(newLevel: Int, statPoints: Int) {
         levelUpNewLevel = newLevel
         levelUpStatPoints = statPoints
+        // W2.D4 — enqueue building unlock ceremonies for every threshold
+        // crossed between the old level and the new one. We use the character
+        // cache's level as the "from" reference because server just returned
+        // newLevel and the modal will reload character afterwards.
+        let fromLevel = (currentCharacter?.level ?? (newLevel - 1))
+        enqueueBuildingUnlocks(fromLevel: fromLevel, toLevel: newLevel)
         enqueueModal(.levelUp)
+    }
+
+    /// W2.D4 — queue building unlock ceremonies for any threshold crossed
+    /// between `fromLevel` (exclusive) and `toLevel` (inclusive). Skips the
+    /// Lv99 "Coming Soon" buildings and dedupes against already-pending.
+    func enqueueBuildingUnlocks(fromLevel: Int, toLevel: Int) {
+        guard toLevel > fromLevel else { return }
+        var newUnlocks: [String] = []
+        for lvl in (fromLevel + 1)...toLevel {
+            let ids = BuildingUnlockConfig.buildingsUnlocking(at: lvl)
+            for id in ids where !pendingBuildingUnlocks.contains(id) && !newUnlocks.contains(id) {
+                newUnlocks.append(id)
+            }
+        }
+        if !newUnlocks.isEmpty {
+            pendingBuildingUnlocks.append(contentsOf: newUnlocks)
+        }
     }
 
     func dismissLevelUpModal() {

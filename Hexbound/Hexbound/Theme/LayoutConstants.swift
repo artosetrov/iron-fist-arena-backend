@@ -135,6 +135,16 @@ enum LayoutConstants {
     static let heroBarFont: CGFloat = 13                   // Text inside bars (unique, readability)
     static let heroPortraitNameFont: CGFloat = spaceMD     // 16 — name overlay on portrait
 
+    // MARK: - Card Portrait System (unified aspect ratio — all portrait cards)
+
+    /// Aspect ratio for all portrait cards (Arena, Boss, Hero selection).
+    /// height = width × cardAspectRatio
+    /// Changed from 1.4 → 1.55 per Card Audit v4 (2026-04-10)
+    static let cardAspectRatio: CGFloat = 1.55
+
+    /// LVL badge size for portrait cards (Arena, Hero) — 38pt circle
+    static let cardLvlBadgeSize: CGFloat = 38
+
     // MARK: - Arena Opponent Card
 
     static let arenaCardRadius: CGFloat = radiusXL         // 16

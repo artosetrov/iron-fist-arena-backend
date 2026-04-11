@@ -7,7 +7,7 @@ struct WelcomeView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            AuthBackground()
 
             VStack(spacing: 0) {
                 Spacer()
@@ -20,35 +20,31 @@ struct WelcomeView: View {
 
                 Spacer()
 
-                // 2. Actions
-                VStack(spacing: LayoutConstants.spaceMD) {
-                    // Play as Guest — primary CTA
-                    Button {
-                        SFXManager.shared.play(.uiConfirm)
-                        Task { await vm.guestLogin(appState: appState) }
-                    } label: {
-                        Text("PLAY AS GUEST")
-                    }
-                    .buttonStyle(.primary(enabled: !vm.isLoading))
-                    .disabled(vm.isLoading)
-                    .accessibilityLabel("Play as guest without account")
+                // 2. Actions — hug the bottom
+                VStack(spacing: LayoutConstants.spaceLG) {
+                    // PLAY — hero CTA. One tap = in the game.
+                    VStack(spacing: LayoutConstants.spaceXS) {
+                        Button {
+                            SFXManager.shared.play(.uiConfirm)
+                            Task { await vm.guestLogin(appState: appState) }
+                        } label: {
+                            Text("PLAY")
+                        }
+                        .buttonStyle(.primary(enabled: !vm.isLoading))
+                        .disabled(vm.isLoading)
+                        .accessibilityLabel("Play now, no account needed")
 
-                    // Log In — secondary
-                    Button {
-                        SFXManager.shared.play(.uiTap)
-                        appState.authPath.append(AppRoute.login)
-                    } label: {
-                        Text("LOG IN")
+                        Text("No account needed · start in 1 tap")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
-                    .buttonStyle(.secondary)
-                    .accessibilityLabel("Log in with email")
 
                     // Social divider
                     HStack(spacing: LayoutConstants.spaceMD) {
                         Rectangle()
                             .fill(DarkFantasyTheme.borderSubtle)
                             .frame(height: 1)
-                        Text("OR")
+                        Text("OR CONTINUE WITH")
                             .font(DarkFantasyTheme.body)
                             .tracking(1)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
@@ -67,9 +63,9 @@ struct WelcomeView: View {
                         } label: {
                             HStack(spacing: LayoutConstants.spaceSM) {
                                 Image(systemName: "apple.logo")
-                                    .font(DarkFantasyTheme.cardTitle.weight(.medium))
+                                    .font(DarkFantasyTheme.section.weight(.medium))
                                 Text("Apple")
-                                    .font(DarkFantasyTheme.body)
+                                    .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -96,7 +92,7 @@ struct WelcomeView: View {
                                 Text("G")
                                     .font(DarkFantasyTheme.googleLogo)
                                 Text("Google")
-                                    .font(DarkFantasyTheme.body)
+                                    .font(DarkFantasyTheme.cardTitle.weight(.semibold))
                             }
                             .foregroundStyle(DarkFantasyTheme.textPrimary)
                             .frame(maxWidth: .infinity)
@@ -115,23 +111,32 @@ struct WelcomeView: View {
                         .accessibilityLabel("Sign in with Google")
                     }
 
-                    // Create Account — text link
-                    Button("Create Account") {
-                        SFXManager.shared.play(.uiTap)
-                        appState.authPath.append(AppRoute.register)
+                    // Email auth — text links (sign up / log in). No more duplicate social row.
+                    VStack(spacing: LayoutConstants.spaceSM) {
+                        Button("Sign up with email →") {
+                            SFXManager.shared.play(.uiTap)
+                            appState.authPath.append(AppRoute.register)
+                        }
+                        .buttonStyle(.ghost)
+                        .accessibilityLabel("Sign up with email")
+
+                        Button("Already have an account? Log in") {
+                            SFXManager.shared.play(.uiTap)
+                            appState.authPath.append(AppRoute.login)
+                        }
+                        .buttonStyle(.ghost)
+                        .accessibilityLabel("Log in to existing account")
                     }
-                    .buttonStyle(.ghost)
-                    .accessibilityLabel("Create new account")
                     .padding(.top, LayoutConstants.spaceXS)
 
                     // Guest warning
-                    Text("Guest progress may be lost. Link your account later in Settings.")
+                    Text("Guest progress links to any account later in Settings.")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
-                .padding(.bottom, LayoutConstants.space2XL)
+                .padding(.bottom, LayoutConstants.authBottomInset)
 
                 // Error
                 if !vm.errorMessage.isEmpty {

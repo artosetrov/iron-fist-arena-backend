@@ -114,8 +114,12 @@ export async function getCombatConfig() {
     'combat.crit_per_agi': COMBAT.CRIT_PER_AGI,
     'combat.dodge_per_agi': COMBAT.DODGE_PER_AGI,
     'combat.dodge_per_luk': COMBAT.DODGE_PER_LUK,
-    'combat.cha_intimidation_per_point': COMBAT.CHA_INTIMIDATION_PER_POINT,
-    'combat.cha_intimidation_cap': COMBAT.CHA_INTIMIDATION_CAP,
+    // W3.D1 — CHA miss chance (replaces legacy cha_intimidation_*)
+    'combat.cha_miss_per_point': COMBAT.CHA_MISS_PER_POINT,
+    'combat.cha_miss_cap': COMBAT.CHA_MISS_CAP,
+    // W3.D2 — Rogue Execute finisher
+    'combat.rogue_execute_hp_threshold': COMBAT.ROGUE_EXECUTE_HP_THRESHOLD,
+    'combat.rogue_execute_damage_bonus': COMBAT.ROGUE_EXECUTE_DAMAGE_BONUS,
   })
   return {
     MAX_TURNS: configs['combat.max_turns'] as number,
@@ -131,8 +135,12 @@ export async function getCombatConfig() {
     CRIT_PER_AGI: configs['combat.crit_per_agi'] as number,
     DODGE_PER_AGI: configs['combat.dodge_per_agi'] as number,
     DODGE_PER_LUK: configs['combat.dodge_per_luk'] as number,
-    CHA_INTIMIDATION_PER_POINT: configs['combat.cha_intimidation_per_point'] as number,
-    CHA_INTIMIDATION_CAP: configs['combat.cha_intimidation_cap'] as number,
+    // W3.D1 — CHA miss chance (replaces legacy cha_intimidation_*)
+    CHA_MISS_PER_POINT: configs['combat.cha_miss_per_point'] as number,
+    CHA_MISS_CAP: configs['combat.cha_miss_cap'] as number,
+    // W3.D2 — Rogue Execute finisher
+    ROGUE_EXECUTE_HP_THRESHOLD: configs['combat.rogue_execute_hp_threshold'] as number,
+    ROGUE_EXECUTE_DAMAGE_BONUS: configs['combat.rogue_execute_damage_bonus'] as number,
   }
 }
 
@@ -152,7 +160,9 @@ export async function getEloConfig() {
   }
 }
 
-// --- PvP Ranks ---
+// --- PvP Ranks (W3.D5 — Variant A ladder rewrite) ---
+// Added Master + Platinum shifted. Each tier is 750 ELO wide with 3 divisions.
+// Challenger is computed from leaderboard rank in tier.ts, not stored here.
 export async function getPvpRanksConfig() {
   const configs = await getGameConfigs({
     'pvp_ranks.bronze': PVP_RANKS.BRONZE,
@@ -160,6 +170,7 @@ export async function getPvpRanksConfig() {
     'pvp_ranks.gold': PVP_RANKS.GOLD,
     'pvp_ranks.platinum': PVP_RANKS.PLATINUM,
     'pvp_ranks.diamond': PVP_RANKS.DIAMOND,
+    'pvp_ranks.master': PVP_RANKS.MASTER,
     'pvp_ranks.grandmaster': PVP_RANKS.GRANDMASTER,
   })
   return {
@@ -168,6 +179,7 @@ export async function getPvpRanksConfig() {
     GOLD: configs['pvp_ranks.gold'] as number,
     PLATINUM: configs['pvp_ranks.platinum'] as number,
     DIAMOND: configs['pvp_ranks.diamond'] as number,
+    MASTER: configs['pvp_ranks.master'] as number,
     GRANDMASTER: configs['pvp_ranks.grandmaster'] as number,
   }
 }

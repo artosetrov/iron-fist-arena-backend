@@ -27,6 +27,8 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultiplier } from '@/lib/game/events'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -108,6 +110,8 @@ export async function POST(req: NextRequest) {
       pvpLosses: true,
       pvpWinStreak: true,
       pvpLossStreak: true,
+      // W3.D5 — include user.premiumUntil for Premium Forever gold multiplier
+      user: { select: { premiumUntil: true } },
     } as const
 
     const [attacker, defender] = await Promise.all([
@@ -215,6 +219,10 @@ export async function POST(req: NextRequest) {
     const eventMultipliers = await getActiveEventMultipliers()
     goldReward = applyEventGoldMultiplier(goldReward, eventMultipliers)
     xpReward = applyEventXpMultiplier(xpReward, eventMultipliers)
+
+    // W3.D5 — Premium Forever +10% gold (applied LAST, after all other bonuses
+    // and event multipliers, to avoid compounding with the W3.D3 CHA cap).
+    goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
 
     const now = new Date()
 
@@ -370,10 +378,12 @@ export async function POST(req: NextRequest) {
           expiresAt,
         },
       }),
-      // 4. Update daily quest progress + award Battle Pass XP
+      // 4. Update daily quest progress + weekly BP challenge + award Battle Pass XP
       (async () => {
         return await Promise.all([
           attackerWon ? updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
+          // W3.D5 — Weekly BP challenges
+          attackerWon ? updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins') : Promise.resolve(),
           awardBattlePassXp(prisma, attacker.id, BATTLE_PASS.BP_XP_PER_PVP),
         ])
       })(),

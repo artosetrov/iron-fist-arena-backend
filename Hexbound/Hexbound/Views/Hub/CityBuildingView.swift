@@ -6,7 +6,8 @@ struct CityBuildingView: View {
     let building: CityBuilding
     let terrainSize: CGSize
     let onTap: (CityBuilding) -> Void
-    var badge: String? = nil
+    /// W2.D5 — structured badge with priority. Defaults to `.none`.
+    var badge: BuildingBadge = .none
     /// When true, only render the sprite (no label). Used for z-order separation.
     var spriteOnly: Bool = false
     var isLocked: Bool = false

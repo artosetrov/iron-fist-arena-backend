@@ -91,11 +91,12 @@ final class StanceSelectorViewModel {
     // MARK: - Stance Bonus Data
 
     /// Attack zone intrinsic bonuses (from balance.ts STANCE_ZONES.ATTACK_ZONE)
+    /// W3.D4 — legs rebalanced from (0, -3) to (2, 0): small upside, no crit penalty.
     static func attackBonuses(for zone: String) -> (offense: Int, crit: Int) {
         switch zone {
         case "head":  return (10, 5)
         case "chest": return (5, 0)
-        case "legs":  return (0, -3)
+        case "legs":  return (2, 0)
         default:      return (0, 0)
         }
     }
@@ -115,7 +116,7 @@ final class StanceSelectorViewModel {
         switch zone {
         case "head":  return "High risk, high reward. Maximum damage and crit chance."
         case "chest": return "Balanced offense. Moderate damage bonus."
-        case "legs":  return "Conservative. No bonus, reduced crit chance."
+        case "legs":  return "Safe stance. Small offense bonus, no crit penalty."
         default:      return ""
         }
     }

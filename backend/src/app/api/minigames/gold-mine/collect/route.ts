@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buildSlotsArray } from '@/lib/game/gold-mine'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -76,8 +77,12 @@ export async function POST(req: NextRequest) {
     const userGems = result.updatedUser.gems
     const userGold = result.updatedUser.gold
 
-    // Update daily quest progress (outside transaction, non-critical)
-    await updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect')
+    // Update daily + weekly quest progress (outside transaction, non-critical)
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'gold_mine_collect'),
+      // W3.D5 — Weekly BP challenge: Prospector slot
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_mine_collect'),
+    ])
 
     const slots = await buildSlotsArray(prisma, character_id, result.goldMineSlots)
 

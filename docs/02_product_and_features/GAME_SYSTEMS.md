@@ -405,9 +405,37 @@ All classes equally viable — balance tuned for equal ELO distribution.
 - **Crossover**: Some rewards share both tracks, others exclusive
 
 ### Leveling
-- **XP source**: All activities grant battle pass XP (PvP, Dungeons, Daily Quests)
+- **XP source**: All activities grant battle pass XP (PvP, Dungeons, Daily Quests, Weekly Challenges)
 - **Level requirements**: 500 XP per level (scales to playtime)
 - **Typical playtime**: Casual 5-10 min/day = ~1 level/week, serious player = 1-2 levels/day
+
+### Weekly Challenges (W3.D5 — BAL-06)
+
+5 rotating challenge slots per ISO week. Pool lives in
+`backend/src/lib/game/weekly-challenges.ts` (9 templates across 7 goal types).
+Selection is **ISO-week-seeded and deterministic** — every player gets the
+same 5 slots per week, and the same week always resolves to the same pool
+subset regardless of when the character first materializes its row.
+
+| Slot codename | Goal type | Source touchpoints |
+|---|---|---|
+| **Gladiator** | `pvp_wins` | `/api/pvp/resolve` |
+| **Delver** | `dungeons_complete` | `/api/dungeon/complete`, `/api/dungeon-rush/*` |
+| **Spendthrift** | `gold_spent` | `/api/shop/buy`, `/api/shop/upgrade`, `/api/minigames/shell-game/start`, `/api/minigames/fortune-wheel/spin` |
+| **Blacksmith** | `item_upgrade` | `/api/shop/upgrade` |
+| **Alchemist** | `consumable_use` | `/api/inventory/use`, `/api/consumables/use` |
+| **Lucky Hand** | `shell_game_play` | `/api/minigames/shell-game/guess`, `/api/minigames/fortune-wheel/spin` |
+| **Prospector** | `gold_mine_collect` | `/api/minigames/gold-mine/collect` |
+
+**Progress wiring:** every relevant API route pairs its existing
+`updateDailyQuestProgress` call with `updateWeeklyChallengeProgress` inside a
+`Promise.all` — both helpers are atomic raw-SQL `UPDATE ... WHERE` operations
+so they don't stomp each other under concurrent fire. Rows materialize lazily
+on the first progress event of the week.
+
+**Reward scale:** weekly challenges award 2-4× the BP-XP of a daily quest
+(higher investment, less frequent completion). Completed challenges persist in
+`WeeklyChallengeProgress` with a `claimedAt` timestamp to drive the claim UI.
 
 ### Reward Tracks
 | Track | Reward Pool | Cosmetics |

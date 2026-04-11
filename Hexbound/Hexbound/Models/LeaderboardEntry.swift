@@ -9,12 +9,20 @@ struct LeaderboardEntry: Codable, Identifiable {
     let level: Int?
     let value: Int
     var rank: Int
+    // W3.D5 — BAL-05 ladder: tier info resolved server-side from pvpRating + rank
+    // so iOS only needs to render, never classify. All three are optional for
+    // forward-compat with older responses / gold leaderboard entries without
+    // an attached character.
+    let tierKey: String?
+    let division: String?
+    let tierLabel: String?
 
     enum CodingKeys: String, CodingKey {
         case characterId
         case characterName
         case characterClass = "class"  // Swift reserved word
         case avatar, level, value, rank
+        case tierKey, division, tierLabel
     }
 
     var classIcon: String {
@@ -71,7 +79,10 @@ struct LeaderboardSearchResult: Codable, Identifiable {
             avatar: avatar,
             level: level,
             value: rating,
-            rank: 0
+            rank: 0,
+            tierKey: nil,
+            division: nil,
+            tierLabel: nil
         )
     }
 }

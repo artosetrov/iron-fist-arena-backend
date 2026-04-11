@@ -21,9 +21,10 @@ struct DailyQuestsDetailView: View {
                         .padding(.top, LayoutConstants.spaceSM)
                         .accessibilityLabel("Daily quests reset: \(vm.resetTimeText)")
 
-                    if vm.errorMessage != nil {
-                        ErrorStateView.loadFailed { Task { await vm.loadQuests() } }
-                    } else if vm.isLoading && vm.quests.isEmpty {
+                    if !vm.hasLoadedOnce {
+                        // Skeleton state — shown until the first network load finishes.
+                        // Prevents the "All Done!" flash caused by (quests == [] && isLoading == false)
+                        // during the brief window before .task fires loadQuests().
                         ScrollView {
                             LazyVStack(spacing: LayoutConstants.spaceSM) {
                                 ForEach(0..<4, id: \.self) { _ in
@@ -33,8 +34,16 @@ struct DailyQuestsDetailView: View {
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.vertical, LayoutConstants.spaceSM)
                         }
+                    } else if vm.errorMessage != nil {
+                        ErrorStateView.loadFailed { Task { await vm.loadQuests() } }
+                    } else if vm.allClaimed && vm.bonusClaimedToday {
+                        // "All Done!" ceremony — only when every quest is claimed
+                        // AND the bonus is already collected for today.
+                        allDoneCeremony(vm: vm)
+                            .transition(.opacity)
                     } else if vm.quests.isEmpty {
-                        EmptyStateView.questsComplete
+                        // Defensive fallback — server returned empty list post-load.
+                        ErrorStateView.loadFailed { Task { await vm.loadQuests() } }
                     } else {
                         ScrollView {
                             LazyVStack(spacing: LayoutConstants.spaceSM) {
@@ -375,6 +384,78 @@ struct DailyQuestsDetailView: View {
         .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
         .brightness(quest.rewardClaimed ? -0.08 : 0)
         .contentShape(Rectangle())
+    }
+
+    // MARK: - All Done Ceremony
+
+    /// Celebratory state shown when every quest is claimed AND the daily bonus has been collected.
+    /// Uses a large victory asset instead of a plain SF Symbol and reuses the ornamental card system.
+    @ViewBuilder
+    private func allDoneCeremony(vm: DailyQuestsViewModel) -> some View {
+        ScrollView {
+            VStack(spacing: LayoutConstants.spaceLG) {
+                Spacer(minLength: LayoutConstants.spaceXL)
+
+                // Hero asset — large victory artwork
+                Image("result-victory")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(maxWidth: 280)
+                    .shadow(color: DarkFantasyTheme.gold.opacity(0.35), radius: 24)
+                    .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 12, y: 6)
+                    .accessibilityLabel("All daily quests completed")
+
+                // Ornamental title + subtitle
+                OrnamentalTitle(
+                    "ALL DONE!",
+                    subtitle: "You've claimed every quest and today's bonus."
+                )
+
+                // Reset countdown card
+                VStack(spacing: LayoutConstants.spaceXS) {
+                    Text("New quests in")
+                        .font(DarkFantasyTheme.uiLabel)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .textCase(.uppercase)
+                        .tracking(1.5)
+
+                    TimelineView(.periodic(from: .now, by: 60)) { _ in
+                        Text(timeUntilReset())
+                            .font(DarkFantasyTheme.cardTitle)
+                            .foregroundStyle(DarkFantasyTheme.goldBright)
+                            .monospacedDigit()
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, LayoutConstants.spaceMD)
+                .padding(.horizontal, LayoutConstants.spaceLG)
+                .background(
+                    RadialGlowBackground(
+                        baseColor: DarkFantasyTheme.bgSecondary,
+                        glowColor: DarkFantasyTheme.bgTertiary,
+                        glowIntensity: 0.4,
+                        cornerRadius: LayoutConstants.cardRadius
+                    )
+                )
+                .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+                .innerBorder(
+                    cornerRadius: LayoutConstants.cardRadius - 2,
+                    inset: 2,
+                    color: DarkFantasyTheme.gold.opacity(0.08)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                        .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+                )
+                .cornerBrackets(color: DarkFantasyTheme.gold.opacity(0.3), length: 14, thickness: 1.5)
+                .cardShadow()
+                .padding(.horizontal, LayoutConstants.screenPadding)
+
+                Spacer(minLength: LayoutConstants.spaceXL)
+            }
+            .frame(maxWidth: .infinity)
+        }
     }
 }
 

@@ -17,9 +17,11 @@ struct HubEditorDetailView: View {
     // Image native aspect ratio (4096×1738)
     private let imageAspect: CGFloat = 4096.0 / 1738.0
 
-    /// Buildings with current server overrides applied
+    /// Buildings with current server overrides applied.
+    /// Редактор показывает ВСЕ здания, включая Coming Soon (guild-hall, black-market),
+    /// чтобы их можно было позиционировать заранее.
     private var buildings: [CityBuilding] {
-        resolvedCityBuildings(from: cache)
+        resolvedCityBuildings(from: cache, includeComingSoon: true)
     }
 
     /// Sky objects with current overrides applied

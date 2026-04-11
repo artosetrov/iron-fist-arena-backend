@@ -34,6 +34,13 @@ struct ArenaOpponentCard: View {
         DarkFantasyTheme.classColor(for: opponent.characterClass)
     }
 
+    /// WinRate pill color: green if low threat (good matchup), amber neutral, red if dominant
+    private func winRateColor(_ wr: Double) -> Color {
+        if wr < 45 { return DarkFantasyTheme.success }
+        if wr < 60 { return DarkFantasyTheme.textWarning }
+        return DarkFantasyTheme.danger
+    }
+
     var body: some View {
         Button(action: onTap) {
             cardContent
@@ -52,7 +59,7 @@ struct ArenaOpponentCard: View {
     private var cardContent: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let height = width * 1.4 // tall portrait ratio
+            let height = width * LayoutConstants.cardAspectRatio
 
             ZStack {
                 // 1. Full-bleed avatar background
@@ -91,7 +98,7 @@ struct ArenaOpponentCard: View {
             .shadow(color: difficulty.glowColor.opacity(0.25), radius: LayoutConstants.arenaGlowRadius, y: 3)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
         }
-        .aspectRatio(1.0 / 1.4, contentMode: .fit)
+        .aspectRatio(1.0 / LayoutConstants.cardAspectRatio, contentMode: .fit)
     }
 
     // MARK: - Vignette Overlay
@@ -165,11 +172,13 @@ struct ArenaOpponentCard: View {
                 .shadow(color: difficulty.glowColor.opacity(0.4), radius: 12)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 3, y: 1)
 
-            // Glass stat pills
+            // Single WinRate pill — Attack/Defense removed (redundant with Difficulty badge)
             HStack(spacing: LayoutConstants.spaceXS) {
-                GlassStatPill(value: "\(opponent.attackPower)", label: "Attack", color: DarkFantasyTheme.danger)
-                GlassStatPill(value: "\(opponent.armor ?? 0)", label: "Defense", color: DarkFantasyTheme.info)
-                GlassStatPill(value: "\(Int(opponent.winRate))%", label: "Winrate", color: DarkFantasyTheme.success)
+                GlassStatPill(
+                    value: "\(Int(opponent.winRate))%",
+                    label: "Winrate",
+                    color: winRateColor(opponent.winRate)
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

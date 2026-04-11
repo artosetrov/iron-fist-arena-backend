@@ -18,6 +18,7 @@ import {
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { getBattlePassConfig } from '@/lib/game/live-config'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
+import { goldBonusMultiplier } from '@/lib/game/premium'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -46,7 +47,11 @@ export async function POST(req: NextRequest) {
     const [character, run] = await Promise.all([
       prisma.character.findFirst({
         where: { id: character_id, userId: user.id },
-        select: { id: true, cha: true },
+        select: {
+          id: true, cha: true,
+          // W3.D5 — Premium Forever gold multiplier
+          user: { select: { premiumUntil: true } },
+        },
       }),
       prisma.dungeonRun.findFirst({
         where: {
@@ -258,6 +263,10 @@ export async function POST(req: NextRequest) {
           throw new Error('RUSH_ROOM_TYPE_INVALID')
       }
 
+      // W3.D5 — Premium Forever +10% gold applied LAST (after CHA / event)
+      if (goldReward > 0) {
+        goldReward = Math.floor(goldReward * goldBonusMultiplier(character.user))
+      }
       if (goldReward > 0 || xpReward > 0) {
         if (goldReward > 0) {
           await tx.user.update({

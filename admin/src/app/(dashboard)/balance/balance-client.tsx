@@ -93,16 +93,20 @@ const BALANCE_TABS: TabDef[] = [
           { key: 'combat.dodge_per_agi', label: 'Dodge per AGI', description: 'Dodge chance % gained per AGI point', defaultValue: 0.2, unit: '%/pt', step: 0.05, min: 0 },
           { key: 'combat.dodge_per_luk', label: 'Dodge per LUK', description: 'Dodge chance % gained per LUK point', defaultValue: 0.1, unit: '%/pt', step: 0.05, min: 0 },
           { key: 'combat.max_dodge_chance', label: 'Max Dodge Chance', description: 'Hard cap on dodge chance', defaultValue: 30, unit: '%', step: 1, min: 0, max: 100 },
-          { key: 'combat.rogue_dodge_bonus', label: 'Rogue Dodge Bonus', description: 'Extra dodge % for rogue class', defaultValue: 3, unit: '%', step: 1, min: 0 },
+          { key: 'combat.rogue_dodge_bonus', label: 'Rogue Dodge Bonus', description: 'Extra dodge % for rogue class (W3.D2)', defaultValue: 4, unit: '%', step: 1, min: 0 },
         ],
       },
       {
         id: 'combat_special',
         title: 'Special Mechanics',
-        description: 'CHA intimidation and poison mechanics',
+        description: 'CHA miss chance, Rogue Execute, poison mechanics',
         fields: [
-          { key: 'combat.cha_intimidation_per_point', label: 'CHA Intimidation/pt', description: 'Damage reduction % per defender CHA point', defaultValue: 0.15, unit: '%/pt', step: 0.01, min: 0 },
-          { key: 'combat.cha_intimidation_cap', label: 'CHA Intimidation Cap', description: 'Maximum damage reduction from CHA intimidation', defaultValue: 15, unit: '%', step: 1, min: 0, max: 100 },
+          // W3.D1 — CHA miss chance (replaces legacy cha_intimidation_*)
+          { key: 'combat.cha_miss_per_point', label: 'CHA Miss/pt', description: 'Miss chance per defender CHA point (W3.D1)', defaultValue: 0.2, unit: '%/pt', step: 0.01, min: 0 },
+          { key: 'combat.cha_miss_cap', label: 'CHA Miss Cap', description: 'Maximum CHA-induced miss chance (W3.D1)', defaultValue: 20, unit: '%', step: 1, min: 0, max: 100 },
+          // W3.D2 — Rogue Execute finisher
+          { key: 'combat.rogue_execute_hp_threshold', label: 'Rogue Execute HP%', description: 'Defender HP ratio that arms Rogue Execute (W3.D2)', defaultValue: 0.35, step: 0.05, min: 0, max: 1 },
+          { key: 'combat.rogue_execute_damage_bonus', label: 'Rogue Execute Bonus', description: 'Final damage bonus when Rogue Execute triggers (W3.D2)', defaultValue: 0.15, step: 0.05, min: 0, max: 1 },
           { key: 'combat.poison_armor_penetration', label: 'Poison Armor Pen', description: 'Fraction of armor ignored by poison damage', defaultValue: 0.3, step: 0.05, min: 0, max: 1 },
         ],
       },

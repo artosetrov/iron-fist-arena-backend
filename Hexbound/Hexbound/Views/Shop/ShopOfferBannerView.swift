@@ -1,6 +1,11 @@
 import SwiftUI
 
-/// Horizontal carousel of special offers displayed above the regular shop grid.
+/// Vertically-stacked list of special offers displayed above the regular shop grid.
+///
+/// Each offer is a full-width horizontal banner (no horizontal scroll) with:
+///   • Header row — title + desc + discount ribbon + purchases counter
+///   • Rewards row — up to 3 `ItemCardView(.offerReward)` tiles (single source of truth)
+///   • Footer row — strikethrough original price + big "FREE"/price + `.primary` CTA
 struct ShopOfferBannerView: View {
     let offers: [ShopOffer]
     let canAfford: (ShopOffer) -> Bool
@@ -8,7 +13,7 @@ struct ShopOfferBannerView: View {
     let onBuy: (ShopOffer) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: "flame")
                     .font(DarkFantasyTheme.body)
@@ -19,39 +24,37 @@ struct ShopOfferBannerView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: LayoutConstants.spaceMD) {
-                    ForEach(Array(offers.enumerated()), id: \.element.id) { index, offer in
-                        OfferCard(
-                            offer: offer,
-                            canAfford: canAfford(offer),
-                            isBuying: buyingId == offer.id,
-                            onBuy: { onBuy(offer) }
-                        )
-                        .staggeredAppear(index: index)
-                    }
+            VStack(spacing: LayoutConstants.spaceMD) {
+                ForEach(Array(offers.enumerated()), id: \.element.id) { index, offer in
+                    OfferCard(
+                        offer: offer,
+                        canAfford: canAfford(offer),
+                        isBuying: buyingId == offer.id,
+                        onBuy: { onBuy(offer) }
+                    )
+                    .staggeredAppear(index: index)
                 }
-                .padding(.horizontal, LayoutConstants.screenPadding)
             }
+            .padding(.horizontal, LayoutConstants.screenPadding)
         }
     }
 }
 
 // MARK: - Single Offer Card
 //
-// Redesigned 2026-04-10 — fixes truncated text, "0 gold / 0 gold" price bug,
-// and the BUY button overlapping content. New layout:
+// Redesigned 2026-04-10 — full-width horizontal banner (no scroll). Layout:
 //
-//   ┌────────────────────┐
-//   │ [-100%]      [0/1] │  ← hero: ribbon TL + counter pill TR
-//   │   [🪙] [🧪] [⚔]    │  ← item slots (38×38, rarity-tinted)
-//   ├────────────────────┤
-//   │ STARTER PACK       │  ← Oswald 18 title
-//   │ Welcome bonus…     │  ← Inter 12 subtitle (2 lines max)
-//   │  499 G       FREE  │  ← old strike + big gold FREE/price
-//   │ ────────────────── │  ← gold ornamental divider
-//   │ [      CLAIM     ] │  ← full-width .primary CTA
-//   └────────────────────┘
+//   ┌─────────────────────────────────────────────────┐
+//   │ STARTER PACK                       [-100%] [0/1]│  ← header
+//   │ Welcome bonus for new warriors                  │
+//   ├─────────────────────────────────────────────────┤
+//   │  ┌────┐  ┌────┐  ┌────┐                         │  ← 3 ItemCardView
+//   │  │ G  │  │ 🧪 │  │ XP │                         │    .offerReward
+//   │  │×500│  │ ×3 │  │×17 │                         │
+//   │  └────┘  └────┘  └────┘                         │
+//   ├─────────────────────────────────────────────────┤
+//   │ 499 gold  FREE                  [   CLAIM   ]   │  ← footer
+//   └─────────────────────────────────────────────────┘
 
 private struct OfferCard: View {
     let offer: ShopOffer
@@ -71,16 +74,19 @@ private struct OfferCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            heroArea
-            contentArea
+        VStack(spacing: LayoutConstants.spaceMS) {
+            headerRow
+            rewardsRow
+            footerRow
         }
-        .frame(width: 200, height: 284)
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.top, LayoutConstants.spaceMS)
+        .padding(.bottom, LayoutConstants.spaceMS)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
                 glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.45,
+                glowIntensity: 0.4,
                 cornerRadius: LayoutConstants.cardRadius
             )
         )
@@ -93,170 +99,127 @@ private struct OfferCard: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(accent.opacity(0.5), lineWidth: 1.5)
+                .stroke(accent.opacity(0.55), lineWidth: 1.5)
         )
         .cornerBrackets(
-            color: accent.opacity(0.35),
-            length: 12,
+            color: accent.opacity(0.4),
+            length: 14,
             thickness: 1.5
         )
         .cardShadow()
     }
 
-    // MARK: Hero (radial glow + item slots + ribbon + counter)
+    // MARK: Header row (title/desc + ribbon/counter)
 
-    private var heroArea: some View {
-        ZStack {
-            // Base linear gradient (top panel tint)
-            LinearGradient(
-                colors: [
-                    DarkFantasyTheme.bgElevated.opacity(0.65),
-                    DarkFantasyTheme.bgSecondary.opacity(0.25)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+    private var headerRow: some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceSM) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                Text(offer.title.uppercased())
+                    .font(DarkFantasyTheme.buttonLabel)
+                    .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    .tracking(0.5)
+                    .lineLimit(1)
 
-            // Warm radial glow behind the slots
-            RadialGradient(
-                colors: [
-                    DarkFantasyTheme.gold.opacity(0.22),
-                    DarkFantasyTheme.gold.opacity(0.0)
-                ],
-                center: .center,
-                startRadius: 4,
-                endRadius: 86
-            )
+                if let desc = offer.displayDescription {
+                    Text(desc)
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                        .lineLimit(1)
+                }
 
-            // Item slots, centered
-            HStack(spacing: LayoutConstants.spaceXS) {
-                ForEach(Array(offer.contents.prefix(3).enumerated()), id: \.offset) { _, content in
-                    OfferContentSlot(content: content)
+                if let remaining = offer.timeRemaining {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Image(systemName: "clock")
+                            .font(DarkFantasyTheme.badge)
+                        Text(remaining)
+                            .font(DarkFantasyTheme.badge)
+                    }
+                    .foregroundStyle(DarkFantasyTheme.stamina)
                 }
             }
 
-            // Overlay chips: discount ribbon (TL) + purchases pill (TR)
-            VStack {
-                HStack(alignment: .top) {
-                    if offer.hasDiscount {
-                        Text("-\(offer.discountPct)%")
-                            .font(DarkFantasyTheme.badge)
-                            .foregroundStyle(DarkFantasyTheme.textPrimary)
-                            .padding(.horizontal, LayoutConstants.spaceXS)
-                            .padding(.vertical, LayoutConstants.space2XS)
-                            .background(
-                                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                                    .fill(DarkFantasyTheme.danger)
-                            )
-                            .shadow(color: DarkFantasyTheme.danger.opacity(0.4), radius: 3)
-                    }
+            Spacer(minLength: 0)
 
-                    Spacer(minLength: 0)
-
-                    if offer.maxPurchases > 0 {
-                        HStack(spacing: LayoutConstants.space2XS) {
-                            Circle()
-                                .fill(offer.canPurchase ? DarkFantasyTheme.success : DarkFantasyTheme.textTertiary)
-                                .frame(width: 5, height: 5)
-                            Text("\(offer.purchasesMade)/\(offer.maxPurchases)")
-                                .font(DarkFantasyTheme.badge)
-                                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                        }
+            VStack(alignment: .trailing, spacing: LayoutConstants.space2XS) {
+                if offer.hasDiscount {
+                    Text("-\(offer.discountPct)%")
+                        .font(DarkFantasyTheme.badge)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .padding(.horizontal, LayoutConstants.spaceXS)
                         .padding(.vertical, LayoutConstants.space2XS)
                         .background(
-                            Capsule().fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                .fill(DarkFantasyTheme.danger)
                         )
-                        .overlay(
-                            Capsule().stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 0.5)
-                        )
-                    }
+                        .shadow(color: DarkFantasyTheme.danger.opacity(0.4), radius: 3)
                 }
-                Spacer(minLength: 0)
+
+                if offer.maxPurchases > 0 {
+                    HStack(spacing: LayoutConstants.space2XS) {
+                        Circle()
+                            .fill(offer.canPurchase ? DarkFantasyTheme.success : DarkFantasyTheme.textTertiary)
+                            .frame(width: 5, height: 5)
+                        Text("\(offer.purchasesMade)/\(offer.maxPurchases)")
+                            .font(DarkFantasyTheme.badge)
+                            .foregroundStyle(DarkFantasyTheme.textPrimary)
+                    }
+                    .padding(.horizontal, LayoutConstants.spaceXS)
+                    .padding(.vertical, LayoutConstants.space2XS)
+                    .background(
+                        Capsule().fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
+                    )
+                    .overlay(
+                        Capsule().stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 0.5)
+                    )
+                }
             }
-            .padding(LayoutConstants.spaceXS)
         }
-        .frame(height: 92)
-        .overlay(
-            // bottom divider separating hero from content
-            Rectangle()
-                .fill(accent.opacity(0.35))
-                .frame(height: 1),
-            alignment: .bottom
-        )
     }
 
-    // MARK: Content (title, description, price, CTA)
+    // MARK: Rewards row (ItemCardView × up to 3)
 
-    private var contentArea: some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-            // Title (Oswald 18, uppercase)
-            Text(offer.title.uppercased())
-                .font(DarkFantasyTheme.buttonLabel)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-                .tracking(0.5)
-
-            // Description (Inter 12, 2 lines)
-            if let desc = offer.displayDescription {
-                Text(desc)
-                    .font(DarkFantasyTheme.caption)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var rewardsRow: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            ForEach(Array(offer.contents.prefix(3).enumerated()), id: \.offset) { _, content in
+                OfferRewardMapper.card(for: content)
+                    .allowsHitTesting(false)
             }
-
-            // Optional countdown (time-limited offers)
-            if let remaining = offer.timeRemaining {
-                HStack(spacing: LayoutConstants.space2XS) {
-                    Image(systemName: "clock")
-                        .font(DarkFantasyTheme.badge)
-                    Text(remaining)
-                        .font(DarkFantasyTheme.badge)
+            // If fewer than 3 rewards, pad the row with transparent spacers so
+            // the remaining cards keep their intrinsic square aspect instead of
+            // ballooning to fill the full width.
+            if offer.contents.count < 3 {
+                ForEach(0..<(3 - offer.contents.count), id: \.self) { _ in
+                    Color.clear
                 }
-                .foregroundStyle(DarkFantasyTheme.stamina)
             }
+        }
+    }
 
-            Spacer(minLength: LayoutConstants.space2XS)
+    // MARK: Footer row (price stack + CTA)
 
-            // Price row: old (strikethrough) ← → new (FREE or price)
-            HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
+    private var footerRow: some View {
+        HStack(alignment: .center, spacing: LayoutConstants.spaceMS) {
+            VStack(alignment: .leading, spacing: 0) {
                 if offer.hasDiscount {
                     Text(offer.displayOriginalPrice)
                         .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .strikethrough(true, color: DarkFantasyTheme.danger)
                 }
-                Spacer(minLength: 0)
                 if isFree {
                     Text("FREE")
-                        .font(DarkFantasyTheme.buttonLabel)
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                         .shadow(color: DarkFantasyTheme.gold.opacity(0.5), radius: 6)
                 } else {
                     Text(offer.displayPrice)
-                        .font(DarkFantasyTheme.buttonLabel)
+                        .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.goldBright)
                 }
             }
 
-            // Ornamental gold divider
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            DarkFantasyTheme.gold.opacity(0.0),
-                            DarkFantasyTheme.gold.opacity(0.4),
-                            DarkFantasyTheme.gold.opacity(0.0)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .frame(height: 1)
-                .padding(.vertical, LayoutConstants.space2XS)
+            Spacer(minLength: LayoutConstants.spaceXS)
 
-            // Full-width CTA (uses .primary gold ornamental button style)
             Button {
                 HapticManager.heavy()
                 onBuy()
@@ -272,137 +235,60 @@ private struct OfferCard: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.primary)
+            .frame(width: 140, height: 44)
             .disabled(!offer.canPurchase || (!canAfford && !isFree) || isBuying)
             .opacity((offer.canPurchase && (canAfford || isFree)) ? 1 : 0.5)
         }
-        .padding(.horizontal, LayoutConstants.spaceMS)
-        .padding(.top, LayoutConstants.spaceSM)
-        .padding(.bottom, LayoutConstants.spaceMS)
     }
 }
 
-// MARK: - Offer Content Slot (small 38×38 content preview tile)
+// MARK: - Offer Reward Mapper
 //
-// Renders a single OfferContent (gold / gems / xp / consumable / item) as a
-// rarity-tinted square with a quantity badge in the bottom-right. Used inside
-// the OfferCard hero area to show pack contents at a glance — replaces the old
-// truncated `contentsSummary` text.
+// Maps an `OfferContent` (gold / gems / xp / consumable / item) to an
+// `ItemCardView` with the `.offerReward` context. Reward cards use the SAME
+// visual component as shop items — per `itemcard_unified_refactor` memory,
+// ItemCardView is the single source of truth for every item tile in the game.
 
-private struct OfferContentSlot: View {
-    let content: OfferContent
+private enum OfferRewardMapper {
 
-    var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            // Slot background + rarity-tinted border
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgAbyss)
-                .frame(width: 38, height: 38)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(borderColor, lineWidth: 1)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM - 1)
-                        .stroke(borderColor.opacity(0.25), lineWidth: 0.5)
-                        .padding(1)
-                )
-                .overlay(iconContent)
-                .shadow(color: borderColor.opacity(0.35), radius: 4)
-
-            // Quantity badge (bottom-right pill)
-            Text(quantityLabel)
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .padding(.horizontal, LayoutConstants.space2XS)
-                .background(
-                    Capsule().fill(DarkFantasyTheme.bgAbyss.opacity(0.85))
-                )
-                .offset(x: 2, y: 2)
-        }
-    }
-
-    private var borderColor: Color {
-        switch content.type {
-        case "gold":       return DarkFantasyTheme.gold
-        case "gems":       return DarkFantasyTheme.purple
-        case "xp":         return DarkFantasyTheme.xpRing
-        case "consumable": return DarkFantasyTheme.success
-        default:           return DarkFantasyTheme.gold.opacity(0.6)
-        }
-    }
-
-    private var quantityLabel: String {
-        let q = content.quantity
-        if q >= 1_000_000 { return "\(q / 1_000_000)M" }
-        if q >= 10_000 { return "\(q / 1_000)K" }
-        return "×\(q)"
-    }
-
+    /// Build an ItemCardView configured for an offer reward.
     @ViewBuilder
-    private var iconContent: some View {
+    static func card(for content: OfferContent) -> some View {
+        let (rarity, imageKey, fallback) = visuals(for: content)
+        ItemCardView(
+            rarity: rarity,
+            imageKey: imageKey,
+            imageUrl: nil,
+            fallbackIcon: fallback,
+            context: .offerReward(label: label(for: content)),
+            onTap: {}
+        )
+    }
+
+    /// Rarity + imageKey + fallbackIcon per content type.
+    private static func visuals(for content: OfferContent) -> (ItemRarity, String?, String) {
         switch content.type {
         case "gold":
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [DarkFantasyTheme.goldBright, DarkFantasyTheme.gold],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .overlay(Circle().stroke(DarkFantasyTheme.goldDim, lineWidth: 0.5))
-                Text("G")
-                    .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.textOnGold)
-            }
-            .frame(width: 22, height: 22)
-
+            return (.legendary, "icon-gold", "shippingbox")
         case "gems":
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [DarkFantasyTheme.purple, DarkFantasyTheme.purple.opacity(0.5)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 14, height: 14)
-                .rotationEffect(.degrees(45))
-
+            return (.epic, "icon-gems", "shippingbox")
         case "xp":
-            ZStack {
-                Circle().fill(DarkFantasyTheme.xpRing)
-                Text("XP")
-                    .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-            }
-            .frame(width: 22, height: 22)
-
+            return (.rare, "icon-xp", "shippingbox")
         case "consumable":
-            // Generic potion silhouette (cap + flask body)
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(DarkFantasyTheme.goldDim)
-                    .frame(width: 6, height: 3)
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .fill(DarkFantasyTheme.success)
-                    .frame(width: 14, height: 18)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                            .stroke(DarkFantasyTheme.success.opacity(0.8), lineWidth: 0.5)
-                    )
-            }
-
+            // Catalog key is the asset name for seeded potions (e.g. health_potion_large)
+            return (.uncommon, content.id, "shippingbox")
+        case "item":
+            return (.rare, content.id, "shippingbox")
         default:
-            // Item placeholder — small elevated square with gold hint
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                .fill(DarkFantasyTheme.bgElevated)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                        .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1)
-                )
-                .frame(width: 20, height: 20)
+            return (.common, nil, "shippingbox")
         }
+    }
+
+    /// Quantity label for the bottom bar ("×3", "×500", "×1K", "×1M").
+    private static func label(for content: OfferContent) -> String {
+        let q = content.quantity
+        if q >= 1_000_000 { return "×\(q / 1_000_000)M" }
+        if q >= 10_000 { return "×\(q / 1_000)K" }
+        return "×\(q)"
     }
 }

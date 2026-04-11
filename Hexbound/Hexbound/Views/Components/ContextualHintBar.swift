@@ -78,17 +78,45 @@ struct ContextualHintBar: View {
 
     @ViewBuilder
     private var categoryIcon: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(hint.category.accentColor.opacity(0.15))
-                .frame(
-                    width: LayoutConstants.iconXL,
-                    height: LayoutConstants.iconXL
-                )
+        if let assetName = hint.iconAsset {
+            // Rounded square asset thumbnail (e.g. boss portrait for dungeon hints)
+            ZStack {
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(hint.category.accentColor.opacity(0.15))
+                    .frame(
+                        width: LayoutConstants.iconXL,
+                        height: LayoutConstants.iconXL
+                    )
 
-            Image(systemName: hint.category.sfSymbol)
-                .font(DarkFantasyTheme.body.weight(.semibold))
-                .foregroundStyle(hint.category.accentColor)
+                Image(assetName)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(
+                        width: LayoutConstants.iconXL,
+                        height: LayoutConstants.iconXL
+                    )
+                    .clipShape(
+                        RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    )
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(hint.category.accentColor.opacity(0.35), lineWidth: 1)
+            )
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(hint.category.accentColor.opacity(0.15))
+                    .frame(
+                        width: LayoutConstants.iconXL,
+                        height: LayoutConstants.iconXL
+                    )
+
+                Image(systemName: hint.category.sfSymbol)
+                    .font(DarkFantasyTheme.body.weight(.semibold))
+                    .foregroundStyle(hint.category.accentColor)
+            }
         }
     }
 }

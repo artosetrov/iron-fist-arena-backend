@@ -107,13 +107,15 @@ export async function seedDefaultConfigs() {
     { key: 'elo.calibration_games', value: 10, category: 'elo', description: 'Number of calibration games before stable rating' },
     { key: 'elo.min_rating', value: 0, category: 'elo', description: 'Minimum possible ELO rating' },
 
-    // PvP Ranks
-    { key: 'pvp_ranks.bronze', value: 0, category: 'pvp_ranks', description: 'Minimum ELO for Bronze rank' },
-    { key: 'pvp_ranks.silver', value: 1200, category: 'pvp_ranks', description: 'Minimum ELO for Silver rank' },
-    { key: 'pvp_ranks.gold', value: 1500, category: 'pvp_ranks', description: 'Minimum ELO for Gold rank' },
-    { key: 'pvp_ranks.platinum', value: 1800, category: 'pvp_ranks', description: 'Minimum ELO for Platinum rank' },
-    { key: 'pvp_ranks.diamond', value: 2100, category: 'pvp_ranks', description: 'Minimum ELO for Diamond rank' },
-    { key: 'pvp_ranks.grandmaster', value: 2400, category: 'pvp_ranks', description: 'Minimum ELO for Grandmaster rank' },
+    // PvP Ranks (W3.D5 — Variant A: 8 tiers × 3 divisions, 750 ELO per tier, 250 per division;
+    // Master added; Challenger = top-100 by leaderboard rank, computed at query time)
+    { key: 'pvp_ranks.bronze', value: 0, category: 'pvp_ranks', description: 'Minimum ELO for Bronze rank (0-749)' },
+    { key: 'pvp_ranks.silver', value: 750, category: 'pvp_ranks', description: 'Minimum ELO for Silver rank (750-1499) — starting tier (Silver II)' },
+    { key: 'pvp_ranks.gold', value: 1500, category: 'pvp_ranks', description: 'Minimum ELO for Gold rank (1500-2249)' },
+    { key: 'pvp_ranks.platinum', value: 2250, category: 'pvp_ranks', description: 'Minimum ELO for Platinum rank (2250-2999)' },
+    { key: 'pvp_ranks.diamond', value: 3000, category: 'pvp_ranks', description: 'Minimum ELO for Diamond rank (3000-3749)' },
+    { key: 'pvp_ranks.master', value: 3750, category: 'pvp_ranks', description: 'Minimum ELO for Master rank (3750-4249, no divisions) — W3.D5 new' },
+    { key: 'pvp_ranks.grandmaster', value: 4250, category: 'pvp_ranks', description: 'Minimum ELO for Grandmaster rank (4250+, no divisions)' },
 
     // Combat
     { key: 'combat.max_turns', value: 15, category: 'combat', description: 'Maximum turns per combat encounter' },
@@ -121,21 +123,54 @@ export async function seedDefaultConfigs() {
     { key: 'combat.crit_multiplier', value: 1.5, category: 'combat', description: 'Critical hit damage multiplier' },
     { key: 'combat.max_crit_chance', value: 50, category: 'combat', description: 'Maximum critical hit chance (%)' },
     { key: 'combat.max_dodge_chance', value: 30, category: 'combat', description: 'Maximum dodge chance (%)' },
-    { key: 'combat.rogue_dodge_bonus', value: 3, category: 'combat', description: 'Rogue class bonus dodge chance (%)' },
+    { key: 'combat.rogue_dodge_bonus', value: 4, category: 'combat', description: 'Rogue class bonus dodge chance (%) — W3.D2' },
     { key: 'combat.tank_damage_reduction', value: 0.85, category: 'combat', description: 'Tank damage multiplier (0.85 = 15% reduction)' },
     { key: 'combat.damage_variance', value: 0.10, category: 'combat', description: 'Damage variance range (±10%)' },
     { key: 'combat.poison_armor_penetration', value: 0.3, category: 'combat', description: 'Poison ignores this % of armor' },
-    { key: 'combat.crit_per_luk', value: 0.7, category: 'combat', description: 'Crit chance per LUK point (%)' },
-    { key: 'combat.crit_per_agi', value: 0.15, category: 'combat', description: 'Crit chance per AGI point (%)' },
+    { key: 'combat.crit_per_luk', value: 0.6, category: 'combat', description: 'Crit chance per LUK point (%) — W3.D2' },
+    { key: 'combat.crit_per_agi', value: 0.2, category: 'combat', description: 'Crit chance per AGI point (%) — W3.D2' },
     { key: 'combat.dodge_per_agi', value: 0.2, category: 'combat', description: 'Dodge chance per AGI point (%)' },
     { key: 'combat.dodge_per_luk', value: 0.1, category: 'combat', description: 'Dodge chance per LUK point (%)' },
-    { key: 'combat.cha_intimidation_per_point', value: 0.15, category: 'combat', description: 'Damage reduction per CHA point (%)' },
-    { key: 'combat.cha_intimidation_cap', value: 15, category: 'combat', description: 'Max CHA intimidation damage reduction (%)' },
+    // W3.D1 — CHA miss chance (replaces legacy cha_intimidation_*)
+    { key: 'combat.cha_miss_per_point', value: 0.2, category: 'combat', description: 'Miss chance per CHA point of defender (%) — W3.D1' },
+    { key: 'combat.cha_miss_cap', value: 20, category: 'combat', description: 'Max CHA-induced miss chance (%) — W3.D1' },
+    // W3.D2 — Rogue Execute finisher
+    { key: 'combat.rogue_execute_hp_threshold', value: 0.35, category: 'combat', description: 'Defender HP ratio that arms Rogue Execute (W3.D2)' },
+    { key: 'combat.rogue_execute_damage_bonus', value: 0.15, category: 'combat', description: 'Final damage bonus when Rogue Execute triggers (W3.D2)' },
 
-    // Win Streaks
-    { key: 'win_streak.3_bonus', value: 0.2, category: 'win_streak', description: '3-win streak gold bonus (+20%)' },
-    { key: 'win_streak.5_bonus', value: 0.5, category: 'win_streak', description: '5-win streak gold bonus (+50%)' },
-    { key: 'win_streak.8_bonus', value: 1.0, category: 'win_streak', description: '8+ win streak gold bonus (+100%)' },
+    // W3.D4 — Daily training XP diminishing returns (LoL FWoTD + RAID pattern)
+    { key: 'training_xp_dr.full_xp_clears', value: 6, category: 'training_xp_dr', description: 'First N dungeon clears/day award 100% XP (W3.D4)' },
+    { key: 'training_xp_dr.half_xp_clears', value: 6, category: 'training_xp_dr', description: 'Next M clears award 50% XP before falling to floor (W3.D4)' },
+    { key: 'training_xp_dr.floor_multiplier', value: 0.1, category: 'training_xp_dr', description: 'Minimum XP multiplier after half window — never zero (W3.D4)' },
+
+    // W3.D4 — Stamina refill diminishing returns + hard daily cap (Clash Royale / Genshin pattern)
+    { key: 'stamina_refill_dr.daily_cap', value: 4, category: 'stamina_refill_dr', description: 'Maximum gem refills per day — hard gate (W3.D4)' },
+    { key: 'stamina_refill_dr.cost_multipliers', value: [1, 1.5, 2.5, 4], category: 'stamina_refill_dr', description: 'Cost multipliers applied in order for refills 1..N (W3.D4)' },
+
+    // Win Streaks (W3.D3 — capped at +50% to hit sink-ratio target)
+    { key: 'win_streak.3_bonus', value: 0.15, category: 'win_streak', description: '3-win streak gold bonus (W3.D3: +15%, was +20%)' },
+    { key: 'win_streak.5_bonus', value: 0.3,  category: 'win_streak', description: '5-win streak gold bonus (W3.D3: +30%, was +50%)' },
+    { key: 'win_streak.8_bonus', value: 0.5,  category: 'win_streak', description: '8+ win streak gold bonus (W3.D3: +50%, was +100%)' },
+
+    // Loss Streak Recovery (W3.D3 — capped at +50%)
+    { key: 'loss_streak.3_bonus', value: 0.2,  category: 'loss_streak', description: '3-loss streak recovery bonus (W3.D3: +20%, was +30%)' },
+    { key: 'loss_streak.5_bonus', value: 0.35, category: 'loss_streak', description: '5-loss streak recovery bonus (W3.D3: +35%, was +50%)' },
+    { key: 'loss_streak.7_bonus', value: 0.5,  category: 'loss_streak', description: '7+ loss streak recovery bonus (W3.D3: +50%, was +80%)' },
+
+    // CHA gold bonus cap (W3.D3 — lowered 125% → 80% after CHA moved to miss-chance in W3.D1)
+    { key: 'cha.gold_bonus_cap', value: 0.80, category: 'charisma', description: 'Max multiplier chaGoldBonus can return (W3.D3: 0.80, was 1.25)' },
+
+    // Repair costs (W3.D3 — bumped to lift sink ratio into the 55-65% band)
+    { key: 'repair.base_cost',   value: 120, category: 'repair', description: 'Base repair cost per item (W3.D3: 120, was 80)' },
+    { key: 'repair.per_level',   value: 20,  category: 'repair', description: 'Additional repair cost per item level (W3.D3: 20, was 15)' },
+
+    // Consumable price bump (W3.D3 — 25% up across the board to match inflation-adjusted income)
+    { key: 'consumable.price.stamina_potion_small',  value: 125, category: 'consumable_prices', description: 'S. Stamina Potion price (W3.D3: 125, was 100)' },
+    { key: 'consumable.price.stamina_potion_medium', value: 315, category: 'consumable_prices', description: 'M. Stamina Potion price (W3.D3: 315, was 250)' },
+    { key: 'consumable.price.stamina_potion_large',  value: 625, category: 'consumable_prices', description: 'L. Stamina Potion price (W3.D3: 625, was 500)' },
+    { key: 'consumable.price.health_potion_small',   value: 190, category: 'consumable_prices', description: 'S. Health Potion price (W3.D3: 190, was 150)' },
+    { key: 'consumable.price.health_potion_medium',  value: 440, category: 'consumable_prices', description: 'M. Health Potion price (W3.D3: 440, was 350)' },
+    { key: 'consumable.price.health_potion_large',   value: 875, category: 'consumable_prices', description: 'L. Health Potion price (W3.D3: 875, was 700)' },
 
     // Matchmaking
     { key: 'matchmaking.level_range', value: 3, category: 'matchmaking', description: 'Level range for opponent matching (±)' },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { rateLimit } from '@/lib/rate-limit'
 
 const MIN_BET = 50
@@ -101,8 +102,12 @@ export async function POST(req: NextRequest) {
       throw err
     }
 
-    // Update daily quest progress for gold spent
-    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', bet_amount)
+    // Update daily + weekly quest progress for gold spent
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'gold_spent', bet_amount),
+      // W3.D5 — Weekly BP challenge: Spendthrift slot
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_spent', bet_amount),
+    ])
 
     return NextResponse.json({
       session_id: session.id,

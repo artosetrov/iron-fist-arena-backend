@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Card v4: Full-Bleed Avatar + Bottom Fade</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════════════════════
+   TOKENS — 1:1 with DarkFantasyTheme.swift
+   Last verified: 2026-04-10
+   ═══════════════════════════════════════════════════════ */
+:root {
+  /* Backgrounds — DarkFantasyTheme.bg* */
+  --bg-abyss:     #08080C;   /* bgAbyss */
+  --bg-primary:   #0D0D12;   /* bgPrimary */
+  --bg-secondary: #1A1A2E;   /* bgSecondary — panels, cards */
+  --bg-tertiary:  #16213E;   /* bgTertiary */
+  --bg-elevated:  #1E2240;   /* bgElevated */
+  --bg-disabled:  #333340;   /* bgDisabled */
+  --bg-card-start:#1C1C30;   /* bgCardGradientStart */
+  --bg-card-end:  #2A2A40;   /* bgCardGradientEnd */
+  --bg-dark-panel:#141428;   /* bgDarkPanel */
+
+  /* Borders */
+  --border-sub:   rgba(255,255,255,0.06);
+  --border-med:   rgba(255,255,255,0.12);
+
+  /* Gold — DarkFantasyTheme.gold / goldBright / goldDim */
+  --gold:         #D4A537;   /* gold */
+  --gold-bright:  #FFD700;   /* goldBright */
+  --gold-dim:     #8B6914;   /* goldDim */
+  --gold-glow:    rgba(243,156,18,0.4); /* goldGlow */
+
+  /* Status — DarkFantasyTheme.danger / success / stamina / info */
+  --danger:       #E63946;   /* danger */
+  --success:      #2ECC71;   /* success */
+  --stamina:      #E67E22;   /* stamina */
+  --info:         #3498DB;   /* info */
+
+  /* Text — DarkFantasyTheme.text* */
+  --text-primary: #F5F5F5;   /* textPrimary */
+  --text-sec:     #A0A0B0;   /* textSecondary */
+  --text-tertiary:#6B6B80;   /* textTertiary */
+  --text-disabled:#555566;   /* textDisabled */
+  --text-on-gold: #1A1A2E;   /* textOnGold */
+  --text-gold:    #FFD700;   /* textGold = goldBright */
+  --text-danger:  #FF6B6B;   /* textDanger */
+  --text-success: #5DECA5;   /* textSuccess */
+  --text-warning: #FFA502;   /* textWarning */
+
+  /* Class colors — DarkFantasyTheme.class* */
+  --class-warrior:#E68C33;   /* classWarrior — Ember Orange */
+  --class-rogue:  #4DD958;   /* classRogue — Venom Green */
+  --class-mage:   #6680FF;   /* classMage — Arcane Blue */
+  --class-tank:   #9999B2;   /* classTank — Iron Gray */
+
+  /* Difficulty (mapped to status) */
+  --diff-easy:    #2ECC71;   /* = success */
+  --diff-med:     #FFA502;   /* = textWarning */
+  --diff-hard:    #E63946;   /* = danger */
+
+  /* Card system */
+  --card-r:       14px;
+  --card-w:       162px;
+}
+
+/* ─── BASE ─── */
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background: var(--bg-abyss);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  padding: 32px 24px 64px;
+}
+
+/* ─── TYPE ─── */
+.h-page { font-family:'Oswald',sans-serif; font-size:26px; font-weight:700; color:var(--gold); letter-spacing:3px; text-transform:uppercase; }
+.h-sec  { font-family:'Oswald',sans-serif; font-size:17px; letter-spacing:2px; text-transform:uppercase; color:var(--text-sec); border-bottom:1px solid var(--border-sub); padding-bottom:10px; margin-bottom:26px; }
+.h-sec span { color:var(--gold); }
+
+/* ─── LAYOUT ─── */
+.section { margin-bottom:52px; }
+.row     { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+.col     { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.cl      { font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; text-align:center; }
+
+.page-header { text-align:center; margin-bottom:48px; }
+.page-header p { color:var(--text-sec); font-size:13px; margin-top:6px; }
+
+/* ─── INFO BOX ─── */
+.box { border-radius:10px; padding:14px 18px; margin-bottom:14px; }
+.box-gold { background:rgba(212,165,55,.05); border:1px solid rgba(212,165,55,.2); }
+.box-red  { background:rgba(230,57,70,.04);  border:1px solid rgba(230,57,70,.2); }
+.box-ok   { background:rgba(46,204,113,.04); border:1px solid rgba(46,204,113,.2); }
+.box h4   { font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+.box-gold h4 { color:var(--gold); }
+.box-red  h4 { color:var(--danger); }
+.box-ok   h4 { color:var(--success); }
+.box p, .box li { font-size:12px; color:var(--text-sec); line-height:1.65; }
+.box ul   { padding-left:16px; }
+.box li   { margin-bottom:4px; }
+code { background:rgba(255,255,255,.06); padding:1px 5px; border-radius:3px; font-size:11px; color:var(--gold); }
+
+
+/* ════════════════════════════════════════════════════
+   UNIFIED CARD COMPONENT v4
+
+   Avatar fills entire card (aspect-ratio 1/1.55)
+   Gradient fade from transparent → #08080C at bottom
+   Content overlay: name + class tag + divider + stats
+   Equal height guaranteed by single aspect-ratio
+   No buttons — tap = action
+   ════════════════════════════════════════════════════ */
+
+.ucard {
+  width: var(--card-w);
+  aspect-ratio: 1 / 1.55;
+  border-radius: var(--card-r);
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  transition: transform .16s ease, filter .16s ease;
+  user-select: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  flex-shrink: 0;
+}
+.ucard:hover  { transform: translateY(-2px); }
+.ucard:active { transform: translateY(-2px); filter: brightness(.88); }
+
+/* ── Avatar — fills entire card ── */
+.u-avatar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+/* ── Bottom gradient fade ──
+   Transparent in the upper 28%, smoothly darkens
+   to absolute bgAbyss black at the bottom.
+   Text sits on top of this — always readable.      */
+.u-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent              25%,
+    rgba(8,  8, 12, 0.08)   42%,
+    rgba(8,  8, 12, 0.45)   58%,
+    rgba(8,  8, 12, 0.80)   72%,
+    rgba(8,  8, 12, 0.95)   85%,
+    rgba(8,  8, 12, 1.00)  100%
+  );
+  pointer-events: none;
+}
+
+/* ── Top row ── */
+.u-top {
+  position: absolute;
+  top: 8px; left: 8px; right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 3;
+}
+
+/* ── LVL badge ── */
+.u-lvl {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.u-lvl .ln { font-family:'Oswald',sans-serif; font-size:14px; font-weight:700; color:var(--text-on-gold); line-height:1; margin-bottom:1px; }
+.u-lvl .ll { font-family:'Oswald',sans-serif; font-size:7.5px; font-weight:600; letter-spacing:.3px; color:rgba(26,26,46,.72); text-transform:uppercase; line-height:1; }
+
+/* ── Context badge ── */
+.u-ctx {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* Stage badge (boss) */
+.stage-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0,0,0,.65);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  padding: 3px 9px;
+  backdrop-filter: blur(4px);
+}
+.stage-badge .sn { font-family:'Oswald',sans-serif; font-size:13px; font-weight:700; color:var(--text-primary); line-height:1; }
+.stage-badge .sl { font-family:'Oswald',sans-serif; font-size:7px; letter-spacing:.5px; color:var(--text-sec); text-transform:uppercase; line-height:1; margin-top:1px; }
+
+/* ── Bottom content overlay ── */
+.u-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 0 10px 10px;
+  z-index: 3;
+}
+
+.u-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.u-class {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-top: 3px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.u-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin: 7px 0 6px;
+}
+
+.u-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(160,160,176,0.8);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.u-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.u-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* Pills */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 5px;
+  padding: 3px 7px;
+  backdrop-filter: blur(4px);
+}
+.pill .pv { font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; line-height:1; }
+.pill .pl { font-family:'Inter',sans-serif; font-size:9px; color:rgba(160,160,176,.8); line-height:1; }
+
+/* Compact bars (hero context) */
+.bars-compact { display:flex; flex-direction:column; gap:4px; }
+.bar-row { display:flex; align-items:center; gap:5px; }
+.bar-lbl { font-family:'Oswald',sans-serif; font-size:8px; color:rgba(160,160,176,.7); letter-spacing:.5px; width:16px; flex-shrink:0; text-transform:uppercase; }
+.bar-track { flex:1; height:4px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden; }
+.bar-fill  { height:100%; border-radius:2px; }
+
+/* Selected gold ring */
+.selected-ring {
+  position:absolute; inset:0;
+  border-radius:var(--card-r);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 18px var(--gold-glow), inset 0 0 10px rgba(212,165,55,.06);
+  pointer-events:none;
+  z-index:10;
+}
+
+/* Outer glow border */
+.u-glow-border {
+  position:absolute; inset:0;
+  border-radius:var(--card-r);
+  border: 1.5px solid;
+  pointer-events:none;
+  z-index:4;
+}
+
+/* WIN / LOSS top-border accent */
+.ucard.win-card  { border-top: 3px solid var(--success); }
+.ucard.loss-card { border-top: 3px solid var(--danger); }
+
+/* Injured */
+.ucard.injured .u-glow-border {
+  border-color: rgba(230,57,70,.65) !important;
+  box-shadow: inset 0 0 24px rgba(230,57,70,.14);
+}
+
+/* Locked */
+.ucard.locked { opacity: .45; }
+
+
+/* ════════════════════════════════════
+   PHONE FRAME
+════════════════════════════════════ */
+.phone {
+  width: 375px;
+  background: var(--bg-abyss);
+  border-radius: 30px;
+  border: 2px solid var(--border-med);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.65);
+  flex-shrink: 0;
+}
+.phone-screen { padding: 16px; }
+.phone-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom: 14px;
+}
+.phone-h2 { font-family:'Oswald',sans-serif; font-size:20px; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+.tabs-row { display:flex; gap:6px; }
+.tab-pill {
+  font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1px; text-transform:uppercase;
+  padding:4px 10px; border-radius:6px; color:var(--text-sec); border:1px solid transparent;
+}
+.tab-pill.on { background:rgba(212,165,55,.1); color:var(--gold); border-color:rgba(212,165,55,.3); }
+
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.grid2 .ucard { width:100%; }
+
+/* ─── TOKEN AUDIT TABLE ─── */
+.tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.tbl th { text-align:left; font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-sec); padding:8px 12px; border-bottom:1px solid var(--border-sub); }
+.tbl td { padding:9px 12px; border-bottom:1px solid var(--border-sub); color:var(--text-sec); vertical-align:middle; }
+.tbl td:first-child { color:var(--text-primary); font-weight:500; }
+.swatch { display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:middle; margin-right:6px; border:1px solid rgba(255,255,255,.1); }
+.tag { display:inline-block; font-family:'Oswald',sans-serif; font-size:9px; letter-spacing:.8px; padding:2px 6px; border-radius:3px; text-transform:uppercase; }
+.tag-r { background:rgba(230,57,70,.1); color:var(--danger); border:1px solid rgba(230,57,70,.25); }
+.tag-g { background:rgba(46,204,113,.1); color:var(--success); border:1px solid rgba(46,204,113,.25); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <h1 class="h-page">Unified Card v4</h1>
+  <p>Реальные ассеты · 1:1 токены с DarkFantasyTheme.swift · аватар под контентом · fade снизу</p>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  TOKEN AUDIT — ЧТО БЫЛО НЕПРАВИЛЬНО
+═══════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">Token Audit — <span>исправления v3 → v4</span></div>
+
+  <table class="tbl">
+    <thead>
+      <tr><th>Токен</th><th>v3 (ошибка)</th><th>v4 (правильно из Swift)</th><th>Статус</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>bgAbyss</td>
+        <td><span class="swatch" style="background:#0D0D1A;"></span><code>#0D0D1A</code></td>
+        <td><span class="swatch" style="background:#08080C;"></span><code>#08080C</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>success</td>
+        <td><span class="swatch" style="background:#4CAF84;"></span><code>#4CAF84</code></td>
+        <td><span class="swatch" style="background:#2ECC71;"></span><code>#2ECC71</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>stamina</td>
+        <td><span class="swatch" style="background:#F08040;"></span><code>#F08040</code></td>
+        <td><span class="swatch" style="background:#E67E22;"></span><code>#E67E22</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>info</td>
+        <td><span class="swatch" style="background:#4A9FD4;"></span><code>#4A9FD4</code></td>
+        <td><span class="swatch" style="background:#3498DB;"></span><code>#3498DB</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>classWarrior</td>
+        <td><span class="swatch" style="background:#E8A030;"></span><code>#E8A030</code></td>
+        <td><span class="swatch" style="background:#E68C33;"></span><code>#E68C33</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>classRogue</td>
+        <td><span class="swatch" style="background:#60C070;"></span><code>#60C070</code></td>
+        <td><span class="swatch" style="background:#4DD958;"></span><code>#4DD958</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>classMage</td>
+        <td><span class="swatch" style="background:#7A5CD6;"></span><code>#7A5CD6</code></td>
+        <td><span class="swatch" style="background:#6680FF;"></span><code>#6680FF</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>classTank</td>
+        <td><span class="swatch" style="background:#4A9FD4;"></span><code>#4A9FD4</code> (info!)</td>
+        <td><span class="swatch" style="background:#9999B2;"></span><code>#9999B2</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>textWarning</td>
+        <td><span class="swatch" style="background:#F0A030;"></span><code>#F0A030</code></td>
+        <td><span class="swatch" style="background:#FFA502;"></span><code>#FFA502</code></td>
+        <td><span class="tag tag-r">FIXED</span></td>
+      </tr>
+      <tr>
+        <td>gold / danger / textPrimary / textSecondary / textOnGold / textDisabled</td>
+        <td colspan="2" style="color:var(--success);">Все были верны ✓</td>
+        <td><span class="tag tag-g">OK</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  ВСЕ 8 КОНТЕКСТОВ — РЕАЛЬНЫЕ АССЕТЫ
+═══════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">8 контекстов — <span>реальные ассеты</span></div>
+
+  <div class="row" style="align-items:flex-end;gap:20px;flex-wrap:wrap;">
+
+    <!-- ARENA MEDIUM (warrior) -->
+    <div class="col">
+      <div class="cl" style="color:var(--diff-med);">Arena · Medium</div>
+      <div class="ucard" style="box-shadow:0 4px 24px rgba(230,140,51,.22);">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-crimson-reaver-portrait.png" alt="Crimson Reaver">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-lvl" style="background:var(--class-warrior);">
+            <span class="ln">7</span><span class="ll">LVL</span>
+          </div>
+          <div class="u-ctx" style="background:rgba(255,165,2,.14);color:var(--diff-med);border:1px solid rgba(255,165,2,.3);">MEDIUM</div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name">Warbane</div>
+          <div class="u-class" style="background:rgba(230,140,51,.18);color:var(--class-warrior);">WARRIOR</div>
+          <div class="u-divider"></div>
+          <div class="u-label">PVP Rating</div>
+          <div class="u-stat-row">
+            <div class="u-value">963</div>
+            <div class="pill"><span class="pv" style="color:var(--success);">42%</span><span class="pl">WR</span></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(230,140,51,.3);"></div>
+      </div>
+    </div>
+
+    <!-- ARENA HARD (tank) -->
+    <div class="col">
+      <div class="cl" style="color:var(--diff-hard);">Arena · Hard</div>
+      <div class="ucard" style="box-shadow:0 4px 24px rgba(230,57,70,.25);">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-iron-juggernaut-portrait.png" alt="Iron Juggernaut">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-lvl" style="background:var(--class-tank);">
+            <span class="ln" style="color:#1A1A2E;">19</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+          </div>
+          <div class="u-ctx" style="background:rgba(230,57,70,.15);color:var(--diff-hard);border:1px solid rgba(230,57,70,.3);">HARD</div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name">Bloodfist</div>
+          <div class="u-class" style="background:rgba(153,153,178,.15);color:var(--class-tank);">TANK</div>
+          <div class="u-divider"></div>
+          <div class="u-label">PVP Rating</div>
+          <div class="u-stat-row">
+            <div class="u-value">1,840</div>
+            <div class="pill"><span class="pv" style="color:var(--danger);">71%</span><span class="pl">WR</span></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(230,57,70,.4);"></div>
+      </div>
+    </div>
+
+    <!-- BOSS STAGE 1 CURRENT -->
+    <div class="col">
+      <div class="cl" style="color:var(--success);">Boss · Stage 1</div>
+      <div class="ucard" style="box-shadow:0 4px 24px rgba(155,89,182,.3);">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/boss-straw-dummy-portrait.png" alt="Straw Dummy">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-ctx" style="background:rgba(46,204,113,.15);color:var(--success);border:1px solid rgba(46,204,113,.3);">⚡ CURRENT</div>
+          <div class="stage-badge"><span class="sn">1</span><span class="sl">STAGE</span></div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">STRAW DUMMY</div>
+          <div class="u-divider"></div>
+          <div class="u-label">Boss HP</div>
+          <div class="u-stat-row">
+            <div class="u-value" style="color:var(--danger);">250</div>
+            <div class="pill"><span class="pv" style="color:var(--gold);">2</span><span class="pl">drops</span></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(155,89,182,.5);"></div>
+      </div>
+    </div>
+
+    <!-- BOSS STAGE 2 LOCKED -->
+    <div class="col">
+      <div class="cl" style="color:var(--text-sec);">Boss · Locked</div>
+      <div class="ucard locked">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/boss-rusty-golem-portrait.png" alt="Rusty Golem" style="filter:grayscale(.7);">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-ctx" style="background:rgba(85,85,102,.2);color:var(--text-disabled);border:1px solid rgba(85,85,102,.3);">🔒 LOCKED</div>
+          <div class="stage-badge" style="opacity:.6;"><span class="sn" style="color:var(--text-sec);">2</span><span class="sl">STAGE</span></div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-sec);">RUSTY GOLEM</div>
+          <div class="u-divider"></div>
+          <div class="u-label">Boss HP</div>
+          <div class="u-stat-row">
+            <div class="u-value" style="color:var(--text-disabled);">320</div>
+            <div class="pill" style="opacity:.4;"><span class="pv" style="color:var(--text-disabled);">2</span><span class="pl">drops</span></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(85,85,102,.18);"></div>
+      </div>
+    </div>
+
+    <!-- HERO SELECTED (mage) -->
+    <div class="col">
+      <div class="cl" style="color:var(--gold);">Hero · Selected</div>
+      <div class="ucard" style="position:relative;box-shadow:0 4px 24px rgba(212,165,55,.2);">
+        <div class="selected-ring"></div>
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-arcane-sentinel-portrait.png" alt="Arcane Sentinel">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-lvl" style="background:var(--class-mage);">
+            <span class="ln">17</span><span class="ll">LVL</span>
+          </div>
+          <div class="u-ctx" style="background:rgba(212,165,55,.15);color:var(--gold);border:1px solid rgba(212,165,55,.3);">✓ ACTIVE</div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name">Shadowmere</div>
+          <div class="u-class" style="background:rgba(102,128,255,.18);color:var(--class-mage);">MAGE</div>
+          <div class="u-divider"></div>
+          <div class="u-label">PVP Rating</div>
+          <div class="u-stat-row" style="margin-bottom:5px;">
+            <div class="u-value">1,140</div>
+          </div>
+          <div class="bars-compact">
+            <div class="bar-row"><span class="bar-lbl">HP</span><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--success);"></div></div></div>
+            <div class="bar-row"><span class="bar-lbl">STA</span><div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--stamina);"></div></div></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(102,128,255,.35);"></div>
+      </div>
+    </div>
+
+    <!-- HERO INJURED (rogue) -->
+    <div class="col">
+      <div class="cl" style="color:var(--danger);">Hero · Injured</div>
+      <div class="ucard injured">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-shadow-assassin-portrait.png" alt="Shadow Assassin">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-lvl" style="background:var(--class-rogue);">
+            <span class="ln" style="color:#1A1A2E;">9</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+          </div>
+          <div class="u-ctx" style="background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.3);">❤️ LOW HP</div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name">Daggermist</div>
+          <div class="u-class" style="background:rgba(77,217,88,.15);color:var(--class-rogue);">ROGUE</div>
+          <div class="u-divider"></div>
+          <div class="u-label">PVP Rating</div>
+          <div class="u-stat-row" style="margin-bottom:5px;">
+            <div class="u-value">720</div>
+          </div>
+          <div class="bars-compact">
+            <div class="bar-row"><span class="bar-lbl">HP</span><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--danger);"></div></div></div>
+            <div class="bar-row"><span class="bar-lbl">STA</span><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--stamina);"></div></div></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(230,57,70,.6);"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY WIN -->
+    <div class="col">
+      <div class="cl" style="color:var(--success);">History · WIN</div>
+      <div class="ucard win-card" style="box-shadow:0 4px 16px rgba(46,204,113,.14);">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-veteran-knight-portrait.png" alt="Veteran Knight">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-lvl" style="background:var(--class-warrior);">
+            <span class="ln">11</span><span class="ll">LVL</span>
+          </div>
+          <div class="u-ctx" style="background:rgba(46,204,113,.15);color:var(--success);border:1px solid rgba(46,204,113,.3);">✓ WIN</div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name">Ironforge</div>
+          <div class="u-class" style="background:rgba(230,140,51,.18);color:var(--class-warrior);">WARRIOR</div>
+          <div class="u-divider"></div>
+          <div class="u-label">Reward</div>
+          <div class="u-stat-row">
+            <div class="u-value" style="color:var(--gold);">+35</div>
+            <div class="pill"><span class="pv" style="color:var(--gold);">🪙</span><span class="pl">gold</span></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(46,204,113,.28);"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY LOSS -->
+    <div class="col">
+      <div class="cl" style="color:var(--danger);">History · LOSS</div>
+      <div class="ucard loss-card" style="box-shadow:0 4px 16px rgba(230,57,70,.12);">
+        <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-cursed-bandit-portrait.png" alt="Cursed Bandit">
+        <div class="u-fade"></div>
+        <div class="u-top">
+          <div class="u-lvl" style="background:var(--class-rogue);">
+            <span class="ln" style="color:#1A1A2E;">15</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+          </div>
+          <div class="u-ctx" style="background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.3);">✗ LOSS</div>
+        </div>
+        <div class="u-bottom">
+          <div class="u-name">Aelindra</div>
+          <div class="u-class" style="background:rgba(77,217,88,.15);color:var(--class-rogue);">ROGUE</div>
+          <div class="u-divider"></div>
+          <div class="u-label">Rating Change</div>
+          <div class="u-stat-row">
+            <div class="u-value" style="color:var(--danger);">−18</div>
+            <div class="pill"><span class="pv" style="color:var(--text-sec);">1,340</span><span class="pl">pts</span></div>
+          </div>
+        </div>
+        <div class="u-glow-border" style="border-color:rgba(230,57,70,.22);"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  PHONE DEMOS — 3 ЭКРАНА
+═══════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">Phone Demos — <span>375pt · 2-col grid · реальные ассеты</span></div>
+
+  <div class="row" style="gap:24px;flex-wrap:wrap;align-items:flex-start;">
+
+    <!-- PHONE 1: Arena Opponents -->
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="phone-h2" style="color:var(--gold);">⚔ Arena</div>
+          <div class="tabs-row">
+            <div class="tab-pill on">Fight</div>
+            <div class="tab-pill">History</div>
+          </div>
+        </div>
+        <div class="grid2">
+
+          <div class="ucard" style="box-shadow:0 3px 14px rgba(230,140,51,.2);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-crimson-reaver-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-warrior);">
+                <span class="ln" style="font-size:12px;">7</span><span class="ll">LVL</span>
+              </div>
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(255,165,2,.14);color:var(--diff-med);border:1px solid rgba(255,165,2,.3);">MED</div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Warbane</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(230,140,51,.18);color:var(--class-warrior);">WARRIOR</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;">963</div>
+                <div class="pill"><span class="pv" style="color:var(--success);font-size:10px;">42%</span><span class="pl" style="font-size:8px;">WR</span></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(230,140,51,.25);"></div>
+          </div>
+
+          <div class="ucard" style="box-shadow:0 3px 14px rgba(230,57,70,.2);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-iron-juggernaut-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-tank);">
+                <span class="ln" style="font-size:11px;color:#1A1A2E;">19</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+              </div>
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(230,57,70,.15);color:var(--diff-hard);border:1px solid rgba(230,57,70,.3);">HARD</div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Bloodfist</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(153,153,178,.15);color:var(--class-tank);">TANK</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;">1,840</div>
+                <div class="pill"><span class="pv" style="color:var(--danger);font-size:10px;">71%</span><span class="pl" style="font-size:8px;">WR</span></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(230,57,70,.35);"></div>
+          </div>
+
+          <div class="ucard" style="box-shadow:0 3px 12px rgba(77,217,88,.14);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-shadow-assassin-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-rogue);">
+                <span class="ln" style="font-size:12px;color:#1A1A2E;">12</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+              </div>
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(46,204,113,.14);color:var(--diff-easy);border:1px solid rgba(46,204,113,.3);">EASY</div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Quickblade</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(77,217,88,.15);color:var(--class-rogue);">ROGUE</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;">780</div>
+                <div class="pill"><span class="pv" style="color:var(--success);font-size:10px;">58%</span><span class="pl" style="font-size:8px;">WR</span></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(77,217,88,.22);"></div>
+          </div>
+
+          <div class="ucard" style="box-shadow:0 3px 12px rgba(102,128,255,.14);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-arcane-sentinel-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-mage);">
+                <span class="ln" style="font-size:12px;">8</span><span class="ll">LVL</span>
+              </div>
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(255,165,2,.14);color:var(--diff-med);border:1px solid rgba(255,165,2,.3);">MED</div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Arcanis</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(102,128,255,.18);color:var(--class-mage);">MAGE</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;">1,020</div>
+                <div class="pill"><span class="pv" style="color:var(--text-warning);font-size:10px;">49%</span><span class="pl" style="font-size:8px;">WR</span></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(102,128,255,.22);"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 2: Hero Selection -->
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="phone-h2">⚔ Heroes</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--text-sec);letter-spacing:.8px;">SELECT</div>
+        </div>
+        <div class="grid2">
+
+          <div class="ucard" style="position:relative;box-shadow:0 3px 14px rgba(212,165,55,.18);">
+            <div class="selected-ring"></div>
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-arcane-sentinel-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-mage);">
+                <span class="ln" style="font-size:12px;">17</span><span class="ll">LVL</span>
+              </div>
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(212,165,55,.15);color:var(--gold);border:1px solid rgba(212,165,55,.3);">✓</div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Shadowmere</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(102,128,255,.18);color:var(--class-mage);">MAGE</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row" style="margin-bottom:4px;">
+                <div class="u-value" style="font-size:18px;">1,140</div>
+              </div>
+              <div class="bars-compact">
+                <div class="bar-row"><span class="bar-lbl">HP</span><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--success);"></div></div></div>
+                <div class="bar-row"><span class="bar-lbl">STA</span><div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--stamina);"></div></div></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(102,128,255,.3);"></div>
+          </div>
+
+          <div class="ucard injured">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-shadow-assassin-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-rogue);">
+                <span class="ln" style="font-size:12px;color:#1A1A2E;">9</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+              </div>
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.3);">❤️ LOW</div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Daggermist</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(77,217,88,.15);color:var(--class-rogue);">ROGUE</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row" style="margin-bottom:4px;">
+                <div class="u-value" style="font-size:18px;">720</div>
+              </div>
+              <div class="bars-compact">
+                <div class="bar-row"><span class="bar-lbl">HP</span><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--danger);"></div></div></div>
+                <div class="bar-row"><span class="bar-lbl">STA</span><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--stamina);"></div></div></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(230,57,70,.55);"></div>
+          </div>
+
+          <div class="ucard" style="box-shadow:0 3px 12px rgba(230,140,51,.14);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-crimson-reaver-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-warrior);">
+                <span class="ln" style="font-size:12px;">5</span><span class="ll">LVL</span>
+              </div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Skullcrusher</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(230,140,51,.18);color:var(--class-warrior);">WARRIOR</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row" style="margin-bottom:4px;">
+                <div class="u-value" style="font-size:18px;">490</div>
+              </div>
+              <div class="bars-compact">
+                <div class="bar-row"><span class="bar-lbl">HP</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--success);"></div></div></div>
+                <div class="bar-row"><span class="bar-lbl">STA</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--stamina);"></div></div></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(230,140,51,.22);"></div>
+          </div>
+
+          <div class="ucard" style="box-shadow:0 3px 12px rgba(153,153,178,.12);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/rush-iron-executioner-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-lvl" style="width:32px;height:32px;background:var(--class-tank);">
+                <span class="ln" style="font-size:12px;color:#1A1A2E;">3</span><span class="ll" style="color:rgba(26,26,46,.7);">LVL</span>
+              </div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:11px;">Ironveil</div>
+              <div class="u-class" style="font-size:9px;padding:1px 5px;background:rgba(153,153,178,.15);color:var(--class-tank);">TANK</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">PVP Rating</div>
+              <div class="u-stat-row" style="margin-bottom:4px;">
+                <div class="u-value" style="font-size:18px;">320</div>
+              </div>
+              <div class="bars-compact">
+                <div class="bar-row"><span class="bar-lbl">HP</span><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--success);"></div></div></div>
+                <div class="bar-row"><span class="bar-lbl">STA</span><div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--stamina);"></div></div></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(153,153,178,.2);"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 3: Dungeon Bosses -->
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="phone-h2" style="color:#9B59B6;">☠ Dungeon</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--text-sec);letter-spacing:.8px;">RUSH</div>
+        </div>
+        <div class="grid2">
+
+          <div class="ucard" style="box-shadow:0 3px 16px rgba(155,89,182,.25);">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/boss-straw-dummy-portrait.png" alt="">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(46,204,113,.15);color:var(--success);border:1px solid rgba(46,204,113,.3);">⚡ NOW</div>
+              <div class="stage-badge"><span class="sn" style="font-size:12px;">1</span><span class="sl">STAGE</span></div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:10px;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;">STRAW DUMMY</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">Boss HP</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;color:var(--danger);">250</div>
+                <div class="pill"><span class="pv" style="color:var(--gold);font-size:10px;">2</span><span class="pl" style="font-size:8px;">drops</span></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(155,89,182,.45);"></div>
+          </div>
+
+          <div class="ucard locked">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/boss-rusty-golem-portrait.png" alt="" style="filter:grayscale(.65);">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(85,85,102,.2);color:var(--text-disabled);border:1px solid rgba(85,85,102,.3);">🔒</div>
+              <div class="stage-badge" style="opacity:.5;"><span class="sn" style="font-size:12px;color:var(--text-sec);">2</span><span class="sl">STAGE</span></div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:10px;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--text-sec);">RUSTY GOLEM</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">Boss HP</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;color:var(--text-disabled);">320</div>
+                <div class="pill" style="opacity:.35;"><span class="pv" style="font-size:10px;color:var(--text-disabled);">2</span><span class="pl" style="font-size:8px;">drops</span></div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(85,85,102,.15);"></div>
+          </div>
+
+          <div class="ucard locked" style="opacity:.3;">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/boss-bone-warrior-portrait.png" alt="" style="filter:grayscale(.9);">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(85,85,102,.2);color:var(--text-disabled);border:1px solid rgba(85,85,102,.25);">🔒</div>
+              <div class="stage-badge" style="opacity:.4;"><span class="sn" style="font-size:12px;color:var(--text-disabled);">3</span><span class="sl">STAGE</span></div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:10px;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--text-disabled);">???</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">Boss HP</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;color:var(--text-disabled);">???</div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(85,85,102,.1);"></div>
+          </div>
+
+          <div class="ucard locked" style="opacity:.2;">
+            <img class="u-avatar" src="../../figma-assets/02_Enemies/boss-banshee-portrait.png" alt="" style="filter:grayscale(.9);">
+            <div class="u-fade"></div>
+            <div class="u-top">
+              <div class="u-ctx" style="font-size:9px;padding:2px 6px;background:rgba(85,85,102,.15);color:var(--text-disabled);border:1px solid rgba(85,85,102,.2);">🔒</div>
+              <div class="stage-badge" style="opacity:.35;"><span class="sn" style="font-size:12px;color:var(--text-disabled);">4</span><span class="sl">STAGE</span></div>
+            </div>
+            <div class="u-bottom">
+              <div class="u-name" style="font-size:10px;font-family:'Oswald',sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--text-disabled);">???</div>
+              <div class="u-divider" style="margin:5px 0 4px;"></div>
+              <div class="u-label">Boss HP</div>
+              <div class="u-stat-row">
+                <div class="u-value" style="font-size:18px;color:var(--text-disabled);">???</div>
+              </div>
+            </div>
+            <div class="u-glow-border" style="border-color:rgba(85,85,102,.08);"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+  SWIFT IMPLEMENTATION
+═══════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">Swift — <span>что менять в коде</span></div>
+
+  <table class="tbl">
+    <thead><tr><th>#</th><th>Файл</th><th>Изменение</th><th>P</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>LayoutConstants.swift</td>
+        <td>Добавить <code>cardAspectRatio: CGFloat = 1.55</code> · убрать <code>cardPortraitRatio</code> + <code>cardInfoHeight</code> · сохранить <code>cardLvlBadgeSize = 38</code>, <code>cardCornerRadius = 14</code></td>
+        <td><span class="tag tag-r">P0</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>CardLevelBadge.swift</td>
+        <td>Добавить <code>Text("LVL")</code> micro-label под цифрой · размер = 38pt</td>
+        <td><span class="tag tag-r">P0</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>ArenaOpponentCard.swift</td>
+        <td><code>ZStack(alignment:.bottom)</code>: <code>CachedAssetImage</code> → <code>LinearGradient</code> fade → <code>VStack</code> с контентом. <code>.aspectRatio(1/1.55, contentMode:.fit)</code> на root. Убрать <code>Attack</code>/<code>Defense</code> pills.</td>
+        <td><span class="tag tag-r">P0</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>DungeonBossCard.swift</td>
+        <td>То же самое + новый <code>StageBadge</code> компонент (число + "STAGE"). Без LVL badge.</td>
+        <td><span class="tag tag-r">P0</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>HeroSelectionCard / CharacterCard</td>
+        <td>Унифицировать со же шаблоном. HP/STA bars — 4px compact поверх fade.</td>
+        <td><span class="tag" style="background:rgba(255,165,2,.1);color:var(--diff-med);border:1px solid rgba(255,165,2,.25);">P1</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>OpponentCardView.swift</td>
+        <td><strong>Удалить.</strong> Переключить все list-views на <code>LazyVGrid</code> 2-кол.</td>
+        <td><span class="tag" style="background:rgba(255,165,2,.1);color:var(--diff-med);border:1px solid rgba(255,165,2,.25);">P1</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="box box-gold" style="margin-top:20px;max-width:680px;">
+    <h4>SwiftUI структура v4</h4>
+    <p>
+      <code>ZStack(alignment: .bottom) { CachedAssetImage(...) · fadeGradient · bottomContent }</code>
+      <br><br>
+      Fade = <code>LinearGradient(colors:[.clear, Color(hex:0x08080C)], startPoint:.top, endPoint:.bottom)</code> начинать от 25–30% высоты через <code>.padding(.top, geometry.size.height * 0.25)</code> или через stops.<br><br>
+      Равная высота = <code>.aspectRatio(1.0 / LayoutConstants.cardAspectRatio, contentMode: .fit)</code> на корневом ZStack.
+    </p>
+  </div>
+</div>
+
+</body>
+</html>

@@ -8,6 +8,7 @@ final class DailyQuestsViewModel {
 
     var quests: [Quest] = []
     var isLoading = false
+    var hasLoadedOnce = false
     var claimingQuestId: String?
     var isClaimingBonus = false
     var bonusClaimedToday = false
@@ -17,12 +18,15 @@ final class DailyQuestsViewModel {
         self.appState = appState
         self.cache = cache
         self.service = QuestService(appState: appState)
-        // Serve cached quests instantly (GameDataCache first, then appState fallback)
+        // Serve cached quests instantly (GameDataCache first, then appState fallback).
+        // If we have cache, treat the initial state as "loaded" to avoid skeleton flash.
         if let cached = cache.cachedDailyQuests() {
             quests = cached.quests
             bonusClaimedToday = cached.bonusClaimed
+            hasLoadedOnce = true
         } else if let cached = appState.cachedTypedQuests, !cached.isEmpty {
             quests = cached
+            hasLoadedOnce = true
         }
     }
 
@@ -72,6 +76,7 @@ final class DailyQuestsViewModel {
         bonusClaimedToday = result.bonusClaimed
         cache.cacheDailyQuests(result.quests, bonusClaimed: result.bonusClaimed)
         isLoading = false
+        hasLoadedOnce = true
     }
 
     // MARK: - Claim

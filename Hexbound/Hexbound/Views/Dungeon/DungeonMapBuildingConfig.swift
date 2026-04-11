@@ -161,6 +161,37 @@ func resolvedDungeonMapBuildings(from cache: GameDataCache) -> [DungeonMapBuildi
     }
 }
 
+// MARK: - Next Available Dungeon
+
+/// Returns the id of the next dungeon the player should tackle:
+/// the first unlocked-and-not-completed building, using the same
+/// sequential-unlock rules as `DungeonMapView`. Returns `nil` if
+/// nothing is currently available (all completed or all locked).
+@MainActor
+func nextAvailableDungeonId(from cache: GameDataCache, characterLevel: Int) -> String? {
+    let buildings = resolvedDungeonMapBuildings(from: cache)
+        .sorted { $0.sortOrder < $1.sortOrder }
+    let progress = cache.dungeonProgress
+    let dungeonList = cache.cachedDungeonList()
+
+    func isCompleted(_ id: String) -> Bool {
+        guard let defeated = progress[id] else { return false }
+        let totalBosses = dungeonList?.first(where: { $0.id == id })?.totalBosses ?? 10
+        return defeated >= totalBosses
+    }
+
+    func isLocked(_ building: DungeonMapBuilding) -> Bool {
+        guard let idx = buildings.firstIndex(where: { $0.id == building.id }) else { return true }
+        if idx == 0 {
+            return characterLevel < building.minLevel
+        }
+        let prev = buildings[idx - 1]
+        return !isCompleted(prev.id)
+    }
+
+    return buildings.first(where: { !isLocked($0) && !isCompleted($0.id) })?.id
+}
+
 // MARK: - Convenience
 
 var dungeonMapBuildings: [DungeonMapBuilding] { defaultDungeonMapBuildings }

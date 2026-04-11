@@ -37,15 +37,73 @@ export const REFERRAL_BONUS = {
 }
 
 // ── Building unlock levels ────────────────────────────────────────────
+// W2.D4 recalibration (2026-04-10): front-loaded schedule so the player
+// receives a new unlock every ~2 levels in the early game. Reduces "empty
+// hub" feeling and creates a clear dopamine beat at every level up.
+//
+// Progression intent:
+//   Lv 1 → Arena + Shop (day-1 baseline, already starting)
+//   Lv 2 → Achievements (first unlock ceremony fires ~5-10 min in)
+//   Lv 4 → Dungeon (first PvE, was Lv3)
+//   Lv 6 → Gold Mine (passive income, was Lv5) + Tavern (meta minigame, was Lv7)
+//   Lv 8 → Battle Pass (paid progression, was Lv10)
+//   Lv 12 → Guild Hall + Leaderboard (social layer, was Lv15)
+//   Lv 99 → Black Market (Coming Soon placeholder)
+//
+// Keep this in sync with:
+//   - Hexbound/Hexbound/Views/Components/BuildingLockOverlay.swift (BuildingUnlockConfig)
+//   - docs/07_ui_ux/W2_D4_BUILDING_GATING_DESIGN.md
 export const BUILDING_UNLOCK_LEVELS: Record<string, number> = {
   arena: 1,
   shop: 1,
-  dungeon: 3,
-  gold_mine: 5,
-  tavern: 7,
-  battle_pass: 10,
-  leaderboard: 10,
-  guild: 15,
+  achievements: 2,
+  dungeon: 4,
+  gold_mine: 6,
+  tavern: 6,
+  battle_pass: 8,
+  leaderboard: 8,
+  guild: 12,
+  black_market: 99, // Coming Soon placeholder
+}
+
+// ── Scripted tutorial fight rewards ───────────────────────────────────
+// W2.D3 — first-victory reward package. Enough to feel meaningful, not
+// enough to imbalance economy. Grant once, gated by character.tutorialCompleted.
+export const TUTORIAL_FIGHT_REWARDS = {
+  /** Gold awarded for completing the scripted tutorial fight. */
+  gold: 150,
+  /** XP awarded — tuned to push Lv1 character to Lv2 immediately. */
+  xp: 50,
+  /**
+   * First-weapon item catalog key — must exist in item-catalog.
+   * Same item for all classes for simplicity (an iron sword carries
+   * universal "starter gear" energy regardless of class).
+   */
+  itemCatalogKey: 'wpn_iron_sword_tutorial',
+  /** Rate limit window for resolve endpoint (3 attempts per 60s). */
+  rateLimit: {
+    max: 3,
+    windowMs: 60_000,
+  },
+} as const
+
+/** Whether a building is unlocked at the given character level. */
+export function isBuildingUnlocked(buildingKey: string, characterLevel: number): boolean {
+  const requiredLevel = BUILDING_UNLOCK_LEVELS[buildingKey]
+  if (requiredLevel === undefined) return true // unknown key = default visible
+  return characterLevel >= requiredLevel
+}
+
+/**
+ * List all buildings that unlock at a specific level.
+ * Used by /api/character/level-up endpoint to include `unlocks` in response,
+ * which drives the LevelUpModal + BuildingUnlockCeremony on iOS.
+ */
+export function getBuildingsUnlockedAt(characterLevel: number): string[] {
+  return Object.entries(BUILDING_UNLOCK_LEVELS)
+    .filter(([_, level]) => level === characterLevel)
+    .map(([key, _]) => key)
+    .sort()
 }
 
 // ── NPC Quest definitions ─────────────────────────────────────────────

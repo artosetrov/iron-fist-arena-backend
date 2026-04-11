@@ -22,6 +22,8 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { degradeEquipment } from '@/lib/game/durability'
 import { createBattleResultMail, createBattleInviteMail, updateBattleInviteStatus } from '@/lib/game/battle-mail'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 const MAX_PENDING_CHALLENGES = 5
 const CHALLENGE_EXPIRY_HOURS = 24
@@ -447,6 +449,8 @@ async function handleAccept(character: any, body: any) {
         pvpRating: true, pvpCalibrationGames: true, highestPvpRank: true,
         firstWinToday: true, firstWinDate: true,
         currentHp: true,
+        // W3.D5 — Premium Forever gold multiplier
+        user: { select: { premiumUntil: true } },
       },
     }),
     prisma.character.findUnique({
@@ -456,6 +460,8 @@ async function handleAccept(character: any, body: any) {
         pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
         pvpRating: true, pvpCalibrationGames: true, highestPvpRank: true,
         currentHp: true,
+        // W3.D5 — Premium Forever gold multiplier
+        user: { select: { premiumUntil: true } },
       },
     }),
   ])
@@ -475,8 +481,14 @@ async function handleAccept(character: any, body: any) {
   // Gold/XP rewards (with duel multiplier)
   const winnerGoldBase = levelScaledReward(GOLD_REWARDS.PVP_WIN_BASE, winner.level)
   const loserGoldBase = levelScaledReward(GOLD_REWARDS.PVP_LOSS_BASE, loser.level)
-  const winnerGold = chaGoldBonus(Math.round(winnerGoldBase * CHALLENGE_GOLD_MULTIPLIER), winner.cha)
-  const loserGold = chaGoldBonus(loserGoldBase, loser.cha)
+  // W3.D5 — Premium Forever +10% gold applied LAST (after CHA + challenge mult)
+  const winnerGold = Math.floor(
+    chaGoldBonus(Math.round(winnerGoldBase * CHALLENGE_GOLD_MULTIPLIER), winner.cha)
+      * goldBonusMultiplier(winner.user),
+  )
+  const loserGold = Math.floor(
+    chaGoldBonus(loserGoldBase, loser.cha) * goldBonusMultiplier(loser.user),
+  )
   const winnerXp = levelScaledReward(XP_REWARDS.PVP_WIN_XP, winner.level)
   const loserXp = levelScaledReward(XP_REWARDS.PVP_LOSS_XP, loser.level)
 
@@ -562,6 +574,8 @@ async function handleAccept(character: any, body: any) {
     applyLevelUp(prisma, winnerId),
     applyLevelUp(prisma, loserId),
     updateDailyQuestProgress(prisma, winnerId, 'pvp_wins'),
+    // W3.D5 — Weekly BP challenges (challenge/duel wins count as pvp_wins)
+    updateWeeklyChallengeProgress(prisma, winnerId, 'pvp_wins'),
     degradeEquipment(prisma, winnerId),
     degradeEquipment(prisma, loserId),
     cacheDeletePrefix(`leaderboard:`),

@@ -156,6 +156,9 @@ struct NPCHint: Identifiable, Equatable {
     var compactSublabel: String? = nil
     /// Visual category for compact hint bar icon & color
     var category: HintCategory = .onboard
+    /// Optional asset name that overrides the category SF Symbol icon
+    /// in the compact ContextualHintBar. Rendered as a rounded square thumbnail.
+    var iconAsset: String? = nil
 
     static func == (lhs: NPCHint, rhs: NPCHint) -> Bool {
         lhs.id == rhs.id
@@ -354,10 +357,11 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Arena Master",
         npcImage: "shopkeeper",
         message: "Hey, you! Yeah, the one who's never fought anyone. The Arena awaits! Pick someone your size and show them what you... probably can't do yet.",
-        ctaLabel: "GO TO ARENA",
+        ctaLabel: "FIGHT",
         compactText: "Try the Arena!",
         compactSublabel: "Earn gold and climb ranks",
-        category: .navigate
+        category: .combat,
+        iconAsset: "building-arena"
     )
 
     static let hubFirstDungeon = NPCHint(
@@ -365,10 +369,11 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Dungeon Guide",
         npcImage: "shopkeeper",
         message: "The dungeons aren't going to clear themselves. Well, technically the monsters live there, so... they already have. But YOU haven't.",
-        ctaLabel: "GO TO DUNGEON",
+        ctaLabel: "FIGHT",
         compactText: "Try a Dungeon!",
         compactSublabel: "Clear monsters for rare loot",
-        category: .navigate
+        category: .combat,
+        iconAsset: "boss-arena-warden-portrait"
     )
 
     static let hubFirstMine = NPCHint(
@@ -376,10 +381,11 @@ struct NPCHint: Identifiable, Equatable {
         npcName: "Mine Foreman",
         npcImage: "shopkeeper",
         message: "Free gold, just sitting there, and you haven't visited the mine? It's like finding money on the ground and walking over it.",
-        ctaLabel: "GO TO MINE",
+        ctaLabel: "MINE",
         compactText: "Visit the Gold Mine",
         compactSublabel: "Earn gold passively",
-        category: .navigate
+        category: .economy,
+        iconAsset: "building-gold-mine"
     )
 
     static let hubUnclaimedRewards = NPCHint(

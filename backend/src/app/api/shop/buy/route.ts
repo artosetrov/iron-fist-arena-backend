@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -78,8 +79,12 @@ export async function POST(req: NextRequest) {
       return { updatedUser, inventoryItem }
     })
 
-    // Update daily + tutorial quest progress (outside transaction, non-critical)
-    await updateDailyQuestProgress(prisma, character_id, 'gold_spent', item.buyPrice)
+    // Update daily + weekly + tutorial quest progress (outside transaction, non-critical)
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'gold_spent', item.buyPrice),
+      // W3.D5 — Weekly BP challenge: Spendthrift slot
+      updateWeeklyChallengeProgress(prisma, character_id, 'gold_spent', item.buyPrice),
+    ])
     updateTutorialQuestProgress(prisma, character_id, 'equip_gear').catch(() => {})
 
     return NextResponse.json({

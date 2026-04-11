@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hexbound — Unified Card v3: Equal Height, No Buttons</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-abyss:    #0D0D1A;
+  --bg-secondary:#12121F;
+  --bg-panel:    #1A1A2E;
+  --border-sub:  rgba(255,255,255,0.06);
+  --border-med:  rgba(255,255,255,0.12);
+  --gold:        #D4A537;
+  --gold-bright: #F0C050;
+  --gold-glow:   rgba(212,165,55,0.3);
+  --text-primary:#F5F5F5;
+  --text-sec:    #A0A0B0;
+  --text-on-gold:#1A1A2E;
+  --text-dis:    #555566;
+  --danger:      #E63946;
+  --success:     #4CAF84;
+  --info:        #4A9FD4;
+  --stamina:     #F08040;
+  --warning:     #F0A030;
+  --boss-purple: #9B59B6;
+  --locked:      #444455;
+  --warrior:     #E8A030;
+  --rogue:       #60C070;
+  --mage:        #7A5CD6;
+  --tank:        #4A9FD4;
+  --diff-easy:   #4CAF84;
+  --diff-med:    #F0A030;
+  --diff-hard:   #E63946;
+
+  /* ═══ CARD SYSTEM CONSTANTS ═══
+     Portrait aspect ratio: 1 : 1.1  (slightly taller than square)
+     Info zone: 72px FIXED for ALL contexts
+     No action strip — tap = action
+     Result: all cards identical total height ✓             */
+  --portrait-ratio: 1.1;   /* height = width × 1.1 */
+  --info-h: 72px;
+  --card-r: 14px;
+  --card-w: 162px;
+  --portrait-h: 178px;     /* 162 × 1.1 */
+}
+
+*  { box-sizing:border-box; margin:0; padding:0; }
+body {
+  background:var(--bg-abyss);
+  color:var(--text-primary);
+  font-family:'Inter',sans-serif;
+  padding:32px 24px 64px;
+}
+
+/* ─── TYPE ─── */
+.h-page { font-family:'Oswald',sans-serif; font-size:26px; font-weight:700; color:var(--gold); letter-spacing:3px; text-transform:uppercase; }
+.h-sec  { font-family:'Oswald',sans-serif; font-size:17px; letter-spacing:2px; text-transform:uppercase; color:var(--text-sec); border-bottom:1px solid var(--border-sub); padding-bottom:10px; margin-bottom:26px; }
+.h-sec span { color:var(--gold); }
+
+/* ─── LAYOUT ─── */
+.section { margin-bottom:52px; }
+.row     { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+.col     { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.cl      { font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; text-align:center; }
+.cl-ok  { color:var(--success); }
+.cl-no  { color:var(--danger); }
+.cl-neu { color:var(--text-sec); }
+.sep    { height:1px; background:linear-gradient(to right,transparent,var(--border-sub),transparent); margin:28px 0; }
+
+.page-header { text-align:center; margin-bottom:48px; }
+.page-header p { color:var(--text-sec); font-size:13px; margin-top:6px; }
+
+/* ─── INFO BOXES ─── */
+.box { border-radius:10px; padding:14px 18px; margin-bottom:14px; }
+.box-gold { background:rgba(212,165,55,.05); border:1px solid rgba(212,165,55,.2); }
+.box-bad  { background:rgba(230,57,70,.04);  border:1px solid rgba(230,57,70,.2); }
+.box-ok   { background:rgba(76,175,132,.04); border:1px solid rgba(76,175,132,.2); }
+.box h4   { font-family:'Oswald',sans-serif; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+.box-gold h4 { color:var(--gold); }
+.box-bad h4  { color:var(--danger); }
+.box-ok h4   { color:var(--success); }
+.box p, .box li { font-size:12px; color:var(--text-sec); line-height:1.65; }
+.box ul { padding-left:16px; }
+.box li { margin-bottom:3px; }
+
+/* ─── ZONE DIAGRAM ─── */
+.zone-diagram {
+  display:flex;
+  flex-direction:column;
+  width:162px;
+  border-radius:var(--card-r);
+  overflow:hidden;
+  border:2px dashed var(--border-med);
+}
+.zone-block {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Oswald',sans-serif;
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+
+/* ════════════════════════════════════════════════
+   THE UNIFIED CARD COMPONENT
+   ─────────────────────────────────────────────
+   Structure:
+   ┌─────────────────────────────────────────┐
+   │  PORTRAIT ZONE  (width × 1.1 = fixed)  │
+   │  • Full-bleed art                       │
+   │  • Vignette bottom                      │
+   │  • LVL badge top-left (always)          │
+   │  • Context badge top-right (always)     │
+   │  • Name + Class overlaid at bottom      │
+   ├─────────────────────────────────────────┤
+   │  INFO ZONE  (72px fixed — ALL contexts) │
+   │  Slot A (20px): label  "PVP RATING"     │
+   │  Slot B (28px): value  "1,250"          │
+   │  Slot C (24px): secondary  [pill/bar]   │
+   └─────────────────────────────────────────┘
+   Total height = portrait + 72px ALWAYS     │
+   Tap entire card = action (no buttons)     │
+════════════════════════════════════════════ */
+
+.ucard {
+  width: var(--card-w);
+  border-radius: var(--card-r);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform .16s, filter .16s;
+  user-select: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,.45);
+  flex-shrink: 0;
+}
+.ucard:hover  { transform:translateY(-2px); }
+.ucard:active { transform:translateY(-4px); filter:brightness(.92); }
+
+/* ── Portrait zone ── */
+.u-portrait {
+  width: 100%;
+  height: var(--portrait-h);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  flex-shrink: 0;
+}
+.u-portrait img {
+  width:100%; height:100%; object-fit:cover; object-position:top;
+}
+.u-vignette {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 35%,
+    rgba(13,13,26,.25) 55%,
+    rgba(13,13,26,.85) 82%,
+    rgba(13,13,26,1)  100%
+  );
+  pointer-events: none;
+}
+.u-glow-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  border: 1.5px solid;
+  pointer-events: none;
+  z-index: 4;
+}
+.u-top {
+  position: absolute;
+  top: 8px; left: 8px; right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  z-index: 3;
+}
+.u-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 6px 10px 8px;
+  z-index: 3;
+}
+.u-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-shadow: 0 1px 6px rgba(13,13,26,.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.u-class {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-top: 2px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* ── LVL badge ── */
+.u-lvl {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.u-lvl .ln { font-family:'Oswald',sans-serif; font-size:14px; font-weight:700; color:var(--text-on-gold); line-height:1; margin-bottom:1px; }
+.u-lvl .ll { font-family:'Oswald',sans-serif; font-size:7.5px; font-weight:600; letter-spacing:.3px; color:rgba(26,26,46,.68); text-transform:uppercase; line-height:1; }
+
+/* ── Context badge ── */
+.u-ctx {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* ── Info zone (FIXED 72px — never changes) ── */
+.u-info {
+  height: var(--info-h);    /* FIXED — key to equal heights */
+  background: var(--bg-panel);
+  padding: 7px 10px 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+/* Slot A: label */
+.u-slot-a {
+  font-family: 'Oswald', sans-serif;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-sec);
+  line-height: 1;
+}
+
+/* Slot B: primary value */
+.u-slot-b {
+  font-family: 'Oswald', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+/* Slot C: secondary (pill or bars) */
+.u-slot-c {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Pills */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(13,13,26,.65);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+.pill .pv { font-family:'Oswald',sans-serif; font-size:11px; font-weight:600; line-height:1; }
+.pill .pl { font-family:'Inter',sans-serif; font-size:9px; color:var(--text-sec); line-height:1; }
+
+/* Compact bars (hero) */
+.bars-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.bar-label { font-family:'Oswald',sans-serif; font-size:8px; color:var(--text-sec); letter-spacing:.5px; width:16px; flex-shrink:0; }
+.bar-track { flex:1; height:4px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; }
+.bar-fill  { height:100%; border-radius:2px; }
+
+/* Selected ring */
+.selected-ring {
+  position: absolute; inset: 0;
+  border-radius: var(--card-r);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 14px var(--gold-glow), inset 0 0 8px rgba(212,165,55,.08);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* States */
+.ucard.locked    { opacity: .5; }
+.ucard.locked .u-portrait { filter: grayscale(.7); }
+
+
+/* ════════════════════════════════════
+   PHONE FRAME
+════════════════════════════════════ */
+.phone {
+  width: 375px;
+  background: var(--bg-abyss);
+  border-radius: 30px;
+  border: 2px solid var(--border-med);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  flex-shrink: 0;
+}
+.phone-screen { padding: 16px; }
+.phone-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.phone-h2 { font-family:'Oswald',sans-serif; font-size:20px; font-weight:700; letter-spacing:2px; text-transform:uppercase; }
+.tabs-row { display:flex; gap:6px; }
+.tab-pill {
+  font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1px; text-transform:uppercase;
+  padding:4px 10px; border-radius:6px; cursor:pointer; color:var(--text-sec);
+  border:1px solid transparent;
+}
+.tab-pill.on { background:rgba(212,165,55,.1); color:var(--gold); border-color:rgba(212,165,55,.3); }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* In grid, cards stretch to fill column width */
+.grid2 .ucard { width: 100%; }
+.grid2 .u-portrait { height: auto; aspect-ratio: 1 / 1.1; }
+
+/* ─── TABLE ─── */
+.tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.tbl th { text-align:left; font-family:'Oswald',sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-sec); padding:8px 12px; border-bottom:1px solid var(--border-sub); }
+.tbl td { padding:9px 12px; border-bottom:1px solid var(--border-sub); color:var(--text-sec); line-height:1.5; vertical-align:top; }
+.tbl td:first-child { color:var(--text-primary); font-weight:500; white-space:nowrap; }
+.tag { display:inline-block; font-family:'Oswald',sans-serif; font-size:9px; letter-spacing:.8px; padding:2px 6px; border-radius:3px; text-transform:uppercase; }
+.tag-r { background:rgba(230,57,70,.1); color:var(--danger); border:1px solid rgba(230,57,70,.25); }
+.tag-o { background:rgba(240,160,48,.1); color:var(--warning); border:1px solid rgba(240,160,48,.25); }
+.tag-g { background:rgba(76,175,132,.1); color:var(--success); border:1px solid rgba(76,175,132,.25); }
+.tag-b { background:rgba(74,159,212,.1); color:var(--info); border:1px solid rgba(74,159,212,.25); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <h1 class="h-page">Unified Card v3</h1>
+  <p>Все карточки · одинаковая высота · без кнопок · 3 фиксированные зоны</p>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  01 — ПОЧЕМУ ЭТО СЛОЖНО И КАК РЕШИТЬ
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">01 — <span>Проблема одинаковой высоты</span></div>
+
+  <div class="row" style="gap:24px;align-items:flex-start;margin-bottom:28px;">
+
+    <!-- Проблема: разное содержимое -->
+    <div class="box box-bad" style="flex:1;min-width:220px;">
+      <h4>Проблема: info-зона разная</h4>
+      <ul>
+        <li>Arena: Rating (1 число) + WR% (1 pill) = 2 строки</li>
+        <li>Boss: HP (1 число) + Drops (1 pill) = 2 строки</li>
+        <li>Hero: Rating + HP bar + STA bar = 3 строки</li>
+        <li>Если просто stack-fit → разная высота карточек в grid</li>
+        <li>Если truncate — контент обрезается</li>
+      </ul>
+    </div>
+
+    <!-- Решение: 3 фиксированных слота -->
+    <div class="box box-ok" style="flex:1;min-width:220px;">
+      <h4>Решение: 3 фиксированных слота (72px)</h4>
+      <ul>
+        <li><strong>Slot A (label, 16px):</strong> "PVP RATING" / "HP" / "RATING" — всегда одна строка</li>
+        <li><strong>Slot B (value, 28px):</strong> главное число — всегда одна строка, крупно</li>
+        <li><strong>Slot C (secondary, 28px):</strong> pills у арены/боссов; компактные bars у героев</li>
+        <li>Высота = 72px для всех без исключений</li>
+        <li>Hero bars компактнее (4px), но влезают в тот же slot C</li>
+      </ul>
+    </div>
+
+    <!-- Zone diagram -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="cl neu">Зональная схема</div>
+      <div class="zone-diagram">
+        <div class="zone-block" style="height:178px;background:linear-gradient(165deg,#1A1030,#2A1A40);color:var(--text-sec);font-size:10px;flex-direction:column;gap:6px;">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--mage);display:flex;flex-direction:column;align-items:center;justify-content:center;margin-top:-40px;">
+            <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-on-gold);line-height:1;">5</span>
+            <span style="font-family:'Oswald',sans-serif;font-size:7px;color:rgba(26,26,46,.7);text-transform:uppercase;">LVL</span>
+          </div>
+          <div style="margin-top:60px;font-size:9px;color:rgba(165,165,200,.6);">PORTRAIT ZONE</div>
+          <div style="font-size:9px;color:rgba(165,165,200,.4);">width × 1.1 = fixed</div>
+        </div>
+        <!-- Info 72px -->
+        <div style="height:72px;background:var(--bg-panel);border-top:1px dashed rgba(212,165,55,.3);display:flex;flex-direction:column;justify-content:space-between;padding:7px 10px;">
+          <div style="font-family:'Oswald',sans-serif;font-size:9px;color:var(--text-sec);letter-spacing:1px;">SLOT A — label</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);">1,250</div>
+          <div style="display:flex;gap:4px;">
+            <div style="background:rgba(13,13,26,.65);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;font-family:'Oswald',sans-serif;font-size:10px;color:var(--success);">64% WR</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-sec);text-align:center;max-width:162px;line-height:1.5;">72px info = всегда одна высота</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  02 — ВСЕ 4 КОНТЕКСТА В ОДНУ ВЫСОТУ
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">02 — <span>Все контексты — одинаковая высота</span></div>
+
+  <div class="box box-gold" style="margin-bottom:24px;max-width:700px;">
+    <h4>Принцип — одинаковая высота без кнопок</h4>
+    <p>Portrait zone = <code>width × 1.1</code> (фиксированный aspect ratio). Info zone = <code>72px</code> hard-coded height. Итого: карточки в любом контексте имеют одну высоту. Тап по карточке = действие (бой / выбор / детали) — кнопки не нужны.</p>
+  </div>
+
+  <div class="row" style="align-items:flex-end;gap:20px;">
+
+    <!-- ARENA -->
+    <div class="col">
+      <div class="cl ok">Arena Opponent</div>
+      <div class="ucard" style="box-shadow:0 4px 20px rgba(240,160,48,.2);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#2A1A0D,#4A2810);">
+          🧙‍♂️
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <div class="u-lvl" style="background:var(--warrior);box-shadow:0 0 10px rgba(232,160,48,.4);">
+              <span class="ln">7</span><span class="ll">LVL</span>
+            </div>
+            <div class="u-ctx" style="background:rgba(240,160,48,.15);color:var(--diff-med);border:1px solid rgba(240,160,48,.3);">MEDIUM</div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name">Warbane</div>
+            <div class="u-class" style="background:rgba(232,160,48,.15);color:var(--warrior);">WARRIOR</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(240,160,48,.35);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">PVP Rating</div>
+          <div class="u-slot-b">963</div>
+          <div class="u-slot-c">
+            <div class="pill"><span class="pv" style="color:var(--success);">42%</span><span class="pl">Winrate</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARENA HARD -->
+    <div class="col">
+      <div class="cl no">Arena (Hard)</div>
+      <div class="ucard" style="box-shadow:0 4px 20px rgba(230,57,70,.2);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#2A0A0D,#401018);">
+          👹
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <div class="u-lvl" style="background:var(--tank);box-shadow:0 0 10px rgba(74,159,212,.4);">
+              <span class="ln">19</span><span class="ll">LVL</span>
+            </div>
+            <div class="u-ctx" style="background:rgba(230,57,70,.15);color:var(--diff-hard);border:1px solid rgba(230,57,70,.3);">HARD</div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name">Bloodfist</div>
+            <div class="u-class" style="background:rgba(74,159,212,.15);color:var(--tank);">TANK</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(230,57,70,.35);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">PVP Rating</div>
+          <div class="u-slot-b">1,840</div>
+          <div class="u-slot-c">
+            <div class="pill"><span class="pv" style="color:var(--danger);">71%</span><span class="pl">Winrate</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOSS CURRENT -->
+    <div class="col">
+      <div class="cl ok">Boss (Current)</div>
+      <div class="ucard" style="box-shadow:0 4px 20px rgba(155,89,182,.3);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#1A0A1A,#2A1035);">
+          💀
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <!-- Boss has no LVL badge: state badge left, stage badge right -->
+            <div class="u-ctx" style="background:rgba(76,175,132,.15);color:var(--success);border:1px solid rgba(76,175,132,.3);">⚡ CURRENT</div>
+            <div style="display:flex;flex-direction:column;align-items:center;background:rgba(13,13,26,.75);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:3px 8px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-primary);line-height:1;">1</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:7px;letter-spacing:.5px;color:var(--text-sec);text-transform:uppercase;line-height:1;margin-top:1px;">STAGE</span>
+            </div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">STRAW DUMMY</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(155,89,182,.5);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">Boss HP</div>
+          <div class="u-slot-b" style="color:var(--danger);">250</div>
+          <div class="u-slot-c">
+            <div class="pill"><span class="pv" style="color:var(--gold);">2</span><span class="pl">Drops</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOSS LOCKED -->
+    <div class="col">
+      <div class="cl neu">Boss (Locked)</div>
+      <div class="ucard locked" style="box-shadow:0 4px 12px rgba(0,0,0,.3);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#111118,#1A1A28);">
+          🤖
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <div class="u-ctx" style="background:rgba(68,68,85,.2);color:var(--locked);border:1px solid rgba(68,68,85,.35);">🔒 LOCKED</div>
+            <div style="display:flex;flex-direction:column;align-items:center;background:rgba(13,13,26,.6);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:3px 8px;">
+              <span style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-sec);line-height:1;">2</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:7px;letter-spacing:.5px;color:var(--text-dis);text-transform:uppercase;line-height:1;margin-top:1px;">STAGE</span>
+            </div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name" style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-sec);">RUSTY GOLEM</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(68,68,85,.25);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">Boss HP</div>
+          <div class="u-slot-b" style="color:var(--text-dis);">320</div>
+          <div class="u-slot-c">
+            <div class="pill" style="opacity:.5;"><span class="pv" style="color:var(--text-dis);">2</span><span class="pl">Drops</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO HEALTHY + SELECTED -->
+    <div class="col">
+      <div class="cl ok">Hero (Selected)</div>
+      <div class="ucard" style="position:relative;box-shadow:0 4px 20px rgba(122,92,214,.2);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#180A28,#2A1A40);">
+          🧙
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <div class="u-lvl" style="background:var(--mage);box-shadow:0 0 10px rgba(122,92,214,.4);">
+              <span class="ln">17</span><span class="ll">LVL</span>
+            </div>
+            <!-- No right badge when selected — ring speaks -->
+          </div>
+          <div class="u-bottom">
+            <div class="u-name">Degon</div>
+            <div class="u-class" style="background:rgba(122,92,214,.15);color:var(--mage);">MAGE</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(122,92,214,.4);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">PVP Rating</div>
+          <div class="u-slot-b" style="font-size:18px;">1,720</div>
+          <div class="u-slot-c">
+            <div class="bars-compact">
+              <div class="bar-row">
+                <span class="bar-label" style="color:var(--danger);">HP</span>
+                <div class="bar-track"><div class="bar-fill" style="width:87%;background:linear-gradient(to right,var(--danger),#FF6B6B);"></div></div>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label" style="color:var(--stamina);">STA</span>
+                <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(to right,var(--stamina),#FFB060);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="selected-ring"></div>
+      </div>
+    </div>
+
+    <!-- HERO INJURED -->
+    <div class="col">
+      <div class="cl no">Hero (Low HP)</div>
+      <div class="ucard" style="box-shadow:0 4px 20px rgba(230,57,70,.25);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#180A28,#2A1A40);">
+          🧝
+          <div class="u-vignette"></div>
+          <!-- Red danger tint overlay -->
+          <div style="position:absolute;inset:0;background:rgba(230,57,70,.07);pointer-events:none;"></div>
+          <div class="u-top">
+            <div class="u-lvl" style="background:var(--tank);">
+              <span class="ln">9</span><span class="ll">LVL</span>
+            </div>
+            <div class="u-ctx" style="background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.3);">❤️ LOW</div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name">Ironwall</div>
+            <div class="u-class" style="background:rgba(74,159,212,.15);color:var(--tank);">TANK</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(230,57,70,.5);box-shadow:inset 0 0 16px rgba(230,57,70,.12);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">PVP Rating</div>
+          <div class="u-slot-b" style="font-size:18px;">890</div>
+          <div class="u-slot-c">
+            <div class="bars-compact">
+              <div class="bar-row">
+                <span class="bar-label" style="color:var(--danger);">HP</span>
+                <div class="bar-track"><div class="bar-fill" style="width:5%;background:var(--danger);"></div></div>
+              </div>
+              <div class="bar-row">
+                <span class="bar-label" style="color:var(--stamina);">STA</span>
+                <div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(to right,var(--stamina),#FFB060);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY WIN -->
+    <div class="col">
+      <div class="cl ok">History (WIN)</div>
+      <div class="ucard" style="box-shadow:0 4px 16px rgba(76,175,132,.15);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#0A1A10,#1A3020);">
+          <!-- Win streak bar at very top -->
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--success);z-index:5;"></div>
+          🐗
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <div class="u-lvl" style="background:var(--rogue);box-shadow:0 0 10px rgba(96,192,112,.4);">
+              <span class="ln">12</span><span class="ll">LVL</span>
+            </div>
+            <div class="u-ctx" style="background:rgba(76,175,132,.15);color:var(--success);border:1px solid rgba(76,175,132,.3);">✓ WIN</div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name">Nightfang</div>
+            <div class="u-class" style="background:rgba(96,192,112,.15);color:var(--rogue);">ROGUE</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(76,175,132,.3);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">PVP Rating</div>
+          <div class="u-slot-b">1,050</div>
+          <div class="u-slot-c">
+            <div class="pill"><span class="pv" style="color:var(--success);">58%</span><span class="pl">Winrate</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY LOSS -->
+    <div class="col">
+      <div class="cl no">History (LOSS)</div>
+      <div class="ucard" style="box-shadow:0 4px 16px rgba(230,57,70,.1);">
+        <div class="u-portrait" style="background:linear-gradient(165deg,#1A0A0D,#301018);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:var(--danger);z-index:5;"></div>
+          👹
+          <div class="u-vignette"></div>
+          <div class="u-top">
+            <div class="u-lvl" style="background:var(--warrior);">
+              <span class="ln">19</span><span class="ll">LVL</span>
+            </div>
+            <div class="u-ctx" style="background:rgba(230,57,70,.12);color:var(--danger);border:1px solid rgba(230,57,70,.3);">✗ LOSS</div>
+          </div>
+          <div class="u-bottom">
+            <div class="u-name">Bloodfist</div>
+            <div class="u-class" style="background:rgba(232,160,48,.15);color:var(--warrior);">WARRIOR</div>
+          </div>
+          <div class="u-glow-border" style="border-color:rgba(230,57,70,.25);"></div>
+        </div>
+        <div class="u-info">
+          <div class="u-slot-a">PVP Rating</div>
+          <div class="u-slot-b">1,840</div>
+          <div class="u-slot-c">
+            <div class="pill"><span class="pv" style="color:var(--danger);">71%</span><span class="pl">Winrate</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- HEIGHT VERIFICATION -->
+  <div class="box box-ok" style="margin-top:24px;max-width:700px;">
+    <h4>✓ Верификация одинаковой высоты</h4>
+    <p>Все карточки выше = одинаковая высота потому что: <strong>portrait height</strong> = width × 1.1 (aspect-ratio, одинаковый у всех) + <strong>info zone</strong> = 72px hard-coded (не зависит от контента). Hero bars помещаются в slot C потому что используют height:4px compact format вместо pills. В SwiftUI: portrait = <code>.aspectRatio(1.0/1.1, contentMode:.fit)</code>, info zone = <code>.frame(height: LayoutConstants.cardInfoHeight)</code>.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  03 — PHONE GRID DEMOS (3 экрана)
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">03 — <span>Phone grid: 3 экрана</span></div>
+
+  <div class="row" style="gap:32px;align-items:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:8px;">
+
+    <!-- Arena screen -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="cl ok">Arena — Opponents</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <span class="phone-h2">Arena</span>
+            <div class="tabs-row">
+              <div class="tab-pill on">Opponents</div>
+              <div class="tab-pill">Revenge</div>
+              <div class="tab-pill">History</div>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="ucard" style="box-shadow:0 3px 10px rgba(240,160,48,.15);">
+              <div class="u-portrait" style="background:linear-gradient(165deg,#2A1A0D,#4A2810);">
+                🧙‍♂️
+                <div class="u-vignette"></div>
+                <div class="u-top">
+                  <div class="u-lvl" style="background:var(--warrior);">
+                    <span class="ln">7</span><span class="ll">LVL</span>
+                  </div>
+                  <div class="u-ctx" style="background:rgba(240,160,48,.15);color:var(--diff-med);border:1px solid rgba(240,160,48,.3);font-size:9px;padding:2px 6px;">MED</div>
+                </div>
+                <div class="u-bottom">
+                  <div class="u-name" style="font-size:12px;">Warbane</div>
+                  <div class="u-class" style="background:rgba(232,160,48,.15);color:var(--warrior);font-size:9px;">WAR</div>
+                </div>
+                <div class="u-glow-border" style="border-color:rgba(240,160,48,.3);"></div>
+              </div>
+              <div class="u-info">
+                <div class="u-slot-a">PVP Rating</div>
+                <div class="u-slot-b" style="font-size:17px;">963</div>
+                <div class="u-slot-c">
+                  <div class="pill"><span class="pv" style="color:var(--success);font-size:10px;">42%</span><span class="pl" style="font-size:8px;">WR</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="ucard" style="box-shadow:0 3px 10px rgba(76,175,132,.12);">
+              <div class="u-portrait" style="background:linear-gradient(165deg,#0A1A10,#1A3020);">
+                🐗
+                <div class="u-vignette"></div>
+                <div class="u-top">
+                  <div class="u-lvl" style="background:var(--rogue);">
+                    <span class="ln">5</span><span class="ll">LVL</span>
+                  </div>
+                  <div class="u-ctx" style="background:rgba(76,175,132,.15);color:var(--diff-easy);border:1px solid rgba(76,175,132,.3);font-size:9px;padding:2px 6px;">EASY</div>
+                </div>
+                <div class="u-bottom">
+                  <div class="u-name" style="font-size:12px;">Nightfang</div>
+                  <div class="u-class" style="background:rgba(96,192,112,.15);color:var(--rogue);font-size:9px;">ROG</div>
+                </div>
+                <div class="u-glow-border" style="border-color:rgba(76,175,132,.25);"></div>
+              </div>
+              <div class="u-info">
+                <div class="u-slot-a">PVP Rating</div>
+                <div class="u-slot-b" style="font-size:17px;">820</div>
+                <div class="u-slot-c">
+                  <div class="pill"><span class="pv" style="color:var(--success);font-size:10px;">55%</span><span class="pl" style="font-size:8px;">WR</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero selection screen -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="cl ok">Hero Selection</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <span class="phone-h2">My Heroes</span>
+          </div>
+          <div class="grid2">
+            <!-- Selected hero -->
+            <div class="ucard" style="position:relative;box-shadow:0 0 0 2px var(--gold),0 4px 14px rgba(212,165,55,.3);">
+              <div class="u-portrait" style="background:linear-gradient(165deg,#180A28,#2A1A40);">
+                🧙
+                <div class="u-vignette"></div>
+                <div class="u-top">
+                  <div class="u-lvl" style="background:var(--mage);">
+                    <span class="ln">17</span><span class="ll">LVL</span>
+                  </div>
+                </div>
+                <div class="u-bottom">
+                  <div class="u-name" style="font-size:12px;">Degon</div>
+                  <div class="u-class" style="background:rgba(122,92,214,.15);color:var(--mage);font-size:9px;">MAGE</div>
+                </div>
+              </div>
+              <div class="u-info">
+                <div class="u-slot-a">PVP Rating</div>
+                <div class="u-slot-b" style="font-size:16px;">1,720</div>
+                <div class="u-slot-c">
+                  <div class="bars-compact">
+                    <div class="bar-row"><span class="bar-label" style="color:var(--danger);font-size:7px;">HP</span><div class="bar-track"><div class="bar-fill" style="width:87%;background:var(--danger);"></div></div></div>
+                    <div class="bar-row"><span class="bar-label" style="color:var(--stamina);font-size:7px;">STA</span><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--stamina);"></div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Injured hero -->
+            <div class="ucard" style="box-shadow:0 0 0 1.5px rgba(230,57,70,.5),0 3px 12px rgba(230,57,70,.2);">
+              <div class="u-portrait" style="background:linear-gradient(165deg,#180A28,#2A1A40);">
+                🧝
+                <div class="u-vignette"></div>
+                <div style="position:absolute;inset:0;background:rgba(230,57,70,.07);pointer-events:none;"></div>
+                <div class="u-top">
+                  <div class="u-lvl" style="background:var(--tank);">
+                    <span class="ln">9</span><span class="ll">LVL</span>
+                  </div>
+                  <div class="u-ctx" style="background:rgba(230,57,70,.15);color:var(--danger);border:1px solid rgba(230,57,70,.3);font-size:9px;padding:2px 5px;">❤️ LOW</div>
+                </div>
+                <div class="u-bottom">
+                  <div class="u-name" style="font-size:12px;">Ironwall</div>
+                  <div class="u-class" style="background:rgba(74,159,212,.15);color:var(--tank);font-size:9px;">TANK</div>
+                </div>
+                <div class="u-glow-border" style="border-color:rgba(230,57,70,.45);"></div>
+              </div>
+              <div class="u-info">
+                <div class="u-slot-a">PVP Rating</div>
+                <div class="u-slot-b" style="font-size:16px;">890</div>
+                <div class="u-slot-c">
+                  <div class="bars-compact">
+                    <div class="bar-row"><span class="bar-label" style="color:var(--danger);font-size:7px;">HP</span><div class="bar-track"><div class="bar-fill" style="width:5%;background:var(--danger);"></div></div></div>
+                    <div class="bar-row"><span class="bar-label" style="color:var(--stamina);font-size:7px;">STA</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--stamina);"></div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dungeon bosses screen -->
+    <div class="col" style="flex-shrink:0;">
+      <div class="cl ok">Dungeon — Bosses</div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <span class="phone-h2">Dungeon</span>
+          </div>
+          <div class="grid2">
+            <!-- Boss current -->
+            <div class="ucard" style="box-shadow:0 3px 14px rgba(155,89,182,.25);">
+              <div class="u-portrait" style="background:linear-gradient(165deg,#1A0A1A,#2A1035);">
+                💀
+                <div class="u-vignette"></div>
+                <div class="u-top">
+                  <div class="u-ctx" style="background:rgba(76,175,132,.15);color:var(--success);border:1px solid rgba(76,175,132,.3);font-size:9px;padding:2px 6px;">⚡ NOW</div>
+                  <div style="display:flex;flex-direction:column;align-items:center;background:rgba(13,13,26,.75);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:2px 6px;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-primary);line-height:1;">1</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:var(--text-sec);text-transform:uppercase;line-height:1;margin-top:1px;">STAGE</span>
+                  </div>
+                </div>
+                <div class="u-bottom">
+                  <div class="u-name" style="font-size:12px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.8px;">STRAW DUMMY</div>
+                </div>
+                <div class="u-glow-border" style="border-color:rgba(155,89,182,.4);"></div>
+              </div>
+              <div class="u-info">
+                <div class="u-slot-a">Boss HP</div>
+                <div class="u-slot-b" style="font-size:17px;color:var(--danger);">250</div>
+                <div class="u-slot-c">
+                  <div class="pill"><span class="pv" style="color:var(--gold);font-size:10px;">2</span><span class="pl" style="font-size:8px;">Drops</span></div>
+                </div>
+              </div>
+            </div>
+            <!-- Boss locked -->
+            <div class="ucard locked" style="box-shadow:0 3px 8px rgba(0,0,0,.25);">
+              <div class="u-portrait" style="background:linear-gradient(165deg,#111118,#1A1A28);">
+                🤖
+                <div class="u-vignette"></div>
+                <div class="u-top">
+                  <div class="u-ctx" style="background:rgba(68,68,85,.2);color:var(--locked);border:1px solid rgba(68,68,85,.3);font-size:9px;padding:2px 6px;">🔒 LOCK</div>
+                  <div style="display:flex;flex-direction:column;align-items:center;background:rgba(13,13,26,.6);border:1px solid rgba(255,255,255,.07);border-radius:6px;padding:2px 6px;">
+                    <span style="font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;color:var(--text-sec);line-height:1;">2</span>
+                    <span style="font-family:'Oswald',sans-serif;font-size:6px;color:var(--text-dis);text-transform:uppercase;line-height:1;margin-top:1px;">STAGE</span>
+                  </div>
+                </div>
+                <div class="u-bottom">
+                  <div class="u-name" style="font-size:12px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.8px;color:var(--text-sec);">RUSTY GOLEM</div>
+                </div>
+                <div class="u-glow-border" style="border-color:rgba(68,68,85,.2);"></div>
+              </div>
+              <div class="u-info">
+                <div class="u-slot-a">Boss HP</div>
+                <div class="u-slot-b" style="font-size:17px;color:var(--text-dis);">320</div>
+                <div class="u-slot-c">
+                  <div class="pill" style="opacity:.4;"><span class="pv" style="color:var(--text-dis);font-size:10px;">2</span><span class="pl" style="font-size:8px;">Drops</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  04 — SWIFT IMPLEMENTATION CONSTANTS
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="h-sec">04 — <span>Swift Constants (LayoutConstants.swift)</span></div>
+
+  <div class="box box-gold" style="max-width:680px;">
+    <h4>Новые константы в LayoutConstants.swift</h4>
+    <pre style="font-family:monospace;font-size:12px;color:var(--text-sec);line-height:1.8;white-space:pre-wrap;">
+// ── Character Card System ──────────────────────
+static let cardPortraitRatio: CGFloat  = 1.0 / 1.1   // aspectRatio для portrait zone
+static let cardInfoHeight: CGFloat     = 72           // FIXED info zone height (all contexts)
+static let cardLvlBadgeSize: CGFloat   = 38           // LVL badge diameter (portrait card)
+static let cardCornerRadius: CGFloat   = 14           // = arenaCardRadius (уже есть)
+</pre>
+    <p style="margin-top:8px;">В SwiftUI portrait zone: <code>.aspectRatio(LayoutConstants.cardPortraitRatio, contentMode: .fit)</code><br>
+    Info zone: <code>.frame(height: LayoutConstants.cardInfoHeight)</code><br>
+    Это гарантирует одинаковую высоту без магических цифр в каждом компоненте.</p>
+  </div>
+
+  <table class="tbl" style="max-width:680px;margin-top:16px;">
+    <thead>
+      <tr><th>#</th><th>Что менять</th><th>Как</th><th>Приоритет</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>LayoutConstants.swift</td>
+        <td>Добавить <code>cardPortraitRatio</code>, <code>cardInfoHeight</code>, <code>cardLvlBadgeSize</code></td>
+        <td><span class="tag tag-r">FIRST</span></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>CardLevelBadge.swift</td>
+        <td>VStack { number + "LVL" }. Size.standard = 38pt (было 48pt — слишком крупный для portrait card)</td>
+        <td><span class="tag tag-r">FIRST</span></td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>ArenaOpponentCard.swift</td>
+        <td>Portrait: <code>.aspectRatio(cardPortraitRatio)</code>. Info: <code>.frame(height: cardInfoHeight)</code>. Убрать Attack+Defense pills.</td>
+        <td><span class="tag tag-o">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>DungeonBossCard.swift</td>
+        <td>Те же константы. StageBadge вместо bossNumberBadge. Info: HP + Drops в 72px zone.</td>
+        <td><span class="tag tag-o">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>OpponentCardView.swift</td>
+        <td>Удалить файл. Заменить на ArenaOpponentCard везде где используется.</td>
+        <td><span class="tag tag-o">HIGH</span></td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>HeroSelectionCard / CharacterSelectionView</td>
+        <td>Те же константы. Info zone: Rating + compact HP/STA bars в 72px.</td>
+        <td><span class="tag tag-b">MED</span></td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Arena Revenge + History views</td>
+        <td><code>LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10)</code> вместо List/ForEach row.</td>
+        <td><span class="tag tag-b">MED</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="text-align:center;padding:28px 0;color:var(--text-dis);font-size:10px;letter-spacing:1.5px;font-family:'Oswald',sans-serif;">
+  HEXBOUND — UNIFIED CARD SYSTEM v3 — NO BUTTONS — EQUAL HEIGHT — 2026-04-10
+</div>
+
+</body>
+</html>

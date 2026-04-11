@@ -21,6 +21,12 @@ struct HexboundApp: App {
                         AuthRouterView()
                     case .characterSelect:
                         CharacterSelectionView()
+                    case .cinematicOpen(let heroName):
+                        CombatColdOpenView(heroName: heroName)
+                    case .scriptedTutorial(let heroName):
+                        TutorialFightView(heroName: heroName)
+                    case .tutorialVictory(let heroName):
+                        VictoryOverlayView(heroName: heroName)
                     case .loreIntro(let heroName):
                         OnboardingCinematicView(heroName: heroName)
                     case .game:

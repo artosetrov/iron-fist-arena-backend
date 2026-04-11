@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
     if (product.premium) {
       // Set premium_until far in the future (permanent = year 2099)
       userUpdate.premiumUntil = new Date('2099-12-31T23:59:59Z')
+      // W3.D5 — grant "Chosen" cosmetic title on ALL of user's characters
+      // Done as a separate UPDATE in the transaction below; enum-based so
+      // the API can't accept arbitrary title strings.
     }
 
     // Execute all operations in a single transaction
@@ -100,6 +103,16 @@ export async function POST(req: NextRequest) {
         prisma.user.update({
           where: { id: user.id },
           data: userUpdate,
+        })
+      )
+    }
+
+    // 2b. W3.D5 — grant "Chosen" title on all user's characters for Premium Forever
+    if (product.premium) {
+      operations.push(
+        prisma.character.updateMany({
+          where: { userId: user.id },
+          data: { activeTitle: 'chosen' },
         })
       )
     }

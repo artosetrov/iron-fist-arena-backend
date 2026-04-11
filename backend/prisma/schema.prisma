@@ -90,6 +90,15 @@ enum QuestType {
   gold_mine_collect
 }
 
+// Premium cosmetic titles (W3.D5 — Premium Forever expansion).
+// Hardcoded enum so title keys cannot be spoofed through the API.
+// Grant via IAP receipt verification or admin tool. Extend this enum when
+// new titles ship — migration required each time, but that's intentional:
+// titles are rare, owned state needs to be typed, not a free-form string.
+enum TitleType {
+  chosen       // Premium Forever holders
+}
+
 enum CosmeticType {
   frame
   title
@@ -215,6 +224,8 @@ model User {
   gold          Int       @default(0)
   gems          Int       @default(0)
   premiumUntil  DateTime? @map("premium_until")
+  // W3.D5 — Premium Forever +25 gems/day claim tracking
+  premiumGemClaimDate DateTime? @map("premium_gem_claim_date")
   role          String    @default("player")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
@@ -280,6 +291,12 @@ model Character {
   statPurchasesDate   DateTime? @map("stat_purchases_date")
   statPurchasesTotal  Int       @default(0) @map("stat_purchases_total")
 
+  // W3.D4 — Daily activity caps (lazy reset by date column)
+  dungeonClearsToday  Int       @default(0) @map("dungeon_clears_today")
+  dungeonClearsDate   DateTime? @map("dungeon_clears_date")
+  staminaRefillsToday Int       @default(0) @map("stamina_refills_today")
+  staminaRefillsDate  DateTime? @map("stamina_refills_date")
+
   // PvP
   pvpRating         Int       @default(1000) @map("pvp_rating")
   pvpWins           Int       @default(0) @map("pvp_wins")
@@ -333,10 +350,15 @@ model Character {
   shopOfferPurchases  ShopOfferPurchase[]
 
   // Tutorial & Onboarding
-  tutorialStep        Int       @default(0) @map("tutorial_step")       // 0=new, 1=equipped, 2=first_fight, 3=completed
-  tutorialSkipped     Boolean   @default(false) @map("tutorial_skipped")
-  referralCode        String?   @unique @map("referral_code")           // 8-char invite code
-  referredBy          String?   @map("referred_by")                     // character_id of referrer
+  tutorialStep          Int       @default(0) @map("tutorial_step")       // 0=new, 1=equipped, 2=first_fight, 3=completed
+  tutorialSkipped       Boolean   @default(false) @map("tutorial_skipped")
+  tutorialCompleted     Boolean   @default(false) @map("tutorial_completed")   // W2.D3: scripted tutorial fight completed
+  tutorialCompletedAt   DateTime? @map("tutorial_completed_at")                // timestamp of scripted fight victory
+  referralCode          String?   @unique @map("referral_code")           // 8-char invite code
+  referredBy            String?   @map("referred_by")                     // character_id of referrer
+
+  // W3.D5 — Cosmetic title (Premium Forever, future titles)
+  activeTitle         TitleType? @map("active_title")
 
   // Social
   lastActiveAt        DateTime? @map("last_active_at")
@@ -348,6 +370,9 @@ model Character {
   challengesReceived  Challenge[] @relation("challenge_defender")
   milestoneClaims     MilestoneClaim[]
   tutorialQuests      TutorialQuest[]
+
+  // W3.D5 — Weekly BP challenges (rotating, ISO-week)
+  weeklyChallengeProgress WeeklyChallengeProgress[]
 
   @@index([userId])
   @@index([pvpRating])
@@ -649,6 +674,28 @@ model BattlePassClaim {
 
   @@unique([characterId, rewardId])
   @@map("battle_pass_claims")
+}
+
+// W3.D5 — Weekly BP challenges (rotating, ISO-week seeded)
+// 5 slots per character per ISO week, deterministic pool selection
+model WeeklyChallengeProgress {
+  id           String    @id @default(uuid())
+  characterId  String    @map("character_id")
+  isoWeek      String    @map("iso_week")   // e.g. "2026-W15"
+  slotIndex    Int       @map("slot_index") // 0..4
+  goalType     QuestType @map("goal_type")
+  goalTarget   Int       @map("goal_target")
+  progress     Int       @default(0)
+  bpXpAward    Int       @map("bp_xp_award")
+  claimed      Boolean   @default(false)
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, isoWeek, slotIndex])
+  @@index([characterId, isoWeek])
+  @@map("weekly_challenge_progress")
 }
 
 model Cosmetic {

@@ -54,6 +54,25 @@
 | `TRAINING` | `5` |
 | `FREE_PVP_PER_DAY` | `3` |
 
+### Refill diminishing returns (W3.D4)
+
+| Refill # | Cost multiplier |
+|----------|-----------------|
+| 1 | ×1 |
+| 2 | ×1.5 |
+| 3 | ×2.5 |
+| 4 | ×4 |
+
+**Daily cap:** 4 refills per UTC day (hard gate). Pattern: Clash Royale chest slots + Genshin Fragile Resin.
+
+### Training XP diminishing returns (W3.D4)
+
+- First **6** dungeon clears/day: **100% XP**  
+- Next **6** clears: **50% XP**  
+- Every clear after: **10% XP** (floor, never zero)
+
+Counter resets at UTC midnight via lazy refresh. Pattern: LoL First Win of the Day + RAID XP brew farming.
+
 **Derived:** full 0→120 stamina takes 960 minutes (16.0 hours).
 
 ## HP regen
@@ -252,16 +271,18 @@ Formula: `xpForLevel(level) = 100 * level + 20 * level²`
 | `CRIT_MULTIPLIER` | `1.5` |
 | `MAX_CRIT_CHANCE` | `50` |
 | `MAX_DODGE_CHANCE` | `30` |
-| `ROGUE_DODGE_BONUS` | `3` |
+| `ROGUE_DODGE_BONUS` | `4` |
 | `TANK_DAMAGE_REDUCTION` | `0.85` |
 | `DAMAGE_VARIANCE` | `0.1` |
 | `POISON_ARMOR_PENETRATION` | `0.3` |
-| `CRIT_PER_LUK` | `0.7` |
-| `CRIT_PER_AGI` | `0.15` |
+| `CRIT_PER_LUK` | `0.6` |
+| `CRIT_PER_AGI` | `0.2` |
 | `DODGE_PER_AGI` | `0.2` |
 | `DODGE_PER_LUK` | `0.1` |
-| `CHA_INTIMIDATION_PER_POINT` | `0.25` |
-| `CHA_INTIMIDATION_CAP` | `25` |
+| `ROGUE_EXECUTE_HP_THRESHOLD` | `0.35` |
+| `ROGUE_EXECUTE_DAMAGE_BONUS` | `0.15` |
+| `CHA_MISS_PER_POINT` | `0.2` |
+| `CHA_MISS_CAP` | `20` |
 
 ## Battle fatigue
 
@@ -285,7 +306,7 @@ Valid zones: `head`, `chest`, `legs`
 |------|---------|------|
 | head | 10 | 5 |
 | chest | 5 | 0 |
-| legs | 0 | -3 |
+| legs | 2 | 0 |
 
 ### Defense zone bonuses
 
@@ -327,35 +348,35 @@ Valid zones: `head`, `chest`, `legs`
 | Streak length | Bonus |
 |---------------|-------|
 | 0 | +0% |
-| 3 | +20% |
-| 4 | +20% |
-| 5 | +50% |
-| 6 | +50% |
-| 7 | +50% |
-| 8 | +100% |
-| 9 | +100% |
-| 10 | +100% |
+| 3 | +15% |
+| 4 | +15% |
+| 5 | +30% |
+| 6 | +30% |
+| 7 | +30% |
+| 8 | +50% |
+| 9 | +50% |
+| 10 | +50% |
 
 ### Loss streak gold recovery (applied on next win)
 
 | Loss streak | Bonus on next win |
 |-------------|-------------------|
 | 0 | +0% |
-| 3 | +30% |
-| 4 | +30% |
-| 5 | +50% |
-| 6 | +50% |
-| 7 | +80% |
-| 8 | +80% |
-| 9 | +80% |
-| 10 | +80% |
+| 3 | +20% |
+| 4 | +20% |
+| 5 | +35% |
+| 6 | +35% |
+| 7 | +50% |
+| 8 | +50% |
+| 9 | +50% |
+| 10 | +50% |
 
 ## Repair & upgrade costs
 
 ### REPAIR_COSTS
 
-- **Base cost:** 80 gold  
-- **Per level:** +15 gold  
+- **Base cost:** 120 gold  
+- **Per level:** +20 gold  
 
 **Rarity multipliers:**
 

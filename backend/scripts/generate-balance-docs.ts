@@ -52,6 +52,8 @@ import {
   INVENTORY,
   EXTRA_PVP,
   RARITY_DISTRIBUTION,
+  STAMINA_REFILL_DR,
+  TRAINING_XP_DR,
 } from '../src/lib/game/balance';
 
 import * as fs from 'node:fs';
@@ -136,6 +138,26 @@ push('- [Rarity distribution](#rarity-distribution)');
 
 section('Stamina');
 kvTable('STAMINA', STAMINA as Record<string, unknown>);
+
+push();
+push('### Refill diminishing returns (W3.D4)');
+push();
+push('| Refill # | Cost multiplier |');
+push('|----------|-----------------|');
+STAMINA_REFILL_DR.COST_MULTIPLIERS.forEach((m, i) => {
+  push(`| ${i + 1} | ×${m} |`);
+});
+push();
+push(`**Daily cap:** ${STAMINA_REFILL_DR.DAILY_CAP} refills per UTC day (hard gate). ` +
+     `Pattern: Clash Royale chest slots + Genshin Fragile Resin.`);
+push();
+push('### Training XP diminishing returns (W3.D4)');
+push();
+push(`- First **${TRAINING_XP_DR.FULL_XP_CLEARS}** dungeon clears/day: **100% XP**  `);
+push(`- Next **${TRAINING_XP_DR.HALF_XP_CLEARS}** clears: **50% XP**  `);
+push(`- Every clear after: **${(TRAINING_XP_DR.FLOOR_MULTIPLIER * 100).toFixed(0)}% XP** (floor, never zero)`);
+push();
+push('Counter resets at UTC midnight via lazy refresh. Pattern: LoL First Win of the Day + RAID XP brew farming.');
 push();
 push(`**Derived:** full 0→${STAMINA.MAX} stamina takes ` +
      `${STAMINA.MAX * STAMINA.REGEN_INTERVAL_MINUTES} minutes ` +

@@ -34,6 +34,12 @@ struct LeaderboardRowView: View {
                             .font(DarkFantasyTheme.body.weight(.semibold))
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
                     }
+
+                    // W3.D5 — BAL-05: tier badge resolved server-side from pvpRating
+                    // Optional: gold leaderboard entries with no character have nil.
+                    if let tierKey = entry.tierKey, !tierKey.isEmpty {
+                        TierBadge(tierKey: tierKey, division: entry.division, size: .compact)
+                    }
                 }
             }
 

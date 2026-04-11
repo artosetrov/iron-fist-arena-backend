@@ -45,8 +45,12 @@ struct CombatConfig {
     let critPerAgi: Double
     let dodgePerAgi: Double
     let dodgePerLuk: Double
-    let chaIntimidationPerPoint: Double
-    let chaIntimidationCap: Double
+    // W3.D1 — CHA miss chance (replaces legacy cha_intimidation_*)
+    let chaMissPerPoint: Double
+    let chaMissCap: Double
+    // W3.D2 — Rogue Execute finisher
+    let rogueExecuteHpThreshold: Double
+    let rogueExecuteDamageBonus: Double
 
     /// Default config matching backend balance.ts
     static let `default` = CombatConfig(
@@ -55,16 +59,18 @@ struct CombatConfig {
         critMultiplier: 1.5,
         maxCritChance: 50,
         maxDodgeChance: 30,
-        rogueDodgeBonus: 3,
+        rogueDodgeBonus: 4,
         tankDamageReduction: 0.85,
         damageVariance: 0.10,
         poisonArmorPenetration: 0.3,
-        critPerLuk: 0.7,
-        critPerAgi: 0.15,
+        critPerLuk: 0.6,
+        critPerAgi: 0.2,
         dodgePerAgi: 0.2,
         dodgePerLuk: 0.1,
-        chaIntimidationPerPoint: 0.15,
-        chaIntimidationCap: 15
+        chaMissPerPoint: 0.2,
+        chaMissCap: 20,
+        rogueExecuteHpThreshold: 0.35,
+        rogueExecuteDamageBonus: 0.15
     )
 
     init(from dict: [String: Any]) {
@@ -73,23 +79,26 @@ struct CombatConfig {
         critMultiplier = dict["crit_multiplier"] as? Double ?? 1.5
         maxCritChance = dict["max_crit_chance"] as? Double ?? 50
         maxDodgeChance = dict["max_dodge_chance"] as? Double ?? 30
-        rogueDodgeBonus = dict["rogue_dodge_bonus"] as? Double ?? 3
+        rogueDodgeBonus = dict["rogue_dodge_bonus"] as? Double ?? 4
         tankDamageReduction = dict["tank_damage_reduction"] as? Double ?? 0.85
         damageVariance = dict["damage_variance"] as? Double ?? 0.10
         poisonArmorPenetration = dict["poison_armor_penetration"] as? Double ?? 0.3
-        critPerLuk = dict["crit_per_luk"] as? Double ?? 0.7
-        critPerAgi = dict["crit_per_agi"] as? Double ?? 0.15
+        critPerLuk = dict["crit_per_luk"] as? Double ?? 0.6
+        critPerAgi = dict["crit_per_agi"] as? Double ?? 0.2
         dodgePerAgi = dict["dodge_per_agi"] as? Double ?? 0.2
         dodgePerLuk = dict["dodge_per_luk"] as? Double ?? 0.1
-        chaIntimidationPerPoint = dict["cha_intimidation_per_point"] as? Double ?? 0.15
-        chaIntimidationCap = dict["cha_intimidation_cap"] as? Double ?? 15
+        chaMissPerPoint = dict["cha_miss_per_point"] as? Double ?? 0.2
+        chaMissCap = dict["cha_miss_cap"] as? Double ?? 20
+        rogueExecuteHpThreshold = dict["rogue_execute_hp_threshold"] as? Double ?? 0.35
+        rogueExecuteDamageBonus = dict["rogue_execute_damage_bonus"] as? Double ?? 0.15
     }
 
     init(maxTurns: Int, minDamage: Int, critMultiplier: Double, maxCritChance: Double,
          maxDodgeChance: Double, rogueDodgeBonus: Double, tankDamageReduction: Double,
          damageVariance: Double, poisonArmorPenetration: Double,
          critPerLuk: Double, critPerAgi: Double, dodgePerAgi: Double, dodgePerLuk: Double,
-         chaIntimidationPerPoint: Double, chaIntimidationCap: Double) {
+         chaMissPerPoint: Double, chaMissCap: Double,
+         rogueExecuteHpThreshold: Double, rogueExecuteDamageBonus: Double) {
         self.maxTurns = maxTurns
         self.minDamage = minDamage
         self.critMultiplier = critMultiplier
@@ -103,8 +112,10 @@ struct CombatConfig {
         self.critPerAgi = critPerAgi
         self.dodgePerAgi = dodgePerAgi
         self.dodgePerLuk = dodgePerLuk
-        self.chaIntimidationPerPoint = chaIntimidationPerPoint
-        self.chaIntimidationCap = chaIntimidationCap
+        self.chaMissPerPoint = chaMissPerPoint
+        self.chaMissCap = chaMissCap
+        self.rogueExecuteHpThreshold = rogueExecuteHpThreshold
+        self.rogueExecuteDamageBonus = rogueExecuteDamageBonus
     }
 }
 
@@ -240,10 +251,14 @@ struct ParsedZoneStance {
 }
 
 enum ZoneStanceConfig {
+    // W3.D4 — Stance symmetry.
+    // Legs attack was (offense:0, crit:-3) — strictly dominated by chest.
+    // Now (offense:2, crit:0): small upside for the "safe" stance, no crit penalty.
+    // Mirrors backend/src/lib/game/balance.ts STANCE_ZONES.ATTACK_ZONE exactly.
     static let attackZones: [String: (offense: Double, crit: Double)] = [
         "head":  (offense: 10, crit: 5),
         "chest": (offense: 5,  crit: 0),
-        "legs":  (offense: 0,  crit: -3),
+        "legs":  (offense: 2,  crit: 0),
     ]
 
     static let defenseZones: [String: (defense: Double, dodge: Double)] = [
@@ -402,6 +417,19 @@ final class CombatEngine {
         attackerZone: String? = nil, defenderZone: String? = nil
     ) -> (turn: CombatLog, newDefenderHp: Int, healAmount: Int) {
 
+        // W3.D1 — CHA miss check FIRST (pre-hit whiff from defender's intimidating presence)
+        let missPct = chaMissChance(defenderCha: defender.cha)
+        let isMiss = missPct > 0 && rollPercent() < missPct
+
+        if isMiss {
+            let turn = CombatLog(
+                attackerId: attacker.id, action: "miss", targetZone: attackerZone, defendZone: defenderZone,
+                damage: 0, isCrit: false, isMiss: true, isDodge: false, isBlocked: false,
+                statusApplied: nil, heal: nil, damageType: nil, skillUsed: nil
+            )
+            return (turn, defenderHp, 0)
+        }
+
         // Dodge check
         let totalDodge = dodgeChance(defender: defender, stanceMod: stanceDef) + passivesDef.flatDodgeChance
         let isDodge = rollPercent() < min(totalDodge, config.maxDodgeChance)
@@ -466,15 +494,20 @@ final class CombatEngine {
         dmg = dmg * (1 + stanceAtk.offense / 100)
         dmg = dmg * (1 - stanceDef.defense / 100)
 
-        // CHA intimidation: defender's CHA reduces attacker's damage
-        let intimReduction = chaIntimidation(defenderCha: defender.cha)
-        if intimReduction > 0 {
-            dmg *= 1 - intimReduction
-        }
+        // W3.D1 — CHA damage reduction removed. CHA now triggers a pre-hit miss roll.
+        // W3.D2 — stat kept useful via miss chance; old intimidation dropped.
 
         // Defender's passive damage reduction
         if passivesDef.damageReduction > 0 {
             dmg *= 1 - min(passivesDef.damageReduction, 50) / 100
+        }
+
+        // W3.D2 — Rogue Execute: +% final damage vs low-HP defenders (thematic finisher)
+        if attacker.characterClass == "rogue" && defender.maxHp > 0 {
+            let hpRatio = Double(defenderHp) / Double(defender.maxHp)
+            if hpRatio <= config.rogueExecuteHpThreshold {
+                dmg *= 1 + config.rogueExecuteDamageBonus
+            }
         }
 
         let finalDmg = max(Int(dmg), config.minDamage)
@@ -543,8 +576,10 @@ final class CombatEngine {
         return min(Double(defender.agi) * config.dodgePerAgi + Double(defender.luk) * config.dodgePerLuk + classBonus + stanceMod.dodge, config.maxDodgeChance)
     }
 
-    private func chaIntimidation(defenderCha: Int) -> Double {
-        return min(Double(defenderCha) * config.chaIntimidationPerPoint, config.chaIntimidationCap) / 100
+    /// W3.D1 — Returns CHA-induced miss chance as a PERCENT (0…cap).
+    private func chaMissChance(defenderCha: Int) -> Double {
+        guard defenderCha > 0 else { return 0 }
+        return min(Double(defenderCha) * config.chaMissPerPoint, config.chaMissCap)
     }
 
     private func applyVariance(_ damage: Double) -> Double {

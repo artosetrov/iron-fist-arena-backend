@@ -10,10 +10,13 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { getBattlePassConfig } from '@/lib/game/live-config'
-import { chaGoldBonus } from '@/lib/game/balance'
+import { chaGoldBonus, trainingXpMultiplier, TRAINING_XP_DR } from '@/lib/game/balance'
+import { currentDailyValue } from '@/lib/game/daily-counter'
 import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { rateLimit } from '@/lib/rate-limit'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 interface DungeonRunFightState {
   enemies: Enemy[]
@@ -88,6 +91,10 @@ export async function POST(
         select: {
           id: true, userId: true, characterName: true, class: true, origin: true,
           level: true, maxHp: true, avatar: true, cha: true, luk: true,
+          // W3.D4 — daily training XP DR fields
+          dungeonClearsToday: true, dungeonClearsDate: true,
+          // W3.D5 — Premium Forever gold multiplier
+          user: { select: { premiumUntil: true } },
         },
       }),
       prisma.dungeonRun.findFirst({
@@ -166,8 +173,25 @@ export async function POST(
       })
     }
 
-    const goldReward = chaGoldBonus(floorGoldReward(currentFloor, run.difficulty), character.cha)
-    const xpReward = floorXpReward(currentFloor, run.difficulty)
+    // W3.D4 — Training XP diminishing returns.
+    // Lazy-reset daily counter: first N clears = 100% XP, next M = 50%, rest = 10% floor.
+    // Prevents unlimited XP farming from grinding the same dungeon while never bricking
+    // a player who wants to keep playing (floor stays > 0). Pattern: LoL FWoTD + RAID.
+    const clearsUsedToday = currentDailyValue(
+      character.dungeonClearsToday,
+      character.dungeonClearsDate,
+      now,
+    )
+    const xpMultiplier = trainingXpMultiplier(clearsUsedToday)
+
+    // W3.D5 — Premium Forever +10% gold applied LAST (after CHA) to avoid
+    // compounding with the W3.D3 CHA cap (sink ratio protection).
+    const goldReward = Math.floor(
+      chaGoldBonus(floorGoldReward(currentFloor, run.difficulty), character.cha)
+        * goldBonusMultiplier(character.user),
+    )
+    const rawXpReward = floorXpReward(currentFloor, run.difficulty)
+    const xpReward = Math.round(rawXpReward * xpMultiplier)
     const newTotalGold = state.totalGoldEarned + goldReward
     const newTotalXp = state.totalXpEarned + xpReward
     const newFloorsCleared = state.floorsCleared + 1
@@ -208,6 +232,9 @@ export async function POST(
           currentXp: { increment: xpReward },
           currentHp: playerFinalHp,
           lastHpUpdate: now,
+          // W3.D4 — persist the lazy-reset daily clear counter.
+          dungeonClearsToday: clearsUsedToday + 1,
+          dungeonClearsDate: now,
         },
       })
 
@@ -239,9 +266,13 @@ export async function POST(
 
     // Non-critical post-combat work in parallel
     const lootDifficulty = isFinalBoss ? 'boss' : `dungeon_${run.difficulty}`
-    const [levelUpResult, , , , lootItem, durabilityResult] = await Promise.all([
+    const [levelUpResult, , , , , lootItem, durabilityResult] = await Promise.all([
       applyLevelUp(prisma, character_id),
       updateDailyQuestProgress(prisma, character_id, 'dungeons_complete'),
+      // W3.D5 — Weekly BP challenges. Mirrors daily-quest cadence (per completed
+      // floor for 'dungeons_complete'); the pool copy says "dungeons" for UX
+      // clarity but the underlying event matches the quest-system semantics.
+      updateWeeklyChallengeProgress(prisma, character_id, 'dungeons_complete'),
       updateTutorialQuestProgress(prisma, character_id, 'first_dungeon'),
       awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR),
       rollAndPersistLoot(prisma, character_id, character.level, lootDifficulty, character.luk),
@@ -265,9 +296,17 @@ export async function POST(
       rewards: {
         gold: goldReward,
         xp: xpReward,
+        xpRaw: rawXpReward,
+        xpMultiplier,
         totalGold: newTotalGold,
         totalXp: newTotalXp,
         floorsCleared: newFloorsCleared,
+      },
+      training_dr: {
+        clears_today: clearsUsedToday + 1,
+        full_xp_cap: TRAINING_XP_DR.FULL_XP_CLEARS,
+        half_xp_cap: TRAINING_XP_DR.FULL_XP_CLEARS + TRAINING_XP_DR.HALF_XP_CLEARS,
+        current_multiplier: xpMultiplier,
       },
       loot,
       nextFloor: {

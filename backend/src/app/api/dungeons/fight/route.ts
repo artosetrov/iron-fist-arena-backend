@@ -15,6 +15,8 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { rateLimit } from '@/lib/rate-limit'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 interface DungeonFightState {
   enemies: Enemy[]
@@ -86,6 +88,8 @@ export async function POST(req: NextRequest) {
         select: {
           id: true, userId: true, characterName: true, class: true, origin: true,
           level: true, maxHp: true, cha: true, luk: true, avatar: true,
+          // W3.D5 — Premium Forever gold multiplier
+          user: { select: { premiumUntil: true } },
         },
       }),
       prisma.dungeonRun.findFirst({
@@ -220,7 +224,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Player won the boss
-    const goldReward = chaGoldBonus(bossGoldReward(currentFloor, run.difficulty), character.cha)
+    // W3.D5 — Premium Forever +10% gold applied LAST (after CHA) to avoid
+    // compounding with the W3.D3 CHA cap.
+    const goldReward = Math.floor(
+      chaGoldBonus(bossGoldReward(currentFloor, run.difficulty), character.cha)
+        * goldBonusMultiplier(character.user),
+    )
     const xpReward = bossXpReward(currentFloor, run.difficulty)
     const newTotalGold = state.totalGoldEarned + goldReward
     const newTotalXp = state.totalXpEarned + xpReward
@@ -290,9 +299,11 @@ export async function POST(req: NextRequest) {
     })
 
     // Non-critical post-combat work in parallel (level-up, quests, BP, loot, durability)
-    const [levelUpResult, , , , lootItem, winDurabilityResult] = await Promise.all([
+    const [levelUpResult, , , , , lootItem, winDurabilityResult] = await Promise.all([
       applyLevelUp(prisma, character_id),
       updateDailyQuestProgress(prisma, character_id, 'dungeons_complete'),
+      // W3.D5 — Weekly BP challenges
+      updateWeeklyChallengeProgress(prisma, character_id, 'dungeons_complete'),
       updateTutorialQuestProgress(prisma, character_id, 'first_dungeon'),
       awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_DUNGEON_FLOOR),
       rollAndPersistLoot(prisma, character_id, character.level, 'boss', character.luk),

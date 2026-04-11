@@ -88,7 +88,7 @@ struct CharacterSelectionView: View {
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .onboarding: OnboardingDetailView()
-                case .register: RegisterDetailView()
+                case .register: AuthView(initialMode: .signup)
                 case .settings: SettingsDetailView()
                 case .currencyPurchase(let tab): CurrencyPurchaseView(initialTab: tab)
                 default: PlaceholderView()

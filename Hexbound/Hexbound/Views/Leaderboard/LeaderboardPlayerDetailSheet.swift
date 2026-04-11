@@ -28,6 +28,19 @@ struct LeaderboardPlayerDetailSheet: View {
         (appState.cachedInventory ?? []).filter { $0.isEquipped ?? false }
     }
 
+    /// Finds the player's item that occupies the same logical slot as the given opponent item.
+    /// Previously lived inside `OpponentIntegratedCard`; moved to the call site so the shared
+    /// `IntegratedCharacterCard` stays free of comparison-specific logic.
+    private func playerItem(matching opponentItem: Item) -> Item? {
+        let slot = opponentItem.equippedSlot ?? opponentItem.itemType.rawValue
+        if slot == "ring" || slot == "ring2" {
+            return playerEquippedItems.first {
+                $0.equippedSlot == "ring" || $0.equippedSlot == "ring2"
+            }
+        }
+        return playerEquippedItems.first { $0.equippedSlot == slot }
+    }
+
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
@@ -117,12 +130,26 @@ struct LeaderboardPlayerDetailSheet: View {
         ScrollView {
             VStack(spacing: LayoutConstants.spaceMD) {
                 // Integrated portrait + equipment card (same layout as hero page)
-                OpponentIntegratedCard(
-                    profile: profile,
-                    playerEquipment: playerEquippedItems,
-                    onItemTapped: { opponentItem, playerItem in
-                        selectedComparedItem = playerItem
+                IntegratedCharacterCard(
+                    display: profile,
+                    equippedItems: profile.equipment ?? [],
+                    onTapSlot: { opponentItem in
+                        selectedComparedItem = playerItem(matching: opponentItem)
                         selectedOpponentItem = opponentItem
+                    },
+                    portraitInfo: {
+                        CharacterPortraitRankInfo(
+                            rank: profile.pvpRank,
+                            rating: profile.pvpRating
+                        )
+                    },
+                    footer: {
+                        HPBarView(
+                            currentHp: profile.currentHp,
+                            maxHp: profile.maxHp,
+                            size: .large,
+                            label: "HP"
+                        )
                     }
                 )
 

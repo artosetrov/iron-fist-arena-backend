@@ -5,6 +5,7 @@ import { ConsumableType } from '@prisma/client'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { rateLimit } from '@/lib/rate-limit'
 import { getGameConfig } from '@/lib/game/config'
 
@@ -195,7 +196,11 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    await updateDailyQuestProgress(prisma, character_id, 'consumable_use')
+    await Promise.all([
+      updateDailyQuestProgress(prisma, character_id, 'consumable_use'),
+      // W3.D5 — Weekly BP challenge: Alchemist slot
+      updateWeeklyChallengeProgress(prisma, character_id, 'consumable_use'),
+    ])
 
     if (result.kind === 'stamina') {
       return NextResponse.json({

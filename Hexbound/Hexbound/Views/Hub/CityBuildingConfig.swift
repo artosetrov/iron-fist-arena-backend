@@ -134,9 +134,13 @@ let defaultCityBuildings: [CityBuilding] = [
 // MARK: - Resolved buildings (server overrides → hardcoded defaults)
 
 @MainActor
-func resolvedCityBuildings(from cache: GameDataCache) -> [CityBuilding] {
+func resolvedCityBuildings(from cache: GameDataCache, includeComingSoon: Bool = false) -> [CityBuilding] {
     let overrides = cache.hubLayout
-    let base = defaultCityBuildings.filter { $0.route != nil } // Hide Coming Soon buildings (route == nil)
+    // В редакторе хаба показываем все здания (включая Coming Soon), чтобы их можно было позиционировать.
+    // В обычном хабе скрываем здания без route.
+    let base = includeComingSoon
+        ? defaultCityBuildings
+        : defaultCityBuildings.filter { $0.route != nil }
     guard !overrides.isEmpty else { return base }
 
     return base.map { building in

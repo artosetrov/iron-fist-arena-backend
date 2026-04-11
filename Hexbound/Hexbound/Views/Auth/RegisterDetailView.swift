@@ -7,7 +7,7 @@ struct RegisterDetailView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            AuthBackground()
 
             ScrollView {
                 VStack(spacing: LayoutConstants.spaceLG) {

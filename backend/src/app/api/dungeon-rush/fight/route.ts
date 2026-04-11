@@ -28,6 +28,8 @@ import {
   type RushArtifact,
 } from '@/lib/game/dungeon-rush'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -55,7 +57,12 @@ export async function POST(req: NextRequest) {
     const [character, run, playerStatsRaw] = await Promise.all([
       prisma.character.findFirst({
         where: { id: character_id, userId: user.id },
-        select: { id: true, characterName: true, class: true, origin: true, level: true, maxHp: true, avatar: true, cha: true, luk: true },
+        select: {
+          id: true, characterName: true, class: true, origin: true, level: true,
+          maxHp: true, avatar: true, cha: true, luk: true,
+          // W3.D5 — Premium Forever gold multiplier
+          user: { select: { premiumUntil: true } },
+        },
       }),
       prisma.dungeonRun.findFirst({
         where: {
@@ -199,7 +206,11 @@ export async function POST(req: NextRequest) {
 
     // Get rewards for this room type, applying artifact multipliers
     const roomRewards = getRoomRewards(currentRoom.index, currentRoom.type)
-    const goldReward = applyArtifactGoldMult(chaGoldBonus(roomRewards.gold, character.cha), ownedArtifacts)
+    // W3.D5 — Premium Forever +10% gold applied LAST (after CHA + artifact mult)
+    const goldReward = Math.floor(
+      applyArtifactGoldMult(chaGoldBonus(roomRewards.gold, character.cha), ownedArtifacts)
+        * goldBonusMultiplier(character.user),
+    )
     const xpReward = applyArtifactXpMult(roomRewards.xp, ownedArtifacts)
 
     if (!playerWon) {
@@ -396,6 +407,12 @@ export async function POST(req: NextRequest) {
     incrementGuildChallenge(prisma, 'gold_earned', goldReward).catch(() => {})
     if (currentRoom.type === 'miniboss') {
       incrementGuildChallenge(prisma, 'bosses_killed', 1).catch(() => {})
+    }
+
+    // W3.D5 — Weekly BP challenges: count miniboss kills as 'dungeons_complete'
+    // (matches Dungeon Rush's "room cleared" cadence for the challenge UX).
+    if (currentRoom.type === 'miniboss') {
+      updateWeeklyChallengeProgress(prisma, character_id, 'dungeons_complete').catch(() => {})
     }
 
     // Check for level-up after XP award

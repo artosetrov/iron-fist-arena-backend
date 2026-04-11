@@ -124,6 +124,7 @@ struct BattleResultCardView: View {
                 .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
                 .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
                 .padding(.horizontal, LayoutConstants.screenPadding)
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxHeight: UIScreen.main.bounds.height * 0.88)
                 .offset(x: shakeOffset)
                 .opacity(showCard ? 1 : 0)

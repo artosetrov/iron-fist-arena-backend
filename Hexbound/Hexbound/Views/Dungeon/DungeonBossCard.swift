@@ -37,7 +37,7 @@ struct DungeonBossCard: View {
     private var cardContent: some View {
         GeometryReader { geo in
             let width = geo.size.width
-            let height = width * 1.4
+            let height = width * LayoutConstants.cardAspectRatio
 
             ZStack {
                 // 1. Full-bleed boss image background
@@ -64,7 +64,7 @@ struct DungeonBossCard: View {
             .shadow(color: stateColor.opacity(isActive ? 0.35 : 0.1), radius: isActive ? LayoutConstants.arenaGlowRadius + 4 : LayoutConstants.arenaGlowRadius, y: 3)
             .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.5), radius: 3, y: 2)
         }
-        .aspectRatio(1.0 / 1.4, contentMode: .fit)
+        .aspectRatio(1.0 / LayoutConstants.cardAspectRatio, contentMode: .fit)
     }
 
     // MARK: - Boss Image Layer
@@ -124,25 +124,14 @@ struct DungeonBossCard: View {
     // MARK: - Top Badges
 
     private var topBadges: some View {
-        HStack {
-            // Boss number circle
-            Text("\(boss.id)")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(stateColor)
-                .frame(width: 28, height: 28)
-                .background(
-                    Circle()
-                        .fill(DarkFantasyTheme.bgAbyss.opacity(0.75))
-                        .overlay(
-                            Circle()
-                                .stroke(stateColor.opacity(0.5), lineWidth: 1.5)
-                        )
-                )
+        HStack(alignment: .top) {
+            // Status badge (left)
+            statusBadge
 
             Spacer()
 
-            // Status badge
-            statusBadge
+            // Stage badge (right) — replaces ambiguous number circle
+            StageBadge(number: bossIndex + 1, stateColor: stateColor)
         }
     }
 
@@ -361,6 +350,41 @@ struct DungeonBossCard: View {
             return DarkFantasyTheme.rarityColor(for: best.rarity)
         }
         return DarkFantasyTheme.textTertiary
+    }
+}
+
+// MARK: - Stage Badge
+
+/// Rounded-rect badge showing stage number + "STAGE" label.
+/// Replaces the old ambiguous number-in-circle on DungeonBossCard top row.
+///
+/// Usage:
+///   StageBadge(number: 2, stateColor: DarkFantasyTheme.lockedGray)
+struct StageBadge: View {
+    let number: Int
+    let stateColor: Color
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("\(number)")
+                .font(.system(size: 13, weight: .bold, design: .default))
+                .foregroundStyle(stateColor)
+
+            Text("STAGE")
+                .font(.system(size: 7, weight: .semibold, design: .default))
+                .foregroundStyle(stateColor.opacity(0.65))
+                .tracking(0.5)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgAbyss.opacity(0.7))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .stroke(stateColor.opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 }
 

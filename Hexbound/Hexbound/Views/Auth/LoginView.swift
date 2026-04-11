@@ -7,7 +7,7 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+            AuthBackground()
 
             VStack(spacing: 0) {
                 // 1. Branding

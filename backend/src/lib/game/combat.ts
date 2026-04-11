@@ -50,6 +50,12 @@ export interface Turn {
   damage: number;
   isCrit: boolean;
   isDodge: boolean;
+  /**
+   * W3.D1 — CHA-driven pre-hit whiff (distinct from dodge).
+   * True when the attacker missed entirely due to defender's CHA unnerving them.
+   * Backward-compatible: omitted on old turns/clients default to `undefined`/false.
+   */
+  isMiss?: boolean;
   defenderHpAfter: number;
   skillUsed?: string;
   skillKey?: string;
@@ -212,8 +218,12 @@ interface CombatConfigData {
   CRIT_PER_AGI: number;
   DODGE_PER_AGI: number;
   DODGE_PER_LUK: number;
-  CHA_INTIMIDATION_PER_POINT: number;
-  CHA_INTIMIDATION_CAP: number;
+  // W3.D1 — CHA miss chance (replaces legacy intimidation damage reduction)
+  CHA_MISS_PER_POINT: number;
+  CHA_MISS_CAP: number;
+  // W3.D2 — Rogue Execute: bonus damage vs low-HP defenders
+  ROGUE_EXECUTE_HP_THRESHOLD: number;
+  ROGUE_EXECUTE_DAMAGE_BONUS: number;
 }
 
 // Cached combat config
@@ -257,9 +267,42 @@ function dodgeChance(defender: CharacterStats, stanceMod: StanceModifiers, confi
   );
 }
 
-/** CHA intimidation: attacker's CHA reduces defender's outgoing damage. */
-function chaIntimidation(attackerCha: number, config: CombatConfigData): number {
-  return Math.min(attackerCha * config.CHA_INTIMIDATION_PER_POINT, config.CHA_INTIMIDATION_CAP) / 100;
+/**
+ * W3.D1 — CHA miss chance. Defender's CHA unnerves the attacker into whiffing.
+ *
+ * Pure helper, exported for unit tests. Returns a probability in **percent**
+ * (0–`CHA_MISS_CAP`) — caller rolls `rollPercent(rng) < chaMissChance(...)`.
+ *
+ * Rolled BEFORE dodge in the attack pipeline so it's a pre-hit whiff, distinct
+ * from AGI/LUK evasion. Capped so high-CHA builds don't become unhittable.
+ */
+export function chaMissChance(defenderCha: number, config: Pick<CombatConfigData, 'CHA_MISS_PER_POINT' | 'CHA_MISS_CAP'>): number {
+  if (defenderCha <= 0) return 0;
+  return Math.min(defenderCha * config.CHA_MISS_PER_POINT, config.CHA_MISS_CAP);
+}
+
+/**
+ * W3.D2 — Rogue Execute finisher.
+ *
+ * Pure helper so the rule is unit-testable without spinning up full combat.
+ * Applies a flat multiplicative damage bonus to the incoming `damage` when:
+ *   1. attacker class is `rogue`
+ *   2. defender HP ratio (current / max) is <= threshold
+ *
+ * Returns the (possibly boosted) damage. Exported for tests.
+ */
+export function applyRogueExecute(
+  damage: number,
+  attackerClass: CharacterClassType,
+  defenderCurrentHp: number,
+  defenderMaxHp: number,
+  config: Pick<CombatConfigData, 'ROGUE_EXECUTE_HP_THRESHOLD' | 'ROGUE_EXECUTE_DAMAGE_BONUS'>,
+): number {
+  if (attackerClass !== 'rogue') return damage;
+  if (defenderMaxHp <= 0) return damage;
+  const hpRatio = defenderCurrentHp / defenderMaxHp;
+  if (hpRatio > config.ROGUE_EXECUTE_HP_THRESHOLD) return damage;
+  return damage * (1 + config.ROGUE_EXECUTE_DAMAGE_BONUS);
 }
 
 function applyVariance(damage: number, rng: SeededRng, config: CombatConfigData): number {
@@ -301,6 +344,29 @@ function resolveAttack(
   attackerZone?: string,
   defenderZone?: string,
 ): { turn: Turn; newDefenderHp: number; healAmount: number } {
+  // W3.D1 — CHA miss check FIRST (pre-hit whiff from intimidation presence).
+  // Separate from dodge so we can tune CHA independently and surface "MISS" in UX.
+  const missPct = chaMissChance(defenderChar.cha, config);
+  const isMiss = missPct > 0 && rollPercent(rng) < missPct;
+
+  if (isMiss) {
+    return {
+      turn: {
+        turnNumber,
+        attackerId: attackerChar.id,
+        damage: 0,
+        isCrit: false,
+        isDodge: false,
+        isMiss: true,
+        defenderHpAfter: defenderHp,
+        targetZone: attackerZone,
+        defendZone: defenderZone,
+      },
+      newDefenderHp: defenderHp,
+      healAmount: 0,
+    };
+  }
+
   // Dodge check — passive dodge bonus applied
   const totalDodge = dodgeChance(defenderChar, stanceDef, config) + passivesDef.flatDodgeChance;
   const isDodge = rollPercent(rng) < Math.min(totalDodge, config.MAX_DODGE_CHANCE);
@@ -388,16 +454,17 @@ function resolveAttack(
   dmg = dmg * (1 + stanceAtk.offense / 100);
   dmg = dmg * (1 - stanceDef.defense / 100);
 
-  // CHA intimidation: defender's CHA reduces attacker's damage
-  const intimReduction = chaIntimidation(defenderChar.cha, config);
-  if (intimReduction > 0) {
-    dmg *= 1 - intimReduction;
-  }
+  // W3.D1 — CHA damage reduction removed. CHA now triggers a pre-hit miss roll
+  // above (see `chaMissChance`). Stat kept useful without stacking two effects.
 
   // Defender's passive damage reduction
   if (passivesDef.damageReduction > 0) {
     dmg *= 1 - Math.min(passivesDef.damageReduction, 50) / 100;
   }
+
+  // W3.D2 — Rogue Execute: +% damage vs low-HP defenders (thematic finisher).
+  // Applied AFTER all mitigation so the bonus lands on the final floor damage.
+  dmg = applyRogueExecute(dmg, attackerChar.class, defenderHp, defenderChar.maxHp, config);
 
   // Battle fatigue: after turn 10, +10% damage per additional turn (anti-stall)
   if (turnNumber > BATTLE_FATIGUE.FATIGUE_START_TURN) {

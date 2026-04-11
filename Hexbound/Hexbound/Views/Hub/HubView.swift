@@ -282,6 +282,13 @@ struct HubView: View {
         .ignoresSafeArea(edges: .bottom)
         .persistentSystemOverlays(.hidden)
         .navigationBarHidden(true)
+        .overlay {
+            // W2.D4 — Building unlock ceremony queue. Mounts above the hub
+            // and consumes `appState.pendingBuildingUnlocks` one at a time.
+            BuildingUnlockCeremonyHost()
+                .allowsHitTesting(!appState.pendingBuildingUnlocks.isEmpty)
+                .zIndex(200)
+        }
         .overlay(alignment: .bottom) {
             // Onboarding NPCGuideWidget overlay (first-time visit)
             if shouldShowOnboarding, let char = appState.currentCharacter {
@@ -317,7 +324,18 @@ struct HubView: View {
                 case "hub_first_pvp":
                     appState.mainPath.append(AppRoute.arena)
                 case "hub_first_dungeon":
-                    appState.mainPath.append(AppRoute.dungeonMap)
+                    // Jump straight into the next available dungeon's boss list,
+                    // skipping the world map. Falls back to the map if nothing
+                    // is currently unlocked (e.g. character too low level).
+                    if let nextId = nextAvailableDungeonId(
+                        from: cache,
+                        characterLevel: appState.currentCharacter?.level ?? 1
+                    ) {
+                        appState.selectedDungeonId = nextId
+                        appState.mainPath.append(AppRoute.dungeonRoom)
+                    } else {
+                        appState.mainPath.append(AppRoute.dungeonMap)
+                    }
                 case "hub_first_mine":
                     appState.mainPath.append(AppRoute.goldMine)
                 case "hub_unclaimed_rewards":

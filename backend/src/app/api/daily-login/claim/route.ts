@@ -3,6 +3,11 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { canClaimDailyLogin, shouldResetStreak, getDailyReward } from '@/lib/game/daily-login'
 import { rateLimit } from '@/lib/rate-limit'
+import {
+  hasPremium,
+  hasPremiumGemsClaimedToday,
+  PREMIUM_DAILY_GEMS,
+} from '@/lib/game/premium'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -113,7 +118,31 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      return { reward, updatedLogin }
+      // W3.D5 — Premium Forever: +25 bonus gems per UTC day, additive to the
+      // base daily reward. Applied inside the same transaction so premium
+      // claim + daily reward are atomic. `hasPremiumGemsClaimedToday` compares
+      // UTC day to prevent double-claim across streak resets.
+      const currentUser = await tx.user.findUnique({
+        where: { id: user.id },
+        select: { premiumUntil: true, premiumGemClaimDate: true },
+      })
+      let premiumGemsAwarded = 0
+      if (
+        currentUser &&
+        hasPremium(currentUser) &&
+        !hasPremiumGemsClaimedToday(currentUser.premiumGemClaimDate)
+      ) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            gems: { increment: PREMIUM_DAILY_GEMS },
+            premiumGemClaimDate: new Date(),
+          },
+        })
+        premiumGemsAwarded = PREMIUM_DAILY_GEMS
+      }
+
+      return { reward, updatedLogin, premiumGemsAwarded }
     })
 
     return NextResponse.json({
@@ -125,6 +154,8 @@ export async function POST(req: NextRequest) {
       currentDay: result.updatedLogin.currentDay,
       streak: result.updatedLogin.streak,
       totalClaims: result.updatedLogin.totalClaims,
+      // W3.D5 — Premium Forever bonus gems (0 if not premium or already claimed today)
+      premiumGemsAwarded: result.premiumGemsAwarded,
     })
   } catch (error: any) {
     if (error.message === 'ALREADY_CLAIMED') {

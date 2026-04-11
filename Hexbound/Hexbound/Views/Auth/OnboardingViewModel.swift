@@ -394,11 +394,12 @@ final class OnboardingViewModel {
                 if !allSkins.isEmpty {
                     cache.cacheSkins(allSkins)
                 }
-                // If this is the user's first hero, show lore intro before entering
-                // Otherwise, go back to character selection
+                // W2.D2 R1 — onboarding reorder. First hero flow is now:
+                //   cinematicOpen → scriptedTutorial → tutorialVictory → loreIntro → game
+                // Additional heroes skip the whole onboarding tunnel.
                 if appState.userCharacters.count <= 1 {
-                    // First hero — show lore intro (it loads game data and transitions to .game)
-                    appState.currentScreen = .loreIntro(heroName: character.characterName)
+                    // First hero — kick off the new reordered onboarding tunnel
+                    appState.currentScreen = .cinematicOpen(heroName: character.characterName)
                 } else {
                     // Additional hero — go to selection screen
                     appState.currentScreen = .characterSelect

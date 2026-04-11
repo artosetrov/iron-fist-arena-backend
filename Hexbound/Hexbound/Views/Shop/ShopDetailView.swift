@@ -110,10 +110,13 @@ struct ShopDetailView: View {
                 .padding(.top, LayoutConstants.spaceSM)
                 .padding(.bottom, LayoutConstants.spaceSM)
 
-            // Special Offers carousel
-            if !vm.offers.isEmpty {
+            // Special Offers carousel — hide fully claimed offers (purchase limit reached).
+            // After a player claims the Starter Pack (or any single-use offer), its card
+            // must disappear from the widget rather than sit in a disabled "CLAIMED" state.
+            let activeOffers = vm.offers.filter { $0.canPurchase }
+            if !activeOffers.isEmpty {
                 ShopOfferBannerView(
-                    offers: vm.offers,
+                    offers: activeOffers,
                     canAfford: { vm.canAffordOffer($0) },
                     buyingId: vm.buyingOfferId,
                     onBuy: { offer in Task { await vm.buyOffer(offer) } }

@@ -20,6 +20,8 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
+import { goldBonusMultiplier } from '@/lib/game/premium'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 function isFirstWinOfDay(firstWinDate: Date | null): boolean {
   if (!firstWinDate) return true
@@ -84,7 +86,11 @@ export async function POST(
     }
 
     const [attacker, defender] = await Promise.all([
-      prisma.character.findUnique({ where: { id: revenge.victimId } }),
+      prisma.character.findUnique({
+        where: { id: revenge.victimId },
+        // W3.D5 — include user.premiumUntil for Premium Forever gold multiplier
+        include: { user: { select: { premiumUntil: true } } },
+      }),
       prisma.character.findUnique({ where: { id: revenge.attackerId } }),
     ])
 
@@ -147,6 +153,9 @@ export async function POST(
       goldReward = goldReward * FIRST_WIN_BONUS.GOLD_MULT
       xpReward = xpReward * FIRST_WIN_BONUS.XP_MULT
     }
+
+    // W3.D5 — Premium Forever +10% gold (applied LAST — don't compound with CHA cap)
+    goldReward = Math.floor(goldReward * goldBonusMultiplier(attacker.user))
 
     const now = new Date()
 
@@ -240,9 +249,13 @@ export async function POST(
     const levelUpResult = await applyLevelUp(prisma, attacker.id)
     await applyLevelUp(prisma, defender.id)
 
-    // Update daily quest progress
+    // Update daily quest progress + weekly BP challenge
     if (attackerWon) {
-      await updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins')
+      await Promise.all([
+        updateDailyQuestProgress(prisma, attacker.id, 'pvp_wins'),
+        // W3.D5 — Weekly BP challenges
+        updateWeeklyChallengeProgress(prisma, attacker.id, 'pvp_wins'),
+      ])
     }
 
     // Roll for loot drop and persist to inventory

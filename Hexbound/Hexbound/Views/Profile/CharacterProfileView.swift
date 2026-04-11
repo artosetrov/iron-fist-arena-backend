@@ -90,7 +90,24 @@ struct CharacterProfileView: View {
         ScrollView {
             VStack(spacing: LayoutConstants.spaceMD) {
                 // Portrait + equipment grid
-                OpponentIntegratedCard(profile: profile)
+                IntegratedCharacterCard(
+                    display: profile,
+                    equippedItems: profile.equipment ?? [],
+                    portraitInfo: {
+                        CharacterPortraitRankInfo(
+                            rank: profile.pvpRank,
+                            rating: profile.pvpRating
+                        )
+                    },
+                    footer: {
+                        HPBarView(
+                            currentHp: profile.currentHp,
+                            maxHp: profile.maxHp,
+                            size: .large,
+                            label: "HP"
+                        )
+                    }
+                )
 
                 // Friend status chip — appears below card when request sent or is friend
                 friendStatusRow

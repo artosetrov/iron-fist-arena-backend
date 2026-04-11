@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
+import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { rateLimit } from '@/lib/rate-limit'
 
 const MIN_BET = 50
@@ -144,9 +145,14 @@ export async function POST(req: NextRequest) {
       return { finalGold, characterId: character_id }
     })
 
-    // Update daily quest progress (non-critical, outside transaction)
-    await updateDailyQuestProgress(prisma, result.characterId, 'shell_game_play')
-    await updateDailyQuestProgress(prisma, result.characterId, 'gold_spent', bet_amount)
+    // Update daily + weekly quest progress (non-critical, outside transaction)
+    await Promise.all([
+      updateDailyQuestProgress(prisma, result.characterId, 'shell_game_play'),
+      updateDailyQuestProgress(prisma, result.characterId, 'gold_spent', bet_amount),
+      // W3.D5 — Weekly BP challenges: Lucky Hand + Spendthrift slots
+      updateWeeklyChallengeProgress(prisma, result.characterId, 'shell_game_play'),
+      updateWeeklyChallengeProgress(prisma, result.characterId, 'gold_spent', bet_amount),
+    ])
 
     return NextResponse.json({
       won,

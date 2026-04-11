@@ -17,7 +17,7 @@ enum DarkFantasyTheme {
     static let bgDisabled = Color(hex: 0x333340)    // Disabled button background
     static let bgSecondaryPressed = Color(hex: 0x18182B) // Pressed state of bgSecondary
     static let bgTertiaryPressed = Color(hex: 0x151F3A)  // Pressed state of bgTertiary
-    static let bgModal = Color.black.opacity(0.88)   // Modal overlay — darker for contrast
+    static let bgModal = Color.black.opacity(0.95)   // Modal overlay — near-black backdrop
     static let bgBackdrop = Color.black.opacity(0.85) // Heavy backdrop for sheets
     static let bgBackdropLight = Color.black.opacity(0.7) // Lighter backdrop for popups
     static let bgScrim = Color.black.opacity(0.5)   // Semi-transparent scrim fill
@@ -114,7 +114,13 @@ enum DarkFantasyTheme {
     static let rankGold = Color(hex: 0xFFD600)
     static let rankPlatinum = Color(hex: 0x66CCCC)
     static let rankDiamond = Color(hex: 0x99CCFF)
+    // W3.D5 — BAL-05 8-tier ladder adds Master & Challenger on top of the
+    // existing 6-tier palette. Grandmaster stays at 0xFF4D4D (ruby red);
+    // Master sits below it (royal purple, distinct but "elite"); Challenger
+    // is the apex (white-gold laurel gradient, rendered in TierBadge).
+    static let rankMaster = Color(hex: 0xB266FF)
     static let rankGrandmaster = Color(hex: 0xFF4D4D)
+    static let rankChallenger = Color(hex: 0xFFE27A)
 
     // MARK: - Hub Character Card Colors
 

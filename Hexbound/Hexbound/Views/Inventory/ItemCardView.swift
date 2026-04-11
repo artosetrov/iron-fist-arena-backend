@@ -15,6 +15,9 @@ enum ItemCardContext {
     case loot
     /// Preview in detail sheets — minimal, no button wrapping
     case preview
+    /// Special offer reward tile — text label strip at bottom (e.g. "×500", "FREE").
+    /// Non-interactive (wrap call-site in `.allowsHitTesting(false)`).
+    case offerReward(label: String)
 }
 
 // MARK: - Unified Item Card View
@@ -456,6 +459,9 @@ private extension ItemCardView {
         } else if case .shop(let price, let isGem, _, _, _, let originalPrice, let discountPct) = context {
             // Shop price bar with optional discount
             shopPriceBar(price: price, isGem: isGem, originalPrice: originalPrice, discountPct: discountPct)
+        } else if case .offerReward(let label) = context {
+            // Offer reward label bar (mirrors shop price bar structurally, text-only)
+            offerRewardBar(label: label)
         } else if let upg = upgradeLevel, upg > 0 {
             // Upgrade level only (rarity stars shown in detail sheet)
             Text("+\(upg)")
@@ -480,6 +486,32 @@ private extension ItemCardView {
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusXS))
                 .padding(LayoutConstants.spaceXS)
         }
+    }
+
+    // MARK: - Offer Reward Bar
+
+    /// Bottom label strip for `.offerReward` context — mirrors `shopPriceBar` structurally
+    /// (translucent abyss background, gold text, bottom-radius clip) but shows a single
+    /// plain-text label like "×500" or "FREE" instead of a price.
+    @ViewBuilder
+    func offerRewardBar(label: String) -> some View {
+        Text(label)
+            .font(DarkFantasyTheme.badge)
+            .foregroundStyle(DarkFantasyTheme.goldBright)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .frame(maxWidth: .infinity)
+            .background(DarkFantasyTheme.bgAbyss.opacity(0.75))
+            .clipShape(
+                .rect(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: LayoutConstants.cardRadius,
+                    bottomTrailingRadius: LayoutConstants.cardRadius,
+                    topTrailingRadius: 0
+                )
+            )
     }
 
     // MARK: - Shop Price Bar

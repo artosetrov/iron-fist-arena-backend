@@ -91,6 +91,10 @@ struct CityMapView: View {
                         let layoutOverrides = cache.hubLayout
                         let buildings = applyOverrides(layoutOverrides)
                         let activeQuestBuilding = questTargetBuildingId
+                        // W2.D5 — compute the cap-3 filtered badge set ONCE per
+                        // frame so both the sprite layer (ForEach above) and the
+                        // label layer (ForEach below) see the same result.
+                        let visibleBadges = filteredBadges(for: buildings)
                         ForEach(buildings) { building in
                             let locked = isBuildinglocked(building)
                             let unlockLvl = BuildingUnlockConfig.requiredLevel(for: building.id)
@@ -119,7 +123,7 @@ struct CityMapView: View {
                                         )
                                     }
                                 },
-                                badge: locked ? nil : badgeFor(building),
+                                badge: locked ? .none : (visibleBadges[building.id] ?? .none),
                                 spriteOnly: true,
                                 isLocked: locked,
                                 requiredLevel: (locked && building.route != nil) ? unlockLvl : nil
@@ -139,7 +143,7 @@ struct CityMapView: View {
                             CityBuildingLabel(
                                 text: building.label,
                                 visible: true,
-                                badge: locked ? nil : badgeFor(building),
+                                badge: locked ? .none : (visibleBadges[building.id] ?? .none),
                                 isLocked: locked,
                                 hasQuest: !locked && building.id == activeQuestBuilding
                             )
@@ -212,60 +216,108 @@ struct CityMapView: View {
         }
     }
 
-    private func badgeFor(_ building: CityBuilding) -> String? {
+    // MARK: - W2.D5 Badge Pipeline
+
+    /// Compute ALL raw badges for the unlocked buildings, then run the cap-3
+    /// priority filter so the hub never renders more than three simultaneous
+    /// red critical pills at once.
+    ///
+    /// Input order matters: ties in the cap-3 sort are resolved left-to-right
+    /// in the building list, which matches the hub's layout order.
+    private func filteredBadges(for buildings: [CityBuilding]) -> [String: BuildingBadge] {
+        let raw: [(id: String, badge: BuildingBadge)] = buildings.compactMap { building in
+            guard !isBuildinglocked(building) else { return nil }
+            let badge = badgeFor(building)
+            guard badge.shouldShow else { return nil }
+            return (building.id, badge)
+        }
+        return BuildingBadge.applyCap(raw)
+    }
+
+    /// Raw badge for a single building (pre-cap). Returns `.none` when the
+    /// building has nothing worth surfacing right now.
+    ///
+    /// W2.D5 priorities (per design doc W2_D5_BADGE_PRIORITY_DESIGN.md):
+    ///   - `.critical` — claimable rewards (achievements, battlepass, gold
+    ///     mine ready) + urgent social state (unread msgs / incoming duels).
+    ///   - `.info`     — free attempts remaining, passive social counters.
+    ///   - Dungeon "X bosses left" badge REMOVED — it's metadata, not a
+    ///     call to action.
+    ///
+    /// Severity scales with count so the cap-3 filter prefers the building
+    /// with the most rewards waiting when it has to downgrade.
+    private func badgeFor(_ building: CityBuilding) -> BuildingBadge {
         switch building.id {
 
-        // Arena — free PvP fights remaining
+        // Arena — free PvP fights remaining. Useful but not urgent.
         case "arena":
             let used = appState.currentCharacter?.freePvpToday ?? 0
             let limit = cache.gameConfig?.freePvpPerDay ?? AppConstants.freePvpPerDay
             let remaining = limit - used
-            guard remaining > 0 else { return nil }
-            return "FREE \(remaining)"
+            guard remaining > 0 else { return .none }
+            return .info("FREE \(remaining)", severity: 10 + remaining)
 
-        // Achievements — unclaimed rewards
+        // Achievements — unclaimed rewards. Actionable → critical.
         case "achievements":
             let claimable = cache.achievements.filter(\.canClaim).count
-            guard claimable > 0 else { return nil }
-            return "\(claimable)"
+            guard claimable > 0 else { return .none }
+            return .critical("\(claimable)", severity: 50 + claimable * 5)
 
-        // Battle Pass — claimable tier rewards
+        // Battle Pass — time-limited season rewards. Highest severity class
+        // because tier expiration is the most expensive miss.
         case "battlepass":
-            guard let bp = cache.battlePassData else { return nil }
+            guard let bp = cache.battlePassData else { return .none }
             let claimable = (bp.freeRewards + bp.premiumRewards).filter {
                 !$0.claimed && $0.level <= bp.currentLevel && ($0.track == "free" || bp.hasPremium)
             }.count
-            guard claimable > 0 else { return nil }
-            return "\(claimable)"
+            guard claimable > 0 else { return .none }
+            return .critical("\(claimable)", severity: 60 + claimable * 5)
 
-        // Gold Mine — slots ready to collect
+        // Gold Mine — slots ready to collect. Actionable → critical.
         case "gold-mine":
             let ready = cache.goldMineSlots.filter { ($0["status"] as? String) == "ready" }.count
-            guard ready > 0 else { return nil }
-            return "READY"
+            guard ready > 0 else { return .none }
+            return .critical("READY", severity: 40 + ready * 2)
 
-        // Guild Hall — total social badge (friends + challenges + messages + revenges)
+        // Guild Hall — priority depends on social state (see helper).
         case "guild-hall":
-            let total = cache.socialStatus?.totalBadge ?? 0
-            guard total > 0 else { return nil }
-            return "\(total)"
+            return buildGuildHallBadge()
 
-        // Dungeon — total bosses remaining across all dungeons
-        case "dungeon":
-            guard let dungeons = cache.cachedDungeonList(), !dungeons.isEmpty else { return nil }
-            let progress = cache.dungeonProgress
-            var totalRemaining = 0
-            for dungeon in dungeons {
-                let defeated = progress[dungeon.id] ?? 0
-                let remaining = max(0, dungeon.totalBosses - defeated)
-                totalRemaining += remaining
-            }
-            guard totalRemaining > 0 else { return nil }
-            return "\(totalRemaining)"
+        // Dungeon — W2.D5: badge REMOVED. "X bosses left" is metadata, not a
+        // signal the player can act on differently based on the number.
 
         default:
-            return nil
+            return .none
         }
+    }
+
+    /// Guild Hall scales by what's actually waiting:
+    ///   - Unread messages or incoming challenges → `.critical` (social
+    ///     interaction is time-sensitive).
+    ///   - Pending friend requests or pending revenges → `.info` (passive,
+    ///     no expiration pressure).
+    ///   - Nothing → `.none`.
+    private func buildGuildHallBadge() -> BuildingBadge {
+        guard let social = cache.socialStatus else { return .none }
+
+        let unreadMsg  = social.unreadMessages
+        let challenges = social.pendingChallenges
+        let friendReq  = social.pendingRequests
+        let revenges   = social.pendingRevenges
+
+        // Critical tier — someone is waiting for a response RIGHT NOW.
+        if unreadMsg > 0 || challenges > 0 {
+            let total = unreadMsg + challenges
+            return .critical("\(total)", severity: 55 + total * 3)
+        }
+
+        // Info tier — passive social state, no response deadline.
+        if friendReq > 0 || revenges > 0 {
+            let total = friendReq + revenges
+            return .info("\(total)", severity: 15 + total)
+        }
+
+        return .none
     }
 }
 

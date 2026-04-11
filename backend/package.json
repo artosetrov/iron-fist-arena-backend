@@ -19,7 +19,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:fix:battle-pass-rewards": "tsx prisma/fix-battle-pass-rewards.ts",
     "docs:balance": "tsx scripts/generate-balance-docs.ts",
-    "docs:balance:check": "tsx scripts/generate-balance-docs.ts --check"
+    "docs:balance:check": "tsx scripts/generate-balance-docs.ts --check",
+    "sim:economy": "tsx scripts/simulate-economy.ts",
+    "test:economy-sim": "vitest run tests/economy/sink-ratio.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.4.0",
