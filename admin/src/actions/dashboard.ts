@@ -66,7 +66,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     prisma.user.count(),
     prisma.user.count({ where: { OR: [{ authProvider: null }, { authProvider: 'guest' }] } }),
     // Economy totals
-    prisma.character.aggregate({ _sum: { gold: true } }),
+    prisma.user.aggregate({ _sum: { gold: true } }),
     prisma.user.aggregate({ _sum: { gems: true } }),
     // PvP today / yesterday
     prisma.pvpMatch.count({ where: { playedAt: { gte: today } } }),

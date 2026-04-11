@@ -185,7 +185,6 @@
 		867AD63D2EA83A7C48FDA067 /* CharacterDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FAD6A83C84EAD299CC19411 /* CharacterDisplay.swift */; };
 		FEF22085A9926BC6841BD45A /* CharacterPortraitInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1892A44F2E9F60825C782E /* CharacterPortraitInfo.swift */; };
 		7C6DB2C84DB9BB54722F72DF /* IntegratedCharacterCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E37329D32F92ED2611F92FB2 /* IntegratedCharacterCard.swift */; };
-		9FFC603AFA333C9FE0297080 /* HeroIntegratedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */; };
 		A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8812C4317B938859A4087AC /* ShellGameViewModel.swift */; };
 		A0E1F2A3B4C5D6E7F8091A2B /* EmailConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */; };
 		A197D004F08DF73AC34CD691 /* AchievementCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790428D0ACD6FA1C13F6B19C /* AchievementCardView.swift */; };
@@ -217,7 +216,6 @@
 		41E2A41FC6BB23AFADE6CE61 /* OpponentStatCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC00DB11E9CD4F14314FCF6 /* OpponentStatCell.swift */; };
 		1319D12813B623F2F4645229 /* StatGroupHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A35B4497ADFD41203D1C25B5 /* StatGroupHeader.swift */; };
 		D037EB2DCF2730146FD38E8B /* GlassStatPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0502E24B9FC94BF5E244516 /* GlassStatPill.swift */; };
-		A7B8C9D0E1F2A3B4C5D6E7F8 /* OpponentIntegratedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F8A9 /* OpponentIntegratedCard.swift */; };
 		A7C9D1E3F5A7B9C1D3E5F7A9 /* OrnamentalStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D0E2F4A6B8C0D2E4F6A8BA /* OrnamentalStyles.swift */; };
 		AA1BC0E1F7A24D8E9C3D5A01 /* ArenaCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1BC0E1F7A24D8E9C3D5A02 /* ArenaCarouselView.swift */; };
 		AA1BC0E1F7A24D8E9C3D5A03 /* ArenaComparisonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1BC0E1F7A24D8E9C3D5A04 /* ArenaComparisonSheet.swift */; };
@@ -458,7 +456,6 @@
 		36990CC42E8623DE866E325C /* APIEndpoints.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoints.swift; sourceTree = "<group>"; };
 		3890414A062272EB010CBAE9 /* CombatEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatEngine.swift; sourceTree = "<group>"; };
 		39859708651A5AACC1204865 /* BattlePassService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassService.swift; sourceTree = "<group>"; };
-		3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroIntegratedCard.swift; sourceTree = "<group>"; };
 		6FAD6A83C84EAD299CC19411 /* CharacterDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterDisplay.swift; sourceTree = "<group>"; };
 		6C1892A44F2E9F60825C782E /* CharacterPortraitInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterPortraitInfo.swift; sourceTree = "<group>"; };
 		E37329D32F92ED2611F92FB2 /* IntegratedCharacterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegratedCharacterCard.swift; sourceTree = "<group>"; };
@@ -629,7 +626,6 @@
 		B7F3F6DFB69AE93686CCB35A /* TabSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcher.swift; sourceTree = "<group>"; };
 		788DFA214D96BAD5671008AE /* TierBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierBadge.swift; sourceTree = "<group>"; };
 		B899DC5918ADE4B9A07F875B /* OrnamentalTitle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrnamentalTitle.swift; sourceTree = "<group>"; };
-		B8C9D0E1F2A3B4C5D6E7F8A9 /* OpponentIntegratedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpponentIntegratedCard.swift; sourceTree = "<group>"; };
 		B8D0E2F4A6B8C0D2E4F6A8BA /* OrnamentalStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrnamentalStyles.swift; sourceTree = "<group>"; };
 		BF81E118A6812E0F4273F368 /* ScreenLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenLayout.swift; sourceTree = "<group>"; };
 		BFF230EF79980A38C6D413DF /* AppearanceSkin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSkin.swift; sourceTree = "<group>"; };
@@ -1095,8 +1091,6 @@
 				6FAD6A83C84EAD299CC19411 /* CharacterDisplay.swift */,
 				6C1892A44F2E9F60825C782E /* CharacterPortraitInfo.swift */,
 				E37329D32F92ED2611F92FB2 /* IntegratedCharacterCard.swift */,
-				3BCD3CA1EEC657193B1C82CA /* HeroIntegratedCard.swift */,
-				B8C9D0E1F2A3B4C5D6E7F8A9 /* OpponentIntegratedCard.swift */,
 				B2C3D4E5F60718A9B0C1D2E4 /* OfflineBannerView.swift */,
 				D676FF4D263CD89706EC11CB /* CelebrationBannerView.swift */,
 				82B3E41C6190D8AE925913E0 /* InlineFeedback.swift */,
@@ -1890,8 +1884,6 @@
 				867AD63D2EA83A7C48FDA067 /* CharacterDisplay.swift in Sources */,
 				FEF22085A9926BC6841BD45A /* CharacterPortraitInfo.swift in Sources */,
 				7C6DB2C84DB9BB54722F72DF /* IntegratedCharacterCard.swift in Sources */,
-				9FFC603AFA333C9FE0297080 /* HeroIntegratedCard.swift in Sources */,
-				A7B8C9D0E1F2A3B4C5D6E7F8 /* OpponentIntegratedCard.swift in Sources */,
 				E33F5024DE17C6563145B8DF /* HexboundApp.swift in Sources */,
 				C1A00001CITY00000001 /* CityBuildingConfig.swift in Sources */,
 				C1A00001CITY00000002 /* CityBuildingLabel.swift in Sources */,

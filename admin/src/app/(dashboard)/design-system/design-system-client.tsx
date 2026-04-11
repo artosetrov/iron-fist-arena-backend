@@ -250,8 +250,16 @@ function SpacingTab() {
       <div className="rounded-xl bg-[#0D0D12] p-6 border border-[#2A2A3E]">
         <h3 className="text-lg font-semibold mb-4">Icon & Button Sizing</h3>
         <div className="space-y-3">
-          {Object.entries(tokens.sizing).map(([name, value]) => (
-            <div key={name} className="flex items-center gap-4">
+          {Object.entries(tokens.sizing).flatMap(([groupName, group]) =>
+            typeof group === 'object' && group !== null
+              ? Object.entries(group as Record<string, number>).map(([name, value]) => ({
+                  key: `${groupName}.${name}`,
+                  name,
+                  value,
+                }))
+              : []
+          ).map(({ key, name, value }) => (
+            <div key={key} className="flex items-center gap-4">
               <span className="text-xs text-[#D4A537] font-mono w-36">.{name}</span>
               <div
                 className="rounded border border-[#D4A537] bg-[#1A1A2E]"

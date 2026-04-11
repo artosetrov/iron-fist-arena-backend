@@ -32,17 +32,46 @@ final class CharacterSelectionViewModel {
             } else if result["id"] != nil {
                 // Single character returned directly
                 charArray = [result]
+            } else if let errMessage = result["error"] as? String {
+                // Backend returned an error envelope
+                throw NSError(
+                    domain: "CharacterSelection",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "Server: \(errMessage)"]
+                )
             }
 
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
 
             var decoded: [Character] = []
+            var decodeErrors: [String] = []
             for charData in charArray {
                 let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                if let character = try? decoder.decode(Character.self, from: jsonData) {
+                do {
+                    let character = try decoder.decode(Character.self, from: jsonData)
                     decoded.append(character)
+                } catch {
+                    let name = (charData["characterName"] as? String)
+                        ?? (charData["character_name"] as? String)
+                        ?? (charData["id"] as? String)
+                        ?? "unknown"
+                    decodeErrors.append("\(name): \(error.localizedDescription)")
+                    #if DEBUG
+                    print("[CharacterSelectionVM] decode failed for \(name): \(error)")
+                    #endif
                 }
+            }
+
+            // If backend returned characters but NONE decoded — surface that as an error
+            // (instead of silently showing empty state).
+            if !charArray.isEmpty && decoded.isEmpty {
+                let detail = decodeErrors.first ?? "unknown decode error"
+                throw NSError(
+                    domain: "CharacterSelection",
+                    code: -2,
+                    userInfo: [NSLocalizedDescriptionKey: "Decode failed (\(charArray.count) heroes): \(detail)"]
+                )
             }
 
             // Sort by level descending (highest level first)
@@ -60,11 +89,15 @@ final class CharacterSelectionViewModel {
 
             isLoading = false
         } catch {
-            self.error = "Failed to load heroes"
-            isLoading = false
+            // User-facing copy is generic; DEBUG builds get the underlying reason
+            // so we can actually see what's wrong in the next run.
             #if DEBUG
+            self.error = "Failed to load heroes\n\(error.localizedDescription)"
             print("[CharacterSelectionVM] loadCharacters error: \(error)")
+            #else
+            self.error = "Failed to load heroes"
             #endif
+            isLoading = false
         }
     }
 

@@ -16,14 +16,31 @@ import SwiftUI
 /// - LayoutConstants for all spacing
 /// - ButtonStyles for Retry CTA
 /// - Accessibility labels included
+/// Retry button layout variants.
+///
+/// - `.compact`: secondary style, content-width, centered. Default for most contexts.
+/// - `.fullWidth`: primary style, matches `.buttonStyle(.primary)` bottom CTAs
+///   (maxWidth + screenPadding + height 56). Use when the error state is shown
+///   on a screen that already has a bottom primary CTA (e.g. character selection),
+///   so retry and the bottom CTA look identical in width and weight.
+enum ErrorStateRetryLayout {
+    case compact
+    case fullWidth
+}
+
 struct ErrorStateView: View {
     @Environment(\.dismiss) private var dismiss
 
+    /// SF Symbol name — used only when `assetIcon` is nil.
     var icon: String = "exclamationmark.triangle"
+    /// Optional Assets.xcassets image name. When set, renders the art asset
+    /// instead of an SF Symbol — preferred per design system (art > system icons).
+    var assetIcon: String? = nil
     var title: String = "Something Went Wrong"
     var message: String = "We couldn't load this content. Please try again."
     var retryLabel: String = "Retry"
     var retryAction: (() -> Void)? = nil
+    var retryLayout: ErrorStateRetryLayout = .compact
     /// If provided, shows a Back CTA that calls this. If nil, falls back to
     /// SwiftUI's `@Environment(\.dismiss)` so the player is never trapped.
     var onBack: (() -> Void)? = nil
@@ -35,10 +52,8 @@ struct ErrorStateView: View {
         VStack(spacing: LayoutConstants.spaceLG) {
             Spacer()
 
-            // Error icon
-            Image(systemName: icon)
-                .font(DarkFantasyTheme.cinematicTitle.weight(.thin))
-                .foregroundStyle(DarkFantasyTheme.danger)
+            // Error icon — prefer art asset over SF Symbol
+            errorIcon
                 .padding(.bottom, LayoutConstants.spaceSM)
 
             // Title
@@ -56,15 +71,8 @@ struct ErrorStateView: View {
 
             // Retry CTA
             if let retryAction {
-                Button(action: retryAction) {
-                    HStack(spacing: LayoutConstants.spaceSM) {
-                        Image(systemName: "arrow.clockwise")
-                        Text(retryLabel)
-                    }
-                }
-                .buttonStyle(.secondary)
-                .padding(.horizontal, LayoutConstants.space2XL)
-                .padding(.top, LayoutConstants.spaceSM)
+                retryButton(action: retryAction)
+                    .padding(.top, LayoutConstants.spaceSM)
             }
 
             // Back CTA — guarantees player can escape error state (Bug #18a)
@@ -90,6 +98,52 @@ struct ErrorStateView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Error: \(title). \(message)")
+    }
+
+    // MARK: - Icon
+
+    @ViewBuilder
+    private var errorIcon: some View {
+        if let assetIcon, UIImage(named: assetIcon) != nil {
+            Image(assetIcon)
+                .resizable()
+                .renderingMode(.template)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                .foregroundStyle(DarkFantasyTheme.danger)
+        } else {
+            Image(systemName: icon)
+                .font(DarkFantasyTheme.cinematicTitle.weight(.thin))
+                .foregroundStyle(DarkFantasyTheme.danger)
+        }
+    }
+
+    // MARK: - Retry Button
+
+    @ViewBuilder
+    private func retryButton(action: @escaping () -> Void) -> some View {
+        switch retryLayout {
+        case .compact:
+            Button(action: action) {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "arrow.clockwise")
+                    Text(retryLabel)
+                }
+            }
+            .buttonStyle(.secondary)
+            .padding(.horizontal, LayoutConstants.space2XL)
+        case .fullWidth:
+            Button(action: action) {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "arrow.clockwise")
+                    Text(retryLabel)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+            }
+            .buttonStyle(.primary)
+            .padding(.horizontal, LayoutConstants.screenPadding)
+        }
     }
 }
 

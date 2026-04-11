@@ -19,7 +19,7 @@ const accent = {
   info: tokens.colors.feedback.info,
   purple: tokens.colors.feedback.purple,
   cyan: tokens.colors.feedback.cyan,
-  stamina: tokens.colors.stamina.stamina,
+  stamina: tokens.colors.feedback.stamina,
 }
 const c = { ...tokens.colors, accent }
 const t = tokens.typography

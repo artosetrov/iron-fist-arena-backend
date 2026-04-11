@@ -483,30 +483,22 @@ struct CharacterSelectionView: View {
 
     // MARK: - Error State
 
+    /// Uses the shared `ErrorStateView` with a full-width retry so the button
+    /// matches `bottomCTA` (ENTER GAME) in style, weight, and width.
+    /// Back button is hidden here because the toolbar already has a Back
+    /// (shown in the same `vm.characters.isEmpty` state).
     private func errorState(_ message: String) -> some View {
-        VStack(spacing: LayoutConstants.sectionGap) {
-            Spacer()
-
-            Image(systemName: "exclamationmark.triangle")
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(DarkFantasyTheme.danger)
-
-            Text(message)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-            Button {
+        ErrorStateView(
+            assetIcon: "rush-ui-combat-skull",
+            title: "Failed to Load Heroes",
+            message: message,
+            retryLabel: "RETRY",
+            retryAction: {
                 Task { await vm.loadCharacters(appState: appState) }
-            } label: {
-                Text("RETRY")
-                    .font(DarkFantasyTheme.body)
-                    .tracking(1)
-                    .frame(width: 140, height: 44)
-            }
-            .buttonStyle(.neutral)
-
-            Spacer()
-        }
+            },
+            retryLayout: .fullWidth,
+            showBackButton: false
+        )
     }
 
     // MARK: - Enter Game Overlay

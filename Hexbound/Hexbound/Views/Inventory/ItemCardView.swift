@@ -251,6 +251,11 @@ struct ItemCardView: View {
             } else if isEmptySlot {
                 emptySlotPlaceholder
             } else {
+                // Uniform item sizing: ItemImageView applies alphaTrimmed() +
+                // aspectRatio(.fit), so items with varying transparent padding
+                // in source PNGs end up at the same visual size inside this
+                // square frame. spaceXS padding gives a consistent safe area
+                // so trimmed items don't touch the rarity border.
                 ItemImageView(
                     imageKey: imageKey,
                     imageUrl: imageUrl,
@@ -260,7 +265,7 @@ struct ItemCardView: View {
                 )
                 .autoLoad()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+                .padding(LayoutConstants.spaceXS)
             }
 
             // MARK: - Layer 4: Bottom vignette
