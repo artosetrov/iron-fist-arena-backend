@@ -72,7 +72,7 @@ struct MineClaimRewardView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, LayoutConstants.spaceMS)
                     }
-                    .buttonStyle(ButtonStyles.primary)
+                    .buttonStyle(.primary)
                     .padding(.horizontal, LayoutConstants.spaceLG)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
@@ -105,7 +105,7 @@ struct MineClaimRewardView: View {
         .padding(.vertical, LayoutConstants.spaceMS)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(DarkFantasyTheme.bgCard.opacity(0.8))
+                .fill(DarkFantasyTheme.bgCardGradientStart.opacity(0.8))
                 .stroke(color.opacity(0.3), lineWidth: 1)
         )
     }
