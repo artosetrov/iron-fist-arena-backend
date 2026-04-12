@@ -191,14 +191,20 @@ final class InventoryViewModel {
         // durability, upgradeLevel) per id. Anything else means the server
         // changed something (auto-swap of two-handed weapon, corrected
         // ring slot, durability tick, upgrade, …) and we must apply it.
-        let serverEquippedSet = Set(serverEquipment.filter { $0.isEquipped == true }.map(\.id))
-        let optimisticEquippedSet = Set(currentEquipment.filter { $0.isEquipped == true }.map(\.id))
-
-        if serverEquippedSet == optimisticEquippedSet &&
-           serverEquipment.count == currentEquipment.count {
-            // Optimistic prediction matches — skip the re-render entirely.
-            appState.cachedInventory = items
-            return
+        if serverEquipment.count == currentEquipment.count {
+            let serverMap = Dictionary(uniqueKeysWithValues: serverEquipment.map { ($0.id, $0) })
+            let allMatch = currentEquipment.allSatisfy { local in
+                guard let remote = serverMap[local.id] else { return false }
+                return local.isEquipped == remote.isEquipped
+                    && local.equippedSlot == remote.equippedSlot
+                    && local.durability == remote.durability
+                    && local.upgradeLevel == remote.upgradeLevel
+            }
+            if allMatch {
+                // Optimistic prediction matches — skip the re-render entirely.
+                appState.cachedInventory = items
+                return
+            }
         }
 
         // Server disagreed with optimistic prediction: apply equipment
@@ -267,26 +273,39 @@ final class InventoryViewModel {
         HapticManager.success()
         appState.showToast("Used \(item.displayName)", type: .reward)
 
-        // Fire API in background — revert on failure, server corrects stat values on success
+        // Fire API in background — capture service + appState directly so the call
+        // survives even if the InventoryViewModel is deallocated (user navigated away).
+        // Previously used [weak self] which could nil-out mid-flight, causing the API
+        // call to never reach the server while the optimistic UI already removed the potion.
+        let capturedService = service
+        let capturedAppState = appState
+        let capturedItems = items
         let itemId = item.id
         let consumableType = item.consumableType
-        Task { [weak self] in
-            let success = await self?.service.useItem(inventoryId: itemId, consumableType: consumableType) ?? false
+        Task { @MainActor [weak self] in
+            let success = await capturedService.useItem(inventoryId: itemId, consumableType: consumableType)
             if !success {
-                await MainActor.run {
-                    self?.items = previousItems
-                    self?.appState.cachedInventory = previousItems
-                    // Revert optimistic stat changes
-                    if isHealthPotion {
-                        self?.appState.currentCharacter?.currentHp = previousHp
-                    } else if isStaminaPotion {
-                        self?.appState.currentCharacter?.currentStamina = previousStamina
-                    }
+                // Revert optimistic changes — use self if still alive, otherwise revert via appState
+                if let self {
+                    self.items = previousItems
+                    self.appState.cachedInventory = previousItems
+                } else {
+                    capturedAppState.cachedInventory = previousItems
+                }
+                // Revert optimistic stat changes
+                if isHealthPotion {
+                    capturedAppState.currentCharacter?.currentHp = previousHp
+                } else if isStaminaPotion {
+                    capturedAppState.currentCharacter?.currentStamina = previousStamina
                 }
             } else {
-                await MainActor.run {
-                    self?.appState.invalidateCache("quests")
+                // Server confirmed — sync the optimistic cache state
+                if let self {
+                    capturedAppState.cachedInventory = self.items
+                } else {
+                    capturedAppState.cachedInventory = capturedItems
                 }
+                capturedAppState.invalidateCache("quests")
             }
         }
     }

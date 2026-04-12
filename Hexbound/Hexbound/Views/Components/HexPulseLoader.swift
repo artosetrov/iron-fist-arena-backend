@@ -62,6 +62,18 @@ struct HexPulseLoader: View {
             }
         }
 
+        /// Skull asset size for large hexagons (center icon replacing diamond)
+        var skullSize: CGFloat {
+            switch self {
+            case .micro: return 0
+            case .compact: return 0
+            case .standard: return 0
+            case .large: return 36
+            }
+        }
+
+        var showSkull: Bool { self == .large }
+
         var glowRadius: CGFloat {
             switch self {
             case .micro: return 0
@@ -155,8 +167,20 @@ struct HexPulseLoader: View {
                     .shadow(color: tintColor.opacity(0.4), radius: diamondPulse ? 6 : 2)
                     .animation(MotionConstants.pulse, value: diamondPulse)
 
-                // Center diamond
-                if size.showDiamond {
+                // Center icon: skull for large, diamond for standard/compact
+                if size.showSkull {
+                    Image("rush-ui-combat-skull")
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: size.skullSize, height: size.skullSize)
+                        .shadow(color: DarkFantasyTheme.goldGlow, radius: diamondPulse ? 10 : 3)
+                        .opacity(diamondPulse ? 1 : 0.4)
+                        .animation(
+                            .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+                            value: diamondPulse
+                        )
+                } else if size.showDiamond {
                     Rectangle()
                         .fill(tintColor)
                         .frame(width: size.diamondSize, height: size.diamondSize)

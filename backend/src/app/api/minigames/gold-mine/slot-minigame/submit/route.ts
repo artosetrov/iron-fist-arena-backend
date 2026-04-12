@@ -49,6 +49,11 @@ import {
   MINIGAME_GAME_TYPE,
 } from '@/lib/game/shaft-catalog'
 
+// Minimum elapsed time (ms) between session start and submit.
+// The actual minigame takes 10-15s; 3s floor blocks instant bot submits
+// without false-positiving on fast players who skip.
+const MIN_PLAY_ELAPSED_MS = 3_000
+
 interface SubmitBody {
   character_id?: string
   slot_index?: number
@@ -157,10 +162,11 @@ export async function POST(req: NextRequest) {
           cap_gold: number | null
           passive_gold_amount: number | null
           expires_at: Date | null
+          created_at: Date
         }>
       >(
         `SELECT id, character_id, game_type, status,
-                cap_gold, passive_gold_amount, expires_at
+                cap_gold, passive_gold_amount, expires_at, created_at
            FROM minigame_sessions
           WHERE id = $1
           FOR UPDATE`,
@@ -171,6 +177,15 @@ export async function POST(req: NextRequest) {
       if (minigameRow.character_id !== character_id) throw new Error('FORBIDDEN')
       if (minigameRow.game_type !== MINIGAME_GAME_TYPE) throw new Error('WRONG_GAME_TYPE')
       if (minigameRow.status !== 'pending') throw new Error('SESSION_NOT_PENDING')
+
+      // Proof-of-play: reject instant submits (bot protection).
+      // Skipped games are exempt — skip button is available immediately.
+      if (!skipped) {
+        const elapsedMs = Date.now() - minigameRow.created_at.getTime()
+        if (elapsedMs < MIN_PLAY_ELAPSED_MS) {
+          throw new Error('TOO_FAST')
+        }
+      }
       if (
         minigameRow.expires_at &&
         minigameRow.expires_at.getTime() < Date.now()
@@ -286,6 +301,11 @@ export async function POST(req: NextRequest) {
         case 'WRONG_GAME_TYPE':
           return NextResponse.json(
             { error: 'Session is not a Gold Mine mini-game' },
+            { status: 400 }
+          )
+        case 'TOO_FAST':
+          return NextResponse.json(
+            { error: 'Mini-game completed too quickly — please play before submitting' },
             { status: 400 }
           )
       }

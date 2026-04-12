@@ -79,6 +79,15 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
   return result.allowed
 }
 
+/**
+ * Global shop action rate limit — shared across all shop endpoints.
+ * Prevents burst abuse by hitting different shop routes in parallel.
+ * Each endpoint still has its own per-endpoint limit on top of this.
+ */
+export async function shopRateLimit(userId: string): Promise<boolean> {
+  return rateLimit(`shop-action:${userId}`, 30, 60_000)
+}
+
 // Clean up old entries periodically when running without shared Redis.
 const cleanupInterval = setInterval(() => {
   const now = Date.now()

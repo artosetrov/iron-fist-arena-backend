@@ -7,7 +7,69 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+7F2B29DE95EE00C146B1F70E /* amb_anvil_ambient.wav in Resources */ = {isa = PBXBuildFile; fileRef = C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */; };
+		BA5CFA1B83EA38F2EDB81532 /* amb_bone_rattle.wav in Resources */ = {isa = PBXBuildFile; fileRef = FDD453A18C4C94AB5159BEAA /* amb_bone_rattle.wav */; };
+		B6409E22684C75EBCEB5ADB0 /* amb_cave_drip.wav in Resources */ = {isa = PBXBuildFile; fileRef = 68AB362E67BF4A3BC3868DFD /* amb_cave_drip.wav */; };
+		2D2417719514AB33149C17CC /* amb_city_murmur.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1E8EE78C724D8F657E32F74 /* amb_city_murmur.wav */; };
+		8E04E670E6EF33F79647CC59 /* amb_coins_ambient.wav in Resources */ = {isa = PBXBuildFile; fileRef = A7C4A0956F2C443F271210FE /* amb_coins_ambient.wav */; };
+		C481AB47CF3316ACF33AD295 /* amb_crowd_murmur.wav in Resources */ = {isa = PBXBuildFile; fileRef = AF8138FD172DD987476BB1AD /* amb_crowd_murmur.wav */; };
+		18615572677A0157EA7F57D7 /* amb_crowd_roar.wav in Resources */ = {isa = PBXBuildFile; fileRef = ECCAA0EC6A32992B2577580A /* amb_crowd_roar.wav */; };
+		8BA2F95EF0621E1BDE74DB60 /* amb_fire_distant.wav in Resources */ = {isa = PBXBuildFile; fileRef = C21E72CB6CF2297ABFC419EE /* amb_fire_distant.wav */; };
+		54BB7AD5999BBE6018538B37 /* amb_forge_fire.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4B954EEABC37CF12297EF9F /* amb_forge_fire.wav */; };
+		10A53B807CF9969F8233D67A /* amb_hall_echo.wav in Resources */ = {isa = PBXBuildFile; fileRef = 968132DE779A045DEC84A0DE /* amb_hall_echo.wav */; };
+		A916227E1717BEEED8902DB9 /* amb_ominous_rumble.wav in Resources */ = {isa = PBXBuildFile; fileRef = F0D2887DE9EBEA3D73595949 /* amb_ominous_rumble.wav */; };
+		B30F0C52724F189749ECED40 /* amb_pickaxe_distant.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0DC42345E343D9736E07FE87 /* amb_pickaxe_distant.wav */; };
+		C773C21055A12E7EA706BD5D /* amb_rain_loop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2E6AFEE7B85E79332868470B /* amb_rain_loop.wav */; };
+		D1E98AF2C6169A728EF38787 /* amb_tavern_bustle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 7BAE64B4DD80948D4533F0B6 /* amb_tavern_bustle.wav */; };
+		F9909BCB68BC7D5F631926DA /* amb_thunder_distant.wav in Resources */ = {isa = PBXBuildFile; fileRef = F88E05D11E0E6EBFE2A7FFBE /* amb_thunder_distant.wav */; };
+		E923A83D9EA268BB98DE526C /* amb_torch_crackle.wav in Resources */ = {isa = PBXBuildFile; fileRef = EC4E1722C3F765D8E9528D27 /* amb_torch_crackle.wav */; };
+		4F0F66CD0D51EE6DE8BB2004 /* amb_wind_cave.wav in Resources */ = {isa = PBXBuildFile; fileRef = 48B44CC368BE4824CF80E697 /* amb_wind_cave.wav */; };
+		5B12A3B11591C9CFD306F677 /* amb_wind_heavy.wav in Resources */ = {isa = PBXBuildFile; fileRef = DC4628892EFBC5C9180FF9D6 /* amb_wind_heavy.wav */; };
+		7FEB95E22E5CC7C3EED184BE /* amb_wind_light.wav in Resources */ = {isa = PBXBuildFile; fileRef = CF3B5A73C50FEB4E2B8AD414 /* amb_wind_light.wav */; };
+		DFE553ACC84C08F5EB45E60B /* anvil_strike.wav in Resources */ = {isa = PBXBuildFile; fileRef = 4D4A3C24C0F1AEDC429F38EA /* anvil_strike.wav */; };
+		3BA10F5C1888208080B0AC35 /* armor_clink.wav in Resources */ = {isa = PBXBuildFile; fileRef = 278E5013E89EF2B5EFD32116 /* armor_clink.wav */; };
+		8091AC64B6F15A8E438179B1 /* armor_clink_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 7DB6754038AE2D421A3F0C03 /* armor_clink_2.wav */; };
+		4408EA424661D7E34B886AF1 /* chain_break.wav in Resources */ = {isa = PBXBuildFile; fileRef = 7D6D154B49CF77604726E366 /* chain_break.wav */; };
+		31ABAF9E3FD83163FB0883A4 /* chain_rattle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 56E8040C8E5608C30480D397 /* chain_rattle.wav */; };
+		5E3C9AF0C4C08CC4A7FC5D3A /* cloth_rustle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 301C6BA7258E83F436B0CB45 /* cloth_rustle.wav */; };
+		E072634DB71DC361BE03B8B9 /* coins_jingle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 29159BC56AD450529AD3AE60 /* coins_jingle.wav */; };
+		F3B7C8F51876CBBB26EDD022 /* coins_jingle_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6D7B85F7C51D0A5D284467D3 /* coins_jingle_2.wav */; };
+		2FE12D4857B4C363DA2B002D /* coins_jingle_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = FD851560B8E3B1D8E32EC92E /* coins_jingle_3.wav */; };
+		6067B6BCD4A6E79DFC3ADF79 /* creature_growl.wav in Resources */ = {isa = PBXBuildFile; fileRef = A922EA25000767703C285688 /* creature_growl.wav */; };
+		19839571EA02350D49353660 /* creature_growl_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = B0EDA33A522BF69DE508020E /* creature_growl_2.wav */; };
+		F645E3687408379B353A6571 /* creature_growl_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9285B369E46D58F89E9DE826 /* creature_growl_3.wav */; };
+		4962363834D5C46D9009E323 /* crowd_roar.wav in Resources */ = {isa = PBXBuildFile; fileRef = D8AE825199A7B4BC8DAACDA3 /* crowd_roar.wav */; };
+		9B07E5487D407789565B29C8 /* crowd_roar_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = FC15BB8FDFD7CC2BEE0A2F98 /* crowd_roar_2.wav */; };
+		9F6F7144900A120991842BF7 /* door_creak.wav in Resources */ = {isa = PBXBuildFile; fileRef = B698D5CED6FEC43EB2AD372F /* door_creak.wav */; };
+		AFFACC4C6E727EEE5445B08C /* door_creak_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2030DE65D1FAA604E54302E1 /* door_creak_2.wav */; };
+		713C8984C688223C340D01A9 /* enchant_glow.wav in Resources */ = {isa = PBXBuildFile; fileRef = DCDB9E686B0D4EDDD932BB2D /* enchant_glow.wav */; };
+		6091E937E7F1F33537B64CE7 /* epic_horn_fanfare.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1B9EE2BC2C07F4AA579C05CB /* epic_horn_fanfare.wav */; };
+		1A9A8B92543201D94529BB29 /* footstep_stone.wav in Resources */ = {isa = PBXBuildFile; fileRef = 16C348EE5C05E7DFD7F6A04B /* footstep_stone.wav */; };
+		3FFF14D4E32D7490B8BDA538 /* footstep_stone_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */; };
+		70C98D4254E93A5268B13C11 /* footstep_stone_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 701F9E91B2E24D72C3B0CA68 /* footstep_stone_3.wav */; };
+		D0703AD0F5903D28F01CAA7B /* footstep_stone_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 57EAFEAA434D8A54DC27670E /* footstep_stone_4.wav */; };
+		6BABCB454266D18FDAA57772 /* footstep_wood.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4557A9628595902AF088B03 /* footstep_wood.wav */; };
+		59F475ED1F7B937719E6786C /* footstep_wood_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = D8DD8CFEFBA5D7CE9479F320 /* footstep_wood_2.wav */; };
+		2E69038A7CA6321C3105928E /* footstep_wood_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = DE6F1AFBF174F985E88C0B43 /* footstep_wood_3.wav */; };
+		1D1146C6F1D1523F6CDDED24 /* gong_hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = 75E76BB2B6A3B6D6615D6B31 /* gong_hit.wav */; };
+		2CD6AFABD04C3EF632924BFC /* magic_shimmer.wav in Resources */ = {isa = PBXBuildFile; fileRef = C588EB5A39040C977A6632B4 /* magic_shimmer.wav */; };
+		AE77EBD74CC46B9302B05F64 /* magic_spark.wav in Resources */ = {isa = PBXBuildFile; fileRef = C050067D9218FEA233BB9C11 /* magic_spark.wav */; };
+		B68B74F158D762184A676AAB /* merchant_greet.wav in Resources */ = {isa = PBXBuildFile; fileRef = D269D22916F1CEDA9ED0476F /* merchant_greet.wav */; };
+		28C0F3C8BC37E7F9F6F7367A /* pickaxe_hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = 91161420701530C8315BA1F3 /* pickaxe_hit.wav */; };
+		E22D2F3BB6C67780576D831A /* pickaxe_hit_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 174967DFC5517BEEF2D62EFD /* pickaxe_hit_2.wav */; };
+		9F93C0B1148B901C08229618 /* pickaxe_hit_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 94B3FF4EBD9246F66D4B6B6B /* pickaxe_hit_3.wav */; };
+		60495F548BED9C6323A7379B /* pouch_drop.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8EF4AED0FE3D95B79C277E1C /* pouch_drop.wav */; };
+		F6FF94503694A1FB3E96DF6A /* rock_crumble.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0F88ADDD4FD7C2C9A1359098 /* rock_crumble.wav */; };
+		9239CB217DC8B4A252236500 /* rock_crumble_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0D5FAFFDB3438183EA7C1957 /* rock_crumble_2.wav */; };
+		2AE128C15635F40A7E2C67D6 /* scroll_unfurl.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8EF87EF6BC5CC46BDC1C4C18 /* scroll_unfurl.wav */; };
+		D38BBCAA8FD2BB0E5C7C13EF /* seal_stamp.wav in Resources */ = {isa = PBXBuildFile; fileRef = 904DC67AA32D06A067C8D60D /* seal_stamp.wav */; };
+		E7A0397200D276BA4EC1669F /* shell_shuffle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 029AA9A175D862EBED174221 /* shell_shuffle.wav */; };
+		BDD8F81548BE5D0FB56E6B47 /* torch_ignite.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3C9D6BD0038D1CB7CE959C81 /* torch_ignite.wav */; };
+		BAEDA442A41F63D12DF42973 /* war_drums.wav in Resources */ = {isa = PBXBuildFile; fileRef = A9A1090A17C031D04345FBF9 /* war_drums.wav */; };
+		11B625771A5ED8D2BEFFCE33 /* war_drums_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0FE96A24212117D6F47A7E6C /* war_drums_2.wav */; };
+		32FC676535D7D2588AB39F45 /* wheel_spin.wav in Resources */ = {isa = PBXBuildFile; fileRef = 3F151B07D471FA1F0C9F129F /* wheel_spin.wav */; };
 		0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */; };
+		F45C4BA75C8D9A2707CAA811 /* ClaimRewardModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */; };
 		db49acc029b0de8074220c92 /* BuyStatPointsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = f258edcf70612de2b763c15f /* BuyStatPointsView.swift */; };
 		007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */; };
 		0179E69325E53F8E8FA6107B /* LeaderboardPlayerDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */; };
@@ -120,7 +182,7 @@
 		55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BBF308478B5B2817B50708 /* HeroDetailView.swift */; };
 		554ADF9C431484FE80147946 /* SessionSummaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */; };
 		555A0B0C05EBE703CD233DEB /* hit_magical.wav in Resources */ = {isa = PBXBuildFile; fileRef = 21EB5EE4AA980ADB311B3FFB /* hit_magical.wav */; };
-		558E4C0EB76AAFF61023FE8A /* victory-fanfare.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 466C80EB3DD78278D4D56357 /* victory-fanfare.mp3 */; };
+		C39EC318C0414DF5891D5444 /* victory-fanfare.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 31EE7709FEE6A29F15A412EE /* victory-fanfare.mp3 */; };
 		558F8F3C3614A51F648F9622 /* CachedAssetImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EF70965657F120803C752C /* CachedAssetImage.swift */; };
 		55ED2F4293172AA050CFC300 /* CharacterSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */; };
 		5612752CB7D2FC212D7A34AB /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9587A537C61AE1E63A2CD011 /* APIClient.swift */; };
@@ -302,7 +364,7 @@
 		F3A5B6C7D8E9F0A1B2C3D4E5 /* VictoryParticlesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A5B6C7D8E9F0A1B2C3D4E6 /* VictoryParticlesView.swift */; };
 		F425A4E619F59E4D30700CDE /* DungeonRushDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */; };
 		A3F7B1C2D4E6890A1B3C5D7E /* TreasureRewardOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */; };
-		F6A962CDDC5012C80BB0D815 /* stray-city.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1DAA6F03EBEB036FC162EC75 /* stray-city.mp3 */; };
+		43E26780CD3C075BC32EF785 /* stray-city.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A9606814424887E99EA0D068 /* stray-city.mp3 */; };
 		F7351EE68E034A74CB95BDA8 /* CombatData.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9792A8A2127BC3038E37E96 /* CombatData.swift */; };
 		F75D1FC0F949F61232E576D6 /* BossDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2880159F81C0DEC1DDB3CB6F /* BossDetailSheet.swift */; };
 		F770CBBD4C6A5F453180B0DC /* ui_upgrade_success.wav in Resources */ = {isa = PBXBuildFile; fileRef = 30FA951781D440F0FDEA8AC9 /* ui_upgrade_success.wav */; };
@@ -410,13 +472,75 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_anvil_ambient.wav; sourceTree = "<group>"; };
+		FDD453A18C4C94AB5159BEAA /* amb_bone_rattle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_bone_rattle.wav; sourceTree = "<group>"; };
+		68AB362E67BF4A3BC3868DFD /* amb_cave_drip.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_cave_drip.wav; sourceTree = "<group>"; };
+		A1E8EE78C724D8F657E32F74 /* amb_city_murmur.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_city_murmur.wav; sourceTree = "<group>"; };
+		A7C4A0956F2C443F271210FE /* amb_coins_ambient.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_coins_ambient.wav; sourceTree = "<group>"; };
+		AF8138FD172DD987476BB1AD /* amb_crowd_murmur.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_crowd_murmur.wav; sourceTree = "<group>"; };
+		ECCAA0EC6A32992B2577580A /* amb_crowd_roar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_crowd_roar.wav; sourceTree = "<group>"; };
+		C21E72CB6CF2297ABFC419EE /* amb_fire_distant.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_fire_distant.wav; sourceTree = "<group>"; };
+		D4B954EEABC37CF12297EF9F /* amb_forge_fire.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_forge_fire.wav; sourceTree = "<group>"; };
+		968132DE779A045DEC84A0DE /* amb_hall_echo.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_hall_echo.wav; sourceTree = "<group>"; };
+		F0D2887DE9EBEA3D73595949 /* amb_ominous_rumble.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_ominous_rumble.wav; sourceTree = "<group>"; };
+		0DC42345E343D9736E07FE87 /* amb_pickaxe_distant.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_pickaxe_distant.wav; sourceTree = "<group>"; };
+		2E6AFEE7B85E79332868470B /* amb_rain_loop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_rain_loop.wav; sourceTree = "<group>"; };
+		7BAE64B4DD80948D4533F0B6 /* amb_tavern_bustle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_tavern_bustle.wav; sourceTree = "<group>"; };
+		F88E05D11E0E6EBFE2A7FFBE /* amb_thunder_distant.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_thunder_distant.wav; sourceTree = "<group>"; };
+		EC4E1722C3F765D8E9528D27 /* amb_torch_crackle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_torch_crackle.wav; sourceTree = "<group>"; };
+		48B44CC368BE4824CF80E697 /* amb_wind_cave.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_wind_cave.wav; sourceTree = "<group>"; };
+		DC4628892EFBC5C9180FF9D6 /* amb_wind_heavy.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_wind_heavy.wav; sourceTree = "<group>"; };
+		CF3B5A73C50FEB4E2B8AD414 /* amb_wind_light.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_wind_light.wav; sourceTree = "<group>"; };
+		4D4A3C24C0F1AEDC429F38EA /* anvil_strike.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = anvil_strike.wav; sourceTree = "<group>"; };
+		278E5013E89EF2B5EFD32116 /* armor_clink.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = armor_clink.wav; sourceTree = "<group>"; };
+		7DB6754038AE2D421A3F0C03 /* armor_clink_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = armor_clink_2.wav; sourceTree = "<group>"; };
+		7D6D154B49CF77604726E366 /* chain_break.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = chain_break.wav; sourceTree = "<group>"; };
+		56E8040C8E5608C30480D397 /* chain_rattle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = chain_rattle.wav; sourceTree = "<group>"; };
+		301C6BA7258E83F436B0CB45 /* cloth_rustle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = cloth_rustle.wav; sourceTree = "<group>"; };
+		29159BC56AD450529AD3AE60 /* coins_jingle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coins_jingle.wav; sourceTree = "<group>"; };
+		6D7B85F7C51D0A5D284467D3 /* coins_jingle_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coins_jingle_2.wav; sourceTree = "<group>"; };
+		FD851560B8E3B1D8E32EC92E /* coins_jingle_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = coins_jingle_3.wav; sourceTree = "<group>"; };
+		A922EA25000767703C285688 /* creature_growl.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = creature_growl.wav; sourceTree = "<group>"; };
+		B0EDA33A522BF69DE508020E /* creature_growl_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = creature_growl_2.wav; sourceTree = "<group>"; };
+		9285B369E46D58F89E9DE826 /* creature_growl_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = creature_growl_3.wav; sourceTree = "<group>"; };
+		D8AE825199A7B4BC8DAACDA3 /* crowd_roar.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = crowd_roar.wav; sourceTree = "<group>"; };
+		FC15BB8FDFD7CC2BEE0A2F98 /* crowd_roar_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = crowd_roar_2.wav; sourceTree = "<group>"; };
+		B698D5CED6FEC43EB2AD372F /* door_creak.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = door_creak.wav; sourceTree = "<group>"; };
+		2030DE65D1FAA604E54302E1 /* door_creak_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = door_creak_2.wav; sourceTree = "<group>"; };
+		DCDB9E686B0D4EDDD932BB2D /* enchant_glow.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = enchant_glow.wav; sourceTree = "<group>"; };
+		1B9EE2BC2C07F4AA579C05CB /* epic_horn_fanfare.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = epic_horn_fanfare.wav; sourceTree = "<group>"; };
+		16C348EE5C05E7DFD7F6A04B /* footstep_stone.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone.wav; sourceTree = "<group>"; };
+		80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone_2.wav; sourceTree = "<group>"; };
+		701F9E91B2E24D72C3B0CA68 /* footstep_stone_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone_3.wav; sourceTree = "<group>"; };
+		57EAFEAA434D8A54DC27670E /* footstep_stone_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone_4.wav; sourceTree = "<group>"; };
+		D4557A9628595902AF088B03 /* footstep_wood.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_wood.wav; sourceTree = "<group>"; };
+		D8DD8CFEFBA5D7CE9479F320 /* footstep_wood_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_wood_2.wav; sourceTree = "<group>"; };
+		DE6F1AFBF174F985E88C0B43 /* footstep_wood_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_wood_3.wav; sourceTree = "<group>"; };
+		75E76BB2B6A3B6D6615D6B31 /* gong_hit.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = gong_hit.wav; sourceTree = "<group>"; };
+		C588EB5A39040C977A6632B4 /* magic_shimmer.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = magic_shimmer.wav; sourceTree = "<group>"; };
+		C050067D9218FEA233BB9C11 /* magic_spark.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = magic_spark.wav; sourceTree = "<group>"; };
+		D269D22916F1CEDA9ED0476F /* merchant_greet.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = merchant_greet.wav; sourceTree = "<group>"; };
+		91161420701530C8315BA1F3 /* pickaxe_hit.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = pickaxe_hit.wav; sourceTree = "<group>"; };
+		174967DFC5517BEEF2D62EFD /* pickaxe_hit_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = pickaxe_hit_2.wav; sourceTree = "<group>"; };
+		94B3FF4EBD9246F66D4B6B6B /* pickaxe_hit_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = pickaxe_hit_3.wav; sourceTree = "<group>"; };
+		8EF4AED0FE3D95B79C277E1C /* pouch_drop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = pouch_drop.wav; sourceTree = "<group>"; };
+		0F88ADDD4FD7C2C9A1359098 /* rock_crumble.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = rock_crumble.wav; sourceTree = "<group>"; };
+		0D5FAFFDB3438183EA7C1957 /* rock_crumble_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = rock_crumble_2.wav; sourceTree = "<group>"; };
+		8EF87EF6BC5CC46BDC1C4C18 /* scroll_unfurl.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = scroll_unfurl.wav; sourceTree = "<group>"; };
+		904DC67AA32D06A067C8D60D /* seal_stamp.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = seal_stamp.wav; sourceTree = "<group>"; };
+		029AA9A175D862EBED174221 /* shell_shuffle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shell_shuffle.wav; sourceTree = "<group>"; };
+		3C9D6BD0038D1CB7CE959C81 /* torch_ignite.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = torch_ignite.wav; sourceTree = "<group>"; };
+		A9A1090A17C031D04345FBF9 /* war_drums.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = war_drums.wav; sourceTree = "<group>"; };
+		0FE96A24212117D6F47A7E6C /* war_drums_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = war_drums_2.wav; sourceTree = "<group>"; };
+		3F151B07D471FA1F0C9F129F /* wheel_spin.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = wheel_spin.wav; sourceTree = "<group>"; };
 		0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleResultCardView.swift; sourceTree = "<group>"; };
+		9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimRewardModalView.swift; sourceTree = "<group>"; };
 		f258edcf70612de2b763c15f /* BuyStatPointsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuyStatPointsView.swift; sourceTree = "<group>"; };
 		005802A02B8BAC38F0E792AC /* AppearanceEditorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceEditorDetailView.swift; sourceTree = "<group>"; };
 		0119FF7351B52985539E24A3 /* ui_sell.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_sell.wav; sourceTree = "<group>"; };
 		02E5682DDDCFDA8038B5CE1C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		02F525698FF57035C2C32D1B /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
-		03211693FA838BABF0DDF071 /* battle-combat.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "battle-combat.mp3"; sourceTree = "<group>"; };
+				03211693FA838BABF0DDF071 /* battle-combat.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "battle-combat.mp3"; path = "Hexbound/Resources/Audio/BGM/battle-combat.mp3"; sourceTree = SOURCE_ROOT; };
 		0337A4B35D2288E5501C6665 /* Achievement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Achievement.swift; sourceTree = "<group>"; };
 		056220C532DB828C69C4C356 /* Opponent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Opponent.swift; sourceTree = "<group>"; };
 		0580D08F8C6242E1F3AA8C12 /* AppearanceEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceEditorViewModel.swift; sourceTree = "<group>"; };
@@ -441,7 +565,7 @@
 		18860E524F76C28304AB39AF /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		1C1B4BDE312B412B655B4901 /* InventoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryViewModel.swift; sourceTree = "<group>"; };
 		1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomViewModel.swift; sourceTree = "<group>"; };
-		1DAA6F03EBEB036FC162EC75 /* stray-city.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "stray-city.mp3"; sourceTree = "<group>"; };
+		A9606814424887E99EA0D068 /* stray-city.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "stray-city.mp3"; path = "Hexbound/Resources/Audio/BGM/stray-city.mp3"; sourceTree = SOURCE_ROOT; };
 		200396381DBAD59E7A4E025A /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		20BBF308478B5B2817B50708 /* HeroDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroDetailView.swift; sourceTree = "<group>"; };
 		218B22634BDF8DD52EFCB0D6 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
@@ -490,7 +614,7 @@
 		44e83640753af3d064cd2dda /* ChallengeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeService.swift; sourceTree = "<group>"; };
 		4548EC844F00904DF207ED30 /* ItemRarity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemRarity.swift; sourceTree = "<group>"; };
 		4599C5B23903A3CEB334E06E /* AvatarImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageView.swift; sourceTree = "<group>"; };
-		466C80EB3DD78278D4D56357 /* victory-fanfare.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "victory-fanfare.mp3"; sourceTree = "<group>"; };
+		31EE7709FEE6A29F15A412EE /* victory-fanfare.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "victory-fanfare.mp3"; path = "Hexbound/Resources/Audio/BGM/victory-fanfare.mp3"; sourceTree = SOURCE_ROOT; };
 		476A9CFCA1A9D35CCC98890C /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		49684F690003F34F2B1878F8 /* hit_critical.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_critical.wav; sourceTree = "<group>"; };
 		E346B03754B3C185D915074B /* hit_critical_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_critical_2.wav; sourceTree = "<group>"; };
@@ -522,7 +646,7 @@
 		643E3100DB3326B4735D59CD /* hit_poison.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_poison.wav; sourceTree = "<group>"; };
 		674F8E9FA1781D491C725FEF /* CharacterOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterOrigin.swift; sourceTree = "<group>"; };
 		689574F6AED50BD6EB0CD419 /* RankUpCeremonyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RankUpCeremonyView.swift; sourceTree = "<group>"; };
-		69222F90A75EB0B4EF5146D9 /* arena-pvp.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "arena-pvp.mp3"; sourceTree = "<group>"; };
+				69222F90A75EB0B4EF5146D9 /* arena-pvp.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "arena-pvp.mp3"; path = "Hexbound/Resources/Audio/BGM/arena-pvp.mp3"; sourceTree = SOURCE_ROOT; };
 		6957CD68AEE2653DFE03F7CF /* CombatFXImageOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatFXImageOverlay.swift; sourceTree = "<group>"; };
 		69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginData.swift; sourceTree = "<group>"; };
 		905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginRewardDef.swift; sourceTree = "<group>"; };
@@ -555,7 +679,7 @@
 		2FB747C6FDAB2BFE84A10570 /* AuthBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthBackground.swift; sourceTree = "<group>"; };
 		82B3E41C6190D8AE925913E0 /* InlineFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InlineFeedback.swift; sourceTree = "<group>"; };
 		851C837AEE3485F0447C5271 /* DailyQuestsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuestsViewModel.swift; sourceTree = "<group>"; };
-		8680209AC977567266A09DA1 /* defeat-sting.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "defeat-sting.mp3"; sourceTree = "<group>"; };
+				8680209AC977567266A09DA1 /* defeat-sting.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "defeat-sting.mp3"; path = "Hexbound/Resources/Audio/BGM/defeat-sting.mp3"; sourceTree = SOURCE_ROOT; };
 		877EA698C6CB6187721D94A8 /* Applogo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Applogo.png; sourceTree = "<group>"; };
 		8825D55175E1FECF38EF971F /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
 		8832D5981A718B505131DA10 /* ui_purchase.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_purchase.wav; sourceTree = "<group>"; };
@@ -564,7 +688,7 @@
 		889F29A69DC229FCE6DEF613 /* BattlePassData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePassData.swift; sourceTree = "<group>"; };
 		88B8909F01E03E455694F1AA /* EquipmentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentViewModel.swift; sourceTree = "<group>"; };
 		8A0D2E4F6A8B9C0D1E2F3A4C /* SocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialService.swift; sourceTree = "<group>"; };
-		8A933FE01392FF1908BB0C9A /* main-theme.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "main-theme.mp3"; sourceTree = "<group>"; };
+				8A933FE01392FF1908BB0C9A /* main-theme.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = "main-theme.mp3"; path = "Hexbound/Resources/Audio/BGM/main-theme.mp3"; sourceTree = SOURCE_ROOT; };
 		CA8EAC4A4FAB49DDD6BCC0EC /* onboarding-voice-welcome.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "onboarding-voice-welcome.mp3"; sourceTree = "<group>"; };
 		FE1211D68B3A99F2D2DDA67C /* onboarding-voice-blood-glory.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "onboarding-voice-blood-glory.mp3"; sourceTree = "<group>"; };
 		71623A5993B071B645C6E562 /* onboarding-voice-your-turn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "onboarding-voice-your-turn.mp3"; sourceTree = "<group>"; };
@@ -883,6 +1007,32 @@
 			path = Inventory;
 			sourceTree = "<group>";
 		};
+		0EAF143E730E3F6B3856DDFE /* Ambient */ = {
+			isa = PBXGroup;
+			children = (
+C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
+					FDD453A18C4C94AB5159BEAA /* amb_bone_rattle.wav */,
+					68AB362E67BF4A3BC3868DFD /* amb_cave_drip.wav */,
+					A1E8EE78C724D8F657E32F74 /* amb_city_murmur.wav */,
+					A7C4A0956F2C443F271210FE /* amb_coins_ambient.wav */,
+					AF8138FD172DD987476BB1AD /* amb_crowd_murmur.wav */,
+					ECCAA0EC6A32992B2577580A /* amb_crowd_roar.wav */,
+					C21E72CB6CF2297ABFC419EE /* amb_fire_distant.wav */,
+					D4B954EEABC37CF12297EF9F /* amb_forge_fire.wav */,
+					968132DE779A045DEC84A0DE /* amb_hall_echo.wav */,
+					F0D2887DE9EBEA3D73595949 /* amb_ominous_rumble.wav */,
+					0DC42345E343D9736E07FE87 /* amb_pickaxe_distant.wav */,
+					2E6AFEE7B85E79332868470B /* amb_rain_loop.wav */,
+					7BAE64B4DD80948D4533F0B6 /* amb_tavern_bustle.wav */,
+					F88E05D11E0E6EBFE2A7FFBE /* amb_thunder_distant.wav */,
+					EC4E1722C3F765D8E9528D27 /* amb_torch_crackle.wav */,
+					48B44CC368BE4824CF80E697 /* amb_wind_cave.wav */,
+					DC4628892EFBC5C9180FF9D6 /* amb_wind_heavy.wav */,
+					CF3B5A73C50FEB4E2B8AD414 /* amb_wind_light.wav */,
+			);
+			path = Ambient;
+			sourceTree = "<group>";
+		};
 		1D449A3516530C16CEC35B1C /* SFX */ = {
 			isa = PBXGroup;
 			children = (
@@ -986,6 +1136,48 @@
 				39AE7A87F68ECFEE3A4B8B91 /* ui_equip_2.wav */,
 				2848F3834E80ADF6C7397E2A /* ui_unequip.wav */,
 				6DAA3C9B871311D897E1AE0C /* ui_unequip_2.wav */,
+4D4A3C24C0F1AEDC429F38EA /* anvil_strike.wav */,
+					278E5013E89EF2B5EFD32116 /* armor_clink.wav */,
+					7DB6754038AE2D421A3F0C03 /* armor_clink_2.wav */,
+					7D6D154B49CF77604726E366 /* chain_break.wav */,
+					56E8040C8E5608C30480D397 /* chain_rattle.wav */,
+					301C6BA7258E83F436B0CB45 /* cloth_rustle.wav */,
+					29159BC56AD450529AD3AE60 /* coins_jingle.wav */,
+					6D7B85F7C51D0A5D284467D3 /* coins_jingle_2.wav */,
+					FD851560B8E3B1D8E32EC92E /* coins_jingle_3.wav */,
+					A922EA25000767703C285688 /* creature_growl.wav */,
+					B0EDA33A522BF69DE508020E /* creature_growl_2.wav */,
+					9285B369E46D58F89E9DE826 /* creature_growl_3.wav */,
+					D8AE825199A7B4BC8DAACDA3 /* crowd_roar.wav */,
+					FC15BB8FDFD7CC2BEE0A2F98 /* crowd_roar_2.wav */,
+					B698D5CED6FEC43EB2AD372F /* door_creak.wav */,
+					2030DE65D1FAA604E54302E1 /* door_creak_2.wav */,
+					DCDB9E686B0D4EDDD932BB2D /* enchant_glow.wav */,
+					1B9EE2BC2C07F4AA579C05CB /* epic_horn_fanfare.wav */,
+					16C348EE5C05E7DFD7F6A04B /* footstep_stone.wav */,
+					80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */,
+					701F9E91B2E24D72C3B0CA68 /* footstep_stone_3.wav */,
+					57EAFEAA434D8A54DC27670E /* footstep_stone_4.wav */,
+					D4557A9628595902AF088B03 /* footstep_wood.wav */,
+					D8DD8CFEFBA5D7CE9479F320 /* footstep_wood_2.wav */,
+					DE6F1AFBF174F985E88C0B43 /* footstep_wood_3.wav */,
+					75E76BB2B6A3B6D6615D6B31 /* gong_hit.wav */,
+					C588EB5A39040C977A6632B4 /* magic_shimmer.wav */,
+					C050067D9218FEA233BB9C11 /* magic_spark.wav */,
+					D269D22916F1CEDA9ED0476F /* merchant_greet.wav */,
+					91161420701530C8315BA1F3 /* pickaxe_hit.wav */,
+					174967DFC5517BEEF2D62EFD /* pickaxe_hit_2.wav */,
+					94B3FF4EBD9246F66D4B6B6B /* pickaxe_hit_3.wav */,
+					8EF4AED0FE3D95B79C277E1C /* pouch_drop.wav */,
+					0F88ADDD4FD7C2C9A1359098 /* rock_crumble.wav */,
+					0D5FAFFDB3438183EA7C1957 /* rock_crumble_2.wav */,
+					8EF87EF6BC5CC46BDC1C4C18 /* scroll_unfurl.wav */,
+					904DC67AA32D06A067C8D60D /* seal_stamp.wav */,
+					029AA9A175D862EBED174221 /* shell_shuffle.wav */,
+					3C9D6BD0038D1CB7CE959C81 /* torch_ignite.wav */,
+					A9A1090A17C031D04345FBF9 /* war_drums.wav */,
+					0FE96A24212117D6F47A7E6C /* war_drums_2.wav */,
+					3F151B07D471FA1F0C9F129F /* wheel_spin.wav */,
 			);
 			path = SFX;
 			sourceTree = "<group>";
@@ -1069,6 +1261,7 @@
 				4599C5B23903A3CEB334E06E /* AvatarImageView.swift */,
 				660D282C9061E69CDF418A66 /* AssetPlaceholderView.swift */,
 				0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */,
+					9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */,
 				D3EF70965657F120803C752C /* CachedAssetImage.swift */,
 				f76f0260c391916a42554dca /* CardLevelBadge.swift */,
 				79D23648A55C5267EC0B4E4F /* EquippedBadge.swift */,
@@ -1235,7 +1428,7 @@
 		7A5996A3C80D4FFB97C3B531 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
-				A3EE7F82954230491888E126 /* BGM */,
+					0EAF143E730E3F6B3856DDFE /* Ambient */,
 				1D449A3516530C16CEC35B1C /* SFX */,
 				4A263CB963FA763A7BC76EBD /* Voice */,
 			);
@@ -1375,8 +1568,8 @@
 				03211693FA838BABF0DDF071 /* battle-combat.mp3 */,
 				8680209AC977567266A09DA1 /* defeat-sting.mp3 */,
 				8A933FE01392FF1908BB0C9A /* main-theme.mp3 */,
-				1DAA6F03EBEB036FC162EC75 /* stray-city.mp3 */,
-				466C80EB3DD78278D4D56357 /* victory-fanfare.mp3 */,
+				A9606814424887E99EA0D068 /* stray-city.mp3 */,
+				31EE7709FEE6A29F15A412EE /* victory-fanfare.mp3 */,
 			);
 			path = BGM;
 			sourceTree = "<group>";
@@ -1655,7 +1848,67 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				19A48DBD490082A32CB124A0 /* Applogo.png in Resources */,
+7F2B29DE95EE00C146B1F70E /* amb_anvil_ambient.wav in Resources */,
+				BA5CFA1B83EA38F2EDB81532 /* amb_bone_rattle.wav in Resources */,
+				B6409E22684C75EBCEB5ADB0 /* amb_cave_drip.wav in Resources */,
+				2D2417719514AB33149C17CC /* amb_city_murmur.wav in Resources */,
+				8E04E670E6EF33F79647CC59 /* amb_coins_ambient.wav in Resources */,
+				C481AB47CF3316ACF33AD295 /* amb_crowd_murmur.wav in Resources */,
+				18615572677A0157EA7F57D7 /* amb_crowd_roar.wav in Resources */,
+				8BA2F95EF0621E1BDE74DB60 /* amb_fire_distant.wav in Resources */,
+				54BB7AD5999BBE6018538B37 /* amb_forge_fire.wav in Resources */,
+				10A53B807CF9969F8233D67A /* amb_hall_echo.wav in Resources */,
+				A916227E1717BEEED8902DB9 /* amb_ominous_rumble.wav in Resources */,
+				B30F0C52724F189749ECED40 /* amb_pickaxe_distant.wav in Resources */,
+				C773C21055A12E7EA706BD5D /* amb_rain_loop.wav in Resources */,
+				D1E98AF2C6169A728EF38787 /* amb_tavern_bustle.wav in Resources */,
+				F9909BCB68BC7D5F631926DA /* amb_thunder_distant.wav in Resources */,
+				E923A83D9EA268BB98DE526C /* amb_torch_crackle.wav in Resources */,
+				4F0F66CD0D51EE6DE8BB2004 /* amb_wind_cave.wav in Resources */,
+				5B12A3B11591C9CFD306F677 /* amb_wind_heavy.wav in Resources */,
+				7FEB95E22E5CC7C3EED184BE /* amb_wind_light.wav in Resources */,
+				DFE553ACC84C08F5EB45E60B /* anvil_strike.wav in Resources */,
+				3BA10F5C1888208080B0AC35 /* armor_clink.wav in Resources */,
+				8091AC64B6F15A8E438179B1 /* armor_clink_2.wav in Resources */,
+				4408EA424661D7E34B886AF1 /* chain_break.wav in Resources */,
+				31ABAF9E3FD83163FB0883A4 /* chain_rattle.wav in Resources */,
+				5E3C9AF0C4C08CC4A7FC5D3A /* cloth_rustle.wav in Resources */,
+				E072634DB71DC361BE03B8B9 /* coins_jingle.wav in Resources */,
+				F3B7C8F51876CBBB26EDD022 /* coins_jingle_2.wav in Resources */,
+				2FE12D4857B4C363DA2B002D /* coins_jingle_3.wav in Resources */,
+				6067B6BCD4A6E79DFC3ADF79 /* creature_growl.wav in Resources */,
+				19839571EA02350D49353660 /* creature_growl_2.wav in Resources */,
+				F645E3687408379B353A6571 /* creature_growl_3.wav in Resources */,
+				4962363834D5C46D9009E323 /* crowd_roar.wav in Resources */,
+				9B07E5487D407789565B29C8 /* crowd_roar_2.wav in Resources */,
+				9F6F7144900A120991842BF7 /* door_creak.wav in Resources */,
+				AFFACC4C6E727EEE5445B08C /* door_creak_2.wav in Resources */,
+				713C8984C688223C340D01A9 /* enchant_glow.wav in Resources */,
+				6091E937E7F1F33537B64CE7 /* epic_horn_fanfare.wav in Resources */,
+				1A9A8B92543201D94529BB29 /* footstep_stone.wav in Resources */,
+				3FFF14D4E32D7490B8BDA538 /* footstep_stone_2.wav in Resources */,
+				70C98D4254E93A5268B13C11 /* footstep_stone_3.wav in Resources */,
+				D0703AD0F5903D28F01CAA7B /* footstep_stone_4.wav in Resources */,
+				6BABCB454266D18FDAA57772 /* footstep_wood.wav in Resources */,
+				59F475ED1F7B937719E6786C /* footstep_wood_2.wav in Resources */,
+				2E69038A7CA6321C3105928E /* footstep_wood_3.wav in Resources */,
+				1D1146C6F1D1523F6CDDED24 /* gong_hit.wav in Resources */,
+				2CD6AFABD04C3EF632924BFC /* magic_shimmer.wav in Resources */,
+				AE77EBD74CC46B9302B05F64 /* magic_spark.wav in Resources */,
+				B68B74F158D762184A676AAB /* merchant_greet.wav in Resources */,
+				28C0F3C8BC37E7F9F6F7367A /* pickaxe_hit.wav in Resources */,
+				E22D2F3BB6C67780576D831A /* pickaxe_hit_2.wav in Resources */,
+				9F93C0B1148B901C08229618 /* pickaxe_hit_3.wav in Resources */,
+				60495F548BED9C6323A7379B /* pouch_drop.wav in Resources */,
+				F6FF94503694A1FB3E96DF6A /* rock_crumble.wav in Resources */,
+				9239CB217DC8B4A252236500 /* rock_crumble_2.wav in Resources */,
+				2AE128C15635F40A7E2C67D6 /* scroll_unfurl.wav in Resources */,
+				D38BBCAA8FD2BB0E5C7C13EF /* seal_stamp.wav in Resources */,
+				E7A0397200D276BA4EC1669F /* shell_shuffle.wav in Resources */,
+				BDD8F81548BE5D0FB56E6B47 /* torch_ignite.wav in Resources */,
+				BAEDA442A41F63D12DF42973 /* war_drums.wav in Resources */,
+				11B625771A5ED8D2BEFFCE33 /* war_drums_2.wav in Resources */,
+				32FC676535D7D2588AB39F45 /* wheel_spin.wav in Resources */,
 				3E60DAFC7472A5B40C11F434 /* arena-pvp.mp3 in Resources */,
 				177944E1D094938DD266E070 /* Assets.xcassets in Resources */,
 				FA1D5ADF4E4BF99CD25E24A0 /* battle_defeat.wav in Resources */,
@@ -1756,7 +2009,7 @@
 				007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */,
 				E5119F4CEF457CC49A78BC1C /* Oswald-Regular.ttf in Resources */,
 				L10N002BLD000000000000A3 /* Localizable.strings in Resources */,
-				F6A962CDDC5012C80BB0D815 /* stray-city.mp3 in Resources */,
+				43E26780CD3C075BC32EF785 /* stray-city.mp3 in Resources */,
 				291EFF46B7F8D6F2B69E7CA3 /* ui_back.wav in Resources */,
 				1F0B4725284403BD3725ECC6 /* ui_close.wav in Resources */,
 				C2D8A185C69A9A57989B92B1 /* ui_error.wav in Resources */,
@@ -1769,7 +2022,7 @@
 				1704A1D3A63363F209977154 /* ui_transition.wav in Resources */,
 				D97B90E8911CFD96CCA47378 /* ui_upgrade_fail.wav in Resources */,
 				F770CBBD4C6A5F453180B0DC /* ui_upgrade_success.wav in Resources */,
-				558E4C0EB76AAFF61023FE8A /* victory-fanfare.mp3 in Resources */,
+				C39EC318C0414DF5891D5444 /* victory-fanfare.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1940,6 +2193,7 @@
 				8380A79FD977F53D662B3660 /* ItemDetailSheet.swift in Sources */,
 				60AA3C7D4E914FAF3DBA1D9B /* ItemImageView.swift in Sources */,
 				0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */,
+					F45C4BA75C8D9A2707CAA811 /* ClaimRewardModalView.swift in Sources */,
 				F3A5B6C7D8E9F0A1B2C3D4E5 /* VictoryParticlesView.swift in Sources */,
 				C41999D768F5968EA7B75677 /* ItemRarity.swift in Sources */,
 				5EB28B015A23710BE4ACA3EC /* ItemType.swift in Sources */,

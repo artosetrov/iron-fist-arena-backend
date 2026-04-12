@@ -30,6 +30,7 @@ final class ArenaViewModel {
     var isLoadingHistory = false
     var fightingOpponentId: String?
     var isRefreshing = false
+    private var tabLoadTask: Task<Void, Never>?
 
     // Equipment / Loadout
     var equippedItems: [Item] = []
@@ -174,18 +175,30 @@ final class ArenaViewModel {
         _ = await (opponentsTask, revengeTask, historyTask)
     }
 
-    func loadTabData() async {
-        switch selectedTab {
-        case 0: await loadOpponents()
-        case 1: await loadRevenge()
-        case 2: await loadHistory()
-        default: break
+    func loadTabData() {
+        tabLoadTask?.cancel()
+        tabLoadTask = Task {
+            guard !Task.isCancelled else { return }
+            switch selectedTab {
+            case 0: await loadOpponents()
+            case 1: await loadRevenge()
+            case 2: await loadHistory()
+            default: break
+            }
         }
     }
 
     // MARK: - Fight (Instant Battle Flow)
 
     func fight(opponentId: String) async {
+        // Client-side stamina pre-check: avoid "Preparing..." spinner
+        // when we already know the fight will fail due to low stamina.
+        let staminaCost = cache.gameConfig?.pvpStaminaCost ?? 10
+        if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
+            appState.showToast("Not enough stamina", subtitle: "Wait for regen or use a potion", type: .error)
+            return
+        }
+
         fightingOpponentId = opponentId
         showComparison = false
 
@@ -198,22 +211,32 @@ final class ArenaViewModel {
             return
         }
 
-        // 2. Navigate to combat screen only after successful prepare
+        // 2. Sync HP/stamina from server prepare response to client cache.
+        //    Fixes stale "full HP" display when server has partial HP from previous fight.
+        if var char = appState.currentCharacter {
+            char.currentHp = prepareData.playerStats.currentHp
+            char.currentStamina = prepareData.staminaInfo.current
+            appState.currentCharacter = char
+        }
+
+        // 3. Reset state and run combat simulation BEFORE navigating
         appState.combatData = nil
         appState.combatResult = nil
         appState.resolveResult = nil
         appState.pendingLoot = []
         fightingOpponentId = nil
-        appState.mainPath.append(AppRoute.combat)
         await battlePreloader.invalidatePreparedBattle(opponentId: opponentId)
 
-        // 3. Run client-side combat simulation (instant, deterministic)
+        // 4. Run client-side combat simulation (instant, deterministic)
         let combatData = battlePreloader.simulateCombat(prepareData: prepareData)
 
-        // 4. Deliver combat data — CombatDetailView picks this up and starts playback
+        // 5. Deliver combat data BEFORE navigation — CombatDetailView has data on first render
         appState.combatData = combatData
 
-        // 5. Resolve on server asynchronously (fire-and-forget)
+        // 6. Navigate to combat screen — data is already available
+        appState.mainPath.append(AppRoute.combat)
+
+        // 7. Resolve on server asynchronously (fire-and-forget)
         let winnerId = combatData.result.winnerId ?? ""
         let seed = prepareData.battleSeed
         Task {
@@ -239,22 +262,31 @@ final class ArenaViewModel {
             return
         }
 
-        // 2. Navigate to combat screen only after successful prepare
+        // 2. Sync HP/stamina from server prepare response to client cache.
+        if var char = appState.currentCharacter {
+            char.currentHp = prepareData.playerStats.currentHp
+            char.currentStamina = prepareData.staminaInfo.current
+            appState.currentCharacter = char
+        }
+
+        // 3. Reset state and run combat simulation BEFORE navigating
         appState.combatData = nil
         appState.combatResult = nil
         appState.resolveResult = nil
         appState.pendingLoot = []
         fightingOpponentId = nil
-        appState.mainPath.append(AppRoute.combat)
         await battlePreloader.invalidatePreparedBattle(revengeId: revengeId)
 
-        // 3. Run client-side combat simulation (instant, deterministic)
+        // 4. Run client-side combat simulation (instant, deterministic)
         let combatData = battlePreloader.simulateCombat(prepareData: prepareData)
 
-        // 4. Deliver combat data — CombatDetailView picks this up and starts playback
+        // 5. Deliver combat data BEFORE navigation — CombatDetailView has data on first render
         appState.combatData = combatData
 
-        // 5. Resolve on server asynchronously (fire-and-forget)
+        // 6. Navigate to combat screen — data is already available
+        appState.mainPath.append(AppRoute.combat)
+
+        // 7. Resolve on server asynchronously (fire-and-forget)
         let winnerId = combatData.result.winnerId ?? ""
         let seed = prepareData.battleSeed
         let opponentId = prepareData.enemyStats.id

@@ -201,6 +201,8 @@ export async function POST(req: NextRequest) {
     if (action === 'claim') {
       // Atomic read-check-write to prevent double-claim
       const quest = await prisma.$transaction(async (tx) => {
+        // Set lock timeout to prevent indefinite hangs on concurrent claims
+        await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '5s'`)
         // Lock the quest row with FOR UPDATE (table mapped to "daily_quests", columns are snake_case)
         const rows = await tx.$queryRawUnsafe<any[]>(
           `SELECT * FROM "daily_quests" WHERE "id" = $1 FOR UPDATE`,

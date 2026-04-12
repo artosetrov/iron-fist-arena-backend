@@ -104,13 +104,11 @@ struct DungeonVictoryView: View {
         let hpFraction = vm.hpFractionAfterBattle ?? 1.0
         let stars: Int = hpFraction > 0.75 ? 3 : hpFraction > 0.25 ? 2 : 1
 
-        // Hero XP counter: xpBefore rolls to xpBefore + xpReward. For the
-        // no-level-up path this is the true pre-fight XP; for the level-up
-        // path it's the new level's remaining XP minus the reward (can
-        // underflow briefly — arena has the same behaviour).
+        // Hero XP counter: use the VM's pre-fight snapshot directly (captured
+        // before the API call) instead of back-computing from optimistic state,
+        // which can drift if loadCharacter() races with this view.
         let xpReward = vm.victoryXP
-        let currentExp = appState.currentCharacter?.experience ?? 0
-        let xpBeforeValue = max(0, currentExp - xpReward)
+        let xpBeforeValue = max(0, vm.preFightXP)
         let xpNeededValue = DungeonRoomViewModel.xpNeededForLevel(displayLevel)
 
         return BattleResultConfig(
@@ -165,10 +163,11 @@ struct DungeonVictoryView: View {
             let charLevel = appState.currentCharacter?.level ?? vm.preFightLevel
             displayLevel = charLevel
             let xpNeeded = DungeonRoomViewModel.xpNeededForLevel(charLevel)
-            let currentExp = appState.currentCharacter?.experience ?? 0
-            let oldXp = max(0, currentExp - xpReward)
+            // Use pre-fight snapshot directly to avoid drift from background loadCharacter()
+            let oldXp = max(0, vm.preFightXP)
+            let newXp = oldXp + xpReward
             oldXpFraction = CGFloat(oldXp) / CGFloat(max(1, xpNeeded))
-            newXpFraction = CGFloat(max(0, currentExp)) / CGFloat(max(1, xpNeeded))
+            newXpFraction = CGFloat(min(newXp, xpNeeded)) / CGFloat(max(1, xpNeeded))
         }
 
         xpBarProgress = oldXpFraction

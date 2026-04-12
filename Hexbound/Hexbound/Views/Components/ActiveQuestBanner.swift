@@ -110,22 +110,22 @@ struct ActiveQuestBanner: View {
                 Button {
                     claimQuest(quest)
                 } label: {
-                    ZStack(alignment: .leading) {
-                        // Progress-fill loader — visible only while API call
-                        // is in flight. Drawn inside the button label so it
-                        // clips to the button shape automatically.
-                        GeometryReader { geo in
-                            Rectangle()
-                                .fill(Color.white.opacity(0.22))
-                                .frame(width: geo.size.width * (isClaimingThis ? claimProgress : 0))
+                    Text("Claim")
+                        .frame(maxWidth: .infinity)
+                        .background(alignment: .leading) {
+                            // Progress-fill loader — visible only while API call
+                            // is in flight. Uses background so it clips to the
+                            // button shape without inflating layout via GeometryReader.
+                            GeometryReader { geo in
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.22))
+                                    .frame(width: geo.size.width * (isClaimingThis ? claimProgress : 0))
+                            }
+                            .allowsHitTesting(false)
                         }
-                        .allowsHitTesting(false)
-
-                        Text("Claim")
-                            .frame(maxWidth: .infinity)
-                    }
                 }
                 .buttonStyle(.compactPrimary)
+                .frame(width: 120, height: 40)
                 .disabled(claimingId != nil)
             } else {
                 // Progress pill

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
 import { GEM_PACKS, getGemPack, isGemPackCatalogId } from '@/lib/game/gem-packs'
 
 /**
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!(await rateLimit(`shop-buy-gems:${user.id}`, 10, 60_000))) {
+  if (!(await shopRateLimit(user.id)) || !(await rateLimit(`shop-buy-gems:${user.id}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 

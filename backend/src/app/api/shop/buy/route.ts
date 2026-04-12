@@ -4,13 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!(await rateLimit(`shop-buy:${user.id}`, 15, 60_000))) {
+  if (!(await shopRateLimit(user.id)) || !(await rateLimit(`shop-buy:${user.id}`, 15, 60_000))) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       inventoryItem: result.inventoryItem,
+      gold: result.updatedUser.gold,
+      gems: result.updatedUser.gems,
+      // Legacy nested shape preserved for backwards compatibility
       character: {
         gold: result.updatedUser.gold,
         gems: result.updatedUser.gems,

@@ -14,6 +14,9 @@ final class DailyQuestsViewModel {
     var bonusClaimedToday = false
     var errorMessage: String? = nil
 
+    // Claim reward modal — shown after any quest/bonus CLAIM
+    var claimRewardConfig: ClaimRewardConfig?
+
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
@@ -148,7 +151,15 @@ final class DailyQuestsViewModel {
         if result.rewardGems > 0 { parts.append("+\(result.rewardGems) gems") }
         let subtitle = parts.isEmpty ? quest.title : parts.joined(separator: "  ")
 
-        appState.showCelebration(.questComplete, title: "Quest Complete!", subtitle: subtitle)
+        // Show reward modal instead of celebration toast
+        claimRewardConfig = ClaimRewardConfig(
+            title: "QUEST\nCOMPLETE!",
+            subtitle: quest.title,
+            goldReward: result.rewardGold,
+            gemsReward: result.rewardGems,
+            xpReward: result.rewardXp,
+            lootItems: []
+        )
     }
 
     func claimBonus() async {
@@ -162,7 +173,17 @@ final class DailyQuestsViewModel {
         // ── Fire API — keep isClaimingBonus until done ──
         let success = await service.claimBonus()
         isClaimingBonus = false
-        if !success {
+        if success {
+            // Show reward modal for daily bonus
+            claimRewardConfig = ClaimRewardConfig(
+                title: "DAILY BONUS\nCLAIMED!",
+                subtitle: "All quests completed",
+                goldReward: 500,
+                gemsReward: 10,
+                xpReward: 0,
+                lootItems: []
+            )
+        } else {
             // Revert on failure
             bonusClaimedToday = false
             appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)

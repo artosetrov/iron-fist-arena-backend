@@ -24,6 +24,13 @@ final class ShopViewModel {
     var contrabandState: ContrabandUIState = .loading
     var isClaimingContraband = false
 
+    // Claim reward modal — shown after any CLAIM action (contraband, offers)
+    var claimRewardConfig: ClaimRewardConfig?
+
+    // Sequential widgets: track whether Scavenger has been claimed this session
+    // so SPECIAL OFFERS only appear after Scavenger is claimed/cooldown
+    var scavengerClaimedThisSession = false
+
     // Detail modal
     var selectedItem: ShopItem?
     var showItemDetail = false
@@ -158,11 +165,18 @@ final class ShopViewModel {
                 params: ["character_id": charId]
             )
             contrabandState = ContrabandUIState.from(response)
+            // If Scavenger is in cooldown on load, it was already claimed —
+            // so unlock SPECIAL OFFERS immediately.
+            if case .cooldown = contrabandState {
+                scavengerClaimedThisSession = true
+            }
         } catch {
             #if DEBUG
             print("[ShopVM] Failed to load contraband: \(error)")
             #endif
             contrabandState = .error
+            // On error, don't block offers
+            scavengerClaimedThisSession = true
         }
     }
 
@@ -202,21 +216,40 @@ final class ShopViewModel {
                 body: ["character_id": charId]
             )
             if response.success {
-                appState.currentCharacter?.gold = response.gold
-                appState.currentCharacter?.gems = response.gems
-                appState.showToast("Contraband claimed!", type: .reward)
+                if var char = appState.currentCharacter {
+                    char.gold = response.gold
+                    char.gems = response.gems
+                    appState.currentCharacter = char
+                }
+                scavengerClaimedThisSession = true
+                // Show reward modal instead of toast
+                claimRewardConfig = .fromOfferContents(
+                    title: "SECURED!",
+                    subtitle: "Drop #\(response.claimNumber)",
+                    contents: response.contents
+                )
                 // Reload to get cooldown state
                 await loadContraband()
             } else {
-                appState.currentCharacter?.gold = savedGold
-                appState.currentCharacter?.gems = savedGems
+                if var char = appState.currentCharacter {
+                    char.gold = savedGold; char.gems = savedGems
+                    appState.currentCharacter = char
+                }
                 appState.showToast("Claim failed", type: .error)
             }
         } catch {
-            appState.currentCharacter?.gold = savedGold
-            appState.currentCharacter?.gems = savedGems
+            if var char = appState.currentCharacter {
+                char.gold = savedGold; char.gems = savedGems
+                appState.currentCharacter = char
+            }
             appState.showToast("Claim failed", type: .error)
         }
+    }
+
+    /// SPECIAL OFFERS are visible only after Scavenger is claimed or in cooldown.
+    /// This prevents two widgets fighting for attention simultaneously.
+    var shouldShowOffers: Bool {
+        scavengerClaimedThisSession
     }
 
     var canAffordContraband: Bool {
@@ -275,19 +308,30 @@ final class ShopViewModel {
                     body: ["character_id": charId, "offer_id": offer.id]
                 )
                 if response.success {
-                    appState.currentCharacter?.gold = response.gold
-                    appState.currentCharacter?.gems = response.gems
-                    appState.showToast("Offer purchased!", type: .reward)
+                    if var char = appState.currentCharacter {
+                        char.gold = response.gold
+                        char.gems = response.gems
+                        appState.currentCharacter = char
+                    }
+                    // Show reward modal with the offer's contents
+                    claimRewardConfig = .fromOfferContents(
+                        title: "REWARD\nCLAIMED!",
+                        subtitle: offer.title,
+                        contents: offer.contents
+                    )
                     await loadOffers()
                 } else {
-                    // Revert
-                    appState.currentCharacter?.gold = savedGold
-                    appState.currentCharacter?.gems = savedGems
+                    if var char = appState.currentCharacter {
+                        char.gold = savedGold; char.gems = savedGems
+                        appState.currentCharacter = char
+                    }
                     appState.showToast("Purchase failed", type: .error)
                 }
             } catch {
-                appState.currentCharacter?.gold = savedGold
-                appState.currentCharacter?.gems = savedGems
+                if var char = appState.currentCharacter {
+                    char.gold = savedGold; char.gems = savedGems
+                    appState.currentCharacter = char
+                }
                 appState.showToast("Purchase failed", type: .error)
             }
         }

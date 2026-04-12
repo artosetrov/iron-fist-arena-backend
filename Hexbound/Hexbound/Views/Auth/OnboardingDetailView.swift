@@ -56,7 +56,7 @@ struct OnboardingDetailView: View {
         }
         .task {
             if vm.allSkins.isEmpty {
-                await vm.fetchSkins()
+                vm.fetchSkins()
             }
         }
     }

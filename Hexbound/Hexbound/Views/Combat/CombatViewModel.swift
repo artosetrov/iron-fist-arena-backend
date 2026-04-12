@@ -78,7 +78,7 @@ final class CombatViewModel {
         try? await Task.sleep(for: .seconds(0.5))
 
         for i in 0..<combatData.combatLog.count {
-            if skipRequested { break }
+            if skipRequested || Task.isCancelled { break }
 
             currentTurnIndex = i
             let turn = combatData.combatLog[i]
@@ -121,6 +121,7 @@ final class CombatViewModel {
     }
 
     private func animateTurn(_ turn: CombatLog, isPlayerAttacking: Bool) async {
+        guard !Task.isCancelled else { return }
         let sm = speedMultiplier
 
         // Defender position (normalized 0-1) for VFX placement
@@ -509,6 +510,16 @@ final class CombatViewModel {
         if let resolve = appState.resolveResult {
             // Use SERVER winner to determine isWin (anti-cheat)
             let serverIsWin = resolve.serverWinnerId == combatData.player.id
+            let clientIsWin = combatData.result.isWin
+
+            // Inform player when server verdict differs from client prediction
+            if serverIsWin != clientIsWin {
+                let msg = serverIsWin
+                    ? "Server verified: you won!"
+                    : "Server verified: opponent won"
+                appState.showToast(msg, subtitle: "Battle result confirmed by server", type: .info)
+            }
+
             let mergedResult = CombatResultInfo(
                 isWin: serverIsWin,
                 winnerId: resolve.serverWinnerId,

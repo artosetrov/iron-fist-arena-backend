@@ -77,6 +77,7 @@ export interface LevelUpResult {
   remainingXp: number;
   statPointsAwarded: number;
   passivePointsAwarded: number;
+  atMaxLevel: boolean;
   milestonesAwarded?: { level: number; gold: number; gems: number; title: string | null; description: string }[];
 }
 
@@ -131,6 +132,7 @@ export async function checkLevelUp(character: {
     remainingXp: currentXp,
     statPointsAwarded: totalStatPoints,
     passivePointsAwarded: totalPassivePoints,
+    atMaxLevel: level >= prestigeConfig.MAX_LEVEL,
   };
 }
 

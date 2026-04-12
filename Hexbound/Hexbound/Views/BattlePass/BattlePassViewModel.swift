@@ -14,6 +14,9 @@ final class BattlePassViewModel {
     private var claimingLevels: Set<Int> = []
     private let cache: GameDataCache
 
+    // Claim reward modal
+    var claimRewardConfig: ClaimRewardConfig?
+
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
@@ -87,17 +90,48 @@ final class BattlePassViewModel {
         HapticManager.success()
 
         // ── Await API call (not fire-and-forget) ──
+        var claimSucceeded = true
         do {
             try await service.claimReward(level: level)
         } catch let error as BattlePassClaimError {
-            // Silently ignore "already claimed" — the reward IS claimed on server
             if case .alreadyClaimed = error {
                 // Optimistic state is correct, just refresh
             } else {
+                claimSucceeded = false
                 appState.showToast("Claim failed", subtitle: error.toastSubtitle, type: .error)
             }
         } catch {
+            claimSucceeded = false
             appState.showToast("Claim failed", subtitle: "Check connection and try again", type: .error)
+        }
+
+        // Show reward modal on success
+        if claimSucceeded {
+            let goldAmount = reward.rewardType == "gold" ? reward.amount : 0
+            let gemsAmount = reward.rewardType == "gems" ? reward.amount : 0
+            let xpAmount = reward.rewardType == "xp" ? reward.amount : 0
+
+            var loot: [ClaimLootItem] = []
+            if reward.rewardType == "item" || reward.rewardType == "consumable" {
+                loot.append(ClaimLootItem(
+                    id: reward.id,
+                    name: reward.rewardName,
+                    quantity: reward.amount,
+                    imageKey: nil,
+                    fallbackIcon: reward.rewardType == "consumable" ? "cross.vial" : "shippingbox",
+                    rarity: reward.track == "premium" ? .epic : .rare,
+                    rarityColor: reward.track == "premium" ? DarkFantasyTheme.rarityEpic : DarkFantasyTheme.rarityRare
+                ))
+            }
+
+            claimRewardConfig = ClaimRewardConfig(
+                title: "BATTLE PASS\nREWARD!",
+                subtitle: "Level \(reward.level) — \(reward.track == "premium" ? "Premium" : "Free")",
+                goldReward: goldAmount,
+                gemsReward: gemsAmount,
+                xpReward: xpAmount,
+                lootItems: loot
+            )
         }
 
         // ── Always refresh to sync with server truth ──

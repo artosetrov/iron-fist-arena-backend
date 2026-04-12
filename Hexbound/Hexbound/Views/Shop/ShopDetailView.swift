@@ -127,18 +127,22 @@ struct ShopDetailView: View {
             )
             .padding(.bottom, LayoutConstants.spaceSM)
 
-            // Special Offers carousel — hide fully claimed offers (purchase limit reached).
-            // After a player claims the Starter Pack (or any single-use offer), its card
-            // must disappear from the widget rather than sit in a disabled "CLAIMED" state.
-            let activeOffers = vm.offers.filter { $0.canPurchase }
-            if !activeOffers.isEmpty {
-                ShopOfferBannerView(
-                    offers: activeOffers,
-                    canAfford: { vm.canAffordOffer($0) },
-                    buyingId: vm.buyingOfferId,
-                    onBuy: { offer in Task { await vm.buyOffer(offer) } }
-                )
-                .padding(.bottom, LayoutConstants.spaceSM)
+            // Special Offers carousel — sequential display: visible only AFTER
+            // Scavenger is claimed or in cooldown. Prevents two widgets competing.
+            // Also hide fully claimed offers (purchase limit reached).
+            if vm.shouldShowOffers {
+                let activeOffers = vm.offers.filter { $0.canPurchase }
+                if !activeOffers.isEmpty {
+                    ShopOfferBannerView(
+                        offers: activeOffers,
+                        canAfford: { vm.canAffordOffer($0) },
+                        buyingId: vm.buyingOfferId,
+                        onBuy: { offer in Task { await vm.buyOffer(offer) } }
+                    )
+                    .padding(.bottom, LayoutConstants.spaceSM)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .animation(MotionConstants.snappy, value: vm.shouldShowOffers)
+                }
             }
 
             // Tab switcher
@@ -163,6 +167,16 @@ struct ShopDetailView: View {
 
         // Item detail modal (unified template)
         itemDetailOverlay(vm)
+
+        // Claim reward ceremony modal (contraband / offers)
+        if let rewardConfig = vm.claimRewardConfig {
+            ClaimRewardModalView(config: rewardConfig) {
+                rewardConfig.onDismiss?()
+                vm.claimRewardConfig = nil
+            }
+            .transition(.opacity)
+            .zIndex(200)
+        }
     }
 
     // MARK: - Currency Bar

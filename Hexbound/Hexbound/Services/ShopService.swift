@@ -191,8 +191,10 @@ final class ShopService {
             ]
             let response = try await APIClient.shared.postRaw(APIEndpoints.shopRepair, body: body)
             let repairCost = response["repairCost"] as? Int ?? 0
-            let gold = response["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
-            let gems = response["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
+            // Handle nested `{ character: { gold, gems } }` shape from /shop/repair
+            let repairCurrency = (response["character"] as? [String: Any]) ?? response
+            let gold = repairCurrency["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
+            let gems = repairCurrency["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
             let inventoryItem = response["inventoryItem"] as? [String: Any] ?? [:]
             let newDurability = inventoryItem["durability"] as? Int ?? 0
             let maxDurability = inventoryItem["maxDurability"] as? Int ?? 0
@@ -244,8 +246,10 @@ final class ShopService {
             let levelLost = response["level_lost"] as? Bool ?? false
             let protectionUsed = response["protection_used"] as? Bool ?? false
             let upgradeCost = response["upgradeCost"] as? Int ?? 0
-            let gold = response["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
-            let gems = response["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
+            // Handle nested `{ character: { gold, gems } }` shape from /shop/upgrade
+            let upgradeCurrency = (response["character"] as? [String: Any]) ?? response
+            let gold = upgradeCurrency["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
+            let gems = upgradeCurrency["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
             if var char = appState.currentCharacter {
                 char.gold = gold
                 char.gems = gems
@@ -272,10 +276,22 @@ final class ShopService {
 
     // MARK: - Helpers
 
+    /// Reads `gold`/`gems` from the server response and updates character state.
+    /// Handles two response shapes:
+    ///   - Flat:   `{ gold, gems, ... }`  (buy-gems, offers)
+    ///   - Nested: `{ character: { gold, gems }, ... }`  (buy, buy-consumable, repair, upgrade)
     private func updateCharacter(from response: [String: Any]) {
+        // Try nested shape first (most shop endpoints), fall back to flat
+        let currencySource: [String: Any]
+        if let nested = response["character"] as? [String: Any] {
+            currencySource = nested
+        } else {
+            currencySource = response
+        }
+
         if var char = appState.currentCharacter {
-            if let gold = response["gold"] as? Int { char.gold = gold }
-            if let gems = response["gems"] as? Int { char.gems = gems }
+            if let gold = currencySource["gold"] as? Int { char.gold = gold }
+            if let gems = currencySource["gems"] as? Int { char.gems = gems }
             appState.currentCharacter = char
             // Invalidate inventory cache since items changed (new purchase)
             appState.cachedInventory = nil

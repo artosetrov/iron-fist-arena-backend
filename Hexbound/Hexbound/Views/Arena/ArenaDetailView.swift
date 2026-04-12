@@ -48,7 +48,7 @@ struct ArenaDetailView: View {
                                 get: { vm.selectedTab },
                                 set: { newValue in
                                     vm.selectedTab = newValue
-                                    Task { await vm.loadTabData() }
+                                    vm.loadTabData()
                                 }
                             )
                         )
@@ -71,11 +71,11 @@ struct ArenaDetailView: View {
                                         onTap: { appState.mainPath.append(AppRoute.hero) }
                                     )
                                     .padding(.horizontal, LayoutConstants.screenPadding)
-
-                                    // PvP Stats Bar — unified compact widget
-                                    PvPStatsWidget(.compact, data: char)
-                                        .padding(.horizontal, LayoutConstants.screenPadding)
                                 }
+
+                                // Combat stance selector — right below hero widget
+                                stancePreview(appState.currentCharacter?.combatStance ?? .default)
+                                    .tutorialAnchor(.arenaStance)
 
                                 // Low HP potion banner — shown when HP < 30%
                                 if let currentChar = appState.currentCharacter,
@@ -102,10 +102,6 @@ struct ArenaDetailView: View {
                                 case 2: historyTab(vm)
                                 default: EmptyView()
                                 }
-
-                                // Current stance indicator — below opponent cards
-                                stancePreview(appState.currentCharacter?.combatStance ?? .default)
-                                    .tutorialAnchor(.arenaStance)
 
                                 Spacer().frame(height: LayoutConstants.spaceLG)
                             }

@@ -12,6 +12,11 @@ struct CombatResultDetailView: View {
     @State private var newXpFraction: CGFloat = 0
     @State private var didLevelUp = false
 
+    // Captured level-up data — stored eagerly so DispatchQueue callbacks
+    // don't depend on `result` (which gets nilled when user taps Continue)
+    @State private var capturedNewLevel: Int? = nil
+    @State private var capturedStatPoints: Int = 3
+
     // Loot detail modal
     @State private var selectedLootIndex: Int? = nil
 
@@ -589,6 +594,11 @@ struct CombatResultDetailView: View {
         let leveledUp = res.leveledUp == true
         let newLevel = res.newLevel
         self.didLevelUp = leveledUp
+        // Capture level-up data eagerly for DispatchQueue callbacks
+        if leveledUp, let newLvl = newLevel {
+            capturedNewLevel = newLvl
+            capturedStatPoints = res.statPointsAwarded ?? 3
+        }
 
         if leveledUp, let newLvl = newLevel {
             let previousLevel = newLvl - 1
@@ -635,9 +645,10 @@ struct CombatResultDetailView: View {
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-                if let res = result, res.leveledUp == true, let newLevel = res.newLevel {
-                    let statPoints = res.statPointsAwarded ?? 3
-                    appState.triggerLevelUpModal(newLevel: newLevel, statPoints: statPoints)
+                // Use captured values — `result` may be nil if user tapped Continue
+                // before this callback fires (goBack() clears combatResult)
+                if let newLevel = capturedNewLevel {
+                    appState.triggerLevelUpModal(newLevel: newLevel, statPoints: capturedStatPoints)
                 }
             }
         } else {

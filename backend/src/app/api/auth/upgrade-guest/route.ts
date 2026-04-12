@@ -108,28 +108,54 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Update local DB user record BEFORE sign-in so the DB stays
+    // in sync even if token generation fails. Retry once on transient
+    // failure; if both attempts fail, revert Supabase to guest state
+    // so the accounts don't diverge.
+    let prismaUpdated = false
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            email,
+            username: displayName,
+            authProvider: 'email',
+            lastLogin: new Date(),
+          },
+        })
+        prismaUpdated = true
+        break
+      } catch (dbError) {
+        console.error(`upgrade-guest prisma update attempt ${attempt + 1} failed:`, dbError)
+        if (attempt === 0) await new Promise((r) => setTimeout(r, 500))
+      }
+    }
+
+    if (!prismaUpdated) {
+      // Revert Supabase back to guest state so accounts stay in sync
+      console.error('upgrade-guest: reverting Supabase user to guest after Prisma failure')
+      await supabase.auth.admin.updateUserById(user.id, {
+        user_metadata: { is_guest: true, username: undefined },
+      }).catch((e: unknown) => console.error('upgrade-guest: supabase revert also failed:', e))
+      return NextResponse.json(
+        { error: 'Failed to upgrade account. Please try again.' },
+        { status: 500 }
+      )
+    }
+
     // Sign in with new credentials to get fresh tokens
     const { data: signInData, error: signInError } =
       await supabase.auth.signInWithPassword({ email, password })
 
     if (signInError || !signInData.session) {
       console.error('upgrade-guest sign-in error:', signInError)
+      // DB is already upgraded — user can login manually next time
       return NextResponse.json(
         { error: 'Account upgraded but sign-in failed. Please login manually.' },
         { status: 500 }
       )
     }
-
-    // Update local DB user record
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        email,
-        username: displayName,
-        authProvider: 'email',
-        lastLogin: new Date(),
-      },
-    })
 
     return NextResponse.json({
       access_token: signInData.session.access_token,

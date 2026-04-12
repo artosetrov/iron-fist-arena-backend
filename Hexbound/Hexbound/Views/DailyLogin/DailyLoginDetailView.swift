@@ -59,6 +59,10 @@ struct DailyLoginDetailView: View {
                 .transaction { $0.animation = nil }
             }
         }
+        .claimRewardModal(config: Binding(
+            get: { vm?.claimRewardConfig },
+            set: { vm?.claimRewardConfig = $0 }
+        ))
         .task {
             if vm == nil {
                 let viewModel = DailyLoginPopupViewModel(appState: appState, cache: cache)

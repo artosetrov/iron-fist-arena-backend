@@ -641,7 +641,7 @@ final class GoldMineViewModel {
 
         // Optimistic: deduct gems + show boosted
         let prevGems = appState.currentCharacter?.gems ?? 0
-        let boostCost = 10
+        let boostCost = cache.gameConfig?.goldMineBoostGems ?? 10
         appState.currentCharacter?.gems = max(0, prevGems - boostCost)
         HapticManager.success()
         appState.showToast("Slot boosted!", type: .info)
@@ -682,7 +682,7 @@ final class GoldMineViewModel {
         let prevGems = appState.currentCharacter?.gems ?? 0
         let prevMaxSlots = maxSlots
         let prevSlots = slots
-        let slotCost = 50
+        let slotCost = cache.gameConfig?.goldMineSlotCostGems ?? 50
         appState.currentCharacter?.gems = max(0, prevGems - slotCost)
         maxSlots += 1
         // Add an idle slot placeholder so UI shows the new slot immediately

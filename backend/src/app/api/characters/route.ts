@@ -99,6 +99,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    if (typeof character_name !== 'string' || character_name.length < 3 || character_name.length > 16) {
+      return NextResponse.json(
+        { error: 'Character name must be between 3 and 16 characters' },
+        { status: 400 }
+      )
+    }
+
+    if (!/^[a-zA-Z0-9]+$/.test(character_name)) {
+      return NextResponse.json(
+        { error: 'Character name must contain only letters and numbers' },
+        { status: 400 }
+      )
+    }
+
     if (!Object.values(CharacterClass).includes(charClass)) {
       return NextResponse.json(
         { error: `Invalid class. Must be one of: ${Object.values(CharacterClass).join(', ')}` },

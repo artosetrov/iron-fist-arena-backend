@@ -88,15 +88,22 @@ export async function POST(req: NextRequest) {
       const newPrestigeLevel = character.prestige_level + 1
 
       // Reset level to 1, keep XP at 0, increment prestige
-      const updated = await tx.character.update({
-        where: { id: character_id },
-        data: {
-          level: 1,
-          currentXp: 0,
-          prestigeLevel: newPrestigeLevel,
-          statPointsAvailable: PRESTIGE_CONFIG.STAT_POINTS_PER_LEVEL, // start with points for level 1
-        },
-      })
+      // Also wipe unlocked passives — player re-earns them via leveling
+      const [updated] = await Promise.all([
+        tx.character.update({
+          where: { id: character_id },
+          data: {
+            level: 1,
+            currentXp: 0,
+            prestigeLevel: newPrestigeLevel,
+            statPointsAvailable: PRESTIGE_CONFIG.STAT_POINTS_PER_LEVEL, // start with points for level 1
+            passivePointsAvailable: 0, // reset passive points — earned again via leveling
+          },
+        }),
+        tx.characterPassive.deleteMany({
+          where: { characterId: character_id },
+        }),
+      ])
 
       return { updated, newPrestigeLevel }
     })

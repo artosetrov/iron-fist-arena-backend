@@ -55,6 +55,10 @@ struct DailyLoginPopupView: View {
                 }
             }
         }
+        .claimRewardModal(config: Binding(
+            get: { viewModel?.claimRewardConfig },
+            set: { viewModel?.claimRewardConfig = $0 }
+        ))
         .onAppear {
             let vm = DailyLoginPopupViewModel(appState: appState, cache: cache)
             viewModel = vm

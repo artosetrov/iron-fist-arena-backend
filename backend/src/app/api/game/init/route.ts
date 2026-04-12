@@ -16,6 +16,7 @@ import {
   getEloConfig,
   getPvpRanksConfig,
   getBattlePassConfig,
+  getGemCostsConfig,
 } from '@/lib/game/live-config'
 import { resolveAllFlags } from '@/lib/game/feature-flags'
 import { QuestType } from '@prisma/client'
@@ -262,6 +263,7 @@ export async function GET(req: NextRequest) {
       eloConfig,
       pvpRanksConfig,
       battlePassConfig,
+      gemCostsConfig,
       featureFlags,
     ] = await Promise.all([
       getStaminaConfig(),
@@ -275,6 +277,7 @@ export async function GET(req: NextRequest) {
       getEloConfig(),
       getPvpRanksConfig(),
       getBattlePassConfig(),
+      getGemCostsConfig(),
       resolveAllFlags(user.id, { id: character.id, level: character.level, class: character.class }),
     ])
 
@@ -299,6 +302,12 @@ export async function GET(req: NextRequest) {
       eloCalibrationGames: eloConfig.CALIBRATION_GAMES,
       pvpRanks: pvpRanksConfig,
       battlePass: battlePassConfig,
+      gemCosts: {
+        goldMineSlotCost: gemCostsConfig.GOLD_MINE_BUY_SLOT,
+        goldMineBoost: gemCostsConfig.GOLD_MINE_BOOST,
+        staminaRefill: gemCostsConfig.STAMINA_REFILL,
+        extraPvpCombat: gemCostsConfig.EXTRA_PVP_COMBAT,
+      },
     }
 
     return NextResponse.json({
@@ -324,8 +333,16 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error('game init error:', error)
+    // Return a descriptive error so the client can show meaningful feedback
+    // while keeping internal details out of the response
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    const safeMessage = message.includes('prisma') || message.includes('SQL')
+      ? 'Database temporarily unavailable'
+      : message.length > 120
+        ? 'Failed to initialize game data'
+        : message
     return NextResponse.json(
-      { error: 'Failed to initialize game data' },
+      { error: safeMessage },
       { status: 500 }
     )
   }

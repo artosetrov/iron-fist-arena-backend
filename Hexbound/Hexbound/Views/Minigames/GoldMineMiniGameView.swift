@@ -38,7 +38,7 @@ struct FallingDrop: Identifiable, Equatable {
                 kind: .gem,
                 xFraction: xFraction,
                 spawnedAt: spawnedAt,
-                fallDurationSec: Double.random(in: 1.6...2.2)
+                fallDurationSec: Double.random(in: 2.8...3.8)
             )
         }
         // Weighted pick across gold values.
@@ -50,7 +50,7 @@ struct FallingDrop: Identifiable, Equatable {
                     kind: .gold(entry.value),
                     xFraction: xFraction,
                     spawnedAt: spawnedAt,
-                    fallDurationSec: Double.random(in: 1.4...2.0)
+                    fallDurationSec: Double.random(in: 2.4...3.4)
                 )
             }
             roll -= entry.weight
@@ -60,7 +60,7 @@ struct FallingDrop: Identifiable, Equatable {
             kind: .gold(1),
             xFraction: xFraction,
             spawnedAt: spawnedAt,
-            fallDurationSec: 1.8
+            fallDurationSec: 3.0
         )
     }
 }
@@ -213,7 +213,7 @@ struct GoldMineMiniGameView: View {
     @State private var serverResponse: [String: Any]?
 
     private let totalSec: Double = 15
-    private let spawnIntervalSec: Double = 0.3
+    private let spawnIntervalSec: Double = 0.45
     @State private var lastSpawn: Date = Date()
 
     var body: some View {
@@ -353,12 +353,14 @@ struct GoldMineMiniGameView: View {
                 gemDropView
             }
         }
-        .position(x: x, y: y)
-        .contentShape(Rectangle().size(width: 56, height: 56))
+        .frame(width: 72, height: 72)
+        .contentShape(Rectangle())
         .onTapGesture {
             catchDrop(drop.id)
         }
-        .allowsHitTesting(progress < 1.0)
+        // Grace zone: allow tapping slightly past the bottom (progress 1.05)
+        .allowsHitTesting(progress < 1.05)
+        .position(x: x, y: y)
     }
 
     private func goldDropView(value: Int) -> some View {

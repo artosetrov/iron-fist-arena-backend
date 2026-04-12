@@ -76,6 +76,10 @@ struct BattlePassDetailView: View {
                 .transaction { $0.animation = nil }
             }
         }
+        .claimRewardModal(config: Binding(
+            get: { vm?.claimRewardConfig },
+            set: { vm?.claimRewardConfig = $0 }
+        ))
         .navigationBarBackButtonHidden(true)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {

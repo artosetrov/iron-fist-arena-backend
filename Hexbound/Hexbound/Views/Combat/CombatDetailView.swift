@@ -8,6 +8,7 @@ struct CombatDetailView: View {
     @State private var critFlashOpacity: Double = 0
     @State private var animatePulse = false
     @State private var showForfeitConfirmation = false
+    @State private var playTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -200,7 +201,7 @@ struct CombatDetailView: View {
         let vm = CombatViewModel(appState: appState, combatData: data)
         vm.onCombatEvent = { event in self.handleCombatEvent(event) }
         viewModel = vm
-        Task { await vm.play() }
+        playTask = Task { await vm.play() }
     }
 
     // MARK: - Preparation Animation
@@ -243,7 +244,11 @@ struct CombatDetailView: View {
             Spacer()
         }
         .onAppear { animatePulse = true }
-        .onDisappear { animatePulse = false }
+        .onDisappear {
+            animatePulse = false
+            playTask?.cancel()
+            playTask = nil
+        }
     }
 
     // MARK: - Round Header

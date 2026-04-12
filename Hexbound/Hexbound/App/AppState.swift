@@ -290,8 +290,8 @@ final class AppState {
     }
 
     func showToast(_ title: String, subtitle: String = "", type: ToastType = .info, actionLabel: String? = nil, action: (() -> Void)? = nil) {
-        // Deduplicate: if a toast with the same title already exists, reset its timer instead of adding a new one
-        if let existingIndex = toasts.firstIndex(where: { $0.title == title }) {
+        // Deduplicate: if a toast with the same (title + type + subtitle) already exists, reset its timer
+        if let existingIndex = toasts.firstIndex(where: { $0.title == title && $0.type == type && $0.subtitle == subtitle }) {
             // Remove old toast and re-add with fresh timer (resets auto-dismiss)
             toasts.remove(at: existingIndex)
             let toast = ToastMessage(title: title, subtitle: subtitle, type: type, actionLabel: actionLabel, action: action)

@@ -8,7 +8,8 @@ actor APIClient {
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
     private var authToken: String?
-    private var isRefreshing = false
+    /// Shared refresh task — parallel 401s await the same refresh instead of failing.
+    private var refreshTask: Task<String?, Never>?
 
     // Callback for 401 handling
     var onUnauthorized: (@Sendable () -> Void)?
@@ -125,8 +126,8 @@ actor APIClient {
             return data
         case 401:
             let isAuthEndpoint = endpoint.contains("/auth/")
-            if !isAuthEndpoint && !isRefreshing {
-                // Attempt token refresh before logout
+            if !isAuthEndpoint {
+                // Attempt token refresh — parallel 401s share the same task
                 if let refreshed = await attemptTokenRefresh() {
                     self.authToken = refreshed
                     // Retry the original request once with new token
@@ -162,19 +163,28 @@ actor APIClient {
     // MARK: - Token Refresh
 
     private func attemptTokenRefresh() async -> String? {
-        guard !isRefreshing else { return nil }
-        isRefreshing = true
-        defer { isRefreshing = false }
-
-        guard let refreshToken = KeychainManager.shared.refreshToken else { return nil }
-        do {
-            let result = try await SupabaseAuthClient.shared.refreshToken(refreshToken)
-            KeychainManager.shared.saveAccessToken(result.accessToken)
-            KeychainManager.shared.saveRefreshToken(result.refreshToken)
-            return result.accessToken
-        } catch {
-            return nil
+        // If a refresh is already in-flight, await that same task instead of
+        // failing immediately. This prevents the second parallel 401 from
+        // throwing unauthorized while the first is still refreshing.
+        if let existing = refreshTask {
+            return await existing.value
         }
+
+        let task = Task<String?, Never> {
+            guard let refreshToken = KeychainManager.shared.refreshToken else { return nil }
+            do {
+                let result = try await SupabaseAuthClient.shared.refreshToken(refreshToken)
+                KeychainManager.shared.saveAccessToken(result.accessToken)
+                KeychainManager.shared.saveRefreshToken(result.refreshToken)
+                return result.accessToken
+            } catch {
+                return nil
+            }
+        }
+        refreshTask = task
+        let result = await task.value
+        refreshTask = nil
+        return result
     }
 
     // MARK: - Helpers

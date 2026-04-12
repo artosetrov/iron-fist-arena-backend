@@ -562,6 +562,12 @@ struct GameConfig {
     /// UI always has exactly 7 entries.
     let dailyLoginRewards: [DailyLoginRewardDef]
 
+    // Gem costs (from live-config, configurable server-side)
+    let goldMineSlotCostGems: Int
+    let goldMineBoostGems: Int
+    let staminaRefillGems: Int
+    let extraPvpCombatGems: Int
+
     init(from dict: [String: Any]) {
         staminaMax = dict["staminaMax"] as? Int ?? 120
         staminaRegenMinutes = dict["staminaRegenMinutes"] as? Int ?? 8
@@ -578,6 +584,12 @@ struct GameConfig {
         maxCritChance = dict["maxCritChance"] as? Int ?? 50
         maxDodgeChance = dict["maxDodgeChance"] as? Int ?? 30
         dailyLoginRewards = Self.parseDailyRewards(dict["dailyLoginRewards"])
+
+        let gemCosts = dict["gemCosts"] as? [String: Any] ?? [:]
+        goldMineSlotCostGems = gemCosts["goldMineSlotCost"] as? Int ?? 50
+        goldMineBoostGems = gemCosts["goldMineBoost"] as? Int ?? 10
+        staminaRefillGems = gemCosts["staminaRefill"] as? Int ?? 30
+        extraPvpCombatGems = gemCosts["extraPvpCombat"] as? Int ?? 50
     }
 
     // MARK: - Daily login rewards parsing

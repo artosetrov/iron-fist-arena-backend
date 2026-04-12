@@ -14,6 +14,9 @@ final class DailyLoginPopupViewModel {
     var isClaiming = false
     var hasClaimed = false
 
+    // Claim reward modal
+    var claimRewardConfig: ClaimRewardConfig?
+
     // Animation states
     var claimedDayBounce: Int? = nil
     var showClaimParticles = false
@@ -80,6 +83,24 @@ final class DailyLoginPopupViewModel {
             isClaiming = false
             if let data = updatedData {
                 loginData = data
+
+                // Show reward modal — parse reward from the daily reward table
+                let rewards = DailyReward.rewards(from: cache)
+                if let todayReward = rewards.first(where: { $0.day == currentDay }) {
+                    // Parse gold/xp from label (e.g. "150 Gold", "50 XP")
+                    let goldAmount = Self.parseRewardAmount(todayReward.label, type: "Gold")
+                    let xpAmount = Self.parseRewardAmount(todayReward.label, type: "XP")
+                    let gemsAmount = Self.parseRewardAmount(todayReward.label, type: "Gems")
+
+                    claimRewardConfig = ClaimRewardConfig(
+                        title: "DAILY REWARD\nCLAIMED!",
+                        subtitle: "Day \(currentDay)",
+                        goldReward: goldAmount,
+                        gemsReward: gemsAmount,
+                        xpReward: xpAmount,
+                        lootItems: []
+                    )
+                }
             } else {
                 // Revert on failure
                 hasClaimed = false
@@ -127,5 +148,17 @@ final class DailyLoginPopupViewModel {
 
     func dismiss() {
         appState.dismissDailyLoginPopup()
+    }
+
+    // MARK: - Reward Parsing
+
+    /// Extracts a numeric amount from reward label like "150 Gold" or "50 XP".
+    private static func parseRewardAmount(_ label: String, type: String) -> Int {
+        let lowered = label.lowercased()
+        let typeKey = type.lowercased()
+        guard lowered.contains(typeKey) else { return 0 }
+        // Extract first number from the label
+        let digits = label.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+        return Int(digits) ?? 0
     }
 }

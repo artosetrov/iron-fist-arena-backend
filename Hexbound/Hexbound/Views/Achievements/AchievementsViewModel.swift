@@ -15,6 +15,9 @@ final class AchievementsViewModel {
     private var claimingKeys: Set<String> = []
     private let cache: GameDataCache
 
+    // Claim reward modal
+    var claimRewardConfig: ClaimRewardConfig?
+
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
@@ -77,7 +80,17 @@ final class AchievementsViewModel {
         // ── API call (runs after UI update thanks to await suspension) ──
         let success = await service.claim(achievementKey: achievement.key)
         claimingKeys.remove(achievement.key)
-        if !success {
+        if success {
+            // Show reward modal
+            claimRewardConfig = ClaimRewardConfig(
+                title: "ACHIEVEMENT\nUNLOCKED!",
+                subtitle: achievement.title,
+                goldReward: achievement.reward?.gold ?? 0,
+                gemsReward: achievement.reward?.gems ?? 0,
+                xpReward: 0,
+                lootItems: []
+            )
+        } else {
             // Revert on failure
             if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
                 achievements[idx].rewardClaimed = false

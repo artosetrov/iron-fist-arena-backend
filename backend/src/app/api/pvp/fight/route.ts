@@ -288,18 +288,27 @@ export async function POST(req: NextRequest) {
       // Lock the attacker row so concurrent requests cannot race on stamina
       const [lockedRow] = await tx.$queryRawUnsafe<Array<{
         id: string
+        current_hp: number
+        max_hp: number
         current_stamina: number
         max_stamina: number
         last_stamina_update: Date
         free_pvp_today: number
         free_pvp_date: Date | null
       }>>(
-        `SELECT id, current_stamina, max_stamina, last_stamina_update, free_pvp_today, free_pvp_date
+        `SELECT id, current_hp, max_hp, current_stamina, max_stamina, last_stamina_update, free_pvp_today, free_pvp_date
          FROM characters WHERE id = $1 FOR UPDATE`,
         attacker.id
       )
 
       if (!lockedRow) throw new Error('ATTACKER_NOT_FOUND')
+
+      // Re-check HP gate inside transaction (prevents TOCTOU race where
+      // another fight damages the player between pre-check and lock acquisition)
+      const lockedMinHp = Math.ceil(lockedRow.max_hp * 0.3)
+      if (lockedRow.current_hp < lockedMinHp) {
+        throw new Error('NOT_ENOUGH_HP')
+      }
 
       // Re-calculate stamina with regen from the authoritative locked values
       const lockedStaminaResult = await calculateCurrentStamina(
@@ -506,6 +515,12 @@ export async function POST(req: NextRequest) {
       if (error.message === 'NOT_ENOUGH_STAMINA') {
         return NextResponse.json(
           { error: 'Not enough stamina', required: 0 },
+          { status: 400 }
+        )
+      }
+      if (error.message === 'NOT_ENOUGH_HP') {
+        return NextResponse.json(
+          { error: 'Not enough health to fight. Use a health potion first!' },
           { status: 400 }
         )
       }

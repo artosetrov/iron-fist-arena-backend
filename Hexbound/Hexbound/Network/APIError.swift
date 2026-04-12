@@ -14,9 +14,46 @@ enum APIError: LocalizedError {
     case noData
     case unknown(String)
 
-    /// User-friendly message suitable for display in the UI
+    /// User-friendly message suitable for display in the UI.
+    /// Maps common technical backend error strings to player-friendly text.
     var userMessage: String {
-        errorDescription ?? "Something went wrong. Please try again."
+        let raw = errorDescription ?? "Something went wrong. Please try again."
+        return Self.friendlyMessage(for: raw)
+    }
+
+    private static let friendlyMap: [(pattern: String, friendly: String)] = [
+        ("Insufficient gold", "Not enough gold"),
+        ("Insufficient gems", "Not enough gems"),
+        ("Not enough gold", "Not enough gold"),
+        ("Not enough gems", "Not enough gems"),
+        ("Inventory full", "Your inventory is full"),
+        ("inventory is full", "Your inventory is full"),
+        ("Item not found", "Item no longer available"),
+        ("Character not found", "Character not found — try restarting"),
+        ("Already claimed", "Already claimed"),
+        ("Quest not completed", "Quest not completed yet"),
+        ("Not eligible", "Not eligible for this action"),
+        ("Too many requests", "Slow down — try again in a moment"),
+        ("Failed to fetch", "Connection error — check your internet"),
+        ("ECONNREFUSED", "Server unavailable — try again later"),
+        ("Internal Server Error", "Server error — try again later"),
+    ]
+
+    private static func friendlyMessage(for raw: String) -> String {
+        let lowered = raw.lowercased()
+        for entry in friendlyMap {
+            if lowered.contains(entry.pattern.lowercased()) {
+                return entry.friendly
+            }
+        }
+        // If the message looks like a technical error (contains stack-trace markers,
+        // prisma keywords, or raw SQL), replace with a generic message
+        if lowered.contains("prisma") || lowered.contains("sql") ||
+           lowered.contains("constraint") || lowered.contains("enotfound") ||
+           lowered.contains("column") || lowered.contains("relation") {
+            return "Something went wrong. Please try again."
+        }
+        return raw
     }
 
     var errorDescription: String? {

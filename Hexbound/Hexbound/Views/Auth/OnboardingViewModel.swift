@@ -35,8 +35,10 @@ final class OnboardingViewModel {
     }
     var nameAvailability: NameAvailability = .idle
     private var nameCheckTask: Task<Void, Never>?
-    /// Local cache: lowercased name → availability result (avoids redundant API calls)
-    private var nameCache: [String: NameAvailability] = [:]
+    private var skinsTask: Task<Void, Never>?
+    /// Local cache: lowercased name → (result, timestamp). Entries expire after 30s.
+    private var nameCache: [String: (result: NameAvailability, at: Date)] = [:]
+    private let nameCacheTTL: TimeInterval = 30
 
     static let totalSteps = 3
 
@@ -79,25 +81,30 @@ final class OnboardingViewModel {
 
     // MARK: - Fetch Skins
 
-    func fetchSkins() async {
-        isLoadingSkins = true
-        do {
-            let response: AppearancesResponse = try await APIClient.shared.get(APIEndpoints.appearances)
-            allSkins = response.skins
-            isLoadingSkins = false
-            // Auto-select first skin for the default origin (human)
-            if selectedSkinKey == nil, selectedOrigin != nil {
-                let valid = availableSkins
-                selectedSkinKey = valid.first?.skinKey
-            }
-            // Prefetch all skin images into cache so scrolling is instant
-            for skin in response.skins {
-                Task {
-                    _ = await AssetManager.shared.fetchIfNeeded(key: skin.resolvedImageKey, url: skin.imageUrl)
+    func fetchSkins() {
+        skinsTask?.cancel()
+        skinsTask = Task {
+            isLoadingSkins = true
+            do {
+                let response: AppearancesResponse = try await APIClient.shared.get(APIEndpoints.appearances)
+                guard !Task.isCancelled else { return }
+                allSkins = response.skins
+                isLoadingSkins = false
+                // Auto-select first skin for the default origin (human)
+                if selectedSkinKey == nil, selectedOrigin != nil {
+                    let valid = availableSkins
+                    selectedSkinKey = valid.first?.skinKey
                 }
+                // Prefetch all skin images into cache so scrolling is instant
+                for skin in response.skins {
+                    Task {
+                        _ = await AssetManager.shared.fetchIfNeeded(key: skin.resolvedImageKey, url: skin.imageUrl)
+                    }
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                isLoadingSkins = false
             }
-        } catch {
-            isLoadingSkins = false
         }
     }
 
@@ -175,17 +182,27 @@ final class OnboardingViewModel {
     }
 
     func onGenderChanged() {
-        avatarIndex = 0
         slideDirection = .none
         let valid = availableSkins
-        selectedSkinKey = valid.first?.skinKey
+        // Preserve current selection if still valid, otherwise pick first
+        if let current = selectedSkinKey, valid.contains(where: { $0.skinKey == current }) {
+            avatarIndex = valid.firstIndex(where: { $0.skinKey == current }) ?? 0
+        } else {
+            avatarIndex = 0
+            selectedSkinKey = valid.first?.skinKey
+        }
     }
 
     func onOriginChanged() {
-        avatarIndex = 0
         slideDirection = .none
         let valid = availableSkins
-        selectedSkinKey = valid.first?.skinKey
+        // Preserve current selection if still valid, otherwise pick first
+        if let current = selectedSkinKey, valid.contains(where: { $0.skinKey == current }) {
+            avatarIndex = valid.firstIndex(where: { $0.skinKey == current }) ?? 0
+        } else {
+            avatarIndex = 0
+            selectedSkinKey = valid.first?.skinKey
+        }
     }
 
     func toggleGender() {
@@ -230,9 +247,10 @@ final class OnboardingViewModel {
             return
         }
 
-        // Return cached result instantly — no API round-trip needed
-        if let cached = nameCache[name.lowercased()] {
-            nameAvailability = cached
+        // Return cached result instantly — expires after nameCacheTTL seconds
+        if let cached = nameCache[name.lowercased()],
+           Date().timeIntervalSince(cached.at) < nameCacheTTL {
+            nameAvailability = cached.result
             return
         }
 
@@ -253,7 +271,7 @@ final class OnboardingViewModel {
 
                 let available = result["available"] as? Bool ?? false
                 let resolved: NameAvailability = available ? .available : .taken
-                nameCache[name.lowercased()] = resolved
+                nameCache[name.lowercased()] = (result: resolved, at: Date())
                 nameAvailability = resolved
             } catch {
                 guard !Task.isCancelled else { return }
