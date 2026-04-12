@@ -133,6 +133,19 @@ final class InventoryViewModel {
         showItemDetail = true
     }
 
+    // MARK: - Deposit to Stash
+
+    func depositToStash(_ item: Item) async {
+        let stashService = StashService(appState: appState)
+        let success = await stashService.deposit(equipmentId: item.id)
+        if success {
+            items.removeAll { $0.id == item.id }
+            appState.cachedInventory = items
+            showItemDetail = false
+            appState.showToast("Stored in chest", type: .success)
+        }
+    }
+
     func equip(_ item: Item) async {
         // Optimistic UI: update immediately
         let previousItems = items

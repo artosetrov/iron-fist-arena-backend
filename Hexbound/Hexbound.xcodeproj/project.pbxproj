@@ -162,6 +162,7 @@
 		470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */; };
 		db9eec8a3007055fe1a5d459 /* MinigameSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ec84daaf1ccbd9ba48d0f8f6 /* MinigameSession.swift */; };
 		eedd3759c99c584098dc0e6c /* GoldMineMiniGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */; };
+		79EA9F1ECA2690A1911B93D9 /* MinigameCatchEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = D43759730CC2C390E6A007B5 /* MinigameCatchEffect.swift */; };
 		3E60956EDA12F1B8ED3966F6 /* MineClaimRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */; };
 		619857d0b35ae05c7bb458d4 /* GoldMineShaftPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */; };
 		48B45024E1F5F9192D4A497D /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18860E524F76C28304AB39AF /* AuthService.swift */; };
@@ -304,6 +305,9 @@
 		B462F6D95352576B0B7E627A /* KeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F022C8EB7B52576FEE27CC /* KeychainManager.swift */; };
 		B48178011544C313F250402F /* ShopDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2F009488F46769899A91153 /* ShopDetailView.swift */; };
 		B4DCDC35F24D14214541FCDA /* dungeon_floor_complete.wav in Resources */ = {isa = PBXBuildFile; fileRef = EEF98F81E4A72C89FBFD2A56 /* dungeon_floor_complete.wav */; };
+		88700CEFF9F980064385A6A7 /* StashDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */; };
+		BB059983409468DCAA68CB7D /* StashService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C32683B6C1D60C1F89BF7977 /* StashService.swift */; };
+		2A2E76DA6D4E2297DE63C265 /* StashViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */; };
 		B68B5E43109FCCF9BCEB258D /* TavernDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B837363250403614BE1A4F /* TavernDetailView.swift */; };
 		B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7F19FB634915B3ACA1B108 /* DungeonRoomViewModel.swift */; };
 		B7C8D9E0F1A2B3C4D5E6F7A8 /* ScrollBounceDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6F7E8D9C0B1A2 /* ScrollBounceDisabler.swift */; };
@@ -586,6 +590,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */ = {isa = PBXFileReference; 
 		2B312FE20E15FB7A18E120B8 /* ItemDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailSheet.swift; sourceTree = "<group>"; };
 		2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantStripView.swift; sourceTree = "<group>"; };
 		2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventoryService.swift; sourceTree = "<group>"; };
+		C32683B6C1D60C1F89BF7977 /* StashService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashService.swift; sourceTree = "<group>"; };
 		30FA951781D440F0FDEA8AC9 /* ui_upgrade_success.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_upgrade_success.wav; sourceTree = "<group>"; };
 		324BA7E625D6131DED6E99D5 /* CharacterGender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterGender.swift; sourceTree = "<group>"; };
 		3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonInfo.swift; sourceTree = "<group>"; };
@@ -733,6 +738,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */ = {isa = PBXFileReference; 
 		A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineViewModel.swift; sourceTree = "<group>"; };
 		ec84daaf1ccbd9ba48d0f8f6 /* MinigameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameSession.swift; sourceTree = "<group>"; };
 		aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineMiniGameView.swift; sourceTree = "<group>"; };
+		D43759730CC2C390E6A007B5 /* MinigameCatchEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameCatchEffect.swift; sourceTree = "<group>"; };
 		E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineClaimRewardView.swift; sourceTree = "<group>"; };
 		7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineShaftPicker.swift; sourceTree = "<group>"; };
 		A9F77C1F26D7F3F4A893CD9D /* PvPRank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPRank.swift; sourceTree = "<group>"; };
@@ -805,6 +811,8 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */ = {isa = PBXFileReference; 
 		D5A6B7C8D9E0F1A2B3C4D5E7 /* GuestGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestGateView.swift; sourceTree = "<group>"; };
 		D676FF4D263CD89706EC11CB /* CelebrationBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationBannerView.swift; sourceTree = "<group>"; };
 		D7B837363250403614BE1A4F /* TavernDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TavernDetailView.swift; sourceTree = "<group>"; };
+		8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashDetailView.swift; sourceTree = "<group>"; };
+		48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StashViewModel.swift; sourceTree = "<group>"; };
 		D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardService.swift; sourceTree = "<group>"; };
 		D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StanceSelectorDetailView.swift; sourceTree = "<group>"; };
 		D9E867F52B861525354D0709 /* BattlePreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattlePreloader.swift; sourceTree = "<group>"; };
@@ -947,6 +955,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */ = {isa = PBXFileReference; 
 			buildActionMask = 2147483647;
 			files = (
 				GSIG00001BLD00002 /* GoogleSignIn in Frameworks */,
+				DLOT00001BLD00001 /* DotLottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1392,6 +1401,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 				EF17A62986FA6638EFB96553 /* GameInitService.swift */,
 				GSIG00001REF00001 /* GoogleSignInHelper.swift */,
 				2FAD2ABA1AD66B62F94AFDE9 /* InventoryService.swift */,
+				C32683B6C1D60C1F89BF7977 /* StashService.swift */,
 				D7CD3B4C56C4E7B4A8E0608F /* LeaderboardService.swift */,
 				86950AC4E5F14D02EB978CC4 /* ContextualHintProvider.swift */,
 				B1B6038D9BA5B1E57ED479BB /* NPCHintManager.swift */,
@@ -1495,12 +1505,15 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
 				9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */,
 				aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */,
+				D43759730CC2C390E6A007B5 /* MinigameCatchEffect.swift */,
 				E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */,
 				7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */,
 				A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */,
 				8CC572483AAC29065E209C11 /* MineResourceHeader.swift */,
 				8E35E46680FF09E33DFF6634 /* ShellGameDetailView.swift */,
 				C8812C4317B938859A4087AC /* ShellGameViewModel.swift */,
+				8D42CD0BD01D8841CA79D730 /* StashDetailView.swift */,
+				48AC5CA7EF1F3DFE816AB335 /* StashViewModel.swift */,
 				D7B837363250403614BE1A4F /* TavernDetailView.swift */,
 				B4E8C2D3F5A7901B2C4D6E8F /* TreasureRewardOverlay.swift */,
 			);
@@ -1810,6 +1823,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 			name = Hexbound;
 			packageProductDependencies = (
 				GSIG00001PKG00002 /* GoogleSignIn */,
+				DLOT00001PKG00002 /* DotLottie */,
 			);
 			productName = Hexbound;
 			productReference = ADE51BBD5FCAAC0F04E83401 /* Hexbound.app */;
@@ -1835,6 +1849,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				GSIG00001PKG00001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				DLOT00001PKG00001 /* XCRemoteSwiftPackageReference "dotlottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9CCC2D362EF031FA188A04BD /* Products */;
@@ -2168,6 +2183,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 				16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */,
 				B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */,
 				eedd3759c99c584098dc0e6c /* GoldMineMiniGameView.swift in Sources */,
+				79EA9F1ECA2690A1911B93D9 /* MinigameCatchEffect.swift in Sources */,
 				3E60956EDA12F1B8ED3966F6 /* MineClaimRewardView.swift in Sources */,
 				619857d0b35ae05c7bb458d4 /* GoldMineShaftPicker.swift in Sources */,
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
@@ -2263,6 +2279,9 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 				3A90425A6C1B65E59C7BB32A /* AmbientManager.swift in Sources */,
 				467020D2C9265A8F7CBEAAE2 /* ShellGameDetailView.swift in Sources */,
 				A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */,
+				88700CEFF9F980064385A6A7 /* StashDetailView.swift in Sources */,
+				BB059983409468DCAA68CB7D /* StashService.swift in Sources */,
+				2A2E76DA6D4E2297DE63C265 /* StashViewModel.swift in Sources */,
 				7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */,
 				B48178011544C313F250402F /* ShopDetailView.swift in Sources */,
 				319EBA8EDCD2DAD9FF12F314 /* ShopItem.swift in Sources */,
@@ -2542,6 +2561,14 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		DLOT00001PKG00001 /* XCRemoteSwiftPackageReference "dotlottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/LottieFiles/dotlottie-ios";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.14.1;
+			};
+		};
 		GSIG00001PKG00001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
@@ -2553,6 +2580,11 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		DLOT00001PKG00002 /* DotLottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DLOT00001PKG00001 /* XCRemoteSwiftPackageReference "dotlottie-ios" */;
+			productName = DotLottie;
+		};
 		GSIG00001PKG00002 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = GSIG00001PKG00001 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;

@@ -152,3 +152,18 @@ struct SentMessageInfo: Codable {
         case quickId = "quickId"
     }
 }
+
+// MARK: - Relationship Stats
+
+struct RelationshipStats: Codable {
+    let friendshipStatus: String
+    let pvp: PvpHeadToHead
+}
+
+struct PvpHeadToHead: Codable {
+    let totalBattles: Int
+    let wins: Int
+    let losses: Int
+    let draws: Int
+    let lastBattleAt: String?
+}

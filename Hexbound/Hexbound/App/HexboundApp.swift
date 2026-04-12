@@ -1,5 +1,6 @@
 import SwiftUI
 import GoogleSignIn
+import DotLottie
 
 @main
 struct HexboundApp: App {
@@ -9,12 +10,13 @@ struct HexboundApp: App {
     @State private var cache = GameDataCache()
     @State private var pushService = PushNotificationService()
     @State private var isCheckingAuth = true
+    @State private var showSplash = true
 
     var body: some Scene {
         WindowGroup {
             ZStack {
-                if isCheckingAuth {
-                    SplashView()
+                if showSplash {
+                    SplashView(isVisible: showSplash)
                 } else {
                     switch appState.currentScreen {
                     case .auth:
@@ -73,11 +75,26 @@ struct HexboundApp: App {
             }
             .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)
             .animation(.easeInOut(duration: 0.3), value: appState.isForgingHero)
-            .animation(.easeInOut(duration: 0.3), value: isCheckingAuth)
+            .animation(.easeInOut(duration: 0.5), value: showSplash)
             .task {
                 // Wire push service into AppDelegate for token forwarding
                 appDelegate.pushService = pushService
+
+                // Auth check with minimum 2s splash display
+                let splashStart = ContinuousClock.now
                 await checkAutoLogin()
+
+                // Wait for remaining time so splash shows at least 2 seconds
+                let elapsed = ContinuousClock.now - splashStart
+                let remaining = Duration.seconds(2) - elapsed
+                if remaining > .zero {
+                    try? await Task.sleep(for: remaining)
+                }
+
+                // Dismiss splash with fade-out
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showSplash = false
+                }
 
                 // Background asset sync — downloads new/updated assets from Supabase
                 // Non-blocking: app works fine with bundle + existing cache while this runs
@@ -163,53 +180,25 @@ struct HexboundApp: App {
 // MARK: - Splash
 
 struct SplashView: View {
-    @State private var titleOpacity: Double = 0
-    @State private var subtitleOpacity: Double = 0
-    @State private var spinnerOpacity: Double = 0
-    @State private var titleScale: CGFloat = 0.8
-    @State private var glowOpacity: Double = 0
+    let isVisible: Bool
+    @State private var contentOpacity: Double = 0
 
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
-            VStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(DarkFantasyTheme.gold.opacity(0.15 * glowOpacity))
-                        .frame(width: 340, height: 340)
-                        .blur(radius: 60)
-
-                    Image("hexbound-logo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 300)
-                }
-                .opacity(titleOpacity)
-                .scaleEffect(titleScale)
-
-                HexPulseLoader(.compact)
-                    .padding(.top, 40)
-                    .opacity(spinnerOpacity)
-            }
+            DotLottieAnimation(
+                webURL: "https://lottie.host/24436149-ecc4-4bf2-b676-b5c7026981c5/UmDSRrwtVp.lottie",
+                config: AnimationConfig(autoplay: true, loop: true)
+            )
+            .view()
+            .frame(width: 80, height: 80)
+            .opacity(contentOpacity)
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
-                titleOpacity = 1
-                titleScale = 1
+            withAnimation(.easeIn(duration: 0.4)) {
+                contentOpacity = 1
             }
-            withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
-                subtitleOpacity = 1
-            }
-            withAnimation(.easeOut(duration: 0.4).delay(0.5)) {
-                spinnerOpacity = 1
-            }
-            withAnimation(.easeInOut(duration: 1.5).delay(0.2).repeatForever(autoreverses: true)) {
-                glowOpacity = 1
-            }
-        }
-        .onDisappear {
-            glowOpacity = 0
         }
     }
 }

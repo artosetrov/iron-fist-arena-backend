@@ -10,6 +10,9 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: "8.0.0"
+  DotLottie:
+    url: https://github.com/LottieFiles/dotlottie-ios
+    from: "0.14.1"
 
 settings:
   base:
@@ -38,5 +41,6 @@ targets:
         GENERATE_INFOPLIST_FILE: false
     dependencies:
       - package: GoogleSignIn
+      - package: DotLottie
     info:
       path: Hexbound/Info.plist

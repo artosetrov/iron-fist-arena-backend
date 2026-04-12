@@ -16,7 +16,7 @@ enum ShaftKey: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Background PNG asset used during the 15s mini-game.
+    /// Background PNG asset used during the 60s mini-game.
     /// Re-uses mine-slot art from xcassets (covered by gradient overlay).
     var backgroundAssetName: String {
         switch self {
@@ -128,10 +128,14 @@ enum CollectAllOutcome {
 // MARK: - Mini-game drop values (client visual only)
 
 /// Static weight table for falling drops. Values are visual — final reward
-/// is always capped server-side in /minigame-bonus. Kept deterministic so
-/// playtesting stays reproducible.
+/// is always capped server-side in /slot-minigame/submit. Kept deterministic
+/// so playtesting stays reproducible.
+///
+/// NOTE: Drop weights are now per-wave (see `MinigameWave` in
+/// GoldMineMiniGameView.swift). These constants are kept for backward
+/// compat and as default fallback values.
 enum MinigameDropValue {
-    /// Drop kinds with their visual gold values + spawn weights.
+    /// Default gold drop weights (used by warmup wave).
     static let goldDrops: [(value: Int, weight: Int)] = [
         (1, 55),
         (2, 25),
@@ -140,9 +144,9 @@ enum MinigameDropValue {
         (10, 2),
     ]
 
-    /// Gem drop weight relative to gold drops. A gem gives +1 to gems caught.
+    /// Default gem drop weight (3%).
     static let gemDropWeight: Int = 3
 
-    /// Total drops spawned per 15s session (roughly 1 every 300ms).
-    static let spawnPerSession: Int = 50
+    /// Max drops spawned per 60s session (~160, varies by wave pacing).
+    static let spawnPerSession: Int = 160
 }

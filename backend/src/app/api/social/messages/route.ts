@@ -240,24 +240,19 @@ async function handleSend(senderId: string, body: any) {
     return NextResponse.json({ error: 'Target not found' }, { status: 404 })
   }
 
-  // Check friendship exists (must be friends to message)
+  // Block check: blocked users can't message
   const friendship = await prisma.friendship.findFirst({
     where: {
       OR: [
         { userId: senderId, friendId: target_id },
         { userId: target_id, friendId: senderId },
       ],
+      status: 'blocked',
     },
   })
 
-  // Block check: blocked users can't message
-  if (friendship?.status === 'blocked') {
+  if (friendship) {
     return NextResponse.json({ error: 'Cannot send message to this player' }, { status: 403 })
-  }
-
-  // Friendship check: must be accepted friends
-  if (!friendship || friendship.status !== 'accepted') {
-    return NextResponse.json({ error: 'Must be allies to send messages' }, { status: 403 })
   }
 
   const now = new Date()
@@ -346,21 +341,19 @@ async function handleSendQuick(senderId: string, body: any) {
     return NextResponse.json({ error: 'Target not found' }, { status: 404 })
   }
 
-  // Check friendship exists (must be friends to message)
+  // Block check: blocked users can't message
   const friendship = await prisma.friendship.findFirst({
     where: {
       OR: [
         { userId: senderId, friendId: target_id },
         { userId: target_id, friendId: senderId },
       ],
+      status: 'blocked',
     },
   })
 
-  if (friendship?.status === 'blocked') {
+  if (friendship) {
     return NextResponse.json({ error: 'Cannot send message to this player' }, { status: 403 })
-  }
-  if (!friendship || friendship.status !== 'accepted') {
-    return NextResponse.json({ error: 'Must be allies to send messages' }, { status: 403 })
   }
 
   const now = new Date()

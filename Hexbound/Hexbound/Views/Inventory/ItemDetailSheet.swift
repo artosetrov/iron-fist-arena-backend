@@ -24,6 +24,8 @@ struct ItemDetailSheet: View {
     var playerClass: CharacterClass? = nil
     /// View-only mode — hides economy, upgrade, and action buttons (used for opponent item inspection)
     var viewMode: Bool = false
+    /// Optional deposit-to-stash action — shown when item is unequipped and in regular inventory context
+    var onDeposit: (() -> Void)? = nil
 
     struct ShopContext {
         let price: Int
@@ -817,6 +819,20 @@ struct ItemDetailSheet: View {
                             }
                         }
                         .buttonStyle(.secondary)
+
+                        // Deposit to stash (only for unequipped items)
+                        if let onDeposit, item.isEquipped != true {
+                            Button {
+                                HapticManager.light()
+                                onDeposit()
+                            } label: {
+                                HStack(spacing: LayoutConstants.spaceXS) {
+                                    Image(systemName: "shippingbox.and.arrow.backward.fill")
+                                    Text("STASH")
+                                }
+                            }
+                            .buttonStyle(.secondary)
+                        }
                     }
                     if canUpgrade {
                         Button("UPGRADE") { HapticManager.medium(); showUpgradeConfirm = true }

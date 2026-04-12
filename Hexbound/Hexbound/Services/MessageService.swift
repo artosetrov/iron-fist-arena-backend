@@ -176,4 +176,25 @@ final class MessageService {
             throw error
         }
     }
+
+    // MARK: - Relationship Stats
+
+    /// Fetches relationship stats between two characters: friendship status + PvP head-to-head.
+    func getRelationship(characterId: String, targetId: String) async throws -> RelationshipStats {
+        do {
+            let response: RelationshipStats = try await APIClient.shared.get(
+                APIEndpoints.socialRelationship,
+                params: [
+                    "character_id": characterId,
+                    "target_id": targetId
+                ]
+            )
+            return response
+        } catch {
+            #if DEBUG
+            print("[MessageService] getRelationship error: \(error)")
+            #endif
+            throw error
+        }
+    }
 }

@@ -727,6 +727,11 @@ struct GuildHallDetailView: View {
             // Thread header — sticky top bar
             threadHeader(vm)
 
+            // Relationship stats banner
+            if let stats = vm.relationshipStats {
+                relationshipBanner(stats)
+            }
+
             // Messages area — opens instantly, messages load in background
             if case .error = vm.threadLoadState {
                 Spacer()
@@ -899,6 +904,82 @@ struct GuildHallDetailView: View {
             Rectangle()
                 .fill(LinearGradient(colors: [.clear, DarkFantasyTheme.goldDim, .clear], startPoint: .leading, endPoint: .trailing))
                 .frame(height: 1)
+        }
+    }
+
+    private func relationshipBanner(_ stats: RelationshipStats) -> some View {
+        HStack(spacing: LayoutConstants.spaceMD) {
+            // Friendship status pill
+            let friendLabel = friendshipLabel(stats.friendshipStatus)
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: friendLabel.icon)
+                    .font(DarkFantasyTheme.caption)
+                Text(friendLabel.text)
+                    .font(DarkFantasyTheme.caption)
+            }
+            .foregroundStyle(friendLabel.color)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(
+                Capsule()
+                    .fill(friendLabel.color.opacity(0.12))
+            )
+
+            // PvP stats (only if they've fought)
+            if stats.pvp.totalBattles > 0 {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                    Text("\(stats.pvp.totalBattles) battles")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+
+                    Text("·")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                    Text("\(stats.pvp.wins)W")
+                        .font(DarkFantasyTheme.caption.bold())
+                        .foregroundStyle(DarkFantasyTheme.success)
+
+                    Text("-")
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+
+                    Text("\(stats.pvp.losses)L")
+                        .font(DarkFantasyTheme.caption.bold())
+                        .foregroundStyle(DarkFantasyTheme.danger)
+                }
+            } else {
+                Text("No battles yet")
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(DarkFantasyTheme.bgTertiary.opacity(0.5))
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(DarkFantasyTheme.borderSubtle.opacity(0.2))
+                .frame(height: 0.5)
+        }
+    }
+
+    private func friendshipLabel(_ status: String) -> (text: String, icon: String, color: Color) {
+        switch status {
+        case "accepted":
+            return ("Allies", "person.2.fill", DarkFantasyTheme.success)
+        case "pending_sent":
+            return ("Request Sent", "hourglass", DarkFantasyTheme.gold)
+        case "pending_received":
+            return ("Wants to be Allies", "person.badge.plus", DarkFantasyTheme.gold)
+        case "blocked":
+            return ("Blocked", "nosign", DarkFantasyTheme.danger)
+        default:
+            return ("Stranger", "person.slash", DarkFantasyTheme.textTertiary)
         }
     }
 

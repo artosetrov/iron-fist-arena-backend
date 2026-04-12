@@ -37,6 +37,9 @@ class GuildHallViewModel {
     var isLoadingThreadMessages = false
     var composedMessage = ""
 
+    // Relationship stats (shown in thread header)
+    var relationshipStats: RelationshipStats?
+
     // Duels tab
     var incomingChallenges: [IncomingChallenge] = []
     var outgoingChallenges: [OutgoingChallenge] = []
@@ -324,20 +327,36 @@ class GuildHallViewModel {
         activeThreadCharacterName = characterName
         activeThreadCharacterAvatar = avatar ?? conversations.first(where: { $0.otherCharacter.id == targetId })?.otherCharacter.avatar
         activeThreadCharacterClass = characterClass ?? conversations.first(where: { $0.otherCharacter.id == targetId })?.otherCharacter.characterClass
-        // Show thread UI instantly — messages load in background
+        // Show thread UI instantly — messages + relationship load in background
         threadLoadState = .loaded
         composedMessage = ""
         activeThread = []
+        relationshipStats = nil
         isLoadingThreadMessages = true
         do {
-            let messages = try await messageService.getThread(
+            // Parallel: messages + relationship stats
+            async let messagesTask = messageService.getThread(
                 characterId: characterId,
                 withCharacterId: targetId
             )
+            async let relationshipTask = messageService.getRelationship(
+                characterId: characterId,
+                targetId: targetId
+            )
+
+            let messages = try await messagesTask
             withAnimation(MotionConstants.snappy) {
                 activeThread = messages
             }
             isLoadingThreadMessages = false
+
+            // Relationship stats — non-critical, don't fail thread on error
+            if let stats = try? await relationshipTask {
+                withAnimation(MotionConstants.snappy) {
+                    relationshipStats = stats
+                }
+            }
+
             // Background: refresh conversations to update read status
             Task { [weak self] in
                 await self?.loadConversations()
@@ -458,6 +477,7 @@ class GuildHallViewModel {
             withAnimation(MotionConstants.snappy) {
                 activeThread.removeAll(where: { $0.id == tempId })
             }
+            sendMessageError = "Failed to send message"
         }
         isSendingMessage = pendingTempIds.isEmpty ? false : true
     }
@@ -472,6 +492,7 @@ class GuildHallViewModel {
         threadLoadState = .idle
         pendingTempIds.removeAll()
         isSendingMessage = false
+        relationshipStats = nil
     }
 
     // MARK: - Duels

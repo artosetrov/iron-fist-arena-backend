@@ -52,7 +52,10 @@ struct HeroDetailView: View {
                         // paint the required-level / class-restriction red and
                         // disable EQUIP before the user taps it.
                         playerLevel: char.level,
-                        playerClass: char.characterClass
+                        playerClass: char.characterClass,
+                        onDeposit: item.isEquipped != true && item.itemType != .consumable
+                            ? { let _ = Task { await vm.depositToStash(item) } }
+                            : nil
                     )
                     .transition(.opacity)
                 }

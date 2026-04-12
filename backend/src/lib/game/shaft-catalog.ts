@@ -51,10 +51,10 @@ export const SHAFT_TOTAL_EXTRACTIONS = 5
 /**
  * Mini-game session config (Variant D locked defaults).
  */
-export const MINIGAME_DURATION_SEC = 15
+export const MINIGAME_DURATION_SEC = 60
 export const MINIGAME_CAP_PERCENT = 0.15 // 15% cap on passive pool
-export const MINIGAME_GEM_CAP = 1 // max 1 bonus gem per session
-export const MINIGAME_SESSION_TTL_SEC = 120 // session must be claimed within 2 min
+export const MINIGAME_GEM_CAP = 3 // max 3 bonus gems per 60s session
+export const MINIGAME_SESSION_TTL_SEC = 180 // session must be claimed within 3 min (game is 60s)
 export const MINIGAME_GAME_TYPE = 'gold_mine_rush' as const
 
 export function isValidShaftKey(value: unknown): value is ShaftKey {

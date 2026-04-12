@@ -154,7 +154,7 @@ final class DailyQuestsViewModel {
         // Show reward modal instead of celebration toast
         claimRewardConfig = ClaimRewardConfig(
             title: "QUEST\nCOMPLETE!",
-            subtitle: quest.title,
+            subtitle: subtitle,
             goldReward: result.rewardGold,
             gemsReward: result.rewardGems,
             xpReward: result.rewardXp,

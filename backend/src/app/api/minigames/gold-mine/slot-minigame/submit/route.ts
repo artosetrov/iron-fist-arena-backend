@@ -50,9 +50,9 @@ import {
 } from '@/lib/game/shaft-catalog'
 
 // Minimum elapsed time (ms) between session start and submit.
-// The actual minigame takes 10-15s; 3s floor blocks instant bot submits
-// without false-positiving on fast players who skip.
-const MIN_PLAY_ELAPSED_MS = 3_000
+// The actual minigame takes ~60s; 8s floor blocks instant bot submits
+// without false-positiving on fast players who skip early.
+const MIN_PLAY_ELAPSED_MS = 8_000
 
 interface SubmitBody {
   character_id?: string

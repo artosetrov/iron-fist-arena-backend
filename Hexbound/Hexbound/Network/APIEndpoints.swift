@@ -47,6 +47,11 @@ enum APIEndpoints {
     static let consumablesUse = "/api/consumables/use"
     static let inventoryExpand = "/api/inventory/expand"
 
+    // MARK: - Stash
+    static let stash = "/api/stash"
+    static let stashDeposit = "/api/stash/deposit"
+    static let stashWithdraw = "/api/stash/withdraw"
+
     // MARK: - Shop
     static let shopItems = "/api/shop/items"
     static let shopBuy = "/api/shop/buy"
@@ -137,6 +142,7 @@ enum APIEndpoints {
     static let socialMessages = "/api/social/messages"
     static let socialStatus = "/api/social/status"
     static let socialChallenges = "/api/social/challenges"
+    static let socialRelationship = "/api/social/relationship"
 
     // MARK: - Admin
     static let adminHubLayout = "/api/admin/hub-layout"

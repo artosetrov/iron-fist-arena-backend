@@ -61,6 +61,54 @@ struct TavernDetailView: View {
         GridItem(.flexible(), spacing: LayoutConstants.spaceSM)
     ]
 
+    // MARK: - Shared Chest Card
+
+    private var stashCard: some View {
+        Button {
+            appState.mainPath.append(.stash)
+        } label: {
+            HStack(spacing: LayoutConstants.spaceMD) {
+                Image(systemName: "shippingbox.fill")
+                    .font(DarkFantasyTheme.title)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+
+                VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                    Text("SHARED CHEST")
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+
+                    Text("Store items for all your characters")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.textTertiary)
+            }
+            .padding(LayoutConstants.spaceMD)
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                    .stroke(DarkFantasyTheme.gold.opacity(0.3), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.1), radius: 6, y: 2)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.scalePress(0.97))
+    }
+
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
@@ -73,6 +121,10 @@ struct TavernDetailView: View {
                         .foregroundStyle(DarkFantasyTheme.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.top, LayoutConstants.spaceSM)
+
+                    // Shared Chest — full width card
+                    stashCard
+                        .padding(.horizontal, LayoutConstants.screenPadding)
 
                     // Minigame cards — 2-column grid (like Gold Mine)
                     LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {

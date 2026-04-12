@@ -5,18 +5,18 @@ import SwiftUI
 /// Composition:
 ///   modalHeader → streak header → weekly progress bar
 ///     → HERO `ItemCardView(.preview)` + title/subtitle
-///     → horizontal 7-day BP-style strip (inline, no new component)
+///     → horizontal 7-day strip using `ItemCardView(.battlePass)` per node
 ///     → CTA (`Button.primary` claim / `.neutral` claimed)
 ///     → footer caption ("Come back tomorrow…" + TO THE CASTLE)
 ///
-/// The 3+3+1 grid and the old `todayRewardCard` HStack are gone.
-/// ItemCardView is the **single** item-visual in this screen — the hero uses
-/// its `.preview` context to get rarity border + corner accents for free.
+/// ItemCardView is the **single** item-visual everywhere in this screen:
+/// hero uses `.preview` context, day strip uses `.battlePass` context —
+/// same component as inventory, shop, loot, and battle pass (reusability #1 rule).
 struct DailyLoginDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(GameDataCache.self) private var cache
     @State private var vm: DailyLoginPopupViewModel?
-    @State private var glowRotation: Double = 0
+    // glowRotation removed — ItemCardView.battlePass(.claimable) handles gold glow natively
 
     // BUG-53: single dismissal path. Routes through AppState's modal queue so
     // any queued modal (e.g. pending .levelUp) gets its turn after close, and
@@ -69,12 +69,6 @@ struct DailyLoginDetailView: View {
                 vm = viewModel
                 await viewModel.loadData()
             }
-            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
-                glowRotation = 360
-            }
-        }
-        .onDisappear {
-            glowRotation = 0
         }
     }
 
@@ -265,7 +259,7 @@ struct DailyLoginDetailView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Day Strip (horizontal 7-node BP-style)
+    // MARK: - Day Strip (horizontal 7-node — unified ItemCardView)
 
     @ViewBuilder
     private func dayStrip(data: DailyLoginData, vm: DailyLoginPopupViewModel) -> some View {
@@ -278,7 +272,7 @@ struct DailyLoginDetailView: View {
         }
     }
 
-    // MARK: - Day Node (single cell in horizontal strip)
+    // MARK: - Day Node (unified ItemCardView — same component as inventory/shop/BP)
 
     @ViewBuilder
     private func dayNode(
@@ -295,76 +289,30 @@ struct DailyLoginDetailView: View {
         let effectiveCanClaim = data.canClaim && !vm.hasClaimed
         let isCurrentDay = reward.day == displayDay && effectiveCanClaim
         let isClaimed = reward.day < displayDay || (reward.day == displayDay && !effectiveCanClaim)
-        let isLocked = !isClaimed && !isCurrentDay
-        let isPremium = reward.day == 7
-        let rarity = dayRarity(reward.day)
         let bounce = vm.claimedDayBounce == reward.day
 
+        // Map daily login states → BPRewardState for ItemCardView rendering:
+        // .claimed  → success border + checkmark badge
+        // .claimable → gold border + glow
+        // .locked   → dim + rarity border
+        let bpState: BPRewardState = isClaimed ? .claimed
+            : isCurrentDay ? .claimable
+            : .locked
+
         VStack(spacing: LayoutConstants.space2XS) {
-            // Icon well
-            ZStack {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .fill(
-                        isCurrentDay
-                            ? LinearGradient(
-                                colors: [
-                                    DarkFantasyTheme.dailyGradientTopGold,
-                                    DarkFantasyTheme.dailyGradientBottomGold
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(
-                                colors: [
-                                    DarkFantasyTheme.bgTertiary.opacity(isLocked ? 0.3 : 0.5),
-                                    DarkFantasyTheme.bgAbyss.opacity(0.7)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                    )
-
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(
-                        isClaimed ? DarkFantasyTheme.success.opacity(0.6) :
-                        isCurrentDay ? DarkFantasyTheme.goldBright :
-                        isPremium ? DarkFantasyTheme.rarityColor(for: rarity).opacity(0.6) :
-                        DarkFantasyTheme.borderSubtle.opacity(0.4),
-                        lineWidth: isCurrentDay ? 2 : 1
-                    )
-
-                // Animated glow ring for current day
-                if isCurrentDay {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: [
-                                    DarkFantasyTheme.goldBright,
-                                    DarkFantasyTheme.goldBright.opacity(0.2),
-                                    DarkFantasyTheme.gold.opacity(0.1),
-                                    DarkFantasyTheme.goldBright
-                                ]),
-                                center: .center,
-                                angle: .degrees(glowRotation)
-                            ),
-                            lineWidth: 2
-                        )
-                        .shadow(color: DarkFantasyTheme.goldGlow, radius: 6)
-                }
-
-                // Content
-                if isClaimed {
-                    Image(systemName: "checkmark")
-                        .font(DarkFantasyTheme.body.bold())
-                        .foregroundStyle(DarkFantasyTheme.success)
-                } else {
-                    rewardIcon(reward, size: isPremium ? 28 : 24)
-                        .opacity(isLocked ? 0.35 : 1)
-                }
-            }
-            .frame(height: 48)
-            .opacity(isLocked ? 0.55 : 1)
-            .scaleEffect(bounce ? 1.08 : 1)
+            // Unified item card — rarity gradient, corner accents, state border
+            // all come from ItemCardView automatically, matching inventory/shop/BP.
+            ItemCardView(
+                rarity: dayRarity(reward.day),
+                imageKey: reward.assetIcon,
+                imageUrl: nil,
+                fallbackIcon: "gift.fill",
+                context: .battlePass(state: bpState, track: "daily"),
+                onTap: {}
+            )
+            .aspectRatio(1, contentMode: .fit)
+            .allowsHitTesting(false)
+            .opacity(bounce ? 0.85 : 1)
             .animation(.spring(response: 0.35, dampingFraction: 0.55), value: bounce)
 
             // Day label
@@ -373,7 +321,7 @@ struct DailyLoginDetailView: View {
                 .foregroundStyle(
                     isCurrentDay ? DarkFantasyTheme.goldBright :
                     isClaimed ? DarkFantasyTheme.success.opacity(0.7) :
-                    DarkFantasyTheme.textTertiary.opacity(isLocked ? 0.4 : 0.7)
+                    DarkFantasyTheme.textTertiary
                 )
         }
         .frame(maxWidth: .infinity)

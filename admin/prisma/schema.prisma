@@ -238,6 +238,7 @@ model User {
   pushTokens    PushToken[]
   iapTransactions IapTransaction[]
   dailyGemCard  DailyGemCard?
+  stashItems    StashItem[]
 
   @@index([gold])
   @@index([deviceId])
@@ -423,6 +424,7 @@ model Item {
 
   equipment       EquipmentInventory[]
   dungeonDrops    DungeonDrop[]
+  stashItems      StashItem[]
 
   @@index([itemType])
   @@index([itemType, itemLevel])
@@ -466,6 +468,27 @@ model ConsumableInventory {
 
   @@unique([characterId, consumableType])
   @@map("consumable_inventory")
+}
+
+// Account-level stash — shared across all characters of a user (100 slots max)
+model StashItem {
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  itemId        String       @map("item_id")
+  upgradeLevel  Int          @default(0) @map("upgrade_level")
+  durability    Int          @default(100)
+  maxDurability Int          @default(100) @map("max_durability")
+  rolledStats   Json?        @map("rolled_stats")
+  storedAt      DateTime     @default(now()) @map("stored_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item          Item         @relation(fields: [itemId], references: [id])
+
+  @@index([userId])
+  @@index([itemId])
+  @@map("stash_items")
 }
 
 model PvpMatch {
