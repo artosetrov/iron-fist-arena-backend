@@ -59,6 +59,12 @@ struct ShellGameDetailView: View {
             }
         }
         .contextualHint(shellHint)
+        .onAppear {
+            AmbientManager.shared.setZone(.tavern)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
         .task {
             if vm == nil {
                 let newVM = ShellGameViewModel(appState: appState)
@@ -581,6 +587,7 @@ struct ShellGameDetailView: View {
 
         // Shuffle animation
         gamePhase = .shuffling
+        SFXManager.shared.play(.shellShuffle)
         let swapCount = 4 + Int.random(in: 0...2) // 4-6 shuffles
         for _ in 0..<swapCount {
             let cup1 = Int.random(in: 0..<3)

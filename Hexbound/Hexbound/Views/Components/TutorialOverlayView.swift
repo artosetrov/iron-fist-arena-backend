@@ -112,7 +112,7 @@ struct TutorialOverlayView: View {
                 )
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                Text("КАЭЛЬ")
+                Text("KAEL")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.gold)
 

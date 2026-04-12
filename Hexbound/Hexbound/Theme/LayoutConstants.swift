@@ -200,6 +200,23 @@ enum LayoutConstants {
     static let packageAmountFont: CGFloat = textSection     // 22
     static let packageBestValueAmountFont: CGFloat = 26    // Unique: best value emphasis
 
+    // MARK: - Gold Mine (Mine Slot Cards, Shaft Picker, Mini-Game)
+
+    static let mineThumbnailSize: CGFloat = 52              // Mine slot thumbnail in card header
+    static let mineShaftThumbSM: CGFloat = 56               // Active shaft banner thumb
+    static let mineShaftThumbMD: CGFloat = 64               // Shaft picker row thumb
+    static let mineShaftThumbLG: CGFloat = 140              // Shaft cleared celebration thumb
+    static let mineProgressHeight: CGFloat = 5              // Mining / shaft progress bar height
+    static let mineProgressCollapsed: CGFloat = 3           // Thin collapsed progress bar
+    static let mineCapBarHeight: CGFloat = 8                // Mini-game cap meter bar height
+    static let mineDropCoinSize: CGFloat = 42                // Falling single coin (value 1-2)
+    static let mineDropBagSmSize: CGFloat = 48              // Falling small bag (value 3)
+    static let mineDropBagMdSize: CGFloat = 54              // Falling medium bag (value 5)
+    static let mineDropBagLgSize: CGFloat = 62              // Falling large bag (value 10)
+    static let mineDropGemSize: CGFloat = 58                // Falling gem drop
+    static let mineResultIconSize: CGFloat = iconMD         // 20 — result row icon
+    static let mineLoaderHeight: CGFloat = 34               // Spinner height in action slot
+
     // MARK: - Layout Insets (safe area + navigation offsets)
 
     static let barInternalPadding: CGFloat = 1             // Pixel-precise internal padding for progress bars

@@ -87,6 +87,7 @@ struct DailyQuestsDetailView: View {
         .onAppear {
             if vm == nil { vm = DailyQuestsViewModel(appState: appState, cache: cache) }
             appearCount += 1
+            SFXManager.shared.play(.scrollUnfurl)
         }
         .task(id: appearCount) {
             // Reload quests every time view appears (e.g., after PvP/dungeon)

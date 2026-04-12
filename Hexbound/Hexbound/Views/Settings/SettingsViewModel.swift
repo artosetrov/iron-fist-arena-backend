@@ -7,7 +7,10 @@ final class SettingsViewModel {
 
     var soundEnabled: Bool {
         get { !settings.isMuted }
-        set { settings.isMuted = !newValue }
+        set {
+            settings.isMuted = !newValue
+            AmbientManager.shared.syncVolume()
+        }
     }
 
     var musicEnabled: Bool {
@@ -15,6 +18,7 @@ final class SettingsViewModel {
         set {
             settings.bgmVolume = newValue ? 0.2 : 0
             AudioManager.shared.syncVolume()
+            AmbientManager.shared.syncVolume()
         }
     }
 
@@ -23,12 +27,16 @@ final class SettingsViewModel {
         set {
             settings.bgmVolume = Float(newValue / 100)
             AudioManager.shared.syncVolume()
+            AmbientManager.shared.syncVolume()
         }
     }
 
     var sfxVolume: Double {
         get { Double(settings.sfxVolume) * 100 }
-        set { settings.sfxVolume = Float(newValue / 100) }
+        set {
+            settings.sfxVolume = Float(newValue / 100)
+            AmbientManager.shared.syncVolume()
+        }
     }
 
     var pushNotifications: Bool {

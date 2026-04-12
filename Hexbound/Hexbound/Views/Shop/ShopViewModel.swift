@@ -20,6 +20,10 @@ final class ShopViewModel {
     var buyingOfferId: String?
     var errorMessage: String? = nil
 
+    // Contraband (timed loot drops from "The Scavenger")
+    var contrabandState: ContrabandUIState = .loading
+    var isClaimingContraband = false
+
     // Detail modal
     var selectedItem: ShopItem?
     var showItemDetail = false
@@ -113,11 +117,13 @@ final class ShopViewModel {
             isLoading = true
         }
         errorMessage = nil
-        // Load items and offers in parallel
+        // Load items, offers, and contraband in parallel
         async let itemsTask = service.getItems()
         async let offersTask: Void = loadOffers()
+        async let contrabandTask: Void = loadContraband()
         let result = await itemsTask
         _ = await offersTask
+        _ = await contrabandTask
         items = result
         cache.cacheShop(result)
         isLoading = false
@@ -140,6 +146,84 @@ final class ShopViewModel {
             print("[ShopVM] Failed to load offers: \(error)")
             #endif
         }
+    }
+
+    // MARK: - Contraband
+
+    func loadContraband() async {
+        guard let charId = appState.currentCharacter?.id else { return }
+        do {
+            let response: ContrabandResponse = try await APIClient.shared.get(
+                APIEndpoints.shopContraband,
+                params: ["character_id": charId]
+            )
+            contrabandState = ContrabandUIState.from(response)
+        } catch {
+            #if DEBUG
+            print("[ShopVM] Failed to load contraband: \(error)")
+            #endif
+            contrabandState = .error
+        }
+    }
+
+    func claimContraband() async {
+        guard !isClaimingContraband else { return }
+        guard let charId = appState.currentCharacter?.id else { return }
+
+        // Check affordability for paid drops
+        if case .available(let offer) = contrabandState, !offer.isFree {
+            guard gold >= offer.price else {
+                HapticManager.error()
+                appState.showToast("Not enough gold!", type: .error,
+                    actionLabel: "GET MORE",
+                    action: { [weak appState] in
+                        appState?.mainPath.append(AppRoute.currencyPurchase())
+                    }
+                )
+                return
+            }
+        }
+
+        isClaimingContraband = true
+
+        // Optimistic: deduct gold for paid drops
+        let savedGold = appState.currentCharacter?.gold ?? 0
+        let savedGems = appState.currentCharacter?.gems ?? 0
+
+        if case .available(let offer) = contrabandState, !offer.isFree {
+            appState.currentCharacter?.gold = savedGold - offer.price
+        }
+        HapticManager.success()
+
+        defer { isClaimingContraband = false }
+        do {
+            let response: ContrabandClaimResponse = try await APIClient.shared.post(
+                APIEndpoints.shopContraband,
+                body: ["character_id": charId]
+            )
+            if response.success {
+                appState.currentCharacter?.gold = response.gold
+                appState.currentCharacter?.gems = response.gems
+                appState.showToast("Contraband claimed!", type: .reward)
+                // Reload to get cooldown state
+                await loadContraband()
+            } else {
+                appState.currentCharacter?.gold = savedGold
+                appState.currentCharacter?.gems = savedGems
+                appState.showToast("Claim failed", type: .error)
+            }
+        } catch {
+            appState.currentCharacter?.gold = savedGold
+            appState.currentCharacter?.gems = savedGems
+            appState.showToast("Claim failed", type: .error)
+        }
+    }
+
+    var canAffordContraband: Bool {
+        if case .available(let offer) = contrabandState {
+            return offer.isFree || gold >= offer.price
+        }
+        return false
     }
 
     func canAffordOffer(_ offer: ShopOffer) -> Bool {
@@ -349,7 +433,8 @@ final class ShopViewModel {
         }
 
         HapticManager.success()
-        SFXManager.shared.play(.uiSell)
+        SFXManager.shared.play(.coinsJingle)
+        SFXManager.shared.play(.pouchDrop)
         showItemDetail = false
         selectedItem = nil
         lastPurchasedItemId = item.id

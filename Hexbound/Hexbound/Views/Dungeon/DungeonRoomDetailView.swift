@@ -143,6 +143,10 @@ struct DungeonRoomDetailView: View {
         .onAppear {
             vm?.applyPendingResult()
             startNodePulseAnimation()
+            AmbientManager.shared.setZone(.dungeon)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
         }
         // Safety net: if onAppear doesn't fire reliably when combat view is popped,
         // detect the pop via path count change and apply pending result

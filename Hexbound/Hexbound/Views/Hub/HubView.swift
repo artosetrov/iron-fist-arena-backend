@@ -95,9 +95,9 @@ struct HubView: View {
                 questId: questId
             )
             if let gold = result?["goldAwarded"] as? Int, gold > 0 {
-                appState.showToast("Награда получена! +\(gold) золота", type: .success)
+                appState.showToast("Reward claimed! +\(gold) gold", type: .success)
             } else {
-                appState.showToast("Награда получена!", type: .success)
+                appState.showToast("Reward claimed!", type: .success)
             }
             // Refresh character data to update currency
             await appState.reloadCharacter()
@@ -107,13 +107,13 @@ struct HubView: View {
     /// Fallback quest titles (matches backend TUTORIAL_QUESTS)
     private func questTitle(for questId: String) -> String? {
         let titles: [String: String] = [
-            "equip_gear": "Снаряжение воина",
-            "win_3_pvp": "Боевая закалка",
-            "first_dungeon": "Тьма подземелий",
-            "start_mining": "Золотая жила",
-            "try_tavern": "Испытай удачу",
-            "explore_endgame": "Путь славы",
-            "join_guild": "Братство",
+            "equip_gear": "Warrior's Gear",
+            "win_3_pvp": "Battle Hardened",
+            "first_dungeon": "Into the Depths",
+            "start_mining": "Gold Vein",
+            "try_tavern": "Try Your Luck",
+            "explore_endgame": "Path of Glory",
+            "join_guild": "Brotherhood",
         ]
         return titles[questId]
     }
@@ -121,13 +121,13 @@ struct HubView: View {
     /// Fallback NPC messages (matches backend TUTORIAL_QUESTS)
     private func questNpcMessage(for questId: String) -> String? {
         let messages: [String: String] = [
-            "equip_gear": "У тебя есть оружие, но защита хромает. Загляни в Лавку.",
-            "win_3_pvp": "Выиграй ещё 3 боя на арене чтобы набраться опыта.",
-            "first_dungeon": "Под городом скрываются подземелья. Победи босса первого этажа.",
-            "start_mining": "Шахта приносит золото, пока ты спишь. Запусти добычу.",
-            "try_tavern": "В таверне играют на золото. Попробуй разок.",
-            "explore_endgame": "Боевой пропуск хранит сокровища. Таблица лидеров покажет на что ты способен.",
-            "join_guild": "Одинокий волк далеко не уйдёт. Вступи в гильдию.",
+            "equip_gear": "You have a weapon, but your defense is lacking. Visit the Shop.",
+            "win_3_pvp": "Win 3 more arena fights to gain experience.",
+            "first_dungeon": "Dungeons lurk beneath the city. Defeat the first floor boss.",
+            "start_mining": "The mine earns gold while you sleep. Start mining.",
+            "try_tavern": "They gamble for gold at the tavern. Give it a try.",
+            "explore_endgame": "The battle pass holds treasures. The leaderboard shows what you're made of.",
+            "join_guild": "A lone wolf won't make it far. Join a guild.",
         ]
         return messages[questId]
     }
@@ -348,8 +348,9 @@ struct HubView: View {
         .task { await fetchUnreadMailCount() }
         .onAppear {
             updateHubHint()
-            // Start BGM
+            // Start BGM + ambient atmosphere
             AudioManager.shared.playBGM("stray-city.mp3")
+            AmbientManager.shared.setZone(.hub)
             // Reload quests if cache was invalidated (e.g., after PvP/dungeon)
             if appState.cachedTypedQuests == nil {
                 Task { await loadQuests() }
@@ -1909,9 +1910,11 @@ struct FloatingSoundToggle: View {
 
         if isMuted {
             AudioManager.shared.stopBGM()
+            AmbientManager.shared.stopAll()
             stopIdleLoop()
         } else {
             AudioManager.shared.syncVolume()
+            AmbientManager.shared.syncVolume()
             AudioManager.shared.playBGM("stray-city.mp3")
             triggerTapBounce()
             triggerWaves()

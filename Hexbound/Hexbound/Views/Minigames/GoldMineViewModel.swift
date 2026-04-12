@@ -28,6 +28,9 @@ final class GoldMineViewModel {
     /// True when the backend responded with `needs_shaft_pick` and the view
     /// should present the picker sheet.
     var showShaftPicker: Bool = false
+    /// Tracks which flow triggered the shaft picker so `pickShaft` can route
+    /// back to the correct function. When `nil`, defaults to collectAll.
+    private var shaftPickerSlotIndex: Int?
     /// Set after /minigame-bonus responds with `shaft_completed: true`.
     /// The view renders `ShaftClearedOverlay` while this is non-nil.
     var clearedShaftKey: ShaftKey?
@@ -48,6 +51,28 @@ final class GoldMineViewModel {
     init(appState: AppState, cache: GameDataCache) {
         self.appState = appState
         self.cache = cache
+    }
+
+    // MARK: - Per-Slot Statistics (aggregated from backend)
+
+    /// Parsed stats per slot index. Populated on /status response.
+    struct SlotStats {
+        let totalGoldMined: Int
+        let sessionsCompleted: Int
+        let bestHaul: Int
+        let currentStreak: Int
+    }
+
+    /// Returns parsed stats for the given slot, or nil if not available.
+    func slotStats(at index: Int) -> SlotStats? {
+        guard index < slots.count else { return nil }
+        guard let statsDict = slots[index]["stats"] as? [String: Any] else { return nil }
+        return SlotStats(
+            totalGoldMined: statsDict["total_gold_mined"] as? Int ?? 0,
+            sessionsCompleted: statsDict["sessions_completed"] as? Int ?? 0,
+            bestHaul: statsDict["best_haul"] as? Int ?? 0,
+            currentStreak: statsDict["current_streak"] as? Int ?? 0
+        )
     }
 
     // MARK: - Mine Names (canonical — docs/08_prompts/mine-card-prompts.md)
@@ -338,6 +363,7 @@ final class GoldMineViewModel {
             if let needs = data["needs_shaft_pick"] as? Bool, needs {
                 let unlockedRaw = (data["unlocked_shafts"] as? [String]) ?? []
                 unlockedShafts = unlockedRaw.compactMap { ShaftKey(rawValue: $0) }
+                shaftPickerSlotIndex = nil  // collectAll context
                 showShaftPicker = true
                 return
             }
@@ -449,10 +475,12 @@ final class GoldMineViewModel {
                 body: body
             )
 
-            // Shaft picker branch.
+            // Shaft picker branch — remember which slot triggered it so
+            // pickShaft routes back to startSlotMinigame (not collectAll).
             if let needs = data["needs_shaft_pick"] as? Bool, needs {
                 let unlockedRaw = (data["unlocked_shafts"] as? [String]) ?? []
                 unlockedShafts = unlockedRaw.compactMap { ShaftKey(rawValue: $0) }
+                shaftPickerSlotIndex = slotIndex
                 showShaftPicker = true
                 return
             }
@@ -531,10 +559,21 @@ final class GoldMineViewModel {
     }
 
     /// Called by `ShaftPickerSheet` when the player confirms a shaft. Dismisses
-    /// the sheet and retries `collectAll` with the picked key.
+    /// the sheet and routes back to whichever flow triggered the picker:
+    /// - `shaftPickerSlotIndex != nil` → re-enter `startSlotMinigame` so the
+    ///   bonus round opens directly after shaft selection.
+    /// - `shaftPickerSlotIndex == nil` → re-enter `collectAll` (Collect All flow).
     func pickShaft(_ key: ShaftKey) {
+        let slotIndex = shaftPickerSlotIndex
+        shaftPickerSlotIndex = nil
         showShaftPicker = false
-        Task { await collectAll(pickedShaftKey: key) }
+        Task {
+            if let slotIndex {
+                await startSlotMinigame(slotIndex: slotIndex, pickedShaftKey: key)
+            } else {
+                await collectAll(pickedShaftKey: key)
+            }
+        }
     }
 
     /// Called by `GoldMineMiniGameView` via its `onFinish` callback once the

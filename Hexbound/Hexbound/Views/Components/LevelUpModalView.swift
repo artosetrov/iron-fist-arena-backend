@@ -436,8 +436,8 @@ struct LevelUpModalView: View {
     // MARK: - Ceremony Sequence
 
     private func startCeremony() {
-        // Sound + haptic
-        SFXManager.shared.play(.uiLevelUp)
+        // Sound + haptic — epic horn fanfare for the ceremony
+        SFXManager.shared.play(.epicHornFanfare)
         HapticManager.heavy()
 
         // Phase 1: Backdrop + rays

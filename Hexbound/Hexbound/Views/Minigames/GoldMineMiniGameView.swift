@@ -97,16 +97,16 @@ struct CapMeterView: View {
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .fill(DarkFantasyTheme.bgTertiary)
-                    .frame(height: 8)
+                    .frame(height: LayoutConstants.mineCapBarHeight)
                 GeometryReader { proxy in
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .fill(DarkFantasyTheme.goldGradient)
                         .frame(width: proxy.size.width * CGFloat(fraction), height: 8)
                         .animation(MotionConstants.smooth, value: fraction)
                 }
-                .frame(height: 8)
+                .frame(height: LayoutConstants.mineCapBarHeight)
             }
-            .frame(height: 8)
+            .frame(height: LayoutConstants.mineCapBarHeight)
         }
         .padding(.horizontal, LayoutConstants.spaceMD)
         .padding(.vertical, LayoutConstants.spaceSM)
@@ -145,7 +145,7 @@ struct MinigameHeroCard: View {
                 } else {
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                         .fill(DarkFantasyTheme.bgTertiary)
-                        .frame(width: 48, height: 48)
+                        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
                 }
             }
             .overlay(
@@ -153,7 +153,7 @@ struct MinigameHeroCard: View {
                     .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
             )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text(characterName)
                     .font(DarkFantasyTheme.uiLabel.bold())
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
@@ -209,6 +209,8 @@ struct GoldMineMiniGameView: View {
     @State private var lastTick: Date = Date()
     @State private var isSubmitting: Bool = false
     @State private var showSkipConfirm: Bool = false
+    @State private var showResults: Bool = false
+    @State private var serverResponse: [String: Any]?
 
     private let totalSec: Double = 15
     private let spawnIntervalSec: Double = 0.3
@@ -217,15 +219,26 @@ struct GoldMineMiniGameView: View {
     var body: some View {
         ZStack {
             background
+                .ignoresSafeArea()
             playField
-            VStack(spacing: LayoutConstants.spaceMD) {
-                topHud
-                Spacer(minLength: 0)
-                bottomBar
+                .ignoresSafeArea()
+            if !showResults {
+                VStack(spacing: LayoutConstants.spaceMD) {
+                    topHud
+                    Spacer(minLength: 0)
+                    bottomBar
+                }
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.vertical, LayoutConstants.spaceMD)
+                .transition(.opacity)
             }
-            .padding(.horizontal, LayoutConstants.spaceMD)
-            .padding(.vertical, LayoutConstants.spaceMD)
+
+            if showResults {
+                resultsOverlay
+                    .transition(.opacity)
+            }
         }
+        .animation(MotionConstants.smooth, value: showResults)
         .onAppear {
             startedAt = Date()
             lastTick = startedAt
@@ -251,20 +264,22 @@ struct GoldMineMiniGameView: View {
     // MARK: - Subviews
 
     private var background: some View {
-        ZStack {
-            Image(session.shaftKey.backgroundAssetName)
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-            LinearGradient(
-                colors: [
-                    DarkFantasyTheme.bgPrimary.opacity(0.25),
-                    DarkFantasyTheme.bgPrimary.opacity(0.65),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                Image(session.shaftKey.backgroundAssetName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .clipped()
+                LinearGradient(
+                    colors: [
+                        DarkFantasyTheme.bgPrimary.opacity(0.55),
+                        DarkFantasyTheme.bgPrimary.opacity(0.85),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
         }
     }
 
@@ -347,34 +362,33 @@ struct GoldMineMiniGameView: View {
     }
 
     private func goldDropView(value: Int) -> some View {
-        ZStack {
-            Circle()
-                .fill(DarkFantasyTheme.goldGradient)
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Circle()
-                        .stroke(DarkFantasyTheme.gold, lineWidth: 1.5)
-                )
-            Text("\(value)")
-                .font(DarkFantasyTheme.buttonLabelCompact)
-                .foregroundStyle(DarkFantasyTheme.textOnGold)
+        let (assetName, size) = goldDropAsset(for: value)
+        return Image(assetName)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .shadow(color: DarkFantasyTheme.gold.opacity(0.5), radius: 8, y: 4)
+    }
+
+    /// Maps gold drop value → asset name + display size. Tiered from single
+    /// coin to progressively larger gold bags for higher-value drops.
+    private func goldDropAsset(for value: Int) -> (String, CGFloat) {
+        switch value {
+        case ...2:  return ("relic_old_coin",    LayoutConstants.mineDropCoinSize)
+        case 3:     return ("shop-gold-tier1",   LayoutConstants.mineDropBagSmSize)
+        case 4...5: return ("shop-gold-tier2",   LayoutConstants.mineDropBagMdSize)
+        default:    return ("shop-gold-tier3",   LayoutConstants.mineDropBagLgSize)
         }
     }
 
     private var gemDropView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                .fill(DarkFantasyTheme.bgTertiary)
-                .frame(width: 40, height: 40)
-                .overlay(
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .stroke(DarkFantasyTheme.cyan, lineWidth: 2)
-                )
-            Image("icon-gems")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 26, height: 26)
-        }
+        Image("icon-gems")
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .frame(width: LayoutConstants.mineDropGemSize, height: LayoutConstants.mineDropGemSize)
+            .shadow(color: DarkFantasyTheme.cyan.opacity(0.55), radius: 12, y: 4)
     }
 
     private var bottomBar: some View {
@@ -399,6 +413,132 @@ struct GoldMineMiniGameView: View {
                 .disabled(isSubmitting)
             }
         }
+    }
+
+    // MARK: - Results overlay
+
+    private var accuracy: Int {
+        guard spawnedCount > 0 else { return 0 }
+        return Int((Double(caughtCount) / Double(spawnedCount) * 100).rounded())
+    }
+
+    private var resultsOverlay: some View {
+        VStack(spacing: LayoutConstants.spaceLG) {
+            Spacer()
+
+            // Kicker
+            Text("SESSION COMPLETE")
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .tracking(3)
+
+            // Title
+            Text("LOOT!")
+                .font(DarkFantasyTheme.cinematicTitle)
+                .foregroundStyle(DarkFantasyTheme.goldBright)
+
+            // Accuracy
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Text("Accuracy:")
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text("\(accuracy)%")
+                    .font(DarkFantasyTheme.uiLabel.bold())
+                    .foregroundStyle(DarkFantasyTheme.goldBright)
+                Text("•")
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text("\(caughtCount)/\(spawnedCount)")
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
+
+            // Result rows
+            VStack(spacing: 0) {
+                resultRow(
+                    icon: "shop-gold-tier1",
+                    label: "Passive income",
+                    value: "+\(session.passiveGoldAmount)",
+                    color: DarkFantasyTheme.textSecondary
+                )
+                Divider().background(DarkFantasyTheme.borderSubtle)
+
+                resultRow(
+                    icon: "shop-gold-tier2",
+                    label: "Bonus gold",
+                    value: "+\(caughtGold)\(caughtGold >= session.capGold ? " (cap)" : "")",
+                    color: DarkFantasyTheme.goldBright
+                )
+                Divider().background(DarkFantasyTheme.borderSubtle)
+
+                resultRow(
+                    icon: "icon-gems",
+                    label: "Bonus gems",
+                    value: "+\(caughtGems)",
+                    color: DarkFantasyTheme.cyan
+                )
+                Divider().background(DarkFantasyTheme.gold.opacity(0.4))
+
+                resultRow(
+                    icon: nil,
+                    label: "TOTAL GOLD",
+                    value: "+\(session.passiveGoldAmount + caughtGold)",
+                    color: DarkFantasyTheme.goldBright,
+                    isTotal: true
+                )
+            }
+            .padding(.horizontal, LayoutConstants.spaceMD)
+
+            // Collect button
+            Button {
+                if let response = serverResponse {
+                    onFinish(response)
+                }
+                dismiss()
+            } label: {
+                Text("COLLECT")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.primary)
+            .padding(.horizontal, LayoutConstants.spaceLG)
+
+            Spacer()
+        }
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .background(
+            DarkFantasyTheme.bgPrimary.opacity(0.92)
+                .ignoresSafeArea()
+        )
+    }
+
+    @ViewBuilder
+    private func resultRow(
+        icon: String?,
+        label: String,
+        value: String,
+        color: Color,
+        isTotal: Bool = false
+    ) -> some View {
+        HStack {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                if let icon {
+                    Image(icon)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.mineResultIconSize, height: LayoutConstants.mineResultIconSize)
+                }
+                Text(label)
+                    .font(isTotal ? DarkFantasyTheme.uiLabel.bold() : DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(isTotal ? DarkFantasyTheme.textPrimary : DarkFantasyTheme.textSecondary)
+                    .textCase(isTotal ? .uppercase : .none)
+                    .tracking(isTotal ? 1 : 0)
+            }
+            Spacer()
+            Text(value)
+                .font(isTotal ? DarkFantasyTheme.title : DarkFantasyTheme.cardTitle)
+                .foregroundStyle(color)
+        }
+        .padding(.vertical, LayoutConstants.spaceSM)
     }
 
     // MARK: - Game loop
@@ -471,12 +611,13 @@ struct GoldMineMiniGameView: View {
                 body: body
             )
             HapticManager.success()
-            onFinish(data)
-            dismiss()
+            serverResponse = data
+            showResults = true
         } catch {
-            isSubmitting = false
-            onSkip()
-            dismiss()
+            // On error, still show results with local data so the player
+            // sees what they caught. Collect button will dismiss without
+            // calling onFinish (serverResponse is nil).
+            showResults = true
         }
     }
 }

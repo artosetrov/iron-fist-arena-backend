@@ -34,7 +34,7 @@ struct ActiveShaftBanner: View {
             Image(shaft.key.thumbAssetName)
                 .resizable()
                 .scaledToFill()
-                .frame(width: 56, height: 56)
+                .frame(width: LayoutConstants.mineShaftThumbSM, height: LayoutConstants.mineShaftThumbSM)
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
@@ -78,16 +78,16 @@ struct ActiveShaftBanner: View {
         ZStack(alignment: .leading) {
             RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                 .fill(DarkFantasyTheme.bgTertiary)
-                .frame(height: 5)
+                .frame(height: LayoutConstants.mineProgressHeight)
             GeometryReader { proxy in
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(DarkFantasyTheme.goldGradient)
                     .frame(width: proxy.size.width * CGFloat(shaft.fraction), height: 5)
                     .animation(MotionConstants.smooth, value: shaft.fraction)
             }
-            .frame(height: 5)
+            .frame(height: LayoutConstants.mineProgressHeight)
         }
-        .frame(height: 5)
+        .frame(height: LayoutConstants.mineProgressHeight)
     }
 }
 
@@ -170,7 +170,7 @@ private struct ShaftPickerRow: View {
                 Image(shaft.thumbAssetName)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 64, height: 64)
+                    .frame(width: LayoutConstants.mineShaftThumbMD, height: LayoutConstants.mineShaftThumbMD)
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusSM))
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
@@ -251,7 +251,7 @@ struct ShaftClearedOverlay: View {
                 Image(clearedShaftKey.thumbAssetName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 140, height: 140)
+                    .frame(width: LayoutConstants.mineShaftThumbLG, height: LayoutConstants.mineShaftThumbLG)
                     .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusLG))
                     .overlay(
                         RoundedRectangle(cornerRadius: LayoutConstants.radiusLG)

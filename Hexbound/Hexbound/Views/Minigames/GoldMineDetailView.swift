@@ -16,11 +16,8 @@ struct GoldMineDetailView: View {
     @State private var liveFlights: [LiveMineFlight] = []
     /// Last tick timestamp so we can pass real elapsed time to the VM.
     @State private var lastTick: Date = Date()
-
-    private let columns = [
-        GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-        GridItem(.flexible(), spacing: LayoutConstants.spaceSM)
-    ]
+    /// Currently expanded card index (nil = all collapsed).
+    @State private var expandedIndex: Int?
 
     var body: some View {
         ZStack {
@@ -31,7 +28,6 @@ struct GoldMineDetailView: View {
                     if vm.isLoading && vm.slots.isEmpty {
                         mineLoadingState
                     } else if vm.slots.isEmpty {
-                        // Error state — loading failed
                         ErrorStateView.loadFailed {
                             Task { await vm.loadStatus() }
                         }
@@ -59,7 +55,7 @@ struct GoldMineDetailView: View {
                                 if vm.readySlotsCount >= 2 {
                                     collectAllButton(vm: vm)
                                 }
-                                slotsGrid(vm: vm)
+                                mineCardsList(vm: vm)
                             }
                             .padding(.horizontal, LayoutConstants.screenPadding)
                             .padding(.bottom, LayoutConstants.spaceLG)
@@ -67,13 +63,11 @@ struct GoldMineDetailView: View {
                     }
                 }
                 .transaction { $0.animation = nil }
-                // Capture icon anchors from MineResourceHeader
                 .onPreferenceChange(GoldMineAnchorPreferenceKey.self) { entries in
                     var next: [MineAnchorRole: CGPoint] = [:]
                     for entry in entries { next[entry.role] = entry.point }
                     resourceAnchors = next
                 }
-                // Capture slot center anchors from each MineSlotCard
                 .onPreferenceChange(MineSlotAnchorPreferenceKey.self) { entries in
                     var next: [Int: CGPoint] = [:]
                     for entry in entries { next[entry.slotIndex] = entry.point }
@@ -112,9 +106,7 @@ struct GoldMineDetailView: View {
                 }
             }
 
-            // Live-tick coin/gem particle overlay — rendered above everything.
-            // Must ignore safe area so its coordinate space matches the
-            // global window coords published by the anchor preference keys.
+            // Live-tick coin/gem particle overlay
             liveFlightsOverlay
                 .ignoresSafeArea()
         }
@@ -132,15 +124,18 @@ struct GoldMineDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
+        .onAppear {
+            AmbientManager.shared.setZone(.goldMine)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
         .task {
             if vm == nil { vm = GoldMineViewModel(appState: appState, cache: cache) }
             await vm?.loadStatus()
             updateMineHint()
             lastTick = Date()
         }
-        // Drive live-tick counter + coin-fly emission. 1 Hz is plenty — real
-        // mining rate is ~17 gold/hr/slot so fractional accumulator handles
-        // the sub-second granularity; we just need a steady pulse.
         .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { now in
             advanceLiveTick(now: now)
         }
@@ -148,9 +143,6 @@ struct GoldMineDetailView: View {
 
     // MARK: - Live Tick
 
-    /// Pulled from the 1 Hz timer. Calls `vm.advanceLiveTick` and, for every
-    /// coin / gem that "arrived" this tick, spawns a `LiveMineFlight` from the
-    /// corresponding mining slot anchor to the resource-header icon anchor.
     private func advanceLiveTick(now: Date) {
         guard let vm else { return }
         let elapsed = max(0, min(5, now.timeIntervalSince(lastTick)))
@@ -160,13 +152,11 @@ struct GoldMineDetailView: View {
         let delta = vm.advanceLiveTick(elapsedSec: elapsed)
         guard delta.coinsPerSlot > 0 || delta.gems > 0 else { return }
 
-        // Fire flights from each currently-mining slot.
         let activeIndices = (0..<vm.slots.count).filter { idx in
             vm.slotStatus(vm.slots[idx]) == "mining"
         }
         guard !activeIndices.isEmpty else { return }
 
-        // Gold: one flight per active slot per coin tick.
         if delta.coinsPerSlot > 0, let goldTarget = resourceAnchors[.gold] {
             for slotIdx in activeIndices {
                 guard let source = slotAnchors[slotIdx] else { continue }
@@ -180,7 +170,6 @@ struct GoldMineDetailView: View {
             }
         }
 
-        // Gems are rarer — emit from a single random active slot.
         if delta.gems > 0, let gemTarget = resourceAnchors[.gem] {
             if let sourceIdx = activeIndices.randomElement(),
                let source = slotAnchors[sourceIdx] {
@@ -197,8 +186,6 @@ struct GoldMineDetailView: View {
 
     // MARK: - Live Flights Overlay
 
-    /// Full-screen overlay that renders all in-flight coin / gem particles
-    /// currently travelling from mining slots to the resource header.
     @ViewBuilder
     private var liveFlightsOverlay: some View {
         ZStack {
@@ -244,7 +231,7 @@ struct GoldMineDetailView: View {
             HStack(spacing: LayoutConstants.spaceXS) {
                 Image("icon-gold")
                     .resizable()
-                    .frame(width: 22, height: 22)
+                    .frame(width: LayoutConstants.iconLG, height: LayoutConstants.iconLG)
                     .accessibilityLabel("Gold per hour")
                     .accessibilityElement(children: .ignore)
                 Text("\(vm.activeSlotCount * 200)/HR")
@@ -283,9 +270,6 @@ struct GoldMineDetailView: View {
 
     // MARK: - Collect All Button (Variant D)
 
-    /// Shown above the slot grid when the player has 2+ ready slots. Fires
-    /// POST /collect-all which either opens the shaft picker (first time) or
-    /// drains all ready slots and launches the mini-game session.
     private func collectAllButton(vm: GoldMineViewModel) -> some View {
         Button {
             HapticManager.medium()
@@ -303,13 +287,22 @@ struct GoldMineDetailView: View {
         .disabled(vm.isCollectingAll)
     }
 
-    // MARK: - Slots Grid
+    // MARK: - Mine Cards List (NEW — vertical expandable cards)
 
-    private func slotsGrid(vm: GoldMineViewModel) -> some View {
-        LazyVGrid(columns: columns, spacing: LayoutConstants.spaceSM) {
+    private func mineCardsList(vm: GoldMineViewModel) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
             ForEach(0..<vm.maxSlots, id: \.self) { index in
-                MineSlotCard(index: index, vm: vm)
-                    .staggeredAppear(index: index)
+                MineShaftCard(
+                    index: index,
+                    vm: vm,
+                    isExpanded: expandedIndex == index,
+                    onToggle: {
+                        withAnimation(MotionConstants.smooth) {
+                            expandedIndex = expandedIndex == index ? nil : index
+                        }
+                    }
+                )
+                .staggeredAppear(index: index)
             }
 
             if vm.maxSlots < 6 {
@@ -345,31 +338,27 @@ struct GoldMineDetailView: View {
                         .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
                 )
 
-                // Skeleton grid
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: LayoutConstants.spaceSM),
-                    GridItem(.flexible(), spacing: LayoutConstants.spaceSM)
-                ], spacing: LayoutConstants.spaceSM) {
-                    ForEach(0..<4, id: \.self) { _ in
-                        VStack(spacing: 0) {
-                            SkeletonRect(height: 110, cornerRadius: 0)
-                            VStack(spacing: LayoutConstants.spaceXS) {
-                                SkeletonRect(width: 60, height: 14)
-                                SkeletonRect(width: 80, height: 10)
-                                SkeletonRect(height: 32, cornerRadius: LayoutConstants.panelRadius)
-                            }
-                            .padding(LayoutConstants.spaceSM)
+                // Skeleton cards (4 full-width)
+                ForEach(0..<4, id: \.self) { _ in
+                    HStack(spacing: LayoutConstants.spaceSM) {
+                        SkeletonRect(width: 52, height: 52, cornerRadius: LayoutConstants.panelRadius)
+                        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                            SkeletonRect(width: 120, height: 16)
+                            SkeletonRect(width: 80, height: 12)
                         }
-                        .background(
-                            RadialGlowBackground(
-                                baseColor: DarkFantasyTheme.bgSecondary,
-                                glowColor: DarkFantasyTheme.bgTertiary,
-                                glowIntensity: 0.3,
-                                cornerRadius: LayoutConstants.cardRadius
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
+                        Spacer()
+                        SkeletonRect(width: 32, height: 32, cornerRadius: LayoutConstants.panelRadius)
                     }
+                    .padding(LayoutConstants.spaceSM)
+                    .background(
+                        RadialGlowBackground(
+                            baseColor: DarkFantasyTheme.bgSecondary,
+                            glowColor: DarkFantasyTheme.bgTertiary,
+                            glowIntensity: 0.3,
+                            cornerRadius: LayoutConstants.cardRadius
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
                 }
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
@@ -378,11 +367,16 @@ struct GoldMineDetailView: View {
     }
 }
 
-// MARK: - Mine Slot Card
+// MARK: - Mine Shaft Card (Expandable)
 
-private struct MineSlotCard: View {
+/// Full-width expandable card for each mine slot. Collapsed shows thumbnail,
+/// name, status, and shaft progress. Expanded reveals stats, lore, progress
+/// bar, and action buttons. Mine art is used as 10% opacity background.
+private struct MineShaftCard: View {
     let index: Int
     let vm: GoldMineViewModel
+    let isExpanded: Bool
+    let onToggle: () -> Void
 
     @State private var showCollectBurst = false
     @State private var previousStatus: String = ""
@@ -407,27 +401,60 @@ private struct MineSlotCard: View {
         return index < accents.count ? accents[index] : DarkFantasyTheme.gold
     }
 
+    /// Lore flavor text per mine slot
+    private var mineLore: String {
+        let lore = [
+            "Ancient amethyst deposits shimmer in the dark, whispering of forgotten riches.",
+            "Veins of pure emerald pulse with an inner light, as if the mountain breathes.",
+            "Liquid gold streams through volcanic rock. The forge never sleeps.",
+            "Ice-locked caverns where time stands still and diamonds form in eternal frost.",
+            "Crimson quartz veins run deep, stained by the blood of the mountain.",
+            "A king's ransom lies buried beneath gilded stone and ancient wards."
+        ]
+        return index < lore.count ? lore[index] : "Uncharted depths await."
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            mineIllustration
-            infoPanel
+            // MARK: Collapsed header — always visible
+            collapsedHeader
+
+            // MARK: Mining progress bar — visible when mining (collapsed)
+            if status == "mining" && !isExpanded {
+                collapsedProgressBar
+            }
+
+            // MARK: Expanded content
+            if isExpanded {
+                expandedContent
+            }
         }
         .background(
-            RadialGlowBackground(
-                baseColor: DarkFantasyTheme.bgSecondary,
-                glowColor: DarkFantasyTheme.bgTertiary,
-                glowIntensity: 0.4,
-                cornerRadius: LayoutConstants.cardRadius
-            )
+            // Mine art as 10% opacity background across entire card
+            ZStack {
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgSecondary,
+                    glowColor: DarkFantasyTheme.bgTertiary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.cardRadius
+                )
+
+                Image("mine-slot-\(index + 1)")
+                    .resizable()
+                    .scaledToFill()
+                    .opacity(0.1)
+                    .clipped()
+            }
         )
         .surfaceLighting(cornerRadius: LayoutConstants.cardRadius, topHighlight: 0.08, bottomShadow: 0.12)
-        .innerBorder(cornerRadius: LayoutConstants.cardRadius - 2, inset: 2, color: DarkFantasyTheme.borderMedium.opacity(0.15))
+        .innerBorder(
+            cornerRadius: LayoutConstants.cardRadius - 2,
+            inset: 2,
+            color: DarkFantasyTheme.borderMedium.opacity(0.15)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(
-                    cardBorderColor,
-                    lineWidth: status == "ready" ? 2 : 1
-                )
+                .stroke(cardBorderColor, lineWidth: status == "ready" ? 2 : 1)
                 .opacity(status != "idle" ? 0.8 : 0.6)
         )
         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius))
@@ -442,8 +469,7 @@ private struct MineSlotCard: View {
                 }
             }
         }
-        // Publish slot center (in global coord space) so the parent
-        // GoldMineDetailView can use it as a coin-fly source point.
+        // Publish slot center for coin-fly source
         .background(
             GeometryReader { geo in
                 Color.clear
@@ -461,322 +487,485 @@ private struct MineSlotCard: View {
         )
         .contentShape(Rectangle())
         .onTapGesture {
-            // Whole-card tap for ready slots. Variant D Phase 2 split:
-            //   • unplayed → open the per-slot bonus minigame on THIS slot
-            //   • played   → trigger Collect All (drains every played-ready
-            //                slot in one shot)
-            // Mining / idle cards keep their inner buttons (BOOST / MINE).
-            guard status == "ready" else { return }
-            if vm.isSlotMinigamePlayed(slot) {
-                guard !vm.isCollectingAll else { return }
-                HapticManager.medium()
-                Task { await vm.collectAll() }
-            } else {
-                guard !vm.isStartingSlotMinigame else { return }
-                HapticManager.medium()
-                Task { await vm.startSlotMinigame(slotIndex: index) }
-            }
+            onToggle()
         }
         .onAppear {
             previousStatus = status
         }
         .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { now in
-            if status == "mining" {
-                progressTick = now
-            }
+            if status == "mining" { progressTick = now }
         }
         .onChange(of: status) { oldVal, newVal in
-            // Detect collect: was "ready" → now "idle" (gold collected)
             if previousStatus == "ready" && newVal == "idle" {
                 HapticManager.success()
                 showCollectBurst = true
             }
             previousStatus = newVal
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(GoldMineViewModel.mineName(for: index)), \(status). \(status == "mining" ? vm.timeRemaining(slot) : "")"
+        )
+        .accessibilityHint(isExpanded ? "Tap to collapse" : "Tap to expand details")
     }
 
-    // MARK: - Mine Illustration
+    // MARK: - Collapsed Header
 
-    private var mineIllustration: some View {
-        ZStack {
-            // Unique gradient background per slot (uses theme tokens only)
-            LinearGradient(
-                colors: [slotAccent.opacity(0.2), DarkFantasyTheme.bgTertiary],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            // AI-generated mine illustration per slot
+    private var collapsedHeader: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Mine thumbnail
             Image("mine-slot-\(index + 1)")
                 .resizable()
                 .scaledToFill()
+                .frame(width: LayoutConstants.mineThumbnailSize, height: LayoutConstants.mineThumbnailSize)
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                        .stroke(slotAccent.opacity(0.4), lineWidth: 1)
+                )
                 .opacity(status == "idle" ? 0.6 : 1.0)
 
-            // Status-specific overlays
-            switch status {
-            case "mining":
-                // Warm glow rising from bottom
-                LinearGradient(
-                    colors: [DarkFantasyTheme.gold.opacity(0.35), .clear],
-                    startPoint: .bottom, endPoint: .center
-                )
+            // Name + status
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Text(GoldMineViewModel.mineName(for: index).uppercased())
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .lineLimit(1)
 
-                // Animated sparkle particles
-                MiningSparklesOverlay(tint: slotAccent)
-
-            case "ready":
-                // Golden shimmer wash
-                LinearGradient(
-                    colors: [
-                        DarkFantasyTheme.goldBright.opacity(0.25),
-                        .clear,
-                        DarkFantasyTheme.goldBright.opacity(0.15)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                // Coin sparkle in corner — subtle static glow
-                Image(systemName: "sparkles")
-                    .font(DarkFantasyTheme.section)
-                    .foregroundStyle(DarkFantasyTheme.goldBright)
-                    .shadow(color: DarkFantasyTheme.goldGlow, radius: 12)
-                    .offset(x: 35, y: -20)
-                    .opacity(0.8)
-
-            case "idle":
-                DarkFantasyTheme.bgScrim
-
-            default:
-                EmptyView()
-            }
-
-            // Variant D Phase 2 — per-slot bonus minigame badge. Pinned to
-            // top-trailing so the player can scan which slots are "armed".
-            //   • unplayed → gold "BONUS" pill (call-to-play)
-            //   • played   → green "BONUS ✓" pill (ready to collect)
-            if status == "mining" || status == "ready" {
-                VStack {
-                    HStack {
-                        Spacer()
-                        bonusStateBadge
+                    // Streak badge (collapsed)
+                    if let stats = vm.slotStats(at: index), stats.currentStreak >= 3 {
+                        HStack(spacing: LayoutConstants.space2XS) {
+                            Image(systemName: stats.currentStreak >= 5 ? "flame.fill" : "bolt.fill")
+                                .font(DarkFantasyTheme.badge)
+                            Text("\(stats.currentStreak)")
+                                .font(DarkFantasyTheme.badge)
+                        }
+                        .foregroundStyle(stats.currentStreak >= 5 ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold)
+                        .padding(.horizontal, LayoutConstants.spaceXS)
+                        .padding(.vertical, LayoutConstants.space2XS)
+                        .background(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                                .fill(
+                                    (stats.currentStreak >= 5 ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold)
+                                        .opacity(0.12)
+                                )
+                        )
                     }
-                    Spacer()
+
+                    // Bonus badge (compact)
+                    if status == "mining" || status == "ready" {
+                        compactBonusBadge
+                    }
                 }
-                .padding(LayoutConstants.spaceXS)
-            }
-        }
-        .frame(height: 110)
-        .clipped()
-    }
 
-    /// Small top-trailing badge that mirrors the per-slot bonus minigame
-    /// gate. Drives the whole-card tap affordance. Pure tokens.
-    @ViewBuilder
-    private var bonusStateBadge: some View {
-        if vm.isSlotMinigamePlayed(slot) {
-            HStack(spacing: LayoutConstants.space2XS) {
-                Image(systemName: "checkmark")
-                    .font(DarkFantasyTheme.badge)
-                Text("BONUS")
-                    .font(DarkFantasyTheme.badge)
-                    .tracking(1.0)
-            }
-            .foregroundStyle(DarkFantasyTheme.textPrimary)
-            .padding(.horizontal, LayoutConstants.spaceXS)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .fill(DarkFantasyTheme.success.opacity(0.85))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .stroke(DarkFantasyTheme.success, lineWidth: 1)
-            )
-        } else {
-            HStack(spacing: LayoutConstants.space2XS) {
-                Image(systemName: "sparkles")
-                    .font(DarkFantasyTheme.badge)
-                Text("BONUS")
-                    .font(DarkFantasyTheme.badge)
-                    .tracking(1.0)
-            }
-            .foregroundStyle(DarkFantasyTheme.textOnGold)
-            .padding(.horizontal, LayoutConstants.spaceXS)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .fill(DarkFantasyTheme.goldGradient)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
-                    .stroke(DarkFantasyTheme.goldBright, lineWidth: 1)
-            )
-        }
-    }
-
-    // MARK: - Info Panel
-
-    private var infoPanel: some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
-            Text(GoldMineViewModel.mineName(for: index).uppercased())
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .accessibilityLabel("\(GoldMineViewModel.mineName(for: index)) slot")
-
-            statusLabel
-
-            if status == "mining" {
-                mineProgressBar
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    statusIndicator
+                    if status == "mining" {
+                        Text("· \(vm.timeRemaining(slot))")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                            .lineLimit(1)
+                    }
+                }
             }
 
-            // Action button area
-            if isActing {
-                HexPulseLoader(.compact)
-                    .tint(DarkFantasyTheme.gold)
-                    .frame(height: 34)
-            } else {
-                actionButton
+            Spacer()
+
+            // Shaft progress mini
+            if let shaft = vm.activeShaft {
+                VStack(spacing: 0) {
+                    Text("Shaft")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    Text(shaft.progressLabel)
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(slotAccent)
+                }
             }
+
+            // Chevron
+            Image(systemName: "chevron.down")
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .rotationEffect(.degrees(isExpanded ? 180 : 0))
         }
         .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.vertical, LayoutConstants.spaceSM)
     }
 
-    // MARK: - Status Label
+    // MARK: - Compact Bonus Badge
 
     @ViewBuilder
-    private var statusLabel: some View {
-        switch status {
-        case "mining":
-            Text("Mining... \(vm.timeRemaining(slot))")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        case "ready":
-            Text("Ready to collect!")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.success)
-        default:
-            Text("Idle")
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
+    private var compactBonusBadge: some View {
+        if vm.isSlotMinigamePlayed(slot) {
+            HStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: "checkmark")
+                    .font(DarkFantasyTheme.badge)
+            }
+            .foregroundStyle(DarkFantasyTheme.textPrimary)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.success.opacity(0.85))
+            )
+        } else {
+            HStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: "sparkles")
+                    .font(DarkFantasyTheme.badge)
+            }
+            .foregroundStyle(DarkFantasyTheme.textOnGold)
+            .padding(.horizontal, LayoutConstants.spaceXS)
+            .padding(.vertical, LayoutConstants.space2XS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                    .fill(DarkFantasyTheme.goldGradient)
+            )
         }
     }
 
-    // MARK: - Progress Bar
+    // MARK: - Status Indicator
 
-    private var mineProgressBar: some View {
-        let _ = progressTick // Force re-evaluation on timer tick
+    private var statusIndicator: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Circle()
+                .fill(statusColor)
+                .frame(width: LayoutConstants.spaceSM, height: LayoutConstants.spaceSM)
+                .shadow(color: statusColor.opacity(status != "idle" ? 0.6 : 0), radius: 4)
+
+            Text(statusLabel)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(statusColor)
+                .tracking(1.0)
+        }
+    }
+
+    private var statusColor: Color {
+        switch status {
+        case "mining": return DarkFantasyTheme.gold
+        case "ready": return DarkFantasyTheme.success
+        default: return DarkFantasyTheme.textTertiary
+        }
+    }
+
+    private var statusLabel: String {
+        switch status {
+        case "mining": return "MINING"
+        case "ready": return "READY"
+        default: return "IDLE"
+        }
+    }
+
+    // MARK: - Collapsed Progress Bar
+
+    private var collapsedProgressBar: some View {
+        let _ = progressTick
         let progress = vm.miningProgress(slot)
         return GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                Rectangle()
                     .fill(DarkFantasyTheme.borderSubtle)
 
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                Rectangle()
                     .fill(
                         LinearGradient(
                             colors: [slotAccent, DarkFantasyTheme.gold],
                             startPoint: .leading, endPoint: .trailing
                         )
                     )
-                    .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
                     .frame(width: geo.size.width * max(0, min(1, progress)))
                     .animation(.linear(duration: 1), value: progress)
             }
         }
-        .frame(height: 5)
+        .frame(height: LayoutConstants.mineProgressCollapsed)
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.bottom, LayoutConstants.spaceSM)
     }
 
-    // MARK: - Action Button
+    // MARK: - Expanded Content
+
+    private var expandedContent: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            // Divider
+            Rectangle()
+                .fill(DarkFantasyTheme.borderSubtle)
+                .frame(height: 1)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+
+            // Lore text
+            Text(mineLore)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .italic()
+                .opacity(0.7)
+                .lineLimit(2)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+
+            // Stats row
+            HStack(spacing: LayoutConstants.spaceXS) {
+                let stats = vm.slotStats(at: index)
+                mineStatBox(
+                    icon: "hammer.fill",
+                    label: "MINED",
+                    value: stats.map { formatCompact($0.totalGoldMined) } ?? "—"
+                )
+                mineStatBox(
+                    icon: "chart.bar.fill",
+                    label: "RUNS",
+                    value: stats.map { "\($0.sessionsCompleted)" } ?? "—"
+                )
+                mineStatBox(
+                    icon: "trophy.fill",
+                    label: "BEST",
+                    value: stats.map { "\($0.bestHaul)" } ?? "—"
+                )
+                mineStatBox(
+                    icon: "bolt.fill",
+                    label: "RATE",
+                    value: "\(200)/h"
+                )
+            }
+            .padding(.horizontal, LayoutConstants.spaceSM)
+
+            // Streak badge (if active)
+            if let stats = vm.slotStats(at: index), stats.currentStreak >= 2 {
+                HStack(spacing: LayoutConstants.spaceXS) {
+                    Image(systemName: stats.currentStreak >= 5 ? "flame.fill" : "bolt.fill")
+                        .font(DarkFantasyTheme.caption)
+                    Text("\(stats.currentStreak) streak")
+                        .font(DarkFantasyTheme.caption)
+                        .bold()
+                }
+                .foregroundStyle(stats.currentStreak >= 5 ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold)
+                .padding(.horizontal, LayoutConstants.spaceSM)
+                .padding(.vertical, LayoutConstants.spaceXS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                        .fill(
+                            (stats.currentStreak >= 5 ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold)
+                                .opacity(0.08)
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                        .stroke(
+                            (stats.currentStreak >= 5 ? DarkFantasyTheme.stamina : DarkFantasyTheme.gold)
+                                .opacity(0.2),
+                            lineWidth: 1
+                        )
+                )
+                .padding(.horizontal, LayoutConstants.spaceSM)
+            }
+
+            // Mining progress (when mining)
+            if status == "mining" {
+                expandedMiningProgress
+            }
+
+            // Action buttons
+            actionButtons
+                .padding(.horizontal, LayoutConstants.spaceSM)
+        }
+        .padding(.bottom, LayoutConstants.spaceSM)
+        .transition(.opacity.combined(with: .move(edge: .top)))
+    }
+
+    // MARK: - Stat Box
+
+    private func mineStatBox(icon: String, label: String, value: String) -> some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            HStack(spacing: LayoutConstants.space2XS) {
+                Image(systemName: icon)
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Text(label)
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .tracking(0.5)
+            }
+
+            Text(value)
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceXS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .fill(DarkFantasyTheme.bgPrimary.opacity(0.4))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Expanded Mining Progress
+
+    private var expandedMiningProgress: some View {
+        let _ = progressTick
+        let progress = vm.miningProgress(slot)
+        return VStack(spacing: LayoutConstants.spaceXS) {
+            HStack {
+                Text("TIME REMAINING")
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .tracking(0.5)
+                Spacer()
+                Text(vm.timeRemaining(slot))
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .bold()
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(DarkFantasyTheme.borderSubtle)
+
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
+                        .fill(
+                            LinearGradient(
+                                colors: [slotAccent, DarkFantasyTheme.gold],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
+                        .frame(width: geo.size.width * max(0, min(1, progress)))
+                        .animation(.linear(duration: 1), value: progress)
+                }
+            }
+            .frame(height: LayoutConstants.mineProgressHeight)
+
+            // Vein hint based on progress
+            veinHint(progress: progress)
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+    }
+
+    // MARK: - Vein Hint (NEW — progressive discovery during mining)
 
     @ViewBuilder
-    private var actionButton: some View {
-        switch status {
-        case "idle":
-            Button {
-                HapticManager.medium()
-                Task { await vm.startMining(slotIndex: index) }
-            } label: {
-                Text("MINE")
-                    .frame(maxWidth: .infinity)
+    private func veinHint(progress: Double) -> some View {
+        let hint: (String, Color)? = {
+            if progress >= 0.75 {
+                return ("Rare deposit detected!", DarkFantasyTheme.gold)
+            } else if progress >= 0.50 {
+                return ("Rich vein found", DarkFantasyTheme.purple)
+            } else if progress >= 0.25 {
+                return ("Detecting minerals...", DarkFantasyTheme.textSecondary)
             }
-            .buttonStyle(.compactPrimary)
+            return nil
+        }()
 
-        case "mining":
-            // Variant D Phase 2: while mining, the player can EITHER tap
-            // BOOST (spend gems to speed up) OR play the bonus minigame in
-            // advance. If the minigame is already played, the slot just
-            // waits — the BOOST button stays available.
-            if vm.isSlotMinigamePlayed(slot) {
-                Button {
-                    vm.boost(slotIndex: index)
-                } label: {
-                    HStack(spacing: LayoutConstants.space2XS) {
-                        Text("BOOST")
-                        Image("icon-gems")
-                            .resizable()
-                            .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
-            } else {
+        if let (text, color) = hint {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: progress >= 0.75 ? "exclamationmark.triangle.fill" : "sparkle")
+                    .font(DarkFantasyTheme.caption)
+                Text(text)
+                    .font(DarkFantasyTheme.caption)
+            }
+            .foregroundStyle(color)
+            .padding(.horizontal, LayoutConstants.spaceSM)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .fill(color.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
+                    .stroke(color.opacity(0.2), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Action Buttons
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        if isActing {
+            HexPulseLoader(.compact)
+                .tint(DarkFantasyTheme.gold)
+                .frame(height: LayoutConstants.mineLoaderHeight)
+        } else {
+            switch status {
+            case "idle":
                 Button {
                     HapticManager.medium()
-                    Task { await vm.startSlotMinigame(slotIndex: index) }
+                    Task { await vm.startMining(slotIndex: index) }
                 } label: {
-                    HStack(spacing: LayoutConstants.space2XS) {
-                        Text("BONUS")
-                        Image(systemName: "sparkles")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
-                .disabled(vm.isStartingSlotMinigame)
-            }
-
-        case "ready":
-            // Variant D Phase 2: collection is GATED by the per-slot bonus
-            // minigame. If played → tap drains all ready played slots. If
-            // not played → the button becomes PLAY BONUS and opens the
-            // minigame on THIS slot.
-            if vm.isSlotMinigamePlayed(slot) {
-                Button {
-                    HapticManager.medium()
-                    Task { await vm.collectAll() }
-                } label: {
-                    HStack(spacing: LayoutConstants.space2XS) {
-                        Text("COLLECT")
-                        Image("icon-gold")
-                            .resizable()
-                            .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
-                    }
-                    .frame(maxWidth: .infinity)
+                    Text("START MINING")
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.compactPrimary)
-                .disabled(vm.isCollectingAll)
-            } else {
-                Button {
-                    HapticManager.medium()
-                    Task { await vm.startSlotMinigame(slotIndex: index) }
-                } label: {
-                    HStack(spacing: LayoutConstants.space2XS) {
-                        Text("PLAY BONUS")
-                        Image(systemName: "sparkles")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.compactPrimary)
-                .disabled(vm.isStartingSlotMinigame)
-            }
 
-        default:
-            EmptyView()
+            case "mining":
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    if !vm.isSlotMinigamePlayed(slot) {
+                        Button {
+                            HapticManager.medium()
+                            Task { await vm.startSlotMinigame(slotIndex: index) }
+                        } label: {
+                            HStack(spacing: LayoutConstants.space2XS) {
+                                Text("BONUS")
+                                Image(systemName: "sparkles")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.compactOutline(color: DarkFantasyTheme.gold))
+                        .disabled(vm.isStartingSlotMinigame)
+                    }
+
+                    Button {
+                        vm.boost(slotIndex: index)
+                    } label: {
+                        HStack(spacing: LayoutConstants.space2XS) {
+                            Text("BOOST")
+                            Image("icon-gems")
+                                .resizable()
+                                .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
+                }
+
+            case "ready":
+                if vm.isSlotMinigamePlayed(slot) {
+                    Button {
+                        HapticManager.medium()
+                        Task { await vm.collectAll() }
+                    } label: {
+                        HStack(spacing: LayoutConstants.space2XS) {
+                            Text("COLLECT")
+                            Image("icon-gold")
+                                .resizable()
+                                .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.compactPrimary)
+                    .disabled(vm.isCollectingAll)
+                } else {
+                    Button {
+                        HapticManager.medium()
+                        Task { await vm.startSlotMinigame(slotIndex: index) }
+                    } label: {
+                        HStack(spacing: LayoutConstants.space2XS) {
+                            Text("PLAY BONUS")
+                            Image(systemName: "sparkles")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.compactPrimary)
+                    .disabled(vm.isStartingSlotMinigame)
+                }
+
+            default:
+                EmptyView()
+            }
         }
     }
 
@@ -784,20 +973,30 @@ private struct MineSlotCard: View {
 
     private var cardBorderColor: Color {
         switch status {
-        case "mining": slotAccent
-        case "ready": DarkFantasyTheme.goldBright
-        default: DarkFantasyTheme.borderSubtle
+        case "mining": return slotAccent
+        case "ready": return DarkFantasyTheme.goldBright
+        default: return DarkFantasyTheme.borderSubtle
         }
     }
 
     private var cardShadowColor: Color {
         switch status {
-        case "mining": slotAccent.opacity(0.3)
-        case "ready": DarkFantasyTheme.goldGlow
-        default: .clear
+        case "mining": return slotAccent.opacity(0.3)
+        case "ready": return DarkFantasyTheme.goldGlow
+        default: return .clear
         }
     }
 
+    // MARK: - Helpers
+
+    /// Compact number formatting: 1234 → "1.2K", 530 → "530"
+    private func formatCompact(_ value: Int) -> String {
+        if value >= 1000 {
+            let k = Double(value) / 1000.0
+            return String(format: "%.1fK", k)
+        }
+        return "\(value)"
+    }
 }
 
 // MARK: - Locked Mine Card
@@ -807,53 +1006,54 @@ private struct LockedMineCard: View {
     let vm: GoldMineViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Locked mine illustration
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Locked mine thumbnail
             ZStack {
                 Image("mine-slot-locked")
                     .resizable()
                     .scaledToFill()
+                    .frame(width: LayoutConstants.mineThumbnailSize, height: LayoutConstants.mineThumbnailSize)
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
 
-                // Darken overlay
                 DarkFantasyTheme.bgScrim
+                    .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.panelRadius))
 
                 Image(systemName: "lock.fill")
-                    .font(DarkFantasyTheme.title)
+                    .font(DarkFantasyTheme.uiLabel)
                     .foregroundStyle(DarkFantasyTheme.textTertiary.opacity(0.6))
             }
-            .frame(height: 110)
-            .clipped()
+            .frame(width: LayoutConstants.mineThumbnailSize, height: LayoutConstants.mineThumbnailSize)
 
-            // Info
-            VStack(spacing: LayoutConstants.spaceXS) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
                 Text("SLOT \(slotNumber)")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.cardTitle)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
 
                 HStack(spacing: LayoutConstants.space2XS) {
                     Text("Unlock for")
-                        .font(DarkFantasyTheme.body)
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                     Image("icon-gems")
                         .resizable()
                         .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
                     Text("50")
-                        .font(DarkFantasyTheme.body)
+                        .font(DarkFantasyTheme.caption)
                         .foregroundStyle(DarkFantasyTheme.cyan)
                 }
-
-                Button {
-                    vm.buySlot()
-                } label: {
-                    Text("UNLOCK")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
-                .disabled(vm.isBuyingSlot)
             }
-            .padding(.horizontal, LayoutConstants.spaceSM)
-            .padding(.vertical, LayoutConstants.spaceSM)
+
+            Spacer()
+
+            Button {
+                vm.buySlot()
+            } label: {
+                Text("UNLOCK")
+            }
+            .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
+            .disabled(vm.isBuyingSlot)
         }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceSM)
         .background(
             RadialGlowBackground(
                 baseColor: DarkFantasyTheme.bgSecondary,
@@ -900,13 +1100,12 @@ private struct MiningSparklesOverlay: View {
                 let time = timeline.date.timeIntervalSinceReferenceDate
 
                 for seed in Self.seeds {
-                    // Each particle loops through its own lifecycle
                     let cycle: Double = 2.5
                     let raw = (time * seed.speed + seed.phaseOffset)
                     let t = (raw - floor(raw / cycle) * cycle) / cycle
 
-                    let alpha = sin(t * .pi) // smooth fade in/out
-                    let y = size.height * (1.0 - t * 0.85) // rise from bottom
+                    let alpha = sin(t * .pi)
+                    let y = size.height * (1.0 - t * 0.85)
                     let x = (seed.x + seed.xDrift * sin(time * 2 + seed.phaseOffset * 6)) * size.width
                     let s = seed.size * (0.6 + 0.4 * (1 - t))
 
@@ -937,8 +1136,6 @@ private struct MineParticleSeed {
 
 // MARK: - Slot Anchor Preference Key
 
-/// Published by each `MineSlotCard` — global center point of the card.
-/// Consumed by `GoldMineDetailView` to position live coin-fly source points.
 struct MineSlotAnchorEntry: Equatable {
     let slotIndex: Int
     let point: CGPoint
@@ -954,9 +1151,6 @@ struct MineSlotAnchorPreferenceKey: PreferenceKey {
 
 // MARK: - Live Flight (coin / gem particle in transit)
 
-/// A single in-flight coin or gem particle from an active mine to the
-/// resource header. Added by the live-tick timer in `GoldMineDetailView`,
-/// removed when its `CoinFlyAnimationView.onComplete` fires.
 struct LiveMineFlight: Identifiable, Equatable {
     let id = UUID()
     let style: CoinStyle

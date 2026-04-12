@@ -60,6 +60,13 @@ struct ShopDetailView: View {
                 HubLogoButton()
             }
         }
+        .onAppear {
+            AmbientManager.shared.setZone(.shop)
+            SFXManager.shared.play(.merchantGreet)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
         .task {
             // Show merchant NPC only on first visit (not yet dismissed)
             if !merchantDismissed {
@@ -109,6 +116,16 @@ struct ShopDetailView: View {
                 .padding(.horizontal, LayoutConstants.screenPadding)
                 .padding(.top, LayoutConstants.spaceSM)
                 .padding(.bottom, LayoutConstants.spaceSM)
+
+            // Contraband widget — "The Scavenger" timed loot drops (always visible)
+            ContrabandWidget(
+                state: vm.contrabandState,
+                canAfford: vm.canAffordContraband,
+                isClaiming: vm.isClaimingContraband,
+                onClaim: { Task { await vm.claimContraband() } },
+                onRefresh: { Task { await vm.loadContraband() } }
+            )
+            .padding(.bottom, LayoutConstants.spaceSM)
 
             // Special Offers carousel — hide fully claimed offers (purchase limit reached).
             // After a player claims the Starter Pack (or any single-use offer), its card

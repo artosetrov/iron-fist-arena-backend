@@ -362,6 +362,7 @@ model Character {
   characterPassives   CharacterPassive[]
   mailRecipients      MailRecipient[]
   shopOfferPurchases  ShopOfferPurchase[]
+  contrabandClaims    ContrabandClaim[]
 
   // Tutorial & Onboarding
   tutorialStep          Int       @default(0) @map("tutorial_step")       // 0=new, 1=equipped, 2=first_fight, 3=completed
@@ -1346,6 +1347,23 @@ model ShopOffer {
 
   @@index([isActive, startsAt, endsAt])
   @@map("shop_offers")
+}
+
+// ──── Contraband System (Timed Loot Drops) ────
+
+model ContrabandClaim {
+  id          String   @id @default(uuid())
+  characterId String   @map("character_id")
+  contents    Json     // [{type, id?, quantity}] — what was in the drop
+  price       Int      @default(0) // 0 = free, >0 = paid
+  currency    String   @default("gold")
+  claimNumber Int      @map("claim_number") // sequential per character, odd=free even=paid
+  claimedAt   DateTime @default(now()) @map("claimed_at")
+
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, claimedAt])
+  @@map("contraband_claims")
 }
 
 model ShopOfferPurchase {

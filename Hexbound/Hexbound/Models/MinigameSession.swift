@@ -17,18 +17,20 @@ enum ShaftKey: String, Codable, CaseIterable, Identifiable {
     }
 
     /// Background PNG asset used during the 15s mini-game.
+    /// Re-uses mine-slot art from xcassets (covered by gradient overlay).
     var backgroundAssetName: String {
         switch self {
-        case .stone: return "minigame-bg-stone"
-        case .ice:   return "minigame-bg-ice"
+        case .stone: return "mine-slot-1"
+        case .ice:   return "mine-slot-4"
         }
     }
 
     /// Thumbnail asset shown in the shaft picker sheet + active shaft banner.
+    /// Re-uses mine-slot art from xcassets.
     var thumbAssetName: String {
         switch self {
-        case .stone: return "shaft-thumb-stone"
-        case .ice:   return "shaft-thumb-ice"
+        case .stone: return "mine-slot-1"
+        case .ice:   return "mine-slot-4"
         }
     }
 

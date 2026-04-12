@@ -39,6 +39,7 @@ enum DarkFantasyTheme {
     static let cyan = Color(hex: 0x00D4FF)            // Enchanted/premium accents
     static let purple = Color(hex: 0x9B59B6)          // XP, magic, epic
     static let stamina = Color(hex: 0xE67E22)         // Orange stamina
+    static let contrabandAccent = Color(hex: 0xC44569) // Dark crimson — contraband/black market
 
     // Semantic aliases
     static let healFlash = success

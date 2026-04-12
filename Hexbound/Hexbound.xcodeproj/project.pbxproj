@@ -293,6 +293,7 @@
 		E53876454A91F74256038E64 /* AchievementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAE85747CEDD3269A7B0FE0A /* AchievementService.swift */; };
 		E5AB8CE71D5D326878C5CD99 /* Character.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47BF69C872101A05B35E80C /* Character.swift */; };
 		E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6D /* SFXManager.swift */; };
+		3A90425A6C1B65E59C7BB32A /* AmbientManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7DFA5AA46E59CFF5DDEA2B /* AmbientManager.swift */; };
 		EA6DA3C33DF151344CE8AFB4 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F525698FF57035C2C32D1B /* LoginViewModel.swift */; };
 		EF81A20CF9208442CCE499D0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C574D383C6E2BD792258C813 /* AppState.swift */; };
 		F0D9A0070A3AEE52A2FCEC9A /* APIEndpoints.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36990CC42E8623DE866E325C /* APIEndpoints.swift */; };
@@ -323,6 +324,8 @@
 		MSVC001BLD00001 /* MessageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSVC001REF00001 /* MessageService.swift */; };
 		OFFER001BLD00001 /* ShopOffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OFFER001REF00001 /* ShopOffer.swift */; };
 		OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = OFFER001REF00002 /* ShopOfferBannerView.swift */; };
+		7A638F9F02B2EE21F9C95645 /* ContrabandState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */; };
+		5F7E8825E76DE222DFE1F5C3 /* ContrabandWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */; };
 		PP0001BUILD00001 /* PremiumPurchaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PP0001FREF00001 /* PremiumPurchaseView.swift */; };
 		PUSH001BLD0000000000000A /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH001REF0000000000000B /* PushNotificationService.swift */; };
 		PUSH002BLD0000000000000C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = PUSH002REF0000000000000D /* AppDelegate.swift */; };
@@ -478,6 +481,7 @@
 		408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintOverlay.swift; sourceTree = "<group>"; };
 		47D25C881865117CB558F2C7 /* ContextualHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualHintOverlay.swift; sourceTree = "<group>"; };
 		41D739E061B444DC46FF0A6D /* SFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXManager.swift; sourceTree = "<group>"; };
+		AC7DFA5AA46E59CFF5DDEA2B /* AmbientManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientManager.swift; sourceTree = "<group>"; };
 		4207BE33FB8C08DAEF7E2385 /* CharacterClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterClass.swift; sourceTree = "<group>"; };
 		42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingConfig.swift; sourceTree = "<group>"; };
 		42A1B2C3D4E5F60DM2BV001 /* DungeonMapBuildingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingView.swift; sourceTree = "<group>"; };
@@ -737,6 +741,8 @@
 		MSVC001REF00001 /* MessageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageService.swift; sourceTree = "<group>"; };
 		OFFER001REF00001 /* ShopOffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopOffer.swift; sourceTree = "<group>"; };
 		OFFER001REF00002 /* ShopOfferBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopOfferBannerView.swift; sourceTree = "<group>"; };
+		5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrabandState.swift; sourceTree = "<group>"; };
+		72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrabandWidget.swift; sourceTree = "<group>"; };
 		PP0001FREF00001 /* PremiumPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumPurchaseView.swift; sourceTree = "<group>"; };
 		PUSH001REF0000000000000B /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		PUSH002REF0000000000000D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -834,6 +840,7 @@
 		129E41F2C8626921FA851877 /* Shop */ = {
 			isa = PBXGroup;
 			children = (
+				72DCB01C78E840C4C69F0E46 /* ContrabandWidget.swift */,
 				9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */,
 				0D6E2F7A8B9C0D1E2F3A4B5C /* MerchantTipProvider.swift */,
 				2F8A4B9C0D1E2F3A4B5C6D7E /* MerchantStripView.swift */,
@@ -1216,6 +1223,7 @@
 		7A40E94B8C62DCB97C6476FC /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				AC7DFA5AA46E59CFF5DDEA2B /* AmbientManager.swift */,
 				8825D55175E1FECF38EF971F /* AudioManager.swift */,
 				79F022C8EB7B52576FEE27CC /* KeychainManager.swift */,
 				41D739E061B444DC46FF0A6D /* SFXManager.swift */,
@@ -1412,6 +1420,7 @@
 				7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */,
 				D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */,
 				776542cff60cc81ecdff074b /* StatPurchase.swift */,
+				5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */,
 				OFFER001REF00001 /* ShopOffer.swift */,
 				62CD513D5B1711C8822F3588 /* Enums */,
 			);
@@ -1993,12 +2002,15 @@
 				2AF622924BD22E871CCC1E02 /* SettingsManager.swift in Sources */,
 				B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */,
 				E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */,
+				3A90425A6C1B65E59C7BB32A /* AmbientManager.swift in Sources */,
 				467020D2C9265A8F7CBEAAE2 /* ShellGameDetailView.swift in Sources */,
 				A021218F7D0F65AF1DD006B5 /* ShellGameViewModel.swift in Sources */,
 				7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */,
 				B48178011544C313F250402F /* ShopDetailView.swift in Sources */,
 				319EBA8EDCD2DAD9FF12F314 /* ShopItem.swift in Sources */,
-				OFFER001BLD00001 /* ShopOffer.swift in Sources */,
+				7A638F9F02B2EE21F9C95645 /* ContrabandState.swift in Sources */,
+			5F7E8825E76DE222DFE1F5C3 /* ContrabandWidget.swift in Sources */,
+			OFFER001BLD00001 /* ShopOffer.swift in Sources */,
 				OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */,
 				4442F83247EBA7804A2839E5 /* ShopService.swift in Sources */,
 				E470471DEBA32722051221AF /* ShopViewModel.swift in Sources */,

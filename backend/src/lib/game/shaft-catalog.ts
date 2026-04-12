@@ -28,15 +28,15 @@ export const SHAFTS: Record<ShaftKey, ShaftConfig> = {
   stone: {
     key: 'stone',
     displayName: 'Stone Shaft',
-    backgroundAssetName: 'minigame-bg-stone',
-    thumbAssetName: 'shaft-thumb-stone',
+    backgroundAssetName: 'mine-slot-1',
+    thumbAssetName: 'mine-slot-1',
     unlockSlotLevel: 1,
   },
   ice: {
     key: 'ice',
     displayName: 'Ice Shaft',
-    backgroundAssetName: 'minigame-bg-ice',
-    thumbAssetName: 'shaft-thumb-ice',
+    backgroundAssetName: 'mine-slot-4',
+    thumbAssetName: 'mine-slot-4',
     unlockSlotLevel: 2,
   },
 }

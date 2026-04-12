@@ -81,7 +81,8 @@ struct CombatDetailView: View {
             Text("You will lose the battle and any rewards. Are you sure?")
         }
         .onAppear {
-            SFXManager.shared.play(.battleStart)
+            SFXManager.shared.play(.gongHit)
+            AmbientManager.shared.setZone(.arenaFight)
             setupCombatIfReady()
         }
         .onChange(of: appState.combatData != nil) { _, hasData in

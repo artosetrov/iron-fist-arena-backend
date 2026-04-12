@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "CLAUDE.md",
+      "title": "Project Rules"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/01_source_of_truth/DOCUMENTATION_INDEX.md",
+      "title": "Documentation Index"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/02_product_and_features/GAME_SYSTEMS.md",
+      "title": "Game Systems"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/03_backend_and_api/API_REFERENCE.md",
+      "title": "API Reference"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/04_database/SCHEMA_REFERENCE.md",
+      "title": "DB Schema"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/06_game_systems/BALANCE_CONSTANTS.md",
+      "title": "Balance Constants"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/07_ui_ux/SCREEN_INVENTORY.md",
+      "title": "Screen Inventory"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/07_ui_ux/DESIGN_SYSTEM.md",
+      "title": "Design System"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/02_product_and_features/ECONOMY.md",
+      "title": "Economy"
+    },
+    {
+      "type": "file",
+      "ctime": 1712928000000,
+      "path": "docs/06_game_systems/COMBAT.md",
+      "title": "Combat"
+    }
+  ]
+}

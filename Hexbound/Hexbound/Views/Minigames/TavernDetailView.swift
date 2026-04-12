@@ -39,6 +39,15 @@ private struct TavernGame: Identifiable {
             accentColor: DarkFantasyTheme.danger,
             route: .dungeonRush
         ),
+        TavernGame(
+            id: "gold-mine",
+            title: "GOLD MINE",
+            subtitle: "Collect your gold.\nCatch bonus drops!",
+            hostName: "The Foreman",
+            hostImage: "building-gold-mine",
+            accentColor: DarkFantasyTheme.gold,
+            route: .goldMine
+        ),
     ]
 }
 

@@ -113,7 +113,7 @@ struct TutorialQuestBanner: View {
                                 SFXManager.shared.play(.uiRewardClaim)
                                 onClaim()
                             } label: {
-                                Text("ЗАБРАТЬ НАГРАДУ")
+                                Text("CLAIM REWARD")
                                     .font(DarkFantasyTheme.buttonLabelCompact)
                                     .textCase(.uppercase)
                             }
@@ -125,7 +125,7 @@ struct TutorialQuestBanner: View {
                                 SFXManager.shared.play(.uiTap)
                                 onTap()
                             } label: {
-                                Text("ПЕРЕЙТИ")
+                                Text("GO")
                                     .font(DarkFantasyTheme.buttonLabelCompact)
                                     .textCase(.uppercase)
                             }

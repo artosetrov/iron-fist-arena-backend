@@ -150,28 +150,43 @@ export async function GET(req: NextRequest) {
       orderBy: { catalogId: 'asc' },
     })
 
+    // Build per-type image fallback map: itemType → { imageUrl, imageKey }
+    // Items without their own image will borrow the image of another item
+    // of the same type (e.g. a helmet without art shows another helmet's art).
+    const typeFallbackImage = new Map<string, { imageUrl: string | null; imageKey: string | null }>()
+    for (const item of equipmentItems) {
+      const t = item.itemType.toLowerCase()
+      if (!typeFallbackImage.has(t) && (item.imageUrl || item.imageKey)) {
+        typeFallbackImage.set(t, { imageUrl: item.imageUrl, imageKey: item.imageKey })
+      }
+    }
+
     // Transform equipment items to snake_case
-    const shopItems = equipmentItems.map((item) => ({
-      id: item.id,
-      catalog_id: item.catalogId,
-      item_name: item.itemName,
-      item_type: item.itemType.toLowerCase(),
-      rarity: item.rarity.toLowerCase(),
-      item_level: item.itemLevel,
-      required_level: item.itemLevel,
-      gold_price: item.buyPrice > 0 ? item.buyPrice : calculateFallbackPrice(item.rarity.toLowerCase(), item.itemLevel),
-      gem_price: 0,
-      sell_price: item.sellPrice,
-      base_stats: item.baseStats,
-      description: item.description,
-      image_url: item.imageUrl,
-      image_key: item.imageKey,
-      special_effect: item.specialEffect,
-      unique_passive: item.uniquePassive,
-      set_name: item.setName,
-      class_restriction: item.classRestriction?.toLowerCase() ?? null,
-      is_two_handed: item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(item.catalogId),
-    }))
+    const shopItems = equipmentItems.map((item) => {
+      const hasImage = !!(item.imageUrl || item.imageKey)
+      const fallback = hasImage ? null : typeFallbackImage.get(item.itemType.toLowerCase())
+      return {
+        id: item.id,
+        catalog_id: item.catalogId,
+        item_name: item.itemName,
+        item_type: item.itemType.toLowerCase(),
+        rarity: item.rarity.toLowerCase(),
+        item_level: item.itemLevel,
+        required_level: item.itemLevel,
+        gold_price: item.buyPrice > 0 ? item.buyPrice : calculateFallbackPrice(item.rarity.toLowerCase(), item.itemLevel),
+        gem_price: 0,
+        sell_price: item.sellPrice,
+        base_stats: item.baseStats,
+        description: item.description,
+        image_url: item.imageUrl ?? fallback?.imageUrl ?? null,
+        image_key: item.imageKey ?? fallback?.imageKey ?? null,
+        special_effect: item.specialEffect,
+        unique_passive: item.uniquePassive,
+        set_name: item.setName,
+        class_restriction: item.classRestriction?.toLowerCase() ?? null,
+        is_two_handed: item.itemType === 'weapon' && TWO_HANDED_CATALOG_IDS.has(item.catalogId),
+      }
+    })
 
     // Batch-load all consumable prices from GameConfig ONCE (fix N+1)
     const consumablePriceMap = new Map<string, number>()

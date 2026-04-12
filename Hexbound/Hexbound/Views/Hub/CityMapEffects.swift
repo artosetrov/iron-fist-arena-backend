@@ -416,6 +416,233 @@ struct ChimneySmokeLayer: View {
     }
 }
 
+// MARK: - Storm Effect (periodic rain + lightning, ~30s burst every ~2 min)
+//
+// Lifecycle:  idle 90-150s → ramp-in 3s → full storm 24s → ramp-out 3s → idle
+// Rain:       Canvas-drawn diagonal streaks, ~80 drops
+// Lightning:  2-3 quick white flashes (opacity overlay) with terrain brightening
+// Performance: Canvas at 20fps during storm, 0fps during idle (no timeline tick)
+
+struct StormEffectLayer: View {
+    let width: CGFloat
+    let height: CGFloat
+
+    // Storm state machine
+    @State private var stormActive = false
+    @State private var stormOpacity: Double = 0       // master opacity for entire effect
+    @State private var lightningFlash: Double = 0     // 0…1 flash intensity
+    @State private var stormStartTime: Date = .now
+
+    // Timers
+    @State private var idleTimer: Timer?
+    @State private var lightningTask: Task<Void, Never>?
+
+    // Storm timing constants
+    private let idleMin: Double = 90     // minimum seconds between storms
+    private let idleMax: Double = 150    // maximum seconds between storms
+    private let stormDuration: Double = 24
+    private let rampDuration: Double = 3
+
+    var body: some View {
+        ZStack {
+            // Lightning flash overlay — full-screen white burst
+            if lightningFlash > 0 {
+                Color.white
+                    .opacity(lightningFlash * 0.12)
+                    .blendMode(.screen)
+            }
+
+            // Rain particles — only rendered during storm
+            if stormActive {
+                TimelineView(.animation(minimumInterval: 0.05)) { timeline in
+                    Canvas { context, size in
+                        let time = timeline.date.timeIntervalSince(stormStartTime)
+                        drawRain(context: &context, size: size, time: time)
+                    }
+                }
+                .opacity(stormOpacity)
+            }
+
+            // Terrain brightness boost during lightning
+            if lightningFlash > 0 {
+                Color.white
+                    .opacity(lightningFlash * 0.06)
+                    .blendMode(.softLight)
+            }
+        }
+        .frame(width: width, height: height)
+        .allowsHitTesting(false)
+        .onAppear { scheduleNextStorm() }
+        .onDisappear { cleanup() }
+    }
+
+    // MARK: - Rain Rendering (3-layer depth system)
+
+    private func drawRain(
+        context: inout GraphicsContext,
+        size: CGSize,
+        time: Double
+    ) {
+        let flashBoost = 1.0 + lightningFlash * 2.0
+
+        // === Far rain (background mist — many tiny faint drops) ===
+        for i in 0..<50 {
+            let seed = Double(i) * 53.71
+            let speed = 140.0 + seed.truncatingRemainder(dividingBy: 80.0)
+            let windX = 20.0
+            let xBase = seed.truncatingRemainder(dividingBy: Double(size.width))
+            let xOff = (time * windX + seed * 2.3).truncatingRemainder(dividingBy: Double(size.width + 60))
+            let x = (xBase + xOff).truncatingRemainder(dividingBy: Double(size.width))
+            let y = (time * speed + seed * 31.0).truncatingRemainder(dividingBy: Double(size.height + 20)) - 10
+            let length = 4.0 + seed.truncatingRemainder(dividingBy: 5.0)
+            let alpha = (0.03 + seed.truncatingRemainder(dividingBy: 0.04)) * flashBoost
+
+            var path = Path()
+            path.move(to: CGPoint(x: x, y: y))
+            path.addLine(to: CGPoint(x: x + windX * length / speed, y: y + length))
+            context.stroke(path, with: .color(DarkFantasyTheme.textSecondary.opacity(alpha)), lineWidth: 0.4)
+        }
+
+        // === Mid rain (main visible layer — varied drops) ===
+        for i in 0..<60 {
+            let seed = Double(i) * 73.137
+            let speed = 300.0 + seed.truncatingRemainder(dividingBy: 200.0)
+            let windX = 50.0 + sin(time * 0.3 + seed) * 12.0 // wind gusts
+
+            let xBase = seed.truncatingRemainder(dividingBy: Double(size.width))
+            let xOff = (time * windX + seed * 3.7).truncatingRemainder(dividingBy: Double(size.width + 120))
+            let x = (xBase + xOff).truncatingRemainder(dividingBy: Double(size.width))
+            let y = (time * speed + seed * 47.3).truncatingRemainder(dividingBy: Double(size.height + 40)) - 20
+
+            let length = 10.0 + seed.truncatingRemainder(dividingBy: 14.0)
+            let alpha = (0.06 + seed.truncatingRemainder(dividingBy: 0.08)) * flashBoost
+
+            var path = Path()
+            path.move(to: CGPoint(x: x, y: y))
+            path.addLine(to: CGPoint(x: x + windX * length / speed, y: y + length))
+            context.stroke(path, with: .color(DarkFantasyTheme.textPrimary.opacity(alpha)), lineWidth: 0.7)
+
+            // Splash at bottom — tiny expanding circle when drop "hits ground"
+            let splashZone = Double(size.height) * 0.85
+            if y > splashZone {
+                let splashProgress = (y - splashZone) / (Double(size.height) - splashZone)
+                let splashRadius = 1.5 + splashProgress * 2.5
+                let splashAlpha = (1.0 - splashProgress) * 0.06 * flashBoost
+                context.fill(
+                    Circle().path(in: CGRect(
+                        x: x - splashRadius, y: y + length - splashRadius,
+                        width: splashRadius * 2, height: splashRadius * 2
+                    )),
+                    with: .color(DarkFantasyTheme.textPrimary.opacity(splashAlpha))
+                )
+            }
+        }
+
+        // === Near rain (foreground — few big bright streaks for depth) ===
+        for i in 0..<8 {
+            let seed = Double(i) * 197.53
+            let speed = 500.0 + seed.truncatingRemainder(dividingBy: 150.0)
+            let windX = 65.0
+
+            let xBase = seed.truncatingRemainder(dividingBy: Double(size.width))
+            let xOff = (time * windX + seed * 5.1).truncatingRemainder(dividingBy: Double(size.width + 200))
+            let x = (xBase + xOff).truncatingRemainder(dividingBy: Double(size.width))
+            let y = (time * speed + seed * 61.0).truncatingRemainder(dividingBy: Double(size.height + 60)) - 30
+
+            let length = 20.0 + seed.truncatingRemainder(dividingBy: 12.0)
+            let alpha = (0.10 + seed.truncatingRemainder(dividingBy: 0.06)) * flashBoost
+
+            var path = Path()
+            path.move(to: CGPoint(x: x, y: y))
+            path.addLine(to: CGPoint(x: x + windX * length / speed, y: y + length))
+            context.stroke(path, with: .color(DarkFantasyTheme.textPrimary.opacity(alpha)), lineWidth: 1.2)
+        }
+    }
+
+    // MARK: - Storm Lifecycle
+
+    private func scheduleNextStorm() {
+        let delay = Double.random(in: idleMin...idleMax)
+        idleTimer?.invalidate()
+        idleTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+            Task { @MainActor in
+                startStorm()
+            }
+        }
+    }
+
+    private func startStorm() {
+        stormStartTime = .now
+        stormActive = true
+
+        // Play ambient rain loop for the storm duration
+        SFXManager.shared.play(.rainAmbient)
+
+        // Ramp in
+        withAnimation(.easeIn(duration: rampDuration)) {
+            stormOpacity = 1.0
+        }
+
+        // Schedule lightning strikes
+        lightningTask?.cancel()
+        lightningTask = Task { @MainActor in
+            // 2-3 lightning strikes during the storm
+            let strikeCount = Int.random(in: 2...3)
+            for s in 0..<strikeCount {
+                // Spread strikes across the storm duration
+                let strikeDelay = rampDuration + Double(s) * (stormDuration / Double(strikeCount)) + Double.random(in: 0...3)
+                try? await Task.sleep(for: .seconds(strikeDelay))
+                if Task.isCancelled { return }
+                await fireLightning()
+            }
+        }
+
+        // Schedule ramp out → idle
+        DispatchQueue.main.asyncAfter(deadline: .now() + rampDuration + stormDuration) {
+            withAnimation(.easeOut(duration: rampDuration)) {
+                stormOpacity = 0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + rampDuration) {
+                stormActive = false
+                scheduleNextStorm()
+            }
+        }
+    }
+
+    /// Fire a single lightning strike — 2-3 rapid flashes + thunder SFX
+    @MainActor
+    private func fireLightning() async {
+        // Play thunder rumble SFX with the flash
+        SFXManager.shared.play(.thunderRumble)
+
+        let subFlashes = Int.random(in: 2...3)
+        for f in 0..<subFlashes {
+            // Flash ON — instant
+            withAnimation(.easeIn(duration: 0.05)) {
+                lightningFlash = f == 0 ? 1.0 : Double.random(in: 0.4...0.7)
+            }
+            try? await Task.sleep(for: .milliseconds(Int.random(in: 60...120)))
+            // Flash OFF — quick fade
+            withAnimation(.easeOut(duration: 0.15)) {
+                lightningFlash = 0
+            }
+            if f < subFlashes - 1 {
+                try? await Task.sleep(for: .milliseconds(Int.random(in: 80...200)))
+            }
+        }
+    }
+
+    private func cleanup() {
+        idleTimer?.invalidate()
+        idleTimer = nil
+        lightningTask?.cancel()
+        lightningTask = nil
+        stormActive = false
+        stormOpacity = 0
+        lightningFlash = 0
+    }
+}
+
 // MARK: - Color(hex:) extension (if not already defined)
 
 // Already defined in DarkFantasyTheme — using that

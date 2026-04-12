@@ -167,7 +167,7 @@ struct RankUpCeremonyView: View {
                 showNewRank = true
             }
             HapticManager.rankUp()
-            SFXManager.shared.play(.uiLevelUp)
+            SFXManager.shared.play(.epicHornFanfare)
         }
 
         // Phase 3: Glow pulse

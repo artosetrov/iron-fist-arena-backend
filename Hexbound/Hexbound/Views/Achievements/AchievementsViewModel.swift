@@ -72,7 +72,7 @@ final class AchievementsViewModel {
         }
         cache.cacheAchievements(achievements)
         HapticManager.success()
-        SFXManager.shared.play(.uiRewardClaim)
+        SFXManager.shared.play(.sealStamp)
 
         // ── API call (runs after UI update thanks to await suspension) ──
         let success = await service.claim(achievementKey: achievement.key)

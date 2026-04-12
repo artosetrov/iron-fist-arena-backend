@@ -231,9 +231,12 @@ struct ArenaDetailView: View {
         // confirmation dialog removed — revenge triggers directly from button
         .onAppear {
             AudioManager.shared.playBGM("arena-pvp.mp3")
+            AmbientManager.shared.setZone(.arena)
+            SFXManager.shared.play(.crowdRoar)
         }
         .onDisappear {
             AudioManager.shared.playBGM("stray-city.mp3")
+            AmbientManager.shared.setZone(.hub)
         }
         .onChange(of: isLowHP) { _, _ in
             updateArenaHint()

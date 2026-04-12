@@ -164,6 +164,9 @@ struct CityMapView: View {
                         // Layer 5.5: Falling leaves & embers
                         FallingLeavesLayer(width: terrainWidth, height: viewHeight)
 
+                        // Layer 5.7: Periodic rain + lightning storm
+                        StormEffectLayer(width: terrainWidth, height: viewHeight)
+
                         // Layer 6: Front clouds (over terrain + buildings)
                         ParallaxLayer(factor: parallaxFactor(for: .frontCloud)) {
                             ForEach(frontClouds) { obj in

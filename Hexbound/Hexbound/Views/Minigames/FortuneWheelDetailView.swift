@@ -35,6 +35,12 @@ struct FortuneWheelDetailView: View {
                     .foregroundStyle(DarkFantasyTheme.goldBright)
             }
         }
+        .onAppear {
+            AmbientManager.shared.setZone(.tavern)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
         .task {
             if vm == nil {
                 let newVM = FortuneWheelViewModel(appState: appState)
@@ -196,6 +202,7 @@ struct FortuneWheelDetailView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 96, height: 120)
+                        .rotationEffect(.degrees(-15))
                         .shadow(color: DarkFantasyTheme.gold, radius: 10)
                         .offset(y: -2)
                     Spacer()

@@ -66,6 +66,12 @@ struct LeaderboardDetailView: View {
                 HubLogoButton()
             }
         }
+        .onAppear {
+            AmbientManager.shared.setZone(.hallOfFame)
+        }
+        .onDisappear {
+            AmbientManager.shared.setZone(.hub)
+        }
         .task {
             if vm == nil { vm = LeaderboardViewModel(appState: appState, cache: cache) }
             await vm?.loadLeaderboard()

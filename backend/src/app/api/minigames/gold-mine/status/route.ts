@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const slots = await buildSlotsArray(prisma, characterId, character.goldMineSlots)
+    const slots = await buildSlotsArray(prisma, characterId, character.goldMineSlots, true)
 
     return NextResponse.json({
       slots,

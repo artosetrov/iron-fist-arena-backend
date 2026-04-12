@@ -55,6 +55,7 @@ enum APIEndpoints {
     static let shopBuyGold = "/api/shop/buy-gold"
     static let shopBuyGems = "/api/shop/buy-gems"
     static let shopOffers = "/api/shop/offers"
+    static let shopContraband = "/api/shop/contraband"
     static let shopRepair = "/api/shop/repair"
     static let shopUpgrade = "/api/shop/upgrade"
 

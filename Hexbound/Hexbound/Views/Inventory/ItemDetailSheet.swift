@@ -108,6 +108,18 @@ struct ItemDetailSheet: View {
         return nil
     }
 
+    /// Contextual equip SFX based on item type — metal clank vs cloth rustle vs magic shimmer.
+    private var equipSFX: SFX {
+        switch item.itemType {
+        case .weapon, .helmet, .chest, .gloves, .legs, .boots, .belt:
+            return .armorClink
+        case .accessory, .amulet, .necklace, .ring, .relic:
+            return .magicShimmer
+        case .consumable:
+            return .uiEquip  // fallback
+        }
+    }
+
     private var currentUpgradeLevel: Int { item.upgradeLevel ?? 0 }
     private var canUpgrade: Bool { item.itemType != .consumable && currentUpgradeLevel < 10 && !isBroken }
     private var upgradeCost: Int { (currentUpgradeLevel + 1) * 100 }
@@ -785,7 +797,7 @@ struct ItemDetailSheet: View {
                         if !isBroken {
                             Button("EQUIP") {
                                 HapticManager.medium()
-                                SFXManager.shared.play(.uiEquip)
+                                SFXManager.shared.play(equipSFX)
                                 onEquip()
                             }
                             .buttonStyle(.secondary)

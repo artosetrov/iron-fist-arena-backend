@@ -119,7 +119,7 @@ struct CityBuildingView: View {
         }
 
         HapticManager.medium()
-        SFXManager.shared.play(.uiTap)
+        SFXManager.shared.play(.doorCreak)
 
         // Visual feedback
         withAnimation {

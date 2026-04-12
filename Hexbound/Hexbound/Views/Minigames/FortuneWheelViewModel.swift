@@ -162,6 +162,7 @@ final class FortuneWheelViewModel {
         guard canSpin, let charId = appState.currentCharacter?.id else { return nil }
 
         isSpinning = true
+        SFXManager.shared.play(.wheelSpin)
         result = nil
 
         // Optimistic: deduct bet immediately
@@ -236,7 +237,7 @@ final class FortuneWheelViewModel {
         }
 
         if result.won {
-            SFXManager.shared.play(.uiRewardClaim)
+            SFXManager.shared.play(.coinsJingle)
             HapticManager.victory()
             npcSpeech = winSpeechLines.randomElement() ?? winSpeechLines[0]
         } else {

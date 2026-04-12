@@ -307,7 +307,8 @@ final class InventoryViewModel {
         appState.cachedInventory = items
         appState.invalidateCache("quests")
         if result.success {
-            SFXManager.shared.play(.uiUpgradeSuccess)
+            SFXManager.shared.play(.anvilStrike)
+            SFXManager.shared.play(.enchantGlow)
             HapticManager.success()
             appState.showToast("⬆ \(item.itemName) +\(result.newLevel)!", type: .reward)
         } else if result.protectionUsed {

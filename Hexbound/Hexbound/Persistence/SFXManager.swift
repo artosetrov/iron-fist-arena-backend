@@ -184,6 +184,50 @@ enum SFX: String, CaseIterable {
     case dungeonGateClose = "dungeon_gate_close"
     case dungeonUnlock = "dungeon_unlock"
 
+    // Ambient — weather
+    case thunderRumble = "thunder_rumble"
+    case rainAmbient = "rain_ambient"
+
+    // Atmospheric — Arena
+    case crowdRoar = "crowd_roar"          // Arena entrance burst
+    case warDrums = "war_drums"            // Pre-fight anticipation
+    case gongHit = "gong_hit"              // Match start punctuation
+
+    // Atmospheric — Shop & Economy
+    case coinsJingle = "coins_jingle"      // Purchase confirmation
+    case merchantGreet = "merchant_greet"  // Shop open (cloth + bell)
+    case pouchDrop = "pouch_drop"          // Gold transaction
+
+    // Atmospheric — Inventory & Forge
+    case armorClink = "armor_clink"        // Metal equip
+    case clothRustle = "cloth_rustle"      // Cloth/accessory equip
+    case magicShimmer = "magic_shimmer"    // Relic/ring equip
+    case anvilStrike = "anvil_strike"      // Upgrade hammer hit
+    case enchantGlow = "enchant_glow"      // Successful enchant
+
+    // Atmospheric — Dungeon
+    case creatureGrowl = "creature_growl"  // Pre-boss tension
+    case rockCrumble = "rock_crumble"      // Floor collapse / gate
+    case chainRattle = "chain_rattle"      // Gate unlock chains
+    case footstepStone = "footstep_stone"  // Dungeon movement
+    case footstepWood = "footstep_wood"    // Building entry
+
+    // Atmospheric — Rewards & Ceremonies
+    case epicHornFanfare = "epic_horn_fanfare"  // Level up / rank up
+    case sealStamp = "seal_stamp"              // Achievement unlocked
+    case scrollUnfurl = "scroll_unfurl"        // Quest list open
+    case chainBreak = "chain_break"            // Battle pass tier unlock
+    case magicSpark = "magic_spark"            // Reward claim sparkle
+
+    // Atmospheric — Minigames
+    case wheelSpin = "wheel_spin"          // Fortune wheel ratchet
+    case shellShuffle = "shell_shuffle"    // Shell game shuffle
+    case pickaxeHit = "pickaxe_hit"        // Gold mine tap
+
+    // Atmospheric — Buildings / Hub
+    case doorCreak = "door_creak"          // Building entry
+    case torchIgnite = "torch_ignite"      // Screen transition fire whoosh
+
     // Misc
     case coinDrop = "coin_drop"
     case itemDrop = "item_drop"
@@ -220,6 +264,18 @@ enum SFX: String, CaseIterable {
         case .dungeonBossAppear: return 3  // dungeon_boss_appear + _2, _3
         case .dungeonDoorOpen:  return 2  // dungeon_door_open + _2
         case .dungeonDoorClose: return 2  // dungeon_door_close + _2
+        case .thunderRumble:    return 3  // thunder_rumble + _2, _3
+        case .rainAmbient:      return 1  // rain_ambient (continuous, no variations)
+        case .crowdRoar:        return 2  // crowd_roar + _2
+        case .warDrums:         return 2  // war_drums + _2
+        case .coinsJingle:      return 3  // coins_jingle + _2, _3
+        case .armorClink:       return 2  // armor_clink + _2
+        case .creatureGrowl:    return 3  // creature_growl + _2, _3
+        case .rockCrumble:      return 2  // rock_crumble + _2
+        case .footstepStone:    return 4  // footstep_stone + _2.._4
+        case .footstepWood:     return 3  // footstep_wood + _2, _3
+        case .pickaxeHit:       return 3  // pickaxe_hit + _2, _3
+        case .doorCreak:        return 2  // door_creak + _2
         default:                return 1
         }
     }
@@ -313,6 +369,76 @@ enum SFX: String, CaseIterable {
             return { HapticManager.heavy() }
         case .dungeonUnlock:
             return { HapticManager.success() }
+
+        // Ambient — weather
+        case .thunderRumble:
+            return nil  // No haptic (ambient rumble)
+        case .rainAmbient:
+            return nil  // No haptic (continuous ambient)
+
+        // Atmospheric — Arena
+        case .crowdRoar:
+            return { HapticManager.heavy() }
+        case .warDrums:
+            return { HapticManager.medium() }
+        case .gongHit:
+            return { HapticManager.heavy() }
+
+        // Atmospheric — Shop & Economy
+        case .coinsJingle:
+            return { HapticManager.light() }
+        case .merchantGreet:
+            return { HapticManager.light() }
+        case .pouchDrop:
+            return { HapticManager.medium() }
+
+        // Atmospheric — Inventory & Forge
+        case .armorClink:
+            return { HapticManager.medium() }
+        case .clothRustle:
+            return { HapticManager.light() }
+        case .magicShimmer:
+            return { HapticManager.light() }
+        case .anvilStrike:
+            return { HapticManager.heavy() }
+        case .enchantGlow:
+            return { HapticManager.success() }
+
+        // Atmospheric — Dungeon
+        case .creatureGrowl:
+            return { HapticManager.heavy() }
+        case .rockCrumble:
+            return { HapticManager.heavy() }
+        case .chainRattle:
+            return { HapticManager.medium() }
+        case .footstepStone, .footstepWood:
+            return nil  // No haptic for footsteps (too frequent)
+
+        // Atmospheric — Rewards & Ceremonies
+        case .epicHornFanfare:
+            return { HapticManager.victory() }
+        case .sealStamp:
+            return { HapticManager.stamp() }
+        case .scrollUnfurl:
+            return { HapticManager.light() }
+        case .chainBreak:
+            return { HapticManager.heavy() }
+        case .magicSpark:
+            return { HapticManager.light() }
+
+        // Atmospheric — Minigames
+        case .wheelSpin:
+            return nil  // No haptic (continuous sound)
+        case .shellShuffle:
+            return nil  // No haptic (continuous sound)
+        case .pickaxeHit:
+            return { HapticManager.medium() }
+
+        // Atmospheric — Hub
+        case .doorCreak:
+            return { HapticManager.medium() }
+        case .torchIgnite:
+            return nil  // No haptic (ambient whoosh)
 
         // Misc
         case .coinDrop:

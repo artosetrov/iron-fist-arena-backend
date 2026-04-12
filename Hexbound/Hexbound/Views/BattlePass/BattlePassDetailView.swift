@@ -202,7 +202,8 @@ struct BattlePassDetailView: View {
                                 state: vm.rewardState(reward)
                             ) {
                                 HapticManager.medium()
-                                SFXManager.shared.play(.uiRewardClaim)
+                                SFXManager.shared.play(.chainBreak)
+                                SFXManager.shared.play(.magicSpark)
                                 Task { await vm.claimReward(reward) }
                             }
                             .id(reward.level)
