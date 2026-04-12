@@ -57,6 +57,17 @@ struct BPReward: Codable, Identifiable {
         }
     }
 
+    /// Mapped rarity for visual consistency with ItemCardView
+    var rewardRarity: ItemRarity {
+        switch rewardType {
+        case "chest": .legendary
+        case "skin": .epic
+        case "gems": .rare
+        case "item": .uncommon
+        default: .common
+        }
+    }
+
     /// Asset name from xcassets — preferred over emoji icon
     var assetIcon: String? {
         switch rewardType {

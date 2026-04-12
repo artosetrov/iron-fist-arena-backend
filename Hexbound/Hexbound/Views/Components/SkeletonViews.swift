@@ -209,10 +209,13 @@ struct SkeletonAchievementCard: View {
 
 struct SkeletonBPNode: View {
     var body: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            SkeletonRect(width: 60, height: 60, cornerRadius: LayoutConstants.radiusLG)
+        VStack(spacing: LayoutConstants.spaceXS) {
+            SkeletonRect(width: 30, height: 10)
+            SkeletonRect(width: 80, height: 80, cornerRadius: LayoutConstants.cardRadius)
+            SkeletonRect(width: 50, height: 10)
             SkeletonRect(width: 40, height: 10)
         }
+        .frame(width: 90)
     }
 }
 

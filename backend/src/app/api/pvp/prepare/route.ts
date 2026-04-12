@@ -304,6 +304,9 @@ export async function POST(req: NextRequest) {
         has_free_pvp: hasFreePvp,
         free_pvp_remaining: STAMINA.FREE_PVP_PER_DAY - freePvpUsed,
       },
+      // Authoritative HP at prepare time — iOS syncs this to fix stale-cache HP display
+      current_hp: currentHp,
+      max_hp: attacker.maxHp,
       is_revenge: isRevenge,
       is_bot_fight: isBotFight,
       ...(revenge_id ? { revenge_id } : {}),

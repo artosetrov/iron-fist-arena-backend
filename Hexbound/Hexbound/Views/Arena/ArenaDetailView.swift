@@ -117,7 +117,7 @@ struct ArenaDetailView: View {
                     // NPC Guide Widget — player's own avatar as arena coach (hidden when HP is critical)
                     // Presented via NPCGuideOverlay: full-screen dim + taps blocked,
                     // so the coach reads as a modal hint, not inline content.
-                    if showArenaGuide && !isLowHP, appState.currentCharacter != nil {
+                    if showArenaGuide, appState.currentCharacter != nil {
                         NPCGuideOverlay(onBackdropTap: {
                             withAnimation(MotionConstants.snappy) {
                                 showArenaGuide = false
@@ -145,7 +145,7 @@ struct ArenaDetailView: View {
                     }
 
                     // Collapsed NPC mini avatar (hidden when HP is critical)
-                    if showArenaGuideMini && !isLowHP, let char = appState.currentCharacter {
+                    if showArenaGuideMini, let char = appState.currentCharacter {
                         VStack {
                             Spacer()
                             HStack {

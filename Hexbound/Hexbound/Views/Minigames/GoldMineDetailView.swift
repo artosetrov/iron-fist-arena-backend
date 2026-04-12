@@ -104,6 +104,16 @@ struct GoldMineDetailView: View {
                         )
                     }
                 }
+                .overlay {
+                    if let reward = vm.claimReward {
+                        MineClaimRewardView(
+                            goldEarned: reward.goldEarned,
+                            gemsEarned: reward.gemsEarned,
+                            onDismiss: { vm.claimReward = nil }
+                        )
+                        .transition(.opacity)
+                    }
+                }
             }
 
             // Live-tick coin/gem particle overlay

@@ -214,7 +214,9 @@ final class ArenaViewModel {
         // 2. Sync HP/stamina from server prepare response to client cache.
         //    Fixes stale "full HP" display when server has partial HP from previous fight.
         if var char = appState.currentCharacter {
-            char.currentHp = prepareData.playerStats.currentHp
+            if let serverHp = prepareData.serverCurrentHp {
+                char.currentHp = serverHp
+            }
             char.currentStamina = prepareData.staminaInfo.current
             appState.currentCharacter = char
         }
@@ -264,7 +266,9 @@ final class ArenaViewModel {
 
         // 2. Sync HP/stamina from server prepare response to client cache.
         if var char = appState.currentCharacter {
-            char.currentHp = prepareData.playerStats.currentHp
+            if let serverHp = prepareData.serverCurrentHp {
+                char.currentHp = serverHp
+            }
             char.currentStamina = prepareData.staminaInfo.current
             appState.currentCharacter = char
         }

@@ -11,32 +11,15 @@ struct BPRewardNodeView: View {
         VStack(spacing: LayoutConstants.spaceXS) {
             // Level
             Text("Lv.\(reward.level)")
-                .font(DarkFantasyTheme.body)
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
 
-            // Icon frame — ornamental node
-            ZStack {
-                RadialGlowBackground(
-                    baseColor: DarkFantasyTheme.bgSecondary,
-                    glowColor: state == .claimable ? DarkFantasyTheme.goldDim.opacity(0.3) : DarkFantasyTheme.bgTertiary,
-                    glowIntensity: 0.5,
-                    cornerRadius: LayoutConstants.panelRadius
-                )
-                .frame(width: 64, height: 64)
-
-                rewardIcon(reward, size: 32)
+            // Unified item card — same component as shop/inventory/loot
+            ItemCardView(bpReward: reward, state: state) {
+                onClaim()
             }
-            .surfaceLighting(cornerRadius: LayoutConstants.panelRadius, topHighlight: 0.06, bottomShadow: 0.10)
-            .innerBorder(cornerRadius: LayoutConstants.panelRadius - 1, inset: 1, color: borderColor.opacity(state == .claimable ? 0.25 : 0.10))
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.panelRadius)
-                    .stroke(borderColor, lineWidth: state == .claimable ? 2.5 : 1)
-            )
-            .compositingGroup()
-            .opacity(state == .locked ? 0.5 : 1)
+            .frame(width: 80, height: 80)
             .glowPulse(color: DarkFantasyTheme.goldBright, intensity: 0.5, isActive: state == .claimable)
-            .shadow(color: state == .claimable ? DarkFantasyTheme.goldBright.opacity(0.15) : Color.clear, radius: 6)
-            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.3), radius: 4, y: 2)
             .overlay {
                 if showClaimBurst {
                     RewardBurstView(style: burstStyleForReward, isActive: $showClaimBurst)
@@ -44,15 +27,15 @@ struct BPRewardNodeView: View {
                 }
             }
 
-            // Name + amount — unified format: "Gold x130" or just "Skin"
+            // Name + amount
             if reward.amount > 1 {
                 Text("\(reward.rewardName) x\(reward.amount)")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             } else {
                 Text(reward.rewardName)
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
                     .lineLimit(1)
             }
@@ -61,7 +44,7 @@ struct BPRewardNodeView: View {
             switch state {
             case .locked:
                 Text(reward.track == "premium" ? "Premium" : "Locked")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.textTertiary)
             case .claimable:
                 Button {
@@ -72,7 +55,7 @@ struct BPRewardNodeView: View {
                 .buttonStyle(.compactPrimary)
             case .claimed:
                 Text("Claimed")
-                    .font(DarkFantasyTheme.body)
+                    .font(DarkFantasyTheme.caption)
                     .foregroundStyle(DarkFantasyTheme.success)
             }
         }
@@ -84,29 +67,7 @@ struct BPRewardNodeView: View {
         }
     }
 
-    @ViewBuilder
-    private func rewardIcon(_ reward: BPReward, size: CGFloat) -> some View {
-        if let assetName = reward.assetIcon, UIImage(named: assetName) != nil {
-            Image(assetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-        } else {
-            AssetPlaceholderView(systemIcon: "gift.fill")
-                .frame(width: size * 0.875, height: size * 0.875)
-        }
-    }
-
-    private var borderColor: Color {
-        switch state {
-        case .claimable: DarkFantasyTheme.goldBright
-        case .claimed: DarkFantasyTheme.success.opacity(0.5)
-        case .locked: DarkFantasyTheme.borderSubtle
-        }
-    }
-
     private var burstStyleForReward: BurstStyle {
-        // Rarity-aware burst: rare/epic/legendary for special rewards, claim for normal
         switch reward.rewardType {
         case "skin": .epic
         case "chest": .legendary

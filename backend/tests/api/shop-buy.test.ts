@@ -31,6 +31,7 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/lib/rate-limit', () => ({
   rateLimit: mockRateLimit,
+  shopRateLimit: mockRateLimit,
 }))
 
 vi.mock('@/lib/game/daily-quests', () => ({

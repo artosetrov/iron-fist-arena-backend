@@ -37,6 +37,15 @@ final class GoldMineViewModel {
     /// Prevents concurrent /collect-all calls.
     var isCollectingAll: Bool = false
 
+    // MARK: - Claim Reward Modal
+    /// When non-nil, the view presents a reward celebration modal.
+    var claimReward: ClaimRewardData?
+
+    struct ClaimRewardData {
+        let goldEarned: Int
+        let gemsEarned: Int
+    }
+
     /// Current gold-mine slot level — proxied from `maxSlots` (the number of
     /// slots the player has unlocked). Used by the picker sheet to label
     /// locked rows. Server remains authoritative on actual shaft gating.
@@ -348,6 +357,10 @@ final class GoldMineViewModel {
         isCollectingAll = true
         defer { isCollectingAll = false }
 
+        // Capture pre-collect totals for reward delta
+        let goldBefore = appState.currentCharacter?.gold ?? 0
+        let gemsBefore = appState.currentCharacter?.gems ?? 0
+
         var body: [String: Any] = ["character_id": charId]
         if let pickedShaftKey {
             body["picked_shaft_key"] = pickedShaftKey.rawValue
@@ -372,14 +385,19 @@ final class GoldMineViewModel {
             if let updatedSlots = data["slots"] as? [[String: Any]] {
                 withAnimation(MotionConstants.smooth) { slots = updatedSlots }
             }
-            if let newGold = data["gold"] as? Int {
-                appState.currentCharacter?.gold = newGold
-            }
-            if let newGems = data["gems"] as? Int {
-                appState.currentCharacter?.gems = newGems
-            }
+            let newGold = data["gold"] as? Int ?? goldBefore
+            let newGems = data["gems"] as? Int ?? gemsBefore
+            appState.currentCharacter?.gold = newGold
+            appState.currentCharacter?.gems = newGems
             syncVisualCounters()
             appState.invalidateCache("quests")
+
+            // Show claim reward celebration modal with earned amounts
+            let goldDelta = max(0, newGold - goldBefore)
+            let gemsDelta = max(0, newGems - gemsBefore)
+            if goldDelta > 0 || gemsDelta > 0 {
+                claimReward = ClaimRewardData(goldEarned: goldDelta, gemsEarned: gemsDelta)
+            }
 
             // Active shaft — may be nil if this cycle cleared the shaft.
             if let shaftDict = data["active_shaft"] as? [String: Any],

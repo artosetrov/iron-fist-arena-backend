@@ -25,6 +25,9 @@ enum ItemCardContext {
     /// Special offer reward tile — text label strip at bottom (e.g. "×500", "FREE").
     /// Non-interactive (wrap call-site in `.allowsHitTesting(false)`).
     case offerReward(label: String)
+    /// Battle Pass reward node — unified rendering with claim/locked/claimed states.
+    /// Uses the same item cell as shop/inventory for visual consistency.
+    case battlePass(state: BPRewardState, track: String)
 }
 
 // MARK: - Unified Item Card View
@@ -109,6 +112,17 @@ struct ItemCardView: View {
         self.imageUrl = loot.imageUrl
         self.fallbackIcon = loot.icon
         self.context = context
+        self.onTap = onTap
+    }
+
+    /// Initialize from a `BPReward` model (battle pass track)
+    init(bpReward: BPReward, state: BPRewardState, onTap: @escaping () -> Void) {
+        self.rarity = bpReward.rewardRarity
+        self.imageKey = bpReward.assetIcon
+        self.imageUrl = nil
+        self.fallbackIcon = bpReward.icon
+        self.quantity = bpReward.amount > 1 ? bpReward.amount : nil
+        self.context = .battlePass(state: state, track: bpReward.track)
         self.onTap = onTap
     }
 
@@ -201,6 +215,24 @@ struct ItemCardView: View {
         return false
     }
 
+    /// Battle Pass specific: current reward state
+    private var bpState: BPRewardState? {
+        if case .battlePass(let state, _) = context {
+            return state
+        }
+        return nil
+    }
+
+    /// Battle Pass specific: is locked
+    private var bpIsLocked: Bool {
+        bpState == .locked
+    }
+
+    /// Battle Pass specific: is claimed
+    private var bpIsClaimed: Bool {
+        bpState == .claimed
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -208,7 +240,7 @@ struct ItemCardView: View {
             cellContent
         }
         .buttonStyle(.scalePress(0.95))
-        .disabled(isEmptySlot)
+        .disabled(isEmptySlot || bpIsLocked || bpIsClaimed)
     }
 
     @ViewBuilder
@@ -223,6 +255,9 @@ struct ItemCardView: View {
                 durabilityFraction: durabilityFraction,
                 shopCanInteract: shopCanInteract,
                 inventoryCanEquip: inventoryCanEquip,
+                bpIsLocked: bpIsLocked,
+                bpIsClaimed: bpIsClaimed,
+                bpState: bpState,
                 rarityColor: rarityColor,
                 rarity: rarity
             ))
@@ -338,8 +373,42 @@ private struct CellOrnamentalsModifier: ViewModifier {
     let durabilityFraction: Double
     let shopCanInteract: Bool
     let inventoryCanEquip: Bool
+    let bpIsLocked: Bool
+    let bpIsClaimed: Bool
+    let bpState: BPRewardState?
     let rarityColor: Color
     let rarity: ItemRarity
+
+    /// Outer border color accounting for BP state
+    private var outerBorderColor: Color {
+        if isEmptySlot { return DarkFantasyTheme.borderSubtle }
+        if isBroken { return DarkFantasyTheme.danger }
+        if !inventoryCanEquip { return DarkFantasyTheme.danger.opacity(0.8) }
+        // Battle Pass: claimable = gold, claimed = success, locked = rarity default
+        if let bp = bpState {
+            switch bp {
+            case .claimable: return DarkFantasyTheme.goldBright
+            case .claimed: return DarkFantasyTheme.success.opacity(0.6)
+            case .locked: return rarityColor.opacity(0.4)
+            }
+        }
+        return rarityColor.opacity(isEquipped ? 1.0 : 0.7)
+    }
+
+    private var outerBorderWidth: CGFloat {
+        if isEmptySlot { return 1 }
+        if bpState == .claimable { return 2.5 }
+        if isEquipped { return 3 }
+        return 2.5
+    }
+
+    /// Opacity accounting for BP locked state
+    private var resolvedOpacity: Double {
+        if bpIsLocked { return 0.5 }
+        if !shopCanInteract { return 0.5 }
+        if !inventoryCanEquip { return 0.55 }
+        return 1.0
+    }
 
     func body(content: Content) -> some View {
         content
@@ -355,23 +424,10 @@ private struct CellOrnamentalsModifier: ViewModifier {
                     .stroke(DarkFantasyTheme.borderSubtle, lineWidth: isEmptySlot ? 1 : 2)
                     .padding(isEmptySlot ? 0 : 1)
             )
-            // MARK: - Outer rarity border
-            // BUG-63: ineligible inventory items (wrong level/class) get a danger-red
-            // outer stroke so players can spot "can't wear this yet" at a glance.
-            // Broken still wins, equipped still wins; otherwise ineligible overrides
-            // the rarity color.
+            // MARK: - Outer rarity border (+ BP state awareness)
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                    .stroke(
-                        isEmptySlot
-                            ? DarkFantasyTheme.borderSubtle
-                            : (isBroken
-                                ? DarkFantasyTheme.danger
-                                : (!inventoryCanEquip
-                                    ? DarkFantasyTheme.danger.opacity(0.8)
-                                    : rarityColor.opacity(isEquipped ? 1.0 : 0.7))),
-                        lineWidth: isEmptySlot ? 1 : (isEquipped ? 3 : 2.5)
-                    )
+                    .stroke(outerBorderColor, lineWidth: outerBorderWidth)
             )
             // MARK: - Corner diamonds (non-empty slots)
             .cornerDiamonds(color: isEmptySlot ? Color.clear : rarityColor.opacity(0.5), size: isEmptySlot ? 0 : 4)
@@ -384,6 +440,16 @@ private struct CellOrnamentalsModifier: ViewModifier {
                     )
                 }
             }
+            // MARK: - BP claimed checkmark badge
+            .overlay(alignment: .topTrailing) {
+                if bpIsClaimed {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DarkFantasyTheme.uiLabel)
+                        .foregroundStyle(DarkFantasyTheme.success)
+                        .background(Circle().fill(DarkFantasyTheme.bgAbyss))
+                        .padding(LayoutConstants.spaceXS)
+                }
+            }
             // MARK: - Enhanced glow shadows
             .shadow(
                 color: isEmptySlot ? Color.clear : DarkFantasyTheme.rarityGlow(for: rarity),
@@ -393,11 +459,13 @@ private struct CellOrnamentalsModifier: ViewModifier {
                 color: isHighRarity && !isEmptySlot ? rarityColor.opacity(0.25) : Color.clear,
                 radius: 4
             )
-            // MARK: - Shop affordability / inventory eligibility dimming
-            // BUG-63: non-equippable inventory items dim to 0.55 (same feel as
-            // unaffordable shop items, kept slightly brighter so the art is still
-            // readable). Shop dim wins if both apply.
-            .opacity(shopCanInteract ? (inventoryCanEquip ? 1.0 : 0.55) : 0.5)
+            // MARK: - BP claimable gold glow
+            .shadow(
+                color: bpState == .claimable ? DarkFantasyTheme.goldBright.opacity(0.3) : Color.clear,
+                radius: 8
+            )
+            // MARK: - Dimming (shop / inventory / BP locked)
+            .opacity(resolvedOpacity)
     }
 }
 

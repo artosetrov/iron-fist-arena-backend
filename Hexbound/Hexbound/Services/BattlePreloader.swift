@@ -22,6 +22,9 @@ struct BattlePrepareData {
     let enemyStats: FighterStats
     let combatConfig: CombatConfig
     let staminaInfo: StaminaInfo
+    /// Server-authoritative HP at prepare time — fixes stale client cache display
+    let serverCurrentHp: Int?
+    let serverMaxHp: Int?
 
     struct StaminaInfo {
         let current: Int
@@ -113,7 +116,9 @@ final class BattlePreloader {
                         cost: staminaDict["cost"] as? Int ?? 0,
                         hasFreePvp: staminaDict["has_free_pvp"] as? Bool ?? false,
                         freePvpRemaining: staminaDict["free_pvp_remaining"] as? Int ?? 0
-                    )
+                    ),
+                    serverCurrentHp: response["current_hp"] as? Int,
+                    serverMaxHp: response["max_hp"] as? Int
                 )
 
                 await cacheStore.set(cacheKey, data)

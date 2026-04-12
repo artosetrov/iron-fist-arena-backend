@@ -162,6 +162,7 @@
 		470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */; };
 		db9eec8a3007055fe1a5d459 /* MinigameSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ec84daaf1ccbd9ba48d0f8f6 /* MinigameSession.swift */; };
 		eedd3759c99c584098dc0e6c /* GoldMineMiniGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */; };
+		3E60956EDA12F1B8ED3966F6 /* MineClaimRewardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */; };
 		619857d0b35ae05c7bb458d4 /* GoldMineShaftPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */; };
 		48B45024E1F5F9192D4A497D /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18860E524F76C28304AB39AF /* AuthService.swift */; };
 		4DAF59473C0FDF7E526B4BF4 /* RegisterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2213FD96DD8374E3C8F83A20 /* RegisterViewModel.swift */; };
@@ -732,6 +733,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */ = {isa = PBXFileReference; 
 		A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineViewModel.swift; sourceTree = "<group>"; };
 		ec84daaf1ccbd9ba48d0f8f6 /* MinigameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinigameSession.swift; sourceTree = "<group>"; };
 		aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineMiniGameView.swift; sourceTree = "<group>"; };
+		E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineClaimRewardView.swift; sourceTree = "<group>"; };
 		7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineShaftPicker.swift; sourceTree = "<group>"; };
 		A9F77C1F26D7F3F4A893CD9D /* PvPRank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPRank.swift; sourceTree = "<group>"; };
 		AA1BC0E1F7A24D8E9C3D5A02 /* ArenaCarouselView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArenaCarouselView.swift; sourceTree = "<group>"; };
@@ -1493,6 +1495,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
 				9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */,
 				aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */,
+				E1204A650345772AEB4026F5 /* MineClaimRewardView.swift */,
 				7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */,
 				A92A3B2116D22AE3448A30D8 /* GoldMineViewModel.swift */,
 				8CC572483AAC29065E209C11 /* MineResourceHeader.swift */,
@@ -2165,6 +2168,7 @@ C5216DBB76B3635BF0402C26 /* amb_anvil_ambient.wav */,
 				16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */,
 				B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */,
 				eedd3759c99c584098dc0e6c /* GoldMineMiniGameView.swift in Sources */,
+				3E60956EDA12F1B8ED3966F6 /* MineClaimRewardView.swift in Sources */,
 				619857d0b35ae05c7bb458d4 /* GoldMineShaftPicker.swift in Sources */,
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
 				db9eec8a3007055fe1a5d459 /* MinigameSession.swift in Sources */,

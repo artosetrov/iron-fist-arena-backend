@@ -23,6 +23,9 @@ struct HubView: View {
 
     // Onboarding flow state
     @State private var currentOnboardingStep = 0
+    /// Latched once on appear — prevents NPC from vanishing mid-sequence
+    /// when TutorialManager state changes (e.g. server sync completing).
+    @State private var onboardingActive = false
     private let onboardingSteps = [
         (title: "Welcome, Adventurer!", message: "This is your Hub — the center of your journey."),
         (title: "Explore the City", message: "Visit the SHOP to gear up, the ARENA to fight other players, or the DUNGEON to explore."),
@@ -30,11 +33,10 @@ struct HubView: View {
     ]
 
     private var shouldShowOnboarding: Bool {
-        // Check if this is the first time visiting hub (no onboarding completed yet)
-        guard appState.currentCharacter != nil else { return false }
-        let tutorial = TutorialManager.shared
-        // Show onboarding if hubCharacterCard hasn't been shown (first-time visit indicator)
-        return tutorial.shouldShow(.hubCharacterCard) && currentOnboardingStep < onboardingSteps.count
+        // Use latched state — once onboarding starts, it stays active until
+        // the user completes/dismisses all steps. Prevents NPC from vanishing
+        // mid-sequence when TutorialManager syncs with server.
+        return onboardingActive && currentOnboardingStep < onboardingSteps.count
     }
 
     // MARK: - Tutorial Quest Banner (NPC Quest Chain)
@@ -347,6 +349,13 @@ struct HubView: View {
         // the tile badge and routes manual taps through the modal queue.
         .task { await fetchUnreadMailCount() }
         .onAppear {
+            // Latch onboarding state once on appear — prevents NPC vanishing mid-sequence
+            if !onboardingActive, appState.currentCharacter != nil {
+                let tutorial = TutorialManager.shared
+                if tutorial.shouldShow(.hubCharacterCard) {
+                    onboardingActive = true
+                }
+            }
             updateHubHint()
             // Start BGM + ambient atmosphere
             AudioManager.shared.playBGM("stray-city.mp3")
@@ -659,11 +668,13 @@ struct HubView: View {
 
     private func dismissOnboarding() {
         // Mark onboarding as complete immediately if dismissed
+        onboardingActive = false
         markOnboardingComplete()
     }
 
     private func markOnboardingComplete() {
         // Mark all hub onboarding steps as complete
+        onboardingActive = false
         TutorialManager.shared.completeHubOnboarding()
     }
 
