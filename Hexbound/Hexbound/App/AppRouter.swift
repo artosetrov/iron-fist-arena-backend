@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum AppRoute: Hashable, Codable {
+enum AppRoute: Hashable {
     // Auth
     case login
     case register
