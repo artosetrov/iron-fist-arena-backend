@@ -164,4 +164,26 @@ grep -rn --include="*.swift" -E '\.padding\(\s*[0-9]+\s*\)' "$TARGET" 2>/dev/nul
   done
 
 echo ""
+
+# --- 6. @Observable ViewModels with stored DI properties must have explicit init ---
+# Incident: commit 712c696 (2026-04-11) — GoldMineViewModel init(appState:cache:)
+# was wiped when a `mineNames` block was pasted at the top of the class. Swift
+# compiler catches this ("Class has no initializers"), but only at build time —
+# cheaper to catch in pre-commit grep. See memory `feedback_observable_init_preservation.md`.
+echo "## @Observable ViewModels — missing init(appState:cache:)"
+echo ""
+find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; do
+  # Only check @Observable classes that store appState or cache as let properties
+  if grep -q '@Observable' "$f" 2>/dev/null; then
+    has_stored_di=$(grep -cE '^\s*(private\s+)?let\s+(appState|cache)\s*:\s*(AppState|GameDataCache)' "$f")
+    if [ "$has_stored_di" -gt 0 ]; then
+      has_init=$(grep -cE '^\s*(public\s+|internal\s+)?init\s*\(' "$f")
+      if [ "$has_init" -eq 0 ]; then
+        echo "❌ [missing init] $f — has let appState/cache but no init(...). Build will fail with 'Class has no initializers'."
+      fi
+    fi
+  fi
+done
+
+echo ""
 echo "=== SCAN COMPLETE ==="

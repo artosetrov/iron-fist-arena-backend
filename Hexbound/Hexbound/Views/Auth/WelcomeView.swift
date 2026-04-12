@@ -123,7 +123,7 @@ struct WelcomeView: View {
                     }
                     .padding(.top, LayoutConstants.spaceXS)
 
-                    Text("Made by Osetrov Design")
+                    Text("Osetrov Design")
                         .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.textTertiary)
                         .multilineTextAlignment(.center)

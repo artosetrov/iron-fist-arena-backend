@@ -57,6 +57,23 @@ enum APIError: LocalizedError {
         if case .clientError(_, _, let body) = self { return body }
         return nil
     }
+
+    /// HTTP status code for cases that carry one (4xx/5xx). Returns `nil`
+    /// for transport/decoding/unknown errors. Lets callers branch on
+    /// specific codes (e.g. 409 NO_PLAYABLE_SLOTS) without unwrapping
+    /// the enum case manually.
+    var statusCode: Int? {
+        switch self {
+        case .serverError(let statusCode, _):
+            return statusCode
+        case .clientError(let statusCode, _, _):
+            return statusCode
+        case .unauthorized:
+            return 401
+        default:
+            return nil
+        }
+    }
 }
 
 extension Error {
