@@ -344,6 +344,14 @@ Figma DS has matching `Assets / *` pages with **350 named placeholder components
 2. Copy: `cp backend/prisma/schema.prisma admin/prisma/schema.prisma`
 3. Commit both together. **Skip step 2 = CI fail + admin crash.**
 
+### Schema Drift Checker (MANDATORY before deploy)
+
+```bash
+python3 scripts/check_schema_drift.py
+```
+
+Compares every `@map("col")` in `schema.prisma` against `prisma/migrations/**/migration.sql`. Catches the **exact class of bug** that caused the 2026-04-11 P0 (commit `d4450b4` added fields without a migration file → prod 500s). Exit 0 = clean, exit 1 = drift found. Run before every push.
+
 ## Git & Deploy (CRITICAL)
 
 Two remotes: `origin` (monorepo, backend auto-deploys) + `admin-deploy` (admin subtree, admin auto-deploys).
@@ -445,6 +453,8 @@ grep -rn 'RoundedRectangle(cornerRadius: [0-9]' Hexbound/Hexbound/Views/ --inclu
 ls Hexbound/Hexbound.xcodeproj/ | grep -E '\.(bak|backup|tmp)$'
 # Merge conflict markers
 grep -rn '^<<<<<<<\|^=======\$\|^>>>>>>>' . --include="*.swift" --include="*.ts" --include="*.prisma" | grep -v node_modules
+# Prisma schema drift (fields in schema.prisma without matching migration)
+python3 scripts/check_schema_drift.py
 ```
 
 ALL pass → "CDO: CLEAN". Any fail → fix + re-scan. **Never skip.**
