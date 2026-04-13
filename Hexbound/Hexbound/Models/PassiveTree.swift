@@ -5,12 +5,17 @@
 //  Codable models for the passive skill tree (Talents tab).
 //  Mirrors backend shapes from /api/passives/tree, /character, /unlock, /respec.
 //
+//  NOTE: APIClient.shared uses `.convertFromSnakeCase`, so we intentionally
+//  DO NOT define custom CodingKeys with snake_case strings here — the decoder
+//  transforms incoming keys to camelCase before lookup. Custom snake_case
+//  CodingKeys would shadow that and break decoding.
+//
 
 import Foundation
 
 // MARK: - Tree definition (from GET /api/passives/tree)
 
-/// A single node in the passive tree catalog (camelCase from backend).
+/// A single node in the passive tree catalog.
 struct PassiveNode: Codable, Identifiable, Hashable {
     let id: String
     let nodeKey: String
@@ -41,9 +46,9 @@ struct PassiveTreeResponse: Codable {
     let connections: [PassiveConnection]
 }
 
-// MARK: - Character-specific unlocks (from GET /api/passives/character — snake_case)
+// MARK: - Character-specific unlocks (from GET /api/passives/character)
 
-/// A node unlocked by the current character (fields are snake_case in JSON).
+/// A node unlocked by the current character.
 struct CharacterPassiveUnlocked: Codable, Identifiable, Hashable {
     let id: String
     let nodeId: String
@@ -57,31 +62,11 @@ struct CharacterPassiveUnlocked: Codable, Identifiable, Hashable {
     let cost: Int
     let icon: String?
     let unlockedAt: String?   // ISO8601 string — decoded as String to avoid Date strategy issues
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case nodeId = "node_id"
-        case nodeKey = "node_key"
-        case name
-        case description
-        case bonusType = "bonus_type"
-        case bonusStat = "bonus_stat"
-        case bonusValue = "bonus_value"
-        case tier
-        case cost
-        case icon
-        case unlockedAt = "unlocked_at"
-    }
 }
 
 struct CharacterPassiveResponse: Codable {
     let passivePointsAvailable: Int
     let unlockedNodes: [CharacterPassiveUnlocked]
-
-    enum CodingKeys: String, CodingKey {
-        case passivePointsAvailable = "passive_points_available"
-        case unlockedNodes = "unlocked_nodes"
-    }
 }
 
 // MARK: - Mutations
@@ -90,24 +75,12 @@ struct PassiveStatsDelta: Codable, Hashable {
     let maxHp: Int?
     let armor: Int?
     let magicResist: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case maxHp = "max_hp"
-        case armor
-        case magicResist = "magic_resist"
-    }
 }
 
 struct PassiveUnlockResponse: Codable {
     let success: Bool
     let passivePointsAvailable: Int
     let stats: PassiveStatsDelta?
-
-    enum CodingKeys: String, CodingKey {
-        case success
-        case passivePointsAvailable = "passive_points_available"
-        case stats
-    }
 }
 
 struct PassiveRespecResponse: Codable {
@@ -117,13 +90,4 @@ struct PassiveRespecResponse: Codable {
     let gemsSpent: Int
     let gemsRemaining: Int
     let stats: PassiveStatsDelta?
-
-    enum CodingKeys: String, CodingKey {
-        case success
-        case pointsRefunded = "points_refunded"
-        case passivePointsAvailable = "passive_points_available"
-        case gemsSpent = "gems_spent"
-        case gemsRemaining = "gems_remaining"
-        case stats
-    }
 }
