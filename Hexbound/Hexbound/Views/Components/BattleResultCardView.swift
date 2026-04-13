@@ -41,9 +41,12 @@ struct BattleResultCardView: View {
     @State private var ratingDisplay = 0
 
     // Per-item reveal state (Gold / XP / Rating staggered fade-in)
-    @State private var goldItemVisible = false
-    @State private var xpItemVisible = false
-    @State private var ratingItemVisible = false
+    // NOTE: defaults to true as a safety net — staggered reveal flips them to false
+    // at start of runAnimationSequence and then back to true on schedule. If reveal
+    // logic fails for any reason, items remain visible rather than disappearing.
+    @State private var goldItemVisible = true
+    @State private var xpItemVisible = true
+    @State private var ratingItemVisible = true
 
     // Completion pulse opacity (1.0 → 0.7 → 1.0 when count-up finishes)
     @State private var goldPulseOpacity: Double = 1.0
@@ -694,6 +697,11 @@ struct BattleResultCardView: View {
     // Defeat:  flash red → title fade → shake + haptic → counters → CTAs (red glow)
 
     private func runAnimationSequence() {
+        // Reset per-item reward visibility for staggered reveal
+        goldItemVisible = false
+        xpItemVisible = false
+        ratingItemVisible = false
+
         // ── 0.0s — Screen flash + card scales in ──
         screenFlashOpacity = config.isVictory ? 0.4 : 0.25
         withAnimation(.easeOut(duration: MotionConstants.fast)) {
@@ -758,16 +766,59 @@ struct BattleResultCardView: View {
                 showRewards = true
             }
 
-            // Build ordered list of present reward items (skip zero/nil)
-            var revealQueue: [(kind: RewardKind, value: Int)] = []
-            if let g = config.goldReward, g > 0 { revealQueue.append((.gold, g)) }
-            if let x = config.xpReward, x > 0 { revealQueue.append((.xp, x)) }
-            if let r = config.ratingChange, r != 0 { revealQueue.append((.rating, r)) }
+            // Stagger reveal: Gold @0ms, XP @stagger, Rating @stagger*2 (skipping nil/zero items)
+            let stagger = MotionConstants.rewardStaggerInterval
+            var slot = 0
 
-            for (index, item) in revealQueue.enumerated() {
-                let itemDelay = Double(index) * MotionConstants.rewardStaggerInterval
-                DispatchQueue.main.asyncAfter(deadline: .now() + itemDelay) {
-                    revealRewardItem(kind: item.kind, target: item.value)
+            if let gold = config.goldReward, gold > 0 {
+                let delay = Double(slot) * stagger; slot += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation(.easeOut(duration: MotionConstants.rewardItemFadeIn)) {
+                        goldItemVisible = true
+                    }
+                    HapticManager.light()
+                    rollUp(to: gold, binding: $goldDisplay, duration: MotionConstants.tickUpDuration)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration) {
+                        pulseReward(.gold)
+                    }
+                }
+            }
+
+            if let xp = config.xpReward, xp > 0 {
+                let delay = Double(slot) * stagger; slot += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation(.easeOut(duration: MotionConstants.rewardItemFadeIn)) {
+                        xpItemVisible = true
+                    }
+                    HapticManager.light()
+                    rollUp(to: xp, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration) {
+                        pulseReward(.xp)
+                    }
+                }
+            }
+
+            if let change = config.ratingChange, change != 0 {
+                let delay = Double(slot) * stagger; slot += 1
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation(.easeOut(duration: MotionConstants.rewardItemFadeIn)) {
+                        ratingItemVisible = true
+                    }
+                    HapticManager.medium()
+                    // Integer-by-integer tick for rating
+                    let absTarget = abs(change)
+                    let stepInterval = min(MotionConstants.ratingTickInterval,
+                                           MotionConstants.ratingTickMaxDuration / Double(absTarget))
+                    let sign = change < 0 ? -1 : 1
+                    ratingDisplay = 0
+                    for i in 1...absTarget {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(i)) {
+                            ratingDisplay = i * sign
+                            if i == absTarget {
+                                pulseReward(.rating)
+                            }
+                        }
+                    }
                 }
             }
 

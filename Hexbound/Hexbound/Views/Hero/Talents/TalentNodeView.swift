@@ -18,13 +18,11 @@ struct TalentNodeView: View {
     let node: PassiveNode
     let state: State
 
-    // Tier-based size
+    // Tier-based size (tier 5 ultimate > tier 3 keystone > rest)
     var size: CGFloat {
-        switch node.bonusType {
-        case "ultimate": return 76
-        case "keystone": return 64
-        default: return 52
-        }
+        if node.tier >= 5 { return 76 }   // ultimate
+        if node.tier == 3 { return 64 }   // keystone
+        return 52
     }
 
     private var strokeColor: Color {
@@ -112,21 +110,34 @@ struct TalentNodeView: View {
     }
 
     private var symbolName: String {
+        // Ultimate/keystone hero symbols come from tier
+        if node.tier >= 5 { return "crown.fill" }
+
+        // Map by mechanical bonusType first
         switch node.bonusType {
-        case "ultimate": return "crown.fill"
-        case "keystone": return "star.fill"
-        default:
-            // Map common stat keys to SF symbols as a safe fallback.
+        case "flat_hp", "percent_hp":                       return "heart.fill"
+        case "flat_armor", "percent_armor":                 return "shield.fill"
+        case "flat_magic_resist", "percent_magic_resist":   return "sparkles"
+        case "flat_damage", "percent_damage":               return "bolt.fill"
+        case "flat_crit_chance":                            return "scope"
+        case "flat_dodge_chance":                           return "hare.fill"
+        case "lifesteal":                                   return "drop.fill"
+        case "cooldown_reduction":                          return "timer"
+        case "damage_reduction":                            return "shield.lefthalf.filled"
+        case "flat_stat", "percent_stat":
             switch node.bonusStat {
-            case "maxHp":      return "heart.fill"
-            case "armor":      return "shield.fill"
-            case "magicResist": return "wand.and.stars"
-            case "strength":   return "figure.strengthtraining.traditional"
-            case "dexterity":  return "hare.fill"
-            case "intelligence": return "brain.head.profile"
-            case "vitality":   return "cross.case.fill"
-            default:           return "circle.grid.2x2.fill"
+            case "str": return "figure.strengthtraining.traditional"
+            case "agi": return "hare.fill"
+            case "vit": return "heart.circle.fill"
+            case "end": return "figure.stand"
+            case "int": return "brain.head.profile"
+            case "wis": return "book.fill"
+            case "luk": return "die.face.5.fill"
+            case "cha": return "person.fill"
+            default:    return "star.fill"
             }
+        default:
+            return "circle.grid.2x2.fill"
         }
     }
 
