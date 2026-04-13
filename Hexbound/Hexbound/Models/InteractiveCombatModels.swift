@@ -23,14 +23,17 @@ enum InteractiveBodyZone: String, Codable, CaseIterable, Sendable {
 
 // MARK: - Match Start
 
+// NOTE: APIClient sets JSONDecoder.keyDecodingStrategy = .convertFromSnakeCase
+// and JSONEncoder.keyEncodingStrategy = .convertToSnakeCase. Per
+// `Hexbound/CLAUDE.md` CodingKeys-vs-convertFromSnakeCase rule: do NOT
+// redeclare CodingKeys with snake_case raw values — that bypasses the
+// strategy and causes `keyNotFound` failures (e.g. "Decode: missing
+// 'match_id'"). Only define CodingKeys when renaming is required
+// (e.g. `class` is a Swift keyword → must map explicitly).
+
 struct InteractiveMatchStartRequest: Encodable, Sendable {
     let characterId: String
     let opponentId: String
-
-    enum CodingKeys: String, CodingKey {
-        case characterId = "character_id"
-        case opponentId = "opponent_id"
-    }
 }
 
 struct InteractiveCharacterSnapshot: Decodable, Sendable {
@@ -45,11 +48,11 @@ struct InteractiveCharacterSnapshot: Decodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id
-        case characterName = "character_name"
+        case characterName
         case characterClass = "class"
         case origin, level, avatar
-        case maxHp = "max_hp"
-        case currentHp = "current_hp"
+        case maxHp
+        case currentHp
     }
 }
 
@@ -65,13 +68,6 @@ struct InteractiveMatchStartResponse: Decodable, Sendable {
     let attacker: InteractiveCharacterSnapshot
     let defender: InteractiveCharacterSnapshot
     let stamina: InteractiveMatchStaminaInfo
-
-    enum CodingKeys: String, CodingKey {
-        case matchId = "match_id"
-        case maxRounds = "max_rounds"
-        case timeoutAt = "timeout_at"
-        case attacker, defender, stamina
-    }
 }
 
 // MARK: - Strike Request (v2 — match-aware)
@@ -80,12 +76,6 @@ struct InteractiveStrikeRequest: Encodable, Sendable {
     let matchId: String
     let attackerZone: InteractiveBodyZone
     let defenderZone: InteractiveBodyZone
-
-    enum CodingKeys: String, CodingKey {
-        case matchId = "match_id"
-        case attackerZone = "attacker_zone"
-        case defenderZone = "defender_zone"
-    }
 }
 
 // MARK: - Strike Response (v2 — two turns + server-authoritative HP)
@@ -122,28 +112,12 @@ struct InteractiveStrikeResponse: Decodable, Sendable {
     let oppZones: InteractiveOpponentZones
     let matchFinished: Bool
     let winnerId: String?
-
-    enum CodingKeys: String, CodingKey {
-        case matchId = "match_id"
-        case strikeIndex = "strike_index"
-        case playerStrike = "player_strike"
-        case opponentStrike = "opponent_strike"
-        case attackerHp = "attacker_hp"
-        case defenderHp = "defender_hp"
-        case oppZones = "opp_zones"
-        case matchFinished = "match_finished"
-        case winnerId = "winner_id"
-    }
 }
 
 // MARK: - Match Complete
 
 struct InteractiveMatchCompleteRequest: Encodable, Sendable {
     let matchId: String
-
-    enum CodingKeys: String, CodingKey {
-        case matchId = "match_id"
-    }
 }
 
 // /pvp/match/complete returns a CombatData-compatible payload, decoded directly
