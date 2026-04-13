@@ -45,6 +45,9 @@
 		18615572677A0157EA7F57D7 /* amb_crowd_roar.wav in Resources */ = {isa = PBXBuildFile; fileRef = ECCAA0EC6A32992B2577580A /* amb_crowd_roar.wav */; };
 		19839571EA02350D49353660 /* creature_growl_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = B0EDA33A522BF69DE508020E /* creature_growl_2.wav */; };
 		1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D145DE1A5F794907BB756397 /* CombatDetailView.swift */; };
+		14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */; };
+		EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */; };
+		EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */; };
 		1A9A8B92543201D94529BB29 /* footstep_stone.wav in Resources */ = {isa = PBXBuildFile; fileRef = 16C348EE5C05E7DFD7F6A04B /* footstep_stone.wav */; };
 		1BDC4E98CDE7ACA78658823C /* DarkFantasyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */; };
 		1D1146C6F1D1523F6CDDED24 /* gong_hit.wav in Resources */ = {isa = PBXBuildFile; fileRef = 75E76BB2B6A3B6D6615D6B31 /* gong_hit.wav */; };
@@ -844,6 +847,9 @@
 		CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterSelectionViewModel.swift; sourceTree = "<group>"; };
 		D0E1F2A3B4C5D6E7F8A9B0C1 /* PvPStatsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPStatsWidget.swift; sourceTree = "<group>"; };
 		D145DE1A5F794907BB756397 /* CombatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatDetailView.swift; sourceTree = "<group>"; };
+		00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatModels.swift; sourceTree = "<group>"; };
+		3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleViewModel.swift; sourceTree = "<group>"; };
+		ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleView.swift; sourceTree = "<group>"; };
 		D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItem.swift; sourceTree = "<group>"; };
 		D269D22916F1CEDA9ED0476F /* merchant_greet.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = merchant_greet.wav; sourceTree = "<group>"; };
 		D3EF70965657F120803C752C /* CachedAssetImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAssetImage.swift; sourceTree = "<group>"; };
@@ -1389,6 +1395,8 @@
 				D145DE1A5F794907BB756397 /* CombatDetailView.swift */,
 				62932E87440D28C2DE136AC0 /* CombatResultDetailView.swift */,
 				2AC33F4DE1089A000F90E2A9 /* CombatViewModel.swift */,
+				ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */,
+				3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */,
 				C432FC1973DEA4743369E3C8 /* LootDetailView.swift */,
 			);
 			path = Combat;
@@ -1636,6 +1644,7 @@
 				69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */,
 				905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */,
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
+				00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */,
 				218B22634BDF8DD52EFCB0D6 /* Item.swift */,
 				E188C114F17088F505906852 /* LeaderboardEntry.swift */,
 				MAIL0001REF00001 /* MailMessage.swift */,
@@ -2173,6 +2182,9 @@
 				F8997328EA780D28EA57EAD1 /* CharacterViewModel.swift in Sources */,
 				F7351EE68E034A74CB95BDA8 /* CombatData.swift in Sources */,
 				1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */,
+				14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */,
+				EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */,
+				EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */,
 				78A8F4968E6F8D3680AD9FA0 /* CombatFXAssetMap.swift in Sources */,
 				89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */,
 				VFX00001BLD00001 /* CombatVFXEffect.swift in Sources */,

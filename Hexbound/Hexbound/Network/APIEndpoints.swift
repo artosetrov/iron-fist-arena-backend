@@ -37,6 +37,8 @@ enum APIEndpoints {
     static let pvpRevenge = "/api/pvp/revenge"
     static func pvpRevengeMatch(_ matchId: String) -> String { "/api/pvp/revenge/\(matchId)" }
     static let pvpHistory = "/api/pvp/history"
+    // Interactive Combat v1 — feature-flagged on server
+    static let pvpStrike = "/api/pvp/strike"
 
     // MARK: - Inventory
     static let inventory = "/api/inventory"
