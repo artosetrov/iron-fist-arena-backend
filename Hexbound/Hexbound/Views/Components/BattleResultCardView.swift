@@ -926,66 +926,23 @@ struct BattleResultCardView: View {
 
     private enum RewardKind { case gold, xp, rating }
 
-    /// Fade in a single reward item, run its tick-up, then fire a completion pulse.
-    /// Stagger is handled by the caller — this only animates one item.
-    private func revealRewardItem(kind: RewardKind, target: Int) {
-        // 1. Per-item fade-in (opacity only, no scale per project rule)
-        withAnimation(.easeOut(duration: MotionConstants.rewardItemFadeIn)) {
+    /// Completion pulse: opacity dip 1.0 → 0.7 → 1.0 (no scale per project rule).
+    private func pulseReward(_ kind: RewardKind) {
+        let half = MotionConstants.rewardCompletionPulse / 2
+        withAnimation(.easeOut(duration: half)) {
             switch kind {
-            case .gold:   goldItemVisible = true
-            case .xp:     xpItemVisible = true
-            case .rating: ratingItemVisible = true
+            case .gold:   goldPulseOpacity = 0.7
+            case .xp:     xpPulseOpacity = 0.7
+            case .rating: ratingPulseOpacity = 0.7
             }
         }
-        // 2. Per-item haptic on appearance
-        switch kind {
-        case .gold, .xp: HapticManager.light()
-        case .rating:    HapticManager.medium()
-        }
-
-        // 3. Count-up — Rating ticks integer-by-integer, others use ease-out roll
-        let onComplete: () -> Void = {
-            // Completion pulse: opacity dip 1.0 → 0.7 → 1.0 (no scale)
-            let pulseBinding: Binding<Double> = {
+        DispatchQueue.main.asyncAfter(deadline: .now() + half) {
+            withAnimation(.easeIn(duration: half)) {
                 switch kind {
-                case .gold:   return $goldPulseOpacity
-                case .xp:     return $xpPulseOpacity
-                case .rating: return $ratingPulseOpacity
+                case .gold:   goldPulseOpacity = 1.0
+                case .xp:     xpPulseOpacity = 1.0
+                case .rating: ratingPulseOpacity = 1.0
                 }
-            }()
-            withAnimation(.easeOut(duration: MotionConstants.rewardCompletionPulse / 2)) {
-                pulseBinding.wrappedValue = 0.7
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.rewardCompletionPulse / 2) {
-                withAnimation(.easeIn(duration: MotionConstants.rewardCompletionPulse / 2)) {
-                    pulseBinding.wrappedValue = 1.0
-                }
-            }
-        }
-
-        switch kind {
-        case .gold:
-            rollUp(to: target, binding: $goldDisplay, duration: MotionConstants.tickUpDuration, completion: onComplete)
-        case .xp:
-            rollUp(to: target, binding: $xpDisplay, duration: MotionConstants.tickUpDuration, completion: onComplete)
-        case .rating:
-            tickRating(to: target, completion: onComplete)
-        }
-    }
-
-    /// Rating tick: integer-by-integer climb (slower than rollUp — feels "earned").
-    /// Total duration capped at ratingTickMaxDuration.
-    private func tickRating(to target: Int, completion: @escaping () -> Void) {
-        guard target != 0 else { completion(); return }
-        let absTarget = abs(target)
-        let stepInterval = min(MotionConstants.ratingTickInterval,
-                               MotionConstants.ratingTickMaxDuration / Double(absTarget))
-        let sign = target < 0 ? -1 : 1
-        ratingDisplay = 0
-        for i in 1...absTarget {
-            DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(i)) {
-                ratingDisplay = i * sign
-                if i == absTarget { completion() }
             }
         }
     }
@@ -994,11 +951,6 @@ struct BattleResultCardView: View {
 
     private func rollUp(to target: Int, binding: Binding<Int>, duration: Double) {
         rollUp(from: 0, to: target, binding: binding, duration: duration)
-    }
-
-    private func rollUp(to target: Int, binding: Binding<Int>, duration: Double, completion: @escaping () -> Void) {
-        rollUp(from: 0, to: target, binding: binding, duration: duration)
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { completion() }
     }
 
     private func rollUp(from start: Int, to target: Int, binding: Binding<Int>, duration: Double) {
