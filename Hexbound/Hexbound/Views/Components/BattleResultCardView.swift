@@ -779,7 +779,7 @@ struct BattleResultCardView: View {
                     HapticManager.light()
                     rollUp(to: gold, binding: $goldDisplay, duration: MotionConstants.tickUpDuration)
                     DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration) {
-                        pulseReward(.gold)
+                        self.pulseReward(.gold)
                     }
                 }
             }
@@ -793,7 +793,7 @@ struct BattleResultCardView: View {
                     HapticManager.light()
                     rollUp(to: xp, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
                     DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration) {
-                        pulseReward(.xp)
+                        self.pulseReward(.xp)
                     }
                 }
             }
@@ -815,7 +815,7 @@ struct BattleResultCardView: View {
                         DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(i)) {
                             ratingDisplay = i * sign
                             if i == absTarget {
-                                pulseReward(.rating)
+                                self.pulseReward(.rating)
                             }
                         }
                     }
