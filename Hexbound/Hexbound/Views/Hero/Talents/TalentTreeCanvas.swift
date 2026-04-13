@@ -17,8 +17,10 @@ struct TalentTreeCanvas: View {
     let isUnlockable: (PassiveNode) -> Bool
     let onTap: (PassiveNode) -> Void
 
-    private let nodePadding: CGFloat = 60  // keep nodes from touching edges
-    private let minCanvasSize: CGFloat = 800
+    private let nodePadding: CGFloat = 60      // keep nodes from touching edges
+    private let pixelsPerUnit: CGFloat = 110   // backend coord unit → screen px
+    private let maxNodeSize: CGFloat = 76      // largest node (ultimate) — used for collision guarantee
+    private let minNodeGap: CGFloat = 20       // empty space between two adjacent nodes
 
     // MARK: - Bounding box of the tree in backend coordinates
     private var bounds: (minX: Double, maxX: Double, minY: Double, maxY: Double) {
@@ -28,18 +30,46 @@ struct TalentTreeCanvas: View {
         return (xs.min() ?? 0, xs.max() ?? 1, ys.min() ?? 0, ys.max() ?? 1)
     }
 
-    /// Maps backend (positionX, positionY) → screen points inside `canvasSize`.
-    private func screenPosition(for node: PassiveNode, in canvasSize: CGSize) -> CGPoint {
+    /// Smallest non-zero distance between any two nodes in backend coords.
+    /// Used to guarantee they never visually overlap regardless of backend density.
+    private var minNodeDelta: Double {
+        var minDelta = Double.greatestFiniteMagnitude
+        for i in 0..<nodes.count {
+            for j in (i + 1)..<nodes.count {
+                let dx = nodes[i].positionX - nodes[j].positionX
+                let dy = nodes[i].positionY - nodes[j].positionY
+                let d = (dx * dx + dy * dy).squareRoot()
+                if d > 0.001 { minDelta = min(minDelta, d) }
+            }
+        }
+        return minDelta == .greatestFiniteMagnitude ? 1 : minDelta
+    }
+
+    /// Effective scale: large enough that closest-pair spacing >= maxNodeSize + minNodeGap.
+    private var effectiveScale: CGFloat {
+        let required = (maxNodeSize + minNodeGap) / CGFloat(minNodeDelta)
+        return max(pixelsPerUnit, required)
+    }
+
+    /// Intrinsic canvas size derived from backend coord range × scale.
+    private var canvasSize: CGSize {
         let b = bounds
-        let rangeX = max(b.maxX - b.minX, 1)
-        let rangeY = max(b.maxY - b.minY, 1)
-        let usableW = canvasSize.width - nodePadding * 2
-        let usableH = canvasSize.height - nodePadding * 2
-        let nx = (node.positionX - b.minX) / rangeX
-        let ny = (node.positionY - b.minY) / rangeY
+        let rangeX = CGFloat(max(b.maxX - b.minX, 1))
+        let rangeY = CGFloat(max(b.maxY - b.minY, 1))
+        let scale = effectiveScale
+        return CGSize(
+            width: rangeX * scale + nodePadding * 2,
+            height: rangeY * scale + nodePadding * 2
+        )
+    }
+
+    /// Maps backend (positionX, positionY) → screen points inside `canvasSize`.
+    private func screenPosition(for node: PassiveNode) -> CGPoint {
+        let b = bounds
+        let scale = effectiveScale
         return CGPoint(
-            x: nodePadding + CGFloat(nx) * usableW,
-            y: nodePadding + CGFloat(ny) * usableH
+            x: nodePadding + CGFloat(node.positionX - b.minX) * scale,
+            y: nodePadding + CGFloat(node.positionY - b.minY) * scale
         )
     }
 
@@ -61,47 +91,41 @@ struct TalentTreeCanvas: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let canvasSize = CGSize(
-                width: max(proxy.size.width, minCanvasSize),
-                height: max(proxy.size.height, minCanvasSize)
-            )
-            let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
+        let size = canvasSize
+        let nodeMap = Dictionary(uniqueKeysWithValues: nodes.map { ($0.id, $0) })
 
-            ZStack {
-                // Connections — drawn in Canvas for perf
-                Canvas { context, _ in
-                    for conn in connections {
-                        guard let from = nodeMap[conn.fromId],
-                              let to = nodeMap[conn.toId] else { continue }
-                        let p1 = screenPosition(for: from, in: canvasSize)
-                        let p2 = screenPosition(for: to, in: canvasSize)
-                        var path = Path()
-                        path.move(to: p1)
-                        path.addLine(to: p2)
-                        let isBoth = isUnlocked(from) && isUnlocked(to)
-                        context.stroke(
-                            path,
-                            with: .color(connectionColor(conn, nodeMap: nodeMap)),
-                            lineWidth: isBoth ? 3 : 2
-                        )
-                    }
-                }
-                .frame(width: canvasSize.width, height: canvasSize.height)
-
-                // Nodes — tappable
-                ForEach(nodes) { node in
-                    let pos = screenPosition(for: node, in: canvasSize)
-                    Button {
-                        onTap(node)
-                    } label: {
-                        TalentNodeView(node: node, state: state(for: node))
-                    }
-                    .buttonStyle(.plain)
-                    .position(pos)
+        ZStack {
+            // Connections — drawn in Canvas for perf
+            Canvas { context, _ in
+                for conn in connections {
+                    guard let from = nodeMap[conn.fromId],
+                          let to = nodeMap[conn.toId] else { continue }
+                    let p1 = screenPosition(for: from)
+                    let p2 = screenPosition(for: to)
+                    var path = Path()
+                    path.move(to: p1)
+                    path.addLine(to: p2)
+                    let isBoth = isUnlocked(from) && isUnlocked(to)
+                    context.stroke(
+                        path,
+                        with: .color(connectionColor(conn, nodeMap: nodeMap)),
+                        lineWidth: isBoth ? 3 : 2
+                    )
                 }
             }
-            .frame(width: canvasSize.width, height: canvasSize.height)
+            .frame(width: size.width, height: size.height)
+
+            // Nodes — tappable
+            ForEach(nodes) { node in
+                Button {
+                    onTap(node)
+                } label: {
+                    TalentNodeView(node: node, state: state(for: node))
+                }
+                .buttonStyle(.plain)
+                .position(screenPosition(for: node))
+            }
         }
+        .frame(width: size.width, height: size.height)
     }
 }

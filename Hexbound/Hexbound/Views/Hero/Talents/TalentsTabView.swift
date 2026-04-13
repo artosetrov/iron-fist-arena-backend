@@ -118,7 +118,7 @@ struct TalentsTabView: View {
                     vm.selectedNode = node
                 }
             )
-            .frame(minWidth: 800, minHeight: 800)
+            .padding(LayoutConstants.spaceMD)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 480)
