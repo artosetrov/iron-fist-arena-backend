@@ -372,7 +372,11 @@
       "Bash(find Hexbound/Hexbound/Views/ -name '*.swift' -type f -exec sh -c 'count=$\\(grep -o \"\\\\.opacity\\(0\\\\.[0-9]*\\)\" \"$1\" | wc -l\\); if [ \"$count\" -gt 0 ]; then echo \"$count $1\"; fi' _ '{}' ';')",
       "Bash(find Hexbound/Hexbound/Views/ -name '*.swift' -type f -exec sh -c 'count=$\\(grep -o \"\\\\.opacity\\(0\\\\.[0-9]*\\)\" \"$1\" | wc -l\\); if [ \"$count\" -gt 15 ]; then echo \"$count $1\"; fi' _ '{}' ';')",
       "Bash(find Hexbound/Hexbound/Views/ -name '*.swift' -type f -exec sh -c 'count=$\\(grep -o \"\\\\.opacity\\(0\\\\.[0-9]*\\)\" \"$1\" | wc -l\\); if [ \"$count\" -gt 0 ]; then echo 1; fi' _ '{}' ';')",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pip install:*)",
+      "Bash(brew list:*)",
+      "Bash(brew install:*)",
+      "Bash(/opt/homebrew/bin/brew install:*)"
     ]
   },
   "enabledMcpjsonServers": [

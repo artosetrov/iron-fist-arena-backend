@@ -512,6 +512,12 @@ model PvpMatch {
   playedAt      DateTime  @default(now()) @map("played_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
+  // Interactive Combat v1 (additive, nullable — old pvp flow ignores these)
+  status                 String?   @default("completed") @map("status")
+  interactiveStrikeIndex Int?      @map("interactive_strike_index")
+  interactiveTimeoutAt   DateTime? @map("interactive_timeout_at")
+  interactiveChoices     Json?     @map("interactive_choices")
+
   player1       Character @relation("player1", fields: [player1Id], references: [id])
   player2       Character @relation("player2", fields: [player2Id], references: [id])
   winner        Character? @relation("winner", fields: [winnerId], references: [id])

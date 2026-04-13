@@ -687,3 +687,74 @@ function buildResult(winnerId: string, loserId: string, turns: Turn[], finalHp: 
     finalHp,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Interactive Combat v1 — single-strike resolution (additive, feature-flagged)
+//
+// Used by POST /pvp/strike. Does NOT mutate DB, does NOT consume stamina, does
+// NOT award rewards. It resolves ONE deterministic strike given attacker /
+// defender zones and current HP, reusing the same `resolveAttack` pipeline
+// that `runCombat` uses. The caller (iOS) owns the match state and calls us
+// once per strike; when HP hits zero the caller finalizes via a later endpoint.
+// ---------------------------------------------------------------------------
+
+export interface SingleStrikeInput {
+  attacker: CharacterStats;
+  defender: CharacterStats;
+  attackerZone: BodyZone;
+  defenderZone: BodyZone;
+  /**
+   * Authoritative HP value the client believes the defender has right now.
+   * Server clamps and uses it as the starting HP for this strike.
+   */
+  defenderHp: number;
+  /** 32-bit seed (e.g. hash(matchId + strikeIndex)) for deterministic replay. */
+  seed: number;
+}
+
+export interface SingleStrikeResult {
+  turn: Turn;
+  newDefenderHp: number;
+  healAmount: number;
+}
+
+export async function resolveSingleStrike(input: SingleStrikeInput): Promise<SingleStrikeResult> {
+  await loadClassDamageConfig();
+  const config = await getCombatConfig();
+  _cachedCombatConfig = config;
+
+  const rng = createSeededRng(input.seed);
+
+  // Build stance modifiers from the zones provided for THIS strike, ignoring
+  // whatever persisted stance the character rows may carry. Interactive combat
+  // is zone-per-strike, not per-match.
+  const atkStance: ParsedZoneStance = { attack: input.attackerZone, defense: input.attackerZone };
+  const defStance: ParsedZoneStance = { attack: input.defenderZone, defense: input.defenderZone };
+  const stanceAtk = computeStanceModifiers(atkStance, defStance);
+  const stanceDef = computeStanceModifiers(defStance, atkStance);
+
+  const passivesAtk = input.attacker.passiveBonuses ?? emptyPassiveBonuses();
+  const passivesDef = input.defender.passiveBonuses ?? emptyPassiveBonuses();
+
+  // Fresh cooldown state per strike — skill reuse tracking lives on the client
+  // in v1. (v2 may persist per-match cooldowns in interactive_choices.)
+  const cooldownState: SkillCooldownState = {};
+
+  const startHp = Math.max(0, Math.floor(input.defenderHp));
+
+  return resolveAttack(
+    1,
+    input.attacker,
+    input.defender,
+    startHp,
+    stanceAtk,
+    stanceDef,
+    passivesAtk,
+    passivesDef,
+    cooldownState,
+    rng,
+    config,
+    input.attackerZone,
+    input.defenderZone,
+  );
+}
