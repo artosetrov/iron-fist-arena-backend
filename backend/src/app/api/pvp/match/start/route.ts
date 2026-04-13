@@ -214,7 +214,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Not enough health to fight. Use a health potion first!' }, { status: 400 })
       }
     }
-    console.error('pvp match/start error:', error)
-    return NextResponse.json({ error: 'Failed to start match' }, { status: 500 })
+    const detail = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    console.error('pvp match/start error:', detail, '\nstack:', stack)
+    return NextResponse.json(
+      { error: 'Failed to start match', detail },
+      { status: 500 }
+    )
   }
 }

@@ -246,7 +246,13 @@ actor APIClient {
 
     private func extractErrorMessage(from data: Data) -> String? {
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            return json["error"] as? String ?? json["message"] as? String
+            let err = json["error"] as? String ?? json["message"] as? String
+            // If server returned a `detail` field (stack summary), surface it
+            // alongside the short error string so callers can debug 500s.
+            if let err, let detail = json["detail"] as? String, !detail.isEmpty {
+                return "\(err): \(detail)"
+            }
+            return err
         }
         return String(data: data, encoding: .utf8)
     }

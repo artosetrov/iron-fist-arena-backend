@@ -238,7 +238,12 @@ export async function POST(req: NextRequest) {
       winner_id: winnerId,
     })
   } catch (error) {
-    console.error('pvp strike error:', error)
-    return NextResponse.json({ error: 'Failed to resolve strike' }, { status: 500 })
+    const detail = error instanceof Error ? error.message : String(error)
+    const stack = error instanceof Error ? error.stack : undefined
+    console.error('pvp strike error:', detail, '\nstack:', stack)
+    return NextResponse.json(
+      { error: 'Failed to resolve strike', detail },
+      { status: 500 }
+    )
   }
 }
