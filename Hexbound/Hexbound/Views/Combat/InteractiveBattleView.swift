@@ -328,3 +328,80 @@ struct InteractiveRevealView: View {
         }
     }
 }
+
+// MARK: - Route Wrapper
+
+/// Thin wrapper that owns the `InteractiveBattleViewModel` lifecycle and wires
+/// the terminal phases back into AppState navigation. Mounted by `AppRouter`
+/// for the `.interactiveBattle` route.
+struct InteractiveBattleRouteView: View {
+    @Environment(AppState.self) private var appState
+    let characterId: String
+    let opponentId: String
+    let attackerMaxHp: Int
+    let defenderMaxHp: Int
+
+    @State private var vm: InteractiveBattleViewModel?
+
+    var body: some View {
+        Group {
+            if let vm {
+                InteractiveBattleView(
+                    vm: vm,
+                    onFinished: { phase in
+                        handleTerminal(phase, vm: vm)
+                    }
+                )
+            } else {
+                ZStack {
+                    DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+                    ProgressView()
+                        .tint(DarkFantasyTheme.gold)
+                }
+            }
+        }
+        .onAppear {
+            if vm == nil {
+                vm = InteractiveBattleViewModel(
+                    appState: appState,
+                    attackerCharacterId: characterId,
+                    defenderCharacterId: opponentId,
+                    attackerMaxHp: attackerMaxHp,
+                    defenderMaxHp: defenderMaxHp
+                )
+            }
+        }
+        .onDisappear {
+            vm?.cancel()
+        }
+        .navigationBarBackButtonHidden(true)
+    }
+
+    private func handleTerminal(_ phase: InteractiveBattleViewModel.Phase,
+                                vm: InteractiveBattleViewModel) {
+        switch phase {
+        case .finished:
+            if let data = vm.finalCombatData {
+                appState.combatData = data
+                if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+                appState.mainPath.append(AppRoute.combatResult)
+            } else {
+                appState.showToast("Match ended", type: .info)
+                if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+            }
+        case .unavailable:
+            // Feature flag flipped off between /game/init and /match/start —
+            // rare race. Fall back: pop and toast; user can tap Fight again
+            // and will get the classic flow on the next tap.
+            appState.showToast("Interactive combat unavailable",
+                               subtitle: "Returning to classic mode",
+                               type: .info)
+            if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+        case .error(let message):
+            appState.showToast("Match failed", subtitle: message, type: .error)
+            if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+        default:
+            break
+        }
+    }
+}

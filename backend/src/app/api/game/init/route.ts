@@ -308,6 +308,10 @@ export async function GET(req: NextRequest) {
         staminaRefill: gemCostsConfig.STAMINA_REFILL,
         extraPvpCombat: gemCostsConfig.EXTRA_PVP_COMBAT,
       },
+      // Interactive Combat v1 — client reads this to route Fight button to
+      // /pvp/match/start instead of classic /pvp/prepare → /pvp/resolve.
+      // Flag flip in Vercel env → clients pick up on next /game/init refresh.
+      interactiveCombatEnabled: process.env.INTERACTIVE_COMBAT_V1 === 'true',
     }
 
     return NextResponse.json({

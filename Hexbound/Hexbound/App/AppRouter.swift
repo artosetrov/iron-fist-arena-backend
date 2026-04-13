@@ -17,6 +17,10 @@ enum AppRoute: Hashable, Codable {
     case combat
     case combatResult
     case loot
+    /// Interactive Combat v1 — new match-lifecycle fight screen.
+    /// Routed here when `GameConfig.interactiveCombatEnabled == true` (driven
+    /// by server env flag `INTERACTIVE_COMBAT_V1`). Classic flow uses `.combat`.
+    case interactiveBattle(characterId: String, opponentId: String, attackerMaxHp: Int, defenderMaxHp: Int)
 
     // Arena
     case arena
@@ -133,6 +137,13 @@ struct MainRouterView: View {
         case .combat: CombatDetailView()
         case .combatResult: CombatResultDetailView()
         case .loot: LootDetailView()
+        case .interactiveBattle(let characterId, let opponentId, let attackerMaxHp, let defenderMaxHp):
+            InteractiveBattleRouteView(
+                characterId: characterId,
+                opponentId: opponentId,
+                attackerMaxHp: attackerMaxHp,
+                defenderMaxHp: defenderMaxHp
+            )
         
         // Arena
         case .arena: ArenaDetailView()

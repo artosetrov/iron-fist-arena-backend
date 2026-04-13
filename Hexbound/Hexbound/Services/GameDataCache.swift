@@ -598,6 +598,11 @@ struct GameConfig {
     let staminaRefillGems: Int
     let extraPvpCombatGems: Int
 
+    // Interactive Combat v1 — when true, Fight button routes to /pvp/match/start
+    // lifecycle; when false, classic /pvp/prepare → /pvp/resolve flow is used.
+    // Sourced from `INTERACTIVE_COMBAT_V1` env flag on server.
+    let interactiveCombatEnabled: Bool
+
     init(from dict: [String: Any]) {
         staminaMax = dict["staminaMax"] as? Int ?? 120
         staminaRegenMinutes = dict["staminaRegenMinutes"] as? Int ?? 8
@@ -620,6 +625,8 @@ struct GameConfig {
         goldMineBoostGems = gemCosts["goldMineBoost"] as? Int ?? 3
         staminaRefillGems = gemCosts["staminaRefill"] as? Int ?? 30
         extraPvpCombatGems = gemCosts["extraPvpCombat"] as? Int ?? 50
+
+        interactiveCombatEnabled = dict["interactiveCombatEnabled"] as? Bool ?? false
     }
 
     // MARK: - Daily login rewards parsing

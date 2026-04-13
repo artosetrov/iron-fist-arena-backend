@@ -199,6 +199,24 @@ final class ArenaViewModel {
             return
         }
 
+        // Interactive Combat v1 routing — when server flag is on
+        // (INTERACTIVE_COMBAT_V1 → GameConfig.interactiveCombatEnabled), route
+        // the Fight button to the new match-lifecycle screen. Classic flow stays
+        // as-is when the flag is off. VM self-handles /match/start; any error
+        // path (including a rare 404 race) falls back via the route wrapper.
+        if cache.gameConfig?.interactiveCombatEnabled == true,
+           let char = appState.currentCharacter,
+           let opponent = opponents.first(where: { $0.id == opponentId }) {
+            showComparison = false
+            appState.mainPath.append(AppRoute.interactiveBattle(
+                characterId: char.id,
+                opponentId: opponent.id,
+                attackerMaxHp: char.maxHp,
+                defenderMaxHp: opponent.maxHp
+            ))
+            return
+        }
+
         fightingOpponentId = opponentId
         showComparison = false
 
