@@ -30,7 +30,7 @@ struct InteractiveBattleView: View {
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceLG)
         }
-        .onAppear { vm.beginPredictPhase() }
+        .onAppear { vm.startMatch() }
         .onChange(of: phaseKey(vm.phase)) { _, _ in
             // Notify host on terminal phases.
             switch vm.phase {
@@ -78,6 +78,10 @@ struct InteractiveBattleView: View {
             InteractivePredictView(vm: vm)
         case .resolving:
             ProgressView("Resolving…")
+                .tint(DarkFantasyTheme.gold)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+        case .completing:
+            ProgressView("Finalizing…")
                 .tint(DarkFantasyTheme.gold)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
         case .reveal:
@@ -141,6 +145,7 @@ struct InteractiveBattleView: View {
         case .predict: return "predict"
         case .resolving: return "resolving"
         case .reveal: return "reveal"
+        case .completing: return "completing"
         case .finished(let id): return "finished:\(id)"
         case .unavailable: return "unavailable"
         case .error(let m): return "error:\(m)"

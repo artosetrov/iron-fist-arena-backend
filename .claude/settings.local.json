@@ -378,7 +378,12 @@
       "Bash(brew install:*)",
       "Bash(/opt/homebrew/bin/brew install:*)",
       "Bash(/opt/homebrew/bin/python3.12 -m pip install /Users/artosetrov/graphify)",
-      "Bash(/opt/homebrew/bin/python3.12 -m pip install --user /Users/artosetrov/graphify)"
+      "Bash(/opt/homebrew/bin/python3.12 -m pip install --user /Users/artosetrov/graphify)",
+      "Bash(/opt/homebrew/bin/pipx install:*)",
+      "Bash(/opt/homebrew/bin/pipx ensurepath:*)",
+      "Bash(PIPX_DEFAULT_PYTHON=/opt/homebrew/bin/python3.12 /opt/homebrew/bin/pipx install /Users/artosetrov/graphify)",
+      "Bash(/Users/artosetrov/.local/bin/graphify --help)",
+      "Bash(/Users/artosetrov/.local/bin/graphify install:*)"
     ]
   },
   "enabledMcpjsonServers": [

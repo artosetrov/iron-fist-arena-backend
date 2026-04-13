@@ -2,10 +2,12 @@
 //  InteractiveBattleViewModel.swift
 //  Hexbound
 //
-//  Interactive Combat v1 — client-side match state + strike orchestration.
-//  Parallel to existing CombatViewModel. Gated by INTERACTIVE_COMBAT_V1 on server.
-//  If server returns 404 (flag off), the VM falls back to `unavailable` state
-//  and the screen can gracefully route back to classic /pvp/fight.
+//  Interactive Combat v1 — match lifecycle orchestration.
+//  Flow: startMatch → (predict → submitStrike → reveal)* → completeMatch → CombatData.
+//  Server is authoritative: HP snapshots, opponent zones, and final rewards come
+//  from /pvp/match/start, /pvp/strike, and /pvp/match/complete respectively.
+//  Gated by INTERACTIVE_COMBAT_V1 on the server (404 → `unavailable` phase,
+//  host can route back to classic /pvp/fight).
 //
 
 import Foundation
@@ -18,10 +20,11 @@ final class InteractiveBattleViewModel {
     // MARK: - Phase
 
     enum Phase: Equatable {
-        case intro              // Opponent reveal / loadout lock
-        case predict            // Player picks zones + optional skill, timer ticking
-        case resolving          // Waiting for /pvp/strike response
-        case reveal             // Playing Reveal animation
+        case intro              // Waiting for /pvp/match/start
+        case predict            // Player picks zones, timer ticking
+        case resolving          // Awaiting /pvp/strike response
+        case reveal             // Playing Reveal animation (player strike)
+        case completing         // Awaiting /pvp/match/complete after finish
         case finished(winnerId: String)
         case unavailable        // Feature flag off — classic fight required
         case error(message: String)
@@ -36,41 +39,53 @@ final class InteractiveBattleViewModel {
     var selectedDefendZone: InteractiveBodyZone = .chest
     var lastOutcome: InteractiveStrikeOutcome?
     var lastTurn: InteractiveStrikeTurn?
+    var lastOpponentTurn: InteractiveStrikeTurn?
+    var lastOpponentZones: InteractiveOpponentZones?
 
-    /// Opponent's historical zone pattern (for read strip). Populated from
-    /// loadout preload. Empty in pure-blind mode.
+    /// Final `/match/complete` payload, emitted for navigation to CombatResultDetailView.
+    var finalCombatData: CombatData?
+
+    /// Opponent's historical zone pattern (for read strip). Empty in pure-blind mode.
     var opponentPattern: [InteractiveBodyZone] = []
 
     // MARK: - Config
 
-    /// Predict window. Spec §3 calls for 6 s at level 1, tightening possible
-    /// in later phases based on telemetry.
+    /// Predict window. Spec §3 calls for 6 s at level 1.
     static let predictWindowSeconds: Double = 6.0
 
     /// Reveal animation budget. Spec §3.4 scripted timeline: 1.4 s.
     static let revealDurationSeconds: Double = 1.4
 
+    static let maxRounds: Int = 15
+
     // MARK: - Private
 
     private var predictTimerTask: Task<Void, Never>?
     private var strikeTask: Task<Void, Never>?
+    private var completeTask: Task<Void, Never>?
+    private var startTask: Task<Void, Never>?
     private let appState: AppState
+    private let attackerCharacterId: String
+    private let defenderCharacterId: String
 
     // MARK: - Init
 
+    /// Initialize with opaque character IDs. Max HPs are provisional until
+    /// `/match/start` returns the authoritative snapshot.
     init(appState: AppState,
-         matchId: String = UUID().uuidString,
-         attackerId: String,
-         defenderId: String,
+         attackerCharacterId: String,
+         defenderCharacterId: String,
          attackerMaxHp: Int,
          defenderMaxHp: Int,
          attackerCurrentHp: Int? = nil,
          defenderCurrentHp: Int? = nil) {
         self.appState = appState
+        self.attackerCharacterId = attackerCharacterId
+        self.defenderCharacterId = defenderCharacterId
         self.state = InteractiveMatchState(
-            matchId: matchId,
-            attackerId: attackerId,
-            defenderId: defenderId,
+            matchId: "",   // populated by /match/start
+            attackerId: attackerCharacterId,
+            defenderId: defenderCharacterId,
             attackerHp: attackerCurrentHp ?? attackerMaxHp,
             defenderHp: defenderCurrentHp ?? defenderMaxHp,
             attackerMaxHp: attackerMaxHp,
@@ -81,15 +96,18 @@ final class InteractiveBattleViewModel {
     deinit {
         predictTimerTask?.cancel()
         strikeTask?.cancel()
+        completeTask?.cancel()
+        startTask?.cancel()
     }
 
     // MARK: - Lifecycle
 
-    /// Begin the first predict window. Call after intro animation completes.
-    func beginPredictPhase() {
+    /// Kick off the match. Call from host view's `.onAppear`.
+    func startMatch() {
         guard case .intro = phase else { return }
-        startPredictTimer()
-        phase = .predict
+        startTask = Task { [weak self] in
+            await self?.performStartMatch()
+        }
     }
 
     /// Called when the player taps Strike or the timer expires.
@@ -106,12 +124,13 @@ final class InteractiveBattleViewModel {
     func revealCompleted() {
         guard case .reveal = phase else { return }
         if state.isFinished {
-            phase = .finished(winnerId: state.winnerId ?? state.defenderId)
+            completeMatch()
             return
         }
-        // Reset selections to defaults for the next round.
         lastOutcome = nil
         lastTurn = nil
+        lastOpponentTurn = nil
+        lastOpponentZones = nil
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
@@ -120,6 +139,8 @@ final class InteractiveBattleViewModel {
     func cancel() {
         predictTimerTask?.cancel()
         strikeTask?.cancel()
+        completeTask?.cancel()
+        startTask?.cancel()
     }
 
     // MARK: - Timer
@@ -138,7 +159,6 @@ final class InteractiveBattleViewModel {
                 }
             }
             if Task.isCancelled { return }
-            // Timer expired — auto-submit with current selection (spec §6 fallback).
             await MainActor.run {
                 if case .predict = self.phase {
                     self.submitStrike()
@@ -147,20 +167,48 @@ final class InteractiveBattleViewModel {
         }
     }
 
-    // MARK: - Strike Resolution
+    // MARK: - /match/start
+
+    private func performStartMatch() async {
+        let body = InteractiveMatchStartRequest(
+            characterId: attackerCharacterId,
+            opponentId: defenderCharacterId
+        )
+        do {
+            let response: InteractiveMatchStartResponse = try await APIClient.shared.post(
+                APIEndpoints.pvpMatchStart,
+                body: body
+            )
+            await applyMatchStart(response)
+        } catch let APIError.clientError(status, _, _) where status == 404 {
+            phase = .unavailable
+        } catch {
+            let msg = (error as? APIError)?.errorDescription ?? "Failed to start match"
+            phase = .error(message: msg)
+        }
+    }
+
+    private func applyMatchStart(_ response: InteractiveMatchStartResponse) async {
+        state.matchId = response.matchId
+        state.attackerHp = response.attacker.currentHp
+        state.defenderHp = response.defender.currentHp
+        predictTimeRemaining = Self.predictWindowSeconds
+        startPredictTimer()
+        phase = .predict
+    }
+
+    // MARK: - /strike
 
     private func resolveStrike() async {
-        let strikeIndex = state.strikes.count
+        guard !state.matchId.isEmpty else {
+            phase = .error(message: "Match not started")
+            return
+        }
         let request = InteractiveStrikeRequest(
             matchId: state.matchId,
-            strikeIndex: strikeIndex,
-            attackerId: state.attackerId,
-            defenderId: state.defenderId,
             attackerZone: selectedAttackZone,
-            defenderZone: selectedDefendZone,
-            defenderHp: state.defenderHp
+            defenderZone: selectedDefendZone
         )
-
         do {
             let response: InteractiveStrikeResponse = try await APIClient.shared.post(
                 APIEndpoints.pvpStrike,
@@ -168,9 +216,9 @@ final class InteractiveBattleViewModel {
             )
             await applyStrikeResponse(response)
         } catch let APIError.clientError(status, _, _) where status == 404 {
-            // Feature flag is off on server. Surface unavailable so the screen
-            // can route back to classic /pvp/fight.
             phase = .unavailable
+        } catch let APIError.clientError(status, _, _) where status == 410 {
+            phase = .error(message: "Match timed out")
         } catch {
             let msg = (error as? APIError)?.errorDescription ?? "Strike failed"
             phase = .error(message: msg)
@@ -178,35 +226,61 @@ final class InteractiveBattleViewModel {
     }
 
     private func applyStrikeResponse(_ response: InteractiveStrikeResponse) async {
-        // Mutate match state.
-        state.strikes.append(response.turn)
-        state.defenderHp = max(0, response.newDefenderHp)
-        if let heal = response.turn.healAmount, heal > 0,
-           response.turn.attackerId == state.attackerId {
-            state.attackerHp = min(state.attackerMaxHp, state.attackerHp + heal)
+        state.strikes.append(response.playerStrike)
+        if let opp = response.opponentStrike {
+            state.strikes.append(opp)
+            lastOpponentTurn = opp
         }
-        // Classify outcome for reveal.
+        state.attackerHp = max(0, response.attackerHp)
+        state.defenderHp = max(0, response.defenderHp)
+        lastOpponentZones = response.oppZones
+
         let outcome = InteractiveStrikeOutcome.classify(
-            turn: response.turn,
+            turn: response.playerStrike,
             attackerZone: selectedAttackZone,
             defenderZone: selectedDefendZone
         )
-        lastTurn = response.turn
+        lastTurn = response.playerStrike
         lastOutcome = outcome
+
+        // If server says match_finished, fast-path: still play reveal, then complete.
         phase = .reveal
+    }
+
+    // MARK: - /match/complete
+
+    private func completeMatch() {
+        phase = .completing
+        completeTask = Task { [weak self] in
+            await self?.performCompleteMatch()
+        }
+    }
+
+    private func performCompleteMatch() async {
+        let body = InteractiveMatchCompleteRequest(matchId: state.matchId)
+        do {
+            let data: CombatData = try await APIClient.shared.post(
+                APIEndpoints.pvpMatchComplete,
+                body: body
+            )
+            finalCombatData = data
+            phase = .finished(winnerId: state.winnerId ?? state.defenderId)
+        } catch let APIError.clientError(status, _, _) where status == 404 {
+            phase = .unavailable
+        } catch {
+            let msg = (error as? APIError)?.errorDescription ?? "Failed to complete match"
+            phase = .error(message: msg)
+        }
     }
 }
 
 // MARK: - Convenience
 
 extension InteractiveBattleViewModel.Phase {
-    /// Whether the player should see the Predict UI active.
     var isPredicting: Bool {
         if case .predict = self { return true }
         return false
     }
-
-    /// Whether the Reveal animation should be playing.
     var isRevealing: Bool {
         if case .reveal = self { return true }
         return false
