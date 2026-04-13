@@ -356,9 +356,19 @@ export async function getUpgradeProtectionCost(): Promise<number> {
 
 /**
  * Get the upgrade level threshold at which failure causes downgrade.
+ *
+ * Economy v3 (2026-04-13): default raised 5 → 8. In the route, comparison is
+ * `currentLevel >= threshold`, where `currentLevel` is the level BEFORE the
+ * attempt. So threshold=8 means downgrade kicks in when attempting +9 or +10
+ * — matching ECONOMY_RULES.md R7.3 ("downgrade-by-1 failure at +9/+10").
+ *
+ * Prod GameConfig override (`item_balance.upgrade_failure_downgrade_threshold`)
+ * MUST be updated to 8 in the admin panel as part of the v3 rollout — fresh
+ * environments inherit 8 from this default, but existing prod still has 5
+ * until explicitly changed.
  */
 export async function getUpgradeDowngradeThreshold(): Promise<number> {
-  return getGameConfig<number>('item_balance.upgrade_failure_downgrade_threshold', 5)
+  return getGameConfig<number>('item_balance.upgrade_failure_downgrade_threshold', 8)
 }
 
 /**

@@ -10,11 +10,17 @@
 > - Flat gold packs (`gold_500 … gold_20000`) **disabled**; replaced by mixed-currency Adventurer's Bundles I/II/III (R10.3).
 > - Achievement rank targets corrected to real ELO ceilings: `rank_diamond 1800 → 3000`, `rank_grandmaster 2200 → 4250` (R5, PVP_RANKS).
 >
-> **Target (rules in place, constant change scheduled separately):**
-> - Stamina cap `120 → 180` (R8.cap).
-> - BP Premium price `500 → 700` gems (R12).
-> - Gold Mine Boost `10 → 15` gems (R13).
-> - Upgrade success curve at +9/+10: `25% → 30%`, `15% → 20%`; failure mode at +9/+10 = `downgrade-by-1` (R7.3); Protection Scroll `50 → 40` gems.
+> **Also shipping in v3 batch 2 (2026-04-13):**
+> - Upgrade success curve `+9: 25% → 30%`, `+10: 15% → 20%` (R7.3).
+> - Upgrade failure at +9/+10 = `downgrade-by-1` (default `getUpgradeDowngradeThreshold()` raised 5 → 8; **prod GameConfig must be set to 8** in admin panel as part of rollout).
+> - `UPGRADE_PROTECTION` scroll: `50 → 40` gems (R7.3).
+> - `BATTLE_PASS_PREMIUM`: `500 → 700` gems (R12).
+> - `GOLD_MINE_BOOST`: `3 → 15` gems (R13).
+>
+> **Target (still deferred — multi-domain):**
+> - Stamina cap `120 → 180` (R8.cap) — touches iOS bar widths + regen tuning.
+> - Premium Pass StoreKit subscription Phase 2 — see `PREMIUM_PASS_MIGRATION.md`.
+> - Bundle extras (Protection Scrolls, Legendary Shards) — needs `ConsumableType` enum migration + character routing decision.
 
 > **⚠️ SSoT for raw numbers:** [`BALANCE_CONSTANTS_AUTO.md`](BALANCE_CONSTANTS_AUTO.md) — auto-generated from `backend/src/lib/game/balance.ts` via `npm run docs:balance`. Every constant, table, and formula below that lives in `balance.ts` is mirrored there and drift-checked in pre-commit.
 >
@@ -402,11 +408,17 @@ Flat gold packs are **disabled for new purchases** in Economy v3. Rationale: gem
 
 Mixed-currency bundles that convert better than pure gem packs but include consumables/progression items instead of flat gold. See R10.3.
 
-| SKU | Gems | Gold | Extras | Price |
+| SKU | Gems | Gold | Extras (Phase 2) | Price |
 |-----|------|------|--------|-------|
 | adventurer_bundle_I | 600 | 3,000 | 3× Protection Scroll | $4.99 |
 | adventurer_bundle_II | 1,400 | 10,000 | 5× Protection Scroll | $9.99 |
 | adventurer_bundle_III | 3,200 | 20,000 | 2× Legendary Shard | $19.99 |
+
+> **Phase 2 note:** Bundles ship currency-only in initial v3 release. Extras (Protection Scrolls, Legendary Shards) are delivered in a follow-up PR that:
+> 1. Adds `protection_scroll` + `legendary_shard` to `ConsumableType` enum (Prisma migration).
+> 2. Decides character routing (likely user-level Stash so they survive character switching).
+> 3. Extends `IapProduct` with `items?: Array<{itemId, quantity}>` and grant logic in `verify-receipt`.
+> Until then, bundles' currency-portion economics already justify the price (per gem rates: bundle I = $0.0083/gem effective with the gold thrown in vs $0.0091 on `gems_medium`).
 
 ### Special Products
 

@@ -121,6 +121,12 @@ export const FIRST_WIN_BONUS = {
 } as const;
 
 // --- Equipment upgrade success chances (index 0 = +1, index 9 = +10) ---
+// Economy v3 (2026-04-13): bumped the +9 / +10 floor (25%/15% → 30%/20%) and
+// changed the failure mode at +9 / +10 to "downgrade by 1" instead of "stays".
+// Why: previous setup turned high-end upgrading into a flat gold tax that whales
+// could brute-force. Downgrade-on-fail makes the choice meaningful — Protection
+// Scrolls become a real call. Higher base success keeps the median grinder honest.
+// See ECONOMY_RULES.md R7.3.
 export const UPGRADE_CHANCES: readonly number[] = [
   100, // +1
   100, // +2
@@ -130,9 +136,12 @@ export const UPGRADE_CHANCES: readonly number[] = [
   80,  // +6
   60,  // +7
   40,  // +8
-  25,  // +9
-  15,  // +10
+  30,  // +9  (v3: was 25)
+  20,  // +10 (v3: was 15)
 ] as const;
+
+/** Plus-levels at which a failed upgrade attempt downgrades the item by 1 (unless protected). */
+export const UPGRADE_DOWNGRADE_LEVELS: readonly number[] = [9, 10] as const;
 
 // --- Daily login rewards (days 1-7, repeating weekly) ---
 //
@@ -498,14 +507,14 @@ export const PASSIVES = {
 } as const;
 
 // --- Gem costs (Economy v3, 2026-04-13) ---
-// See ECONOMY_RULES.md R8 (stamina), R11 (BP), R13 (mine).
+// See ECONOMY_RULES.md R7.3 (protection), R8 (stamina), R11/R12 (BP), R13 (mine).
 export const GEM_COSTS = {
   STAMINA_REFILL: 50,           // v3: 30 → 50 (1st of day). Diminishing curve via STAMINA_REFILL_DR: 50 / 80 / 140 / 240.
   EXTRA_PVP_COMBAT: 50,         // kept for backward compat, prefer STAMINA_REFILL
-  BATTLE_PASS_PREMIUM: 500,     // target 700 (R12) — deferred to BP v3 PR.
+  BATTLE_PASS_PREMIUM: 700,     // v3: 500 → 700. Brings BP price in line with industry mid-core (~$5 effective) and pushes whales into the Premium Pass funnel.
   GOLD_MINE_BUY_SLOT: 50,
-  GOLD_MINE_BOOST: 3,           // target 15 (R13) — deferred to Gold Mine v3 PR.
-  UPGRADE_PROTECTION: 50,       // target 40 (R7.3) — deferred with upgrade curve rework.
+  GOLD_MINE_BOOST: 15,          // v3: 3 → 15. At 3💎 the boost was a no-op pricewise; at 15💎 it becomes a meaningful "skip the wait" choice while still F2P-affordable from daily gem income.
+  UPGRADE_PROTECTION: 40,       // v3: 50 → 40. With downgrade-on-fail at +9/+10 (UPGRADE_DOWNGRADE_LEVELS) the scroll has higher utility, so the price drop keeps the EV positive for the player.
 } as const;
 
 // --- Stat Point Purchase (escalating daily cost) ---
