@@ -56,6 +56,35 @@ enum APIError: LocalizedError {
         return raw
     }
 
+    /// Extract a compact, actionable message from a `DecodingError` that
+    /// names the failing key / path — so toasts show something like
+    /// "Decode: keyNotFound 'max_hp' at attacker" instead of the opaque
+    /// "The data couldn't be read because it is missing".
+    private static func describeDecodingError(_ error: Error) -> String {
+        guard let decErr = error as? DecodingError else {
+            return "Data error: \(error.localizedDescription)"
+        }
+        func pathStr(_ ctx: DecodingError.Context) -> String {
+            ctx.codingPath.map { $0.stringValue }.joined(separator: ".")
+        }
+        switch decErr {
+        case .keyNotFound(let key, let ctx):
+            let p = pathStr(ctx)
+            return "Decode: missing '\(key.stringValue)'\(p.isEmpty ? "" : " at \(p)")"
+        case .typeMismatch(let type, let ctx):
+            let p = pathStr(ctx)
+            return "Decode: type mismatch \(type) at \(p.isEmpty ? "root" : p)"
+        case .valueNotFound(let type, let ctx):
+            let p = pathStr(ctx)
+            return "Decode: null \(type) at \(p.isEmpty ? "root" : p)"
+        case .dataCorrupted(let ctx):
+            let p = pathStr(ctx)
+            return "Decode: corrupted at \(p.isEmpty ? "root" : p) — \(ctx.debugDescription)"
+        @unknown default:
+            return "Data error: \(decErr.localizedDescription)"
+        }
+    }
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
@@ -69,7 +98,7 @@ enum APIError: LocalizedError {
         case .clientError(_, let message, _):
             message
         case .decodingError(let error):
-            "Data error: \(error.localizedDescription)"
+            Self.describeDecodingError(error)
         case .networkError(let error):
             "Network error: \(error.localizedDescription)"
         case .noData:
