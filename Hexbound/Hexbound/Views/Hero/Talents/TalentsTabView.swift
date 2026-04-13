@@ -1,0 +1,211 @@
+//
+//  TalentsTabView.swift
+//  Hexbound
+//
+//  Third tab on HeroDetailView. Hosts the passive-tree canvas, SP banner,
+//  and respec action. Purely additive — does not modify existing Inventory or Status tabs.
+//
+
+import SwiftUI
+
+struct TalentsTabView: View {
+    @Bindable var vm: PassiveTreeViewModel
+
+    // Respec cost is surfaced server-side; we echo the canonical value here for UI clarity.
+    private let respecGemCost: Int = 50
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
+            header
+
+            if vm.isLoading && vm.nodes.isEmpty {
+                loadingView
+            } else if vm.nodes.isEmpty {
+                emptyView
+            } else {
+                canvasContainer
+            }
+
+            respecRow
+        }
+        .padding(.horizontal, LayoutConstants.screenPadding)
+        .padding(.bottom, LayoutConstants.spaceMD)
+        .sheet(item: sheetBinding()) { node in
+            TalentDetailSheet(
+                node: node,
+                isUnlocked: vm.isUnlocked(node),
+                isUnlockable: vm.isUnlockable(node),
+                pointsAvailable: vm.passivePointsAvailable,
+                isMutating: vm.isMutating,
+                onUnlock: {
+                    vm.unlock(node)
+                    vm.selectedNode = nil
+                },
+                onClose: { vm.selectedNode = nil }
+            )
+            .presentationDetents([.medium])
+            .presentationBackground(DarkFantasyTheme.bgSecondary)
+        }
+        .alert("Reset all talents?", isPresented: $vm.showRespecConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset — \(respecGemCost) gems", role: .destructive) {
+                vm.respec()
+            }
+        } message: {
+            Text("All unlocked talents will be refunded as skill points. Costs \(respecGemCost) gems.")
+        }
+        .task {
+            await vm.load()
+        }
+    }
+
+    // MARK: - Header (SP banner)
+
+    private var header: some View {
+        HStack(spacing: LayoutConstants.spaceMD) {
+            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
+                Text("SKILL POINTS")
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    .tracking(2)
+                Text("\(vm.passivePointsAvailable) available")
+                    .font(DarkFantasyTheme.cardTitle)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+            }
+            Spacer()
+            unlockedCountPill
+        }
+        .padding(LayoutConstants.spaceMD)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgSecondary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+    }
+
+    private var unlockedCountPill: some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            Image(systemName: "sparkles")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+            Text("\(vm.unlockedNodes.count)/\(vm.nodes.count)")
+                .font(DarkFantasyTheme.uiLabel.bold())
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+        }
+        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgTertiary)
+        )
+    }
+
+    // MARK: - Canvas container
+
+    private var canvasContainer: some View {
+        ScrollView([.horizontal, .vertical], showsIndicators: true) {
+            TalentTreeCanvas(
+                nodes: vm.nodes,
+                connections: vm.connections,
+                isUnlocked: vm.isUnlocked,
+                isUnlockable: vm.isUnlockable,
+                onTap: { node in
+                    vm.selectedNode = node
+                }
+            )
+            .frame(minWidth: 800, minHeight: 800)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 480)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .fill(DarkFantasyTheme.bgPrimary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
+                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Loading / Empty
+
+    private var loadingView: some View {
+        VStack {
+            ProgressView()
+                .tint(DarkFantasyTheme.gold)
+            Text("Loading talents…")
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .padding(.top, LayoutConstants.spaceSM)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 480)
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
+            Image(systemName: "sparkles")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(DarkFantasyTheme.textDisabled)
+                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+            Text("No talents available")
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 480)
+    }
+
+    // MARK: - Respec row
+
+    private var respecRow: some View {
+        Button {
+            vm.showRespecConfirm = true
+        } label: {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: "arrow.counterclockwise")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(DarkFantasyTheme.danger)
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                Text("RESET TALENTS")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .foregroundStyle(DarkFantasyTheme.danger)
+                    .tracking(2)
+                Spacer()
+                Text("\(respecGemCost) gems")
+                    .font(DarkFantasyTheme.uiLabel)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+            }
+            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.vertical, LayoutConstants.spaceMS)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.unlockedNodes.isEmpty || vm.isMutating)
+        .opacity(vm.unlockedNodes.isEmpty ? 0.5 : 1)
+    }
+
+    // MARK: - Sheet binding
+
+    private func sheetBinding() -> Binding<PassiveNode?> {
+        Binding(
+            get: { vm.selectedNode },
+            set: { vm.selectedNode = $0 }
+        )
+    }
+}

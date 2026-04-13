@@ -88,9 +88,7 @@ struct DungeonMapView: View {
                     Spacer()
                     Button {
                         HapticManager.selection()
-                        if !appState.mainPath.isEmpty {
-                            appState.mainPath.removeLast()
-                        }
+                        appState.mainPath = NavigationPath()
                     } label: {
                         HStack(spacing: LayoutConstants.spaceSM) {
                             Image("ui-arrow-up")

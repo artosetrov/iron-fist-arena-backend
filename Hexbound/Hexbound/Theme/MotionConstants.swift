@@ -94,6 +94,19 @@ enum MotionConstants {
     /// Extended tick-up for big numbers (level up, season summary)
     static let tickUpLong: Double = 0.8
 
+    // MARK: - Reward Row Reveal
+
+    /// Stagger interval between Gold → XP → Rating reveal in Victory rewards row
+    static let rewardStaggerInterval: Double = 0.25
+    /// Per-item fade-in duration for reward items
+    static let rewardItemFadeIn: Double = 0.20
+    /// Per-tick interval for Rating counter (integer-by-integer climb)
+    static let ratingTickInterval: Double = 0.15
+    /// Cap for Rating count-up total duration (avoid 30+ tick crawl)
+    static let ratingTickMaxDuration: Double = 1.5
+    /// Completion pulse opacity dip duration (no scale, opacity only)
+    static let rewardCompletionPulse: Double = 0.20
+
     // MARK: - Progress Bar
 
     /// Minimum fill animation duration

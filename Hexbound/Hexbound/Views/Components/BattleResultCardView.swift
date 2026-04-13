@@ -38,6 +38,17 @@ struct BattleResultCardView: View {
     // Reward counter roll-ups
     @State private var goldDisplay = 0
     @State private var xpDisplay = 0
+    @State private var ratingDisplay = 0
+
+    // Per-item reveal state (Gold / XP / Rating staggered fade-in)
+    @State private var goldItemVisible = false
+    @State private var xpItemVisible = false
+    @State private var ratingItemVisible = false
+
+    // Completion pulse opacity (1.0 → 0.7 → 1.0 when count-up finishes)
+    @State private var goldPulseOpacity: Double = 1.0
+    @State private var xpPulseOpacity: Double = 1.0
+    @State private var ratingPulseOpacity: Double = 1.0
 
     // Hero XP counter roll-up
     @State private var xpHeroDisplay: Int = 0
@@ -264,13 +275,15 @@ struct BattleResultCardView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
-            HStack(spacing: 0) {
+            HStack(alignment: .top, spacing: LayoutConstants.spaceLG) {
                 if let gold = config.goldReward, gold > 0 {
                     rewardCounter(
                         iconImage: "reward-gold",
                         value: "+\(goldDisplay)",
                         label: "Gold",
-                        color: DarkFantasyTheme.goldBright
+                        color: DarkFantasyTheme.goldBright,
+                        isVisible: goldItemVisible,
+                        pulseOpacity: goldPulseOpacity
                     )
                 }
 
@@ -279,16 +292,20 @@ struct BattleResultCardView: View {
                         iconImage: "reward-xp",
                         value: "+\(xpDisplay)",
                         label: "XP",
-                        color: DarkFantasyTheme.xpRing
+                        color: DarkFantasyTheme.xpRing,
+                        isVisible: xpItemVisible,
+                        pulseOpacity: xpPulseOpacity
                     )
                 }
 
                 if let change = config.ratingChange, change != 0 {
                     rewardCounter(
                         iconImage: change > 0 ? "reward-rating-up" : "reward-rating-down",
-                        value: change > 0 ? "+\(change)" : "\(change)",
+                        value: ratingDisplay > 0 ? "+\(ratingDisplay)" : "\(ratingDisplay)",
                         label: "Rating",
-                        color: change > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+                        color: change > 0 ? DarkFantasyTheme.success : DarkFantasyTheme.danger,
+                        isVisible: ratingItemVisible,
+                        pulseOpacity: ratingPulseOpacity
                     )
                 }
             }
@@ -298,24 +315,38 @@ struct BattleResultCardView: View {
     }
 
     @ViewBuilder
-    private func rewardCounter(iconImage: String, value: String, label: String, color: Color) -> some View {
-        VStack(spacing: LayoutConstants.spaceXS) {
+    private func rewardCounter(
+        iconImage: String,
+        value: String,
+        label: String,
+        color: Color,
+        isVisible: Bool,
+        pulseOpacity: Double
+    ) -> some View {
+        VStack(spacing: LayoutConstants.spaceSM) {
             Image(iconImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
+                .interpolation(.high)
+                .frame(width: LayoutConstants.icon3XL, height: LayoutConstants.icon3XL)
+                .shadow(color: Color.black.opacity(0.4), radius: 6, y: 3)
 
             Text(value)
-                .font(DarkFantasyTheme.cardTitle)
+                .font(DarkFantasyTheme.cinematicTitle)
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .contentTransition(.numericText())
+                .shadow(color: Color.black.opacity(0.5), radius: 8)
+                .opacity(pulseOpacity)
 
             Text(label)
-                .font(DarkFantasyTheme.body)
+                .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .tracking(1)
+                .textCase(.uppercase)
         }
         .frame(maxWidth: .infinity)
+        .opacity(isVisible ? 1 : 0)
     }
 
     // MARK: - Hero XP Bar (big numbers + thick bar)
@@ -718,7 +749,7 @@ struct BattleResultCardView: View {
             }
         }
 
-        // ── 0.8s+ — Rewards appear + counters tick up ──
+        // ── 0.8s+ — Rewards header + staggered per-item reveal + counters tick up ──
         // (delayed further if stars are showing)
         let starsDelay: Double = (config.starRating != nil && config.isVictory) ? Double(config.starRating ?? 0) * 0.25 : 0
         let rewardsTime = 0.8 + starsDelay
@@ -726,8 +757,19 @@ struct BattleResultCardView: View {
             withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showRewards = true
             }
-            rollUp(to: config.goldReward ?? 0, binding: $goldDisplay, duration: MotionConstants.tickUpDuration)
-            rollUp(to: config.xpReward ?? 0, binding: $xpDisplay, duration: MotionConstants.tickUpDuration)
+
+            // Build ordered list of present reward items (skip zero/nil)
+            var revealQueue: [(kind: RewardKind, value: Int)] = []
+            if let g = config.goldReward, g > 0 { revealQueue.append((.gold, g)) }
+            if let x = config.xpReward, x > 0 { revealQueue.append((.xp, x)) }
+            if let r = config.ratingChange, r != 0 { revealQueue.append((.rating, r)) }
+
+            for (index, item) in revealQueue.enumerated() {
+                let itemDelay = Double(index) * MotionConstants.rewardStaggerInterval
+                DispatchQueue.main.asyncAfter(deadline: .now() + itemDelay) {
+                    revealRewardItem(kind: item.kind, target: item.value)
+                }
+            }
 
             // Hero XP counter: roll from xpBefore → xpBefore + xpReward
             if let xpBefore = config.xpBefore {
@@ -738,7 +780,21 @@ struct BattleResultCardView: View {
         }
 
         // ── Loot section with RARITY-BASED reveal (Audit §7 #11) ──
-        let lootStartTime = rewardsTime + 0.6
+        // Pushed back to let the staggered reward row + tick-ups complete first.
+        let rewardsRevealTotal: Double = {
+            var count = 0
+            if (config.goldReward ?? 0) > 0 { count += 1 }
+            if (config.xpReward ?? 0) > 0 { count += 1 }
+            if let r = config.ratingChange, r != 0 { count += 1 }
+            let staggerEnd = Double(max(count - 1, 0)) * MotionConstants.rewardStaggerInterval
+            // Rating tick may run longest; estimate generously
+            let ratingTickEst: Double = {
+                guard let r = config.ratingChange, r != 0 else { return MotionConstants.tickUpDuration }
+                return min(MotionConstants.ratingTickMaxDuration, Double(abs(r)) * MotionConstants.ratingTickInterval)
+            }()
+            return staggerEnd + max(MotionConstants.tickUpDuration, ratingTickEst) + MotionConstants.rewardCompletionPulse
+        }()
+        let lootStartTime = rewardsTime + max(0.6, rewardsRevealTotal)
         if !config.lootItems.isEmpty {
             DispatchQueue.main.asyncAfter(deadline: .now() + lootStartTime) {
                 withAnimation(.easeOut(duration: MotionConstants.fast)) {
@@ -781,7 +837,7 @@ struct BattleResultCardView: View {
 
         // ── Buttons appear last ──
         let lootTotalDelay = config.lootItems.reduce(0.0) { acc, item in acc + rarityRevealDelay(tier: item.rarityTier) }
-        let buttonDelay = config.lootItems.isEmpty ? rewardsTime + 0.6 : lootStartTime + lootTotalDelay + 0.3
+        let buttonDelay = config.lootItems.isEmpty ? rewardsTime + max(0.6, rewardsRevealTotal) : lootStartTime + lootTotalDelay + 0.3
         DispatchQueue.main.asyncAfter(deadline: .now() + buttonDelay) {
             withAnimation(.easeOut(duration: MotionConstants.fast)) {
                 showButtons = true
@@ -815,10 +871,83 @@ struct BattleResultCardView: View {
         }
     }
 
+    // MARK: - Reward Item Reveal
+
+    private enum RewardKind { case gold, xp, rating }
+
+    /// Fade in a single reward item, run its tick-up, then fire a completion pulse.
+    /// Stagger is handled by the caller — this only animates one item.
+    private func revealRewardItem(kind: RewardKind, target: Int) {
+        // 1. Per-item fade-in (opacity only, no scale per project rule)
+        withAnimation(.easeOut(duration: MotionConstants.rewardItemFadeIn)) {
+            switch kind {
+            case .gold:   goldItemVisible = true
+            case .xp:     xpItemVisible = true
+            case .rating: ratingItemVisible = true
+            }
+        }
+        // 2. Per-item haptic on appearance
+        switch kind {
+        case .gold, .xp: HapticManager.light()
+        case .rating:    HapticManager.medium()
+        }
+
+        // 3. Count-up — Rating ticks integer-by-integer, others use ease-out roll
+        let onComplete: () -> Void = {
+            // Completion pulse: opacity dip 1.0 → 0.7 → 1.0 (no scale)
+            let pulseBinding: Binding<Double> = {
+                switch kind {
+                case .gold:   return $goldPulseOpacity
+                case .xp:     return $xpPulseOpacity
+                case .rating: return $ratingPulseOpacity
+                }
+            }()
+            withAnimation(.easeOut(duration: MotionConstants.rewardCompletionPulse / 2)) {
+                pulseBinding.wrappedValue = 0.7
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.rewardCompletionPulse / 2) {
+                withAnimation(.easeIn(duration: MotionConstants.rewardCompletionPulse / 2)) {
+                    pulseBinding.wrappedValue = 1.0
+                }
+            }
+        }
+
+        switch kind {
+        case .gold:
+            rollUp(to: target, binding: $goldDisplay, duration: MotionConstants.tickUpDuration, completion: onComplete)
+        case .xp:
+            rollUp(to: target, binding: $xpDisplay, duration: MotionConstants.tickUpDuration, completion: onComplete)
+        case .rating:
+            tickRating(to: target, completion: onComplete)
+        }
+    }
+
+    /// Rating tick: integer-by-integer climb (slower than rollUp — feels "earned").
+    /// Total duration capped at ratingTickMaxDuration.
+    private func tickRating(to target: Int, completion: @escaping () -> Void) {
+        guard target != 0 else { completion(); return }
+        let absTarget = abs(target)
+        let stepInterval = min(MotionConstants.ratingTickInterval,
+                               MotionConstants.ratingTickMaxDuration / Double(absTarget))
+        let sign = target < 0 ? -1 : 1
+        ratingDisplay = 0
+        for i in 1...absTarget {
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepInterval * Double(i)) {
+                ratingDisplay = i * sign
+                if i == absTarget { completion() }
+            }
+        }
+    }
+
     // MARK: - Counter Roll-Up
 
     private func rollUp(to target: Int, binding: Binding<Int>, duration: Double) {
         rollUp(from: 0, to: target, binding: binding, duration: duration)
+    }
+
+    private func rollUp(to target: Int, binding: Binding<Int>, duration: Double, completion: @escaping () -> Void) {
+        rollUp(from: 0, to: target, binding: binding, duration: duration)
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { completion() }
     }
 
     private func rollUp(from start: Int, to target: Int, binding: Binding<Int>, duration: Double) {

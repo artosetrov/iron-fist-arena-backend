@@ -86,6 +86,15 @@ struct CombatDetailView: View {
             AmbientManager.shared.setZone(.arenaFight)
             setupCombatIfReady()
         }
+        .onDisappear {
+            // D02 FIX (2026-04-13): cancel playTask when the combat SCREEN goes
+            // away, not when the preparation sub-view disappears. Attaching
+            // this to preparationView.onDisappear killed the animation the
+            // instant the battle UI swapped in — every fight opened to an
+            // already-finished log. See finishCombat() fallback.
+            playTask?.cancel()
+            playTask = nil
+        }
         .onChange(of: appState.combatData != nil) { _, hasData in
             if hasData {
                 setupCombatIfReady()
@@ -246,8 +255,6 @@ struct CombatDetailView: View {
         .onAppear { animatePulse = true }
         .onDisappear {
             animatePulse = false
-            playTask?.cancel()
-            playTask = nil
         }
     }
 

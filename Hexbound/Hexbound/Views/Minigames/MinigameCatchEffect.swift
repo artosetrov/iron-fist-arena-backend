@@ -121,30 +121,28 @@ struct MiniBurstView: View {
 
     var body: some View {
         Canvas { context, _ in
-            let resolvedRadius = maxRadius * progress
-            let alpha = 1.0 - progress
+            let resolvedRadius: CGFloat = maxRadius * progress
+            let alpha: CGFloat = 1.0 - progress
 
             for i in 0..<particleCount {
-                let angle = (Double(i) / Double(particleCount)) * 2 * .pi
-                    + Double(i) * 0.3 // golden offset
-                let r = resolvedRadius * CGFloat.random(in: 0.6...1.0, using: &SeededRNG(seed: UInt64(i)))
-                let px = position.x + cos(angle) * r
-                let py = position.y + sin(angle) * r
-                let size = CGFloat.random(in: 2...5, using: &SeededRNG(seed: UInt64(i + 100)))
+                let angle: Double = (Double(i) / Double(particleCount)) * 2 * .pi + Double(i) * 0.3
+                var rng1 = SeededRNG(seed: UInt64(i))
+                let r: CGFloat = resolvedRadius * CGFloat.random(in: 0.6...1.0, using: &rng1)
+                let px: CGFloat = position.x + cos(angle) * r
+                let py: CGFloat = position.y + sin(angle) * r
+                var rng2 = SeededRNG(seed: UInt64(i + 100))
+                let size: CGFloat = CGFloat.random(in: 2...5, using: &rng2)
 
-                let baseColor = isGem
-                    ? (i % 2 == 0 ? DarkFantasyTheme.cyan : DarkFantasyTheme.info)
-                    : (i % 3 == 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.gold)
+                let baseColor: Color
+                if isGem {
+                    baseColor = i % 2 == 0 ? DarkFantasyTheme.cyan : DarkFantasyTheme.info
+                } else {
+                    baseColor = i % 3 == 0 ? DarkFantasyTheme.goldBright : DarkFantasyTheme.gold
+                }
 
-                context.fill(
-                    Circle().path(in: CGRect(
-                        x: px - size / 2,
-                        y: py - size / 2,
-                        width: size,
-                        height: size
-                    )),
-                    with: .color(baseColor.opacity(alpha * 0.8))
-                )
+                let rect = CGRect(x: px - size / 2, y: py - size / 2, width: size, height: size)
+                let path = Circle().path(in: rect)
+                context.fill(path, with: .color(baseColor.opacity(alpha * 0.8)))
             }
         }
         .allowsHitTesting(false)

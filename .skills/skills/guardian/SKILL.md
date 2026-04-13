@@ -85,18 +85,44 @@ bash .skills/skills/guardian/scripts/check_design_system.sh <path-to-file-or-dir
 - **Character model specifics:** Character has `.avatar` (appearance key), NOT `.skinKey`. The `.skinKey` is on `AppearanceSkin`, not `Character`.
 - **PvP data specifics:** `PvPRank` has NO `.displayName` — use `.rawValue` instead. `LeaderboardEntry` has ONLY: `characterId`, `characterName`, `characterClass` (String), `value`, `rank`. No avatar/equipment/stats.
 
-### 5. Enum Exhaustiveness
+### 5. Guard Before Await (Double-Tap Prevention)
+
+Every async method in a ViewModel that triggers a network request MUST set its guard flag (`isLoading`, `isClaiming`, `isFighting`, etc.) as the **FIRST** line, BEFORE any `await` call. The flag must be checked at the top with `guard !isXxx else { return }`.
+
+**Pattern (CORRECT):**
+```swift
+func fight(opponentId: String) async {
+    guard !isFighting else { return }
+    isFighting = true
+    defer { isFighting = false }
+    // ... await network call ...
+}
+```
+
+**Anti-pattern (WRONG — causes double-tap exploits):**
+```swift
+func fight(opponentId: String) async {
+    let opponent = await api.prepare(opponentId)  // ← Two taps both pass guard!
+    isFighting = true  // ← Too late
+}
+```
+
+**Why:** QA audit 2026-04-12 found 3 critical double-tap race conditions (BUG-C01/C02/C03) where two rapid taps both passed the guard because the flag was set AFTER the first `await`. This caused duplicate battles, gold loss, and double purchases.
+
+**Rule:** Flag any ViewModel async method that (a) has an `await` call AND (b) does not set a boolean guard flag before the first `await`. Scanner section 7 checks this automatically.
+
+### 6. Enum Exhaustiveness
 
 When a new case is added to an enum, search ALL `switch` statements on that enum. Each must handle the new case with correct values — don't just add `default:`.
 
-### 6. Accessibility
+### 7. Accessibility
 
 - **Every Button must have `.accessibilityLabel()`.** Icon-only buttons are the highest priority. Flag any `Button { }` without `.accessibilityLabel`.
 - Labels describe the **action** ("Go back", "Show password"), not the visual ("Arrow", "Eye icon").
 - Dynamic state → dynamic label: `.accessibilityLabel(isVisible ? "Hide password" : "Show password")`
 - No emoji as functional icons — use asset images or SF Symbols. Exception: decorative/flavor text.
 
-### 7. ViewModifier Parameters
+### 8. ViewModifier Parameters
 
 If a modifier struct got a new parameter, search for ALL callers — both the `.modifier(Foo(...))` form and the `.foo(...)` extension. Direct struct initializers don't get default values from the extension.
 

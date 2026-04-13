@@ -65,7 +65,7 @@ struct TavernDetailView: View {
 
     private var stashCard: some View {
         Button {
-            appState.mainPath.append(.stash)
+            appState.mainPath.append(AppRoute.stash)
         } label: {
             HStack(spacing: LayoutConstants.spaceMD) {
                 Image(systemName: "shippingbox.fill")

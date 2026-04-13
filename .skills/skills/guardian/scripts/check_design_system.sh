@@ -185,5 +185,36 @@ find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; d
   fi
 done
 
+# --- 7. Guard-before-await in ViewModel async methods ---
+# Incident: QA audit 2026-04-12 — BUG-C01/C02/C03. Double-tap exploits caused by
+# setting guard flag AFTER the first await, allowing two concurrent calls.
+echo "## Guard Before Await (Double-Tap Prevention)"
+echo ""
+find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; do
+  # Find async func declarations and check if the first non-blank line after them
+  # contains a guard or flag assignment before any await
+  grep -n 'func .* async' "$f" 2>/dev/null | while IFS=: read -r lineno rest; do
+    # Skip if line is a comment
+    echo "$rest" | grep -q '^\s*//' && continue
+    # Get the function name
+    func_name=$(echo "$rest" | grep -oP 'func\s+\K\w+')
+    # Check next 30 lines for pattern: has await but no guard/flag before it
+    end_line=$((lineno + 30))
+    block=$(sed -n "${lineno},${end_line}p" "$f" 2>/dev/null)
+    has_await=$(echo "$block" | grep -c 'await ')
+    if [ "$has_await" -gt 0 ]; then
+      # Find line of first await (relative)
+      first_await_rel=$(echo "$block" | grep -n 'await ' | head -1 | cut -d: -f1)
+      # Check if there's a guard or bool assignment before it
+      before_await=$(echo "$block" | head -n "$((first_await_rel - 1))")
+      has_guard=$(echo "$before_await" | grep -cE 'guard\s+!is|= true$|= true\s')
+      if [ "$has_guard" -eq 0 ]; then
+        abs_line=$((lineno))
+        echo "⚠️  [no guard before await] $f:$abs_line — func $func_name() has await but no guard/flag set before it"
+      fi
+    fi
+  done
+done
+
 echo ""
 echo "=== SCAN COMPLETE ==="

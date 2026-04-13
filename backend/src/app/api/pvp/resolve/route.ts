@@ -31,6 +31,7 @@ import { createBattleResultMail } from '@/lib/game/battle-mail'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
 import { goldBonusMultiplier } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
+import { BOT_TICKET_SECRET_MISSING, createBotBattleTicketId } from '@/lib/game/bot-ticket'
 
 function isNewUtcDay(date: Date | null): boolean {
   if (!date) return true
@@ -555,6 +556,10 @@ export async function POST(req: NextRequest) {
       if (error.message === 'NOT_ENOUGH_STAMINA') {
         return NextResponse.json({ error: 'Not enough stamina', required: 0 }, { status: 400 })
       }
+      if (error.message === BOT_TICKET_SECRET_MISSING) {
+        console.error('pvp resolve bot ticket secret is not configured')
+        return NextResponse.json({ error: 'Bot fights are temporarily unavailable.' }, { status: 503 })
+      }
     }
     console.error('pvp resolve error:', error)
     return NextResponse.json(
@@ -583,12 +588,7 @@ async function resolveBotFight(
   BATTLE_PASS: Awaited<ReturnType<typeof getBattlePassConfig>>,
 ) {
   // Validate bot ticket hash
-  const { createHash } = await import('crypto')
-  const secret = process.env.BOT_TICKET_SECRET ?? 'hexbound-bot-fights-2026'
-  const expectedTicketId = `bot_${createHash('sha256')
-    .update(`${character_id}:${opponent_id}:${battle_seed}:${secret}`)
-    .digest('hex')
-    .slice(0, 32)}`
+  const expectedTicketId = createBotBattleTicketId(character_id, opponent_id, battle_seed)
 
   if (battle_ticket_id !== expectedTicketId) {
     return NextResponse.json({ error: 'Invalid bot battle ticket.' }, { status: 400 })

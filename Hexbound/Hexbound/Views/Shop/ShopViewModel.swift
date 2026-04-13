@@ -228,8 +228,11 @@ final class ShopViewModel {
                     subtitle: "Drop #\(response.claimNumber)",
                     contents: response.contents
                 )
-                // Reload to get cooldown state
-                await loadContraband()
+                // Optimistic: flip to cooldown placeholder immediately so the
+                // widget switches state without waiting for a network trip.
+                // A fire-and-forget refresh syncs the exact `nextAvailableAt`.
+                contrabandState = .loading
+                Task { [weak self] in await self?.loadContraband() }
             } else {
                 if var char = appState.currentCharacter {
                     char.gold = savedGold; char.gems = savedGems
@@ -319,7 +322,33 @@ final class ShopViewModel {
                         subtitle: offer.title,
                         contents: offer.contents
                     )
-                    await loadOffers()
+                    // Local patch: bump purchasesMade and flip canPurchase if limit hit.
+                    if let idx = offers.firstIndex(where: { $0.id == offer.id }) {
+                        let existing = offers[idx]
+                        let newCount = existing.purchasesMade + 1
+                        let stillPurchasable = existing.maxPurchases == 0 || newCount < existing.maxPurchases
+                        offers[idx] = ShopOffer(
+                            id: existing.id,
+                            key: existing.key,
+                            title: existing.title,
+                            description: existing.description,
+                            offerType: existing.offerType,
+                            contents: existing.contents,
+                            originalPrice: existing.originalPrice,
+                            salePrice: existing.salePrice,
+                            currency: existing.currency,
+                            discountPct: existing.discountPct,
+                            maxPurchases: existing.maxPurchases,
+                            purchasesMade: newCount,
+                            canPurchase: stillPurchasable,
+                            imageKey: existing.imageKey,
+                            tags: existing.tags,
+                            startsAt: existing.startsAt,
+                            endsAt: existing.endsAt
+                        )
+                    }
+                    // Fire-and-forget background reconcile — never blocks the UI.
+                    Task { [weak self] in await self?.loadOffers() }
                 } else {
                     if var char = appState.currentCharacter {
                         char.gold = savedGold; char.gems = savedGems

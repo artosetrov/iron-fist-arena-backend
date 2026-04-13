@@ -26,6 +26,23 @@
 - **Strict null checks:** Narrow `T | null` before use. `if (!x) throw` + assertion.
 - **Build before push:** `npx next build` locally or check Vercel preview.
 
+## Economy Rules SSoT (CRITICAL)
+
+**Before changing ANY number in `balance.ts`**, read the economy constitution:
+
+- `docs/06_game_systems/ECONOMY_RULES.md` — 19 rules (R1–R19) that every balance change must satisfy.
+- `docs/06_game_systems/BALANCE_CONSTANTS.md` — curated narrative of current numbers + Economy v3 deltas.
+- `docs/06_game_systems/ECONOMY_AUDIT_2026-04-13.md` — diagnosis that produced v3.
+- `docs/06_game_systems/PREMIUM_PASS_MIGRATION.md` — ADR for `premium_forever` → Premium Pass (StoreKit subscription) migration.
+
+**IAP catalog (`IAP_PRODUCTS` in `balance.ts`) owns an `enabled?: boolean` flag.** Products with `enabled === false` are still honored on server (for grandfathered owners / refund flows) but MUST be filtered out of `/api/iap/products` and rejected by `/api/iap/verify-receipt` with `"This product is no longer available for purchase"`.
+
+**Never add a new SKU or change a price without touching:**
+1. `IAP_PRODUCTS` in `balance.ts` (authoritative)
+2. `BALANCE_CONSTANTS.md` table
+3. Apple Connect StoreKit config (`product_id` must round-trip through `/verify-receipt` mapping at line ~55)
+4. An ADR note if it's a monetization model change (subscription ↔ one-time, flat ↔ bundle)
+
 ## Economy & Purchase Routes (CRITICAL — TOCTOU)
 
 **All purchase routes MUST validate limits INSIDE a Prisma `$transaction` with `SELECT FOR UPDATE` row lock.**

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomInt } from 'crypto'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
@@ -65,8 +66,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate secret shell (0, 1, or 2)
-    const correctShell = Math.floor(Math.random() * 3)
+    // Generate the secret shell server-side. Do not return this from /start;
+    // the reveal happens only after /guess so clients cannot pre-read wins.
+    const correctShell = randomInt(0, 3)
 
     // Lock the user row, re-check gold, then deduct + create session atomically
     let session: Awaited<ReturnType<typeof prisma.minigameSession.create>>
@@ -112,7 +114,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       session_id: session.id,
       bet_amount: session.betAmount,
-      winning_cup: correctShell,
       plays_remaining: Math.max(0, 20 - todayGames - 1),
       plays_limit: 20,
     })

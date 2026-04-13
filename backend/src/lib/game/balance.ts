@@ -30,7 +30,10 @@ export const STAMINA = {
 // makes a 20-refill day healthy for the economy.
 export const STAMINA_REFILL_DR = {
   /** Multiplier applied to the base gem cost per refill index on that day. */
-  COST_MULTIPLIERS: [1, 1.5, 2.5, 4] as const, // refill 1 → 1×, 2 → 1.5×, 3 → 2.5×, 4 → 4×
+  // Economy v3 (2026-04-13): raised multipliers. With base cost 50 (was 30) the sequence is
+  // 50 / 80 / 140 / 240 — whales still can refill, but the 4th refill costs ~5× the 1st.
+  // See ECONOMY_RULES.md R8.refill.
+  COST_MULTIPLIERS: [1, 1.6, 2.8, 4.8] as const, // refill 1 → 1×, 2 → 1.6×, 3 → 2.8×, 4 → 4.8×
   /** Maximum number of refills allowed per day. */
   DAILY_CAP: 4,
 } as const;
@@ -168,33 +171,48 @@ export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
 ] as const;
 
 // --- In-App Purchase products ---
+// Economy v3 (2026-04-13): added `enabled` flag for lifecycle management.
+// `enabled: false` = no new purchases, but server still honors existing owners
+// (e.g., premium_forever entitlement remains valid for users who bought before disable).
+// Rules: see docs/06_game_systems/ECONOMY_RULES.md R10, R11.
 export interface IapProduct {
   gems: number;
   gold: number;
   premium: boolean; // grants permanent premium
   monthlyGemCard: boolean; // activates daily gem card (50 instant + 10/day x30)
   price: number;
+  enabled?: boolean; // default: true. If false, /api/iap/products hides it and /verify-receipt rejects new purchases.
 }
 
 export const IAP_PRODUCTS: Record<string, IapProduct> = {
-  // Gem packs
+  // Gem packs (core premium currency — always enabled)
   gems_small:  { gems: 100,  gold: 0, premium: false, monthlyGemCard: false, price: 0.99 },
   gems_medium: { gems: 550,  gold: 0, premium: false, monthlyGemCard: false, price: 4.99 },
   gems_large:  { gems: 1200, gold: 0, premium: false, monthlyGemCard: false, price: 9.99 },
   gems_huge:   { gems: 2500, gold: 0, premium: false, monthlyGemCard: false, price: 19.99 },
   gems_mega:   { gems: 6500, gold: 0, premium: false, monthlyGemCard: false, price: 49.99 },
-  // Gold packs
-  gold_500:    { gems: 0, gold: 500,   premium: false, monthlyGemCard: false, price: 0.99 },
-  gold_1200:   { gems: 0, gold: 1200,  premium: false, monthlyGemCard: false, price: 1.99 },
-  gold_3500:   { gems: 0, gold: 3500,  premium: false, monthlyGemCard: false, price: 4.99 },
-  gold_8000:   { gems: 0, gold: 8000,  premium: false, monthlyGemCard: false, price: 9.99 },
-  gold_20000:  { gems: 0, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99 },
+  // Flat gold packs — DISABLED in Economy v3. Selling gold directly shortcuts the
+  // soft-currency loop and erodes the gem→gold shop. Replaced by Adventurer's Bundles.
+  // See ECONOMY_RULES.md R10.2, R15.
+  gold_500:    { gems: 0, gold: 500,   premium: false, monthlyGemCard: false, price: 0.99,  enabled: false },
+  gold_1200:   { gems: 0, gold: 1200,  premium: false, monthlyGemCard: false, price: 1.99,  enabled: false },
+  gold_3500:   { gems: 0, gold: 3500,  premium: false, monthlyGemCard: false, price: 4.99,  enabled: false },
+  gold_8000:   { gems: 0, gold: 8000,  premium: false, monthlyGemCard: false, price: 9.99,  enabled: false },
+  gold_20000:  { gems: 0, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99, enabled: false },
+  // Adventurer's Bundles — v3 replacement for flat gold packs. Mixed gems+gold + content promise.
+  // Extras (Protection Scrolls / Legendary Shards) will be granted via a follow-up inventory patch;
+  // current release grants the currency portion only. See ECONOMY_RULES.md R10.3.
+  adventurer_bundle_I:   { gems: 600,  gold: 3000,  premium: false, monthlyGemCard: false, price: 4.99 },
+  adventurer_bundle_II:  { gems: 1400, gold: 10000, premium: false, monthlyGemCard: false, price: 9.99 },
+  adventurer_bundle_III: { gems: 3200, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99 },
   // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry)
   monthly_gem_card: { gems: 50, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
   // Starter Bundle — one-time purchase for new players (best value, creates habit)
   starter_bundle: { gems: 200, gold: 3000, premium: false, monthlyGemCard: false, price: 2.99 },
-  // Premium — one-time forever unlock
-  premium_forever: { gems: 0, gold: 0, premium: true, monthlyGemCard: false, price: 9.99 },
+  // Premium Forever — DISABLED for new purchases in Economy v3.
+  // Existing owners keep entitlement (server checks `premiumUntil`). New monetization path:
+  // Premium Pass (30-day subscription) — see docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.
+  premium_forever: { gems: 0, gold: 0, premium: true, monthlyGemCard: false, price: 9.99, enabled: false },
 } as const;
 
 // --- Battle Pass ---
@@ -420,8 +438,11 @@ export function streakGoldMultiplier(winStreak: number): number {
 
 /** Scale PvP gold/XP reward based on character level (higher levels earn slightly more). */
 export function levelScaledReward(baseReward: number, level: number): number {
-  // +2% per level above 1 (level 50 gets +98% = ~2x rewards)
-  return Math.floor(baseReward * (1 + (level - 1) * 0.02));
+  // Economy v3 (2026-04-13): +4% per level above 1 (was +2%).
+  // v2's +2% was slower than cost scaling (repair/upgrade grow faster), making midgame
+  // feel like treading water. Doubling the slope keeps earning power ahead of costs at
+  // L10–L30. Level 50 now gets +196% = ~3× rewards. See ECONOMY_RULES.md R3.
+  return Math.floor(baseReward * (1 + (level - 1) * 0.04));
 }
 
 // --- Equipment Repair Costs (W3.D3 — bumped to meet sink-ratio target) ---
@@ -476,14 +497,15 @@ export const PASSIVES = {
   RESPEC_GOLD_COST: 5000, // Alternative gold cost for respec (gold sink)
 } as const;
 
-// --- Gem costs (Economy v2) ---
+// --- Gem costs (Economy v3, 2026-04-13) ---
+// See ECONOMY_RULES.md R8 (stamina), R11 (BP), R13 (mine).
 export const GEM_COSTS = {
-  STAMINA_REFILL: 30,
+  STAMINA_REFILL: 50,           // v3: 30 → 50 (1st of day). Diminishing curve via STAMINA_REFILL_DR: 50 / 80 / 140 / 240.
   EXTRA_PVP_COMBAT: 50,         // kept for backward compat, prefer STAMINA_REFILL
-  BATTLE_PASS_PREMIUM: 500,
+  BATTLE_PASS_PREMIUM: 500,     // target 700 (R12) — deferred to BP v3 PR.
   GOLD_MINE_BUY_SLOT: 50,
-  GOLD_MINE_BOOST: 10,
-  UPGRADE_PROTECTION: 50,       // was 30 — protection more valuable with exponential upgrade costs
+  GOLD_MINE_BOOST: 3,           // target 15 (R13) — deferred to Gold Mine v3 PR.
+  UPGRADE_PROTECTION: 50,       // target 40 (R7.3) — deferred with upgrade curve rework.
 } as const;
 
 // --- Stat Point Purchase (escalating daily cost) ---

@@ -96,7 +96,8 @@ final class ShellGameViewModel {
 
     // MARK: - Step 1: Start session
 
-    /// Called when user presses START. Returns winning cup index for reveal, or nil on failure.
+    /// Called when user presses START. Returns a local animation cup index, not
+    /// the server's winning cup. The real result is revealed only after guess().
     func startGame() async -> Int? {
         guard canPlay, let charId = appState.currentCharacter?.id else { return nil }
 
@@ -119,7 +120,6 @@ final class ShellGameViewModel {
                 ]
             )
             let sid = data["session_id"] as? String
-            let revealCup = data["winning_cup"] as? Int ?? Int.random(in: 0...2)
 
             guard let sid else {
                 isPlaying = false
@@ -139,7 +139,7 @@ final class ShellGameViewModel {
                 playsLimit = limit
             }
 
-            return revealCup
+            return Int.random(in: 0...2)
         } catch let error as APIError {
             isPlaying = false
             appState.currentCharacter?.gold = savedGold // revert

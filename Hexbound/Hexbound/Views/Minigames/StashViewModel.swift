@@ -68,13 +68,22 @@ final class StashViewModel {
     // MARK: - Withdraw (Stash → Character Inventory)
 
     func withdraw(_ item: Item) async {
+        // Optimistic UI — remove instantly, API in background with rollback
+        let previousItems = items
+        let previousUsedSlots = usedSlots
+        items.removeAll { $0.id == item.id }
+        usedSlots = items.count
+        showItemDetail = false
+        // Invalidate inventory cache so Hero screen reloads fresh
+        appState.cachedInventory = nil
+        appState.showToast("Withdrawn to inventory", type: .success)
+
         let success = await service.withdraw(stashItemId: item.id)
-        if success {
-            items.removeAll { $0.id == item.id }
-            usedSlots = items.count
-            // Invalidate inventory cache so Hero screen reloads
-            appState.cachedInventory = nil
-            appState.showToast("Withdrawn to inventory", type: .success)
+        if !success {
+            // Rollback on failure
+            items = previousItems
+            usedSlots = previousUsedSlots
+            appState.showToast("Failed to withdraw item", type: .error)
         }
     }
 

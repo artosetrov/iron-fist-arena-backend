@@ -63,7 +63,7 @@ struct StaminaBarView: View {
             }
             .frame(height: 14)
 
-            Text("\(currentStamina)/\(maxStamina)")
+            Text("\(currentStamina)")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.stamina)
                 .monospacedDigit()
@@ -123,7 +123,7 @@ struct StaminaBarView: View {
             // Label + Value centered with dark pill for readability
             HStack {
                 Spacer()
-                Text("Stamina  \(currentStamina) / \(maxStamina)")
+                Text("Stamina  \(currentStamina)")
                     .font(DarkFantasyTheme.body.bold())
                     .foregroundStyle(isLow ? DarkFantasyTheme.textWarning : DarkFantasyTheme.textPrimary)
                     .monospacedDigit()

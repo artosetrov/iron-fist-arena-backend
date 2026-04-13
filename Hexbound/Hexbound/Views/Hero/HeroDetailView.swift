@@ -5,11 +5,13 @@ import SwiftUI
 enum HeroTab: Int, CaseIterable {
     case equipment = 0
     case stats = 1
+    case talents = 2
 
     var label: String {
         switch self {
         case .equipment: "INVENTORY"
         case .stats: "STATUS"
+        case .talents: "TALENTS"
         }
     }
 }
@@ -22,6 +24,7 @@ struct HeroDetailView: View {
     @State private var selectedTab: HeroTab = .equipment
     @State private var characterVM: CharacterViewModel?
     @State private var inventoryVM: InventoryViewModel?
+    @State private var talentVM: PassiveTreeViewModel?
     @State private var showRespecConfirm = false
     @State private var statsBadgePulse = false
     @State private var tooltipStat: StatType?
@@ -341,6 +344,21 @@ struct HeroDetailView: View {
                     case .stats:
                         if let vm = characterVM {
                             statsTabContent(char, vm: vm)
+                        }
+
+                    case .talents:
+                        if let vm = talentVM {
+                            TalentsTabView(vm: vm)
+                        } else {
+                            Color.clear
+                                .frame(height: 1)
+                                .onAppear {
+                                    talentVM = PassiveTreeViewModel(
+                                        service: PassiveTreeService(appState: appState),
+                                        appState: appState,
+                                        characterId: char.id
+                                    )
+                                }
                         }
                     }
                 }
@@ -1174,7 +1192,7 @@ struct HeroDetailView: View {
                 .scaledToFit()
                 .frame(width: 36, height: 36)
 
-            Text("\(char.currentStamina)/\(char.maxStamina)")
+            Text("\(char.currentStamina)")
                 .font(DarkFantasyTheme.title)
                 .foregroundStyle(isLow ? DarkFantasyTheme.danger : DarkFantasyTheme.stamina)
                 .monospacedDigit()
@@ -1201,9 +1219,6 @@ struct HeroDetailView: View {
                 }
 
                 Spacer()
-                Text("\(vm.items.count) items")
-                    .font(DarkFantasyTheme.body)
-                    .foregroundStyle(DarkFantasyTheme.textTertiary)
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
 

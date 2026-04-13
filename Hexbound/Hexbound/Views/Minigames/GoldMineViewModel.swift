@@ -659,7 +659,7 @@ final class GoldMineViewModel {
 
         // Optimistic: deduct gems + show boosted
         let prevGems = appState.currentCharacter?.gems ?? 0
-        let boostCost = cache.gameConfig?.goldMineBoostGems ?? 10
+        let boostCost = cache.gameConfig?.goldMineBoostGems ?? 3
         appState.currentCharacter?.gems = max(0, prevGems - boostCost)
         HapticManager.success()
         appState.showToast("Slot boosted!", type: .info)
@@ -682,7 +682,10 @@ final class GoldMineViewModel {
             } catch {
                 // Revert gems on failure
                 appState.currentCharacter?.gems = prevGems
-                appState.showToast("Failed to boost", subtitle: "Check your gem balance", type: .error)
+                // Surface the actual server reason instead of blaming gems for every failure.
+                // Common real reasons: ALREADY_BOOSTED, NO_SESSION, rate-limit.
+                let reason = (error as? APIError)?.userMessage ?? "Please try again"
+                appState.showToast("Failed to boost", subtitle: reason, type: .error)
             }
             actionSlotId = nil
             activeActionSlots.remove(slotIndex)
@@ -749,6 +752,11 @@ final class GoldMineViewModel {
             }
         }
         return raw
+    }
+
+    /// Gem cost for boosting a mining slot (server config with fallback).
+    var boostCost: Int {
+        cache.gameConfig?.goldMineBoostGems ?? 3
     }
 
     func timeRemaining(_ slot: [String: Any]) -> String {

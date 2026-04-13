@@ -576,6 +576,18 @@ struct HubView: View {
         let opponents = await pvpService.getOpponents()
         if !opponents.isEmpty {
             await MainActor.run { cache.cacheOpponents(opponents) }
+
+            // Phase 2 (2026-04-13): warm BattlePreloader from Hub so
+            // tap-to-combat latency drops from ~1.5s to <500ms. The
+            // shared PrepareCacheStore means ArenaViewModel and Combat
+            // will find the result already cached when the user taps
+            // Fight. Fire-and-forget, background priority.
+            let preloader = BattlePreloader(appState: appState)
+            for opponent in opponents.prefix(3) {
+                Task(priority: .background) {
+                    _ = await preloader.prepare(opponentId: opponent.id, showErrors: false)
+                }
+            }
         }
     }
 

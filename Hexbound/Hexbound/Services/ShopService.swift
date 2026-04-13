@@ -165,7 +165,12 @@ final class ShopService {
     /// Quests screen, ActiveQuestBanner). Same pattern as Bug #10 fix in
     /// InventoryService for consumable_use.
     private func refreshDailyQuestsAfterGoldSpend() {
-        appState.cachedTypedQuests = nil
+        // STALE-WHILE-REVALIDATE: keep the previously cached quest list on
+        // screen so Hub banner / ActiveQuestBanner don't blink to an empty
+        // state during the 150-400ms refetch. The background task will
+        // overwrite `cachedTypedQuests` with fresh data when it lands.
+        // (Pre-2026-04-13 this set `cachedTypedQuests = nil` which caused
+        //  visible quest-list flicker on every shop purchase.)
         let appStateRef = appState
         Task { @MainActor in
             _ = try? await QuestService(appState: appStateRef).loadQuests()

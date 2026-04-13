@@ -11,6 +11,13 @@ actor APIClient {
     /// Shared refresh task — parallel 401s await the same refresh instead of failing.
     private var refreshTask: Task<String?, Never>?
 
+    /// Phase 2 (2026-04-13, M-1): in-flight GET dedup. Two rapid taps
+    /// hitting the same endpoint+params await the same URLSession task
+    /// instead of firing duplicate network requests. Cleared as soon as
+    /// the underlying task completes (success or failure). Mutations
+    /// (POST/PATCH/DELETE) are never deduped — they have side effects.
+    private var inFlightGETs: [String: Task<Data, Error>] = [:]
+
     // Callback for 401 handling
     var onUnauthorized: (@Sendable () -> Void)?
 
@@ -88,6 +95,44 @@ actor APIClient {
         body: Encodable? = nil,
         rawBody: [String: Any]? = nil
     ) async throws -> Data {
+        // Phase 2 (2026-04-13, M-1): dedup concurrent GETs. Same
+        // endpoint+params → one URLSession task shared across callers.
+        // Never applied to mutations.
+        if method == "GET" {
+            let key = dedupKey(endpoint: endpoint, params: params)
+            if let existing = inFlightGETs[key] {
+                return try await existing.value
+            }
+            let task = Task<Data, Error> { [weak self] in
+                guard let self else { throw APIError.unknown("APIClient deallocated") }
+                return try await self.performRequest(
+                    method: "GET", endpoint: endpoint, params: params
+                )
+            }
+            inFlightGETs[key] = task
+            defer { inFlightGETs.removeValue(forKey: key) }
+            return try await task.value
+        }
+        return try await performRequest(
+            method: method, endpoint: endpoint, params: params,
+            body: body, rawBody: rawBody
+        )
+    }
+
+    private func dedupKey(endpoint: String, params: [String: String]) -> String {
+        let sorted = params.sorted { $0.key < $1.key }
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+        return "\(endpoint)?\(sorted)"
+    }
+
+    private func performRequest(
+        method: String,
+        endpoint: String,
+        params: [String: String] = [:],
+        body: Encodable? = nil,
+        rawBody: [String: Any]? = nil
+    ) async throws -> Data {
         // Build URL
         guard var components = URLComponents(url: baseURL.appendingPathComponent(endpoint), resolvingAgainstBaseURL: false) else {
             throw APIError.invalidURL
@@ -130,8 +175,11 @@ actor APIClient {
                 // Attempt token refresh — parallel 401s share the same task
                 if let refreshed = await attemptTokenRefresh() {
                     self.authToken = refreshed
-                    // Retry the original request once with new token
-                    return try await request(
+                    // Retry the original request once with new token.
+                    // Skip the dedup wrapper — we're already inside the
+                    // in-flight Task for this GET, and re-entering
+                    // `request()` would deadlock awaiting ourselves.
+                    return try await performRequest(
                         method: method, endpoint: endpoint,
                         params: params, body: body, rawBody: rawBody
                     )

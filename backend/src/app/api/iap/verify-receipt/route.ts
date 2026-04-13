@@ -27,6 +27,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Economy v3: reject disabled SKUs (e.g., premium_forever, flat gold packs).
+    // Existing owners' entitlements are unaffected — this only blocks NEW receipts.
+    // See docs/06_game_systems/ECONOMY_RULES.md R10, R11.
+    if (product.enabled === false) {
+      return NextResponse.json(
+        { error: 'This product is no longer available for purchase.' },
+        { status: 410 } // Gone
+      )
+    }
+
     // Check for duplicate transaction
     const existingTx = await prisma.iapTransaction.findUnique({
       where: { transactionId: transaction_id },

@@ -29,9 +29,27 @@ final class BuyStatPointsViewModel {
     }
 
     func loadStatus() async {
-        isLoading = true
+        // Only flip isLoading if we have nothing on screen yet.
+        if status == nil { isLoading = true }
         status = await service.getStatPurchaseStatus()
         isLoading = false
+    }
+
+    /// Patch local status from a mutation response — no network round-trip.
+    /// Static fields (`prices`, `dailyLimit`) are preserved from the previous status.
+    private func applyPurchaseLocally(_ result: BuyStatPointsResult) {
+        guard let prev = status else { return }
+        status = StatPurchaseStatus(
+            purchasesToday: result.purchased,
+            dailyLimit: prev.dailyLimit,
+            dailyRemaining: result.dailyRemaining,
+            totalPurchased: result.totalPurchased,
+            globalCap: result.globalCap,
+            prices: prev.prices,
+            nextPrice: result.nextPrice,
+            // Each purchase grants +1 stat point; CharacterService already updated currentCharacter.
+            statPointsAvailable: prev.statPointsAvailable + 1
+        )
     }
 
     func purchase() {
@@ -48,11 +66,13 @@ final class BuyStatPointsViewModel {
                 lastPurchaseResult = result
                 HapticManager.success()
                 SFXManager.shared.play(.uiConfirm)
-                // Reload status to get fresh data
-                await loadStatus()
+                // Apply new status instantly from mutation response — no refetch.
+                applyPurchaseLocally(result)
             } else {
                 HapticManager.light()
                 errorMessage = "Purchase failed"
+                // On error, verify ground truth in the background.
+                Task { [weak self] in await self?.loadStatus() }
             }
         }
     }

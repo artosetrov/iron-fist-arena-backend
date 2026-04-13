@@ -137,6 +137,12 @@ enum APIEndpoints {
     static let iapRestore = "/api/iap/restore"
     static let iapProducts = "/api/iap/products"
 
+    // MARK: - Passives (Talents)
+    static let passivesTree = "/api/passives/tree"
+    static let passivesCharacter = "/api/passives/character"
+    static let passivesUnlock = "/api/passives/unlock"
+    static let passivesRespec = "/api/passives/respec"
+
     // MARK: - Social
     static let socialFriends = "/api/social/friends"
     static let socialMessages = "/api/social/messages"

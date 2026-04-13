@@ -479,6 +479,34 @@ final class GameDataCache {
         socialStatusFetchedAt = Date()
     }
 
+    // MARK: - Opponent Profile Cache (60s TTL, keyed by characterId)
+    //
+    // Phase 2 (2026-04-13): rapid profile sheet open/close was refetching
+    // /api/pvp/profile every time — a 400-600ms wait per open. Cache the
+    // decoded OpponentProfile for 60s so tapping the same leaderboard row
+    // twice feels instant. Serve cached value + kick off a silent refresh
+    // (stale-while-revalidate) for freshness on rating/equipment changes.
+
+    private(set) var opponentProfiles: [String: OpponentProfile] = [:]
+    private var opponentProfilesFetchedAt: [String: Date] = [:]
+    private let opponentProfileTTL: TimeInterval = 60
+
+    func cachedOpponentProfile(characterId: String) -> OpponentProfile? {
+        guard let fetchedAt = opponentProfilesFetchedAt[characterId],
+              Date().timeIntervalSince(fetchedAt) < opponentProfileTTL,
+              let profile = opponentProfiles[characterId] else { return nil }
+        return profile
+    }
+
+    func cacheOpponentProfile(characterId: String, profile: OpponentProfile) {
+        opponentProfiles[characterId] = profile
+        opponentProfilesFetchedAt[characterId] = Date()
+    }
+
+    func invalidateOpponentProfile(characterId: String) {
+        opponentProfilesFetchedAt.removeValue(forKey: characterId)
+    }
+
     // MARK: - Incoming Challenges Cache (60s TTL)
 
     private let incomingChallengesTTL: TimeInterval = 60
@@ -530,6 +558,8 @@ final class GameDataCache {
         socialStatusFetchedAt = nil
         incomingChallenges = []
         incomingChallengesFetchedAt = nil
+        opponentProfiles = [:]
+        opponentProfilesFetchedAt = [:]
         featureFlags = [:]
         gameConfig = nil
         isInitLoaded = false
@@ -587,7 +617,7 @@ struct GameConfig {
 
         let gemCosts = dict["gemCosts"] as? [String: Any] ?? [:]
         goldMineSlotCostGems = gemCosts["goldMineSlotCost"] as? Int ?? 50
-        goldMineBoostGems = gemCosts["goldMineBoost"] as? Int ?? 10
+        goldMineBoostGems = gemCosts["goldMineBoost"] as? Int ?? 3
         staminaRefillGems = gemCosts["staminaRefill"] as? Int ?? 30
         extraPvpCombatGems = gemCosts["extraPvpCombat"] as? Int ?? 50
     }

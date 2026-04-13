@@ -1,7 +1,20 @@
 # Game Balance Constants (Curated Narrative)
 
 *Derived from backend: `src/lib/game/balance.ts`, `live-config.ts`, `loot.ts`, `gold-mine.ts`*
-*Updated: 2026-04-10 — W1.D4 auto-gen split*
+*Updated: 2026-04-13 — Economy v3 (see `ECONOMY_AUDIT_2026-04-13.md` + `ECONOMY_RULES.md`)*
+
+> **Economy v3 highlights** (shipping in C1–C5):
+> - `LEVEL_REWARD_SCALE: 0.02 → 0.04` — doubles level-scaled reward growth to match cost scaling (R3).
+> - Stamina refill `30 → 50` gems + curve `[1, 1.5, 2.5, 4] → [1, 1.6, 2.8, 4.8]` → sequence 50 / 80 / 140 / 240 (R8.refill).
+> - `premium_forever` **disabled for new purchases** (grandfathered for existing owners); replacement is a 30-day Premium Pass (R11, `PREMIUM_PASS_MIGRATION.md`).
+> - Flat gold packs (`gold_500 … gold_20000`) **disabled**; replaced by mixed-currency Adventurer's Bundles I/II/III (R10.3).
+> - Achievement rank targets corrected to real ELO ceilings: `rank_diamond 1800 → 3000`, `rank_grandmaster 2200 → 4250` (R5, PVP_RANKS).
+>
+> **Target (rules in place, constant change scheduled separately):**
+> - Stamina cap `120 → 180` (R8.cap).
+> - BP Premium price `500 → 700` gems (R12).
+> - Gold Mine Boost `10 → 15` gems (R13).
+> - Upgrade success curve at +9/+10: `25% → 30%`, `15% → 20%`; failure mode at +9/+10 = `downgrade-by-1` (R7.3); Protection Scroll `50 → 40` gems.
 
 > **⚠️ SSoT for raw numbers:** [`BALANCE_CONSTANTS_AUTO.md`](BALANCE_CONSTANTS_AUTO.md) — auto-generated from `backend/src/lib/game/balance.ts` via `npm run docs:balance`. Every constant, table, and formula below that lives in `balance.ts` is mirrored there and drift-checked in pre-commit.
 >
@@ -59,18 +72,20 @@
 
 ### PvP Gold Multipliers
 
-Rewards scale with **character level:**
+Rewards scale with **character level** (Economy v3 — doubled from v2):
 
 ```
-Leveled Reward = Base × (1 + (level - 1) × 0.02)
+Leveled Reward = Base × (1 + (level - 1) × 0.04)
 ```
 
-| Level | Multiplier | Example (200 base) |
+| Level | Multiplier | Example (150 base) |
 |-------|-----------|-------------------|
-| 1 | 1.00× | 200 |
-| 10 | 1.18× | 236 |
-| 25 | 1.48× | 296 |
-| 50 | 1.98× | 396 |
+| 1 | 1.00× | 150 |
+| 10 | 1.36× | 204 |
+| 25 | 1.96× | 294 |
+| 50 | 2.96× | 444 |
+
+**Why:** v2's +2%/level was slower than cost scaling (upgrades/repairs scale faster), making midgame feel like treading water. v3's +4%/level keeps earning power ahead of costs at L10–L30. See `ECONOMY_RULES.md` R3.
 
 ### Special Multipliers
 
@@ -302,7 +317,7 @@ Premium currency sinks:
 
 | Action | Cost | Notes |
 |--------|------|-------|
-| Stamina Refill | 30 gems | Instant full stamina |
+| Stamina Refill | 50 gems | Instant full stamina (1st of day); diminishing curve 50 / 80 / 140 / 240 for 1st–4th refill — see R8.refill |
 | Extra PvP Combat | 50 gems | +5 stamina immediately |
 | Upgrade Protection | 50 gems | Prevents downgrade on failed +6+ upgrade |
 | Battle Pass Premium | 500 gems | Unlocks premium track (100 levels) |
@@ -371,26 +386,36 @@ Players earn free gems from:
 | gems_huge | 2500 | 0 | No | No | $19.99 |
 | gems_mega | 6500 | 0 | No | No | $49.99 |
 
-### Gold Packs
+### ~~Gold Packs (DISABLED v3)~~
 
-| SKU | Gems | Gold | Premium | Monthly Card | Price |
-|-----|------|------|---------|-------------|-------|
-| gold_500 | 0 | 500 | No | No | $0.99 |
-| gold_1200 | 0 | 1200 | No | No | $1.99 |
-| gold_3500 | 0 | 3500 | No | No | $4.99 |
-| gold_8000 | 0 | 8000 | No | No | $9.99 |
-| gold_20000 | 0 | 20000 | No | No | $19.99 |
+Flat gold packs are **disabled for new purchases** in Economy v3. Rationale: gems are the premium currency; selling gold directly for USD shortcuts the soft-currency loop and erodes the gem→gold shop (R10.2, R15). Existing receipts are unaffected.
+
+| SKU | Status |
+|-----|--------|
+| gold_500 | Disabled |
+| gold_1200 | Disabled |
+| gold_3500 | Disabled |
+| gold_8000 | Disabled |
+| gold_20000 | Disabled |
+
+### Adventurer's Bundles (NEW v3)
+
+Mixed-currency bundles that convert better than pure gem packs but include consumables/progression items instead of flat gold. See R10.3.
+
+| SKU | Gems | Gold | Extras | Price |
+|-----|------|------|--------|-------|
+| adventurer_bundle_I | 600 | 3,000 | 3× Protection Scroll | $4.99 |
+| adventurer_bundle_II | 1,400 | 10,000 | 5× Protection Scroll | $9.99 |
+| adventurer_bundle_III | 3,200 | 20,000 | 2× Legendary Shard | $19.99 |
 
 ### Special Products
 
-| SKU | Gems | Gold | Premium | Monthly Card | Price |
-|-----|------|------|---------|-------------|-------|
-| monthly_gem_card | 50 | 0 | No | **Yes** | $4.99 |
-| premium_forever | 0 | 0 | **Yes** | No | $9.99 |
+| SKU | Gems | Gold | Premium | Monthly Card | Price | Status |
+|-----|------|------|---------|-------------|-------|--------|
+| monthly_gem_card | 50 | 0 | No | **Yes** | $4.99 | Active |
+| premium_forever | 0 | 0 | **Yes** | No | $9.99 | **Disabled (new sales)** — grandfathered for existing owners; replaced by Premium Pass (30-day subscription, R11). See `PREMIUM_PASS_MIGRATION.md` ADR. |
 
 **Monthly Gem Card:** 50 instant gems + 10 gems/day for 30 days (500 total)
-
-**Premium Forever:** One-time unlock (server-side flag)
 
 ---
 
@@ -572,7 +597,7 @@ Max Stamina: 120 (regenerates 1 pt every 8 min)
 
 ### Pay-to-Accelerate Options
 
-1. **Stamina Refills:** 30 gems = instant 120 stamina
+1. **Stamina Refills:** 50 gems (1st/day); diminishing 80/140/240 for 2nd–4th
 2. **Extra PvP:** 50 gems = +5 stamina immediately
 3. **Inventory Expansion:** 5000 gold = +10 slots (tradeable in time)
 4. **Skill Upgrades:** 1000–3000 gold per rank

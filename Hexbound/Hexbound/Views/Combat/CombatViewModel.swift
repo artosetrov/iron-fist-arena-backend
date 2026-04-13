@@ -74,11 +74,20 @@ final class CombatViewModel {
         guard !isPlaying else { return }
         isPlaying = true
 
-        // Small initial delay
+        #if DEBUG
+        print("[COMBAT] play() started — \(combatData.combatLog.count) turns to animate, Task.isCancelled=\(Task.isCancelled)")
+        #endif
+
+        // Small initial delay (non-critical — if cancelled, continue to loop)
         try? await Task.sleep(for: .seconds(0.5))
 
         for i in 0..<combatData.combatLog.count {
-            if skipRequested || Task.isCancelled { break }
+            if skipRequested || Task.isCancelled {
+                #if DEBUG
+                print("[COMBAT] play() breaking at turn \(i): skipRequested=\(skipRequested), Task.isCancelled=\(Task.isCancelled)")
+                #endif
+                break
+            }
 
             currentTurnIndex = i
             let turn = combatData.combatLog[i]
@@ -422,6 +431,34 @@ final class CombatViewModel {
         isFinished = true
         isPlaying = false
         SFXManager.shared.play(.combatDeath)
+
+        // BUG-FIX: If play() was cancelled or skipped before animating any
+        // turns, populate the log and apply final HP so the screen isn't stuck
+        // with empty log + full HP bars.
+        if visibleLogEntries.isEmpty && !combatData.combatLog.isEmpty {
+            #if DEBUG
+            print("[COMBAT] finishCombat fallback: populating \(combatData.combatLog.count) log entries that were never animated")
+            #endif
+            for i in 0..<combatData.combatLog.count {
+                let turn = combatData.combatLog[i]
+                let isPlayerAttacking = turn.attackerId == combatData.player.id
+                if isPlayerAttacking {
+                    enemyHp = max(0, enemyHp - turn.damage)
+                } else {
+                    playerHp = max(0, playerHp - turn.damage)
+                }
+                if let heal = turn.heal, heal > 0 {
+                    if isPlayerAttacking {
+                        playerHp = min(playerMaxHp, playerHp + heal)
+                    } else {
+                        enemyHp = min(enemyMaxHp, enemyHp + heal)
+                    }
+                }
+                addLogEntry(turn, isPlayerAttacking: isPlayerAttacking)
+            }
+            currentTurnIndex = combatData.combatLog.count - 1
+            currentRound = (currentTurnIndex / 2) + 1
+        }
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             currentAttackZone = nil

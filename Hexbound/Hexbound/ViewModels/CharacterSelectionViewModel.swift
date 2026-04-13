@@ -129,28 +129,35 @@ final class CharacterSelectionViewModel {
         }
     }
 
-    /// Select a character and load game data, then transition to hub.
+    /// Select a character and transition to hub.
+    ///
+    /// Phase 2 (2026-04-13, M-2): instant shell UI. Previously we awaited
+    /// `GameInitService.loadGameData()` before switching screens, which
+    /// blocked the Hub transition for 800-1500ms on cold start. Now we
+    /// switch screens immediately and load game data in the background —
+    /// HubView renders its frame + cached data instantly and @Observable
+    /// re-renders each section as fresh data arrives.
     func selectAndEnter(
         characterId: String,
         appState: AppState,
         cache: GameDataCache
     ) async {
-        guard !isLoading else { return } // prevent double-tap
         guard let character = characters.first(where: { $0.id == characterId }) else { return }
-
-        isLoading = true
 
         // Set the character on appState
         appState.currentCharacter = character
         appState.userCharacters = characters
 
-        // Load game data for this character
-        let initService = GameInitService(appState: appState, cache: cache)
-        await initService.loadGameData()
-
-        isLoading = false
-
-        // Transition to game
+        // Transition to game IMMEDIATELY — Hub renders with cached/empty
+        // data, then fills in as loadGameData completes.
         appState.currentScreen = .game
+
+        // Load game data in background. Fire-and-forget — HubView's own
+        // .task hooks (prefetchOpponents, etc.) will still run; init data
+        // (inventory/quests/config) populates the cache as it arrives.
+        Task { [appState, cache] in
+            let initService = GameInitService(appState: appState, cache: cache)
+            await initService.loadGameData()
+        }
     }
 }

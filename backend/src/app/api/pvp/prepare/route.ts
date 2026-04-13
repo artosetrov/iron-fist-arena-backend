@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
+import { BOT_TICKET_SECRET_MISSING, createBotBattleTicketId } from '@/lib/game/bot-ticket'
 // HP regen intentionally NOT used in Arena — players must use potions
 import {
   getStaminaConfig,
@@ -177,12 +178,7 @@ export async function POST(req: NextRequest) {
 
     if (isBotFight) {
       // Lightweight ticket for bot fights: hash(characterId + botId + seed + secret)
-      const { createHash } = await import('crypto')
-      const secret = process.env.BOT_TICKET_SECRET ?? 'hexbound-bot-fights-2026'
-      battleTicketId = `bot_${createHash('sha256')
-        .update(`${character_id}:${resolvedOpponentId}:${battleSeed}:${secret}`)
-        .digest('hex')
-        .slice(0, 32)}`
+      battleTicketId = createBotBattleTicketId(character_id, resolvedOpponentId, battleSeed)
     } else {
       const battleTicket = await prisma.pvpBattleTicket.create({
         data: {
@@ -312,6 +308,14 @@ export async function POST(req: NextRequest) {
       ...(revenge_id ? { revenge_id } : {}),
     })
   } catch (error) {
+    if (error instanceof Error && error.message === BOT_TICKET_SECRET_MISSING) {
+      console.error('pvp prepare bot ticket secret is not configured')
+      return NextResponse.json(
+        { error: 'Bot fights are temporarily unavailable.' },
+        { status: 503 }
+      )
+    }
+
     const message = error instanceof Error ? error.message : String(error)
     const stack = error instanceof Error ? error.stack : undefined
     console.error('pvp prepare error:', message, stack)

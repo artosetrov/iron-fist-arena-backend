@@ -194,11 +194,13 @@ final class InventoryService {
             // Don't nil cachedInventory — caller already applied optimistic update.
             // Server confirmed success, so the optimistic state is correct.
 
-            // Bug #10: invalidate quest cache + background refetch so the
-            // Alchemist (consumable_use) daily quest progress and Claim button
-            // update across Hub widgets (QuestRewardWidget, ActiveQuestBanner)
-            // and the Daily Quests screen immediately after a consumable use.
-            appState.cachedTypedQuests = nil
+            // Bug #10: refresh quest cache in background so the Alchemist
+            // (consumable_use) daily quest progress and Claim button update
+            // across Hub widgets (QuestRewardWidget, ActiveQuestBanner) and
+            // the Daily Quests screen after a consumable use.
+            // STALE-WHILE-REVALIDATE: keep existing cachedTypedQuests visible
+            // (don't nil it) so dependent widgets don't flash empty during the
+            // ~200ms refetch — the background task overwrites on success.
             let appStateRef = appState
             Task { @MainActor in
                 // Fire-and-forget: if the refresh fails, the next screen

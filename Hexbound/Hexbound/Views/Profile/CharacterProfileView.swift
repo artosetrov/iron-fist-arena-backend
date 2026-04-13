@@ -535,16 +535,30 @@ struct CharacterProfileView: View {
     // MARK: - Data Loading
 
     private func loadProfile() async {
-        isLoading = true
-        errorMessage = nil
+        // Phase 2 (2026-04-13): cache-first with stale-while-revalidate.
+        // If we have a cached profile <60s old, show it instantly and
+        // refetch silently in the background. Otherwise show the loader.
+        if let cached = cache.cachedOpponentProfile(characterId: characterId) {
+            profile = cached
+            isLoading = false
+            errorMessage = nil
+        } else {
+            isLoading = true
+            errorMessage = nil
+        }
 
         do {
             let response: OpponentProfileResponse = try await APIClient.shared.get(
                 APIEndpoints.characterProfile(characterId)
             )
             profile = response.profile
+            cache.cacheOpponentProfile(characterId: characterId, profile: response.profile)
         } catch {
-            errorMessage = "Failed to load profile"
+            // Only surface the error when we have nothing to display.
+            // Stale cache is better than a failed-load screen.
+            if profile == nil {
+                errorMessage = "Failed to load profile"
+            }
         }
 
         isLoading = false

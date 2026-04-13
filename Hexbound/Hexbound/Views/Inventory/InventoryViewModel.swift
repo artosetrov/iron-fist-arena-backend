@@ -136,13 +136,20 @@ final class InventoryViewModel {
     // MARK: - Deposit to Stash
 
     func depositToStash(_ item: Item) async {
+        // Optimistic UI — remove instantly, API in background with rollback
+        let previousItems = items
+        items.removeAll { $0.id == item.id }
+        appState.cachedInventory = items
+        showItemDetail = false
+        appState.showToast("Stored in chest", type: .success)
+
         let stashService = StashService(appState: appState)
         let success = await stashService.deposit(equipmentId: item.id)
-        if success {
-            items.removeAll { $0.id == item.id }
-            appState.cachedInventory = items
-            showItemDetail = false
-            appState.showToast("Stored in chest", type: .success)
+        if !success {
+            // Rollback on failure
+            items = previousItems
+            appState.cachedInventory = previousItems
+            appState.showToast("Failed to deposit item", type: .error)
         }
     }
 

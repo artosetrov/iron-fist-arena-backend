@@ -595,9 +595,11 @@ final class DungeonRushViewModel {
     // MARK: - Private: Parse Combat Data
 
     private func parseCombatData(from response: [String: Any]) -> CombatData? {
-        guard response["player"] != nil, response["combat_log"] != nil else {
+        guard response["player"] != nil, response["combat_log"] != nil, response["result"] != nil else {
             #if DEBUG
-            print("[DUNGEON-RUSH] parseCombatData: missing 'player' or 'combat_log' keys")
+            let keys = Array(response.keys).sorted()
+            print("[DUNGEON-RUSH] parseCombatData: missing required keys. Available: \(keys)")
+            print("[DUNGEON-RUSH]   player=\(response["player"] != nil), combat_log=\(response["combat_log"] != nil), result=\(response["result"] != nil)")
             #endif
             return nil
         }
@@ -605,10 +607,19 @@ final class DungeonRushViewModel {
             let jsonData = try JSONSerialization.data(withJSONObject: response)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(CombatData.self, from: jsonData)
+            let data = try decoder.decode(CombatData.self, from: jsonData)
+            #if DEBUG
+            print("[DUNGEON-RUSH] parseCombatData OK: \(data.combatLog.count) turns, isWin=\(data.result.isWin)")
+            #endif
+            return data
         } catch {
             #if DEBUG
             print("[DUNGEON-RUSH] parseCombatData decode FAILED: \(error)")
+            // Print the raw JSON to help diagnose which field failed
+            if let jsonData = try? JSONSerialization.data(withJSONObject: response, options: .prettyPrinted),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("[DUNGEON-RUSH] Raw response (first 2000 chars): \(String(jsonString.prefix(2000)))")
+            }
             #endif
             return nil
         }

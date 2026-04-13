@@ -79,12 +79,16 @@ final class DailyQuestsViewModel {
     ///   failure without cache correctly shows the error state (not an
     ///   infinite skeleton).
     func loadQuests() async {
-        // Cache-first: show cached data instantly
+        // Cache-first: show cached data instantly.
+        // Only flip isLoading on a cold miss — with warm cache the view
+        // keeps the cached quests visible while we silently revalidate in
+        // the background (no skeleton flash on warm cache).
         if let cached = cache.cachedDailyQuests() {
             quests = cached.quests
             bonusClaimedToday = cached.bonusClaimed
+        } else if quests.isEmpty {
+            isLoading = true
         }
-        isLoading = true
         errorMessage = nil
         do {
             let result = try await service.loadQuests()

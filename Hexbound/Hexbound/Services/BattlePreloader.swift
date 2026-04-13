@@ -57,7 +57,15 @@ private actor PrepareCacheStore {
 @MainActor @Observable
 final class BattlePreloader {
     private let appState: AppState
-    private let cacheStore = PrepareCacheStore()
+    // Phase 2 (2026-04-13): shared cache across all BattlePreloader instances.
+    // Previously each instance had its own PrepareCacheStore, which meant a
+    // Hub-time prefetch couldn't warm the Arena's (and Combat's) cache — they
+    // were talking to different dictionaries. Now every instance sees the
+    // same inFlight + cache tables so a `prepare()` call from any caller
+    // (Hub prefetch, Arena auto-preload, Fight button, revenge) dedups and
+    // reuses results.
+    private let cacheStore = BattlePreloader.sharedCacheStore
+    private static let sharedCacheStore = PrepareCacheStore()
 
     init(appState: AppState) {
         self.appState = appState

@@ -36,6 +36,7 @@ enum LayoutConstants {
     static let iconLG: CGFloat = 24       // Large icons (action icons, toolbar)
     static let iconXL: CGFloat = 32       // Extra-large (empty state, fallback)
     static let icon2XL: CGFloat = 48      // Hero icons (empty state, celebration)
+    static let icon3XL: CGFloat = 56      // Reward row icons (Victory rewards)
 
     // MARK: - Typography Sizes
 
@@ -206,8 +207,7 @@ enum LayoutConstants {
     static let mineShaftThumbSM: CGFloat = 56               // Active shaft banner thumb
     static let mineShaftThumbMD: CGFloat = 64               // Shaft picker row thumb
     static let mineShaftThumbLG: CGFloat = 140              // Shaft cleared celebration thumb
-    static let mineProgressHeight: CGFloat = 5              // Mining / shaft progress bar height
-    static let mineProgressCollapsed: CGFloat = 3           // Thin collapsed progress bar
+    static let mineProgressHeight: CGFloat = 10             // Mining / shaft progress bar height (matches XPBarView.compact) — used for both collapsed and expanded mine cards
     static let mineCapBarHeight: CGFloat = 8                // Mini-game cap meter bar height
     static let mineDropCoinSize: CGFloat = 42                // Falling single coin (value 1-2)
     static let mineDropBagSmSize: CGFloat = 48              // Falling small bag (value 3)

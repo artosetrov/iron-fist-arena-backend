@@ -1,6 +1,5 @@
 import SwiftUI
 import GoogleSignIn
-import DotLottie
 
 @main
 struct HexboundApp: App {
@@ -187,12 +186,17 @@ struct SplashView: View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
 
-            DotLottieAnimation(
-                webURL: "https://lottie.host/24436149-ecc4-4bf2-b676-b5c7026981c5/UmDSRrwtVp.lottie",
-                config: AnimationConfig(autoplay: true, loop: true)
-            )
-            .view()
-            .frame(width: 80, height: 80)
+            VStack(spacing: LayoutConstants.spaceMD) {
+                Image("hexbound-logo")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 80, height: 80)
+
+                ProgressView()
+                    .tint(DarkFantasyTheme.gold)
+                    .scaleEffect(1.2)
+            }
             .opacity(contentOpacity)
         }
         .onAppear {

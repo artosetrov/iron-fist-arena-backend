@@ -105,9 +105,16 @@ ls Hexbound/Hexbound.xcodeproj/ | grep -E '\.(bak|backup|tmp)$'
 # Should return NOTHING. If hits found, delete them:
 rm -f Hexbound/Hexbound.xcodeproj/*.bak Hexbound/Hexbound.xcodeproj/*.backup Hexbound/Hexbound.xcodeproj/*.tmp*
 
+# Editor config directories (should be in .gitignore, never committed)
+git diff --cached --name-only | grep -E '^\.obsidian/|\.base$'
+# Also check if staged changes include prototype HTML files
+git diff --cached --name-only | grep -E '_prototype\.(html|jsx)$'
+
 # .env files in staging
 git diff --cached --name-only | grep '\.env'
 ```
+
+**Why .obsidian/:** Obsidian config files leak local workspace state (bookmarks, graph positions, plugins). They were accidentally committed in `d0e7f3a` (2026-04-12). Now blocked by `.gitignore` — this check catches cases where `.gitignore` is bypassed via `git add -f`.
 
 **Why:** Temp files inside `.xcodeproj` bundle (e.g., `project.pbxproj.backup`, `file.tmp1`) break Xcode's project parsing, causing "Couldn't load project" error even if they're not referenced in the pbxproj file. Clean bundle must only contain: `project.pbxproj`, `project.xcworkspace/`, `xcshareddata/`, `xcuserdata/`.
 

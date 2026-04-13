@@ -16,10 +16,16 @@ combat-fx-prototype/
 .claude/agent-bus/
 .git-backups/
 
+# Editor config (Obsidian, etc.)
+.obsidian/
+*.base
+
 # Prototypes (deleted, prevent re-add)
 *.prototype.html
 *-prototype.html
+*_prototype.html
 *-prototype*.jsx
+*_prototype*.jsx
 *-audit.html
 comic-proto-assets/
 

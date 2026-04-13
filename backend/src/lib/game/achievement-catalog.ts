@@ -125,13 +125,17 @@ export const ACHIEVEMENT_CATALOG: Record<string, AchievementDef> = {
     rewardAmount: 3,
   },
   rank_diamond: {
-    target: 1800,
+    // v3: 1800 → 3000. PVP_RANKS.DIAMOND minimum is 3000, so the old 1800 target
+    // unlocked the achievement at Platinum — players got "Diamond" badge without
+    // actually reaching Diamond. See ECONOMY_RULES.md R5 + PVP_RANKS table.
+    target: 3000,
     category: 'ranking',
     rewardType: 'gems',
     rewardAmount: 10,
   },
   rank_grandmaster: {
-    target: 2200,
+    // v3: 2200 → 4250. PVP_RANKS.GRANDMASTER minimum is 4250. Same reasoning as above.
+    target: 4250,
     category: 'ranking',
     rewardType: 'gems',
     rewardAmount: 25,

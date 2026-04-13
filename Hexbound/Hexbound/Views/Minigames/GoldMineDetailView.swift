@@ -672,23 +672,26 @@ private struct MineShaftCard: View {
     private var collapsedProgressBar: some View {
         let _ = progressTick
         let progress = vm.miningProgress(slot)
+        // Unified with expandedMiningProgress — same shape, radius, and height
+        // so the bar reads identically whether the card is collapsed or open.
         return GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Rectangle()
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(DarkFantasyTheme.borderSubtle)
 
-                Rectangle()
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                     .fill(
                         LinearGradient(
                             colors: [slotAccent, DarkFantasyTheme.gold],
                             startPoint: .leading, endPoint: .trailing
                         )
                     )
+                    .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
                     .frame(width: geo.size.width * max(0, min(1, progress)))
                     .animation(.linear(duration: 1), value: progress)
             }
         }
-        .frame(height: LayoutConstants.mineProgressCollapsed)
+        .frame(height: LayoutConstants.mineProgressHeight)
         .padding(.horizontal, LayoutConstants.spaceSM)
         .padding(.bottom, LayoutConstants.spaceSM)
     }
@@ -716,22 +719,18 @@ private struct MineShaftCard: View {
             HStack(spacing: LayoutConstants.spaceXS) {
                 let stats = vm.slotStats(at: index)
                 mineStatBox(
-                    icon: "hammer.fill",
                     label: "MINED",
                     value: stats.map { formatCompact($0.totalGoldMined) } ?? "—"
                 )
                 mineStatBox(
-                    icon: "chart.bar.fill",
                     label: "RUNS",
                     value: stats.map { "\($0.sessionsCompleted)" } ?? "—"
                 )
                 mineStatBox(
-                    icon: "trophy.fill",
                     label: "BEST",
                     value: stats.map { "\($0.bestHaul)" } ?? "—"
                 )
                 mineStatBox(
-                    icon: "bolt.fill",
                     label: "RATE",
                     value: "\(200)/h"
                 )
@@ -783,17 +782,12 @@ private struct MineShaftCard: View {
 
     // MARK: - Stat Box
 
-    private func mineStatBox(icon: String, label: String, value: String) -> some View {
+    private func mineStatBox(label: String, value: String) -> some View {
         VStack(spacing: LayoutConstants.space2XS) {
-            HStack(spacing: LayoutConstants.space2XS) {
-                Image(systemName: icon)
-                    .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                Text(label)
-                    .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .tracking(0.5)
-            }
+            Text(label)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .tracking(0.5)
 
             Text(value)
                 .font(DarkFantasyTheme.cardTitle)
@@ -817,16 +811,16 @@ private struct MineShaftCard: View {
         let _ = progressTick
         let progress = vm.miningProgress(slot)
         return VStack(spacing: LayoutConstants.spaceXS) {
-            HStack {
+            HStack(alignment: .lastTextBaseline) {
                 Text("TIME REMAINING")
                     .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .tracking(0.5)
                 Spacer()
                 Text(vm.timeRemaining(slot))
-                    .font(DarkFantasyTheme.uiLabel)
+                    .font(DarkFantasyTheme.section)
                     .foregroundStyle(DarkFantasyTheme.gold)
-                    .bold()
+                    .monospacedDigit()
             }
 
             GeometryReader { geo in
@@ -928,18 +922,25 @@ private struct MineShaftCard: View {
                         .disabled(vm.isStartingSlotMinigame)
                     }
 
-                    Button {
-                        vm.boost(slotIndex: index)
-                    } label: {
-                        HStack(spacing: LayoutConstants.space2XS) {
-                            Text("BOOST")
-                            Image("icon-gems")
-                                .resizable()
-                                .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                    // Only show BOOST when the session is not already boosted.
+                    // Server returns 400 ALREADY_BOOSTED otherwise, which surfaced as a
+                    // misleading "not enough gems" toast.
+                    if !(slot["boosted"] as? Bool ?? false) {
+                        Button {
+                            vm.boost(slotIndex: index)
+                        } label: {
+                            HStack(spacing: LayoutConstants.space2XS) {
+                                Text("BOOST")
+                                Text("\(vm.boostCost)")
+                                    .monospacedDigit()
+                                Image("icon-gems")
+                                    .resizable()
+                                    .frame(width: LayoutConstants.iconXS, height: LayoutConstants.iconXS)
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
+                        .buttonStyle(.compactPrimary)
                     }
-                    .buttonStyle(.compactOutline(color: DarkFantasyTheme.cyan))
                 }
 
             case "ready":
