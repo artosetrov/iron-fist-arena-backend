@@ -45,29 +45,32 @@ describe('staminaRefillGemCost (W3.D4)', () => {
   });
 
   it('always rounds UP (ceil) so the treasury never rounds against itself', () => {
-    // 29 × 1.5 = 43.5 → 44, not 43
+    // 29 × 1.6 = 46.4 → 47, not 46
     const cost1 = staminaRefillGemCost(29, 1);
-    expect(cost1).toBe(44);
+    expect(cost1).toBe(47);
 
-    // 31 × 2.5 = 77.5 → 78
+    // 31 × 2.8 = 86.8 → 87
     const cost2 = staminaRefillGemCost(31, 2);
-    expect(cost2).toBe(78);
+    expect(cost2).toBe(87);
   });
 
-  it('constants match the W3.D4 spec values', () => {
+  it('constants match the economy(v3) batch 2 spec values', () => {
+    // v3 batch 2 (2026-04-13): multipliers bumped from [1, 1.5, 2.5, 4]
+    // to [1, 1.6, 2.8, 4.8] to pair with the 30 → 50 gem base price bump
+    // so full-day refill cost scales with the new gem economy.
     expect(STAMINA_REFILL_DR.DAILY_CAP).toBe(4);
-    expect(STAMINA_REFILL_DR.COST_MULTIPLIERS).toEqual([1, 1.5, 2.5, 4]);
+    expect(STAMINA_REFILL_DR.COST_MULTIPLIERS).toEqual([1, 1.6, 2.8, 4.8]);
   });
 
   it('full-day total cost is dramatically higher than a naive 4× flat price', () => {
     // Flat pricing: 4 refills × BASE = 120 gems
-    // DR pricing: 1× + 1.5× + 2.5× + 4× = 9× BASE = 270 gems
+    // DR pricing (v3 batch 2): 1× + 1.6× + 2.8× + 4.8× = 10.2× BASE = 306 gems
     const flat = BASE * STAMINA_REFILL_DR.DAILY_CAP;
     let drTotal = 0;
     for (let i = 0; i < STAMINA_REFILL_DR.DAILY_CAP; i++) {
       drTotal += staminaRefillGemCost(BASE, i)!;
     }
-    expect(drTotal).toBe(270);
+    expect(drTotal).toBe(306);
     expect(drTotal).toBeGreaterThan(flat * 2);
   });
 });

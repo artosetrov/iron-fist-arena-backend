@@ -376,7 +376,9 @@
       "Bash(pip install:*)",
       "Bash(brew list:*)",
       "Bash(brew install:*)",
-      "Bash(/opt/homebrew/bin/brew install:*)"
+      "Bash(/opt/homebrew/bin/brew install:*)",
+      "Bash(/opt/homebrew/bin/python3.12 -m pip install /Users/artosetrov/graphify)",
+      "Bash(/opt/homebrew/bin/python3.12 -m pip install --user /Users/artosetrov/graphify)"
     ]
   },
   "enabledMcpjsonServers": [

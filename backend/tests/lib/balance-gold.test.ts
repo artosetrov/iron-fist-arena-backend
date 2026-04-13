@@ -10,7 +10,7 @@
 //   - lossStreakGoldMult    — loss recovery capped at +50% (was +80%)
 //   - repairCost            — base 120 / per-level 20 (was 80 / 15)
 //   - upgradeCost           — exponential 150 × 1.4^N unchanged, regression guard
-//   - levelScaledReward     — +2% per level, regression guard
+//   - levelScaledReward     — +4% per level (v3 batch 2), regression guard
 //
 // These numbers are referenced directly by economy-simulator.ts — if any
 // constant drifts, the sink-ratio acceptance test in tests/economy/ will also
@@ -242,15 +242,18 @@ describe('upgradeCost (exponential endgame sink)', () => {
 })
 
 // -----------------------------------------------------------------------------
-// levelScaledReward — +2% per level above 1
+// levelScaledReward — +4% per level above 1 (v3 batch 2)
 // -----------------------------------------------------------------------------
-describe('levelScaledReward (+2% per level above 1)', () => {
+describe('levelScaledReward (+4% per level above 1 — v3 batch 2)', () => {
   it('level 1 is passthrough', () => {
     expect(levelScaledReward(100, 1)).toBe(100)
   })
 
-  it('level 50 gives ~+98% (floor of 1.98 × base)', () => {
-    expect(levelScaledReward(100, 50)).toBe(Math.floor(100 * 1.98))
+  it('level 50 gives ~+196% (floor of 2.96 × base)', () => {
+    // v3 batch 2 (2026-04-13): slope doubled from +2%/lvl to +4%/lvl
+    // so earning power stays ahead of the new upgrade/repair cost curve.
+    // See balance.ts levelScaledReward and ECONOMY_RULES.md R3.
+    expect(levelScaledReward(100, 50)).toBe(Math.floor(100 * 2.96))
   })
 
   it('is monotone non-decreasing in level', () => {
