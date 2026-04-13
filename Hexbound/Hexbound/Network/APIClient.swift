@@ -52,17 +52,32 @@ actor APIClient {
 
     func get<T: Decodable>(_ endpoint: String, params: [String: String] = [:]) async throws -> T {
         let data = try await request(method: "GET", endpoint: endpoint, params: params)
-        return try decoder.decode(T.self, from: data)
+        return try decodeOrThrow(T.self, from: data, endpoint: endpoint)
     }
 
     func post<T: Decodable>(_ endpoint: String, body: Encodable? = nil) async throws -> T {
         let data = try await request(method: "POST", endpoint: endpoint, body: body)
-        return try decoder.decode(T.self, from: data)
+        return try decodeOrThrow(T.self, from: data, endpoint: endpoint)
     }
 
     func patch<T: Decodable>(_ endpoint: String, body: Encodable? = nil) async throws -> T {
         let data = try await request(method: "PATCH", endpoint: endpoint, body: body)
-        return try decoder.decode(T.self, from: data)
+        return try decodeOrThrow(T.self, from: data, endpoint: endpoint)
+    }
+
+    /// Decode and wrap `DecodingError` as `APIError.decodingError` so callers
+    /// that branch on `APIError` (and surface `errorDescription` in toasts)
+    /// see a useful message instead of the generic fallback.
+    private func decodeOrThrow<T: Decodable>(
+        _ type: T.Type, from data: Data, endpoint: String
+    ) throws -> T {
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch let decodeErr {
+            let bodyPreview = String(data: data, encoding: .utf8)?.prefix(500) ?? ""
+            print("[APIClient] decode failed \(endpoint): \(decodeErr)\nbody: \(bodyPreview)")
+            throw APIError.decodingError(decodeErr)
+        }
     }
 
     func delete(_ endpoint: String) async throws {
