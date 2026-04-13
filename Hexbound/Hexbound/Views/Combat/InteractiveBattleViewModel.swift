@@ -34,7 +34,7 @@ final class InteractiveBattleViewModel {
 
     var phase: Phase = .intro
     var state: InteractiveMatchState
-    var predictTimeRemaining: Double = Self.predictWindowSeconds
+    var predictTimeRemaining: Double = InteractiveBattleViewModel.predictWindowSeconds
     var selectedAttackZone: InteractiveBodyZone = .chest
     var selectedDefendZone: InteractiveBodyZone = .chest
     var lastOutcome: InteractiveStrikeOutcome?
@@ -93,12 +93,12 @@ final class InteractiveBattleViewModel {
         )
     }
 
-    deinit {
-        predictTimerTask?.cancel()
-        strikeTask?.cancel()
-        completeTask?.cancel()
-        startTask?.cancel()
-    }
+    // NOTE: No deinit cancellation. @MainActor-isolated stored properties can't
+    // be touched from a nonisolated deinit under Swift 6 strict concurrency,
+    // and Swift 6.1 `isolated deinit` isn't available on our toolchain yet.
+    // All tasks capture `[weak self]`; once the VM deallocates they early-
+    // return on the next await. For deterministic teardown call `cancel()`
+    // from the host view's screen-level `.onDisappear`.
 
     // MARK: - Lifecycle
 
