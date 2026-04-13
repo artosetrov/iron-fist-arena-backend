@@ -42,6 +42,15 @@ final class InteractiveBattleViewModel {
     var lastOpponentTurn: InteractiveStrikeTurn?
     var lastOpponentZones: InteractiveOpponentZones?
 
+    /// Authoritative fighter metadata — populated by `/match/start`.
+    /// Used by the view to render YOU / ENEMY portrait cards (name, level, class, avatar).
+    var attackerProfile: FighterProfile?
+    var defenderProfile: FighterProfile?
+
+    /// Whether the player just tapped SKIP (auto-pick zones).
+    /// Purely presentational — flag used to visually highlight the auto-chosen zones.
+    var lastStrikeWasSkipped: Bool = false
+
     /// Final `/match/complete` payload, emitted for navigation to CombatResultDetailView.
     var finalCombatData: CombatData?
 
@@ -114,6 +123,21 @@ final class InteractiveBattleViewModel {
     func submitStrike() {
         guard case .predict = phase else { return }
         predictTimerTask?.cancel()
+        lastStrikeWasSkipped = false
+        phase = .resolving
+        strikeTask = Task { [weak self] in
+            await self?.resolveStrike()
+        }
+    }
+
+    /// Called when the player taps SKIP — auto-picks random zones and submits.
+    /// Server still resolves normally; from its POV there's no difference.
+    func skipAndSubmit() {
+        guard case .predict = phase else { return }
+        selectedAttackZone = InteractiveBodyZone.allCases.randomElement() ?? .chest
+        selectedDefendZone = InteractiveBodyZone.allCases.randomElement() ?? .chest
+        predictTimerTask?.cancel()
+        lastStrikeWasSkipped = true
         phase = .resolving
         strikeTask = Task { [weak self] in
             await self?.resolveStrike()
@@ -141,6 +165,7 @@ final class InteractiveBattleViewModel {
         strikeTask?.cancel()
         completeTask?.cancel()
         startTask?.cancel()
+        revealAdvanceTask?.cancel()
     }
 
     // MARK: - Timer
@@ -192,6 +217,8 @@ final class InteractiveBattleViewModel {
         state.matchId = response.matchId
         state.attackerHp = response.attacker.currentHp
         state.defenderHp = response.defender.currentHp
+        attackerProfile = FighterProfile(snapshot: response.attacker)
+        defenderProfile = FighterProfile(snapshot: response.defender)
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
@@ -245,6 +272,26 @@ final class InteractiveBattleViewModel {
 
         // If server says match_finished, fast-path: still play reveal, then complete.
         phase = .reveal
+        scheduleRevealAutoAdvance()
+    }
+
+    /// Since the view no longer mounts a dedicated Reveal screen (reveal is an
+    /// in-place HP animation on the duel header), the VM drives the phase
+    /// transition itself. After `revealDurationSeconds` we roll into the next
+    /// predict round — or into `completing` if the match is over.
+    private var revealAdvanceTask: Task<Void, Never>?
+    private func scheduleRevealAutoAdvance() {
+        revealAdvanceTask?.cancel()
+        revealAdvanceTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.revealDurationSeconds))
+            if Task.isCancelled { return }
+            await MainActor.run {
+                guard let self else { return }
+                if case .reveal = self.phase {
+                    self.revealCompleted()
+                }
+            }
+        }
     }
 
     // MARK: - /match/complete
@@ -284,5 +331,120 @@ extension InteractiveBattleViewModel.Phase {
     var isRevealing: Bool {
         if case .reveal = self { return true }
         return false
+    }
+    var isBusy: Bool {
+        switch self {
+        case .resolving, .reveal, .completing: return true
+        default: return false
+        }
+    }
+}
+
+// MARK: - Fighter Profile (view-ready snapshot)
+
+/// View-ready snapshot of a fighter populated from `/pvp/match/start`.
+/// Decouples view code from the raw DTO and provides safe defaults so
+/// portraits render even when the server omits optional fields.
+struct FighterProfile: Equatable, Sendable {
+    let id: String
+    let name: String
+    let level: Int
+    let characterClass: CharacterClass
+    let avatar: String?
+
+    init(id: String,
+         name: String,
+         level: Int,
+         characterClass: CharacterClass,
+         avatar: String?) {
+        self.id = id
+        self.name = name
+        self.level = level
+        self.characterClass = characterClass
+        self.avatar = avatar
+    }
+
+    /// Adapt the decoded snapshot — tolerate missing/invalid class strings.
+    init(snapshot: InteractiveCharacterSnapshot) {
+        self.id = snapshot.id
+        self.name = snapshot.characterName?.trimmingCharacters(in: .whitespaces).isEmpty == false
+            ? snapshot.characterName!
+            : "Unknown"
+        self.level = snapshot.level ?? 1
+        self.characterClass = snapshot.characterClass
+            .flatMap { CharacterClass(rawValue: $0.lowercased()) } ?? .warrior
+        self.avatar = snapshot.avatar
+    }
+}
+
+// MARK: - Combat Log Row (view-ready)
+
+/// One row rendered in the combat log. Derived from `InteractiveStrikeTurn`
+/// + fighter profiles so the view never has to cross-reference IDs itself.
+struct InteractiveCombatLogRow: Identifiable, Equatable {
+    let id: Int
+    let attackerName: String
+    let targetZone: String          // "Head" / "Chest" / "Legs"
+    let damage: Int
+    let healAmount: Int             // positive = healing tick
+    let damageTypeLabel: String?    // "Physical" / "Magical" / "True" / "Poison"
+    let damageTypeIcon: String?     // SF Symbol
+    let outcomeLabel: String?       // "MISS" / "DODGE" / "CRIT" / nil for normal hit
+    let isPlayer: Bool
+}
+
+extension InteractiveBattleViewModel {
+    /// View-ready combat log — built on each access from `state.strikes`.
+    /// Kept as a computed property (not stored) so it auto-updates when
+    /// strikes append, without an extra @Observable property to coordinate.
+    var combatLogRows: [InteractiveCombatLogRow] {
+        let attackerId = state.attackerId
+        return state.strikes.enumerated().map { idx, turn in
+            let isPlayerStrike = (turn.attackerId ?? "") == attackerId
+            let attackerName = isPlayerStrike
+                ? (attackerProfile?.name ?? "You")
+                : (defenderProfile?.name ?? "Enemy")
+            let zone = (turn.targetZone ?? "").capitalized
+            let zoneLabel = zone.isEmpty ? "—" : zone
+            let heal = turn.healAmount ?? 0
+            let outcome: String? = {
+                if turn.isMiss == true { return "MISS" }
+                if turn.isDodge == true { return "DODGE" }
+                if turn.isCrit == true { return "CRIT" }
+                return nil
+            }()
+            let type = turn.damageType?.lowercased()
+            return InteractiveCombatLogRow(
+                id: idx,
+                attackerName: attackerName,
+                targetZone: zoneLabel,
+                damage: max(0, turn.damage),
+                healAmount: max(0, heal),
+                damageTypeLabel: Self.damageTypeLabel(type),
+                damageTypeIcon: Self.damageTypeIcon(type),
+                outcomeLabel: outcome,
+                isPlayer: isPlayerStrike
+            )
+        }
+    }
+
+    private static func damageTypeLabel(_ type: String?) -> String? {
+        switch type {
+        case "physical": return "Physical"
+        case "magical": return "Magical"
+        case "true_damage", "true": return "True"
+        case "poison": return "Poison"
+        default: return nil
+        }
+    }
+
+    private static func damageTypeIcon(_ type: String?) -> String? {
+        switch type {
+        case "physical": return "figure.walk"
+        case "magical": return "sparkles"
+        case "true_damage", "true": return "bolt.fill"
+        case "poison": return "drop.fill"
+        default: return nil
+        }
     }
 }

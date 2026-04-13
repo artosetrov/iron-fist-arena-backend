@@ -2,9 +2,20 @@
 //  InteractiveBattleView.swift
 //  Hexbound
 //
-//  Interactive Combat v1 — host screen + Predict + Reveal sub-views.
-//  Additive UI. Mounted only when feature flag is on the server side; if server
-//  returns 404 the screen routes back to classic CombatDetailView.
+//  Interactive Combat v1 — host screen.
+//
+//  Layout (mirrors the reference old-combat screen):
+//    • Duel header — YOU (green frame) / ENEMY (red frame) portraits with
+//      class + level + HP bar inline. Reserved FX slot over each avatar.
+//    • Zone badges — last picked Attack / Defend zones.
+//    • Predict panel — big ornamental timer, zone pickers, STRIKE + SKIP.
+//
+//  Combat log is intentionally NOT rendered here — per product decision
+//  2026-04-13 it surfaces only in the post-match result modal, so players
+//  can review who struck which stance. Data still accumulates on the VM
+//  (`combatLogRows`) and is consumed by the result screen in Commit 2.
+//
+//  VFX burst overlays + result modal are Commit 2 (wired in separately).
 //
 
 import SwiftUI
@@ -21,18 +32,18 @@ struct InteractiveBattleView: View {
     var body: some View {
         ZStack {
             DarkFantasyTheme.bgPrimary.ignoresSafeArea()
+
             VStack(spacing: LayoutConstants.spaceMD) {
-                hpHeader
+                duelHeader
+                zoneBadgesRow
                 Spacer(minLength: 0)
-                contentForPhase
-                Spacer(minLength: 0)
+                predictPanel
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceLG)
         }
         .onAppear { vm.startMatch() }
         .onChange(of: phaseKey(vm.phase)) { _, _ in
-            // Notify host on terminal phases.
             switch vm.phase {
             case .finished, .unavailable, .error:
                 onFinished?(vm.phase)
@@ -42,60 +53,67 @@ struct InteractiveBattleView: View {
         }
     }
 
-    // MARK: - HP Header
+    // MARK: - Duel Header (YOU vs ENEMY)
 
-    private var hpHeader: some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
-            HPBarView(
+    private var duelHeader: some View {
+        HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
+            DuelFighterCard(
+                side: .player,
+                profile: vm.attackerProfile,
                 currentHp: vm.state.attackerHp,
-                maxHp: vm.state.attackerMaxHp,
-                size: .compact,
-                showTextInside: true,
-                pulseOnCritical: true,
-                label: "YOU"
+                maxHp: vm.state.attackerMaxHp
             )
-            HPBarView(
+            DuelFighterCard(
+                side: .enemy,
+                profile: vm.defenderProfile,
                 currentHp: vm.state.defenderHp,
-                maxHp: vm.state.defenderMaxHp,
-                size: .compact,
-                showTextInside: true,
-                pulseOnCritical: true,
-                label: "FOE"
+                maxHp: vm.state.defenderMaxHp
             )
         }
     }
 
-    // MARK: - Phase Routing
+    // MARK: - Zone Badges
+
+    private var zoneBadgesRow: some View {
+        HStack(spacing: LayoutConstants.spaceSM) {
+            ZoneBadge(label: "Attack", zone: vm.selectedAttackZone)
+            ZoneBadge(label: "Defend", zone: vm.selectedDefendZone)
+        }
+    }
+
+    // MARK: - Predict Panel (timer + pickers + strike + skip)
 
     @ViewBuilder
-    private var contentForPhase: some View {
+    private var predictPanel: some View {
         switch vm.phase {
         case .intro:
             ProgressView()
                 .progressViewStyle(.circular)
                 .tint(DarkFantasyTheme.gold)
-        case .predict:
-            InteractivePredictView(vm: vm)
-        case .resolving:
-            ProgressView("Resolving…")
-                .tint(DarkFantasyTheme.gold)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-        case .completing:
-            ProgressView("Finalizing…")
-                .tint(DarkFantasyTheme.gold)
-                .foregroundStyle(DarkFantasyTheme.textPrimary)
-        case .reveal:
-            InteractiveRevealView(
-                outcome: vm.lastOutcome ?? .hit,
-                turn: vm.lastTurn,
-                onComplete: { vm.revealCompleted() }
-            )
-        case .finished(let winnerId):
-            finishedBanner(winnerId: winnerId)
+                .frame(maxWidth: .infinity, minHeight: 180)
         case .unavailable:
             unavailableBanner
         case .error(let message):
             errorBanner(message: message)
+        case .finished(let winnerId):
+            finishedBanner(winnerId: winnerId)
+        case .completing:
+            ProgressView("Finalizing…")
+                .tint(DarkFantasyTheme.gold)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 180)
+        default:
+            // .predict / .resolving / .reveal — controls stay mounted so layout
+            // doesn't jump, but get disabled while the server is resolving.
+            VStack(spacing: LayoutConstants.spaceMD) {
+                PredictTimerBar(
+                    remaining: vm.predictTimeRemaining,
+                    total: InteractiveBattleViewModel.predictWindowSeconds
+                )
+                InteractivePredictView(vm: vm)
+                    .disabled(vm.phase.isBusy)
+                    .opacity(vm.phase.isBusy ? 0.6 : 1.0)
+            }
         }
     }
 
@@ -111,6 +129,7 @@ struct InteractiveBattleView: View {
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
+        .frame(maxWidth: .infinity, minHeight: 180)
     }
 
     private var unavailableBanner: some View {
@@ -122,6 +141,7 @@ struct InteractiveBattleView: View {
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
+        .frame(maxWidth: .infinity, minHeight: 180)
     }
 
     private func errorBanner(message: String) -> some View {
@@ -134,6 +154,7 @@ struct InteractiveBattleView: View {
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
                 .multilineTextAlignment(.center)
         }
+        .frame(maxWidth: .infinity, minHeight: 180)
     }
 
     // MARK: - Phase Diffing
@@ -153,14 +174,183 @@ struct InteractiveBattleView: View {
     }
 }
 
-// MARK: - Predict View
+// MARK: - Duel Fighter Card
+
+private struct DuelFighterCard: View {
+    enum Side { case player, enemy }
+
+    let side: Side
+    let profile: FighterProfile?
+    let currentHp: Int
+    let maxHp: Int
+
+    private var borderColor: Color {
+        side == .player ? DarkFantasyTheme.success : DarkFantasyTheme.danger
+    }
+
+    private var sideLabel: String {
+        side == .player ? "YOU" : "ENEMY"
+    }
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            Text(sideLabel)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(borderColor)
+
+            avatarTile
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .stroke(borderColor, lineWidth: 2)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
+
+            Text(profile?.name.uppercased() ?? "…")
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(DarkFantasyTheme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+
+            Text(profileSubtitle)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+
+            HPBarView(
+                currentHp: currentHp,
+                maxHp: maxHp,
+                size: .compact,
+                showTextInside: false,
+                pulseOnCritical: true
+            )
+
+            Text("\(currentHp) / \(maxHp)")
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(DarkFantasyTheme.hpBlood)
+                .contentTransition(.numericText())
+                .animation(.easeOut(duration: 0.25), value: currentHp)
+        }
+    }
+
+    private var profileSubtitle: String {
+        guard let profile else { return "—" }
+        return "Lv.\(profile.level) \(profile.characterClass.displayName)"
+    }
+
+    @ViewBuilder
+    private var avatarTile: some View {
+        ZStack {
+            DarkFantasyTheme.bgSecondary
+            if let profile {
+                AvatarImageView(
+                    skinKey: profile.avatar,
+                    characterClass: profile.characterClass,
+                    size: 200
+                )
+                .scaleEffect(x: side == .player ? 1 : -1, y: 1)
+            } else {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(DarkFantasyTheme.gold)
+            }
+        }
+    }
+}
+
+// MARK: - Zone Badge (Attack / Defend display)
+
+private struct ZoneBadge: View {
+    let label: String
+    let zone: InteractiveBodyZone
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            Text(label)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+            Text(zone.rawValue.uppercased())
+                .font(DarkFantasyTheme.cardTitle)
+                .foregroundStyle(zoneColor)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, LayoutConstants.spaceSM)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(0.6))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                .stroke(zoneColor.opacity(0.4), lineWidth: 1)
+        )
+    }
+
+    private var zoneColor: Color {
+        switch zone {
+        case .head: return DarkFantasyTheme.zoneHead
+        case .chest: return DarkFantasyTheme.zoneChest
+        case .legs: return DarkFantasyTheme.zoneLegs
+        }
+    }
+}
+
+// MARK: - Predict Timer (bigger, ornamental, with countdown text)
+
+private struct PredictTimerBar: View {
+    let remaining: Double
+    let total: Double
+
+    private var fraction: Double {
+        guard total > 0 else { return 0 }
+        return max(0, min(1, remaining / total))
+    }
+
+    private var isCritical: Bool { remaining <= 2.0 }
+
+    private var barColor: Color {
+        isCritical ? DarkFantasyTheme.danger : DarkFantasyTheme.gold
+    }
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            HStack {
+                Text("CHOOSE YOUR STANCE")
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(DarkFantasyTheme.textSecondary)
+                Spacer()
+                Text(String(format: "%.1fs", max(0, remaining)))
+                    .font(DarkFantasyTheme.cardTitle.monospacedDigit())
+                    .foregroundStyle(barColor)
+                    .contentTransition(.numericText())
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(barColor)
+                        .frame(width: max(0, geo.size.width * fraction))
+                        .animation(.linear(duration: 0.1), value: remaining)
+                }
+            }
+            .frame(height: 14)
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+            )
+        }
+    }
+}
+
+// MARK: - Predict View (zone pickers + STRIKE + SKIP)
 
 struct InteractivePredictView: View {
     @Bindable var vm: InteractiveBattleViewModel
 
     var body: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
-            timerBar
+        VStack(spacing: LayoutConstants.spaceMD) {
             zonePicker(
                 title: "ATTACK",
                 selection: Binding(
@@ -175,27 +365,27 @@ struct InteractivePredictView: View {
                     set: { vm.selectedDefendZone = $0 }
                 )
             )
-            strikeButton
-        }
-    }
 
-    private var timerBar: some View {
-        let fraction = vm.predictTimeRemaining / InteractiveBattleViewModel.predictWindowSeconds
-        return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .fill(DarkFantasyTheme.bgSecondary)
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                    .fill(DarkFantasyTheme.gold)
-                    .frame(width: max(0, geo.size.width * fraction))
-                    .animation(.linear(duration: 0.1), value: vm.predictTimeRemaining)
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Button(action: { vm.submitStrike() }) {
+                    Text("STRIKE")
+                        .font(DarkFantasyTheme.buttonLabel)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PrimaryButtonStyle())
+
+                Button(action: { vm.skipAndSubmit() }) {
+                    Text("SKIP")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .frame(maxWidth: 120)
+                }
+                .buttonStyle(SecondaryButtonStyle())
             }
         }
-        .frame(height: 6)
     }
 
     private func zonePicker(title: String, selection: Binding<InteractiveBodyZone>) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceSM) {
+        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             Text(title)
                 .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
@@ -215,7 +405,7 @@ struct InteractivePredictView: View {
         Button(action: action) {
             VStack(spacing: LayoutConstants.spaceXS) {
                 Image(systemName: iconForZone(zone))
-                    .font(.system(size: 24)) // keep — SF Symbol icon size, no theme token for icons
+                    .font(.system(size: 22)) // keep — SF Symbol icon size, no theme token for icons
                 Text(zone.rawValue.uppercased())
                     .font(DarkFantasyTheme.badge)
             }
@@ -241,90 +431,6 @@ struct InteractivePredictView: View {
         case .head: return "brain.head.profile"
         case .chest: return "heart.fill"
         case .legs: return "figure.walk"
-        }
-    }
-
-    private var strikeButton: some View {
-        Button(action: { vm.submitStrike() }) {
-            Text("STRIKE")
-                .font(DarkFantasyTheme.buttonLabel)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(PrimaryButtonStyle())
-    }
-}
-
-// MARK: - Reveal View
-
-struct InteractiveRevealView: View {
-    let outcome: InteractiveStrikeOutcome
-    let turn: InteractiveStrikeTurn?
-    let onComplete: () -> Void
-
-    @State private var badgeOpacity: Double = 0
-    @State private var damageOpacity: Double = 0
-    @State private var damageOffset: CGFloat = 20
-
-    var body: some View {
-        VStack(spacing: LayoutConstants.spaceLG) {
-            Text(outcome.label)
-                .font(DarkFantasyTheme.cinematicTitle)
-                .foregroundStyle(outcomeColor)
-                .opacity(badgeOpacity)
-
-            if let damage = turn?.damage, damage > 0 {
-                Text("-\(damage)")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.danger)
-                    .opacity(damageOpacity)
-                    .offset(y: damageOffset)
-            } else if let heal = turn?.healAmount, heal > 0 {
-                Text("+\(heal)")
-                    .font(DarkFantasyTheme.title)
-                    .foregroundStyle(DarkFantasyTheme.success)
-                    .opacity(damageOpacity)
-                    .offset(y: damageOffset)
-            }
-
-            if let skill = turn?.skillUsed {
-                Text(skill.uppercased())
-                    .font(DarkFantasyTheme.caption)
-                    .foregroundStyle(DarkFantasyTheme.gold)
-                    .opacity(damageOpacity)
-            }
-        }
-        .onAppear { runAnimation() }
-    }
-
-    private var outcomeColor: Color {
-        switch outcome {
-        case .crit, .antiRead, .execute: return DarkFantasyTheme.gold
-        case .miss, .dodge, .blocked: return DarkFantasyTheme.textSecondary
-        case .fatigue: return DarkFantasyTheme.danger
-        case .glancing: return DarkFantasyTheme.textSecondary
-        case .hit: return DarkFantasyTheme.textPrimary
-        }
-    }
-
-    /// Scripted Reveal timeline from COMBAT_MECHANIC_SPEC.md §3.4.
-    /// t=80 ms    badge fade in
-    /// t=220 ms   damage number enters (opacity + translate, NO scale per rule)
-    /// t=1200 ms  hold
-    /// t=1400 ms  complete → next predict round
-    private func runAnimation() {
-        // t=80 ms
-        withAnimation(.easeOut(duration: 0.2).delay(0.08)) {
-            badgeOpacity = 1
-        }
-        // t=220 ms
-        withAnimation(.easeOut(duration: 0.28).delay(0.22)) {
-            damageOpacity = 1
-            damageOffset = 0
-        }
-        // t=1400 ms — signal completion
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(InteractiveBattleViewModel.revealDurationSeconds))
-            onComplete()
         }
     }
 }
