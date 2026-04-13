@@ -325,9 +325,9 @@ struct BattleResultCardView: View {
     ) -> some View {
         VStack(spacing: LayoutConstants.spaceSM) {
             Image(iconImage)
+                .interpolation(.high)
                 .resizable()
                 .scaledToFit()
-                .interpolation(.high)
                 .frame(width: LayoutConstants.icon3XL, height: LayoutConstants.icon3XL)
                 .shadow(color: Color.black.opacity(0.4), radius: 6, y: 3)
 
