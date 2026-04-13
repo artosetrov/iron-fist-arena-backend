@@ -36,7 +36,7 @@ const MAX_ROUNDS = 15
 const MATCH_TIMEOUT_MS = 10 * 60_000 // 10 min
 
 export async function POST(req: NextRequest) {
-  if (process.env.INTERACTIVE_COMBAT_V1 !== 'true') {
+  if (process.env.INTERACTIVE_COMBAT_V1 === 'false') {
     return NextResponse.json({ error: 'Not Found' }, { status: 404 })
   }
 

@@ -76,7 +76,7 @@ interface StoredRound {
 }
 
 export async function POST(req: NextRequest) {
-  if (process.env.INTERACTIVE_COMBAT_V1 !== 'true') {
+  if (process.env.INTERACTIVE_COMBAT_V1 === 'false') {
     return NextResponse.json({ error: 'Not Found' }, { status: 404 })
   }
 
