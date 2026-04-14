@@ -81,6 +81,66 @@ final class PassiveTreeService {
         }
     }
 
+    // MARK: - Active Slots (Interactive Combat v1)
+
+    /// Fetches equipped active-skill slots for a character.
+    func loadActiveSlots(characterId: String) async -> ActiveSlotsResponse? {
+        do {
+            let response: ActiveSlotsResponse = try await APIClient.shared.get(
+                APIEndpoints.passivesActiveSlots,
+                params: ["character_id": characterId]
+            )
+            return response
+        } catch {
+            #if DEBUG
+            print("[PassiveTreeService] loadActiveSlots error: \(error)")
+            #endif
+            // Silent fail — feature degrades gracefully if endpoint unavailable.
+            return nil
+        }
+    }
+
+    /// Equips an unlocked activatable node into the given 0-based slot.
+    /// Server enforces: node is activatable + unlocked + class-allowed.
+    @discardableResult
+    func equipActiveSlot(characterId: String, slotIndex: Int, nodeId: String) async -> Bool {
+        do {
+            let body: [String: Any] = [
+                "character_id": characterId,
+                "slot_index": slotIndex,
+                "node_id": nodeId
+            ]
+            _ = try await APIClient.shared.postRaw(APIEndpoints.passivesActiveSlots, body: body)
+            HapticManager.light()
+            return true
+        } catch let error as APIError {
+            switch error {
+            case .clientError(_, let message, _):
+                appState.showToast(message, type: .error)
+            default:
+                appState.showToast("Failed to equip skill", type: .error)
+            }
+            return false
+        } catch {
+            appState.showToast("Failed to equip skill", type: .error)
+            return false
+        }
+    }
+
+    /// Clears the given slot.
+    @discardableResult
+    func clearActiveSlot(characterId: String, slotIndex: Int) async -> Bool {
+        do {
+            // APIClient.delete() doesn't take params — embed in the path.
+            let path = "\(APIEndpoints.passivesActiveSlots)?character_id=\(characterId)&slot_index=\(slotIndex)"
+            try await APIClient.shared.delete(path)
+            return true
+        } catch {
+            appState.showToast("Failed to clear slot", type: .error)
+            return false
+        }
+    }
+
     // MARK: - Respec
 
     /// Refunds all points, deletes all unlocked nodes, spends RESPEC_GEM_COST gems.

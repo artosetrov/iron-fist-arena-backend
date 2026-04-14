@@ -17,6 +17,12 @@ struct TalentDetailSheet: View {
     let onUnlock: () -> Void
     let onClose: () -> Void
 
+    // Interactive Combat v1 — Active Slot controls.
+    // equippedSlotIndex == nil → node is not currently in any slot.
+    let equippedSlotIndex: Int?
+    let onEquip: () -> Void
+    let onUnequip: () -> Void
+
     private var canAfford: Bool { pointsAvailable >= node.cost }
     private var canUnlockNow: Bool { !isUnlocked && isUnlockable && canAfford }
 
@@ -74,6 +80,10 @@ struct TalentDetailSheet: View {
                 .background(DarkFantasyTheme.borderSubtle)
 
             cta
+
+            if isUnlocked, node.isActivatable == true {
+                activeSlotCTA
+            }
         }
         .padding(LayoutConstants.spaceLG)
         .background(DarkFantasyTheme.bgSecondary)
@@ -187,6 +197,63 @@ struct TalentDetailSheet: View {
             RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
                 .stroke(DarkFantasyTheme.gold, lineWidth: 1)
         )
+    }
+
+    // MARK: - Active slot CTA
+
+    @ViewBuilder
+    private var activeSlotCTA: some View {
+        if let slotIndex = equippedSlotIndex {
+            Button(action: onUnequip) {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "xmark.circle")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                    Text("UNEQUIP (SLOT \(slotIndex + 1))")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .tracking(2)
+                }
+                .foregroundStyle(DarkFantasyTheme.danger)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, LayoutConstants.spaceMS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .stroke(DarkFantasyTheme.danger.opacity(0.5), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isMutating)
+        } else {
+            Button(action: onEquip) {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "bolt.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                    Text("EQUIP AS ACTIVE")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .tracking(2)
+                }
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, LayoutConstants.spaceMS)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .fill(DarkFantasyTheme.bgSecondary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                        .stroke(DarkFantasyTheme.gold.opacity(0.6), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(isMutating)
+        }
     }
 
     private var lockedPill: some View {

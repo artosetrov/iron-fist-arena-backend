@@ -18,6 +18,8 @@ struct TalentsTabView: View {
         VStack(spacing: LayoutConstants.spaceMD) {
             header
 
+            ActiveSlotsBar(vm: vm)
+
             if vm.isLoading && vm.nodes.isEmpty {
                 loadingView
             } else if vm.nodes.isEmpty {
@@ -41,7 +43,18 @@ struct TalentsTabView: View {
                     vm.unlock(node)
                     vm.selectedNode = nil
                 },
-                onClose: { vm.selectedNode = nil }
+                onClose: { vm.selectedNode = nil },
+                equippedSlotIndex: vm.equippedSlotIndex(for: node.id),
+                onEquip: {
+                    vm.equipActive(node: node)
+                    vm.selectedNode = nil
+                },
+                onUnequip: {
+                    if let idx = vm.equippedSlotIndex(for: node.id) {
+                        vm.clearActive(slotIndex: idx)
+                    }
+                    vm.selectedNode = nil
+                }
             )
             .presentationDetents([.medium])
             .presentationBackground(DarkFantasyTheme.bgSecondary)

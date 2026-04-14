@@ -194,6 +194,14 @@ enum SkillTargetType {
   aoe
 }
 
+enum TalentSlotAction {
+  burst_damage       // +magnitude% damage on next strike
+  heal_self          // restore magnitude% of max HP
+  shield_self        // absorb magnitude × currentMaxHp damage on next incoming strike
+  stun_enemy         // enemy skips next strike
+  execute            // multiplier damage if enemy HP < magnitude threshold
+}
+
 enum PassiveBonusType {
   flat_stat
   percent_stat
@@ -361,6 +369,7 @@ model Character {
 
   characterSkills     CharacterSkill[]
   characterPassives   CharacterPassive[]
+  characterActiveSlots CharacterActiveSlot[]
   mailRecipients      MailRecipient[]
   shopOfferPurchases  ShopOfferPurchase[]
   contrabandClaims    ContrabandClaim[]
@@ -1201,9 +1210,20 @@ model PassiveNode {
   isActive         Boolean          @default(true) @map("is_active")
   createdAt        DateTime         @default(now()) @map("created_at")
 
-  connectionsFrom   PassiveConnection[] @relation("from_node")
-  connectionsTo     PassiveConnection[] @relation("to_node")
-  characterPassives CharacterPassive[]
+  // Interactive Combat v1 — Phase 1: active slot metadata.
+  // isActivatable gates whether this node can be equipped as one of the
+  // 3 active skills. activeActionType + activeCooldown + activeMagnitude
+  // describe the in-combat effect. All nullable so non-activatable nodes
+  // stay as pure stat bonuses.
+  activeActionType TalentSlotAction? @map("active_action_type")
+  activeCooldown   Int?              @map("active_cooldown")
+  activeMagnitude  Float?            @map("active_magnitude")
+  isActivatable    Boolean           @default(false) @map("is_activatable")
+
+  connectionsFrom      PassiveConnection[]   @relation("from_node")
+  connectionsTo        PassiveConnection[]   @relation("to_node")
+  characterPassives    CharacterPassive[]
+  characterActiveSlots CharacterActiveSlot[]
 
   @@map("passive_nodes")
 }
@@ -1232,6 +1252,26 @@ model CharacterPassive {
   @@unique([characterId, nodeId])
   @@index([characterId])
   @@map("character_passives")
+}
+
+// Interactive Combat v1 — Phase 1: 3-slot active loadout.
+// Each character can equip up to 3 unlocked-and-activatable PassiveNodes as
+// active skills. Server enforces: node must be in CharacterPassive AND
+// node.isActivatable = true. Referenced by CombatSession / strike resolver.
+model CharacterActiveSlot {
+  id           String       @id @default(uuid())
+  characterId  String       @map("character_id")
+  nodeId       String       @map("node_id")
+  slotIndex    Int          @map("slot_index")  // 0, 1, 2
+  equippedAt   DateTime     @default(now()) @map("equipped_at")
+
+  character    Character    @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  node         PassiveNode  @relation(fields: [nodeId], references: [id])
+
+  @@unique([characterId, slotIndex])
+  @@unique([characterId, nodeId])   // a node can't occupy two slots
+  @@index([characterId])
+  @@map("character_active_slots")
 }
 
 // --- Dungeon System ---

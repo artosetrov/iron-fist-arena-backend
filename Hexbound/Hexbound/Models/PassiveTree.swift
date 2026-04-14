@@ -31,6 +31,14 @@ struct PassiveNode: Codable, Identifiable, Hashable {
     let icon: String?
     let classRestriction: String?
     let isStartNode: Bool
+
+    // Interactive Combat v1 — Active Slot metadata. All nullable.
+    // isActivatable is optional-with-default to stay forward-compatible with
+    // old backends that don't return the field yet.
+    let isActivatable: Bool?
+    let activeActionType: TalentSlotAction?
+    let activeCooldown: Int?
+    let activeMagnitude: Double?
 }
 
 /// Directed edge between two PassiveNode ids.
@@ -61,6 +69,10 @@ struct CharacterPassiveUnlocked: Codable, Identifiable, Hashable {
     let tier: Int
     let cost: Int
     let icon: String?
+    let isActivatable: Bool?
+    let activeActionType: TalentSlotAction?
+    let activeCooldown: Int?
+    let activeMagnitude: Double?
     let unlockedAt: String?   // ISO8601 string — decoded as String to avoid Date strategy issues
 }
 
@@ -90,4 +102,60 @@ struct PassiveRespecResponse: Codable {
     let gemsSpent: Int
     let gemsRemaining: Int
     let stats: PassiveStatsDelta?
+}
+
+// MARK: - Active Slot (Interactive Combat v1)
+
+/// Mirrors backend `TalentSlotAction` enum.
+enum TalentSlotAction: String, Codable, Hashable, CaseIterable {
+    case burstDamage  = "burst_damage"
+    case healSelf     = "heal_self"
+    case shieldSelf   = "shield_self"
+    case stunEnemy    = "stun_enemy"
+    case execute
+
+    /// Compact label for combat HUD.
+    var shortLabel: String {
+        switch self {
+        case .burstDamage: return "Burst"
+        case .healSelf:    return "Heal"
+        case .shieldSelf:  return "Shield"
+        case .stunEnemy:   return "Stun"
+        case .execute:     return "Execute"
+        }
+    }
+
+    /// SF Symbol fallback for when the node has no icon asset.
+    var sfSymbol: String {
+        switch self {
+        case .burstDamage: return "bolt.fill"
+        case .healSelf:    return "cross.case.fill"
+        case .shieldSelf:  return "shield.lefthalf.filled"
+        case .stunEnemy:   return "hand.raised.fill"
+        case .execute:     return "scope"
+        }
+    }
+}
+
+/// One equipped active-skill slot.
+struct ActiveSlot: Codable, Identifiable, Hashable {
+    // id synthesised from (characterId, slotIndex) — backend doesn't echo a primary key.
+    var id: Int { slotIndex }
+
+    let slotIndex: Int
+    let nodeId: String
+    let nodeKey: String
+    let name: String
+    let description: String
+    let icon: String?
+    let activeActionType: TalentSlotAction?
+    let activeCooldown: Int?
+    let activeMagnitude: Double?
+    let equippedAt: String?   // ISO8601, decoded as String
+}
+
+/// Wrapper for GET /api/passives/active-slots response.
+struct ActiveSlotsResponse: Codable {
+    let slots: [ActiveSlot]
+    let maxSlots: Int
 }

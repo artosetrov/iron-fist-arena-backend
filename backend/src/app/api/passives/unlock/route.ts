@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Invalidate cache
-    await cacheDelete(`passives:char:${character_id}`)
+    await cacheDelete(`passives:char:v2:${character_id}`)
 
     return NextResponse.json({
       success: true,

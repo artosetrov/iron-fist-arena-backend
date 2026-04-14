@@ -16,7 +16,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const cacheKey = 'passives:tree'
+    // v2 — added isActivatable + active_* fields (Interactive Combat v1)
+    const cacheKey = 'passives:tree:v2'
     let tree = await cacheGet<CachedTree>(cacheKey)
 
     if (!tree) {
@@ -29,6 +30,8 @@ export async function GET(req: NextRequest) {
             bonusType: true, bonusStat: true, bonusValue: true,
             tier: true, positionX: true, positionY: true, cost: true,
             icon: true, classRestriction: true, isStartNode: true,
+            isActivatable: true, activeActionType: true,
+            activeCooldown: true, activeMagnitude: true,
           },
         }),
         prisma.passiveConnection.findMany({

@@ -146,6 +146,7 @@ enum APIEndpoints {
     static let passivesCharacter = "/api/passives/character"
     static let passivesUnlock = "/api/passives/unlock"
     static let passivesRespec = "/api/passives/respec"
+    static let passivesActiveSlots = "/api/passives/active-slots"
 
     // MARK: - Social
     static let socialFriends = "/api/social/friends"

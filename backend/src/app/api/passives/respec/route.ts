@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
         where: { characterId: character_id },
       })
 
+      // Clear active slots — they reference unlocked nodes that no longer exist
+      await tx.characterActiveSlot.deleteMany({
+        where: { characterId: character_id },
+      })
+
       // Refund points
       await tx.character.update({
         where: { id: character_id },
@@ -81,7 +86,8 @@ export async function POST(req: NextRequest) {
     })
 
     // Invalidate cache
-    await cacheDelete(`passives:char:${character_id}`)
+    await cacheDelete(`passives:char:v2:${character_id}`)
+    await cacheDelete(`active-slots:char:${character_id}`)
 
     return NextResponse.json({
       success: true,

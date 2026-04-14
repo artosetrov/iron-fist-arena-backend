@@ -489,6 +489,7 @@
 		F11E41A8F1B869983AD5CB66 /* TalentNodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43926542867509F3EED4100 /* TalentNodeView.swift */; };
 		8FD77418B5A4ACF5991FD11F /* TalentTreeCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA69617C3057861267B75898 /* TalentTreeCanvas.swift */; };
 		30671C7B75A67D1130AC71D0 /* TalentDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */; };
+		65C3D8AE9FD0C3158DC88B51 /* ActiveSlotsBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */; };
 		DEBB0F1E7C783B18110447A6 /* TalentsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 004389D00C793F9780C63EB6 /* TalentsTabView.swift */; };
 /* End PBXBuildFile section */
 
@@ -972,6 +973,7 @@
 		B43926542867509F3EED4100 /* TalentNodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalentNodeView.swift; sourceTree = "<group>"; };
 		BA69617C3057861267B75898 /* TalentTreeCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalentTreeCanvas.swift; sourceTree = "<group>"; };
 		0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalentDetailSheet.swift; sourceTree = "<group>"; };
+		9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSlotsBar.swift; sourceTree = "<group>"; };
 		004389D00C793F9780C63EB6 /* TalentsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalentsTabView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1537,6 +1539,7 @@
 				B43926542867509F3EED4100 /* TalentNodeView.swift */,
 				BA69617C3057861267B75898 /* TalentTreeCanvas.swift */,
 				0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */,
+				9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */,
 				004389D00C793F9780C63EB6 /* TalentsTabView.swift */,
 			);
 			path = Talents;
@@ -2402,6 +2405,7 @@
 				F11E41A8F1B869983AD5CB66 /* TalentNodeView.swift in Sources */,
 				8FD77418B5A4ACF5991FD11F /* TalentTreeCanvas.swift in Sources */,
 				30671C7B75A67D1130AC71D0 /* TalentDetailSheet.swift in Sources */,
+				65C3D8AE9FD0C3158DC88B51 /* ActiveSlotsBar.swift in Sources */,
 				DEBB0F1E7C783B18110447A6 /* TalentsTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

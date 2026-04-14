@@ -22,6 +22,10 @@ final class PassiveTreeViewModel {
     var unlockedNodes: [CharacterPassiveUnlocked] = []
     var passivePointsAvailable: Int = 0
 
+    // Active slots (Interactive Combat v1)
+    var activeSlots: [ActiveSlot] = []
+    var maxActiveSlots: Int = 3
+
     // UI state
     var isLoading: Bool = false
     var isMutating: Bool = false
@@ -46,7 +50,8 @@ final class PassiveTreeViewModel {
         if nodes.isEmpty { isLoading = true }
         async let tree = service.loadTree()
         async let character = service.loadCharacterPassives(characterId: characterId)
-        let (t, c) = await (tree, character)
+        async let slots = service.loadActiveSlots(characterId: characterId)
+        let (t, c, s) = await (tree, character, slots)
 
         if let t {
             nodes = t.nodes
@@ -56,6 +61,10 @@ final class PassiveTreeViewModel {
         if let c {
             unlockedNodes = c.unlockedNodes
             passivePointsAvailable = c.passivePointsAvailable
+        }
+        if let s {
+            activeSlots = s.slots
+            maxActiveSlots = s.maxSlots
         }
         recomputeDerived()
         isLoading = false
@@ -129,6 +138,10 @@ final class PassiveTreeViewModel {
             tier: node.tier,
             cost: node.cost,
             icon: node.icon,
+            isActivatable: node.isActivatable,
+            activeActionType: node.activeActionType,
+            activeCooldown: node.activeCooldown,
+            activeMagnitude: node.activeMagnitude,
             unlockedAt: nil
         )
         unlockedNodes.append(optimistic)
@@ -152,6 +165,75 @@ final class PassiveTreeViewModel {
         }
     }
 
+    // MARK: - Active Slot Mutations
+
+    /// True if node is eligible to be equipped (unlocked + activatable + class-OK).
+    func canEquip(_ node: PassiveNode) -> Bool {
+        guard unlockedIds.contains(node.id) else { return false }
+        return node.isActivatable == true
+    }
+
+    /// Slot index currently holding a given node, or nil if not equipped.
+    func equippedSlotIndex(for nodeId: String) -> Int? {
+        activeSlots.first(where: { $0.nodeId == nodeId })?.slotIndex
+    }
+
+    /// Equip node into first free slot, or replace the given slotIndex if provided.
+    func equipActive(node: PassiveNode, slotIndex explicit: Int? = nil) {
+        guard canEquip(node), !isMutating else { return }
+        let targetSlot: Int = {
+            if let s = explicit { return s }
+            // Prefer a free slot; else slot 0
+            let taken = Set(activeSlots.map(\.slotIndex))
+            for i in 0..<maxActiveSlots where !taken.contains(i) { return i }
+            return 0
+        }()
+
+        let prev = activeSlots
+        // Optimistic: remove any existing slot for same slotIndex OR same node, then append.
+        activeSlots.removeAll { $0.slotIndex == targetSlot || $0.nodeId == node.id }
+        activeSlots.append(ActiveSlot(
+            slotIndex: targetSlot,
+            nodeId: node.id,
+            nodeKey: node.nodeKey,
+            name: node.name,
+            description: node.description,
+            icon: node.icon,
+            activeActionType: node.activeActionType,
+            activeCooldown: node.activeCooldown,
+            activeMagnitude: node.activeMagnitude,
+            equippedAt: nil
+        ))
+        activeSlots.sort { $0.slotIndex < $1.slotIndex }
+        isMutating = true
+
+        Task { [weak self] in
+            guard let self else { return }
+            let ok = await service.equipActiveSlot(
+                characterId: characterId, slotIndex: targetSlot, nodeId: node.id
+            )
+            isMutating = false
+            if !ok { activeSlots = prev }
+        }
+    }
+
+    /// Clear a specific slot.
+    func clearActive(slotIndex: Int) {
+        guard !isMutating else { return }
+        let prev = activeSlots
+        activeSlots.removeAll { $0.slotIndex == slotIndex }
+        isMutating = true
+
+        Task { [weak self] in
+            guard let self else { return }
+            let ok = await service.clearActiveSlot(
+                characterId: characterId, slotIndex: slotIndex
+            )
+            isMutating = false
+            if !ok { activeSlots = prev }
+        }
+    }
+
     /// Respec — gems cost applied server-side; we only confirm & refresh.
     func respec() {
         guard !isMutating else { return }
@@ -164,6 +246,7 @@ final class PassiveTreeViewModel {
             if let result, result.success {
                 passivePointsAvailable = result.passivePointsAvailable
                 unlockedNodes = []
+                activeSlots = []
                 recomputeDerived()
                 // Sync gems on the character model (matches GoldMine/Respec pattern).
                 appState.currentCharacter?.gems = result.gemsRemaining

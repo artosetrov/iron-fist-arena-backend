@@ -23,7 +23,8 @@ export async function GET(req: NextRequest) {
     if (!character) return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     if (character.userId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const cacheKey = `passives:char:${characterId}`
+    // v2 — added isActivatable + active_* fields
+    const cacheKey = `passives:char:v2:${characterId}`
     const cached = await cacheGet<unknown[]>(cacheKey)
     if (cached) {
       return NextResponse.json({
@@ -40,6 +41,8 @@ export async function GET(req: NextRequest) {
             id: true, nodeKey: true, name: true, description: true,
             bonusType: true, bonusStat: true, bonusValue: true,
             tier: true, cost: true, icon: true,
+            isActivatable: true, activeActionType: true,
+            activeCooldown: true, activeMagnitude: true,
           },
         },
       },
@@ -57,6 +60,10 @@ export async function GET(req: NextRequest) {
       tier: p.node.tier,
       cost: p.node.cost,
       icon: p.node.icon,
+      is_activatable: p.node.isActivatable,
+      active_action_type: p.node.activeActionType,
+      active_cooldown: p.node.activeCooldown,
+      active_magnitude: p.node.activeMagnitude,
       unlocked_at: p.unlockedAt,
     }))
 
