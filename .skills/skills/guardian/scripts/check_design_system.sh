@@ -217,4 +217,15 @@ find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; d
 done
 
 echo ""
+echo "## 8. snake_case CodingKeys in DTOs (double-conversion bug)"
+# APIClient applies convertFromSnakeCase — CodingKey mapping to "snake_case" will fail at runtime
+snake_ck=$(grep -rn 'case [a-zA-Z]* = "[a-z]*_[a-z_]*"' Hexbound/Hexbound/Models/ --include="*.swift" 2>/dev/null)
+if [ -n "$snake_ck" ]; then
+  echo "⚠️  snake_case CodingKeys found (APIClient already does convertFromSnakeCase — remove them):"
+  echo "$snake_ck"
+else
+  echo "✅ No snake_case CodingKeys in Models/"
+fi
+
+echo ""
 echo "=== SCAN COMPLETE ==="

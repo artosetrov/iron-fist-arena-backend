@@ -57,6 +57,34 @@ final class InteractiveBattleViewModel {
     /// Opponent's historical zone pattern (for read strip). Empty in pure-blind mode.
     var opponentPattern: [InteractiveBodyZone] = []
 
+    // MARK: - VFX / SFX State
+
+    /// Canvas particle VFX (sparks, flashes). Mounted by the view as an overlay.
+    let vfxManager = CombatVFXManager()
+
+    /// PNG image FX overlay (slash, crit text, shields, heal). Mounted above `vfxManager`.
+    let fxImageManager = CombatFXImageManager()
+
+    /// Avatar positions in the view's coordinate space, normalized to (0…1).
+    /// Set by the view via `GeometryReader` so VFX land on the right avatar
+    /// regardless of screen size. Defaults are the fallback layout used by
+    /// classic `/fight` replay (attacker-left, defender-right on player turn).
+    var playerAvatarPos: CGPoint = CGPoint(x: 0.25, y: 0.30)
+    var enemyAvatarPos: CGPoint  = CGPoint(x: 0.75, y: 0.30)
+
+    /// Per-side visual state driven by the animation pipeline. Mirrors
+    /// `CombatViewModel.playTurn` — slide-in on attack, flash on hit.
+    var playerSlideX: CGFloat = 0
+    var enemySlideX: CGFloat = 0
+    var playerFlash: Bool = false
+    var enemyFlash: Bool = false
+
+    /// Floating damage / heal popups on each fighter. Cap = 5 (GPU guard).
+    var damagePopups: [DamagePopup] = []
+
+    /// Whether an animation run is currently in flight. Prevents double-entry.
+    private var isAnimating: Bool = false
+
     // MARK: - Config
 
     /// Predict window. Spec §3 calls for 6 s at level 1.
@@ -165,7 +193,6 @@ final class InteractiveBattleViewModel {
         strikeTask?.cancel()
         completeTask?.cancel()
         startTask?.cancel()
-        revealAdvanceTask?.cancel()
     }
 
     // MARK: - Timer
@@ -258,8 +285,6 @@ final class InteractiveBattleViewModel {
             state.strikes.append(opp)
             lastOpponentTurn = opp
         }
-        state.attackerHp = max(0, response.attackerHp)
-        state.defenderHp = max(0, response.defenderHp)
         lastOpponentZones = response.oppZones
 
         let outcome = InteractiveStrikeOutcome.classify(
@@ -270,28 +295,210 @@ final class InteractiveBattleViewModel {
         lastTurn = response.playerStrike
         lastOutcome = outcome
 
-        // If server says match_finished, fast-path: still play reveal, then complete.
+        // Enter reveal and run the scripted VFX/SFX/HP-tween sequence.
+        // HP is NOT set to the final server value up front — `animateStrike`
+        // tweens it per-turn so the duel header bar animates naturally.
+        // A final reconcile step snaps to the authoritative server values
+        // to paper over any rounding / status-tick divergence.
         phase = .reveal
-        scheduleRevealAutoAdvance()
+        await animateReveal(
+            player: response.playerStrike,
+            opponent: response.opponentStrike,
+            targetAttackerHp: response.attackerHp,
+            targetDefenderHp: response.defenderHp
+        )
     }
 
-    /// Since the view no longer mounts a dedicated Reveal screen (reveal is an
-    /// in-place HP animation on the duel header), the VM drives the phase
-    /// transition itself. After `revealDurationSeconds` we roll into the next
-    /// predict round — or into `completing` if the match is over.
-    private var revealAdvanceTask: Task<Void, Never>?
-    private func scheduleRevealAutoAdvance() {
-        revealAdvanceTask?.cancel()
-        revealAdvanceTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.revealDurationSeconds))
-            if Task.isCancelled { return }
-            await MainActor.run {
-                guard let self else { return }
-                if case .reveal = self.phase {
-                    self.revealCompleted()
+    // MARK: - Reveal Animation Pipeline
+
+    /// Plays the scripted reveal for this round: player strike → (brief gap)
+    /// → opponent counter-strike → HP reconcile → phase advance.
+    /// Mirrors `CombatViewModel.playTurn` but driven by server Turns rather
+    /// than a pre-computed log. Slide, VFX particles, PNG FX overlay, SFX,
+    /// damage popups, flash, and HP tween all fire per strike.
+    private func animateReveal(
+        player: InteractiveStrikeTurn,
+        opponent: InteractiveStrikeTurn?,
+        targetAttackerHp: Int,
+        targetDefenderHp: Int
+    ) async {
+        guard !isAnimating else { return }
+        isAnimating = true
+        defer { isAnimating = false }
+
+        // 1) Player attacks defender
+        let playerLog = combatLogFrom(turn: player, fallbackAttackerId: state.attackerId)
+        await animateStrike(log: playerLog, isPlayerAttacking: true)
+
+        // 2) Defender counters (if alive)
+        if let opp = opponent {
+            try? await Task.sleep(for: .seconds(0.25))
+            let oppLog = combatLogFrom(turn: opp, fallbackAttackerId: state.defenderId)
+            await animateStrike(log: oppLog, isPlayerAttacking: false)
+        }
+
+        // 3) Reconcile to authoritative server HP (handles status ticks / rounding)
+        withAnimation(.easeInOut(duration: 0.2)) {
+            state.attackerHp = max(0, targetAttackerHp)
+            state.defenderHp = max(0, targetDefenderHp)
+        }
+        try? await Task.sleep(for: .seconds(0.2))
+
+        // 4) Phase advance
+        if state.isFinished {
+            completeMatch()
+        } else {
+            revealCompleted()
+        }
+    }
+
+    /// Animates a single strike using the classic `playTurn` pipeline:
+    /// slide-in → VFX+SFX+PNG FX → flash → damage popup → HP tween → slide back.
+    private func animateStrike(log: CombatLog, isPlayerAttacking: Bool) async {
+        let sm: Double = 1.0
+
+        let defenderPos = isPlayerAttacking ? enemyAvatarPos  : playerAvatarPos
+        let attackerPos = isPlayerAttacking ? playerAvatarPos : enemyAvatarPos
+
+        // 1) Slide-in
+        withAnimation(.easeOut(duration: 0.15 * sm)) {
+            if isPlayerAttacking { playerSlideX = 40 } else { enemySlideX = -40 }
+        }
+        try? await Task.sleep(for: .seconds(0.15 * sm))
+
+        let fxDescriptor = CombatFXAssetMap.fxForTurn(log, isPlayerAttacking: isPlayerAttacking)
+
+        // 2) Outcome VFX / SFX / PNG FX
+        if log.isDodge {
+            vfxManager.trigger(.dodge, at: defenderPos, speed: sm)
+            SFXManager.shared.play(.combatDodge)
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
+        } else if log.isMiss {
+            vfxManager.trigger(.miss, at: defenderPos, speed: sm)
+            SFXManager.shared.play(.combatMiss)
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
+        } else if log.isBlocked {
+            vfxManager.trigger(.block, at: defenderPos, speed: sm)
+            SFXManager.shared.play(.combatBlock)
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
+            withAnimation(.easeInOut(duration: 0.1)) {
+                if isPlayerAttacking { enemyFlash = true } else { playerFlash = true }
+            }
+            try? await Task.sleep(for: .seconds(0.1 * sm))
+            withAnimation(.easeInOut(duration: 0.1)) {
+                enemyFlash = false
+                playerFlash = false
+            }
+        }
+
+        if !log.isMiss && !log.isDodge && !log.isBlocked && log.damage > 0 {
+            let vfxType = VFXEffectType.from(log)
+            vfxManager.trigger(vfxType, at: defenderPos, speed: sm)
+            SFXManager.shared.play(SFX.from(vfxType: vfxType))
+            if let fx = fxDescriptor {
+                fxImageManager.trigger(fx, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+            }
+
+            withAnimation(.easeInOut(duration: 0.1)) {
+                if isPlayerAttacking { enemyFlash = true } else { playerFlash = true }
+            }
+            try? await Task.sleep(for: .seconds(0.15 * sm))
+            withAnimation(.easeInOut(duration: 0.1)) {
+                enemyFlash = false
+                playerFlash = false
+            }
+        }
+
+        // 3) Damage popup
+        spawnDamagePopup(log: log, isPlayerAttacking: isPlayerAttacking)
+
+        // 4) Heal FX (if any) + HP tween
+        if let heal = log.heal, heal > 0 {
+            vfxManager.trigger(.heal, at: attackerPos, speed: sm)
+            SFXManager.shared.play(.combatHeal)
+            let healFX = CombatFXAssetMap.healFX()
+            fxImageManager.trigger(healFX, defenderPos: defenderPos, attackerPos: attackerPos, speed: sm)
+        }
+
+        withAnimation(.easeInOut(duration: 0.3 * sm)) {
+            if isPlayerAttacking {
+                state.defenderHp = max(0, state.defenderHp - log.damage)
+                if let heal = log.heal, heal > 0 {
+                    state.attackerHp = min(state.attackerMaxHp, state.attackerHp + heal)
+                }
+            } else {
+                state.attackerHp = max(0, state.attackerHp - log.damage)
+                if let heal = log.heal, heal > 0 {
+                    state.defenderHp = min(state.defenderMaxHp, state.defenderHp + heal)
                 }
             }
         }
+        try? await Task.sleep(for: .seconds(0.3 * sm))
+
+        // 5) Slide back
+        withAnimation(.easeIn(duration: 0.15 * sm)) {
+            playerSlideX = 0
+            enemySlideX = 0
+        }
+        try? await Task.sleep(for: .seconds(0.15 * sm))
+    }
+
+    private func spawnDamagePopup(log: CombatLog, isPlayerAttacking: Bool) {
+        let popup: DamagePopup
+        if log.isMiss {
+            popup = DamagePopup(text: "Missed!", color: DarkFantasyTheme.textTertiary, isCrit: false, onDefender: !isPlayerAttacking)
+        } else if log.isDodge {
+            popup = DamagePopup(text: "Dodged!", color: DarkFantasyTheme.textTertiary, isCrit: false, onDefender: !isPlayerAttacking)
+        } else {
+            let text = log.isCrit ? "\(log.damage)!" : "\(log.damage)"
+            let dmgStyle = DamageTypeStyle(from: log.damageType)
+            popup = DamagePopup(text: text, color: dmgStyle.color, isCrit: log.isCrit, onDefender: !isPlayerAttacking)
+        }
+        if damagePopups.count >= 5 { damagePopups.removeFirst() }
+        damagePopups.append(popup)
+
+        if let heal = log.heal, heal > 0 {
+            if damagePopups.count >= 5 { damagePopups.removeFirst() }
+            let healPopup = DamagePopup(text: "+\(heal)", color: DarkFantasyTheme.success, isCrit: false, onDefender: isPlayerAttacking)
+            damagePopups.append(healPopup)
+        }
+
+        let popupId = popup.id
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(1.0))
+            self?.damagePopups.removeAll { $0.id == popupId }
+        }
+    }
+
+    /// Adapt `InteractiveStrikeTurn` (match-aware DTO) → `CombatLog` so we can
+    /// reuse `CombatFXAssetMap`, `VFXEffectType.from`, `SFX.from(vfxType:)` and
+    /// `DamageTypeStyle` without duplicating mapping logic. `isBlocked` isn't
+    /// a separate server flag — it's inferred when damage==0 with no miss/dodge.
+    private func combatLogFrom(turn: InteractiveStrikeTurn, fallbackAttackerId: String) -> CombatLog {
+        let miss = turn.isMiss ?? false
+        let dodge = turn.isDodge ?? false
+        let blocked = !miss && !dodge && turn.damage <= 0
+        return CombatLog(
+            attackerId: turn.attackerId ?? fallbackAttackerId,
+            action: turn.skillUsed,
+            targetZone: turn.targetZone,
+            defendZone: turn.defendZone,
+            damage: max(0, turn.damage),
+            isCrit: turn.isCrit ?? false,
+            isMiss: miss,
+            isDodge: dodge,
+            isBlocked: blocked,
+            statusApplied: nil,
+            heal: turn.healAmount,
+            damageType: turn.damageType,
+            skillUsed: turn.skillUsed
+        )
     }
 
     // MARK: - /match/complete

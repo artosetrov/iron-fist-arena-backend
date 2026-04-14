@@ -175,9 +175,16 @@ export async function POST(req: NextRequest) {
       return { match, newStamina: staminaAfter }
     })
 
-    // Initial HPs as combat starts (current_hp from characters, snapshotted)
-    const startAttackerHp = attackerStats.currentHp ?? attacker.maxHp
-    const startDefenderHp = defenderStats.currentHp ?? defender.maxHp
+    // Interactive Combat is a discrete duel — both fighters enter at full HP.
+    // Classic `/fight` used persisted currentHp but the UI never rendered it;
+    // Interactive Combat shows the HP bar from round 0, so persisted damage
+    // looks like "enemy HP dropped before first strike". Use maxHp for both.
+    // The 30% HP gate on the attacker above still prevents near-death PvP.
+    const startAttackerHp = attacker.maxHp
+    const startDefenderHp = defender.maxHp
+    // loadCombatCharacter calls above keep the combat config warm; stat bodies
+    // themselves aren't needed here because /match/start doesn't resolve combat.
+    void attackerStats; void defenderStats;
 
     return NextResponse.json({
       match_id: match.id,

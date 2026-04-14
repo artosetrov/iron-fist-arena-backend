@@ -41,6 +41,28 @@ struct InteractiveBattleView: View {
             }
             .padding(.horizontal, LayoutConstants.screenPadding)
             .padding(.vertical, LayoutConstants.spaceLG)
+
+            // Canvas particle VFX — mounted behind PNG FX so sparks sit
+            // under the slash/crit/text layer but above the UI chrome.
+            CombatVFXOverlay(vfxManager: vm.vfxManager)
+                .allowsHitTesting(false)
+
+            // PNG image FX overlay — slash, crit text, shield, heal.
+            CombatFXImageOverlay(fxManager: vm.fxImageManager)
+                .allowsHitTesting(false)
+        }
+        // Resolve fighter-card anchors in screen coordinates and push them
+        // to the VM so VFX/FX land on the right avatar. Attached to the root
+        // so `proxy.size` === screen size.
+        .overlayPreferenceValue(FighterAnchorKey.self) { entries in
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear { publishAnchors(entries: entries, proxy: proxy) }
+                    .onChange(of: proxy.size.width) { _, _ in
+                        publishAnchors(entries: entries, proxy: proxy)
+                    }
+            }
+            .allowsHitTesting(false)
         }
         .onAppear { vm.startMatch() }
         .onChange(of: phaseKey(vm.phase)) { _, _ in
@@ -55,20 +77,58 @@ struct InteractiveBattleView: View {
 
     // MARK: - Duel Header (YOU vs ENEMY)
 
+    /// Duel header with live avatar anchor reporting. After layout, each
+    /// `DuelFighterCard` publishes its frame via an anchor preference; the
+    /// root `overlayPreferenceValue` resolves those anchors in screen
+    /// coordinates and feeds the VM so VFX/FX land on the correct avatar.
+    /// Slide-in offsets + hit flash also live here.
     private var duelHeader: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
             DuelFighterCard(
                 side: .player,
                 profile: vm.attackerProfile,
                 currentHp: vm.state.attackerHp,
-                maxHp: vm.state.attackerMaxHp
+                maxHp: vm.state.attackerMaxHp,
+                slideX: vm.playerSlideX,
+                flash: vm.playerFlash,
+                popups: vm.damagePopups.filter { !$0.onDefender }
             )
+            .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
+                [FighterAnchorKey.Entry(side: .player, bounds: $0)]
+            }
             DuelFighterCard(
                 side: .enemy,
                 profile: vm.defenderProfile,
                 currentHp: vm.state.defenderHp,
-                maxHp: vm.state.defenderMaxHp
+                maxHp: vm.state.defenderMaxHp,
+                slideX: vm.enemySlideX,
+                flash: vm.enemyFlash,
+                popups: vm.damagePopups.filter { $0.onDefender }
             )
+            .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
+                [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
+            }
+        }
+    }
+
+    /// Convert each fighter's anchor bounds → normalized screen-space position,
+    /// then write into the VM for VFX placement. Called from the root-attached
+    /// `overlayPreferenceValue`, where `proxy.size` equals the screen size.
+    private func publishAnchors(entries: [FighterAnchorKey.Entry],
+                                proxy: GeometryProxy) {
+        let screen = proxy.size
+        guard screen.width > 0, screen.height > 0 else { return }
+        for entry in entries {
+            let rect = proxy[entry.bounds]
+            // Aim FX at the avatar tile: card mid-x, card top third.
+            let p = CGPoint(
+                x: rect.midX / screen.width,
+                y: (rect.minY + rect.height * 0.30) / screen.height
+            )
+            switch entry.side {
+            case .player: vm.playerAvatarPos = p
+            case .enemy:  vm.enemyAvatarPos  = p
+            }
         }
     }
 
@@ -176,13 +236,35 @@ struct InteractiveBattleView: View {
 
 // MARK: - Duel Fighter Card
 
+enum DuelSide { case player, enemy }
+
+/// Preference key that carries each fighter card's layout anchor up to the
+/// screen root, so we can normalize its position into (0…1) coordinates
+/// and feed the VFX/FX overlay managers.
+struct FighterAnchorKey: PreferenceKey {
+    struct Entry: Equatable {
+        let side: DuelSide
+        let bounds: Anchor<CGRect>
+        // Anchor<CGRect> is not Equatable; we compare by side identity only,
+        // which is enough to dedupe two player-side or two enemy-side anchors.
+        static func == (lhs: Entry, rhs: Entry) -> Bool { lhs.side == rhs.side }
+    }
+    static var defaultValue: [Entry] = []
+    static func reduce(value: inout [Entry], nextValue: () -> [Entry]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
 private struct DuelFighterCard: View {
-    enum Side { case player, enemy }
+    typealias Side = DuelSide
 
     let side: Side
     let profile: FighterProfile?
     let currentHp: Int
     let maxHp: Int
+    var slideX: CGFloat = 0
+    var flash: Bool = false
+    var popups: [DamagePopup] = []
 
     private var borderColor: Color {
         side == .player ? DarkFantasyTheme.success : DarkFantasyTheme.danger
@@ -206,6 +288,23 @@ private struct DuelFighterCard: View {
                         .stroke(borderColor, lineWidth: 2)
                 )
                 .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.radiusMD))
+                // Hit flash — mirrors CombatDetailView
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .fill(DarkFantasyTheme.danger.opacity(flash ? 0.35 : 0.0))
+                        .allowsHitTesting(false)
+                )
+                // Floating damage / heal popups over the avatar
+                .overlay(alignment: .top) {
+                    ZStack {
+                        ForEach(popups) { popup in
+                            DamagePopupBubble(popup: popup)
+                        }
+                    }
+                    .allowsHitTesting(false)
+                }
+                // Attacker slide-in X offset (per side)
+                .offset(x: slideX)
 
             Text(profile?.name.uppercased() ?? "…")
                 .font(DarkFantasyTheme.cardTitle)

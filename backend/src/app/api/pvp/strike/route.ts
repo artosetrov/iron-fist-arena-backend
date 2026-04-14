@@ -135,8 +135,10 @@ export async function POST(req: NextRequest) {
       ? (match.interactiveChoices as StoredRound[])
       : []
     const last = choices[choices.length - 1]
-    const curAttackerHp = last ? last.attacker_hp_after : (attackerStats.currentHp ?? attackerRow.maxHp)
-    const curDefenderHp = last ? last.defender_hp_after : (defenderStats.currentHp ?? defenderRow.maxHp)
+    // Round 0: both fighters start at full maxHp (match is a discrete duel).
+    // Subsequent rounds read mid-match HP from the last persisted round.
+    const curAttackerHp = last ? last.attacker_hp_after : attackerRow.maxHp
+    const curDefenderHp = last ? last.defender_hp_after : defenderRow.maxHp
 
     if (curAttackerHp <= 0 || curDefenderHp <= 0) {
       return NextResponse.json({ error: 'Match already resolved' }, { status: 409 })
