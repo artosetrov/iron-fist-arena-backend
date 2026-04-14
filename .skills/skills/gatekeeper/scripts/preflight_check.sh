@@ -9,8 +9,8 @@ cd "$ROOT" || exit 1
 echo "=== HEXBOUND PREFLIGHT ==="
 echo ""
 
-# Get changed files (staged + unstaged)
-CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null)
+# Get changed files (tracked staged + unstaged + untracked)
+CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
 CHANGED=$(echo "$CHANGED" | sort -u)
 
 if [ -z "$CHANGED" ]; then
@@ -34,8 +34,9 @@ if [ -n "$NEW_SWIFT" ]; then
   if [ -f "$PBXPROJ" ]; then
     while IFS= read -r f; do
       basename=$(basename "$f")
+      [ ! -f "$f" ] && continue
       count=$(grep -c "$basename" "$PBXPROJ" 2>/dev/null || echo 0)
-      if [ "$count" -lt 3 ]; then
+      if [ "$count" -lt 4 ]; then
         echo "  ❌ MISSING: $basename (found $count refs, need 4+)"
         BLOCKERS="$BLOCKERS\n  - $basename not in pbxproj"
         VERDICT="BLOCKED"
@@ -99,14 +100,14 @@ if [ -n "$VIEW_FILES" ]; then
     fi
 
     # Small fonts
-    sf=$(grep -oP '\.system\(size:\s*\K[0-9]+' "$f" 2>/dev/null | awk '$1 < 16' | wc -l)
+    sf=$(grep -E '\.system\(size:[[:space:]]*[0-9]+' "$f" 2>/dev/null | sed -nE 's/.*\.system\(size:[[:space:]]*([0-9]+).*/\1/p' | awk '$1 < 16' | wc -l)
     if [ "$sf" -gt 0 ]; then
       echo "  ❌ $f: $sf font(s) < 16px"
       ISSUES=$((ISSUES + sf))
     fi
 
     # Emoji
-    em=$(grep -cP '[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}]' "$f" 2>/dev/null || echo 0)
+    em=$(perl -CS -ne '$hit++ if /[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}]/; END { print $hit + 0 }' "$f" 2>/dev/null || echo 0)
     if [ "$em" -gt 0 ]; then
       echo "  ⚠️  $f: $em emoji usage(s)"
       WARNINGS="$WARNINGS\n  - Emoji in $f"

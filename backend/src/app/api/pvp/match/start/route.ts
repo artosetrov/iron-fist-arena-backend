@@ -6,6 +6,8 @@ import { initCombatConfig } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { getStaminaConfig } from '@/lib/game/live-config'
+import { getHpRestoreFraction, isHealthPotion } from '@/lib/game/consumable-effects'
+import { ConsumableType } from '@prisma/client'
 
 /**
  * POST /api/pvp/match/start — Interactive Combat v1 (FEATURE-FLAGGED)

@@ -11,7 +11,6 @@ Formats: png (default, transparent), white (white bg), black (black bg)
 import argparse
 import os
 import sys
-import subprocess
 import shutil
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,18 +18,16 @@ SKILL_DIR = os.path.dirname(SCRIPT_DIR)
 
 
 def ensure_deps():
-    """Install rembg if missing."""
+    """Verify image-removal dependencies are installed."""
     try:
         from rembg import remove
         from PIL import Image
     except ImportError:
-        print("[remove-bg] Installing rembg + Pillow...")
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "rembg[cpu]", "Pillow", "--break-system-packages", "-q"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        from rembg import remove
-        from PIL import Image
+        print("[remove-bg] Missing dependency: rembg/Pillow.")
+        print("[remove-bg] Install in a virtualenv, for example:")
+        print("  python3 -m venv .venv-rembg && . .venv-rembg/bin/activate")
+        print("  python3 -m pip install 'rembg[cpu]' Pillow")
+        sys.exit(2)
     return remove, Image
 
 

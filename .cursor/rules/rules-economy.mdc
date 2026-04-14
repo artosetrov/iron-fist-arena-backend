@@ -1,6 +1,6 @@
 ---
 description: "Economy rules — currencies, TOCTOU prevention, shop, gold mine, battle pass, atomic increments"
-globs: ["backend/**/shop/**/*.ts", "backend/**/economy*.ts", "Hexbound/**/Shop/**/*.swift"]
+globs: ["backend/**/shop/**/*.ts", "backend/**/economy*.ts", "backend/**/api/minigames/gold-mine/**/*.ts", "backend/**/api/battle-pass/**/*.ts", "backend/**/api/quests/daily/**/*.ts", "Hexbound/**/Shop/**/*.swift", "Hexbound/**/Views/Minigames/**/*.swift", "Hexbound/**/Views/BattlePass/**/*.swift", "Hexbound/**/Views/DailyLogin/**/*.swift", "Hexbound/**/Views/Quests/**/*.swift", "Hexbound/**/Services/BattlePassService.swift", "Hexbound/**/Services/DailyLoginService.swift"]
 ---
 
 # Rules: Economy / Shop / IAP

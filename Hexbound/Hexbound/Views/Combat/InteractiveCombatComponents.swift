@@ -302,22 +302,23 @@ struct StanceBonusChip: View {
     let mode: Mode
 
     var body: some View {
-        HStack(spacing: LayoutConstants.space2XS) {
-            // Channel tag (ATK / DEF)
-            Text(kindTag)
-                .font(DarkFantasyTheme.badge)
-                .foregroundStyle(channelColor)
-                .frame(width: 28, alignment: .leading)
+        HStack(spacing: LayoutConstants.spaceXS) {
+            // Channel icon (ATK sword / DEF shield)
+            Image(kindAsset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .colorMultiply(channelColor)
 
             // Zone label
             HStack(spacing: 2) {
                 if isPredicted {
                     Text("?")
-                        .font(DarkFantasyTheme.badge)
+                        .font(DarkFantasyTheme.body)
                         .foregroundStyle(DarkFantasyTheme.gold)
                 }
                 Text(zoneLabel)
-                    .font(DarkFantasyTheme.badge)
+                    .font(DarkFantasyTheme.body)
                     .foregroundStyle(zoneLabelColor)
             }
 
@@ -325,19 +326,19 @@ struct StanceBonusChip: View {
 
             // Bonus headline
             Text(bonusText)
-                .font(DarkFantasyTheme.badge)
+                .font(DarkFantasyTheme.body)
                 .foregroundStyle(bonusColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .padding(.horizontal, LayoutConstants.spaceXS)
-        .padding(.vertical, LayoutConstants.space2XS)
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.spaceXS)
         .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .fill(DarkFantasyTheme.bgSecondary.opacity(isHidden ? 0.35 : 0.7))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                 .strokeBorder(
                     strokeColor,
                     style: StrokeStyle(
@@ -357,6 +358,13 @@ struct StanceBonusChip: View {
         switch kind {
         case .attack: return "ATK"
         case .defend: return "DEF"
+        }
+    }
+
+    private var kindAsset: String {
+        switch kind {
+        case .attack: return "icon-weapon-offhand"
+        case .defend: return "rush-buff-defense"
         }
     }
 

@@ -223,6 +223,11 @@ struct InteractiveBattleView: View {
                 .tint(DarkFantasyTheme.gold)
                 .foregroundStyle(DarkFantasyTheme.textPrimary)
                 .frame(maxWidth: .infinity, minHeight: 180)
+        case .summary:
+            // Finishing blow landed — replace the predict panel with the
+            // full-battle log + CONTINUE button. Avatars (YOU/ENEMY cards)
+            // above this panel stay on screen.
+            BattleSummaryView(vm: vm)
         default:
             // .predict / .resolving / .reveal — controls stay mounted so layout
             // doesn't jump, but get disabled while the server is resolving.
@@ -283,6 +288,7 @@ struct InteractiveBattleView: View {
         case .predict: return "predict"
         case .resolving: return "resolving"
         case .reveal: return "reveal"
+        case .summary: return "summary"
         case .completing: return "completing"
         case .finished(let id): return "finished:\(id)"
         case .unavailable: return "unavailable"

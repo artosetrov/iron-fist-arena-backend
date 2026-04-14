@@ -1,6 +1,6 @@
 # Combat Screen v2 — Implementation Plan
 
-> **Status:** Planning. Not started. Awaiting Artem's sign-off on the phasing and open questions at the bottom.
+> **Status:** Superseded by `COMBAT_V3_IMPLEMENTATION_PLAN.md` / `combat-proto-B2-v3.html`. Keep as v2 decision history.
 > **Prototype:** `combat-proto-B2.html` (approved direction)
 > **Audit:** `COMBAT_UX_AUDIT.md`
 > **Date:** 2026-04-14

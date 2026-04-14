@@ -4,7 +4,7 @@
 > **Prototype:** `/PVP RPG/combat-proto-B2-v3.html`
 > **Target screen:** `InteractiveBattleView`
 > **Owner:** client-only changes (no backend / schema work — consumes existing `InteractiveStrikeResponse`)
-> **Status:** plan, not started.
+> **Status:** Implemented in workspace; keep as implementation record. Re-verify against native Swift files before using as an active plan.
 
 ---
 

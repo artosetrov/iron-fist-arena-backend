@@ -1,6 +1,6 @@
 # Combat Screen — UX Audit & Prototype Proposals
 
-> **Status:** Discovery / proposal. No code changes. Three clickable HTML prototypes attached — see links at bottom.
+> **Status:** Historical discovery / proposal. Superseded by the B2/B2-v3 direction; keep for rationale and alternatives.
 > **Author:** Claude (orchestrator)
 > **Date:** 2026-04-14
 > **Scope:** Interactive Combat v1 fight screen (Phase 3.B shipped). Not dungeon PvE combat.

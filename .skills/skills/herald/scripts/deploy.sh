@@ -161,6 +161,14 @@ git add CLAUDE.md .github/ .skills/ 2>/dev/null || true
 git reset HEAD -- '*.DS_Store' 2>/dev/null || true
 git reset HEAD -- '*/.DS_Store' 2>/dev/null || true
 
+# Re-check secret-like env files after broad product staging.
+STAGED_ENV=$(git diff --cached --name-only 2>/dev/null | grep -E '(^|/)\.env($|[.])' || true)
+if [ -n "$STAGED_ENV" ]; then
+  echo -e "${RED}⛔ .env files staged after product staging — unstage them before deploy${NC}"
+  echo "$STAGED_ENV" | while read -r f; do echo "    → $f"; done
+  exit 1
+fi
+
 # Show what's being committed
 CHANGED=$(git diff --cached --stat | tail -1)
 info "Changes: $CHANGED"

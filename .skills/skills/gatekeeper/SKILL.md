@@ -90,8 +90,8 @@ grep -rn "^<<<<<<<\|^=======\|^>>>>>>>" backend/ admin/ Hexbound/Hexbound/
 **Past incident:** A merge with ~25 conflicts was committed via `git add -A` without resolving markers. `seed-dungeon-drops.ts` had `<<<<<<< HEAD` at line 330 → Vercel build failed with "Merge conflict marker encountered." Required a second fix commit.
 
 Special cases:
-- **`tsconfig.tsbuildinfo`** — auto-generated, delete if conflicted (`rm -f admin/tsconfig.tsbuildinfo`)
-- **Binary files** (`.png`, `.mp3`) — `git checkout --ours <file>` or `--theirs <file>` to pick one version
+- **`tsconfig.tsbuildinfo`** — auto-generated; remove only after confirming it is ignored/generated and not the user's work
+- **Binary files** (`.png`, `.mp3`) — choose one version deliberately after previewing both sides; do not blindly apply ours/theirs
 - **Seed scripts** (`seed*.ts`) — check `.finally()` blocks, a common conflict site
 
 ### 4. Junk Files & .env Leaks
@@ -159,7 +159,7 @@ If behavior/schema/API/screens changed, check:
 
 ## ❌ Blockers
 - [ ] 2 junk files found → delete them
-  → rm -rf "backend/src/app/api/mail/[id] 2"
+  → confirm the duplicate is unreferenced, then remove the exact duplicate file/directory only
 
 ## ⚠️ Reminders
 - After push: git subtree push --prefix=admin admin-deploy main

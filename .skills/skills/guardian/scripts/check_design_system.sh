@@ -7,18 +7,26 @@ TARGET="${1:-.}"
 ROOT="${2:-$(git rev-parse --show-toplevel 2>/dev/null || echo '.')}"
 THEME="$ROOT/Hexbound/Hexbound/Theme/DarkFantasyTheme.swift"
 
+swift_files() {
+  if [ -f "$TARGET" ]; then
+    printf '%s\n' "$TARGET"
+  else
+    find "$TARGET" -type f -name "*.swift" 2>/dev/null
+  fi
+}
+
 # Collect real token names from DarkFantasyTheme.swift
 if [ -f "$THEME" ]; then
-  VALID_TOKENS=$(grep -oP 'static\s+(let|var)\s+\K\w+' "$THEME" | sort -u | tr '\n' '|')
+  VALID_TOKENS=$(sed -nE 's/.*static[[:space:]]+(let|var)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' "$THEME" | sort -u | tr '\n' '|')
 fi
 
 # Collect Color/ShapeStyle extension shorthand tokens (bare .tokenName is safe for these)
 # These are defined in `extension Color { static var xxx }` and `extension ShapeStyle where Self == Color`
 EXTENSION_TOKENS=""
 if [ -f "$THEME" ]; then
-  EXTENSION_TOKENS=$(grep -A1 'extension Color {' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)
+  EXTENSION_TOKENS=$(grep -A20 'extension Color {' "$THEME" 2>/dev/null | sed -nE 's/.*static var ([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | sort -u)
   EXTENSION_TOKENS="$EXTENSION_TOKENS
-$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)"
+$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | sed -nE 's/.*static var ([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | sort -u)"
   EXTENSION_TOKENS=$(echo "$EXTENSION_TOKENS" | sort -u | grep -v '^$')
   # Build grep exclusion pattern: bgAbyss|bgPrimary|textPrimary|...
   EXTENSION_EXCLUDE=$(echo "$EXTENSION_TOKENS" | tr '\n' '|' | sed 's/|$//')
@@ -69,7 +77,7 @@ grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|t
   grep -v '\.\(white\|black\|red\|blue\|green\|gray\|orange\|yellow\|pink\|purple\|cyan\|mint\|indigo\|brown\|clear\|primary\|secondary\)' | \
   while IFS= read -r line; do
     # Extract the token name after (. pattern, e.g. .foregroundStyle(.textPrimary) → textPrimary
-    token=$(echo "$line" | grep -oP '\(\.\K\w+' | head -1)
+    token=$(echo "$line" | sed -nE 's/.*\(\.([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | head -1)
     if [ -n "$EXTENSION_EXCLUDE" ] && echo "$token" | grep -qwE "$EXTENSION_EXCLUDE"; then
       # Covered by Color/ShapeStyle extension — safe but noted
       echo "ℹ️  [extension-covered] $line"
@@ -101,7 +109,7 @@ grep -rn --include="*.swift" -E '\.system\(size:\s*[0-9]+' "$TARGET" 2>/dev/null
   grep -v '#Preview' | \
   grep -v 'Tests/' | \
   while IFS= read -r line; do
-    size=$(echo "$line" | grep -oP 'size:\s*\K[0-9]+')
+    size=$(echo "$line" | sed -nE 's/.*size:[[:space:]]*([0-9]+).*/\1/p')
     if [ -n "$size" ] && [ "$size" -lt 16 ]; then
       echo "❌ [${size}px] $line"
     fi
@@ -120,7 +128,9 @@ echo ""
 # --- 3. Emoji in views (combat zone icons, card decorations) ---
 echo "## Emoji in Views"
 echo ""
-grep -rn --include="*.swift" -P '[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}\x{1F3B2}\x{2699}\x{26A1}\x{1F525}\x{2B50}\x{1F4A5}\x{1F9EA}\x{1F48E}]' "$TARGET" 2>/dev/null | \
+swift_files | while IFS= read -r f; do
+  perl -CS -ne 'print "$ARGV:$.:$_" if /[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}\x{1F3B2}\x{2699}\x{26A1}\x{1F525}\x{2B50}\x{1F4A5}\x{1F9EA}\x{1F48E}]/' "$f" 2>/dev/null
+done | \
   grep -v '^\s*//' | \
   grep -v '#Preview' | \
   grep -v '// emoji' | \
@@ -197,7 +207,7 @@ find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; d
     # Skip if line is a comment
     echo "$rest" | grep -q '^\s*//' && continue
     # Get the function name
-    func_name=$(echo "$rest" | grep -oP 'func\s+\K\w+')
+    func_name=$(echo "$rest" | sed -nE 's/.*func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/p')
     # Check next 30 lines for pattern: has await but no guard/flag before it
     end_line=$((lineno + 30))
     block=$(sed -n "${lineno},${end_line}p" "$f" 2>/dev/null)

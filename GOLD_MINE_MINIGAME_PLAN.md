@@ -1,6 +1,6 @@
 # Gold Mine Mini-game — Implementation Plan
 
-**Status:** Phase 1 spec — LOCKED (Variant D)
+**Status:** Phase 1 spec — implemented with path drift notes. Current backend routes live under `/api/minigames/gold-mine/*`, and several planned Swift component files were consolidated into `GoldMineMiniGameView.swift` / `GoldMineShaftPicker.swift`.
 **Date:** 2026-04-11
 **Dependencies:** `GOLD_MINE_MINIGAME_BALANCE_AUDIT.md`, `gold_mine_minigame_prototype.html`
 **Target Phase:** 1 (MVP — ship first)

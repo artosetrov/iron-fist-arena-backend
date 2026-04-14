@@ -6,11 +6,17 @@ on:
     paths:
       - 'backend/**'
       - 'admin/**'
+      - 'scripts/**'
+      - '.github/workflows/ci.yml'
+      - 'docs/04_BALANCE/**'
   pull_request:
     branches: [main]
     paths:
       - 'backend/**'
       - 'admin/**'
+      - 'scripts/**'
+      - '.github/workflows/ci.yml'
+      - 'docs/04_BALANCE/**'
 
 jobs:
   backend-build:
@@ -31,6 +37,7 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx vitest run
+      - run: npm run docs:balance:check
       - run: npx next build
 
   admin-build:
@@ -53,9 +60,11 @@ jobs:
       - run: npx next build
 
   prisma-schema-sync:
-    name: Prisma Schema Sync Check
+    name: Prisma Schema & Migration Drift Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Check backend/admin schemas match
         run: diff backend/prisma/schema.prisma admin/prisma/schema.prisma || (echo "Prisma schemas out of sync!" && exit 1)
+      - name: Check Prisma migration drift
+        run: python3 scripts/check_schema_drift.py

@@ -26,6 +26,7 @@ echo ""
 # Pass 2: for each hit, check surrounding lines for Promise.all context
 
 TMPFILE=$(mktemp)
+trap 'rm -f "$TMPFILE"' EXIT
 for pattern in "${ASYNC_PATTERNS[@]}"; do
   grep -rn --include="*.ts" --include="*.tsx" "$pattern" "$TARGET" 2>/dev/null | \
     grep -v 'await' | \
@@ -56,6 +57,7 @@ while IFS= read -r hit; do
   fi
 done < "$TMPFILE"
 rm -f "$TMPFILE"
+trap - EXIT
 
 echo ""
 echo "Found $REAL_COUNT real issues ($FALSE_POS excluded — inside Promise.all/allSettled/race)"
@@ -100,6 +102,42 @@ find "$TARGET" -name "* 2.*" -o -name "* 2" 2>/dev/null | \
 find "$TARGET" -type d -name "* 2" 2>/dev/null | \
   while IFS= read -r line; do
     echo "❌ [junk dir] $line"
+  done
+
+echo ""
+
+# --- 5. Shared wallet violations (character.gold moved to user.gold — 2026-04-09) ---
+echo "## Shared Wallet Violations (character.gold/gems → user.gold/gems)"
+echo ""
+WALLET_HITS=0
+grep -rn --include="*.ts" --include="*.tsx" 'character\.gold\b' "$TARGET" 2>/dev/null | \
+  grep -v 'node_modules' | \
+  grep -v '\.d\.ts' | \
+  grep -v 'goldMine' | \
+  grep -v 'goldMineSlots' | \
+  while IFS= read -r line; do
+    echo "❌ [character.gold → user.gold] $line"
+    WALLET_HITS=$((WALLET_HITS + 1))
+  done
+grep -rn --include="*.ts" --include="*.tsx" 'character\.gems\b' "$TARGET" 2>/dev/null | \
+  grep -v 'node_modules' | \
+  grep -v '\.d\.ts' | \
+  while IFS= read -r line; do
+    echo "❌ [character.gems → user.gems] $line"
+    WALLET_HITS=$((WALLET_HITS + 1))
+  done
+
+# 2026-04-10: admin grantGold shipped with prisma.character.update({data:{gold}})
+# TypeScript caught it at Vercel build (TS2353) — but a scanner pre-commit would
+# have caught it locally. Pattern: prisma.character.update containing gold/gems
+# in the same statement. Multiline tolerant via -A3.
+grep -rn --include="*.ts" --include="*.tsx" -A3 'prisma\.character\.update' "$TARGET" 2>/dev/null | \
+  grep -v 'node_modules' | \
+  grep -v '\.d\.ts' | \
+  grep -E '\b(gold|gems)\s*:' | \
+  while IFS= read -r line; do
+    echo "❌ [prisma.character.update writes gold/gems — move to user.update] $line"
+    WALLET_HITS=$((WALLET_HITS + 1))
   done
 
 echo ""

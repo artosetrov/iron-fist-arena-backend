@@ -1298,21 +1298,25 @@ model CharacterPassive {
 }
 
 // Interactive Combat v1 — Phase 1: 3-slot active loadout.
-// Each character can equip up to 3 unlocked-and-activatable PassiveNodes as
-// active skills. Server enforces: node must be in CharacterPassive AND
-// node.isActivatable = true. Referenced by CombatSession / strike resolver.
+// Phase 4 (2026-04-14): a slot can now hold EITHER a PassiveNode (talent) OR a
+// ConsumableType (health potion) — exactly one. Enforced by DB CHECK constraint
+// `character_active_slots_exactly_one_kind_chk` and by partial indexes:
+//   - UNIQUE(character_id, node_id) WHERE node_id IS NOT NULL  → one talent per kind
+//   - UNIQUE(character_id)          WHERE consumable_type IS NOT NULL → max 1 consumable
+// Server enforces: talent must be unlocked and `isActivatable = true`; consumable
+// requires >= 1 quantity in ConsumableInventory at the time of use (not equip).
 model CharacterActiveSlot {
-  id           String       @id @default(uuid())
-  characterId  String       @map("character_id")
-  nodeId       String       @map("node_id")
-  slotIndex    Int          @map("slot_index")  // 0, 1, 2
-  equippedAt   DateTime     @default(now()) @map("equipped_at")
+  id              String          @id @default(uuid())
+  characterId     String          @map("character_id")
+  nodeId          String?         @map("node_id")           // NULL when slot holds a consumable
+  consumableType  ConsumableType? @map("consumable_type")   // NULL when slot holds a talent
+  slotIndex       Int             @map("slot_index")        // 0, 1, 2
+  equippedAt      DateTime        @default(now()) @map("equipped_at")
 
-  character    Character    @relation(fields: [characterId], references: [id], onDelete: Cascade)
-  node         PassiveNode  @relation(fields: [nodeId], references: [id])
+  character       Character       @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  node            PassiveNode?    @relation(fields: [nodeId], references: [id])
 
   @@unique([characterId, slotIndex])
-  @@unique([characterId, nodeId])   // a node can't occupy two slots
   @@index([characterId])
   @@map("character_active_slots")
 }

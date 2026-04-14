@@ -1,6 +1,6 @@
 ---
 description: "Combat and PvP system rules — server-authoritative combat, matchmaking, stance, arena"
-globs: ["Hexbound/**/Combat/**/*.swift", "backend/**/combat*.ts", "backend/**/pvp/**/*.ts"]
+globs: ["Hexbound/**/Views/Combat/**/*.swift", "Hexbound/**/Views/Arena/**/*.swift", "Hexbound/**/Models/*PvP*.swift", "Hexbound/**/Services/PvPService.swift", "backend/**/combat*.ts", "backend/**/combat/**/*.ts", "backend/**/api/combat/**/*.ts", "backend/**/api/pvp/**/*.ts"]
 ---
 
 # Rules: Combat / PvP / Arena

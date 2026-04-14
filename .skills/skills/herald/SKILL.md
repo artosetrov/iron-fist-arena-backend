@@ -125,7 +125,7 @@ git log origin/main --oneline -1
 
 If the trigger file still exists after 60s → watcher is not running. Tell the user:
 > Watcher не запущен. Запусти `./scripts/git-watcher.sh` в терминале на маке, или вручную:
-> `rm -f .git/index.lock && git add -A && git commit -m "$(cat .git-trigger)" && git push origin main`
+> remove a stale `.git/index.lock` only after confirming no git process is running, then stage the reviewed product paths explicitly and commit with `$(cat .git-trigger)`.
 
 **If direct git succeeded (no lock error):**
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Hexbound Retro — Metrics Gatherer
 # Scans recent git activity and current violation counts for the daily retrospective.
-# Usage: ./gather_metrics.sh [project_root] [days_back]
+# Usage: ./gather_metrics.sh [project_root] [days_back] [max_commits] [max_file_lines]
 #
 # Improvements over chronicler/gather_metrics.sh:
 # - Scans all .skills/skills/*/ (not just hexbound-* prefix)
@@ -11,6 +11,8 @@
 
 ROOT="${1:-$(git rev-parse --show-toplevel 2>/dev/null || echo '.')}"
 DAYS="${2:-1}"
+MAX_COMMITS="${3:-200}"
+MAX_FILE_LINES="${4:-2000}"
 SINCE="$(date -d "$DAYS days ago" +%Y-%m-%d 2>/dev/null || date -v-${DAYS}d +%Y-%m-%d 2>/dev/null || echo "$DAYS days ago")"
 THEME="$ROOT/Hexbound/Hexbound/Theme/DarkFantasyTheme.swift"
 
@@ -24,7 +26,7 @@ echo ""
 # --- 1. Git Activity ---
 echo "## 1. Git Activity"
 echo ""
-COMMIT_COUNT=$(git log --since="$SINCE" --oneline 2>/dev/null | wc -l | tr -d ' ')
+COMMIT_COUNT=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" --oneline 2>/dev/null | wc -l | tr -d ' ')
 echo "Commits: $COMMIT_COUNT"
 
 if [ "$COMMIT_COUNT" -eq 0 ]; then
@@ -35,17 +37,17 @@ if [ "$COMMIT_COUNT" -eq 0 ]; then
   exit 0
 fi
 
-FILES_CHANGED=$(git log --since="$SINCE" --name-only --pretty=format: 2>/dev/null | sort -u | grep -v '^$' | wc -l | tr -d ' ')
+FILES_CHANGED=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" --name-only --pretty=format: 2>/dev/null | head -n "$MAX_FILE_LINES" | sort -u | grep -v '^$' | wc -l | tr -d ' ')
 echo "Files touched: $FILES_CHANGED"
 
 echo ""
 echo "### Files changed by area:"
-git log --since="$SINCE" --name-only --pretty=format: 2>/dev/null | sort -u | grep -v '^$' | \
+git log --since="$SINCE" --max-count="$MAX_COMMITS" --name-only --pretty=format: 2>/dev/null | head -n "$MAX_FILE_LINES" | sort -u | grep -v '^$' | \
   sed 's|/.*||' | sort | uniq -c | sort -rn
 echo ""
 
 echo "### Commit messages:"
-git log --since="$SINCE" --oneline 2>/dev/null | head -30
+git log --since="$SINCE" --max-count="$MAX_COMMITS" --oneline 2>/dev/null | head -30
 echo ""
 
 # --- 2. Current Violation Snapshot ---
@@ -59,9 +61,9 @@ echo "Color(hex:) in Views/: $COLORS_IN_VIEWS"
 # Bare tokens analysis — with extension awareness
 EXTENSION_TOKENS=""
 if [ -f "$THEME" ]; then
-  EXTENSION_TOKENS=$(grep -A20 'extension Color {' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)
+  EXTENSION_TOKENS=$(grep -A20 'extension Color {' "$THEME" 2>/dev/null | sed -nE 's/.*static var ([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | sort -u)
   EXTENSION_TOKENS="$EXTENSION_TOKENS
-$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)"
+$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | sed -nE 's/.*static var ([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | sort -u)"
   EXTENSION_TOKENS=$(echo "$EXTENSION_TOKENS" | sort -u | grep -v '^$')
   EXTENSION_EXCLUDE=$(echo "$EXTENSION_TOKENS" | tr '\n' '|' | sed 's/|$//')
 fi
@@ -153,10 +155,10 @@ echo ""
 echo "## 5. Fix Patterns in Commits"
 echo ""
 echo "### fix() commits:"
-git log --since="$SINCE" --oneline 2>/dev/null | grep -i "^[a-f0-9]* fix" | head -10
+git log --since="$SINCE" --max-count="$MAX_COMMITS" --oneline 2>/dev/null | grep -i "^[a-f0-9]* fix" | head -10
 echo ""
 echo "### Files with most churn (excluding binary/assets):"
-git log --since="$SINCE" --name-only --pretty=format: 2>/dev/null | grep -v '\.png$\|\.jpg$\|\.wav$\|\.mp3$\|\.json$' | sort | uniq -c | sort -rn | head -10
+git log --since="$SINCE" --max-count="$MAX_COMMITS" --name-only --pretty=format: 2>/dev/null | head -n "$MAX_FILE_LINES" | grep -v '\.png$\|\.jpg$\|\.wav$\|\.mp3$\|\.json$' | sort | uniq -c | sort -rn | head -10
 echo ""
 
 echo "=== METRICS COMPLETE ==="

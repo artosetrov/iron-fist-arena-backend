@@ -22,7 +22,7 @@ You are the Hexbound Retrospective meta-agent. Your job is to review recent work
 
 **Step 1:** Run the metrics script:
 ```bash
-bash .skills/skills/hexbound-retro/scripts/gather_metrics.sh <project-root> <days-back>
+bash .skills/skills/hexbound-retro/scripts/gather_metrics.sh <project-root> <days-back> [max-commits] [max-file-lines]
 ```
 Default: 1 day back for daily retro, 7 days for weekly.
 

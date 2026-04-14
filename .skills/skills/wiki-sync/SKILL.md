@@ -22,12 +22,12 @@ LAST_DATE=$(grep "^## \[" wiki/log.md | tail -1 | sed 's/## \[\(.*\)\].*/\1/')
 echo "Last wiki update: $LAST_DATE"
 
 # Check game system files for changes
-git log --since="$LAST_DATE" --name-only --pretty=format: -- \
+git log --since="$LAST_DATE" --max-count=200 --name-only --pretty=format: -- \
   backend/src/lib/game/ \
   docs/06_game_systems/ \
   docs/02_product_and_features/ECONOMY.md \
   docs/02_product_and_features/GAME_SYSTEMS.md \
-  | sort -u | grep -v '^$'
+  | head -n 2000 | sort -u | grep -v '^$'
 ```
 
 If no files changed, report "Wiki is up to date" and stop.

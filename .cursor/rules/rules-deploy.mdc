@@ -1,6 +1,6 @@
 ---
 description: "Deploy and git workflow rules — two remotes, admin subtree push, merge conflict resolution"
-globs: ["scripts/**", ".github/**"]
+globs: ["scripts/**", ".github/**", ".skills/**"]
 ---
 
 # Rules: Git / Deploy / CI/CD

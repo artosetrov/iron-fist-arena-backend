@@ -57,6 +57,7 @@
 		81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */; };
 		EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */; };
 		EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */; };
+		7F17A3ED61CE3E287ECEEAC2 /* BattleSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384A549FF75D5E1FD633CE4E /* BattleSummaryView.swift */; };
 		EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */; };
 		120BC39048D8157C74F3FDD5 /* CombatLogRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD60BA0687D6AE41D42432B /* CombatLogRow.swift */; };
 		900BD74B14A2BD1C97037B6C /* InteractiveRoundLogCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEE457FD7F9583EEF1B98969 /* InteractiveRoundLogCard.swift */; };
@@ -901,6 +902,7 @@
 		FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundExchange.swift; sourceTree = "<group>"; };
 		3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleViewModel.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleView.swift; sourceTree = "<group>"; };
+		384A549FF75D5E1FD633CE4E /* BattleSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleSummaryView.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatComponents.swift; sourceTree = "<group>"; };
 		EAD60BA0687D6AE41D42432B /* CombatLogRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatLogRow.swift; sourceTree = "<group>"; };
 		BEE457FD7F9583EEF1B98969 /* InteractiveRoundLogCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveRoundLogCard.swift; sourceTree = "<group>"; };
@@ -1461,6 +1463,7 @@
 				62932E87440D28C2DE136AC0 /* CombatResultDetailView.swift */,
 				2AC33F4DE1089A000F90E2A9 /* CombatViewModel.swift */,
 				67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */,
+				384A549FF75D5E1FD633CE4E /* BattleSummaryView.swift */,
 				ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */,
 				ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */,
 				3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */,
@@ -2275,6 +2278,7 @@
 				81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */,
 				EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */,
 				EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */,
+				7F17A3ED61CE3E287ECEEAC2 /* BattleSummaryView.swift in Sources */,
 				EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */,
 				120BC39048D8157C74F3FDD5 /* CombatLogRow.swift in Sources */,
 				900BD74B14A2BD1C97037B6C /* InteractiveRoundLogCard.swift in Sources */,

@@ -1,11 +1,13 @@
 #!/bin/bash
 # Gathers metrics from recent work to feed the retrospective analysis.
-# Usage: ./gather_metrics.sh [project_root] [days_back]
+# Usage: ./gather_metrics.sh [project_root] [days_back] [max_commits] [max_file_lines]
 #
 # Output: structured summary of recent changes, current violations, and agent health.
 
 ROOT="${1:-$(git rev-parse --show-toplevel 2>/dev/null || echo '.')}"
 DAYS="${2:-7}"
+MAX_COMMITS="${3:-200}"
+MAX_FILE_LINES="${4:-2000}"
 SINCE="$(date -d "$DAYS days ago" +%Y-%m-%d 2>/dev/null || date -v-${DAYS}d +%Y-%m-%d 2>/dev/null || echo '7 days ago')"
 
 cd "$ROOT" || exit 1
@@ -18,20 +20,20 @@ echo ""
 # --- 1. Git Activity ---
 echo "## 1. Git Activity"
 echo ""
-COMMIT_COUNT=$(git log --since="$SINCE" --oneline 2>/dev/null | wc -l | tr -d ' ')
+COMMIT_COUNT=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" --oneline 2>/dev/null | wc -l | tr -d ' ')
 echo "Commits: $COMMIT_COUNT"
 
-FILES_CHANGED=$(git log --since="$SINCE" --name-only --pretty=format: 2>/dev/null | sort -u | grep -v '^$' | wc -l | tr -d ' ')
+FILES_CHANGED=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" --name-only --pretty=format: 2>/dev/null | head -n "$MAX_FILE_LINES" | sort -u | grep -v '^$' | wc -l | tr -d ' ')
 echo "Files touched: $FILES_CHANGED"
 
 echo ""
 echo "### Files changed by area:"
-git log --since="$SINCE" --name-only --pretty=format: 2>/dev/null | sort -u | grep -v '^$' | \
+git log --since="$SINCE" --max-count="$MAX_COMMITS" --name-only --pretty=format: 2>/dev/null | head -n "$MAX_FILE_LINES" | sort -u | grep -v '^$' | \
   sed 's|/.*||' | sort | uniq -c | sort -rn
 echo ""
 
 echo "### Recent commit messages:"
-git log --since="$SINCE" --oneline 2>/dev/null | head -20
+git log --since="$SINCE" --max-count="$MAX_COMMITS" --oneline 2>/dev/null | head -20
 echo ""
 
 # --- 2. Current Violation Counts ---
@@ -60,7 +62,9 @@ TINY_FONTS=$(grep -rn --include="*.swift" '\.font(\.system(size: [0-9]\b' "$ROOT
 echo "Fonts < 10px (non-dev views): $TINY_FONTS"
 
 # Emoji in functional UI
-EMOJI_FUNCTIONAL=$(grep -rn --include="*.swift" 'Text("[\x{2600}-\x{27BF}\x{1F300}-\x{1F9FF}]' "$ROOT/Hexbound/Hexbound/Views/" 2>/dev/null | wc -l | tr -d ' ')
+EMOJI_FUNCTIONAL=$(find "$ROOT/Hexbound/Hexbound/Views/" -type f -name "*.swift" 2>/dev/null | while IFS= read -r f; do
+  perl -CS -ne '$count++ if /Text\("[\x{2600}-\x{27BF}\x{1F300}-\x{1F9FF}]/; END { print $count + 0, "\n" }' "$f" 2>/dev/null
+done | awk '{sum += $1} END { print sum + 0 }')
 echo "Emoji in Text(): $EMOJI_FUNCTIONAL (check manually — some may be decorative)"
 
 # Junk files
@@ -101,15 +105,15 @@ echo "## 6. Potential New Patterns to Investigate"
 echo ""
 
 # New DarkFantasyTheme tokens added recently
-NEW_TOKENS=$(git log --since="$SINCE" -p -- "$ROOT/Hexbound/Hexbound/Theme/DarkFantasyTheme.swift" 2>/dev/null | grep '^+.*static let' | grep -v '^\+\+\+' | wc -l | tr -d ' ')
+NEW_TOKENS=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" -p -- "$ROOT/Hexbound/Hexbound/Theme/DarkFantasyTheme.swift" 2>/dev/null | grep '^+.*static let' | grep -v '^\+\+\+' | wc -l | tr -d ' ')
 echo "New DarkFantasyTheme tokens added: $NEW_TOKENS"
 
 # New button styles added
-NEW_STYLES=$(git log --since="$SINCE" -p -- "$ROOT/Hexbound/Hexbound/Theme/ButtonStyles.swift" 2>/dev/null | grep '^+.*struct\|^+.*case\|^+.*static' | grep -v '^\+\+\+' | wc -l | tr -d ' ')
+NEW_STYLES=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" -p -- "$ROOT/Hexbound/Hexbound/Theme/ButtonStyles.swift" 2>/dev/null | grep '^+.*struct\|^+.*case\|^+.*static' | grep -v '^\+\+\+' | wc -l | tr -d ' ')
 echo "New ButtonStyles additions: $NEW_STYLES"
 
 # Files deleted (cleanup work)
-DELETED=$(git log --since="$SINCE" --diff-filter=D --name-only --pretty=format: 2>/dev/null | grep -v '^$' | wc -l | tr -d ' ')
+DELETED=$(git log --since="$SINCE" --max-count="$MAX_COMMITS" --diff-filter=D --name-only --pretty=format: 2>/dev/null | head -n "$MAX_FILE_LINES" | grep -v '^$' | wc -l | tr -d ' ')
 echo "Files deleted (cleanup): $DELETED"
 
 echo ""

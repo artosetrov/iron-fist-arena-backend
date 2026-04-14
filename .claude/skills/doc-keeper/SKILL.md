@@ -63,7 +63,7 @@ For each doc in `docs/`, check:
 # Note: use grep without -h to keep filenames, then filter out templates/archive
 grep -rn "Hexbound/.*\.swift" docs/ --include="*.md" | \
   grep -v "docs/templates/" | grep -v "docs/11_archive/" | grep -v "docs/retro/" | \
-  grep -oP 'Hexbound/[^\s`|,)]+\.swift' | grep -v '{' | sort -u | while read f; do
+  sed -nE 's/.*(Hexbound\/[^ `|,)]+\.swift).*/\1/p' | grep -v '{' | sort -u | while read f; do
   [ ! -f "$f" ] && echo "MISSING: $f"
 done
 ```
@@ -103,13 +103,13 @@ done
 
 ```bash
 # Check PROJECT_INDEX.md links
-grep -oP '\[.*?\]\(.*?\)' docs/PROJECT_INDEX.md | grep -oP '\(.*?\)' | tr -d '()' | while read link; do
+sed -nE 's/.*\[[^]]+\]\(([^)]+)\).*/\1/p' docs/PROJECT_INDEX.md | while read link; do
   resolved="docs/$link"
   [ ! -f "$resolved" ] && echo "BROKEN LINK: $link in PROJECT_INDEX.md"
 done
 
 # Check SOURCE_OF_TRUTH.md references
-grep -oP '`[^`]+`' docs/SOURCE_OF_TRUTH.md | tr -d '`' | grep "/" | while read path; do
+sed -nE 's/.*`([^`]+)`.*/\1/p' docs/SOURCE_OF_TRUTH.md | grep "/" | while read path; do
   [ ! -f "$path" ] && [ ! -d "$path" ] && echo "BROKEN REF: $path in SOURCE_OF_TRUTH.md"
 done
 ```

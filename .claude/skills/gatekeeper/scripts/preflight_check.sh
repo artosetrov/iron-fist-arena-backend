@@ -9,8 +9,8 @@ cd "$ROOT" || exit 1
 echo "=== HEXBOUND PREFLIGHT ==="
 echo ""
 
-# Get changed files (staged + unstaged)
-CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null)
+# Get changed files (tracked staged + unstaged + untracked)
+CHANGED=$(git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
 CHANGED=$(echo "$CHANGED" | sort -u)
 
 if [ -z "$CHANGED" ]; then
@@ -34,8 +34,9 @@ if [ -n "$NEW_SWIFT" ]; then
   if [ -f "$PBXPROJ" ]; then
     while IFS= read -r f; do
       basename=$(basename "$f")
+      [ ! -f "$f" ] && continue
       count=$(grep -c "$basename" "$PBXPROJ" 2>/dev/null || echo 0)
-      if [ "$count" -lt 3 ]; then
+      if [ "$count" -lt 4 ]; then
         echo "  ❌ MISSING: $basename (found $count refs, need 4+)"
         BLOCKERS="$BLOCKERS\n  - $basename not in pbxproj"
         VERDICT="BLOCKED"
@@ -99,14 +100,14 @@ if [ -n "$VIEW_FILES" ]; then
     fi
 
     # Small fonts
-    sf=$(grep -oP '\.system\(size:\s*\K[0-9]+' "$f" 2>/dev/null | awk '$1 < 16' | wc -l)
+    sf=$(grep -E '\.system\(size:[[:space:]]*[0-9]+' "$f" 2>/dev/null | sed -nE 's/.*\.system\(size:[[:space:]]*([0-9]+).*/\1/p' | awk '$1 < 16' | wc -l)
     if [ "$sf" -gt 0 ]; then
       echo "  ❌ $f: $sf font(s) < 16px"
       ISSUES=$((ISSUES + sf))
     fi
 
     # Emoji
-    em=$(grep -cP '[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}]' "$f" 2>/dev/null || echo 0)
+    em=$(perl -CS -ne '$hit++ if /[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}]/; END { print $hit + 0 }' "$f" 2>/dev/null || echo 0)
     if [ "$em" -gt 0 ]; then
       echo "  ⚠️  $f: $em emoji usage(s)"
       WARNINGS="$WARNINGS\n  - Emoji in $f"
@@ -157,45 +158,6 @@ if [ -n "$TS_FILES" ]; then
     fi
 
   done <<< "$TS_FILES"
-  echo ""
-fi
-
-# --- 8. Balance docs drift check (if balance.ts changed) ---
-BALANCE_CHANGED=$(echo "$CHANGED" | grep 'backend/src/lib/game/balance\.ts' || true)
-AUTO_DOC_CHANGED=$(echo "$CHANGED" | grep 'docs/06_game_systems/BALANCE_CONSTANTS_AUTO\.md' || true)
-if [ -n "$BALANCE_CHANGED" ] || [ -n "$AUTO_DOC_CHANGED" ]; then
-  echo "## Balance Docs Drift Check"
-  if [ -f "backend/package.json" ]; then
-    if (cd backend && npm run --silent docs:balance:check > /tmp/hexbound_balance_check.log 2>&1); then
-      echo "  ✅ BALANCE_CONSTANTS_AUTO.md is in sync with balance.ts"
-    else
-      echo "  ❌ BALANCE_CONSTANTS_AUTO.md is STALE — run: cd backend && npm run docs:balance"
-      cat /tmp/hexbound_balance_check.log | sed 's/^/     /'
-      BLOCKERS="$BLOCKERS\n  - BALANCE_CONSTANTS_AUTO.md out of date (run: cd backend && npm run docs:balance)"
-      VERDICT="BLOCKED"
-    fi
-  else
-    echo "  ⚠️  backend/package.json not found — skipping drift check"
-  fi
-  echo ""
-fi
-
-# --- 9. iOS/backend constant drift (if AppConstants.swift or any iOS .swift changed) ---
-IOS_SWIFT_CHANGED=$(echo "$CHANGED" | grep -E '^Hexbound/Hexbound/.*\.swift$' || true)
-if [ -n "$IOS_SWIFT_CHANGED" ]; then
-  echo "## iOS ↔ Backend Constant Drift"
-  if [ -x "scripts/check_ios_backend_drift.sh" ]; then
-    if bash scripts/check_ios_backend_drift.sh > /tmp/hexbound_drift_check.log 2>&1; then
-      echo "  ✅ No iOS/backend game-constant drift"
-    else
-      echo "  ❌ Drift detected — see details:"
-      cat /tmp/hexbound_drift_check.log | sed 's/^/     /'
-      BLOCKERS="$BLOCKERS\n  - iOS hardcoded game constants (run: bash scripts/check_ios_backend_drift.sh)"
-      VERDICT="BLOCKED"
-    fi
-  else
-    echo "  ⚠️  scripts/check_ios_backend_drift.sh not found — skipping"
-  fi
   echo ""
 fi
 

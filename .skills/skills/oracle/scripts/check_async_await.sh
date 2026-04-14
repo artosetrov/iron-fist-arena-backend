@@ -26,6 +26,7 @@ echo ""
 # Pass 2: for each hit, check surrounding lines for Promise.all context
 
 TMPFILE=$(mktemp)
+trap 'rm -f "$TMPFILE"' EXIT
 for pattern in "${ASYNC_PATTERNS[@]}"; do
   grep -rn --include="*.ts" --include="*.tsx" "$pattern" "$TARGET" 2>/dev/null | \
     grep -v 'await' | \
@@ -56,6 +57,7 @@ while IFS= read -r hit; do
   fi
 done < "$TMPFILE"
 rm -f "$TMPFILE"
+trap - EXIT
 
 echo ""
 echo "Found $REAL_COUNT real issues ($FALSE_POS excluded — inside Promise.all/allSettled/race)"

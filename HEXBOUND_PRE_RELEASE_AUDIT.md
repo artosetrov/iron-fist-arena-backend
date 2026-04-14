@@ -4,6 +4,7 @@
 **Auditors:** Lead QA / Lead Game Designer / Lead iOS Release Manager / Lead Product Designer / Lead Engineer  
 **Project:** Hexbound (PVP RPG) — iOS SwiftUI + Next.js API + Supabase + PostgreSQL  
 **Target:** App Store submission readiness  
+**Audit status:** Historical snapshot. Several listed blockers may now be fixed; rerun current release audit before using this as a ship/no-ship source.
 
 ---
 
@@ -208,7 +209,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 
 | ID | Severity | Issue | File | Fix |
 |----|----------|-------|------|-----|
-| TC-1 | **P0** | Secrets в git: Supabase keys, JWT secret, DB password (`Flojib1986!!`), Vercel token, GitHub token | `backend/.env`, `admin/.env` | Немедленно: .env в .gitignore, rotate ALL credentials, revoke exposed tokens |
+| TC-1 | **P0** | Secrets в git: Supabase keys, JWT secret, DB password (`[REDACTED]`), Vercel token, GitHub token | `backend/.env`, `admin/.env` | Немедленно: .env в .gitignore, rotate ALL credentials, revoke exposed tokens |
 | TC-2 | **P0** | Supabase anon key + project URL hardcoded в Swift binary | `AppConstants.swift:38-41` | Proxy все Supabase calls через backend API. Regenerate key после fix |
 | TC-3 | **P3** | 6 TODO comments в production code | `AppConstants.swift`, `AppDelegate.swift`, `BattlePassDetailView.swift`, `GuildHallDetailView.swift`, `LevelUpModalView.swift`, `HubView.swift` | Resolve или convert to tracked issues |
 | TC-4 | **P4** | No client-side retry logic на registration failures | `RegisterViewModel.swift` | Добавить exponential backoff для network errors |
@@ -381,7 +382,7 @@ Hexbound — это зрелый проект с 263 Swift-файлами, 238 T
 
 ## HIDDEN DANGEROUS ISSUES
 
-1. **DB password в git history** — даже после .gitignore, password `Flojib1986!!` навсегда в git log. Нужно rotate + рассмотреть git filter-branch или BFG.
+1. **DB password в git history** — даже после .gitignore, password `[REDACTED]` навсегда в git log. Нужно rotate + рассмотреть git filter-branch или BFG.
 2. **Mail claim 60ms rate limit** — выглядит как typo, но позволяет ~166 rq/sec. Может быть эксплуатирован ботами.
 3. **Gold inflation** — не видна в первую неделю, но к week 3 active players будут иметь 50k+ gold с ничем чтобы тратить. Убьёт endgame если не добавить sinks.
 4. **Matchmaking Phase 4** — при маленьком launch pool (100-500 players) Level 50 whales будут matchиться с Level 1 новичками. Может убить first-day retention.

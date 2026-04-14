@@ -24,6 +24,7 @@ final class InteractiveBattleViewModel {
         case predict            // Player picks zones, timer ticking
         case resolving          // Awaiting /pvp/strike response
         case reveal             // Playing Reveal animation (player strike)
+        case summary            // Finishing blow landed — showing full-battle log, awaiting CONTINUE
         case completing         // Awaiting /pvp/match/complete after finish
         case finished(winnerId: String)
         case unavailable        // Feature flag off — classic fight required
@@ -68,6 +69,12 @@ final class InteractiveBattleViewModel {
     /// hides the picker and shows `InteractiveRoundLogCard`. The card owns
     /// its own countdown timer and calls back via `dismissExchange`.
     var currentExchange: RoundExchange?
+
+    /// Full chronological log of every round exchange in the battle.
+    /// Appended inside `applyStrikeResponse` at the same time `currentExchange`
+    /// is set, so the end-of-battle summary can replay the entire sequence
+    /// without needing to re-query the server. Cleared only by `cancel()`.
+    var battleLog: [RoundExchange] = []
 
     // MARK: - Intent Hint (Phase 4 — Variant B2)
 
@@ -260,10 +267,14 @@ final class InteractiveBattleViewModel {
     func dismissExchange() {
         guard currentExchange != nil else { return }
         currentExchange = nil
-        // If the match ended on this round, roll straight into completion.
+        // If the match ended on this round, park in the summary phase so
+        // the full-battle log + CONTINUE button can render. Player taps
+        // CONTINUE → `continueFromSummary()` → `completeMatch()`.
         // Otherwise fall through to the standard reveal→predict transition.
         if state.isFinished {
-            if case .reveal = phase { completeMatch() }
+            if case .reveal = phase {
+                phase = .summary
+            }
             return
         }
         if case .reveal = phase {
@@ -271,11 +282,22 @@ final class InteractiveBattleViewModel {
         }
     }
 
+    /// Called by the end-of-battle summary screen's CONTINUE button.
+    /// Advances from `.summary` into the existing `completeMatch()` pipeline
+    /// which fetches `/match/complete` and eventually emits `.finished`.
+    func continueFromSummary() {
+        guard case .summary = phase else { return }
+        completeMatch()
+    }
+
     /// Called by the view when the Reveal animation finishes.
     func revealCompleted() {
         guard case .reveal = phase else { return }
         if state.isFinished {
-            completeMatch()
+            // Park in summary so the end-of-battle screen can render even
+            // when the `currentExchange` log card isn't shown (degraded /
+            // direct-advance paths). CONTINUE → `completeMatch()`.
+            phase = .summary
             return
         }
         lastOutcome = nil
@@ -453,7 +475,7 @@ final class InteractiveBattleViewModel {
         let playerName  = attackerProfile?.name ?? "You"
         let enemyName   = defenderProfile?.name ?? "Enemy"
         let roundNumber = max(1, response.strikeIndex)
-        currentExchange = RoundExchange.build(
+        let exchange = RoundExchange.build(
             from: response,
             roundNumber: roundNumber,
             playerName: playerName,
@@ -461,6 +483,8 @@ final class InteractiveBattleViewModel {
             playerAttackZone: selectedAttackZone,
             playerDefendZone: selectedDefendZone
         )
+        currentExchange = exchange
+        battleLog.append(exchange)
 
         // Enter reveal and run the scripted VFX/SFX/HP-tween sequence.
         // HP is NOT set to the final server value up front — `animateStrike`
@@ -523,7 +547,9 @@ final class InteractiveBattleViewModel {
             return
         }
         if state.isFinished {
-            completeMatch()
+            // Route terminal rounds through the summary screen — same as
+            // the log-card dismissal path in `dismissExchange()`.
+            phase = .summary
         } else {
             revealCompleted()
         }

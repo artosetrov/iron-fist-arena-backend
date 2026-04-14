@@ -34,7 +34,7 @@ This agent owns **process improvement**: updating DEVELOPMENT_RULES.md, agent SK
 
 **Step 1:** Scan recent git history for patterns:
 ```bash
-bash .skills/skills/chronicler/scripts/gather_metrics.sh <project-root> [days-back]
+bash .skills/skills/chronicler/scripts/gather_metrics.sh <project-root> [days-back] [max-commits] [max-file-lines]
 ```
 
 **Step 2:** Read current state of all rules and agents:

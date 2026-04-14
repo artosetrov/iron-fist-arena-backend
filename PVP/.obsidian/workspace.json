@@ -169,8 +169,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -183,8 +182,9 @@
       "bases:Create new base": false
     }
   },
-  "active": "111b4549504d543e",
+  "active": "e48e496aae5784f4",
   "lastOpenFiles": [
+    "Untitled 1",
     "Welcome.md",
     "Untitled",
     "Untitled.md",

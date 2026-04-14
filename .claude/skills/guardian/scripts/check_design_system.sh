@@ -7,18 +7,26 @@ TARGET="${1:-.}"
 ROOT="${2:-$(git rev-parse --show-toplevel 2>/dev/null || echo '.')}"
 THEME="$ROOT/Hexbound/Hexbound/Theme/DarkFantasyTheme.swift"
 
+swift_files() {
+  if [ -f "$TARGET" ]; then
+    printf '%s\n' "$TARGET"
+  else
+    find "$TARGET" -type f -name "*.swift" 2>/dev/null
+  fi
+}
+
 # Collect real token names from DarkFantasyTheme.swift
 if [ -f "$THEME" ]; then
-  VALID_TOKENS=$(grep -oP 'static\s+(let|var)\s+\K\w+' "$THEME" | sort -u | tr '\n' '|')
+  VALID_TOKENS=$(sed -nE 's/.*static[[:space:]]+(let|var)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\2/p' "$THEME" | sort -u | tr '\n' '|')
 fi
 
 # Collect Color/ShapeStyle extension shorthand tokens (bare .tokenName is safe for these)
 # These are defined in `extension Color { static var xxx }` and `extension ShapeStyle where Self == Color`
 EXTENSION_TOKENS=""
 if [ -f "$THEME" ]; then
-  EXTENSION_TOKENS=$(grep -A1 'extension Color {' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)
+  EXTENSION_TOKENS=$(grep -A20 'extension Color {' "$THEME" 2>/dev/null | sed -nE 's/.*static var ([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | sort -u)
   EXTENSION_TOKENS="$EXTENSION_TOKENS
-$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | grep -oP 'static var \K\w+' | sort -u)"
+$(grep -A20 'extension ShapeStyle' "$THEME" 2>/dev/null | sed -nE 's/.*static var ([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | sort -u)"
   EXTENSION_TOKENS=$(echo "$EXTENSION_TOKENS" | sort -u | grep -v '^$')
   # Build grep exclusion pattern: bgAbyss|bgPrimary|textPrimary|...
   EXTENSION_EXCLUDE=$(echo "$EXTENSION_TOKENS" | tr '\n' '|' | sed 's/|$//')
@@ -69,13 +77,26 @@ grep -rn --include="*.swift" -E '\.(foregroundColor|foregroundStyle|background|t
   grep -v '\.\(white\|black\|red\|blue\|green\|gray\|orange\|yellow\|pink\|purple\|cyan\|mint\|indigo\|brown\|clear\|primary\|secondary\)' | \
   while IFS= read -r line; do
     # Extract the token name after (. pattern, e.g. .foregroundStyle(.textPrimary) → textPrimary
-    token=$(echo "$line" | grep -oP '\(\.\K\w+' | head -1)
+    token=$(echo "$line" | sed -nE 's/.*\(\.([A-Za-z_][A-Za-z0-9_]*).*/\1/p' | head -1)
     if [ -n "$EXTENSION_EXCLUDE" ] && echo "$token" | grep -qwE "$EXTENSION_EXCLUDE"; then
       # Covered by Color/ShapeStyle extension — safe but noted
       echo "ℹ️  [extension-covered] $line"
     else
       echo "❌ [UNSAFE bare token] $line"
     fi
+  done
+
+echo ""
+
+# --- 1c. Deprecated .foregroundColor() usage ---
+echo "## Deprecated .foregroundColor() (use .foregroundStyle() instead)"
+echo ""
+grep -rn --include="*.swift" '\.foregroundColor(' "$TARGET" 2>/dev/null | \
+  grep -v '^\s*//' | \
+  grep -v '#Preview' | \
+  grep -v 'Tests/' | \
+  while IFS= read -r line; do
+    echo "⚠️  [deprecated API] $line"
   done
 
 echo ""
@@ -88,7 +109,7 @@ grep -rn --include="*.swift" -E '\.system\(size:\s*[0-9]+' "$TARGET" 2>/dev/null
   grep -v '#Preview' | \
   grep -v 'Tests/' | \
   while IFS= read -r line; do
-    size=$(echo "$line" | grep -oP 'size:\s*\K[0-9]+')
+    size=$(echo "$line" | sed -nE 's/.*size:[[:space:]]*([0-9]+).*/\1/p')
     if [ -n "$size" ] && [ "$size" -lt 16 ]; then
       echo "❌ [${size}px] $line"
     fi
@@ -107,7 +128,9 @@ echo ""
 # --- 3. Emoji in views (combat zone icons, card decorations) ---
 echo "## Emoji in Views"
 echo ""
-grep -rn --include="*.swift" -P '[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}\x{1F3B2}\x{2699}\x{26A1}\x{1F525}\x{2B50}\x{1F4A5}\x{1F9EA}\x{1F48E}]' "$TARGET" 2>/dev/null | \
+swift_files | while IFS= read -r f; do
+  perl -CS -ne 'print "$ARGV:$.:$_" if /[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}\x{1F3B2}\x{2699}\x{26A1}\x{1F525}\x{2B50}\x{1F4A5}\x{1F9EA}\x{1F48E}]/' "$f" 2>/dev/null
+done | \
   grep -v '^\s*//' | \
   grep -v '#Preview' | \
   grep -v '// emoji' | \
@@ -149,6 +172,70 @@ grep -rn --include="*.swift" -E '\.padding\(\s*[0-9]+\s*\)' "$TARGET" 2>/dev/nul
   while IFS= read -r line; do
     echo "⚠️  $line"
   done
+
+echo ""
+
+# --- 6. @Observable ViewModels with stored DI properties must have explicit init ---
+# Incident: commit 712c696 (2026-04-11) — GoldMineViewModel init(appState:cache:)
+# was wiped when a `mineNames` block was pasted at the top of the class. Swift
+# compiler catches this ("Class has no initializers"), but only at build time —
+# cheaper to catch in pre-commit grep. See memory `feedback_observable_init_preservation.md`.
+echo "## @Observable ViewModels — missing init(appState:cache:)"
+echo ""
+find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; do
+  # Only check @Observable classes that store appState or cache as let properties
+  if grep -q '@Observable' "$f" 2>/dev/null; then
+    has_stored_di=$(grep -cE '^\s*(private\s+)?let\s+(appState|cache)\s*:\s*(AppState|GameDataCache)' "$f")
+    if [ "$has_stored_di" -gt 0 ]; then
+      has_init=$(grep -cE '^\s*(public\s+|internal\s+)?init\s*\(' "$f")
+      if [ "$has_init" -eq 0 ]; then
+        echo "❌ [missing init] $f — has let appState/cache but no init(...). Build will fail with 'Class has no initializers'."
+      fi
+    fi
+  fi
+done
+
+# --- 7. Guard-before-await in ViewModel async methods ---
+# Incident: QA audit 2026-04-12 — BUG-C01/C02/C03. Double-tap exploits caused by
+# setting guard flag AFTER the first await, allowing two concurrent calls.
+echo "## Guard Before Await (Double-Tap Prevention)"
+echo ""
+find "$TARGET" -type f -name "*ViewModel.swift" 2>/dev/null | while read -r f; do
+  # Find async func declarations and check if the first non-blank line after them
+  # contains a guard or flag assignment before any await
+  grep -n 'func .* async' "$f" 2>/dev/null | while IFS=: read -r lineno rest; do
+    # Skip if line is a comment
+    echo "$rest" | grep -q '^\s*//' && continue
+    # Get the function name
+    func_name=$(echo "$rest" | sed -nE 's/.*func[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\1/p')
+    # Check next 30 lines for pattern: has await but no guard/flag before it
+    end_line=$((lineno + 30))
+    block=$(sed -n "${lineno},${end_line}p" "$f" 2>/dev/null)
+    has_await=$(echo "$block" | grep -c 'await ')
+    if [ "$has_await" -gt 0 ]; then
+      # Find line of first await (relative)
+      first_await_rel=$(echo "$block" | grep -n 'await ' | head -1 | cut -d: -f1)
+      # Check if there's a guard or bool assignment before it
+      before_await=$(echo "$block" | head -n "$((first_await_rel - 1))")
+      has_guard=$(echo "$before_await" | grep -cE 'guard\s+!is|= true$|= true\s')
+      if [ "$has_guard" -eq 0 ]; then
+        abs_line=$((lineno))
+        echo "⚠️  [no guard before await] $f:$abs_line — func $func_name() has await but no guard/flag set before it"
+      fi
+    fi
+  done
+done
+
+echo ""
+echo "## 8. snake_case CodingKeys in DTOs (double-conversion bug)"
+# APIClient applies convertFromSnakeCase — CodingKey mapping to "snake_case" will fail at runtime
+snake_ck=$(grep -rn 'case [a-zA-Z]* = "[a-z]*_[a-z_]*"' Hexbound/Hexbound/Models/ --include="*.swift" 2>/dev/null)
+if [ -n "$snake_ck" ]; then
+  echo "⚠️  snake_case CodingKeys found (APIClient already does convertFromSnakeCase — remove them):"
+  echo "$snake_ck"
+else
+  echo "✅ No snake_case CodingKeys in Models/"
+fi
 
 echo ""
 echo "=== SCAN COMPLETE ==="

@@ -64,8 +64,12 @@ echo ""
 # --- 3. Design system violations (project-wide scan) ---
 echo "## Design System Violations"
 HC_COUNT=$(grep -rn --include="*.swift" 'Color(' Hexbound/Hexbound/Views/ 2>/dev/null | grep -v 'DarkFantasyTheme' | grep -v '^\s*//' | grep -v 'Color("' | grep -v '#Preview' | wc -l)
-SF_COUNT=$(grep -rn --include="*.swift" -oP '\.system\(size:\s*\K[0-9]+' Hexbound/Hexbound/Views/ 2>/dev/null | awk '$1 < 16' | wc -l)
-EM_COUNT=$(grep -rcP --include="*.swift" '[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}\x{1F3B2}]' Hexbound/Hexbound/Views/ 2>/dev/null | awk -F: '$2 > 0' | wc -l)
+SF_COUNT=$(grep -rn --include="*.swift" -E '\.system\(size:[[:space:]]*[0-9]+' Hexbound/Hexbound/Views/ 2>/dev/null | sed -nE 's/.*\.system\(size:[[:space:]]*([0-9]+).*/\1/p' | awk '$1 < 16' | wc -l)
+EM_COUNT=$(find Hexbound/Hexbound/Views -type f -name "*.swift" 2>/dev/null | while IFS= read -r f; do
+  if perl -CS -ne '$hit = 1 if /[\x{2694}\x{1F6E1}\x{1F3AF}\x{1F9BF}\x{1F381}\x{2753}\x{1F3B2}]/; END { exit($hit ? 0 : 1) }' "$f" 2>/dev/null; then
+    echo "$f"
+  fi
+done | wc -l)
 
 [ "$HC_COUNT" -eq 0 ] && report PASS "No hardcoded colors" || report FAIL "Hardcoded colors" "$HC_COUNT instances"
 [ "$SF_COUNT" -eq 0 ] && report PASS "No small fonts (<16px)" || report FAIL "Small fonts" "$SF_COUNT instances below 16px"
