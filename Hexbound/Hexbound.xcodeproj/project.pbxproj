@@ -153,6 +153,8 @@
 		542C67EDB654AF9BFE887353 /* AchievementsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */; };
 		54BB7AD5999BBE6018538B37 /* amb_forge_fire.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4B954EEABC37CF12297EF9F /* amb_forge_fire.wav */; };
 		55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BBF308478B5B2817B50708 /* HeroDetailView.swift */; };
+		55384939A59DB1194B7B4832 /* HeroInventoryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BBF308478B5B2817B50709 /* HeroInventoryTab.swift */; };
+		55384939A59DB1194B7B4833 /* HeroStatsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20BBF308478B5B2817B5070A /* HeroStatsTab.swift */; };
 		554ADF9C431484FE80147946 /* SessionSummaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */; };
 		555A0B0C05EBE703CD233DEB /* hit_magical.wav in Resources */ = {isa = PBXBuildFile; fileRef = 21EB5EE4AA980ADB311B3FFB /* hit_magical.wav */; };
 		558F8F3C3614A51F648F9622 /* CachedAssetImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EF70965657F120803C752C /* CachedAssetImage.swift */; };
@@ -553,6 +555,8 @@
 		200396381DBAD59E7A4E025A /* SessionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryView.swift; sourceTree = "<group>"; };
 		2030DE65D1FAA604E54302E1 /* door_creak_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = door_creak_2.wav; sourceTree = "<group>"; };
 		20BBF308478B5B2817B50708 /* HeroDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroDetailView.swift; sourceTree = "<group>"; };
+		20BBF308478B5B2817B50709 /* HeroInventoryTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroInventoryTab.swift; sourceTree = "<group>"; };
+		20BBF308478B5B2817B5070A /* HeroStatsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroStatsTab.swift; sourceTree = "<group>"; };
 		218B22634BDF8DD52EFCB0D6 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		21EB5EE4AA980ADB311B3FFB /* hit_magical.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical.wav; sourceTree = "<group>"; };
 		2213FD96DD8374E3C8F83A20 /* RegisterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewModel.swift; sourceTree = "<group>"; };
@@ -1566,6 +1570,8 @@
 				f258edcf70612de2b763c15f /* BuyStatPointsView.swift */,
 				15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */,
 				20BBF308478B5B2817B50708 /* HeroDetailView.swift */,
+				20BBF308478B5B2817B50709 /* HeroInventoryTab.swift */,
+				20BBF308478B5B2817B5070A /* HeroStatsTab.swift */,
 				5AB28E8F5F2F9E8128879CC0 /* Talents */,
 			);
 			path = Hero;
@@ -2303,6 +2309,8 @@
 				AC2F4A6B8C9D0E1F2A3B4C54 /* GuildHallScrollsTab.swift in Sources */,
 				9B1E3F5A7B8C9D0E1F2A3B4C /* GuildHallViewModel.swift in Sources */,
 				55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */,
+				55384939A59DB1194B7B4832 /* HeroInventoryTab.swift in Sources */,
+				55384939A59DB1194B7B4833 /* HeroStatsTab.swift in Sources */,
 				867AD63D2EA83A7C48FDA067 /* CharacterDisplay.swift in Sources */,
 				FEF22085A9926BC6841BD45A /* CharacterPortraitInfo.swift in Sources */,
 				7C6DB2C84DB9BB54722F72DF /* IntegratedCharacterCard.swift in Sources */,
