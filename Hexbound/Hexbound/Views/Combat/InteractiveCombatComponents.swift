@@ -17,6 +17,8 @@
 //    2. TimerRingStrikeButton ........ STRIKE CTA with radial countdown arc
 //    3. FighterStatusChip ............ Streak + gear-score row
 //    4. EnemyIntentPill .............. "Likely: HEAD" hint pill (ghost style)
+//    5. StanceBonusChip .............. Richer ATK/DEF chip with zone + bonus text
+//    6. StanceBonusChipStack ......... Pair of ATK+DEF chips under a fighter card
 //
 //  Phase 3 will wire these into the combat screen; this file changes
 //  nothing on its own until then.
@@ -268,6 +270,190 @@ struct EnemyIntentPill: View {
     }
 }
 
+// MARK: - 5. Stance Bonus Chip
+
+/// Richer replacement for `StanceOverlay` shown directly beneath a fighter's
+/// card. Communicates three things at once: the channel (ATK/DEF), the chosen
+/// zone (HEAD/CHEST/LEGS) and the headline bonus text ("OFF +10%", etc.).
+///
+/// Three visual modes cover the combat lifecycle:
+///   • `.confirmed(zone)` — player or revealed opponent value. Solid fill,
+///     channel-tinted zone label, bonus in `success` green.
+///   • `.predicted(zone)` — opponent during `.predict`, inferred from the
+///     intent heuristic. Dashed stroke, amber label, prefixed with "?".
+///   • `.hidden` — opponent channel we can't yet read (DEF during predict).
+///     Muted placeholder, "???" label.
+///
+/// Bonus strings are sourced from `InteractiveStanceBonuses` which mirrors
+/// the backend `STANCE_ZONES` table 1:1.
+struct StanceBonusChip: View {
+    enum Kind {
+        case attack
+        case defend
+    }
+
+    enum Mode {
+        case confirmed(InteractiveBodyZone)
+        case predicted(InteractiveBodyZone)
+        case hidden
+    }
+
+    let kind: Kind
+    let mode: Mode
+
+    var body: some View {
+        HStack(spacing: LayoutConstants.space2XS) {
+            // Channel tag (ATK / DEF)
+            Text(kindTag)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(channelColor)
+                .frame(width: 28, alignment: .leading)
+
+            // Zone label
+            HStack(spacing: 2) {
+                if isPredicted {
+                    Text("?")
+                        .font(DarkFantasyTheme.badge)
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                }
+                Text(zoneLabel)
+                    .font(DarkFantasyTheme.badge)
+                    .foregroundStyle(zoneLabelColor)
+            }
+
+            Spacer(minLength: 0)
+
+            // Bonus headline
+            Text(bonusText)
+                .font(DarkFantasyTheme.badge)
+                .foregroundStyle(bonusColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .padding(.horizontal, LayoutConstants.spaceXS)
+        .padding(.vertical, LayoutConstants.space2XS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(DarkFantasyTheme.bgSecondary.opacity(isHidden ? 0.35 : 0.7))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .strokeBorder(
+                    strokeColor,
+                    style: StrokeStyle(
+                        lineWidth: 1,
+                        dash: isPredicted ? [3, 2] : []
+                    )
+                )
+        )
+        .opacity(isHidden ? 0.6 : 1.0)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(accessibilityText))
+    }
+
+    // MARK: Derived
+
+    private var kindTag: String {
+        switch kind {
+        case .attack: return "ATK"
+        case .defend: return "DEF"
+        }
+    }
+
+    private var channelColor: Color {
+        switch kind {
+        case .attack: return DarkFantasyTheme.danger
+        case .defend: return DarkFantasyTheme.info
+        }
+    }
+
+    private var isPredicted: Bool {
+        if case .predicted = mode { return true }
+        return false
+    }
+
+    private var isHidden: Bool {
+        if case .hidden = mode { return true }
+        return false
+    }
+
+    private var zoneLabel: String {
+        switch mode {
+        case .confirmed(let z), .predicted(let z):
+            return z.rawValue.uppercased()
+        case .hidden:
+            return "???"
+        }
+    }
+
+    private var zoneLabelColor: Color {
+        switch mode {
+        case .confirmed:
+            return DarkFantasyTheme.textPrimary
+        case .predicted:
+            return DarkFantasyTheme.gold
+        case .hidden:
+            return DarkFantasyTheme.textTertiary
+        }
+    }
+
+    private var bonusText: String {
+        switch mode {
+        case .confirmed(let z), .predicted(let z):
+            switch kind {
+            case .attack: return InteractiveStanceBonuses.attackBonusHeadline(for: z)
+            case .defend: return InteractiveStanceBonuses.defendBonusHeadline(for: z)
+            }
+        case .hidden:
+            return "—"
+        }
+    }
+
+    private var bonusColor: Color {
+        switch mode {
+        case .confirmed: return DarkFantasyTheme.success
+        case .predicted: return DarkFantasyTheme.gold
+        case .hidden:    return DarkFantasyTheme.textTertiary
+        }
+    }
+
+    private var strokeColor: Color {
+        switch mode {
+        case .confirmed: return channelColor.opacity(0.45)
+        case .predicted: return DarkFantasyTheme.gold.opacity(0.55)
+        case .hidden:    return DarkFantasyTheme.borderSubtle
+        }
+    }
+
+    private var accessibilityText: String {
+        switch mode {
+        case .confirmed(let z):
+            return "\(kindTag) \(z.rawValue), \(bonusText)"
+        case .predicted(let z):
+            return "Predicted \(kindTag) \(z.rawValue), \(bonusText)"
+        case .hidden:
+            return "\(kindTag) unknown"
+        }
+    }
+}
+
+// MARK: - 6. Stance Bonus Chip Stack
+
+/// Convenience wrapper: the pair of ATK + DEF chips shown directly under a
+/// fighter card. Caller passes each channel's `Mode` so the view stays
+/// stateless and testable.
+struct StanceBonusChipStack: View {
+    let attackMode: StanceBonusChip.Mode
+    let defendMode: StanceBonusChip.Mode
+
+    var body: some View {
+        VStack(spacing: LayoutConstants.space2XS) {
+            StanceBonusChip(kind: .attack, mode: attackMode)
+            StanceBonusChip(kind: .defend, mode: defendMode)
+        }
+    }
+}
+
 // MARK: - Previews
 
 #if DEBUG
@@ -306,6 +492,29 @@ struct EnemyIntentPill: View {
         EnemyIntentPill(channel: .defend, likelyZone: .legs)
     }
     .padding()
+    .background(DarkFantasyTheme.bgPrimary)
+}
+
+#Preview("StanceBonusChipStack") {
+    VStack(spacing: 12) {
+        // Confirmed / confirmed — your side after selection
+        StanceBonusChipStack(
+            attackMode: .confirmed(.head),
+            defendMode: .confirmed(.chest)
+        )
+        // Predicted / hidden — opponent during predict
+        StanceBonusChipStack(
+            attackMode: .predicted(.chest),
+            defendMode: .hidden
+        )
+        // Confirmed / confirmed — opponent after reveal
+        StanceBonusChipStack(
+            attackMode: .confirmed(.legs),
+            defendMode: .confirmed(.head)
+        )
+    }
+    .padding()
+    .frame(width: 200)
     .background(DarkFantasyTheme.bgPrimary)
 }
 #endif

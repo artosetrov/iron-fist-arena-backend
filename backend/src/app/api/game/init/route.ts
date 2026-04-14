@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
           id: true, userId: true, characterName: true, class: true, origin: true,
           gender: true, avatar: true, level: true,
           str: true, agi: true, vit: true, end: true, int: true, wis: true, luk: true, cha: true,
-          statPointsAvailable: true, currentXp: true,
+          statPointsAvailable: true, passivePointsAvailable: true, currentXp: true,
           currentStamina: true, maxStamina: true, lastStaminaUpdate: true,
           currentHp: true, maxHp: true, lastHpUpdate: true,
           armor: true, magicResist: true,

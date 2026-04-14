@@ -35,6 +35,7 @@ struct Character: Codable, Identifiable {
     var luck: Int?
     var charisma: Int?
     var statPoints: Int?
+    var passivePointsAvailable: Int?
 
     // Stance
     var combatStance: CombatStance?
@@ -81,6 +82,7 @@ struct Character: Codable, Identifiable {
         case luck = "luk"
         case charisma = "cha"
         case statPoints = "statPointsAvailable"     // JSON: "statPointsAvailable"
+        case passivePointsAvailable                 // JSON: "passivePointsAvailable" (talent/skill points)
         case combatStance
         case prestige = "prestigeLevel"             // JSON: "prestigeLevel"
         case gearScore

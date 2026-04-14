@@ -53,9 +53,15 @@
 		1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D145DE1A5F794907BB756397 /* CombatDetailView.swift */; };
 		14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */; };
 		14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */; };
+		961E078086264A48C0187425 /* CombatLogEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F1C089B801E579936A908F9 /* CombatLogEvent.swift */; };
+		81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */; };
 		EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */; };
 		EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */; };
 		EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */; };
+		120BC39048D8157C74F3FDD5 /* CombatLogRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAD60BA0687D6AE41D42432B /* CombatLogRow.swift */; };
+		900BD74B14A2BD1C97037B6C /* InteractiveRoundLogCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEE457FD7F9583EEF1B98969 /* InteractiveRoundLogCard.swift */; };
+		E1CBE356C33452D4BF1B1258 /* LogDivider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DB3EC949CED44303D4F95AE /* LogDivider.swift */; };
+		0936D03D0E54FBC7977CD2D7 /* YourChoiceButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6E0EF0D8AC11E50D88D24D /* YourChoiceButton.swift */; };
 		36E49A6359B79F0A8FEBB178 /* ActiveSkillsHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */; };
 		1A9A8B92543201D94529BB29 /* footstep_stone.wav in Resources */ = {isa = PBXBuildFile; fileRef = 16C348EE5C05E7DFD7F6A04B /* footstep_stone.wav */; };
 		1BDC4E98CDE7ACA78658823C /* DarkFantasyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */; };
@@ -891,9 +897,15 @@
 		D145DE1A5F794907BB756397 /* CombatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatDetailView.swift; sourceTree = "<group>"; };
 		00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatModels.swift; sourceTree = "<group>"; };
 		00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveStanceBonuses.swift; sourceTree = "<group>"; };
+		9F1C089B801E579936A908F9 /* CombatLogEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatLogEvent.swift; sourceTree = "<group>"; };
+		FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundExchange.swift; sourceTree = "<group>"; };
 		3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleViewModel.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleView.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatComponents.swift; sourceTree = "<group>"; };
+		EAD60BA0687D6AE41D42432B /* CombatLogRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatLogRow.swift; sourceTree = "<group>"; };
+		BEE457FD7F9583EEF1B98969 /* InteractiveRoundLogCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveRoundLogCard.swift; sourceTree = "<group>"; };
+		0DB3EC949CED44303D4F95AE /* LogDivider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogDivider.swift; sourceTree = "<group>"; };
+		AC6E0EF0D8AC11E50D88D24D /* YourChoiceButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourChoiceButton.swift; sourceTree = "<group>"; };
 		67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSkillsHUD.swift; sourceTree = "<group>"; };
 		D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItem.swift; sourceTree = "<group>"; };
 		D269D22916F1CEDA9ED0476F /* merchant_greet.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = merchant_greet.wav; sourceTree = "<group>"; };
@@ -1445,13 +1457,17 @@
 			children = (
 				VFX00001GRP00001 /* VFX */,
 				D145DE1A5F794907BB756397 /* CombatDetailView.swift */,
+				EAD60BA0687D6AE41D42432B /* CombatLogRow.swift */,
 				62932E87440D28C2DE136AC0 /* CombatResultDetailView.swift */,
 				2AC33F4DE1089A000F90E2A9 /* CombatViewModel.swift */,
 				67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */,
 				ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */,
 				ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */,
 				3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */,
+				BEE457FD7F9583EEF1B98969 /* InteractiveRoundLogCard.swift */,
+				0DB3EC949CED44303D4F95AE /* LogDivider.swift */,
 				C432FC1973DEA4743369E3C8 /* LootDetailView.swift */,
+				AC6E0EF0D8AC11E50D88D24D /* YourChoiceButton.swift */,
 			);
 			path = Combat;
 			sourceTree = "<group>";
@@ -1709,6 +1725,7 @@
 				5c4d89bb78c26dddad451fcc /* Challenge.swift */,
 				E47BF69C872101A05B35E80C /* Character.swift */,
 				E9792A8A2127BC3038E37E96 /* CombatData.swift */,
+				9F1C089B801E579936A908F9 /* CombatLogEvent.swift */,
 				69C589255AB5D68E6FCFE847 /* DailyLoginData.swift */,
 				905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */,
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
@@ -1725,6 +1742,7 @@
 				7F3A9E2B41C8D605E1A0B3C8 /* OpponentProfile.swift */,
 				4B8DD10D38C3C6619DCDD923 /* Quest.swift */,
 				CE7DEC31D96099535208BCD1 /* RevengeEntry.swift */,
+				FCCB0EE35B26C43B6538B157 /* RoundExchange.swift */,
 				7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */,
 				D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */,
 				776542cff60cc81ecdff074b /* StatPurchase.swift */,
@@ -2253,9 +2271,15 @@
 				1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */,
 				14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */,
 				14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */,
+				961E078086264A48C0187425 /* CombatLogEvent.swift in Sources */,
+				81FB2994A93CA148AE398FEC /* RoundExchange.swift in Sources */,
 				EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */,
 				EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */,
 				EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */,
+				120BC39048D8157C74F3FDD5 /* CombatLogRow.swift in Sources */,
+				900BD74B14A2BD1C97037B6C /* InteractiveRoundLogCard.swift in Sources */,
+				E1CBE356C33452D4BF1B1258 /* LogDivider.swift in Sources */,
+				0936D03D0E54FBC7977CD2D7 /* YourChoiceButton.swift in Sources */,
 				36E49A6359B79F0A8FEBB178 /* ActiveSkillsHUD.swift in Sources */,
 				78A8F4968E6F8D3680AD9FA0 /* CombatFXAssetMap.swift in Sources */,
 				89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */,

@@ -73,9 +73,18 @@ private struct ActiveSkillSlotButton: View {
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(iconColor)
                 } else {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .regular))
-                        .foregroundStyle(DarkFantasyTheme.textDisabled)
+                    // Empty slot — padlock asset (interactive combat v3).
+                    // Falls back to SF Symbol if the bundle asset hasn't
+                    // resolved yet so the slot never renders blank.
+                    CachedAssetImage(
+                        key: "icon-padlock",
+                        url: nil,
+                        systemIcon: "lock.fill",
+                        contentMode: .fit
+                    )
+                    .frame(width: 22, height: 22)
+                    .foregroundStyle(DarkFantasyTheme.textDisabled)
+                    .opacity(0.6)
                 }
 
                 if isOnCooldown, let slot {

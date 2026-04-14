@@ -11,10 +11,13 @@ import SwiftUI
 struct TalentDetailSheet: View {
     let node: PassiveNode
     let isUnlocked: Bool
+    let isPending: Bool
     let isUnlockable: Bool
+    /// Points still available AFTER current pending allocation — what the user can still spend.
     let pointsAvailable: Int
     let isMutating: Bool
-    let onUnlock: () -> Void
+    let onStage: () -> Void
+    let onUnstage: () -> Void
     let onClose: () -> Void
 
     // Interactive Combat v1 — Active Slot controls.
@@ -24,7 +27,6 @@ struct TalentDetailSheet: View {
     let onUnequip: () -> Void
 
     private var canAfford: Bool { pointsAvailable >= node.cost }
-    private var canUnlockNow: Bool { !isUnlocked && isUnlockable && canAfford }
 
     private var tierLabel: String {
         switch node.bonusType {
@@ -96,7 +98,9 @@ struct TalentDetailSheet: View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
             TalentNodeView(
                 node: node,
-                state: isUnlocked ? .unlocked : (isUnlockable ? .unlockable : .locked)
+                state: isUnlocked
+                    ? .unlocked
+                    : (isPending ? .pending : (isUnlockable ? .unlockable : .locked))
             )
 
             VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
@@ -155,16 +159,18 @@ struct TalentDetailSheet: View {
     private var cta: some View {
         if isUnlocked {
             unlockedPill
+        } else if isPending {
+            unstageButton
         } else if !isUnlockable {
             lockedPill
         } else {
-            Button(action: onUnlock) {
+            Button(action: onStage) {
                 HStack(spacing: LayoutConstants.spaceSM) {
                     if isMutating {
                         ProgressView()
                             .tint(DarkFantasyTheme.textOnGold)
                     }
-                    Text(canAfford ? "UNLOCK — \(node.cost) SP" : "NOT ENOUGH POINTS")
+                    Text(canAfford ? "STAGE — \(node.cost) SP" : "NOT ENOUGH POINTS")
                         .font(DarkFantasyTheme.buttonLabel)
                         .tracking(1)
                 }
@@ -173,6 +179,34 @@ struct TalentDetailSheet: View {
             .disabled(!canAfford || isMutating)
             .opacity(canAfford ? 1 : 0.6)
         }
+    }
+
+    private var unstageButton: some View {
+        Button(action: onUnstage) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Image(systemName: "minus.circle")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                Text("UNSTAGE — REFUND \(node.cost) SP")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .foregroundStyle(DarkFantasyTheme.gold)
+                    .tracking(2)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, LayoutConstants.spaceMD)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .fill(DarkFantasyTheme.bgSecondary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.buttonRadius)
+                    .stroke(DarkFantasyTheme.gold.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isMutating)
     }
 
     private var unlockedPill: some View {

@@ -43,7 +43,7 @@
 
 | Key | Value |
 |-----|-------|
-| `MAX` | `120` |
+| `MAX` | `180` |
 | `REGEN_RATE` | `1` |
 | `REGEN_INTERVAL_MINUTES` | `8` |
 | `PVP_COST` | `10` |
@@ -59,9 +59,9 @@
 | Refill # | Cost multiplier |
 |----------|-----------------|
 | 1 | ×1 |
-| 2 | ×1.5 |
-| 3 | ×2.5 |
-| 4 | ×4 |
+| 2 | ×1.6 |
+| 3 | ×2.8 |
+| 4 | ×4.8 |
 
 **Daily cap:** 4 refills per UTC day (hard gate). Pattern: Clash Royale chest slots + Genshin Fragile Resin.
 
@@ -73,7 +73,7 @@
 
 Counter resets at UTC midnight via lazy refresh. Pattern: LoL First Win of the Day + RAID XP brew farming.
 
-**Derived:** full 0→120 stamina takes 960 minutes (16.0 hours).
+**Derived:** full 0→180 stamina takes 1440 minutes (24.0 hours).
 
 ## HP regen
 
@@ -152,8 +152,8 @@ Formula: `xpForLevel(level) = 100 * level + 20 * level²`
 | +6 | 80% |
 | +7 | 60% |
 | +8 | 40% |
-| +9 | 25% |
-| +10 | 15% |
+| +9 | 30% |
+| +10 | 20% |
 
 ### UPGRADE_COSTS
 
@@ -208,9 +208,13 @@ Formula: `xpForLevel(level) = 100 * level + 20 * level²`
 | `gold_3500` | 0 | 3500 | — | — | $4.99 |
 | `gold_8000` | 0 | 8000 | — | — | $9.99 |
 | `gold_20000` | 0 | 20000 | — | — | $19.99 |
+| `adventurer_bundle_I` | 600 | 3000 | — | — | $4.99 |
+| `adventurer_bundle_II` | 1400 | 10000 | — | — | $9.99 |
+| `adventurer_bundle_III` | 3200 | 20000 | — | — | $19.99 |
 | `monthly_gem_card` | 50 | 0 | — | yes | $4.99 |
 | `starter_bundle` | 200 | 3000 | — | — | $2.99 |
 | `premium_forever` | 0 | 0 | yes | — | $9.99 |
+| `premium_pass_monthly` | 0 | 0 | — | — | $4.99 |
 
 ## Battle pass
 
@@ -253,11 +257,12 @@ Formula: `xpForLevel(level) = 100 * level + 20 * level²`
 | Key | Value |
 |-----|-------|
 | `BRONZE` | `0` |
-| `SILVER` | `1200` |
+| `SILVER` | `750` |
 | `GOLD` | `1500` |
-| `PLATINUM` | `1800` |
-| `DIAMOND` | `2100` |
-| `GRANDMASTER` | `2400` |
+| `PLATINUM` | `2250` |
+| `DIAMOND` | `3000` |
+| `MASTER` | `3750` |
+| `GRANDMASTER` | `4250` |
 
 ## Combat
 
@@ -417,12 +422,12 @@ Valid zones: `head`, `chest`, `legs`
 
 | Key | Value |
 |-----|-------|
-| `STAMINA_REFILL` | `30` |
+| `STAMINA_REFILL` | `50` |
 | `EXTRA_PVP_COMBAT` | `50` |
-| `BATTLE_PASS_PREMIUM` | `500` |
+| `BATTLE_PASS_PREMIUM` | `700` |
 | `GOLD_MINE_BUY_SLOT` | `50` |
-| `GOLD_MINE_BOOST` | `10` |
-| `UPGRADE_PROTECTION` | `50` |
+| `GOLD_MINE_BOOST` | `15` |
+| `UPGRADE_PROTECTION` | `40` |
 
 ## Stat purchase
 

@@ -97,10 +97,12 @@ struct InteractiveBattleView: View {
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .player, bounds: $0)]
                 }
-                stanceOverlayRow(
-                    attack: vm.selectedAttackZone,
-                    defend: vm.selectedDefendZone,
-                    isGhost: false
+                // Player stance always resolves to a confirmed selection:
+                // the VM defaults to .chest and the picker keeps a current
+                // choice at all times, so both chips are always .confirmed.
+                StanceBonusChipStack(
+                    attackMode: .confirmed(vm.selectedAttackZone),
+                    defendMode: .confirmed(vm.selectedDefendZone)
                 )
                 if let playerLabel = vm.lastActiveFiredLabel {
                     ActiveFireBanner(actionType: playerLabel, isOpponent: false)
@@ -123,21 +125,19 @@ struct InteractiveBattleView: View {
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
                 }
-                stanceOverlayRow(
-                    attack: vm.lastOpponentZones?.attack,
-                    defend: vm.lastOpponentZones?.defend,
-                    isGhost: true
+                // Opponent chips cover three phases:
+                //   • `.predict` + last strike revealed          → confirmed (last round's zones)
+                //   • `.predict` before any reveal + history OK  → predicted ATK (heuristic), hidden DEF
+                //   • `.reveal` / `.resolving`                   → confirmed (fresh reveal)
+                // We don't know the opponent's upcoming DEF from the
+                // intent heuristic alone, so DEF stays hidden during
+                // predict. ATK is where the tell lives.
+                StanceBonusChipStack(
+                    attackMode: opponentAttackChipMode,
+                    defendMode: opponentDefendChipMode
                 )
                 if !vm.opponentActives.isEmpty {
                     OpponentActivesPreview(actives: vm.opponentActives)
-                }
-                // Intent hint — "LIKELY HITS: CHEST" style pill, visible
-                // only during the predict window once we have ≥2 rounds
-                // of signal. Ghost styling signals "read, not a tell".
-                if vm.phase.isPredicting,
-                   let likely = vm.likelyOpponentAttack {
-                    EnemyIntentPill(channel: .attack, likelyZone: likely)
-                        .transition(.opacity)
                 }
                 if let oppLabel = vm.lastOpponentActiveFiredLabel {
                     ActiveFireBanner(actionType: oppLabel, isOpponent: true)
@@ -149,17 +149,36 @@ struct InteractiveBattleView: View {
         .animation(.easeInOut(duration: 0.2), value: vm.lastActiveFiredLabel)
         .animation(.easeInOut(duration: 0.2), value: vm.lastOpponentActiveFiredLabel)
         .animation(.easeInOut(duration: 0.25), value: vm.likelyOpponentAttack)
+        .animation(.easeInOut(duration: 0.25), value: vm.selectedAttackZone)
+        .animation(.easeInOut(duration: 0.25), value: vm.selectedDefendZone)
+        .animation(.easeInOut(duration: 0.25), value: vm.lastOpponentZones?.attack)
+        .animation(.easeInOut(duration: 0.25), value: vm.lastOpponentZones?.defend)
     }
 
-    /// Compact row of Attack / Defend `StanceOverlay` chips under a fighter
-    /// card. Opponent side uses `isGhost = true` to dim until reveal.
-    private func stanceOverlayRow(attack: InteractiveBodyZone?,
-                                  defend: InteractiveBodyZone?,
-                                  isGhost: Bool) -> some View {
-        HStack(spacing: LayoutConstants.spaceXS) {
-            StanceOverlay(kind: .attack, zone: attack, isGhost: isGhost)
-            StanceOverlay(kind: .defend, zone: defend, isGhost: isGhost)
+    // MARK: - Opponent chip mode derivation
+
+    /// ATK chip for the opponent side. Priority order:
+    ///   1. If `lastOpponentZones` is known (post-reveal)  → confirmed
+    ///   2. Else if predicting and we have a heuristic tell → predicted
+    ///   3. Else → hidden
+    private var opponentAttackChipMode: StanceBonusChip.Mode {
+        if let zones = vm.lastOpponentZones {
+            return .confirmed(zones.attack)
         }
+        if vm.phase.isPredicting, let likely = vm.likelyOpponentAttack {
+            return .predicted(likely)
+        }
+        return .hidden
+    }
+
+    /// DEF chip for the opponent side. We never "predict" defense —
+    /// the tell lives on attack only. During predict: hidden.
+    /// After reveal: confirmed.
+    private var opponentDefendChipMode: StanceBonusChip.Mode {
+        if let zones = vm.lastOpponentZones {
+            return .confirmed(zones.defend)
+        }
+        return .hidden
     }
 
     /// Convert each fighter's anchor bounds → normalized screen-space position,
@@ -403,7 +422,74 @@ struct InteractivePredictView: View {
 
     var body: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            // 1) Stance pickers — ATTACK + DEFEND
+            // 1+2) Pickers + Active skills OR Round Exchange log card.
+            //      During .resolving / .reveal the VM publishes a
+            //      `currentExchange`, which swaps the stance picker
+            //      surface for the gold-bordered log card. The CTA
+            //      row below morphs in lock-step.
+            ZStack(alignment: .top) {
+                if let exchange = vm.currentExchange {
+                    InteractiveRoundLogCard(exchange: exchange) {
+                        vm.dismissExchange()
+                    }
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .bottom)),
+                        removal:   .opacity.combined(with: .move(edge: .top))
+                    ))
+                } else {
+                    predictControls
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .bottom)),
+                            removal:   .opacity.combined(with: .move(edge: .top))
+                        ))
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: vm.currentExchange?.id)
+
+            // 3) Bottom bar — SKIP on the left, STRIKE (with integrated
+            //    radial timer) on the right. Equal-weight so the CTAs
+            //    form a balanced commit row. While a round exchange is
+            //    on screen, STRIKE morphs into the locked YOUR CHOICE
+            //    badge and SKIP dims to avoid double-dismiss.
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Button(action: { vm.skipAndSubmit() }) {
+                    Text("SKIP")
+                        .font(DarkFantasyTheme.buttonLabelCompact)
+                        .frame(maxWidth: .infinity, minHeight: LayoutConstants.buttonHeightLG)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .frame(maxWidth: .infinity)
+                .disabled(vm.currentExchange != nil)
+                .opacity(vm.currentExchange != nil ? 0.4 : 1.0)
+
+                ZStack {
+                    if vm.currentExchange == nil {
+                        TimerRingStrikeButton(
+                            remainingFraction: timerFraction,
+                            isCritical: vm.predictTimeRemaining <= 1.5,
+                            isBusy: false,
+                            action: { vm.submitStrike() }
+                        )
+                        .transition(.opacity)
+                    } else {
+                        YourChoiceButton(
+                            attackZone: vm.selectedAttackZone,
+                            defendZone: vm.selectedDefendZone
+                        )
+                        .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.25), value: vm.currentExchange?.id)
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    /// Stance pickers + active-skills HUD. Extracted so it can live
+    /// inside the ZStack that swaps it for the Round Exchange log card.
+    @ViewBuilder
+    private var predictControls: some View {
+        VStack(spacing: LayoutConstants.spaceMD) {
             zonePicker(
                 title: "ATTACK",
                 selection: Binding(
@@ -419,9 +505,6 @@ struct InteractivePredictView: View {
                 )
             )
 
-            // 2) Active skills — sit directly beneath the picker rows
-            //    so the player's gaze travels naturally from stance →
-            //    talents → commit button.
             if !vm.playerActives.isEmpty {
                 VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
                     Text("ACTIVE SKILLS")
@@ -435,27 +518,6 @@ struct InteractivePredictView: View {
                     )
                 }
             }
-
-            // 3) Bottom bar — SKIP on the left, STRIKE (with integrated
-            //    radial timer) on the right. Equal-weight so the CTAs
-            //    form a balanced commit row.
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Button(action: { vm.skipAndSubmit() }) {
-                    Text("SKIP")
-                        .font(DarkFantasyTheme.buttonLabelCompact)
-                        .frame(maxWidth: .infinity, minHeight: LayoutConstants.buttonHeightLG)
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .frame(maxWidth: .infinity)
-
-                TimerRingStrikeButton(
-                    remainingFraction: timerFraction,
-                    isCritical: vm.predictTimeRemaining <= 1.5,
-                    isBusy: false,
-                    action: { vm.submitStrike() }
-                )
-                .frame(maxWidth: .infinity)
-            }
         }
     }
 
@@ -466,13 +528,18 @@ struct InteractivePredictView: View {
     }
 
     private func zonePicker(title: String, selection: Binding<InteractiveBodyZone>) -> some View {
-        VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+        let isAttack = title == "ATTACK"
+        return VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
             Text(title)
                 .font(DarkFantasyTheme.uiLabel)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
             HStack(spacing: LayoutConstants.spaceSM) {
                 ForEach(InteractiveBodyZone.allCases, id: \.self) { zone in
-                    zoneTile(zone: zone, isSelected: selection.wrappedValue == zone) {
+                    zoneTile(
+                        zone: zone,
+                        isSelected: selection.wrappedValue == zone,
+                        isAttack: isAttack
+                    ) {
                         selection.wrappedValue = zone
                     }
                 }
@@ -482,16 +549,37 @@ struct InteractivePredictView: View {
 
     private func zoneTile(zone: InteractiveBodyZone,
                           isSelected: Bool,
+                          isAttack: Bool,
                           action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: LayoutConstants.spaceXS) {
-                Image(systemName: iconForZone(zone))
-                    .font(.system(size: 22)) // keep — SF Symbol icon size, no theme token for icons
+        let bonusText = isAttack
+            ? InteractiveStanceBonuses.attackBonusText(for: zone)
+            : InteractiveStanceBonuses.defendBonusText(for: zone)
+        return Button(action: action) {
+            VStack(spacing: LayoutConstants.space2XS) {
+                CachedAssetImage(
+                    key: InteractiveStanceBonuses.assetName(for: zone),
+                    url: nil,
+                    systemIcon: fallbackIconForZone(zone),
+                    contentMode: .fit
+                )
+                .frame(width: 28, height: 28)
+
                 Text(zone.rawValue.uppercased())
                     .font(DarkFantasyTheme.badge)
+
+                Text(bonusText)
+                    .font(DarkFantasyTheme.caption)
+                    .foregroundStyle(
+                        isSelected
+                            ? DarkFantasyTheme.gold
+                            : DarkFantasyTheme.textTertiary
+                    )
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, LayoutConstants.spaceSM)
+            .padding(.horizontal, LayoutConstants.spaceXS)
             .background(
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                     .fill(isSelected ? DarkFantasyTheme.gold.opacity(0.2) : DarkFantasyTheme.bgSecondary)
@@ -507,7 +595,10 @@ struct InteractivePredictView: View {
         .buttonStyle(.plain)
     }
 
-    private func iconForZone(_ zone: InteractiveBodyZone) -> String {
+    /// SF Symbol fallback used by `CachedAssetImage` if the zone asset
+    /// isn't available in the bundle yet (keeps the tile from flashing
+    /// a broken-image icon during a cold cache).
+    private func fallbackIconForZone(_ zone: InteractiveBodyZone) -> String {
         switch zone {
         case .head: return "brain.head.profile"
         case .chest: return "heart.fill"

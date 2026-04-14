@@ -390,7 +390,13 @@
       "Bash(mv ViewModels/BuyStatPointsViewModel.swift Views/Hero/BuyStatPointsViewModel.swift)",
       "Bash(mv ViewModels/CharacterSelectionViewModel.swift Views/Auth/CharacterSelectionViewModel.swift)",
       "Bash(mv ViewModels/PassiveTreeViewModel.swift Views/Hero/Talents/PassiveTreeViewModel.swift)",
-      "Bash(mv ViewModels/SessionSummaryViewModel.swift Views/SessionSummary/SessionSummaryViewModel.swift)"
+      "Bash(mv ViewModels/SessionSummaryViewModel.swift Views/SessionSummary/SessionSummaryViewModel.swift)",
+      "Bash(printf \"import Foundation\\\\n\\\\n\")",
+      "Bash(cp /tmp/SFXManager_trimmed.swift Hexbound/Hexbound/Persistence/SFXManager.swift)",
+      "Bash(/Users/artosetrov/.local/bin/graphify update:*)",
+      "Bash(sed:*)",
+      "Bash(find wiki:*)",
+      "Bash(ls docs/*.md)"
     ]
   },
   "enabledMcpjsonServers": [

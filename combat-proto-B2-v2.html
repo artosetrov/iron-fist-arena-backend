@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Combat · Variant B2 v2 — Stance Bonuses & Always-On Talents</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D0D14; --panel:#14141C; --panel2:#1C1C26; --border:#2A2A3A; --borderSubtle:#20202c;
+    --gold:#D4A537; --goldDim:#8A6A20;
+    --text:#F5F5F5; --text2:#A0A0B0; --text3:#6B6B7A;
+    --danger:#E63946; --success:#4A9D5F; --warning:#E8A947; --info:#6A9BD8;
+    --ally:#4A9D5F; --enemy:#E63946;
+    --radius-sm:8px; --radius-md:12px; --radius-lg:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:#000;color:var(--text);font-family:Inter,sans-serif;height:100%}
+  body{display:flex;justify-content:center;align-items:center;min-height:100vh;padding:24px;background:radial-gradient(circle at 50% 30%,#1a1a2a 0%,#060609 70%);gap:28px;flex-wrap:wrap}
+
+  .stage{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .stage .cap{font-family:Oswald,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--text2)}
+  .stage .cap b{color:var(--gold)}
+
+  .phone{width:390px;height:844px;background:var(--bg);border-radius:52px;overflow:hidden;border:8px solid #111;box-shadow:0 40px 80px rgba(0,0,0,.7);position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:130px;height:32px;background:#000;border-radius:20px;z-index:10}
+  .status{padding:14px 28px 4px;display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+  .screen{flex:1;display:flex;flex-direction:column;padding:6px 12px 10px;gap:6px;overflow:hidden}
+
+  .meta-row{display:flex;justify-content:space-between;padding:0 4px;font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:2px}
+  .meta-row .round{color:var(--gold);font-family:Oswald,sans-serif;font-size:12px;letter-spacing:3px}
+
+  /* ---------- Fighter cards ---------- */
+  .fighters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .fighter{background:var(--panel);border-radius:var(--radius-lg);padding:8px;border:1px solid var(--border);position:relative;display:flex;flex-direction:column}
+  .fighter.ally{border-color:rgba(74,157,95,.45)}
+  .fighter.enemy{border-color:rgba(230,57,70,.45)}
+  .fighter .label{font-family:Oswald,sans-serif;font-size:9px;letter-spacing:3px;text-align:center;padding-bottom:3px;color:var(--ally)}
+  .fighter.enemy .label{color:var(--enemy)}
+  .portrait{aspect-ratio:1/1;border-radius:var(--radius-md);overflow:hidden;background:#222;border:2px solid var(--ally);position:relative}
+  .fighter.enemy .portrait{border-color:var(--enemy)}
+  .portrait img{width:100%;height:100%;object-fit:cover}
+  .stance-ov{position:absolute;inset:0;pointer-events:none}
+  .stance-ov .hit{position:absolute;width:24px;height:24px;border-radius:50%;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(212,165,55,.7),transparent 70%);box-shadow:0 0 14px rgba(212,165,55,.8)}
+  .stance-ov .hit.head{top:6%} .stance-ov .hit.chest{top:42%} .stance-ov .hit.legs{top:72%}
+  .stance-ov .def{position:absolute;width:30px;height:30px;left:50%;transform:translateX(-50%);border:2px solid var(--info);border-radius:50%;background:rgba(106,155,216,.1)}
+  .stance-ov .def.head{top:3%} .stance-ov .def.chest{top:39%} .stance-ov .def.legs{top:69%}
+  .fighter .name{font-family:Oswald,sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:4px}
+  .fighter .meta{font-size:9px;color:var(--text2);text-align:center;margin-top:0}
+  .hpbar{margin-top:5px;height:7px;background:#0a0a10;border:1px solid #1a1a24;border-radius:6px;overflow:hidden}
+  .hpbar > span{display:block;height:100%;background:linear-gradient(90deg,#4A9D5F,#2E6B3A);transition:width .6s}
+  .fighter.enemy .hpbar > span{background:linear-gradient(90deg,#E63946,#9A1A25)}
+  .hpnum{text-align:center;font-family:Oswald,sans-serif;font-size:10px;color:var(--text);margin-top:2px;letter-spacing:.5px}
+
+  /* ---------- Stance chips under fighter card ---------- */
+  .chip-stack{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+  .chip{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:6px;background:var(--panel2);border:1px solid var(--borderSubtle);font-size:9px;line-height:1.1}
+  .chip .ch-tag{font-family:Oswald,sans-serif;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;width:34px;flex-shrink:0}
+  .chip.attack .ch-tag{color:var(--danger)}
+  .chip.defend .ch-tag{color:var(--info)}
+  .chip .ch-zone{font-family:Oswald,sans-serif;font-size:10px;letter-spacing:.5px;font-weight:700;text-transform:uppercase;color:var(--text);padding-right:3px}
+  .chip .ch-bonus{flex:1;font-family:Oswald,sans-serif;font-size:9px;font-weight:600;color:var(--success);letter-spacing:.3px;text-align:right}
+  .chip.predicted{border-style:dashed;opacity:.8}
+  .chip.predicted .ch-zone{color:var(--warning)}
+  .chip.predicted .ch-bonus{color:var(--warning)}
+  .chip.predicted::before{content:"?";color:var(--warning);font-family:Oswald,sans-serif;font-weight:700;margin-right:1px}
+  .chip.hidden{opacity:.4}
+  .chip.hidden .ch-zone{color:var(--text3)}
+  .chip.hidden .ch-bonus{color:var(--text3)}
+
+  /* Enemy actives mini-strip */
+  .enemy-actives{display:flex;justify-content:center;gap:3px;margin-top:4px}
+  .mini-slot{width:20px;height:20px;background:var(--panel2);border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;position:relative;opacity:.75}
+  .mini-slot.used{opacity:.3}
+  .mini-slot.firing{opacity:1;border-color:var(--danger);background:rgba(230,57,70,.25);box-shadow:0 0 8px rgba(230,57,70,.6);animation:fire .8s ease-out}
+  @keyframes fire{0%{transform:scale(1)}30%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+  .fire-banner{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(90deg,rgba(230,57,70,.9),rgba(138,26,37,.9));color:#fff;font-family:Oswald,sans-serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;padding:5px 14px;border-radius:4px;border:1px solid var(--danger);box-shadow:0 0 20px rgba(230,57,70,.5);opacity:0;transition:opacity .3s;z-index:30}
+  .fire-banner.show{opacity:1;animation:slam .6s ease-out}
+  @keyframes slam{0%{transform:translate(-50%,-50%) scale(2);opacity:0}30%{transform:translate(-50%,-50%) scale(.95);opacity:1}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+
+  /* ---------- Stance picker (now with bonuses) ---------- */
+  .picker{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);padding:8px;display:flex;flex-direction:column;gap:6px}
+  .row{display:flex;align-items:stretch;gap:6px}
+  .row .tag{width:42px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase}
+  .row .tag .ico-sm{font-size:13px;opacity:.85}
+  .row.attack .tag{color:var(--danger)}
+  .row.defend .tag{color:var(--info)}
+  .row .btns{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .btn{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:6px 3px;font-family:Oswald,sans-serif;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;transition:all .15s;text-align:center;min-height:52px;justify-content:center}
+  .btn .b-zone{font-size:11px;letter-spacing:1px;font-weight:600}
+  .btn .b-bonus{font-size:9px;font-weight:600;color:var(--text2);letter-spacing:.3px;line-height:1.15;margin-top:1px}
+  .row.attack .btn.active{border-color:var(--danger);background:rgba(230,57,70,.15)}
+  .row.attack .btn.active .b-zone{color:var(--danger)}
+  .row.attack .btn.active .b-bonus{color:var(--danger)}
+  .row.defend .btn.active{border-color:var(--info);background:rgba(106,155,216,.15)}
+  .row.defend .btn.active .b-zone{color:var(--info)}
+  .row.defend .btn.active .b-bonus{color:var(--info)}
+
+  /* ---------- Active talent slots — always 3 visible ---------- */
+  .your-actives{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg)}
+  .your-actives .lbl{font-family:Oswald,sans-serif;font-size:9px;letter-spacing:2px;color:var(--text2);text-transform:uppercase;width:48px;flex-shrink:0}
+  .slots{display:flex;gap:6px;flex:1;justify-content:space-around}
+  .slot{width:50px;height:50px;background:var(--panel2);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative;cursor:pointer;overflow:hidden}
+  .slot.ready{border-color:var(--gold);box-shadow:0 0 10px rgba(212,165,55,.3)}
+  .slot.ready:active{transform:scale(.95)}
+  .slot .cd{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.75) var(--p,0%),transparent 0)}
+  .slot.cooling{opacity:.55}
+  .slot .n{position:absolute;bottom:-2px;left:0;right:0;text-align:center;font-size:8px;color:var(--text2);letter-spacing:.5px;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(0,0,0,.7));padding-top:5px}
+  .slot.ready .n{color:var(--gold);font-weight:700}
+  .slot .cdnum{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:Oswald,sans-serif;font-size:14px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.8);z-index:2}
+
+  /* Empty slot — dimmed placeholder with lock */
+  .slot.empty{background:transparent;border-style:dashed;border-color:var(--borderSubtle);opacity:.55;cursor:default;font-size:14px;color:var(--text3)}
+  .slot.empty .n{color:var(--text3);opacity:.5}
+
+  .streak-row{display:flex;justify-content:space-between;align-items:center;padding:0 6px;font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase}
+  .streak-row .s{color:var(--gold);font-weight:700}
+  .streak-row .s b{font-family:Oswald,sans-serif;font-size:13px}
+
+  /* Bottom: SKIP · STRIKE */
+  .cta-row{display:grid;grid-template-columns:1fr 1.6fr;gap:10px;margin-top:auto}
+  .skip-btn{height:56px;border-radius:14px;background:transparent;border:2px solid var(--border);color:var(--text2);font-family:Oswald,sans-serif;font-size:15px;font-weight:600;letter-spacing:3px;cursor:pointer;text-transform:uppercase;transition:all .15s}
+  .skip-btn:hover{border-color:var(--text2);color:var(--text)}
+  .strike-wrap{position:relative;height:56px}
+  .strike{width:100%;height:56px;border-radius:14px;background:linear-gradient(180deg,#D4A537,#A67A1E);border:2px solid var(--gold);color:#1a1a20;font-family:Oswald,sans-serif;font-size:18px;font-weight:700;letter-spacing:4px;cursor:pointer;position:relative;z-index:2}
+  .strike:active{transform:scale(.97)}
+  .arc{position:absolute;inset:-5px;border-radius:18px;background:conic-gradient(var(--gold) var(--p,70%), rgba(255,255,255,.06) 0);-webkit-mask:radial-gradient(circle,transparent 60%,black 61%);mask:radial-gradient(circle,transparent 60%,black 61%);z-index:1;transition:background .2s}
+  .arc.danger{background:conic-gradient(var(--danger) var(--p,70%), rgba(255,255,255,.06) 0)}
+  .timer-num{position:absolute;top:-20px;right:6px;font-family:Oswald,sans-serif;font-size:12px;color:var(--gold);font-weight:700;letter-spacing:1px;z-index:3}
+  .timer-num.danger{color:var(--danger)}
+
+  /* Phase toggle for demo */
+  .phase-toggle{display:flex;gap:6px;justify-content:center;margin-top:6px}
+  .phase-toggle button{background:var(--panel);border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:8px;font-family:Oswald,sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;text-transform:uppercase}
+  .phase-toggle button.active{border-color:var(--gold);color:var(--gold);background:rgba(212,165,55,.1)}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="cap">Variant <b>B2-v2</b> · Predict phase (opponent predicted)</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="status"><span>9:24</span><span>···· 📶 🔋</span></div>
+    <div class="screen">
+      <div class="meta-row"><span>Round <span class="round">3</span></span><span>Best of 5</span></div>
+
+      <div class="fighters">
+        <!-- YOU -->
+        <div class="fighter ally">
+          <div class="label">· YOU ·</div>
+          <div class="portrait">
+            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Degon&backgroundColor=1a2a1a"/>
+            <div class="stance-ov"><div class="hit chest" id="youHit"></div><div class="def chest" id="youDef"></div></div>
+          </div>
+          <div class="name">Degon</div>
+          <div class="meta">Lv.18 Warrior</div>
+          <div class="hpbar"><span style="width:82%"></span></div>
+          <div class="hpnum">1313 / 1600</div>
+
+          <!-- Your stance chips (picked, confirmed) -->
+          <div class="chip-stack">
+            <div class="chip attack">
+              <span class="ch-tag">ATK</span>
+              <span class="ch-zone" id="youAtkZone">CHEST</span>
+              <span class="ch-bonus" id="youAtkBonus">OFF +5%</span>
+            </div>
+            <div class="chip defend">
+              <span class="ch-tag">DEF</span>
+              <span class="ch-zone" id="youDefZone">CHEST</span>
+              <span class="ch-bonus" id="youDefBonus">DEF +10%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ENEMY -->
+        <div class="fighter enemy">
+          <div class="label">· ENEMY ·</div>
+          <div class="portrait">
+            <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Nightclaw&backgroundColor=2a1a1a"/>
+            <div class="stance-ov"><div class="hit chest" id="enHit" style="display:none"></div><div class="def chest" id="enDef" style="display:none"></div></div>
+            <div class="fire-banner" id="fireBanner">🔥 BURST DAMAGE</div>
+          </div>
+          <div class="name">Nightclaw</div>
+          <div class="meta">Lv.18 Mage</div>
+          <div class="hpbar"><span style="width:54%"></span></div>
+          <div class="hpnum">864 / 1600</div>
+
+          <!-- Enemy stance chips (predicted during predict, revealed after) -->
+          <div class="chip-stack">
+            <div class="chip attack predicted" id="enAtkChip">
+              <span class="ch-tag">ATK</span>
+              <span class="ch-zone">CHEST</span>
+              <span class="ch-bonus">OFF +5%</span>
+            </div>
+            <div class="chip defend hidden" id="enDefChip">
+              <span class="ch-tag">DEF</span>
+              <span class="ch-zone">???</span>
+              <span class="ch-bonus">—</span>
+            </div>
+          </div>
+
+          <div class="enemy-actives" title="Opponent's equipped talents">
+            <div class="mini-slot" id="eSlot0">💥</div>
+            <div class="mini-slot used" id="eSlot1">🌀</div>
+            <div class="mini-slot" id="eSlot2">⚡</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stance picker with bonuses per zone -->
+      <div class="picker">
+        <div class="row attack">
+          <div class="tag"><span class="ico-sm">⚔</span>ATK</div>
+          <div class="btns">
+            <button class="btn" data-z="attack" data-v="head">
+              <span class="b-zone">HEAD</span>
+              <span class="b-bonus">OFF +10%<br/>CRIT +5%</span>
+            </button>
+            <button class="btn active" data-z="attack" data-v="chest">
+              <span class="b-zone">CHEST</span>
+              <span class="b-bonus">OFF +5%</span>
+            </button>
+            <button class="btn" data-z="attack" data-v="legs">
+              <span class="b-zone">LEGS</span>
+              <span class="b-bonus">OFF +2%</span>
+            </button>
+          </div>
+        </div>
+        <div class="row defend">
+          <div class="tag"><span class="ico-sm">🛡</span>DEF</div>
+          <div class="btns">
+            <button class="btn" data-z="defend" data-v="head">
+              <span class="b-zone">HEAD</span>
+              <span class="b-bonus">DODGE +8%</span>
+            </button>
+            <button class="btn active" data-z="defend" data-v="chest">
+              <span class="b-zone">CHEST</span>
+              <span class="b-bonus">DEF +10%</span>
+            </button>
+            <button class="btn" data-z="defend" data-v="legs">
+              <span class="b-zone">LEGS</span>
+              <span class="b-bonus">DEF +5%<br/>DODGE +3%</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Your actives directly under the stance picker (3 always visible) -->
+      <div class="your-actives">
+        <div class="lbl">Talents</div>
+        <div class="slots">
+          <div class="slot ready" id="s0">💥<div class="n">Burst</div></div>
+          <div class="slot cooling" id="s1" style="--p:65%">🛡<div class="cd"></div><div class="cdnum">3</div><div class="n">Shield</div></div>
+          <div class="slot empty" id="s2">🔒<div class="n">Empty</div></div>
+        </div>
+      </div>
+
+      <div class="streak-row">
+        <span>Streak <span class="s"><b>×3</b></span></span>
+        <span>Gear Score 1240</span>
+      </div>
+
+      <div class="cta-row">
+        <button class="skip-btn">Skip</button>
+        <div class="strike-wrap">
+          <div class="arc" id="arc" style="--p:70%"></div>
+          <div class="timer-num" id="tNum">2.8s</div>
+          <button class="strike" id="strike">STRIKE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-toggle">
+    <button class="active" data-phase="predict">Predict</button>
+    <button data-phase="resolve">Resolve</button>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="cap"><b>KEY CHANGES</b> from B2</div>
+  <div style="width:390px;background:var(--panel);border-radius:16px;padding:18px;font-size:13px;line-height:1.6;border:1px solid var(--border);color:var(--text2)">
+    <div style="color:var(--gold);font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;font-size:12px;margin-bottom:8px">1 · Picker + Chip Combo</div>
+    Picker buttons show bonuses per zone (HEAD: OFF+10% CRIT+5%, etc.). Under each fighter card, two compact <i>chips</i> confirm the selected ATK/DEF zone + main bonus. Picker = decision, chip = status.
+    <br/><br/>
+    <div style="color:var(--gold);font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;font-size:12px;margin-bottom:8px">2 · 3 Slots Always Visible</div>
+    Talent row renders 3 slots at all times. Empty ones show dashed border + lock icon, muted. Keeps layout stable round-to-round and hints at unlockable slots.
+    <br/><br/>
+    <div style="color:var(--gold);font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;font-size:12px;margin-bottom:8px">3 · Opponent Predicted Bonus</div>
+    During <b>Predict</b>: opponent ATK chip is <span style="color:var(--warning)">dashed + amber + "?"</span> — shows likely zone (from 2+ round history) and its bonus. DEF chip is hidden until reveal. After reveal: both chips solid (DEF flips to info blue).
+    <br/><br/>
+    <div style="color:var(--gold);font-family:Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;font-size:12px;margin-bottom:8px">Bonus values (from balance.ts)</div>
+    <div style="font-family:Oswald,sans-serif;font-size:11px;color:var(--text);letter-spacing:.5px;line-height:1.55">
+      ATK · HEAD: OFF+10 CRIT+5<br/>
+      ATK · CHEST: OFF+5<br/>
+      ATK · LEGS: OFF+2<br/>
+      DEF · HEAD: DODGE+8<br/>
+      DEF · CHEST: DEF+10<br/>
+      DEF · LEGS: DEF+5 DODGE+3<br/>
+      <span style="color:var(--text2)">+ MISMATCH: OFF +5 (attacker) · MATCH: DEF +15 (defender)</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Bonus lookup — mirrors backend/src/lib/game/balance.ts STANCE_ZONES
+  const ATTACK_BONUS = {
+    head:  'OFF +10%  CRIT +5%',
+    chest: 'OFF +5%',
+    legs:  'OFF +2%',
+  };
+  const DEFEND_BONUS = {
+    head:  'DODGE +8%',
+    chest: 'DEF +10%',
+    legs:  'DEF +5%  DODGE +3%',
+  };
+
+  // Picker interactions — update chips live
+  document.querySelectorAll('.btn').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const z=el.dataset.z;
+      document.querySelectorAll('.btn[data-z="'+z+'"]').forEach(x=>x.classList.remove('active'));
+      el.classList.add('active');
+      const v=el.dataset.v;
+      if(z==='attack'){
+        document.getElementById('youHit').className='hit '+v;
+        document.getElementById('youAtkZone').textContent=v.toUpperCase();
+        document.getElementById('youAtkBonus').textContent=ATTACK_BONUS[v];
+      }
+      if(z==='defend'){
+        document.getElementById('youDef').className='def '+v;
+        document.getElementById('youDefZone').textContent=v.toUpperCase();
+        document.getElementById('youDefBonus').textContent=DEFEND_BONUS[v];
+      }
+    });
+  });
+
+  // Phase toggle — predict vs resolve
+  const enAtk = document.getElementById('enAtkChip');
+  const enDef = document.getElementById('enDefChip');
+  const enHit = document.getElementById('enHit');
+  const enDefOv = document.getElementById('enDef');
+  document.querySelectorAll('.phase-toggle button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.phase-toggle button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      const ph=b.dataset.phase;
+      if(ph==='predict'){
+        // ATK: predicted (dashed+amber), DEF: hidden
+        enAtk.classList.add('predicted'); enAtk.classList.remove('hidden');
+        enAtk.querySelector('.ch-zone').textContent='CHEST';
+        enAtk.querySelector('.ch-bonus').textContent='OFF +5%';
+        enDef.classList.add('hidden'); enDef.classList.remove('predicted');
+        enDef.querySelector('.ch-zone').textContent='???';
+        enDef.querySelector('.ch-bonus').textContent='—';
+        enHit.style.display='none';
+        enDefOv.style.display='none';
+      } else {
+        // Reveal: both solid, DEF becomes known (head)
+        enAtk.classList.remove('predicted','hidden');
+        enAtk.querySelector('.ch-zone').textContent='CHEST';
+        enAtk.querySelector('.ch-bonus').textContent='OFF +5%';
+        enDef.classList.remove('hidden','predicted');
+        enDef.querySelector('.ch-zone').textContent='HEAD';
+        enDef.querySelector('.ch-bonus').textContent='DODGE +8%';
+        enHit.style.display='block';
+        enHit.className='hit chest';
+        enDefOv.style.display='block';
+        enDefOv.className='def head';
+      }
+    });
+  });
+
+  // Timer arc
+  const arc=document.getElementById('arc');
+  const tNum=document.getElementById('tNum');
+  const strike=document.getElementById('strike');
+  let t=4.0;
+  setInterval(()=>{
+    t-=0.05; if(t<=0) t=4.0;
+    arc.style.setProperty('--p', (t/4.0*100)+'%');
+    tNum.textContent=t.toFixed(1)+'s';
+    if(t<1.5){arc.classList.add('danger');tNum.classList.add('danger')} else {arc.classList.remove('danger');tNum.classList.remove('danger')}
+  },50);
+  strike.addEventListener('click',()=>{ t=4.0 });
+
+  // Enemy fires demo
+  const eSlots=[document.getElementById('eSlot0'),document.getElementById('eSlot1'),document.getElementById('eSlot2')];
+  const names=['BURST DAMAGE','WHIRLWIND','THUNDERSTRIKE'];
+  let fireIdx=0;
+  function enemyFire(){
+    let pickIdx=-1;
+    for(let i=0;i<3;i++){ if(!eSlots[i].classList.contains('used')){ pickIdx=i; break; } }
+    if(pickIdx<0){ eSlots.forEach(s=>s.classList.remove('used')); pickIdx=0; }
+    const el=eSlots[pickIdx];
+    el.classList.add('firing');
+    const banner=document.getElementById('fireBanner');
+    banner.textContent='🔥 '+names[pickIdx];
+    banner.classList.add('show');
+    setTimeout(()=>{
+      el.classList.remove('firing');
+      el.classList.add('used');
+      banner.classList.remove('show');
+    },1400);
+    fireIdx++;
+  }
+  setTimeout(enemyFire,2500);
+  setInterval(enemyFire,6500);
+
+  // Ally active tap
+  ['s0'].forEach(id=>{
+    document.getElementById(id).addEventListener('click',function(){
+      if(!this.classList.contains('ready')) return;
+      this.classList.remove('ready');
+      this.classList.add('cooling');
+      this.style.setProperty('--p','100%');
+      const cdn=document.createElement('div');cdn.className='cdnum';cdn.textContent='5';this.appendChild(cdn);
+      if(!this.querySelector('.cd')){ const c=document.createElement('div');c.className='cd';this.appendChild(c); }
+      let c=5; const iv=setInterval(()=>{
+        c--; cdn.textContent=c;
+        this.style.setProperty('--p',(c/5*100)+'%');
+        if(c<=0){clearInterval(iv); this.classList.remove('cooling'); this.classList.add('ready'); cdn.remove(); const cd=this.querySelector('.cd'); if(cd) cd.remove();}
+      },1000);
+    });
+  });
+</script>
+</body>
+</html>

@@ -63,6 +63,20 @@ def parse_dark_fantasy_theme(file_path: str) -> Dict[str, Any]:
     with open(file_path, 'r') as f:
         content = f.read()
 
+    def resolve_color_token(name: str) -> Any:
+        """Resolve a color token through simple aliases."""
+        seen = set()
+        while name in tokens and name not in seen:
+            seen.add(name)
+            token = tokens[name]
+            if token.get('type') == 'color':
+                return token
+            if token.get('type') == 'alias':
+                name = token.get('target')
+                continue
+            break
+        return None
+
     # Pattern 1: static let X = Color(hex: 0xHHHHHH)
     hex_pattern = r'static let (\w+)\s*=\s*Color\(hex:\s*(0x[0-9A-Fa-f]+)\s*(?:,\s*opacity:\s*([\d.]+))?\s*\)'
     for match in re.finditer(hex_pattern, content):
@@ -99,6 +113,21 @@ def parse_dark_fantasy_theme(file_path: str) -> Dict[str, Any]:
         # Only track if target is already defined (to avoid dupes)
         if alias_target in tokens:
             tokens[name] = {'type': 'alias', 'target': alias_target}
+
+    # Pattern 2c: Derived color aliases with opacity
+    # e.g. static let dangerGlow = danger.opacity(0.25)
+    alias_opacity_pattern = r'static let (\w+)\s*=\s*(\w+)\.opacity\(([\d.]+)\)'
+    for match in re.finditer(alias_opacity_pattern, content):
+        name = match.group(1)
+        alias_target = match.group(2)
+        opacity = float(match.group(3))
+        target = resolve_color_token(alias_target)
+        if target:
+            tokens[name] = {
+                'type': 'color',
+                'hex': target['hex'],
+                'opacity': target.get('opacity', 1.0) * opacity
+            }
 
     # Pattern 3: Gradient references (we note them but don't enforce strict value match)
     gradient_pattern = r'static let (\w+)\s*=\s*LinearGradient\('
@@ -144,11 +173,25 @@ def parse_layout_constants(file_path: str) -> Dict[str, Any]:
         content = f.read()
 
     # Pattern: static let X: CGFloat = Y or static let X = Y
-    const_pattern = r'static let (\w+)(?:\s*:\s*CGFloat)?\s*=\s*([\d.]+)'
+    const_pattern = r'static let (\w+)(?:\s*:\s*CGFloat)?\s*=\s*(-?[\d.]+)'
     for match in re.finditer(const_pattern, content):
         name = match.group(1)
         value = float(match.group(2))
         tokens[name] = {'type': 'spacing/sizing', 'value': value}
+
+    # Pattern: static let X: CGFloat = existingToken
+    # Semantic aliases are still public design tokens and must be mirrored.
+    alias_pattern = r'static let (\w+)(?:\s*:\s*CGFloat)?\s*=\s*(\w+)(?:\s|$|//)'
+    for match in re.finditer(alias_pattern, content):
+        name = match.group(1)
+        alias_target = match.group(2)
+        if name in tokens:
+            continue
+        if alias_target in tokens and tokens[alias_target].get('type') == 'spacing/sizing':
+            tokens[name] = {
+                'type': 'spacing/sizing',
+                'value': tokens[alias_target]['value']
+            }
 
     return tokens
 
@@ -211,7 +254,7 @@ def flatten_admin_tokens(admin_data: Dict) -> Dict[str, str]:
     if 'opacity' in admin_data:
         flat.update(admin_data['opacity'])
     if 'sizing' in admin_data:
-        flat.update(admin_data['sizing'])
+        flatten_dict(admin_data['sizing'])
 
     return flat
 
@@ -315,7 +358,7 @@ def compare_tokens(ios_theme: Dict, ios_layout: Dict, admin_tokens: Dict) -> Tup
         'difficultyEasy', 'difficultyMedium', 'pillHealText', 'pillUrgentText',
         'pillEnergyText', 'pillStatText', 'pillWarnText', 'pillOfflineText', 'gems',
         'npcAvatarOffset', 'merchantAvatarSize', 'merchantMiniSize', 'merchantBarHeight',
-        'merchantBubbleRadius', 'heroBottomSlots'
+        'merchantBubbleRadius', 'heroBottomSlots', 'glowOrange'
     }
 
     for admin_name in admin_flat.keys():
@@ -366,6 +409,46 @@ def build_admin_tokens_from_ios(ios_theme: Dict, ios_layout: Dict, existing_admi
         'sizing': {}
     }
 
+    existing_sizing_groups = {}
+    for group_name, group in existing_admin.get('sizing', {}).items():
+        if isinstance(group, dict):
+            for token_name in group.keys():
+                existing_sizing_groups[token_name] = group_name
+
+    def sizing_group_for(name: str) -> str:
+        """Keep admin sizing grouped for the design-system explorer UI."""
+        if name in existing_sizing_groups:
+            return existing_sizing_groups[name]
+        if name.startswith('icon'):
+            return 'icons'
+        if name.startswith('text'):
+            return 'typography'
+        if name.startswith('touch'):
+            return 'touchTargets'
+        if name.startswith('button'):
+            return 'buttons'
+        if name.startswith('card') or name.startswith('panel') or name.startswith('modal'):
+            return 'cards'
+        if name.startswith('input'):
+            return 'inputs'
+        if name.startswith('bottomNav') or name.startswith('nav') or name.startswith('tab'):
+            return 'navigation'
+        if name.endswith('Cols') or name.endswith('Gap') or 'Grid' in name:
+            return 'grids'
+        if name.startswith('hero') or name.startswith('avatar'):
+            return 'hero'
+        if name.startswith('arena'):
+            return 'arena'
+        if name.startswith('pill'):
+            return 'pill'
+        if name.startswith('widget'):
+            return 'widget'
+        if name.startswith('npc') or name.startswith('merchant'):
+            return 'npc'
+        if name.startswith('screen') or name.startswith('safeArea') or name == 'sectionGap':
+            return 'screen'
+        return 'misc'
+
     # Process iOS theme colors
     for name, token in sorted(ios_theme.items()):
         if token.get('type') == 'alias':
@@ -390,7 +473,8 @@ def build_admin_tokens_from_ios(ios_theme: Dict, ios_layout: Dict, existing_admi
             elif name.startswith('gold'):
                 cat = 'gold'
             elif name.startswith('danger') or name.startswith('success') or \
-                 name.startswith('info') or name.startswith('cyan') or name.startswith('purple'):
+                 name.startswith('info') or name.startswith('cyan') or \
+                 name.startswith('purple') or name.startswith('stamina'):
                 cat = 'feedback'
             elif name.startswith('border'):
                 cat = 'border'
@@ -427,8 +511,6 @@ def build_admin_tokens_from_ios(ios_theme: Dict, ios_layout: Dict, existing_admi
                 cat = 'premium'
             elif name.startswith('hp') or name.startswith('heal'):
                 cat = 'hp'
-            elif name.startswith('stamina'):
-                cat = 'stamina'
             elif name.startswith('durability'):
                 cat = 'durability'
             elif name.startswith('difficulty'):
@@ -464,7 +546,10 @@ def build_admin_tokens_from_ios(ios_theme: Dict, ios_layout: Dict, existing_admi
             elif name.startswith('opacity'):
                 new_admin['opacity'][name] = value
             else:
-                new_admin['sizing'][name] = int(value) if value == int(value) else value
+                group = sizing_group_for(name)
+                if group not in new_admin['sizing']:
+                    new_admin['sizing'][group] = {}
+                new_admin['sizing'][group][name] = int(value) if value == int(value) else value
 
     # Preserve existing typography and other top-level keys
     for key in existing_admin:

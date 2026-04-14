@@ -57,6 +57,18 @@ final class InteractiveBattleViewModel {
     /// Opponent's historical zone pattern (for read strip). Empty in pure-blind mode.
     var opponentPattern: [InteractiveBodyZone] = []
 
+    // MARK: - Interactive Combat v3 — Round Exchange log
+
+    /// The log card payload shown in the space the picker vacates during
+    /// `.resolving` / `.reveal`. Populated inside `applyStrikeResponse`,
+    /// cleared by `dismissExchange()` (tap or auto-timer) — that dismissal
+    /// is ALSO what advances the phase machine to the next round.
+    ///
+    /// Rendering contract: when this is non-nil, `InteractiveBattleView`
+    /// hides the picker and shows `InteractiveRoundLogCard`. The card owns
+    /// its own countdown timer and calls back via `dismissExchange`.
+    var currentExchange: RoundExchange?
+
     // MARK: - Intent Hint (Phase 4 — Variant B2)
 
     /// Rolling history of opponent attack zones, most recent appended last.
@@ -239,6 +251,26 @@ final class InteractiveBattleViewModel {
         }
     }
 
+    /// Called by the Round Exchange log card on tap-to-skip or when the
+    /// auto-dismiss timer elapses. This is the user-driven trigger that
+    /// advances the round — when the log is showing, the animation
+    /// pipeline does NOT auto-advance (see `animateReveal` tail).
+    ///
+    /// Guarded so tapping twice in flight can't double-advance the phase.
+    func dismissExchange() {
+        guard currentExchange != nil else { return }
+        currentExchange = nil
+        // If the match ended on this round, roll straight into completion.
+        // Otherwise fall through to the standard reveal→predict transition.
+        if state.isFinished {
+            if case .reveal = phase { completeMatch() }
+            return
+        }
+        if case .reveal = phase {
+            revealCompleted()
+        }
+    }
+
     /// Called by the view when the Reveal animation finishes.
     func revealCompleted() {
         guard case .reveal = phase else { return }
@@ -416,6 +448,20 @@ final class InteractiveBattleViewModel {
         lastTurn = response.playerStrike
         lastOutcome = outcome
 
+        // v3 — build the Round Exchange log so the view can swap the
+        // picker for the log card the moment phase flips to `.reveal`.
+        let playerName  = attackerProfile?.name ?? "You"
+        let enemyName   = defenderProfile?.name ?? "Enemy"
+        let roundNumber = max(1, response.strikeIndex)
+        currentExchange = RoundExchange.build(
+            from: response,
+            roundNumber: roundNumber,
+            playerName: playerName,
+            opponentName: enemyName,
+            playerAttackZone: selectedAttackZone,
+            playerDefendZone: selectedDefendZone
+        )
+
         // Enter reveal and run the scripted VFX/SFX/HP-tween sequence.
         // HP is NOT set to the final server value up front — `animateStrike`
         // tweens it per-turn so the duel header bar animates naturally.
@@ -466,6 +512,16 @@ final class InteractiveBattleViewModel {
         try? await Task.sleep(for: .seconds(0.2))
 
         // 4) Phase advance
+        //
+        // v3 Round Exchange log — when a `currentExchange` is on-screen,
+        // the user (or the card's auto-dismiss timer) is responsible for
+        // advancing the round via `dismissExchange()`. Auto-advancing here
+        // would yank the picker back in while the log is still reading.
+        // When there's no log (degraded mode / older clients), fall back
+        // to the original automatic advance.
+        if currentExchange != nil {
+            return
+        }
         if state.isFinished {
             completeMatch()
         } else {

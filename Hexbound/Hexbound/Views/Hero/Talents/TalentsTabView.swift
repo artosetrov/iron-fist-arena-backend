@@ -15,32 +15,46 @@ struct TalentsTabView: View {
     private let respecGemCost: Int = 50
 
     var body: some View {
-        VStack(spacing: LayoutConstants.spaceMD) {
-            header
+        ZStack(alignment: .bottom) {
+            VStack(spacing: LayoutConstants.spaceMD) {
+                header
 
-            ActiveSlotsBar(vm: vm)
+                ActiveSlotsBar(vm: vm)
 
-            if vm.isLoading && vm.nodes.isEmpty {
-                loadingView
-            } else if vm.nodes.isEmpty {
-                emptyView
-            } else {
-                canvasContainer
+                if vm.isLoading && vm.nodes.isEmpty {
+                    loadingView
+                } else if vm.nodes.isEmpty {
+                    emptyView
+                } else {
+                    canvasContainer
+                }
+
+                respecRow
             }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            // Reserve room so respec row stays above the sticky bar when it appears.
+            .padding(.bottom, vm.hasPendingChanges ? 96 : LayoutConstants.spaceMD)
 
-            respecRow
+            // Sticky confirm bar (Stats-tab pattern).
+            if vm.hasPendingChanges {
+                stickyConfirmBar
+            }
         }
-        .padding(.horizontal, LayoutConstants.screenPadding)
-        .padding(.bottom, LayoutConstants.spaceMD)
+        .animation(.easeOut(duration: 0.25), value: vm.hasPendingChanges)
         .sheet(item: sheetBinding()) { node in
             TalentDetailSheet(
                 node: node,
                 isUnlocked: vm.isUnlocked(node),
+                isPending: vm.isPending(node),
                 isUnlockable: vm.isUnlockable(node),
-                pointsAvailable: vm.passivePointsAvailable,
+                pointsAvailable: vm.pointsAvailableAfterPending,
                 isMutating: vm.isMutating,
-                onUnlock: {
-                    vm.unlock(node)
+                onStage: {
+                    vm.stageUnlock(node)
+                    vm.selectedNode = nil
+                },
+                onUnstage: {
+                    vm.unstageUnlock(node)
                     vm.selectedNode = nil
                 },
                 onClose: { vm.selectedNode = nil },
@@ -81,9 +95,16 @@ struct TalentsTabView: View {
                     .font(DarkFantasyTheme.badge)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
                     .tracking(2)
-                Text("\(vm.passivePointsAvailable) available")
-                    .font(DarkFantasyTheme.cardTitle)
-                    .foregroundStyle(DarkFantasyTheme.gold)
+                HStack(alignment: .firstTextBaseline, spacing: LayoutConstants.spaceXS) {
+                    Text("\(vm.pointsAvailableAfterPending) available")
+                        .font(DarkFantasyTheme.cardTitle)
+                        .foregroundStyle(DarkFantasyTheme.gold)
+                    if vm.hasPendingChanges {
+                        Text("(−\(vm.pendingCost) pending)")
+                            .font(DarkFantasyTheme.caption)
+                            .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    }
+                }
             }
             Spacer()
             unlockedCountPill
@@ -126,6 +147,7 @@ struct TalentsTabView: View {
                 nodes: vm.nodes,
                 connections: vm.connections,
                 isUnlocked: vm.isUnlocked,
+                isPending: vm.isPending,
                 isUnlockable: vm.isUnlockable,
                 onTap: { node in
                     vm.selectedNode = node
@@ -134,7 +156,8 @@ struct TalentsTabView: View {
             .padding(LayoutConstants.spaceMD)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 480)
+        // Bigger nodes need a taller viewport to feel comfortable; user can still pan/zoom.
+        .frame(height: 560)
         .background(
             RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
                 .fill(DarkFantasyTheme.bgPrimary)
@@ -157,7 +180,7 @@ struct TalentsTabView: View {
                 .padding(.top, LayoutConstants.spaceSM)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 480)
+        .frame(height: 560)
     }
 
     private var emptyView: some View {
@@ -172,7 +195,7 @@ struct TalentsTabView: View {
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 480)
+        .frame(height: 560)
     }
 
     // MARK: - Respec row
@@ -211,6 +234,57 @@ struct TalentsTabView: View {
         .buttonStyle(.plain)
         .disabled(vm.unlockedNodes.isEmpty || vm.isMutating)
         .opacity(vm.unlockedNodes.isEmpty ? 0.5 : 1)
+    }
+
+    // MARK: - Sticky Confirm Bar (mirrors Stats tab `statsStickyBar`)
+
+    private var stickyConfirmBar: some View {
+        VStack(spacing: 0) {
+            // Top edge gradient to lift the bar off content
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.clear, DarkFantasyTheme.bgPrimary.opacity(0.95)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                )
+                .frame(height: LayoutConstants.iconMD)
+
+            HStack(spacing: LayoutConstants.spaceSM) {
+                Button("RESET") { vm.resetPending() }
+                    .buttonStyle(.ghost)
+                    .frame(maxWidth: .infinity)
+                    .disabled(vm.isMutating)
+
+                Button {
+                    vm.commitPending()
+                } label: {
+                    HStack(spacing: LayoutConstants.spaceXS) {
+                        if vm.isMutating {
+                            ProgressView()
+                                .tint(DarkFantasyTheme.textOnGold)
+                        }
+                        Text("CONFIRM \(vm.pendingCost) SP")
+                    }
+                }
+                .buttonStyle(.primary)
+                .disabled(vm.isMutating)
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .padding(.top, LayoutConstants.spaceSM)
+            .padding(.bottom, LayoutConstants.spaceMD)
+            .background(DarkFantasyTheme.bgPrimary.opacity(0.95))
+            .overlay(alignment: .top) {
+                FiligreeLine(
+                    color: DarkFantasyTheme.gold.opacity(0.3),
+                    notchColor: DarkFantasyTheme.gold.opacity(0.5),
+                    notchCount: 5,
+                    notchSize: 3
+                )
+            }
+        }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     // MARK: - Sheet binding
