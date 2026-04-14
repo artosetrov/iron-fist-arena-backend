@@ -149,6 +149,10 @@ struct InteractiveBattleView: View {
                 stanceSideLabel("FOE", color: DarkFantasyTheme.danger)
                 ZoneBadge(label: "Attack", zone: vm.lastOpponentZones?.attack)
                 ZoneBadge(label: "Defend", zone: vm.lastOpponentZones?.defend)
+                if !vm.opponentActives.isEmpty {
+                    OpponentActivesPreview(actives: vm.opponentActives)
+                        .padding(.leading, LayoutConstants.spaceXS)
+                }
             }
         }
     }
@@ -477,6 +481,20 @@ struct InteractivePredictView: View {
 
     var body: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
+            if !vm.playerActives.isEmpty {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                    Text("ACTIVE SKILLS")
+                        .font(DarkFantasyTheme.uiLabel)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    ActiveSkillsHUD(
+                        actives: vm.playerActives,
+                        pendingSlot: vm.pendingActiveSlot,
+                        isInteractive: true,
+                        onTap: { vm.toggleActiveSlot($0) }
+                    )
+                }
+            }
+
             zonePicker(
                 title: "ATTACK",
                 selection: Binding(

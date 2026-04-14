@@ -73,6 +73,43 @@ interface StoredRound {
   opp_strike: unknown | null
   attacker_hp_after: number
   defender_hp_after: number
+  // Phase 3: which actives fired this round (null if none)
+  player_active: number | null    // slot_index of fired active, or null
+  opponent_active: number | null
+}
+
+interface ActiveSlotSnapshot {
+  slot_index: number
+  node_id: number
+  node_key: string
+  name: string
+  icon: string | null
+  action_type: string | null
+  cooldown_max: number
+  magnitude: number
+  cooldown_remaining: number
+}
+
+interface InteractiveActivesState {
+  p1: ActiveSlotSnapshot[]
+  p2: ActiveSlotSnapshot[]
+}
+
+/**
+ * Apply a single active's effect to an in-flight strike and return the modified
+ * resolution inputs/outputs. v1 supports burst_damage fully; other action_types
+ * are validated and cooldown-tracked but not yet applied (Phase 3.B TODO).
+ */
+function applyBurstDamage(baseDamage: number, magnitude: number): number {
+  // magnitude stored as fraction (0.5 = +50%). Integer round to prevent decimals.
+  return Math.round(baseDamage * (1 + Math.max(0, magnitude)))
+}
+
+function decrementCooldowns(actives: ActiveSlotSnapshot[]): ActiveSlotSnapshot[] {
+  return actives.map((a) => ({
+    ...a,
+    cooldown_remaining: Math.max(0, a.cooldown_remaining - 1),
+  }))
 }
 
 export async function POST(req: NextRequest) {
@@ -89,11 +126,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { match_id, attacker_zone, defender_zone } = body ?? {}
+    const { match_id, attacker_zone, defender_zone, player_active_slot } = body ?? {}
 
     if (typeof match_id !== 'string' || !isZone(attacker_zone) || !isZone(defender_zone)) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
+    // Optional: slot index 0..2 to fire an active this round
+    const firedSlotIndex: number | null =
+      typeof player_active_slot === 'number' && player_active_slot >= 0 && player_active_slot <= 2
+        ? player_active_slot
+        : null
 
     // Local Prisma client may be stale for the 4 Interactive Combat v1 columns
     // (see memory feedback_stale_prisma_client_triage). schema.prisma + migration
@@ -153,6 +195,24 @@ export async function POST(req: NextRequest) {
     const oppAtkZone = pickZoneFromSeed(deriveSeed(match_id, strikeIndex, 'opp-atk'))
     const oppDefZone = pickZoneFromSeed(deriveSeed(match_id, strikeIndex, 'opp-def'))
 
+    // --- Phase 3: validate + prepare active fire for this round ---
+    const actives: InteractiveActivesState =
+      (match.interactiveActives as InteractiveActivesState | null) ?? { p1: [], p2: [] }
+    let firedPlayerActive: ActiveSlotSnapshot | null = null
+    if (firedSlotIndex !== null) {
+      const slot = actives.p1.find((a) => a.slot_index === firedSlotIndex)
+      if (!slot) {
+        return NextResponse.json({ error: 'Active slot not equipped' }, { status: 400 })
+      }
+      if (slot.cooldown_remaining > 0) {
+        return NextResponse.json({ error: 'Active on cooldown' }, { status: 409 })
+      }
+      if (!slot.action_type) {
+        return NextResponse.json({ error: 'Slot has no action' }, { status: 400 })
+      }
+      firedPlayerActive = slot
+    }
+
     // 1) Player attacks defender
     const playerSeed = deriveSeed(match_id, strikeIndex, 'p')
     const playerInput: SingleStrikeInput = {
@@ -164,7 +224,25 @@ export async function POST(req: NextRequest) {
       seed: playerSeed,
     }
     const playerResult = await resolveSingleStrike(playerInput)
-    const newDefenderHp = playerResult.newDefenderHp
+
+    // --- Phase 3: mutate player result per fired active ---
+    // v1 supports burst_damage fully; other types are stubbed (cooldown still
+    // applies). playerResult.turn + newDefenderHp are re-derived from original
+    // turn damage so downstream HP math stays consistent.
+    let mutatedPlayerTurn = playerResult.turn
+    let newDefenderHp = playerResult.newDefenderHp
+    let playerActiveLabel: string | null = null
+    if (firedPlayerActive) {
+      playerActiveLabel = firedPlayerActive.action_type
+      if (firedPlayerActive.action_type === 'burst_damage') {
+        const originalDmg = playerResult.turn.damage
+        const boosted = applyBurstDamage(originalDmg, firedPlayerActive.magnitude)
+        const delta = boosted - originalDmg
+        mutatedPlayerTurn = { ...playerResult.turn, damage: boosted }
+        newDefenderHp = Math.max(0, newDefenderHp - delta)
+      }
+      // Other action_types: cooldown is still consumed below (stub semantics).
+    }
     // Apply player's self-heal (if any) — heal is applied to attacker side
     const attackerAfterHeal = Math.min(
       attackerRow.maxHp,
@@ -208,11 +286,26 @@ export async function POST(req: NextRequest) {
       player_def: defender_zone,
       opp_atk: oppAtkZone,
       opp_def: oppDefZone,
-      player_strike: playerResult.turn,
+      player_strike: mutatedPlayerTurn,
       opp_strike: oppResult?.turn ?? null,
       attacker_hp_after: Math.max(0, newAttackerHp),
       defender_hp_after: Math.max(0, newDefenderHp),
+      player_active: firedSlotIndex,
+      opponent_active: null,  // Phase 3.B: opponent AI will fire here
     }
+
+    // --- Phase 3: update actives state (set fired cooldown, tick all others) ---
+    const updatedP1 = decrementCooldowns(
+      firedPlayerActive
+        ? actives.p1.map((a) =>
+            a.slot_index === firedPlayerActive.slot_index
+              ? { ...a, cooldown_remaining: a.cooldown_max }
+              : a
+          )
+        : actives.p1
+    )
+    const updatedP2 = decrementCooldowns(actives.p2)
+    const newActives: InteractiveActivesState = { p1: updatedP1, p2: updatedP2 }
 
     // Persist round (atomic append + index bump; relies on optimistic concurrency
     // via strikeIndex check — if a concurrent call bumped it, we reject 409)
@@ -222,6 +315,7 @@ export async function POST(req: NextRequest) {
       data: {
         interactiveChoices: [...choices, round],
         interactiveStrikeIndex: strikeIndex + 1,
+        interactiveActives: newActives,
       },
     })
     if (updated.count === 0) {
@@ -231,13 +325,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       match_id,
       strike_index: strikeIndex,
-      player_strike: playerResult.turn,
+      player_strike: mutatedPlayerTurn,
       opponent_strike: oppResult?.turn ?? null,
       attacker_hp: round.attacker_hp_after,
       defender_hp: round.defender_hp_after,
       opp_zones: { attack: oppAtkZone, defend: oppDefZone },
       match_finished: matchFinished,
       winner_id: winnerId,
+      actives: newActives,
+      player_active_fired: firedSlotIndex,
+      player_active_label: playerActiveLabel,
     })
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)

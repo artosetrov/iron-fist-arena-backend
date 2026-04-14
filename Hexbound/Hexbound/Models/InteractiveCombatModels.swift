@@ -68,6 +68,36 @@ struct InteractiveMatchStartResponse: Decodable, Sendable {
     let attacker: InteractiveCharacterSnapshot
     let defender: InteractiveCharacterSnapshot
     let stamina: InteractiveMatchStaminaInfo
+    let actives: InteractiveActivesState?
+}
+
+// MARK: - Active Slot Snapshot (Phase 3)
+
+/// Mirror of ActiveSlotSnapshot from backend pvp/strike/route.ts. Fired slot
+/// sets `cooldownRemaining = cooldownMax`; tick-down happens each round.
+struct InteractiveActiveSlotSnapshot: Decodable, Sendable, Hashable, Identifiable {
+    var id: Int { slotIndex }
+    let slotIndex: Int
+    let nodeId: Int
+    let nodeKey: String
+    let name: String
+    let icon: String?
+    let actionType: String?
+    let cooldownMax: Int
+    let magnitude: Double
+    let cooldownRemaining: Int
+
+    var isReady: Bool { cooldownRemaining == 0 && actionType != nil }
+
+    var talentAction: TalentSlotAction? {
+        guard let raw = actionType else { return nil }
+        return TalentSlotAction(rawValue: raw)
+    }
+}
+
+struct InteractiveActivesState: Decodable, Sendable {
+    let p1: [InteractiveActiveSlotSnapshot]
+    let p2: [InteractiveActiveSlotSnapshot]
 }
 
 // MARK: - Strike Request (v2 — match-aware)
@@ -76,6 +106,8 @@ struct InteractiveStrikeRequest: Encodable, Sendable {
     let matchId: String
     let attackerZone: InteractiveBodyZone
     let defenderZone: InteractiveBodyZone
+    /// Phase 3 — optional slot index (0..2) to fire an active this round.
+    let playerActiveSlot: Int?
 }
 
 // MARK: - Strike Response (v2 — two turns + server-authoritative HP)
@@ -112,6 +144,12 @@ struct InteractiveStrikeResponse: Decodable, Sendable {
     let oppZones: InteractiveOpponentZones
     let matchFinished: Bool
     let winnerId: String?
+    /// Phase 3 — refreshed active-slot state for both players (with cooldowns).
+    let actives: InteractiveActivesState?
+    /// Phase 3 — echoes the slot_index fired this round (nil = no active used).
+    let playerActiveFired: Int?
+    /// Phase 3 — action_type label that fired, for HUD floating-text feedback.
+    let playerActiveLabel: String?
 }
 
 // MARK: - Match Complete

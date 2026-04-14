@@ -107,6 +107,52 @@ export async function POST(req: NextRequest) {
     const now = new Date()
     const timeoutAt = new Date(now.getTime() + MATCH_TIMEOUT_MS)
 
+    // Load equipped active-slot snapshot for both players. Snapshotted at
+    // match-start so mid-match equip changes (from another device) don't
+    // influence the current duel. All cooldowns start at 0 (ready).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type ActiveSnapshotRow = {
+      slot_index: number
+      node_id: number
+      node_key: string
+      name: string
+      icon: string | null
+      active_action_type: string | null
+      active_cooldown: number | null
+      active_magnitude: number | null
+    }
+    async function loadActives(charId: string): Promise<ActiveSnapshotRow[]> {
+      return prisma.$queryRawUnsafe<ActiveSnapshotRow[]>(
+        `SELECT s.slot_index, n.id AS node_id, n.node_key, n.name, n.icon,
+                n.active_action_type, n.active_cooldown, n.active_magnitude
+         FROM character_active_slots s
+         JOIN passive_nodes n ON n.id = s.node_id
+         WHERE s.character_id = $1 AND n.is_activatable = true
+         ORDER BY s.slot_index`,
+        charId
+      )
+    }
+    const [p1Actives, p2Actives] = await Promise.all([
+      loadActives(attacker.id),
+      loadActives(defender.id),
+    ])
+    const actorActivesSnapshot = (rows: ActiveSnapshotRow[]) =>
+      rows.map((r) => ({
+        slot_index: r.slot_index,
+        node_id: r.node_id,
+        node_key: r.node_key,
+        name: r.name,
+        icon: r.icon,
+        action_type: r.active_action_type,
+        cooldown_max: r.active_cooldown ?? 0,
+        magnitude: r.active_magnitude ?? 0,
+        cooldown_remaining: 0,
+      }))
+    const interactiveActives = {
+      p1: actorActivesSnapshot(p1Actives),
+      p2: actorActivesSnapshot(p2Actives),
+    }
+
     const { match, newStamina } = await prisma.$transaction(async (tx) => {
       // Lock attacker row
       const [locked] = await tx.$queryRawUnsafe<Array<{
@@ -169,6 +215,7 @@ export async function POST(req: NextRequest) {
           interactiveStrikeIndex: 0,
           interactiveTimeoutAt: timeoutAt,
           interactiveChoices: [],
+          interactiveActives,
         },
       })
 
@@ -211,6 +258,7 @@ export async function POST(req: NextRequest) {
         current_hp: startDefenderHp,
       },
       stamina: { current: newStamina, max: attacker.maxStamina },
+      actives: interactiveActives,
     })
   } catch (error) {
     if (error instanceof Error) {

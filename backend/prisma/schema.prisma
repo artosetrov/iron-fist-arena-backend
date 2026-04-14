@@ -526,6 +526,7 @@ model PvpMatch {
   interactiveStrikeIndex Int?      @map("interactive_strike_index")
   interactiveTimeoutAt   DateTime? @map("interactive_timeout_at")
   interactiveChoices     Json?     @map("interactive_choices")
+  interactiveActives     Json?     @map("interactive_actives")
 
   player1       Character @relation("player1", fields: [player1Id], references: [id])
   player2       Character @relation("player2", fields: [player2Id], references: [id])

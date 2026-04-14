@@ -57,6 +57,24 @@ final class InteractiveBattleViewModel {
     /// Opponent's historical zone pattern (for read strip). Empty in pure-blind mode.
     var opponentPattern: [InteractiveBodyZone] = []
 
+    // MARK: - Phase 3: Active Slots
+
+    /// Player's 3 equipped actives with live cooldown state (0 = ready).
+    /// Populated by `/match/start`, refreshed by each `/strike` response.
+    var playerActives: [InteractiveActiveSlotSnapshot] = []
+
+    /// Opponent's 3 equipped actives (read-only — for UI tell). Cooldowns tick
+    /// down but are not player-visible (Phase 3.B will surface opponent use).
+    var opponentActives: [InteractiveActiveSlotSnapshot] = []
+
+    /// Slot (0..2) the player queued for THIS pending strike; cleared after reveal.
+    /// Nil = regular attack only.
+    var pendingActiveSlot: Int? = nil
+
+    /// Label for the active fired on the most recent strike — used for a
+    /// floating-text cue ("BURST!" etc.) above the player avatar.
+    var lastActiveFiredLabel: String? = nil
+
     // MARK: - VFX / SFX State
 
     /// Canvas particle VFX (sparks, flashes). Mounted by the view as an overlay.
@@ -246,9 +264,25 @@ final class InteractiveBattleViewModel {
         state.defenderHp = response.defender.currentHp
         attackerProfile = FighterProfile(snapshot: response.attacker)
         defenderProfile = FighterProfile(snapshot: response.defender)
+        if let actives = response.actives {
+            playerActives = actives.p1
+            opponentActives = actives.p2
+        }
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
+    }
+
+    // MARK: - Active Slots (Phase 3)
+
+    /// Toggle the queued active for this pending strike. Only one active can
+    /// fire per round. Tapping a ready slot arms it; tapping the armed slot
+    /// cancels. Cooldown/empty slots are ignored.
+    func toggleActiveSlot(_ slotIndex: Int) {
+        guard case .predict = phase else { return }
+        guard let slot = playerActives.first(where: { $0.slotIndex == slotIndex }) else { return }
+        guard slot.isReady else { return }
+        pendingActiveSlot = (pendingActiveSlot == slotIndex) ? nil : slotIndex
     }
 
     // MARK: - /strike
@@ -261,7 +295,8 @@ final class InteractiveBattleViewModel {
         let request = InteractiveStrikeRequest(
             matchId: state.matchId,
             attackerZone: selectedAttackZone,
-            defenderZone: selectedDefendZone
+            defenderZone: selectedDefendZone,
+            playerActiveSlot: pendingActiveSlot
         )
         do {
             let response: InteractiveStrikeResponse = try await APIClient.shared.post(
@@ -280,6 +315,14 @@ final class InteractiveBattleViewModel {
     }
 
     private func applyStrikeResponse(_ response: InteractiveStrikeResponse) async {
+        // Refresh actives state first — server is authoritative on cooldowns.
+        if let actives = response.actives {
+            playerActives = actives.p1
+            opponentActives = actives.p2
+        }
+        lastActiveFiredLabel = response.playerActiveLabel
+        pendingActiveSlot = nil
+
         state.strikes.append(response.playerStrike)
         if let opp = response.opponentStrike {
             state.strikes.append(opp)
