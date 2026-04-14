@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */; };
+		0045A1B2C3D4E5F6A7B8C9D2 /* BattleResultAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D3 /* BattleResultAnimations.swift */; };
+		0045A1B2C3D4E5F6A7B8C9D4 /* BattleResultModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D5 /* BattleResultModels.swift */; };
+		0045A1B2C3D4E5F6A7B8C9D6 /* BattleResultSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0045A1B2C3D4E5F6A7B8C9D7 /* BattleResultSections.swift */; };
 		007DA01B4884A35D761A3143 /* ArenaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 910F65D9F5A816029B1BB05C /* ArenaDetailView.swift */; };
 		007DC53980035ED82C4D6F98 /* onboarding-voice-your-turn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 71623A5993B071B645C6E562 /* onboarding-voice-your-turn.mp3 */; };
 		0179E69325E53F8E8FA6107B /* LeaderboardPlayerDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */; };
@@ -346,6 +349,7 @@
 		B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6DF2AB4A5F6FDC34209975 /* SettingsViewModel.swift */; };
 		B1FD7C06AD25A6CD94815611 /* RevengeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE7DEC31D96099535208BCD1 /* RevengeEntry.swift */; };
 		B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */; };
+		B294310206ED6C9AB5A5DEB3 /* GoldMineCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3616ED882512BF3531BF8A /* GoldMineCards.swift */; };
 		B2C3D4E5F60718A9B0C1D2E3 /* OfflineBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718A9B0C1D2E4 /* OfflineBannerView.swift */; };
 		B2C3D4E5F60718A9B0C1D2E5 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718A9B0C1D2E6 /* NetworkMonitor.swift */; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* StanceDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A4 /* StanceDisplayView.swift */; };
@@ -512,6 +516,9 @@
 
 /* Begin PBXFileReference section */
 		0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleResultCardView.swift; sourceTree = "<group>"; };
+		0045A1B2C3D4E5F6A7B8C9D3 /* BattleResultAnimations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleResultAnimations.swift; sourceTree = "<group>"; };
+		0045A1B2C3D4E5F6A7B8C9D5 /* BattleResultModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleResultModels.swift; sourceTree = "<group>"; };
+		0045A1B2C3D4E5F6A7B8C9D7 /* BattleResultSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BattleResultSections.swift; sourceTree = "<group>"; };
 		005802A02B8BAC38F0E792AC /* AppearanceEditorDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceEditorDetailView.swift; sourceTree = "<group>"; };
 		0119FF7351B52985539E24A3 /* ui_sell.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_sell.wav; sourceTree = "<group>"; };
 		029AA9A175D862EBED174221 /* shell_shuffle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = shell_shuffle.wav; sourceTree = "<group>"; };
@@ -758,6 +765,7 @@
 		9B61D08312F184A7F1239B21 /* CurrencyPurchaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPurchaseView.swift; sourceTree = "<group>"; };
 		9C458C4E4D8FA7CBBD802647 /* LeaderboardPlayerDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardPlayerDetailSheet.swift; sourceTree = "<group>"; };
 		9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineDetailView.swift; sourceTree = "<group>"; };
+		9D3616ED882512BF3531BF8A /* GoldMineCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineCards.swift; sourceTree = "<group>"; };
 		9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaimRewardModalView.swift; sourceTree = "<group>"; };
 		9EEE772058711E44DA5FCEDD /* battle_victory.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = battle_victory.wav; sourceTree = "<group>"; };
 		9F67715A23319BE1550DDF55 /* dungeon_boss_appear_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dungeon_boss_appear_2.wav; sourceTree = "<group>"; };
@@ -1351,7 +1359,10 @@
 				E3F5A7B9C1D3E5F7A9B1C3D6 /* EventBannerView.swift */,
 				4599C5B23903A3CEB334E06E /* AvatarImageView.swift */,
 				660D282C9061E69CDF418A66 /* AssetPlaceholderView.swift */,
+				0045A1B2C3D4E5F6A7B8C9D3 /* BattleResultAnimations.swift */,
 				0045A1B2C3D4E5F6A7B8C9D1 /* BattleResultCardView.swift */,
+				0045A1B2C3D4E5F6A7B8C9D5 /* BattleResultModels.swift */,
+				0045A1B2C3D4E5F6A7B8C9D7 /* BattleResultSections.swift */,
 				9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */,
 				D3EF70965657F120803C752C /* CachedAssetImage.swift */,
 				f76f0260c391916a42554dca /* CardLevelBadge.swift */,
@@ -1600,6 +1611,7 @@
 				A84C12D9BFA71769CEBB55D0 /* DungeonRushViewModel.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
+				9D3616ED882512BF3531BF8A /* GoldMineCards.swift */,
 				9D3616ED882512BF3531BF89 /* GoldMineDetailView.swift */,
 				aeced6bc077e1b4a8c7f0418 /* GoldMineMiniGameView.swift */,
 				D43759730CC2C390E6A007B5 /* MinigameCatchEffect.swift */,
@@ -2295,6 +2307,7 @@
 				db49acc029b0de8074220c92 /* BuyStatPointsView.swift in Sources */,
 				36ec7d0e1c0a728f05f2465e /* BuyStatPointsViewModel.swift in Sources */,
 				16d6f9f14664ce442317ef3e /* StatPurchase.swift in Sources */,
+				B294310206ED6C9AB5A5DEB3 /* GoldMineCards.swift in Sources */,
 				B294310206ED6C9AB5A5DEB2 /* GoldMineDetailView.swift in Sources */,
 				eedd3759c99c584098dc0e6c /* GoldMineMiniGameView.swift in Sources */,
 				79EA9F1ECA2690A1911B93D9 /* MinigameCatchEffect.swift in Sources */,
@@ -2336,7 +2349,10 @@
 				8380A79FD977F53D662B3660 /* ItemDetailSheet.swift in Sources */,
 				8380A79FD977F53D662B3662 /* ItemDetailSections.swift in Sources */,
 				60AA3C7D4E914FAF3DBA1D9B /* ItemImageView.swift in Sources */,
+				0045A1B2C3D4E5F6A7B8C9D2 /* BattleResultAnimations.swift in Sources */,
 				0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */,
+				0045A1B2C3D4E5F6A7B8C9D4 /* BattleResultModels.swift in Sources */,
+				0045A1B2C3D4E5F6A7B8C9D6 /* BattleResultSections.swift in Sources */,
 				F45C4BA75C8D9A2707CAA811 /* ClaimRewardModalView.swift in Sources */,
 				F3A5B6C7D8E9F0A1B2C3D4E5 /* VictoryParticlesView.swift in Sources */,
 				C41999D768F5968EA7B75677 /* ItemRarity.swift in Sources */,
