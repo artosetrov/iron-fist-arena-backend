@@ -75,6 +75,9 @@ final class InteractiveBattleViewModel {
     /// floating-text cue ("BURST!" etc.) above the player avatar.
     var lastActiveFiredLabel: String? = nil
 
+    /// Label for the opponent AI's fired active this round (Phase 3.B).
+    var lastOpponentActiveFiredLabel: String? = nil
+
     // MARK: - VFX / SFX State
 
     /// Canvas particle VFX (sparks, flashes). Mounted by the view as an overlay.
@@ -201,6 +204,8 @@ final class InteractiveBattleViewModel {
         lastTurn = nil
         lastOpponentTurn = nil
         lastOpponentZones = nil
+        lastActiveFiredLabel = nil
+        lastOpponentActiveFiredLabel = nil
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
@@ -321,6 +326,7 @@ final class InteractiveBattleViewModel {
             opponentActives = actives.p2
         }
         lastActiveFiredLabel = response.playerActiveLabel
+        lastOpponentActiveFiredLabel = response.opponentActiveLabel
         pendingActiveSlot = nil
 
         state.strikes.append(response.playerStrike)

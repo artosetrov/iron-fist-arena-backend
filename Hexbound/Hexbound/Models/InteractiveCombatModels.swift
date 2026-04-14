@@ -150,6 +150,10 @@ struct InteractiveStrikeResponse: Decodable, Sendable {
     let playerActiveFired: Int?
     /// Phase 3 — action_type label that fired, for HUD floating-text feedback.
     let playerActiveLabel: String?
+    /// Phase 3.B — opponent AI fired this slot_index (nil = no active used).
+    let opponentActiveFired: Int?
+    /// Phase 3.B — opponent action_type label that fired.
+    let opponentActiveLabel: String?
 }
 
 // MARK: - Match Complete

@@ -153,8 +153,22 @@ struct InteractiveBattleView: View {
                     OpponentActivesPreview(actives: vm.opponentActives)
                         .padding(.leading, LayoutConstants.spaceXS)
                 }
+                if let oppLabel = vm.lastOpponentActiveFiredLabel {
+                    ActiveFireBanner(actionType: oppLabel, isOpponent: true)
+                        .padding(.leading, LayoutConstants.spaceXS)
+                        .id("opp-fire-\(oppLabel)")
+                }
+            }
+            if let playerLabel = vm.lastActiveFiredLabel {
+                HStack {
+                    ActiveFireBanner(actionType: playerLabel, isOpponent: false)
+                    Spacer()
+                }
+                .id("you-fire-\(playerLabel)")
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: vm.lastActiveFiredLabel)
+        .animation(.easeInOut(duration: 0.2), value: vm.lastOpponentActiveFiredLabel)
     }
 
     private func stanceSideLabel(_ text: String, color: Color) -> some View {

@@ -131,3 +131,56 @@ struct OpponentActivesPreview: View {
         .accessibilityLabel(Text("Opponent active skills"))
     }
 }
+
+// MARK: - Floating-text banner (Phase 3.B)
+
+/// Transient banner shown when a player or opponent fires an active. Pass the
+/// `actionType` raw string from the /strike response — the view maps it to a
+/// display label and accent color. Caller controls visibility lifetime by
+/// nilling out its binding source ~1.5s after the strike reveal.
+struct ActiveFireBanner: View {
+    let actionType: String?
+    let isOpponent: Bool
+
+    private var tuple: (label: String, color: Color)? {
+        guard let raw = actionType, let action = TalentSlotAction(rawValue: raw) else {
+            return nil
+        }
+        let base: String
+        switch action {
+        case .burstDamage: base = "BURST"
+        case .healSelf:    base = "HEAL"
+        case .shieldSelf:  base = "SHIELD"
+        case .stunEnemy:   base = "STUN"
+        case .execute:     base = "EXECUTE"
+        }
+        let color = isOpponent ? DarkFantasyTheme.danger : DarkFantasyTheme.gold
+        return (base + "!", color)
+    }
+
+    var body: some View {
+        if let t = tuple {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                if isOpponent {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                Text(t.label)
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(2)
+            }
+            .foregroundStyle(t.color)
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgElevated.opacity(0.92))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(t.color.opacity(0.7), lineWidth: 1)
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+    }
+}

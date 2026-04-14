@@ -105,11 +105,84 @@ function applyBurstDamage(baseDamage: number, magnitude: number): number {
   return Math.round(baseDamage * (1 + Math.max(0, magnitude)))
 }
 
+function applyShield(incomingDamage: number, magnitude: number): number {
+  // magnitude stored as damage-reduction fraction (0.5 = -50% incoming).
+  const reduced = Math.round(incomingDamage * Math.max(0, 1 - magnitude))
+  return Math.max(0, reduced)
+}
+
+function healAmountFromActive(maxHp: number, magnitude: number): number {
+  // magnitude = fraction of maxHp to heal (0.25 = 25%).
+  return Math.max(0, Math.round(maxHp * Math.max(0, magnitude)))
+}
+
+function shouldExecute(currentHp: number, maxHp: number, magnitude: number): boolean {
+  // magnitude = HP% threshold (0.2 = execute if defender ≤ 20% HP).
+  if (maxHp <= 0) return false
+  const pct = currentHp / maxHp
+  return pct > 0 && pct <= Math.max(0, magnitude)
+}
+
 function decrementCooldowns(actives: ActiveSlotSnapshot[]): ActiveSlotSnapshot[] {
   return actives.map((a) => ({
     ...a,
     cooldown_remaining: Math.max(0, a.cooldown_remaining - 1),
   }))
+}
+
+/**
+ * AI picks one ready active for the opponent, prioritizing:
+ *   1. execute — if player is low HP (≤ magnitude threshold)
+ *   2. burst_damage — if player will survive counter and we can punish
+ *   3. heal_self — if opponent is below 50% HP
+ *   4. shield_self — if opponent is below 60% HP
+ *   5. stun_enemy — otherwise, if available
+ * Returns the chosen slot or null.
+ */
+function pickOpponentActive(
+  opponentActives: ActiveSlotSnapshot[],
+  opponentHp: number,
+  opponentMaxHp: number,
+  playerHp: number,
+  playerMaxHp: number
+): ActiveSlotSnapshot | null {
+  const ready = opponentActives.filter(
+    (a) => a.cooldown_remaining === 0 && a.action_type
+  )
+  if (ready.length === 0) return null
+
+  const priority: Record<string, number> = {
+    execute: 0,
+    burst_damage: 1,
+    heal_self: 2,
+    shield_self: 3,
+    stun_enemy: 4,
+  }
+
+  const oppPct = opponentHp / opponentMaxHp
+
+  const candidates = ready.filter((a) => {
+    switch (a.action_type) {
+      case 'execute':
+        return shouldExecute(playerHp, playerMaxHp, a.magnitude)
+      case 'heal_self':
+        return oppPct <= 0.5
+      case 'shield_self':
+        return oppPct <= 0.6
+      case 'burst_damage':
+      case 'stun_enemy':
+        return true
+      default:
+        return false
+    }
+  })
+  if (candidates.length === 0) return null
+
+  candidates.sort(
+    (a, b) =>
+      (priority[a.action_type ?? ''] ?? 99) - (priority[b.action_type ?? ''] ?? 99)
+  )
+  return candidates[0] ?? null
 }
 
 export async function POST(req: NextRequest) {
@@ -226,34 +299,84 @@ export async function POST(req: NextRequest) {
     const playerResult = await resolveSingleStrike(playerInput)
 
     // --- Phase 3: mutate player result per fired active ---
-    // v1 supports burst_damage fully; other types are stubbed (cooldown still
-    // applies). playerResult.turn + newDefenderHp are re-derived from original
-    // turn damage so downstream HP math stays consistent.
+    // Full support for all 5 action_types. Cooldown is consumed for every fire.
     let mutatedPlayerTurn = playerResult.turn
     let newDefenderHp = playerResult.newDefenderHp
     let playerActiveLabel: string | null = null
+    let playerHasShield = false           // reduces next counter-strike damage
+    let playerExtraHeal = 0               // from heal_self active
+    let opponentStunned = false           // stun_enemy suppresses counter this round
     if (firedPlayerActive) {
       playerActiveLabel = firedPlayerActive.action_type
-      if (firedPlayerActive.action_type === 'burst_damage') {
-        const originalDmg = playerResult.turn.damage
-        const boosted = applyBurstDamage(originalDmg, firedPlayerActive.magnitude)
-        const delta = boosted - originalDmg
-        mutatedPlayerTurn = { ...playerResult.turn, damage: boosted }
-        newDefenderHp = Math.max(0, newDefenderHp - delta)
+      switch (firedPlayerActive.action_type) {
+        case 'burst_damage': {
+          const originalDmg = playerResult.turn.damage
+          const boosted = applyBurstDamage(originalDmg, firedPlayerActive.magnitude)
+          const delta = boosted - originalDmg
+          mutatedPlayerTurn = { ...playerResult.turn, damage: boosted }
+          newDefenderHp = Math.max(0, newDefenderHp - delta)
+          break
+        }
+        case 'execute': {
+          if (shouldExecute(curDefenderHp, defenderRow.maxHp, firedPlayerActive.magnitude)) {
+            const finishingDmg = playerResult.turn.damage + Math.max(0, newDefenderHp)
+            mutatedPlayerTurn = { ...playerResult.turn, damage: finishingDmg }
+            newDefenderHp = 0
+          }
+          break
+        }
+        case 'heal_self': {
+          playerExtraHeal = healAmountFromActive(attackerRow.maxHp, firedPlayerActive.magnitude)
+          break
+        }
+        case 'shield_self': {
+          playerHasShield = true
+          break
+        }
+        case 'stun_enemy': {
+          opponentStunned = true
+          break
+        }
       }
-      // Other action_types: cooldown is still consumed below (stub semantics).
     }
-    // Apply player's self-heal (if any) — heal is applied to attacker side
+    // Apply player's self-heal (combat formula heal + active heal)
     const attackerAfterHeal = Math.min(
       attackerRow.maxHp,
-      curAttackerHp + (playerResult.healAmount || 0)
+      curAttackerHp + (playerResult.healAmount || 0) + playerExtraHeal
     )
+
+    // --- Phase 3.B: pick opponent AI active for this round ---
+    // Opp sees post-strike HP so pickOpponentActive prefers heal_self if about to die.
+    const firedOppActive = pickOpponentActive(
+      actives.p2,
+      newDefenderHp,
+      defenderRow.maxHp,
+      attackerAfterHeal,
+      attackerRow.maxHp
+    )
+    const oppActiveLabel: string | null = firedOppActive?.action_type ?? null
+
+    // Apply opp's defensive / setup actives BEFORE counter-strike resolves:
+    //   shield_self → retroactively reduce player's incoming damage
+    //   heal_self   → bump opp HP (can bring them back above 0 from a fatal hit)
+    if (firedOppActive?.action_type === 'shield_self') {
+      const reduced = applyShield(mutatedPlayerTurn.damage, firedOppActive.magnitude)
+      const refund = mutatedPlayerTurn.damage - reduced
+      if (refund > 0) {
+        mutatedPlayerTurn = { ...mutatedPlayerTurn, damage: reduced }
+        newDefenderHp = Math.min(defenderRow.maxHp, newDefenderHp + refund)
+      }
+    }
+    if (firedOppActive?.action_type === 'heal_self') {
+      const oppHeal = healAmountFromActive(defenderRow.maxHp, firedOppActive.magnitude)
+      newDefenderHp = Math.min(defenderRow.maxHp, newDefenderHp + oppHeal)
+    }
 
     let oppResult: Awaited<ReturnType<typeof resolveSingleStrike>> | null = null
     let newAttackerHp = attackerAfterHeal
 
-    // 2) Opponent counter-strike only if still alive
-    if (newDefenderHp > 0) {
+    // 2) Opponent counter-strike only if still alive AND not stunned
+    if (newDefenderHp > 0 && !opponentStunned) {
       const oppSeed = deriveSeed(match_id, strikeIndex, 'o')
       const oppInput: SingleStrikeInput = {
         attacker: defenderStats,
@@ -264,7 +387,26 @@ export async function POST(req: NextRequest) {
         seed: oppSeed,
       }
       oppResult = await resolveSingleStrike(oppInput)
-      newAttackerHp = oppResult.newDefenderHp
+      // Apply opponent's offensive actives to counter-strike damage
+      let oppDamage = oppResult.turn.damage
+      if (firedOppActive?.action_type === 'burst_damage') {
+        oppDamage = applyBurstDamage(oppDamage, firedOppActive.magnitude)
+      } else if (
+        firedOppActive?.action_type === 'execute' &&
+        shouldExecute(attackerAfterHeal, attackerRow.maxHp, firedOppActive.magnitude)
+      ) {
+        oppDamage = attackerAfterHeal  // finishing blow
+      }
+      // Player's shield reduces incoming opponent damage
+      if (playerHasShield) {
+        oppDamage = applyShield(oppDamage, firedPlayerActive?.magnitude ?? 0)
+      }
+      const mutatedOppTurn = oppDamage !== oppResult.turn.damage
+        ? { ...oppResult.turn, damage: oppDamage }
+        : oppResult.turn
+      const finalAttackerHp = Math.max(0, attackerAfterHeal - oppDamage)
+      oppResult = { ...oppResult, turn: mutatedOppTurn, newDefenderHp: finalAttackerHp }
+      newAttackerHp = finalAttackerHp
     }
 
     const matchFinished = newAttackerHp <= 0 || newDefenderHp <= 0 || (strikeIndex + 1) >= MAX_ROUNDS
@@ -291,7 +433,7 @@ export async function POST(req: NextRequest) {
       attacker_hp_after: Math.max(0, newAttackerHp),
       defender_hp_after: Math.max(0, newDefenderHp),
       player_active: firedSlotIndex,
-      opponent_active: null,  // Phase 3.B: opponent AI will fire here
+      opponent_active: firedOppActive?.slot_index ?? null,
     }
 
     // --- Phase 3: update actives state (set fired cooldown, tick all others) ---
@@ -304,7 +446,15 @@ export async function POST(req: NextRequest) {
           )
         : actives.p1
     )
-    const updatedP2 = decrementCooldowns(actives.p2)
+    const updatedP2 = decrementCooldowns(
+      firedOppActive
+        ? actives.p2.map((a) =>
+            a.slot_index === firedOppActive.slot_index
+              ? { ...a, cooldown_remaining: a.cooldown_max }
+              : a
+          )
+        : actives.p2
+    )
     const newActives: InteractiveActivesState = { p1: updatedP1, p2: updatedP2 }
 
     // Persist round (atomic append + index bump; relies on optimistic concurrency
@@ -335,6 +485,8 @@ export async function POST(req: NextRequest) {
       actives: newActives,
       player_active_fired: firedSlotIndex,
       player_active_label: playerActiveLabel,
+      opponent_active_fired: firedOppActive?.slot_index ?? null,
+      opponent_active_label: oppActiveLabel,
     })
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
