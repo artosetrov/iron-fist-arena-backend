@@ -20,7 +20,7 @@ type SlotResponse = {
   node_id: string
   node_key: string
   name: string
-  description: string
+  description: string | null
   icon: string | null
   active_action_type: string | null
   active_cooldown: number | null
