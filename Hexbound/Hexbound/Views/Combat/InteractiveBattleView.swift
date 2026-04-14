@@ -44,7 +44,7 @@ struct InteractiveBattleView: View {
 
             // Canvas particle VFX — mounted behind PNG FX so sparks sit
             // under the slash/crit/text layer but above the UI chrome.
-            CombatVFXOverlay(vfxManager: vm.vfxManager)
+            CombatVFXOverlay(vfxManager: vm.vfxManager, speedMultiplier: 1.0)
                 .allowsHitTesting(false)
 
             // PNG image FX overlay — slash, crit text, shield, heal.
