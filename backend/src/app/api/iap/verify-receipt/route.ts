@@ -91,6 +91,30 @@ export async function POST(req: NextRequest) {
       // the API can't accept arbitrary title strings.
     }
 
+    // Premium Pass Phase 2 (2026-04-14) — Auto-renewable subscription.
+    // Compute the subscription window. Prefer Apple's authoritative
+    // `expiresDate` from the signed transaction; fall back to purchase +
+    // duration for environments where it's missing (dev / StoreKit-only).
+    // Apple Server Notifications v2 will keep this row current on renewals.
+    let subscriptionExpiresAt: Date | null = null
+    let subscriptionStartedAt: Date | null = null
+    let subscriptionOriginalTxId: string | null = null
+    if (product.subscription) {
+      const appleTx = appleResult.transactionInfo
+      const startMs = appleTx?.purchaseDate ?? now.getTime()
+      const expiresMs = appleTx?.expiresDate
+        ?? startMs + product.subscription.durationDays * 24 * 60 * 60 * 1000
+      subscriptionStartedAt = new Date(startMs)
+      subscriptionExpiresAt = new Date(expiresMs)
+      subscriptionOriginalTxId = appleTx?.originalTransactionId ?? transaction_id
+      // Grant the monthly gem allotment on purchase (renewals handled by webhook).
+      if (product.subscription.monthlyGems > 0) {
+        userUpdate.gems = userUpdate.gems
+          ? { increment: (userUpdate.gems as { increment: number }).increment + product.subscription.monthlyGems }
+          : { increment: product.subscription.monthlyGems }
+      }
+    }
+
     // Execute all operations in a single transaction
     const operations: any[] = [
       // 1. Record the IAP transaction
@@ -127,6 +151,76 @@ export async function POST(req: NextRequest) {
       )
     }
 
+
+    // 3. Bundle extras — grant consumables to the user's active (most-recent) character.
+    //    We resolve the target character ONCE and upsert each line item so the
+    //    unique (characterId, consumableType) index isn't violated.
+    //    If the user has no character (signup edge case), items are skipped
+    //    silently — currencies still credit to the user.
+    //    See ECONOMY_RULES.md R10.3 + balance.ts IAP_PRODUCTS comments.
+    if (product.items && product.items.length > 0) {
+      const activeChar = await prisma.character.findFirst({
+        where: { userId: user.id },
+        orderBy: { updatedAt: 'desc' },
+        select: { id: true },
+      })
+      if (activeChar) {
+        for (const grant of product.items) {
+          operations.push(
+            prisma.consumableInventory.upsert({
+              where: {
+                characterId_consumableType: {
+                  characterId: activeChar.id,
+                  consumableType: grant.type,
+                },
+              },
+              create: {
+                characterId: activeChar.id,
+                consumableType: grant.type,
+                quantity: grant.quantity,
+              },
+              update: {
+                quantity: { increment: grant.quantity },
+              },
+            })
+          )
+        }
+      } else {
+        console.warn(`[IAP] bundle ${product_id} bought by user ${user.id} with no character — items skipped`)
+      }
+    }
+
+    // 3b. Premium Pass subscription row — upsert so repeat purchases (new
+    //     original_transaction_id) replace the previous record. The webhook
+    //     is the authority for renewals; initial purchase seeds the row.
+    if (product.subscription && subscriptionExpiresAt && subscriptionStartedAt && subscriptionOriginalTxId) {
+      operations.push(
+        prisma.premiumSubscription.upsert({
+          where: { userId: user.id },
+          create: {
+            userId: user.id,
+            productId: product_id,
+            originalTransactionId: subscriptionOriginalTxId,
+            latestTransactionId: transaction_id,
+            startedAt: subscriptionStartedAt,
+            expiresAt: subscriptionExpiresAt,
+            autoRenew: true,
+            status: 'active',
+            latestReceipt: receipt_data,
+          },
+          update: {
+            productId: product_id,
+            originalTransactionId: subscriptionOriginalTxId,
+            latestTransactionId: transaction_id,
+            startedAt: subscriptionStartedAt,
+            expiresAt: subscriptionExpiresAt,
+            autoRenew: true,
+            status: 'active',
+            latestReceipt: receipt_data,
+          },
+        })
+      )
+    }
 
     // 4. Monthly Gem Card — create daily_gem_card record
     if (product.monthlyGemCard) {
@@ -165,6 +259,11 @@ export async function POST(req: NextRequest) {
     if (product.gold > 0) response.goldAwarded = product.gold
     if (product.premium) response.premiumUntil = '2099-12-31T23:59:59Z'
     if (product.monthlyGemCard) response.gemCardActivated = true
+    if (product.items && product.items.length > 0) response.itemsAwarded = product.items
+    if (product.subscription && subscriptionExpiresAt) {
+      response.subscriptionExpiresAt = subscriptionExpiresAt.toISOString()
+      response.monthlyGemsAwarded = product.subscription.monthlyGems
+    }
 
     return NextResponse.json(response)
   } catch (error) {

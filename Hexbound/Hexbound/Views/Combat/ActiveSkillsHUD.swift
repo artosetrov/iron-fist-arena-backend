@@ -132,7 +132,25 @@ struct OpponentActivesPreview: View {
     }
 }
 
-// MARK: - Floating-text banner (Phase 3.B)
+// MARK: - Floating-text banner (Phase 3.B + Phase 4 polish)
+
+/// Per-action display metadata — single source of truth for label, SF Symbol,
+/// and accent color. Also used by the VM to dispatch the matching SFX.
+struct ActiveFireStyle {
+    let label: String
+    let icon: String
+    let color: Color
+
+    static func forAction(_ action: TalentSlotAction) -> ActiveFireStyle {
+        switch action {
+        case .burstDamage: return .init(label: "BURST",   icon: "bolt.fill",             color: DarkFantasyTheme.danger)
+        case .healSelf:    return .init(label: "HEAL",    icon: "cross.case.fill",       color: DarkFantasyTheme.success)
+        case .shieldSelf:  return .init(label: "SHIELD",  icon: "shield.lefthalf.filled", color: DarkFantasyTheme.info)
+        case .stunEnemy:   return .init(label: "STUN",    icon: "bolt.slash.fill",       color: DarkFantasyTheme.gold)
+        case .execute:     return .init(label: "EXECUTE", icon: "scope",                 color: DarkFantasyTheme.danger)
+        }
+    }
+}
 
 /// Transient banner shown when a player or opponent fires an active. Pass the
 /// `actionType` raw string from the /strike response — the view maps it to a
@@ -142,34 +160,31 @@ struct ActiveFireBanner: View {
     let actionType: String?
     let isOpponent: Bool
 
-    private var tuple: (label: String, color: Color)? {
+    @State private var glowPulse: CGFloat = 0.0
+
+    private var style: ActiveFireStyle? {
         guard let raw = actionType, let action = TalentSlotAction(rawValue: raw) else {
             return nil
         }
-        let base: String
-        switch action {
-        case .burstDamage: base = "BURST"
-        case .healSelf:    base = "HEAL"
-        case .shieldSelf:  base = "SHIELD"
-        case .stunEnemy:   base = "STUN"
-        case .execute:     base = "EXECUTE"
+        var s = ActiveFireStyle.forAction(action)
+        // Opponent-fired actives always tint red regardless of base action color
+        // so the player instantly recognizes "they did something bad to me".
+        if isOpponent {
+            s = ActiveFireStyle(label: s.label, icon: s.icon, color: DarkFantasyTheme.danger)
         }
-        let color = isOpponent ? DarkFantasyTheme.danger : DarkFantasyTheme.gold
-        return (base + "!", color)
+        return s
     }
 
     var body: some View {
-        if let t = tuple {
+        if let s = style {
             HStack(spacing: LayoutConstants.spaceXS) {
-                if isOpponent {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 12, weight: .bold))
-                }
-                Text(t.label)
+                Image(systemName: s.icon)
+                    .font(.system(size: 12, weight: .bold))
+                Text(s.label + "!")
                     .font(DarkFantasyTheme.buttonLabelCompact)
                     .tracking(2)
             }
-            .foregroundStyle(t.color)
+            .foregroundStyle(s.color)
             .padding(.horizontal, LayoutConstants.spaceMS)
             .padding(.vertical, LayoutConstants.spaceXS)
             .background(
@@ -178,9 +193,24 @@ struct ActiveFireBanner: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(t.color.opacity(0.7), lineWidth: 1)
+                    .stroke(s.color.opacity(0.7), lineWidth: 1)
+            )
+            .background(
+                // Pulsing radial glow that fades in + fades out once per fire.
+                // Opacity-only animation — no scale — honors the project-wide
+                // "no scale animations" rule.
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(s.color.opacity(glowPulse))
+                    .blur(radius: 12)
+                    .allowsHitTesting(false)
             )
             .transition(.opacity.combined(with: .move(edge: .top)))
+            .onAppear {
+                glowPulse = 0.55
+                withAnimation(.easeOut(duration: 0.6)) {
+                    glowPulse = 0.0
+                }
+            }
         }
     }
 }

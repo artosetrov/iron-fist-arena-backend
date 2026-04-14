@@ -19,10 +19,10 @@
 >
 > **Also shipping in v3 batch 3 (2026-04-14):**
 > - Stamina cap `120 → 180` (R8.cap) — pure buff for existing players; migration `20260414_stamina_cap_180` applied to prod. 24h overnight regen at 1/8min.
+> - Bundle extras: Adventurer's Bundle I/II/III now grant Protection Scrolls + Legendary Shards alongside currencies. Routes to user's most-recent character. `ConsumableType` enum extended (migration `20260414_consumable_type_extras`).
 >
-> **Target (still deferred — multi-domain):**
-> - Premium Pass StoreKit subscription Phase 2 — see `PREMIUM_PASS_MIGRATION.md`.
-> - Bundle extras (Protection Scrolls, Legendary Shards) — needs `ConsumableType` enum migration + character routing decision.
+> **Target (still deferred — single-domain):**
+> - Premium Pass StoreKit subscription Phase 2 — see `PREMIUM_PASS_MIGRATION.md`. Full auto-renewable subscription + server-side validation; ADR in place, execution pending StoreKit config work.
 
 > **⚠️ SSoT for raw numbers:** [`BALANCE_CONSTANTS_AUTO.md`](BALANCE_CONSTANTS_AUTO.md) — auto-generated from `backend/src/lib/game/balance.ts` via `npm run docs:balance`. Every constant, table, and formula below that lives in `balance.ts` is mirrored there and drift-checked in pre-commit.
 >

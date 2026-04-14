@@ -200,11 +200,18 @@ export interface IapItemGrant {
 export interface IapProduct {
   gems: number;
   gold: number;
-  premium: boolean; // grants permanent premium
+  premium: boolean; // grants permanent premium (legacy: premium_forever). For subscriptions, use `subscription` instead.
   monthlyGemCard: boolean; // activates daily gem card (50 instant + 10/day x30)
   price: number;
   enabled?: boolean; // default: true. If false, /api/iap/products hides it and /verify-receipt rejects new purchases.
   items?: IapItemGrant[]; // optional consumable grants for bundle SKUs
+  // Premium Pass Phase 2 (2026-04-14): auto-renewable subscription marker.
+  // When set, /verify-receipt upserts a PremiumSubscription row (not user.premiumUntil).
+  // See docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.
+  subscription?: {
+    durationDays: 30; // only 30-day SKU shipped in Phase 2
+    monthlyGems: number; // gems credited per renewal period
+  };
 }
 
 export const IAP_PRODUCTS: Record<string, IapProduct> = {
@@ -222,12 +229,17 @@ export const IAP_PRODUCTS: Record<string, IapProduct> = {
   gold_3500:   { gems: 0, gold: 3500,  premium: false, monthlyGemCard: false, price: 4.99,  enabled: false },
   gold_8000:   { gems: 0, gold: 8000,  premium: false, monthlyGemCard: false, price: 9.99,  enabled: false },
   gold_20000:  { gems: 0, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99, enabled: false },
-  // Adventurer's Bundles — v3 replacement for flat gold packs. Mixed gems+gold + content promise.
-  // Extras (Protection Scrolls / Legendary Shards) will be granted via a follow-up inventory patch;
-  // current release grants the currency portion only. See ECONOMY_RULES.md R10.3.
-  adventurer_bundle_I:   { gems: 600,  gold: 3000,  premium: false, monthlyGemCard: false, price: 4.99 },
-  adventurer_bundle_II:  { gems: 1400, gold: 10000, premium: false, monthlyGemCard: false, price: 9.99 },
-  adventurer_bundle_III: { gems: 3200, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99 },
+  // Adventurer's Bundles — v3 replacement for flat gold packs. Mixed gems+gold + consumables.
+  // Extras route to the user's most-recently-updated character. See ECONOMY_RULES.md R10.3.
+  //   I   — 1× Protection Scroll (rationale: first-time +9 attempts).
+  //   II  — 3× Protection Scroll + 1× Legendary Shard (mid-game +10 push).
+  //   III — 5× Protection Scroll + 5× Legendary Shard (whale bundle, crafting-grade).
+  adventurer_bundle_I:   { gems: 600,  gold: 3000,  premium: false, monthlyGemCard: false, price: 4.99,
+    items: [{ type: 'protection_scroll', quantity: 1 }] },
+  adventurer_bundle_II:  { gems: 1400, gold: 10000, premium: false, monthlyGemCard: false, price: 9.99,
+    items: [{ type: 'protection_scroll', quantity: 3 }, { type: 'legendary_shard', quantity: 1 }] },
+  adventurer_bundle_III: { gems: 3200, gold: 20000, premium: false, monthlyGemCard: false, price: 19.99,
+    items: [{ type: 'protection_scroll', quantity: 5 }, { type: 'legendary_shard', quantity: 5 }] },
   // Monthly Gem Card (50 instant gems + server creates daily_gem_card entry)
   monthly_gem_card: { gems: 50, gold: 0, premium: false, monthlyGemCard: true, price: 4.99 },
   // Starter Bundle — one-time purchase for new players (best value, creates habit)
@@ -236,6 +248,15 @@ export const IAP_PRODUCTS: Record<string, IapProduct> = {
   // Existing owners keep entitlement (server checks `premiumUntil`). New monetization path:
   // Premium Pass (30-day subscription) — see docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.
   premium_forever: { gems: 0, gold: 0, premium: true, monthlyGemCard: false, price: 9.99, enabled: false },
+  // Premium Pass — 30-day auto-renewable subscription. Economy v3 successor to premium_forever.
+  // Grants premium entitlement for the subscription window + 300 gems per renewal.
+  // Verified by Apple Server Notifications v2 webhook; tracked in premium_subscriptions table.
+  // Field mapping: price = introductory/list price; actual charge is Apple's renewal amount.
+  // See docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.
+  premium_pass_monthly: {
+    gems: 0, gold: 0, premium: false, monthlyGemCard: false, price: 4.99,
+    subscription: { durationDays: 30, monthlyGems: 300 },
+  },
 } as const;
 
 // --- Battle Pass ---

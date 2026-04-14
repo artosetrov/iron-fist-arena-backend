@@ -35,16 +35,19 @@
 
 **Observable outcome:** storefront hides Premium Forever. Existing owners unaffected. No new Premium entitlements created until Phase 2 ships.
 
-### Phase 2 — follow-up PR (Premium Pass launch)
+### Phase 2 — backend shipped 2026-04-14 (batch 4)
 
-- [ ] Prisma migration: add `PremiumSubscription` table (`userId`, `startedAt`, `expiresAt`, `autoRenew`, `originalTransactionId`, `latestReceipt`).
-- [ ] `IAP_PRODUCTS.premium_pass_monthly` entry.
-- [ ] Apple StoreKit: create subscription group + product (`com.hexbound.premiumpassmonthly`).
-- [ ] `verify-receipt` branch for subscription: store receipt, compute `expiresAt` from Apple's response, upsert `PremiumSubscription`.
-- [ ] `hasPremium()` in `premium.ts` reads **max(user.premiumUntil, active subscription.expiresAt)**.
-- [ ] Apple App Store Server Notifications v2 webhook handler (`/api/iap/apple-notifications`) to process `DID_RENEW`, `EXPIRED`, `REFUND`, `GRACE_PERIOD`, `BILLING_RETRY`.
+- [x] Prisma migration: add `PremiumSubscription` table (`userId`, `startedAt`, `expiresAt`, `autoRenew`, `originalTransactionId`, `latestTransactionId`, `latestReceipt`, `status`). Applied to prod via Supabase MCP + on-disk migration `20260414_premium_subscription/`.
+- [x] `IAP_PRODUCTS.premium_pass_monthly` entry (price $4.99, 30-day window, 300 gems/period).
+- [x] `verify-receipt` branch for subscription: reads `appleResult.transactionInfo.expiresDate`, falls back to `purchaseDate + durationDays`, upserts `PremiumSubscription`, grants monthly gems on initial purchase.
+- [x] `hasPremium()` in `premium.ts` reads **either** `premiumUntil` OR `activeSubscriptionExpiresAt` (both optional — backward-compatible for legacy callers).
+- [x] Apple App Store Server Notifications v2 webhook handler (`/api/iap/apple-notifications`) — processes `DID_RENEW`, `SUBSCRIBED`, `OFFER_REDEEMED`, `DID_FAIL_TO_RENEW` (grace period), `EXPIRED`, `DID_CHANGE_RENEWAL_STATUS`, `REFUND`, `REVOKE`.
+- [ ] Apple StoreKit: create subscription group + product (`com.hexbound.premiumpassmonthly`) in App Store Connect.
+- [ ] Register webhook URL `https://api.hexboundapp.com/api/iap/apple-notifications` in App Store Connect.
+- [ ] Wire caller sites (`pvp/*`, `dungeons/*`, `daily-login/claim`) to pass `activeSubscriptionExpiresAt` from `PremiumSubscription` — otherwise subscription benefits won't apply at runtime. Currently only the legacy `premiumUntil` path is wired. **Blocker for launch.**
 - [ ] iOS storefront: new "Premium Pass" card with 7-day free trial introductory offer.
 - [ ] Analytics: trial → paid conversion, renewal rate, refund rate.
+- [ ] Phase 3 hardening: verify Apple's JWS signature against their cert chain (webhook currently decodes payload-only).
 
 ### Phase 3 — optional enhancements
 

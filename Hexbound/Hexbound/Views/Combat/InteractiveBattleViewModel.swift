@@ -328,6 +328,16 @@ final class InteractiveBattleViewModel {
         lastActiveFiredLabel = response.playerActiveLabel
         lastOpponentActiveFiredLabel = response.opponentActiveLabel
         pendingActiveSlot = nil
+        // Phase 4 polish — SFX per fired active. Opponent and player fire on
+        // the same tick; dispatch both with a tiny stagger so they don't step
+        // on each other. Player SFX plays first (their choice, their reward).
+        Self.playActiveFireSFX(labelRaw: response.playerActiveLabel)
+        if response.opponentActiveLabel != nil {
+            Task { [label = response.opponentActiveLabel] in
+                try? await Task.sleep(for: .milliseconds(120))
+                await MainActor.run { Self.playActiveFireSFX(labelRaw: label) }
+            }
+        }
 
         state.strikes.append(response.playerStrike)
         if let opp = response.opponentStrike {
@@ -574,6 +584,23 @@ final class InteractiveBattleViewModel {
             let msg = (error as? APIError)?.errorDescription ?? "Failed to complete match"
             phase = .error(message: msg)
         }
+    }
+
+    // MARK: - Active SFX dispatch (Phase 4 polish)
+
+    /// Maps a TalentSlotAction raw label from the /strike response to the
+    /// SFX file baked into the bundle. No-op when the label is nil or unknown.
+    static func playActiveFireSFX(labelRaw: String?) {
+        guard let raw = labelRaw, let action = TalentSlotAction(rawValue: raw) else { return }
+        let sfx: SFX
+        switch action {
+        case .burstDamage: sfx = .hitCritical
+        case .healSelf:    sfx = .combatHeal
+        case .shieldSelf:  sfx = .combatShield
+        case .stunEnemy:   sfx = .combatBuff
+        case .execute:     sfx = .combatDeath
+        }
+        SFXManager.shared.play(sfx)
     }
 }
 

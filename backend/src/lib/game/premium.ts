@@ -21,6 +21,14 @@
 
 export interface PremiumUserFields {
   readonly premiumUntil: Date | null
+  // Phase 2 (2026-04-14) — Premium Pass subscription. Null for users without a
+  // subscription row, or for legacy Premium Forever owners (who use premiumUntil).
+  // hasPremium() returns true if EITHER source is active — so grandfathered
+  // Forever owners keep access indefinitely, and subscribers get access while
+  // their subscription is in good standing.
+  // Pass the expiresAt value from the PremiumSubscription row, but ONLY when
+  // status is 'active' or 'grace_period' — expired/refunded rows should be null.
+  readonly activeSubscriptionExpiresAt?: Date | null
 }
 
 /** Premium gold bonus — +10% on all gold income. */
@@ -37,8 +45,10 @@ export function hasPremium(
   user: PremiumUserFields,
   now: Date = new Date(),
 ): boolean {
-  if (!user.premiumUntil) return false
-  return user.premiumUntil.getTime() > now.getTime()
+  const nowMs = now.getTime()
+  if (user.premiumUntil && user.premiumUntil.getTime() > nowMs) return true
+  if (user.activeSubscriptionExpiresAt && user.activeSubscriptionExpiresAt.getTime() > nowMs) return true
+  return false
 }
 
 /**

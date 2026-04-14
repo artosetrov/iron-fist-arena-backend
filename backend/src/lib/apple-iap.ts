@@ -30,7 +30,11 @@ export interface AppleTransactionInfo {
   inAppOwnershipType: 'PURCHASED' | 'FAMILY_SHARED'
   environment: 'Sandbox' | 'Production'
   signedDate: number
-  // ... more fields available
+  // Subscription-only fields (present when type is 'Auto-Renewable Subscription').
+  // See docs/06_game_systems/PREMIUM_PASS_MIGRATION.md.
+  expiresDate?: number       // ms since epoch — renewal boundary
+  revocationDate?: number    // ms since epoch — refund/family-revoke timestamp
+  revocationReason?: 0 | 1   // 0=app issue, 1=other (refund)
 }
 
 export interface AppleVerifyResult {
