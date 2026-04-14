@@ -519,6 +519,12 @@ class GuildHallViewModel {
             incomingChallenges.removeAll { $0.id == challenge.id }
             return "This challenge has expired"
         }
+        // Client-side stamina pre-check — mirrors ArenaViewModel; server is
+        // still authoritative, but this avoids the spinner → error round-trip.
+        let staminaCost = AppConstants.pvpStaminaCost
+        if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
+            return "Not enough stamina — wait for regen or use a potion"
+        }
         processingChallengeId = challenge.id
         defer { processingChallengeId = nil }
         do {

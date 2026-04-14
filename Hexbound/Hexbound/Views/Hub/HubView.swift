@@ -1275,6 +1275,16 @@ struct BattleInviteBanner: View {
 
     private func acceptChallenge(_ challenge: IncomingChallenge) {
         guard !isAccepting else { return }
+
+        // Client-side stamina pre-check — mirrors ArenaViewModel so the user
+        // gets immediate feedback instead of a round-trip "Not enough stamina"
+        // server error.
+        let staminaCost = cache.gameConfig?.pvpStaminaCost ?? AppConstants.pvpStaminaCost
+        if (appState.currentCharacter?.currentStamina ?? 0) < staminaCost {
+            appState.showToast("Not enough stamina", subtitle: "Wait for regen or use a potion", type: .error)
+            return
+        }
+
         isAccepting = true
         HapticManager.heavy()
 
