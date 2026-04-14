@@ -132,11 +132,15 @@ function decrementCooldowns(actives: ActiveSlotSnapshot[]): ActiveSlotSnapshot[]
 
 /**
  * AI picks one ready active for the opponent, prioritizing:
- *   1. execute — if player is low HP (≤ magnitude threshold)
- *   2. burst_damage — if player will survive counter and we can punish
- *   3. heal_self — if opponent is below 50% HP
- *   4. shield_self — if opponent is below 60% HP
- *   5. stun_enemy — otherwise, if available
+ *   1. execute — if player is in execute range (guaranteed kill)
+ *   2. heal_self — if opponent is CRITICALLY low (≤ 0.35 HP) and not already
+ *      in execute range from the player
+ *   3. burst_damage — if player is vulnerable (< 0.7 HP) OR opponent is
+ *      healthy (> 0.7 HP) — i.e. good kill window or low-risk aggression
+ *   4. shield_self — if opponent is below 0.5 HP AND player has a ready
+ *      active that isn't already on cooldown (incoming heavy hit likely)
+ *   5. stun_enemy — if player has ≥ 1 ready active (denies their next fire)
+ *   6. burst_damage — fallback when nothing else fits but burst is ready
  * Returns the chosen slot or null.
  */
 function pickOpponentActive(
@@ -144,45 +148,58 @@ function pickOpponentActive(
   opponentHp: number,
   opponentMaxHp: number,
   playerHp: number,
-  playerMaxHp: number
+  playerMaxHp: number,
+  playerActives?: ActiveSlotSnapshot[]
 ): ActiveSlotSnapshot | null {
   const ready = opponentActives.filter(
     (a) => a.cooldown_remaining === 0 && a.action_type
   )
   if (ready.length === 0) return null
 
-  const priority: Record<string, number> = {
-    execute: 0,
-    burst_damage: 1,
-    heal_self: 2,
-    shield_self: 3,
-    stun_enemy: 4,
+  const oppPct = opponentMaxHp > 0 ? opponentHp / opponentMaxHp : 0
+  const playerPct = playerMaxHp > 0 ? playerHp / playerMaxHp : 0
+  const playerHasReadyActive = (playerActives ?? []).some(
+    (a) => a.cooldown_remaining === 0 && !!a.action_type
+  )
+
+  // Tier 1 — execute (guaranteed kill)
+  const execSlot = ready.find(
+    (a) =>
+      a.action_type === 'execute' &&
+      shouldExecute(playerHp, playerMaxHp, a.magnitude)
+  )
+  if (execSlot) return execSlot
+
+  // Tier 2 — emergency heal (save from certain death next round)
+  if (oppPct <= 0.35) {
+    const heal = ready.find((a) => a.action_type === 'heal_self')
+    if (heal) return heal
   }
 
-  const oppPct = opponentHp / opponentMaxHp
+  // Tier 3 — burst in kill window OR safe-aggressive window
+  if (playerPct < 0.7 || oppPct > 0.7) {
+    const burst = ready.find((a) => a.action_type === 'burst_damage')
+    if (burst) return burst
+  }
 
-  const candidates = ready.filter((a) => {
-    switch (a.action_type) {
-      case 'execute':
-        return shouldExecute(playerHp, playerMaxHp, a.magnitude)
-      case 'heal_self':
-        return oppPct <= 0.5
-      case 'shield_self':
-        return oppPct <= 0.6
-      case 'burst_damage':
-      case 'stun_enemy':
-        return true
-      default:
-        return false
-    }
-  })
-  if (candidates.length === 0) return null
+  // Tier 4 — preemptive shield when opp is low AND player has a loaded active
+  if (oppPct <= 0.5 && playerHasReadyActive) {
+    const shield = ready.find((a) => a.action_type === 'shield_self')
+    if (shield) return shield
+  }
 
-  candidates.sort(
-    (a, b) =>
-      (priority[a.action_type ?? ''] ?? 99) - (priority[b.action_type ?? ''] ?? 99)
-  )
-  return candidates[0] ?? null
+  // Tier 5 — stun to deny player's next active (only useful if they have one)
+  if (playerHasReadyActive) {
+    const stun = ready.find((a) => a.action_type === 'stun_enemy')
+    if (stun) return stun
+  }
+
+  // Tier 6 — fallback burst when all else fails but we have it ready
+  const burstFallback = ready.find((a) => a.action_type === 'burst_damage')
+  if (burstFallback) return burstFallback
+
+  // Tier 7 — take any shield/heal/stun to at least use the cooldown
+  return ready[0] ?? null
 }
 
 export async function POST(req: NextRequest) {
@@ -352,7 +369,8 @@ export async function POST(req: NextRequest) {
       newDefenderHp,
       defenderRow.maxHp,
       attackerAfterHeal,
-      attackerRow.maxHp
+      attackerRow.maxHp,
+      actives.p1
     )
     const oppActiveLabel: string | null = firedOppActive?.action_type ?? null
 

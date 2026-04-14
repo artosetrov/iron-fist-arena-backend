@@ -41,6 +41,8 @@ private struct ActiveSkillSlotButton: View {
     let isInteractive: Bool
     let onTap: () -> Void
 
+    @State private var readyFlash = false
+
     private var isEmpty: Bool { slot == nil }
     private var isOnCooldown: Bool { (slot?.cooldownRemaining ?? 0) > 0 }
     private var isReady: Bool { slot?.isReady == true }
@@ -82,10 +84,35 @@ private struct ActiveSkillSlotButton: View {
                     Text("\(slot.cooldownRemaining)")
                         .font(DarkFantasyTheme.section)
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
+                        .contentTransition(.numericText(countsDown: true))
+                        .id("cd-\(slotIndex)-\(slot.cooldownRemaining)")
                 }
             }
             .frame(width: 56, height: 56)
             .opacity(canTap ? 1.0 : (isEmpty ? 0.5 : 0.85))
+            // Phase 4 polish — animate cooldown tick and "ready" flash.
+            // When cooldownRemaining decrements (server → client), the digit
+            // rolls via contentTransition; when it hits 0 the dark overlay
+            // fades out and the stroke pulses gold once.
+            .animation(.easeOut(duration: 0.25),
+                       value: slot?.cooldownRemaining)
+            .animation(.easeOut(duration: 0.3),
+                       value: isReady)
+            .onChange(of: isReady) { _, newValue in
+                guard newValue, !isEmpty else { return }
+                readyFlash = true
+                Task {
+                    try? await Task.sleep(for: .milliseconds(500))
+                    await MainActor.run { readyFlash = false }
+                }
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(DarkFantasyTheme.gold, lineWidth: readyFlash ? 2 : 0)
+                    .opacity(readyFlash ? 0.85 : 0)
+                    .animation(.easeOut(duration: 0.5), value: readyFlash)
+                    .allowsHitTesting(false)
+            )
         }
         .buttonStyle(.plain)
         .disabled(!canTap)
