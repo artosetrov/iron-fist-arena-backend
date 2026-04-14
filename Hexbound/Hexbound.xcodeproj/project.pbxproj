@@ -329,7 +329,10 @@
 		AAA20B5F92A1A7803ABFCB3C /* HexPulseLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA51BA22E1C9E99ECDDDE93F /* HexPulseLoader.swift */; };
 		AB392EFE4F889BCC0C41A3A8 /* dungeon_door_close.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0BB05E1367953E51C8696212 /* dungeon_door_close.wav */; };
 		AC04981FBFE24456A455C363 /* ui_tap.wav in Resources */ = {isa = PBXBuildFile; fileRef = CE48B13717090E0D50A83A9B /* ui_tap.wav */; };
+		AC2F4A6B8C9D0E1F2A3B4C50 /* GuildHallAlliesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2F4A6B8C9D0E1F2A3B4C51 /* GuildHallAlliesTab.swift */; };
 		AC2F4A6B8C9D0E1F2A3B4C5D /* GuildHallDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2F4A6B8C9D0E1F2A3B4C5E /* GuildHallDetailView.swift */; };
+		AC2F4A6B8C9D0E1F2A3B4C52 /* GuildHallDuelsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2F4A6B8C9D0E1F2A3B4C53 /* GuildHallDuelsTab.swift */; };
+		AC2F4A6B8C9D0E1F2A3B4C54 /* GuildHallScrollsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2F4A6B8C9D0E1F2A3B4C55 /* GuildHallScrollsTab.swift */; };
 		AD41D37DCCD627BDB0085647 /* combat_block_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = B6D065AB078ABF21D519E164 /* combat_block_3.wav */; };
 		AE77EBD74CC46B9302B05F64 /* magic_spark.wav in Resources */ = {isa = PBXBuildFile; fileRef = C050067D9218FEA233BB9C11 /* magic_spark.wav */; };
 		AEF2DE25A9A38E438380D2A3 /* combat_block_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = F592F13EECE15960B2811748 /* combat_block_4.wav */; };
@@ -422,6 +425,7 @@
 		E55080DD83E15810D7C63678 /* SegmentedProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB613DE56FBC3B40EBE42011 /* SegmentedProgressBar.swift */; };
 		E5AB8CE71D5D326878C5CD99 /* Character.swift in Sources */ = {isa = PBXBuildFile; fileRef = E47BF69C872101A05B35E80C /* Character.swift */; };
 		E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6D /* SFXManager.swift */; };
+		E769609CAAA4399CC60C2541 /* SFXCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D739E061B444DC46FF0A6E /* SFXCatalog.swift */; };
 		E7A0397200D276BA4EC1669F /* shell_shuffle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 029AA9A175D862EBED174221 /* shell_shuffle.wav */; };
 		E8A745114C6558E972DA5AD0 /* hit_true_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = DD2B68A87A3919594D4C98CD /* hit_true_2.wav */; };
 		E923A83D9EA268BB98DE526C /* amb_torch_crackle.wav in Resources */ = {isa = PBXBuildFile; fileRef = EC4E1722C3F765D8E9528D27 /* amb_torch_crackle.wav */; };
@@ -593,6 +597,7 @@
 		3F71A0C501580577FDDB710B /* DungeonSelectDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonSelectDetailView.swift; sourceTree = "<group>"; };
 		408F0CE2F3C37201A7839058 /* NPCHintOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NPCHintOverlay.swift; sourceTree = "<group>"; };
 		41D739E061B444DC46FF0A6D /* SFXManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXManager.swift; sourceTree = "<group>"; };
+		41D739E061B444DC46FF0A6E /* SFXCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXCatalog.swift; sourceTree = "<group>"; };
 		4207BE33FB8C08DAEF7E2385 /* CharacterClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CharacterClass.swift; sourceTree = "<group>"; };
 		42A1B2C3D4E5F60DM1CF001 /* DungeonMapBuildingConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingConfig.swift; sourceTree = "<group>"; };
 		42A1B2C3D4E5F60DM2BV001 /* DungeonMapBuildingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonMapBuildingView.swift; sourceTree = "<group>"; };
@@ -785,7 +790,10 @@
 		AA1BC0E1F7A24D8E9C3D5A06 /* ArenaOpponentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArenaOpponentCard.swift; sourceTree = "<group>"; };
 		AA710DEA74DE34B17C932FE7 /* hit_critical_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_critical_3.wav; sourceTree = "<group>"; };
 		AB9A6B1D0F6FECA30FCAD7F3 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
+		AC2F4A6B8C9D0E1F2A3B4C51 /* GuildHallAlliesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallAlliesTab.swift; sourceTree = "<group>"; };
 		AC2F4A6B8C9D0E1F2A3B4C5E /* GuildHallDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallDetailView.swift; sourceTree = "<group>"; };
+		AC2F4A6B8C9D0E1F2A3B4C53 /* GuildHallDuelsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallDuelsTab.swift; sourceTree = "<group>"; };
+		AC2F4A6B8C9D0E1F2A3B4C55 /* GuildHallScrollsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuildHallScrollsTab.swift; sourceTree = "<group>"; };
 		AC7DFA5AA46E59CFF5DDEA2B /* AmbientManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbientManager.swift; sourceTree = "<group>"; };
 		AC84A62ED896D7BFE13A0591 /* DailyLoginPopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginPopupView.swift; sourceTree = "<group>"; };
 		AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyLoginDetailView.swift; sourceTree = "<group>"; };
@@ -1493,6 +1501,7 @@
 				AC7DFA5AA46E59CFF5DDEA2B /* AmbientManager.swift */,
 				8825D55175E1FECF38EF971F /* AudioManager.swift */,
 				79F022C8EB7B52576FEE27CC /* KeychainManager.swift */,
+				41D739E061B444DC46FF0A6E /* SFXCatalog.swift */,
 				41D739E061B444DC46FF0A6D /* SFXManager.swift */,
 				F9C1475B1BBD153D131D99EA /* SettingsManager.swift */,
 			);
@@ -1694,7 +1703,10 @@
 		BD3A5B7C8D9E0F1A2B3C4D5E /* Social */ = {
 			isa = PBXGroup;
 			children = (
+				AC2F4A6B8C9D0E1F2A3B4C51 /* GuildHallAlliesTab.swift */,
 				AC2F4A6B8C9D0E1F2A3B4C5E /* GuildHallDetailView.swift */,
+				AC2F4A6B8C9D0E1F2A3B4C53 /* GuildHallDuelsTab.swift */,
+				AC2F4A6B8C9D0E1F2A3B4C55 /* GuildHallScrollsTab.swift */,
 				9B1E3F5A7B8C9D0E1F2A3B4D /* GuildHallViewModel.swift */,
 			);
 			path = Social;
@@ -2267,7 +2279,10 @@
 				470F5BEDF3805578CF1EE29A /* GoldMineViewModel.swift in Sources */,
 				db9eec8a3007055fe1a5d459 /* MinigameSession.swift in Sources */,
 				5B34EB72B2B1DF29098C8BE5 /* MineResourceHeader.swift in Sources */,
+				AC2F4A6B8C9D0E1F2A3B4C50 /* GuildHallAlliesTab.swift in Sources */,
 				AC2F4A6B8C9D0E1F2A3B4C5D /* GuildHallDetailView.swift in Sources */,
+				AC2F4A6B8C9D0E1F2A3B4C52 /* GuildHallDuelsTab.swift in Sources */,
+				AC2F4A6B8C9D0E1F2A3B4C54 /* GuildHallScrollsTab.swift in Sources */,
 				9B1E3F5A7B8C9D0E1F2A3B4C /* GuildHallViewModel.swift in Sources */,
 				55384939A59DB1194B7B4831 /* HeroDetailView.swift in Sources */,
 				867AD63D2EA83A7C48FDA067 /* CharacterDisplay.swift in Sources */,
@@ -2356,6 +2371,7 @@
 				77DFA39FC5C4215967DF859A /* ReferralSectionView.swift in Sources */,
 				2AF622924BD22E871CCC1E02 /* SettingsManager.swift in Sources */,
 				B17C8CC7C1A53DD722B5647F /* SettingsViewModel.swift in Sources */,
+				E769609CAAA4399CC60C2541 /* SFXCatalog.swift in Sources */,
 				E769609CAAA4399CC60C2540 /* SFXManager.swift in Sources */,
 				3A90425A6C1B65E59C7BB32A /* AmbientManager.swift in Sources */,
 				467020D2C9265A8F7CBEAAE2 /* ShellGameDetailView.swift in Sources */,
