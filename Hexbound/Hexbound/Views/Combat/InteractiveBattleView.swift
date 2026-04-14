@@ -660,13 +660,18 @@ struct InteractiveBattleRouteView: View {
                 if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
             }
         case .unavailable:
-            // Feature flag flipped off between /game/init and /match/start —
-            // rare race. Fall back: pop and toast; user can tap Fight again
-            // and will get the classic flow on the next tap.
-            appState.showToast("Interactive combat unavailable",
-                               subtitle: "Returning to classic mode",
-                               type: .info)
+            // /pvp/match/start returned 404 — endpoint not deployed (feature
+            // flag on client but backend rolled back, or race between deploys).
+            // Disable interactive combat for the rest of this session, then
+            // signal ArenaDetailView to re-run the fight in classic mode for
+            // the same opponent. No user-visible "unavailable" toast — the
+            // fallback should be transparent.
+            appState.interactiveCombatLocallyDisabled = true
+            let oppId = opponentId
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
+            // Set pending id AFTER pop so ArenaDetailView's onChange fires
+            // once the arena screen is back in scope.
+            appState.pendingClassicFightOpponentId = oppId
         case .error(let message):
             appState.showToast("Match failed", subtitle: message, type: .error)
             if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }

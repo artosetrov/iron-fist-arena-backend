@@ -17,8 +17,10 @@
 > - `BATTLE_PASS_PREMIUM`: `500 → 700` gems (R12).
 > - `GOLD_MINE_BOOST`: `3 → 15` gems (R13).
 >
+> **Also shipping in v3 batch 3 (2026-04-14):**
+> - Stamina cap `120 → 180` (R8.cap) — pure buff for existing players; migration `20260414_stamina_cap_180` applied to prod. 24h overnight regen at 1/8min.
+>
 > **Target (still deferred — multi-domain):**
-> - Stamina cap `120 → 180` (R8.cap) — touches iOS bar widths + regen tuning.
 > - Premium Pass StoreKit subscription Phase 2 — see `PREMIUM_PASS_MIGRATION.md`.
 > - Bundle extras (Protection Scrolls, Legendary Shards) — needs `ConsumableType` enum migration + character routing decision.
 
@@ -34,7 +36,7 @@
 
 | Property | Value | Details |
 |----------|-------|---------|
-| Maximum Stamina | 120 | Hard cap |
+| Maximum Stamina | 180 | Hard cap (v3 batch 3: was 120) |
 | Regen Rate | 1 point | Per interval |
 | Regen Interval | 8 minutes | Every 8 min → +1 stamina |
 | Regen Duration | Infinite | Always regenerating |

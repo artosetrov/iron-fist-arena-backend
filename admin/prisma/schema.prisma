@@ -78,6 +78,8 @@ enum ConsumableType {
   health_potion_small
   health_potion_medium
   health_potion_large
+  protection_scroll
+  legendary_shard
 }
 
 enum QuestType {
@@ -285,8 +287,8 @@ model Character {
   combatStance      Json?     @map("combat_stance")
 
   // Stamina
-  currentStamina    Int       @default(120) @map("current_stamina")
-  maxStamina        Int       @default(120) @map("max_stamina")
+  currentStamina    Int       @default(180) @map("current_stamina")
+  maxStamina        Int       @default(180) @map("max_stamina")
   lastStaminaUpdate DateTime? @map("last_stamina_update")
   lastHpUpdate      DateTime? @map("last_hp_update")
 

@@ -25,7 +25,7 @@ final class DungeonSelectViewModel {
 
     var playerLevel: Int { appState.currentCharacter?.level ?? 1 }
     var stamina: Int { appState.currentCharacter?.currentStamina ?? 0 }
-    var maxStamina: Int { appState.currentCharacter?.maxStamina ?? 120 }
+    var maxStamina: Int { appState.currentCharacter?.maxStamina ?? 180 }
 
     // MARK: - Dungeon State
 

@@ -58,6 +58,16 @@ final class AppState {
     var pendingLoot: [[String: Any]] = []
     var resolveResult: ResolveResult?
 
+    // MARK: - Interactive Combat v1 Fallback
+    //
+    // When /pvp/match/start returns 404 (feature flag on client but endpoint
+    // not deployed / rolled back on server), `InteractiveBattleView` sets
+    // `interactiveCombatLocallyDisabled = true` for the rest of the session
+    // and sets `pendingClassicFightOpponentId` so `ArenaDetailView` re-runs
+    // `fight(opponentId:, forceClassic: true)` automatically.
+    var interactiveCombatLocallyDisabled = false
+    var pendingClassicFightOpponentId: String?
+
     // MARK: - Cache
     var cachedInventory: [Item]?
     var cachedQuests: [[String: Any]]?

@@ -86,7 +86,7 @@ final class DungeonRoomViewModel {
     }
 
     var stamina: Int { appState.currentCharacter?.currentStamina ?? 0 }
-    var maxStamina: Int { appState.currentCharacter?.maxStamina ?? 120 }
+    var maxStamina: Int { appState.currentCharacter?.maxStamina ?? 180 }
 
     func bossState(at index: Int) -> BossState {
         if index < defeatedCount { return .defeated }

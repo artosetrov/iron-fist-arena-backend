@@ -237,6 +237,16 @@ struct ArenaDetailView: View {
         .onChange(of: isLowHP) { _, _ in
             updateArenaHint()
         }
+        // Interactive Combat v1 → classic fallback. When
+        // `InteractiveBattleView` hits a 404 from /pvp/match/start, it flips
+        // `appState.interactiveCombatLocallyDisabled` and sets this pending id
+        // after popping back to the arena. We consume it here and re-run the
+        // Fight in classic mode for the same opponent — seamless to the user.
+        .onChange(of: appState.pendingClassicFightOpponentId) { _, newValue in
+            guard let opponentId = newValue, let vm else { return }
+            appState.pendingClassicFightOpponentId = nil
+            Task { await vm.fight(opponentId: opponentId, forceClassic: true) }
+        }
         .task {
             // Show arena guide NPC only on first visit (not yet dismissed)
             if !arenaGuideDismissed {

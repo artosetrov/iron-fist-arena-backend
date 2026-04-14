@@ -4,7 +4,9 @@
 
 // --- Stamina ---
 export const STAMINA = {
-  MAX: 120,
+  // Economy v3 (2026-04-14): raised 120 → 180 so two daily check-ins fully use
+  // overnight regen (24h 0→max at 1 point / 8 min). See ECONOMY_RULES.md R8.
+  MAX: 180,
   REGEN_RATE: 1, // 1 point per REGEN_INTERVAL_MINUTES
   REGEN_INTERVAL_MINUTES: 8,
   PVP_COST: 10,
@@ -184,6 +186,17 @@ export const DAILY_LOGIN_REWARDS: readonly DailyLoginRewardDef[] = [
 // `enabled: false` = no new purchases, but server still honors existing owners
 // (e.g., premium_forever entitlement remains valid for users who bought before disable).
 // Rules: see docs/06_game_systems/ECONOMY_RULES.md R10, R11.
+/**
+ * Bundle item grant — a count of a consumable to drop into the user's
+ * active (most-recent) character's ConsumableInventory on purchase.
+ * Used by Adventurer's Bundles to deliver Protection Scrolls / Legendary
+ * Shards alongside currencies. Enum values must exist in ConsumableType.
+ */
+export interface IapItemGrant {
+  type: 'protection_scroll' | 'legendary_shard';
+  quantity: number;
+}
+
 export interface IapProduct {
   gems: number;
   gold: number;
@@ -191,6 +204,7 @@ export interface IapProduct {
   monthlyGemCard: boolean; // activates daily gem card (50 instant + 10/day x30)
   price: number;
   enabled?: boolean; // default: true. If false, /api/iap/products hides it and /verify-receipt rejects new purchases.
+  items?: IapItemGrant[]; // optional consumable grants for bundle SKUs
 }
 
 export const IAP_PRODUCTS: Record<string, IapProduct> = {

@@ -60,7 +60,7 @@ final class ArenaViewModel {
     var hasFreePvp: Bool { freePvpUsed < freePvpPerDayLimit }
     var firstWinToday: Bool { character?.firstWinToday ?? false }
     var currentStamina: Int { character?.currentStamina ?? 0 }
-    var maxStamina: Int { character?.maxStamina ?? 120 }
+    var maxStamina: Int { character?.maxStamina ?? 180 }
 
     func goToShop() {
         appState.shopInitialTab = 3
@@ -190,7 +190,7 @@ final class ArenaViewModel {
 
     // MARK: - Fight (Instant Battle Flow)
 
-    func fight(opponentId: String) async {
+    func fight(opponentId: String, forceClassic: Bool = false) async {
         // Client-side stamina pre-check: avoid "Preparing..." spinner
         // when we already know the fight will fail due to low stamina.
         let staminaCost = cache.gameConfig?.pvpStaminaCost ?? 10
@@ -202,9 +202,13 @@ final class ArenaViewModel {
         // Interactive Combat v1 routing — when server flag is on
         // (INTERACTIVE_COMBAT_V1 → GameConfig.interactiveCombatEnabled), route
         // the Fight button to the new match-lifecycle screen. Classic flow stays
-        // as-is when the flag is off. VM self-handles /match/start; any error
-        // path (including a rare 404 race) falls back via the route wrapper.
-        if cache.gameConfig?.interactiveCombatEnabled == true,
+        // as-is when the flag is off. VM self-handles /match/start; if it returns
+        // 404 (rolled-back endpoint), `InteractiveBattleView` flips
+        // `appState.interactiveCombatLocallyDisabled = true` and re-runs this
+        // method with `forceClassic: true`, which skips the check below.
+        if !forceClassic,
+           !appState.interactiveCombatLocallyDisabled,
+           cache.gameConfig?.interactiveCombatEnabled == true,
            let char = appState.currentCharacter,
            let opponent = opponents.first(where: { $0.id == opponentId }) {
             showComparison = false

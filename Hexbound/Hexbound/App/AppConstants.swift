@@ -81,7 +81,7 @@ enum AppConstants {
     // and version-gated.
 
     // DEPRECATED: use cache.gameConfig.maxStamina — unused fallback, pending W4 removal
-    static let maxStamina = 120
+    static let maxStamina = 180
     // DEPRECATED: use cache.gameConfig.freePvpPerDay — migrated 2026-04-09 (W1.D3), kept as fallback
     static let freePvpPerDay = 3
     // DEPRECATED: use cache.gameConfig.pvpStaminaCost — pending full migration in W4

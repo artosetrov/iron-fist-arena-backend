@@ -110,22 +110,22 @@ struct ProgressBarsCatalogView: View {
         catalogSection("Stamina Bar — Sizes & States") {
             VStack(spacing: LayoutConstants.spaceMD) {
                 barRow("Compact (75%)") {
-                    StaminaBarView(currentStamina: 90, maxStamina: 120, size: .compact)
+                    StaminaBarView(currentStamina: 135, maxStamina: 180, size: .compact)
                 }
                 barRow("Large (75%)") {
-                    StaminaBarView(currentStamina: 90, maxStamina: 120, size: .large)
+                    StaminaBarView(currentStamina: 135, maxStamina: 180, size: .large)
                 }
                 barRow("Full") {
-                    StaminaBarView(currentStamina: 120, maxStamina: 120, size: .large)
+                    StaminaBarView(currentStamina: 180, maxStamina: 180, size: .large)
                 }
                 barRow("Low (10%)") {
-                    StaminaBarView(currentStamina: 12, maxStamina: 120, size: .large)
+                    StaminaBarView(currentStamina: 18, maxStamina: 180, size: .large)
                 }
                 barRow("Empty") {
-                    StaminaBarView(currentStamina: 0, maxStamina: 120, size: .large)
+                    StaminaBarView(currentStamina: 0, maxStamina: 180, size: .large)
                 }
                 barRow("With Recovery") {
-                    StaminaBarView(currentStamina: 60, maxStamina: 120, size: .large, recoveryText: "Full in 8h 0m")
+                    StaminaBarView(currentStamina: 90, maxStamina: 180, size: .large, recoveryText: "Full in 12h 0m")
                 }
             }
         }

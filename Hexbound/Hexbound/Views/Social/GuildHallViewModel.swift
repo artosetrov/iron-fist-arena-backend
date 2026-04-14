@@ -609,7 +609,7 @@ class GuildHallViewModel {
                 statPointsAwarded: nil,
                 loot: [],
                 staminaCurrent: appState.currentCharacter?.currentStamina ?? 0,
-                staminaMax: appState.currentCharacter?.maxStamina ?? 120,
+                staminaMax: appState.currentCharacter?.maxStamina ?? 180,
                 matchId: result.matchId,
                 durabilityDegraded: [],
                 hpCurrent: nil,

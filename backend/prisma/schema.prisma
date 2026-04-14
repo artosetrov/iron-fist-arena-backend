@@ -78,6 +78,13 @@ enum ConsumableType {
   health_potion_small
   health_potion_medium
   health_potion_large
+  // Economy v3 batch 3 (2026-04-14): Adventurer's Bundle extras.
+  // protection_scroll — consumed during +9/+10 upgrade attempts to prevent
+  //   downgrade-on-fail. See R7.3.
+  // legendary_shard — crafting material for legendary gear. Granted via
+  //   Adventurer's Bundle III. Route: active (most-recent) character.
+  protection_scroll
+  legendary_shard
 }
 
 enum QuestType {
@@ -285,8 +292,8 @@ model Character {
   combatStance      Json?     @map("combat_stance")
 
   // Stamina
-  currentStamina    Int       @default(120) @map("current_stamina")
-  maxStamina        Int       @default(120) @map("max_stamina")
+  currentStamina    Int       @default(180) @map("current_stamina")
+  maxStamina        Int       @default(180) @map("max_stamina")
   lastStaminaUpdate DateTime? @map("last_stamina_update")
   lastHpUpdate      DateTime? @map("last_hp_update")
 
