@@ -234,6 +234,8 @@
 		8281E05D2AF0FB9BAA88513A /* combat_buff.wav in Resources */ = {isa = PBXBuildFile; fileRef = BFEC262932E55B761AE0D804 /* combat_buff.wav */; };
 		82C5D1FA1A587E598C410E8D /* BattlePassService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39859708651A5AACC1204865 /* BattlePassService.swift */; };
 		8380A79FD977F53D662B3660 /* ItemDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B312FE20E15FB7A18E120B8 /* ItemDetailSheet.swift */; };
+		8380A79FD977F53D662B3661 /* ItemDetailActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B312FE20E15FB7A18E120B9 /* ItemDetailActions.swift */; };
+		8380A79FD977F53D662B3662 /* ItemDetailSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B312FE20E15FB7A18E120BA /* ItemDetailSections.swift */; };
 		8394D02039030683CC15DC76 /* PvPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F22D92AB4A3E0BFA40954F /* PvPService.swift */; };
 		84E41B106E5AC37AC2BE6EC8 /* hit_true_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6307593A6A8467F6791F1103 /* hit_true_3.wav */; };
 		850b12f3254266fef3d33289 /* BuildingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = a094119bdc4ac5d80724a699 /* BuildingBadge.swift */; };
@@ -442,6 +444,9 @@
 		F3A5B6C7D8E9F0A1B2C3D4E5 /* VictoryParticlesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A5B6C7D8E9F0A1B2C3D4E6 /* VictoryParticlesView.swift */; };
 		F3B7C8F51876CBBB26EDD022 /* coins_jingle_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6D7B85F7C51D0A5D284467D3 /* coins_jingle_2.wav */; };
 		F425A4E619F59E4D30700CDE /* DungeonRushDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */; };
+		F425A4E619F59E4D30700CDF /* DungeonRushGameOver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F47C02A1E8000971C47A7C2 /* DungeonRushGameOver.swift */; };
+		F425A4E619F59E4D30700CE0 /* DungeonRushRoomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F47C02A1E8000971C47A7C3 /* DungeonRushRoomView.swift */; };
+		F425A4E619F59E4D30700CE1 /* DungeonRushStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F47C02A1E8000971C47A7C4 /* DungeonRushStartView.swift */; };
 		F45C4BA75C8D9A2707CAA811 /* ClaimRewardModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E87AA6F0256AA378D3CBCB6 /* ClaimRewardModalView.swift */; };
 		F645E3687408379B353A6571 /* creature_growl_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9285B369E46D58F89E9DE826 /* creature_growl_3.wav */; };
 		F65BC8C3CB2266B39AEB122C /* combat_dodge_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9AF8ADC51BB174F8BA5545E1 /* combat_dodge_3.wav */; };
@@ -566,6 +571,8 @@
 		2A939232902186D39EE630E6 /* BuildingLockOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildingLockOverlay.swift; sourceTree = "<group>"; };
 		2AC33F4DE1089A000F90E2A9 /* CombatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatViewModel.swift; sourceTree = "<group>"; };
 		2B312FE20E15FB7A18E120B8 /* ItemDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailSheet.swift; sourceTree = "<group>"; };
+		2B312FE20E15FB7A18E120B9 /* ItemDetailActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailActions.swift; sourceTree = "<group>"; };
+		2B312FE20E15FB7A18E120BA /* ItemDetailSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailSections.swift; sourceTree = "<group>"; };
 		2CA09FFED80BD238E20EE3E4 /* dungeon_door_close_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = dungeon_door_close_2.wav; sourceTree = "<group>"; };
 		2E4A238B86CA38072EB508BC /* gold_mine_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = gold_mine_2.wav; sourceTree = "<group>"; };
 		2E6AFEE7B85E79332868470B /* amb_rain_loop.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = amb_rain_loop.wav; sourceTree = "<group>"; };
@@ -692,6 +699,9 @@
 		7E06CD0596AD36E563E8E620 /* combat_shield_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = combat_shield_3.wav; sourceTree = "<group>"; };
 		7F3A9E2B41C8D605E1A0B3C8 /* OpponentProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpponentProfile.swift; sourceTree = "<group>"; };
 		7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushDetailView.swift; sourceTree = "<group>"; };
+		7F47C02A1E8000971C47A7C2 /* DungeonRushGameOver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushGameOver.swift; sourceTree = "<group>"; };
+		7F47C02A1E8000971C47A7C3 /* DungeonRushRoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushRoomView.swift; sourceTree = "<group>"; };
+		7F47C02A1E8000971C47A7C4 /* DungeonRushStartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRushStartView.swift; sourceTree = "<group>"; };
 		7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineShaftPicker.swift; sourceTree = "<group>"; };
 		80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone_2.wav; sourceTree = "<group>"; };
 		80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsDetailView.swift; sourceTree = "<group>"; };
@@ -1092,7 +1102,9 @@
 				88B8909F01E03E455694F1AA /* EquipmentViewModel.swift */,
 				1C1B4BDE312B412B655B4901 /* InventoryViewModel.swift */,
 				5E160EA5CEA60F2AB037A705 /* ItemCardView.swift */,
+				2B312FE20E15FB7A18E120B9 /* ItemDetailActions.swift */,
 				2B312FE20E15FB7A18E120B8 /* ItemDetailSheet.swift */,
+				2B312FE20E15FB7A18E120BA /* ItemDetailSections.swift */,
 			);
 			path = Inventory;
 			sourceTree = "<group>";
@@ -1576,6 +1588,9 @@
 			isa = PBXGroup;
 			children = (
 				7F47C02A1E8000971C47A7C1 /* DungeonRushDetailView.swift */,
+				7F47C02A1E8000971C47A7C2 /* DungeonRushGameOver.swift */,
+				7F47C02A1E8000971C47A7C3 /* DungeonRushRoomView.swift */,
+				7F47C02A1E8000971C47A7C4 /* DungeonRushStartView.swift */,
 				A84C12D9BFA71769CEBB55D0 /* DungeonRushViewModel.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8A /* FortuneWheelDetailView.swift */,
 				5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */,
@@ -2251,6 +2266,9 @@
 				A4C8E2F6B1D3A5C7E9F1B3D5 /* LowHPPotionBanner.swift in Sources */,
 				B7A49363F89E4A8CDB1F9601 /* DungeonRoomViewModel.swift in Sources */,
 				F425A4E619F59E4D30700CDE /* DungeonRushDetailView.swift in Sources */,
+				F425A4E619F59E4D30700CDF /* DungeonRushGameOver.swift in Sources */,
+				F425A4E619F59E4D30700CE0 /* DungeonRushRoomView.swift in Sources */,
+				F425A4E619F59E4D30700CE1 /* DungeonRushStartView.swift in Sources */,
 				1DF365585FEF43884C9CDEC0 /* DungeonRushViewModel.swift in Sources */,
 				A3F7B1C2D4E6890A1B3C5D7E /* TreasureRewardOverlay.swift in Sources */,
 				3F2D8E7A9C0B1A2F3E4D5C6A /* FortuneWheelDetailView.swift in Sources */,
@@ -2306,7 +2324,9 @@
 				686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */,
 				9284496670692885430BC264 /* Item.swift in Sources */,
 				F162051F66C8DD0A2339E9D5 /* ItemCardView.swift in Sources */,
+				8380A79FD977F53D662B3661 /* ItemDetailActions.swift in Sources */,
 				8380A79FD977F53D662B3660 /* ItemDetailSheet.swift in Sources */,
+				8380A79FD977F53D662B3662 /* ItemDetailSections.swift in Sources */,
 				60AA3C7D4E914FAF3DBA1D9B /* ItemImageView.swift in Sources */,
 				0045A1B2C3D4E5F6A7B8C9D0 /* BattleResultCardView.swift in Sources */,
 				F45C4BA75C8D9A2707CAA811 /* ClaimRewardModalView.swift in Sources */,
