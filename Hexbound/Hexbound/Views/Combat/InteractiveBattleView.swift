@@ -587,6 +587,12 @@ struct InteractiveBattleRouteView: View {
         switch phase {
         case .finished:
             if let data = vm.finalCombatData {
+                // CombatResultDetailView reads appState.combatResult (NOT
+                // combatData) — setting the wrong property triggers the
+                // fallback "Battle Failed" error state. Set both so any
+                // downstream consumer (in-progress playback vs result modal)
+                // sees the final data.
+                appState.combatResult = data
                 appState.combatData = data
                 if !appState.mainPath.isEmpty { appState.mainPath.removeLast() }
                 appState.mainPath.append(AppRoute.combatResult)
