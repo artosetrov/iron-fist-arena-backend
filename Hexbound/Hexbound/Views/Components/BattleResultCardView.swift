@@ -696,7 +696,7 @@ struct BattleResultCardView: View {
     }
 
     @ViewBuilder
-    private func combatLogRow(index: Int, entry: CombatLogEntry) -> some View {
+    private func combatLogRow(index: Int, entry: CombatLogSummaryEntry) -> some View {
         // Outcome label + color
         let label: String = {
             if entry.isMiss { return "MISS" }
@@ -1122,7 +1122,7 @@ struct BattleResultConfig {
     let onLootTap: ((Int) -> Void)?
 
     // Combat log (optional — PvP/Arena shows turn-by-turn recap)
-    var combatLog: [CombatLogEntry] = []
+    var combatLog: [CombatLogSummaryEntry] = []
 
     // Buttons
     let buttons: [ResultButton]
@@ -1130,7 +1130,7 @@ struct BattleResultConfig {
 
 /// Turn-by-turn display entry for the collapsible Combat Log section in the
 /// result modal. Built by CombatResultDetailView from CombatData.combatLog.
-struct CombatLogEntry: Identifiable {
+struct CombatLogSummaryEntry: Identifiable {
     let id = UUID()
     let isPlayerAttacking: Bool
     let attackerName: String

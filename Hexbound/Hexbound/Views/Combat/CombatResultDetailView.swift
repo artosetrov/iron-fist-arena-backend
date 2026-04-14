@@ -267,7 +267,7 @@ struct CombatResultDetailView: View {
         let xpNeededValue = xpNeededForLevel(charLevel)
 
         // Build combat log entries (PvP / Arena only — dungeon rewards hide it)
-        let combatLogEntries: [CombatLogEntry] = {
+        let combatLogEntries: [CombatLogSummaryEntry] = {
             guard let data = combatData, source == "arena" || source == "pvp" || source == "challenge" else {
                 return []
             }
@@ -276,7 +276,7 @@ struct CombatResultDetailView: View {
             let enemyName = data.enemy.characterName
             return data.combatLog.map { log in
                 let isPlayerAttacking = log.attackerId == playerId
-                return CombatLogEntry(
+                return CombatLogSummaryEntry(
                     isPlayerAttacking: isPlayerAttacking,
                     attackerName: isPlayerAttacking ? playerName : enemyName,
                     damage: log.damage,
