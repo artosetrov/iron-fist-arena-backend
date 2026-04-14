@@ -137,25 +137,129 @@ enum TalentSlotAction: String, Codable, Hashable, CaseIterable {
     }
 }
 
-/// One equipped active-skill slot.
+/// Kind of content occupying an active slot. Phase 4.B introduced `consumable`
+/// alongside `talent`. Old backends that don't send this field are treated as
+/// `talent` to keep decoding forward-compatible.
+enum ActiveSlotKind: String, Codable, Hashable {
+    case talent
+    case consumable
+}
+
+/// One equipped active-skill slot. Mirrors backend `SlotResponse` from
+/// `/api/passives/active-slots` (Phase 4.B).
+///
+/// Mutual exclusion: exactly one of `nodeId` / `consumableType` is non-nil,
+/// enforced by DB CHECK. Talent slots have `activeActionType/Cooldown/Magnitude`;
+/// consumable slots have those all nil (1/battle, not cooldown-based).
 struct ActiveSlot: Codable, Identifiable, Hashable {
-    // id synthesised from (characterId, slotIndex) — backend doesn't echo a primary key.
+    // id synthesised from slotIndex — backend doesn't echo a primary key.
     var id: Int { slotIndex }
 
     let slotIndex: Int
-    let nodeId: String
-    let nodeKey: String
+    /// Defaults to `.talent` if the backend omits the field (pre-4.B payloads).
+    let kind: ActiveSlotKind
+    let nodeId: String?
+    let nodeKey: String?
+    let consumableType: String?
     let name: String
-    let description: String
+    let description: String?
     let icon: String?
     let activeActionType: TalentSlotAction?
     let activeCooldown: Int?
     let activeMagnitude: Double?
     let equippedAt: String?   // ISO8601, decoded as String
+
+    var isTalent: Bool { kind == .talent }
+    var isConsumable: Bool { kind == .consumable }
+
+    init(
+        slotIndex: Int,
+        kind: ActiveSlotKind = .talent,
+        nodeId: String? = nil,
+        nodeKey: String? = nil,
+        consumableType: String? = nil,
+        name: String,
+        description: String? = nil,
+        icon: String? = nil,
+        activeActionType: TalentSlotAction? = nil,
+        activeCooldown: Int? = nil,
+        activeMagnitude: Double? = nil,
+        equippedAt: String? = nil
+    ) {
+        self.slotIndex = slotIndex
+        self.kind = kind
+        self.nodeId = nodeId
+        self.nodeKey = nodeKey
+        self.consumableType = consumableType
+        self.name = name
+        self.description = description
+        self.icon = icon
+        self.activeActionType = activeActionType
+        self.activeCooldown = activeCooldown
+        self.activeMagnitude = activeMagnitude
+        self.equippedAt = equippedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: DecodingKey.self)
+        slotIndex = try c.decode(Int.self, forKey: .slotIndex)
+        kind = (try? c.decode(ActiveSlotKind.self, forKey: .kind)) ?? .talent
+        nodeId = try c.decodeIfPresent(String.self, forKey: .nodeId)
+        nodeKey = try c.decodeIfPresent(String.self, forKey: .nodeKey)
+        consumableType = try c.decodeIfPresent(String.self, forKey: .consumableType)
+        name = try c.decode(String.self, forKey: .name)
+        description = try c.decodeIfPresent(String.self, forKey: .description)
+        icon = try c.decodeIfPresent(String.self, forKey: .icon)
+        activeActionType = try c.decodeIfPresent(TalentSlotAction.self, forKey: .activeActionType)
+        activeCooldown = try c.decodeIfPresent(Int.self, forKey: .activeCooldown)
+        activeMagnitude = try c.decodeIfPresent(Double.self, forKey: .activeMagnitude)
+        equippedAt = try c.decodeIfPresent(String.self, forKey: .equippedAt)
+    }
+
+    private enum DecodingKey: String, CodingKey {
+        case slotIndex, kind, nodeId, nodeKey, consumableType
+        case name, description, icon
+        case activeActionType, activeCooldown, activeMagnitude, equippedAt
+    }
+}
+
+/// Picker meta for a consumable — price + owned count, used by the Consumables
+/// section of the Active Skill Picker. Mirrors backend `ConsumableMeta`.
+struct ConsumableMeta: Codable, Hashable, Identifiable {
+    var id: String { consumableType }
+
+    let consumableType: String
+    let name: String
+    let description: String?
+    let rarity: String
+    let priceGold: Int
+    let ownedCount: Int
 }
 
 /// Wrapper for GET /api/passives/active-slots response.
 struct ActiveSlotsResponse: Codable {
     let slots: [ActiveSlot]
     let maxSlots: Int
+    /// Picker meta for every allowed health potion. Nil for pre-4.B backends.
+    let consumablesMeta: [ConsumableMeta]?
+}
+
+// MARK: - Batch save (Active Skill Picker commits 3 slots atomically)
+
+/// One slot in a `POST /api/passives/active-slots/batch` payload. Exactly one of
+/// `nodeId` / `consumableType` is set for a non-empty slot; both nil = empty.
+struct ActiveSlotLoadoutEntry: Encodable, Hashable {
+    let slotIndex: Int
+    let nodeId: String?
+    let consumableType: String?
+
+    static func empty(slotIndex: Int) -> ActiveSlotLoadoutEntry {
+        .init(slotIndex: slotIndex, nodeId: nil, consumableType: nil)
+    }
+    static func talent(slotIndex: Int, nodeId: String) -> ActiveSlotLoadoutEntry {
+        .init(slotIndex: slotIndex, nodeId: nodeId, consumableType: nil)
+    }
+    static func consumable(slotIndex: Int, consumableType: String) -> ActiveSlotLoadoutEntry {
+        .init(slotIndex: slotIndex, nodeId: nil, consumableType: consumableType)
+    }
 }

@@ -127,6 +127,33 @@ final class PassiveTreeService {
         }
     }
 
+    /// Equips a health potion into a slot (Phase 4.B). Server enforces:
+    /// max-1-consumable-per-loadout + consumable_type is in allow-list.
+    @discardableResult
+    func equipConsumableSlot(characterId: String, slotIndex: Int, consumableType: String) async -> Bool {
+        do {
+            let body: [String: Any] = [
+                "character_id": characterId,
+                "slot_index": slotIndex,
+                "consumable_type": consumableType
+            ]
+            _ = try await APIClient.shared.postRaw(APIEndpoints.passivesActiveSlots, body: body)
+            HapticManager.light()
+            return true
+        } catch let error as APIError {
+            switch error {
+            case .clientError(_, let message, _):
+                appState.showToast(message, type: .error)
+            default:
+                appState.showToast("Failed to equip potion", type: .error)
+            }
+            return false
+        } catch {
+            appState.showToast("Failed to equip potion", type: .error)
+            return false
+        }
+    }
+
     /// Clears the given slot.
     @discardableResult
     func clearActiveSlot(characterId: String, slotIndex: Int) async -> Bool {
@@ -137,6 +164,52 @@ final class PassiveTreeService {
             return true
         } catch {
             appState.showToast("Failed to clear slot", type: .error)
+            return false
+        }
+    }
+
+    /// Atomic batch save — commits all 3 slots in one server transaction.
+    /// Preferred over per-slot POST from the Active Skill Picker so the server
+    /// never observes a partially-updated loadout.
+    ///
+    /// `slots` MUST contain exactly 3 entries covering slot_index 0/1/2; empty
+    /// slots are represented via `ActiveSlotLoadoutEntry.empty(slotIndex:)`.
+    @discardableResult
+    func saveLoadout(characterId: String, slots: [ActiveSlotLoadoutEntry]) async -> Bool {
+        do {
+            let slotsBody: [[String: Any]] = slots.map { slot in
+                var dict: [String: Any] = ["slot_index": slot.slotIndex]
+                // Explicit NSNull preserves the nil across JSONSerialization and
+                // matches the backend's `node_id?: string | null` shape.
+                if let nodeId = slot.nodeId {
+                    dict["node_id"] = nodeId
+                } else {
+                    dict["node_id"] = NSNull()
+                }
+                if let ct = slot.consumableType {
+                    dict["consumable_type"] = ct
+                } else {
+                    dict["consumable_type"] = NSNull()
+                }
+                return dict
+            }
+            let body: [String: Any] = [
+                "character_id": characterId,
+                "slots": slotsBody
+            ]
+            _ = try await APIClient.shared.postRaw(APIEndpoints.passivesActiveSlotsBatch, body: body)
+            HapticManager.light()
+            return true
+        } catch let error as APIError {
+            switch error {
+            case .clientError(_, let message, _):
+                appState.showToast(message, type: .error)
+            default:
+                appState.showToast("Failed to save loadout", type: .error)
+            }
+            return false
+        } catch {
+            appState.showToast("Failed to save loadout", type: .error)
             return false
         }
     }

@@ -80,14 +80,26 @@ interface StoredRound {
 
 interface ActiveSlotSnapshot {
   slot_index: number
-  node_id: number
-  node_key: string
+  // Phase 4.B: snapshots may be talent OR consumable. Field is absent in
+  // pre-4.B matches — treat missing `kind` as 'talent' for backward compat.
+  kind?: 'talent' | 'consumable'
+  node_id: number | null
+  node_key: string | null
+  // Consumable-only (null for talent).
+  consumable_type?: string | null
   name: string
   icon: string | null
   action_type: string | null
   cooldown_max: number
   magnitude: number
   cooldown_remaining: number
+  // Consumable-only: true once fired this battle. Enforces 1-per-battle at
+  // the snapshot level (cooldowns are 0 for consumables, so we can't use them).
+  consumed?: boolean
+}
+
+function isConsumableSlot(slot: ActiveSlotSnapshot): boolean {
+  return slot.kind === 'consumable' || (!!slot.consumable_type && slot.node_id == null)
 }
 
 interface InteractiveActivesState {
@@ -151,8 +163,11 @@ function pickOpponentActive(
   playerMaxHp: number,
   playerActives?: ActiveSlotSnapshot[]
 ): ActiveSlotSnapshot | null {
+  // Phase 4.B: exclude consumable slots from AI. Consumables belong to a
+  // specific player's inventory — the opponent-AI must not decrement the
+  // user's real potions. Talent slots only.
   const ready = opponentActives.filter(
-    (a) => a.cooldown_remaining === 0 && a.action_type
+    (a) => a.cooldown_remaining === 0 && a.action_type && !isConsumableSlot(a)
   )
   if (ready.length === 0) return null
 
@@ -289,16 +304,25 @@ export async function POST(req: NextRequest) {
     const actives: InteractiveActivesState =
       (match.interactiveActives as InteractiveActivesState | null) ?? { p1: [], p2: [] }
     let firedPlayerActive: ActiveSlotSnapshot | null = null
+    let firedIsConsumable = false
     if (firedSlotIndex !== null) {
       const slot = actives.p1.find((a) => a.slot_index === firedSlotIndex)
       if (!slot) {
         return NextResponse.json({ error: 'Active slot not equipped' }, { status: 400 })
       }
-      if (slot.cooldown_remaining > 0) {
-        return NextResponse.json({ error: 'Active on cooldown' }, { status: 409 })
-      }
       if (!slot.action_type) {
         return NextResponse.json({ error: 'Slot has no action' }, { status: 400 })
+      }
+      if (isConsumableSlot(slot)) {
+        // Consumables: gated by `consumed` (1/battle), not cooldowns.
+        if (slot.consumed) {
+          return NextResponse.json({ error: 'Consumable already used this battle' }, { status: 409 })
+        }
+        firedIsConsumable = true
+      } else {
+        if (slot.cooldown_remaining > 0) {
+          return NextResponse.json({ error: 'Active on cooldown' }, { status: 409 })
+        }
       }
       firedPlayerActive = slot
     }
@@ -454,40 +478,87 @@ export async function POST(req: NextRequest) {
       opponent_active: firedOppActive?.slot_index ?? null,
     }
 
-    // --- Phase 3: update actives state (set fired cooldown, tick all others) ---
+    // --- Phase 3: update actives state (set fired cooldown OR consumed flag, tick all others) ---
+    //   Talent fires → set cooldown_remaining = cooldown_max, tick others down.
+    //   Consumable fires → set consumed = true (cooldown_max is 0, so ticking is a no-op).
+    const markFired = (a: ActiveSlotSnapshot): ActiveSlotSnapshot => {
+      if (isConsumableSlot(a)) return { ...a, consumed: true }
+      return { ...a, cooldown_remaining: a.cooldown_max }
+    }
     const updatedP1 = decrementCooldowns(
       firedPlayerActive
         ? actives.p1.map((a) =>
-            a.slot_index === firedPlayerActive.slot_index
-              ? { ...a, cooldown_remaining: a.cooldown_max }
-              : a
+            a.slot_index === firedPlayerActive.slot_index ? markFired(a) : a
           )
         : actives.p1
     )
     const updatedP2 = decrementCooldowns(
       firedOppActive
         ? actives.p2.map((a) =>
-            a.slot_index === firedOppActive.slot_index
-              ? { ...a, cooldown_remaining: a.cooldown_max }
-              : a
+            a.slot_index === firedOppActive.slot_index ? markFired(a) : a
           )
         : actives.p2
     )
     const newActives: InteractiveActivesState = { p1: updatedP1, p2: updatedP2 }
 
-    // Persist round (atomic append + index bump; relies on optimistic concurrency
-    // via strikeIndex check — if a concurrent call bumped it, we reject 409)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updated = await (prisma.pvpMatch.updateMany as any)({
-      where: { id: match_id, interactiveStrikeIndex: strikeIndex, status: 'in_progress' },
-      data: {
-        interactiveChoices: [...choices, round],
-        interactiveStrikeIndex: strikeIndex + 1,
-        interactiveActives: newActives,
-      },
-    })
-    if (updated.count === 0) {
-      return NextResponse.json({ error: 'Match state changed, please retry' }, { status: 409 })
+    // Persist round in a single transaction:
+    //   1. If a consumable fired, lock + decrement its inventory row.
+    //      If quantity < 1 (user consumed it out-of-combat between match-start
+    //      and now) — abort with 400 so the client can strip it from the UI.
+    //   2. Atomic updateMany on pvp_matches with optimistic concurrency guard
+    //      (strikeIndex + status). If the guard fails, rollback the inventory
+    //      decrement too.
+    try {
+      await prisma.$transaction(async (tx) => {
+        if (firedIsConsumable && firedPlayerActive?.consumable_type) {
+          const consumableType = firedPlayerActive.consumable_type
+          const [inv] = await tx.$queryRawUnsafe<Array<{ id: string; quantity: number }>>(
+            `SELECT id, quantity FROM consumable_inventory
+               WHERE character_id = $1 AND consumable_type::text = $2
+               FOR UPDATE`,
+            match.player1Id,
+            consumableType
+          )
+          if (!inv || inv.quantity < 1) {
+            throw new Error('OUT_OF_CONSUMABLE')
+          }
+          await tx.$executeRawUnsafe(
+            `UPDATE consumable_inventory
+                SET quantity = quantity - 1
+              WHERE id = $1`,
+            inv.id
+          )
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updated = await (tx.pvpMatch.updateMany as any)({
+          where: { id: match_id, interactiveStrikeIndex: strikeIndex, status: 'in_progress' },
+          data: {
+            interactiveChoices: [...choices, round],
+            interactiveStrikeIndex: strikeIndex + 1,
+            interactiveActives: newActives,
+          },
+        })
+        if (updated.count === 0) {
+          throw new Error('MATCH_STATE_CHANGED')
+        }
+      })
+    } catch (txErr) {
+      if (txErr instanceof Error) {
+        if (txErr.message === 'OUT_OF_CONSUMABLE') {
+          return NextResponse.json(
+            { error: 'You have no potions of this type left' },
+            { status: 400 }
+          )
+        }
+        if (txErr.message === 'MATCH_STATE_CHANGED') {
+          return NextResponse.json(
+            { error: 'Match state changed, please retry' },
+            { status: 409 }
+          )
+        }
+      }
+      throw txErr
     }
 
     return NextResponse.json({
@@ -503,6 +574,11 @@ export async function POST(req: NextRequest) {
       actives: newActives,
       player_active_fired: firedSlotIndex,
       player_active_label: playerActiveLabel,
+      // Phase 4.B: surface consumable fire so iOS can refresh inventory counts
+      // and show a distinct "Potion used" banner instead of the generic heal_self.
+      player_consumable_fired: firedIsConsumable
+        ? (firedPlayerActive?.consumable_type ?? null)
+        : null,
       opponent_active_fired: firedOppActive?.slot_index ?? null,
       opponent_active_label: oppActiveLabel,
     })

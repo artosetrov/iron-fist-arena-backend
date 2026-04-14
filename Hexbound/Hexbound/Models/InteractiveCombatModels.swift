@@ -73,25 +73,71 @@ struct InteractiveMatchStartResponse: Decodable, Sendable {
 
 // MARK: - Active Slot Snapshot (Phase 3)
 
-/// Mirror of ActiveSlotSnapshot from backend pvp/strike/route.ts. Fired slot
-/// sets `cooldownRemaining = cooldownMax`; tick-down happens each round.
+/// Mirror of ActiveSlotSnapshot from backend pvp/strike/route.ts (Phase 4.B).
+/// A snapshot is either a `.talent` (node_id + cooldown-gated) or a `.consumable`
+/// (consumable_type + 1/battle, gated by `consumed`).
+///
+/// Fired-talent slot sets `cooldownRemaining = cooldownMax`; fired-consumable
+/// sets `consumed = true`. Tick-down of talent cooldowns happens each round.
+///
+/// Forward-compat: `kind` defaults to `.talent`, `consumableType` + `consumed`
+/// default to `nil` / `false` so in-flight pre-4.B matches still decode.
 struct InteractiveActiveSlotSnapshot: Decodable, Sendable, Hashable, Identifiable {
     var id: Int { slotIndex }
     let slotIndex: Int
-    let nodeId: Int
-    let nodeKey: String
+    let kind: ActiveSlotKind
+    /// `nil` when kind == .consumable.
+    let nodeId: Int?
+    /// `nil` when kind == .consumable.
+    let nodeKey: String?
+    /// Set only when kind == .consumable (e.g. `health_potion_medium`).
+    let consumableType: String?
     let name: String
     let icon: String?
     let actionType: String?
     let cooldownMax: Int
     let magnitude: Double
     let cooldownRemaining: Int
+    /// Consumables only — true after the one-shot fired this duel.
+    let consumed: Bool
 
-    var isReady: Bool { cooldownRemaining == 0 && actionType != nil }
+    var isConsumable: Bool { kind == .consumable }
+    var isTalent: Bool { kind == .talent }
+
+    /// Ready-to-fire gate. Talents: off cooldown + has action. Consumables:
+    /// not yet consumed this match.
+    var isReady: Bool {
+        if kind == .consumable {
+            return !consumed
+        }
+        return cooldownRemaining == 0 && actionType != nil
+    }
 
     var talentAction: TalentSlotAction? {
         guard let raw = actionType else { return nil }
         return TalentSlotAction(rawValue: raw)
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: DecodingKey.self)
+        slotIndex = try c.decode(Int.self, forKey: .slotIndex)
+        kind = (try? c.decode(ActiveSlotKind.self, forKey: .kind)) ?? .talent
+        nodeId = try c.decodeIfPresent(Int.self, forKey: .nodeId)
+        nodeKey = try c.decodeIfPresent(String.self, forKey: .nodeKey)
+        consumableType = try c.decodeIfPresent(String.self, forKey: .consumableType)
+        name = try c.decode(String.self, forKey: .name)
+        icon = try c.decodeIfPresent(String.self, forKey: .icon)
+        actionType = try c.decodeIfPresent(String.self, forKey: .actionType)
+        cooldownMax = (try? c.decode(Int.self, forKey: .cooldownMax)) ?? 0
+        magnitude = (try? c.decode(Double.self, forKey: .magnitude)) ?? 0
+        cooldownRemaining = (try? c.decode(Int.self, forKey: .cooldownRemaining)) ?? 0
+        consumed = (try? c.decode(Bool.self, forKey: .consumed)) ?? false
+    }
+
+    private enum DecodingKey: String, CodingKey {
+        case slotIndex, kind, nodeId, nodeKey, consumableType
+        case name, icon, actionType
+        case cooldownMax, magnitude, cooldownRemaining, consumed
     }
 }
 
@@ -154,6 +200,14 @@ struct InteractiveStrikeResponse: Decodable, Sendable {
     let opponentActiveFired: Int?
     /// Phase 3.B — opponent action_type label that fired.
     let opponentActiveLabel: String?
+    /// Phase 4.B — consumable_type string if the player fired a health potion
+    /// this round (e.g. `health_potion_medium`). Used by the combat HUD to
+    /// render a "Potion used!" banner distinct from talent-fire feedback.
+    let playerConsumableFired: String?
+    /// Phase 4.B — consumable_type string if the opponent AI fired a potion.
+    /// Note: in Phase 4.B the AI intentionally never fires consumables (player
+    /// inventory only), so this will always be nil today — reserved for Phase 5+.
+    let opponentConsumableFired: String?
 }
 
 // MARK: - Match Complete

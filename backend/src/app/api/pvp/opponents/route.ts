@@ -109,19 +109,28 @@ export async function GET(req: NextRequest) {
         orderBy: { level: 'asc' },
         take: 15,
       }),
-      // Phase 4: Any characters (last resort for small player pools)
+      // Phase 4: Any characters (last resort for small player pools).
+      // No DB-side orderBy — Prisma can't ORDER BY ABS(level - playerLevel).
+      // We fetch a wide sample and sort by level-proximity below in JS so
+      // a high-level player in a sparse pool gets the closest-level opponents
+      // (e.g. Lv18 → Lv7), not the lowest-level ones (Lv18 → Lv1).
       prisma.character.findMany({
         where: { id: { not: characterId } },
         select: selectFields,
-        orderBy: { level: 'asc' },
-        take: 15,
+        take: 100,
       }),
     ])
+
+    // Sort Phase 4 by level proximity to the player. Phases 1–3 already
+    // constrain by level band, so proximity only matters for the fallback.
+    const phase4ByProximity = [...phase4].sort(
+      (a, b) => Math.abs(a.level - character.level) - Math.abs(b.level - character.level)
+    )
 
     // Merge phases in priority order, deduplicating by id
     const seen = new Set<string>()
     const candidates: typeof phase1 = []
-    for (const batch of [phase1, phase2, phase3, phase4]) {
+    for (const batch of [phase1, phase2, phase3, phase4ByProximity]) {
       for (const c of batch) {
         if (!seen.has(c.id)) {
           seen.add(c.id)
@@ -132,7 +141,10 @@ export async function GET(req: NextRequest) {
       if (candidates.length >= MAX_OPPONENTS * 3) break
     }
 
-    // Sort by combined rating + level + gear score closeness, take top 5
+    // Sort by level proximity first, then rating, then gear score.
+    // Level is the primary match signal — a Lv7 opponent is a better fight for a
+    // Lv18 than a Lv5 with a slightly closer rating. Within the same level (e.g.
+    // Phase 1 tight band), rating and gear break the tie.
     const sorted = candidates
       .map((opp) => ({
         ...opp,
@@ -140,7 +152,7 @@ export async function GET(req: NextRequest) {
         levelDiff: Math.abs(opp.level - character.level),
         gearDiff: Math.abs((opp.gearScore ?? 0) - playerGearScore),
       }))
-      .sort((a, b) => a.ratingDiff - b.ratingDiff || a.levelDiff - b.levelDiff || a.gearDiff - b.gearDiff)
+      .sort((a, b) => a.levelDiff - b.levelDiff || a.ratingDiff - b.ratingDiff || a.gearDiff - b.gearDiff)
       .slice(0, MAX_OPPONENTS)
 
     // --- NPC Bot injection for new players ---

@@ -112,8 +112,11 @@ export async function POST(req: NextRequest) {
     // Load equipped active-slot snapshot for both players. Snapshotted at
     // match-start so mid-match equip changes (from another device) don't
     // influence the current duel. All cooldowns start at 0 (ready).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    type ActiveSnapshotRow = {
+    //
+    // Phase 4.B: slots can be EITHER a talent (node_id set) OR a consumable
+    // (consumable_type set). Both kinds unify into the same ActiveSlotSnapshot
+    // shape downstream so the strike-resolver + client only see one list.
+    type TalentRow = {
       slot_index: number
       node_id: number
       node_key: string
@@ -123,36 +126,92 @@ export async function POST(req: NextRequest) {
       active_cooldown: number | null
       active_magnitude: number | null
     }
-    async function loadActives(charId: string): Promise<ActiveSnapshotRow[]> {
-      return prisma.$queryRawUnsafe<ActiveSnapshotRow[]>(
-        `SELECT s.slot_index, n.id AS node_id, n.node_key, n.name, n.icon,
-                n.active_action_type, n.active_cooldown, n.active_magnitude
-         FROM character_active_slots s
-         JOIN passive_nodes n ON n.id = s.node_id
-         WHERE s.character_id = $1 AND n.is_activatable = true
-         ORDER BY s.slot_index`,
-        charId
-      )
+    type ConsumableRow = {
+      slot_index: number
+      consumable_type: string
+      name: string | null
+      icon: string | null
     }
-    const [p1Actives, p2Actives] = await Promise.all([
+    async function loadActives(charId: string) {
+      const [talentRows, consumableRows] = await Promise.all([
+        prisma.$queryRawUnsafe<TalentRow[]>(
+          `SELECT s.slot_index, n.id AS node_id, n.node_key, n.name, n.icon,
+                  n.active_action_type, n.active_cooldown, n.active_magnitude
+             FROM character_active_slots s
+             JOIN passive_nodes n ON n.id = s.node_id
+             WHERE s.character_id = $1 AND n.is_activatable = true
+             ORDER BY s.slot_index`,
+          charId
+        ),
+        prisma.$queryRawUnsafe<ConsumableRow[]>(
+          `SELECT s.slot_index, s.consumable_type::text AS consumable_type,
+                  COALESCE(i.item_name, s.consumable_type::text) AS name,
+                  i.image_key AS icon
+             FROM character_active_slots s
+             LEFT JOIN items i ON i.catalog_id = s.consumable_type::text
+             WHERE s.character_id = $1 AND s.consumable_type IS NOT NULL
+             ORDER BY s.slot_index`,
+          charId
+        ),
+      ])
+      return { talentRows, consumableRows }
+    }
+    const [p1Slots, p2Slots] = await Promise.all([
       loadActives(attacker.id),
       loadActives(defender.id),
     ])
-    const actorActivesSnapshot = (rows: ActiveSnapshotRow[]) =>
-      rows.map((r) => ({
+
+    // Pre-resolve heal fractions for consumables (magnitude snapshot: frozen for this duel).
+    const allConsumableTypes = [
+      ...p1Slots.consumableRows.map((r) => r.consumable_type),
+      ...p2Slots.consumableRows.map((r) => r.consumable_type),
+    ]
+    const uniqueConsumableTypes = [...new Set(allConsumableTypes)] as ConsumableType[]
+    const healFractionEntries = await Promise.all(
+      uniqueConsumableTypes.map(async (t) => [t, await getHpRestoreFraction(t)] as const)
+    )
+    const healFractionByType = new Map(healFractionEntries)
+
+    const actorActivesSnapshot = (slots: { talentRows: TalentRow[]; consumableRows: ConsumableRow[] }) => {
+      const talentSnaps = slots.talentRows.map((r) => ({
         slot_index: r.slot_index,
-        node_id: r.node_id,
-        node_key: r.node_key,
+        kind: 'talent' as const,
+        node_id: r.node_id as number | null,
+        node_key: r.node_key as string | null,
+        consumable_type: null as string | null,
         name: r.name,
         icon: r.icon,
         action_type: r.active_action_type,
         cooldown_max: r.active_cooldown ?? 0,
         magnitude: r.active_magnitude ?? 0,
         cooldown_remaining: 0,
+        consumed: false,
       }))
+      const consumableSnaps = slots.consumableRows.map((r) => {
+        const ct = r.consumable_type as ConsumableType
+        const magnitude = isHealthPotion(ct) ? (healFractionByType.get(ct) ?? 0) : 0
+        return {
+          slot_index: r.slot_index,
+          kind: 'consumable' as const,
+          node_id: null as number | null,
+          node_key: null as string | null,
+          consumable_type: r.consumable_type,
+          name: r.name ?? r.consumable_type,
+          icon: r.icon,
+          // Reuse existing heal_self handler in strike-resolver — consumables
+          // behave identically to a heal_self talent in terms of HP math.
+          action_type: 'heal_self' as string | null,
+          cooldown_max: 0,          // no cooldown — gated by `consumed` instead
+          magnitude,
+          cooldown_remaining: 0,
+          consumed: false,
+        }
+      })
+      return [...talentSnaps, ...consumableSnaps].sort((a, b) => a.slot_index - b.slot_index)
+    }
     const interactiveActives = {
-      p1: actorActivesSnapshot(p1Actives),
-      p2: actorActivesSnapshot(p2Actives),
+      p1: actorActivesSnapshot(p1Slots),
+      p2: actorActivesSnapshot(p2Slots),
     }
 
     const { match, newStamina } = await prisma.$transaction(async (tx) => {

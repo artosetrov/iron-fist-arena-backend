@@ -25,6 +25,15 @@ final class PassiveTreeViewModel {
     // Active slots (Interactive Combat v1)
     var activeSlots: [ActiveSlot] = []
     var maxActiveSlots: Int = 3
+    /// Phase 4.B — picker meta for every allowed health potion (name, price, owned).
+    /// Refreshed together with `activeSlots` via `load()`.
+    var consumablesMeta: [ConsumableMeta] = []
+    /// Phase 4.C — controls presentation of the Active Skill Picker bottom sheet.
+    /// Callers open the picker via `openActiveSkillPicker(focusedSlotIndex:)`.
+    var showActiveSkillPicker: Bool = false
+    /// Slot index the picker should pre-select when opened (tap a slot tile →
+    /// picker opens with that slot highlighted).
+    var pickerFocusedSlotIndex: Int? = nil
 
     // UI state
     var isLoading: Bool = false
@@ -90,6 +99,7 @@ final class PassiveTreeViewModel {
         if let s {
             activeSlots = s.slots
             maxActiveSlots = s.maxSlots
+            consumablesMeta = s.consumablesMeta ?? []
         }
         recomputeDerived()
         isLoading = false
@@ -391,5 +401,58 @@ final class PassiveTreeViewModel {
             }
             showRespecConfirm = false
         }
+    }
+
+    // MARK: - Active Skill Picker (Phase 4.C)
+
+    /// Open the picker sheet, optionally focused on a specific slot.
+    func openActiveSkillPicker(focusedSlotIndex: Int? = nil) {
+        pickerFocusedSlotIndex = focusedSlotIndex
+        showActiveSkillPicker = true
+    }
+
+    /// Persist a full 3-slot loadout via the atomic batch endpoint.
+    /// Optimistic: `activeSlots` is updated client-side BEFORE the API call,
+    /// rolled back on failure. Also increments `isMutating` so concurrent
+    /// single-slot mutations don't interleave.
+    func commitLoadout(_ draftSlots: [ActiveSlot]) async -> Bool {
+        guard !isMutating else { return false }
+        isMutating = true
+        defer { isMutating = false }
+
+        let prev = activeSlots
+        // Optimistic mirror — insert the draft's non-empty slots, sorted.
+        activeSlots = draftSlots.sorted { $0.slotIndex < $1.slotIndex }
+
+        let payload: [ActiveSlotLoadoutEntry] = (0..<maxActiveSlots).map { i in
+            if let slot = draftSlots.first(where: { $0.slotIndex == i }) {
+                switch slot.kind {
+                case .talent:
+                    if let nodeId = slot.nodeId {
+                        return .talent(slotIndex: i, nodeId: nodeId)
+                    }
+                    return .empty(slotIndex: i)
+                case .consumable:
+                    if let ct = slot.consumableType {
+                        return .consumable(slotIndex: i, consumableType: ct)
+                    }
+                    return .empty(slotIndex: i)
+                }
+            }
+            return .empty(slotIndex: i)
+        }
+
+        let ok = await service.saveLoadout(characterId: characterId, slots: payload)
+        if !ok { activeSlots = prev }
+        return ok
+    }
+
+    /// Refresh picker meta (name/price/owned) without a full reload — used after
+    /// an inline Buy so the consumable row flips from "Buy" to "Equip" immediately.
+    func refreshConsumablesMeta() async {
+        guard let response = await service.loadActiveSlots(characterId: characterId) else { return }
+        consumablesMeta = response.consumablesMeta ?? []
+        // Also re-sync slots in case server-side state changed.
+        activeSlots = response.slots
     }
 }
