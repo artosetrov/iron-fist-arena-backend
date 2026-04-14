@@ -78,6 +78,11 @@ enum ConsumableType {
   health_potion_small
   health_potion_medium
   health_potion_large
+  // Economy v3 batch 3 (2026-04-14): Adventurer's Bundle extras.
+  // protection_scroll — consumed during +9/+10 upgrade attempts to prevent
+  //   downgrade-on-fail. See R7.3.
+  // legendary_shard — crafting material for legendary gear. Granted via
+  //   Adventurer's Bundle III. Route: active (most-recent) character.
   protection_scroll
   legendary_shard
 }
@@ -256,17 +261,30 @@ model User {
   @@map("users")
 }
 
+/**
+ * Premium Pass (30-day auto-renewable subscription). One row per user;
+ * refreshed on renewal via Apple's receipt.
+ *
+ * hasPremium() reads max(user.premiumUntil, premiumSubscription.expiresAt) so
+ * legacy Premium Forever owners and new Pass holders coexist cleanly.
+ *
+ * Grace period: Apple's `expiresDate` already includes the 16-day billing
+ * retry window when applicable. `status` lets the server short-circuit checks
+ * without parsing expiresAt.
+ *
+ * See docs/06_game_systems/PREMIUM_PASS_MIGRATION.md (Phase 2).
+ */
 model PremiumSubscription {
   id                    String    @id @default(uuid())
   userId                String    @unique @map("user_id")
-  productId             String    @map("product_id")
-  originalTransactionId String    @map("original_transaction_id")
+  productId             String    @map("product_id") // e.g. premium_pass_monthly
+  originalTransactionId String    @map("original_transaction_id") // Apple's ORIGINAL tx id — stable across renewals
   latestTransactionId   String    @map("latest_transaction_id")
   startedAt             DateTime  @map("started_at")
   expiresAt             DateTime  @map("expires_at")
   autoRenew             Boolean   @default(true) @map("auto_renew")
-  status                String    @default("active") @map("status")
-  latestReceipt         String?   @map("latest_receipt")
+  status                String    @default("active") @map("status") // active | grace_period | expired | refunded
+  latestReceipt         String?   @map("latest_receipt") // opaque receipt blob for re-verification
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
 

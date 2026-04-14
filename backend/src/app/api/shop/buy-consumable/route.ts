@@ -15,6 +15,10 @@ const DEFAULT_CONSUMABLE_PRICES: Record<ConsumableType, number> = {
   health_potion_small: 150,
   health_potion_medium: 350,
   health_potion_large: 700,
+  // Not sold directly in the consumable shop — granted via Adventurer's Bundles
+  // (IAP). Kept here so the Record<ConsumableType, number> is exhaustive.
+  protection_scroll: 0,
+  legendary_shard: 0,
 }
 
 async function getConsumablePrice(type: ConsumableType): Promise<number> {

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Combat Prototypes · Side-by-side</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 16px;background:#06060a;color:#F5F5F5;font-family:Inter,sans-serif;min-height:100vh}
+  h1{font-family:Oswald,sans-serif;font-size:34px;font-weight:700;letter-spacing:4px;text-transform:uppercase;text-align:center;margin:0 0 8px;color:#D4A537}
+  .sub{text-align:center;color:#A0A0B0;font-size:13px;max-width:760px;margin:0 auto 32px;line-height:1.6}
+  .sub a{color:#D4A537}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;max-width:1440px;margin:0 auto}
+  .card{background:#0f0f16;border:1px solid #22222e;border-radius:20px;padding:20px;display:flex;flex-direction:column;align-items:center}
+  .card h2{font-family:Oswald,sans-serif;font-size:20px;letter-spacing:3px;margin:0 0 4px;text-transform:uppercase;color:#F5F5F5}
+  .tag{font-size:10px;letter-spacing:2px;color:#D4A537;text-transform:uppercase;margin-bottom:12px}
+  .desc{font-size:12px;color:#A0A0B0;line-height:1.55;margin:0 0 16px;text-align:center;min-height:80px}
+  iframe{width:440px;height:940px;border:none;border-radius:16px;background:#000}
+  .footer{max-width:900px;margin:48px auto 0;text-align:center;color:#70707a;font-size:12px;line-height:1.8}
+  .links{margin-top:16px}
+  .links a{display:inline-block;margin:0 10px;color:#D4A537;font-weight:600;letter-spacing:1px}
+  @media(max-width:1400px){.grid{grid-template-columns:1fr;gap:40px}iframe{width:440px}}
+</style>
+</head>
+<body>
+  <h1>Combat Screen — Proposals</h1>
+  <p class="sub">
+    Three proposals for the most important screen in the game. Each addresses the five flagged problems: duplicate stance echo, unclear ownership, detached timer, left-aligned STRIKE, and missing actives slot. See the full <a href="COMBAT_UX_AUDIT.md">audit report</a> for rationale.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Variant A</h2>
+      <div class="tag">Vertical · Integrated STRIKE</div>
+      <p class="desc">Enemy on top, you on bottom — spatial ownership. Stance picker in the center with no duplicate readout. Timer <b>fills the STRIKE button</b> as it elapses. 2 active talents dock beside STRIKE.</p>
+      <iframe src="combat-proto-A.html" title="Variant A"></iframe>
+    </div>
+    <div class="card">
+      <h2>Variant B</h2>
+      <div class="tag">Hotbar · Side portraits</div>
+      <p class="desc">Keeps the current side-by-side portrait aesthetic. Stance picks overlay the portraits as gold/blue glyphs — no duplicate echo. <b>Radial arc timer around STRIKE.</b> 3-slot active hotbar on the left.</p>
+      <iframe src="combat-proto-B.html" title="Variant B"></iframe>
+    </div>
+    <div class="card">
+      <h2>Variant C</h2>
+      <div class="tag">Stance silhouette · Novel</div>
+      <p class="desc">Tap body parts on a shared silhouette — Attack mode flashes gold, Defend mode flashes blue, auto-flips after each pick. Enemy intent shown as ghost arrow on the same body. Most space-efficient, highest design risk.</p>
+      <iframe src="combat-proto-C.html" title="Variant C"></iframe>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div><b>Recommendation:</b> start with <span style="color:#D4A537">Variant A</span> — safest upgrade, proven pattern (Marvel Snap / HS / Raid), resolves every flagged problem without re-educating existing players.</div>
+    <div class="links">
+      <a href="COMBAT_UX_AUDIT.md">Full audit report (MD)</a>
+      <a href="combat-proto-A.html">Variant A alone</a>
+      <a href="combat-proto-B.html">Variant B alone</a>
+      <a href="combat-proto-C.html">Variant C alone</a>
+    </div>
+  </div>
+</body>
+</html>
