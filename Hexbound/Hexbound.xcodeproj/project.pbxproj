@@ -52,6 +52,7 @@
 		19839571EA02350D49353660 /* creature_growl_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = B0EDA33A522BF69DE508020E /* creature_growl_2.wav */; };
 		1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D145DE1A5F794907BB756397 /* CombatDetailView.swift */; };
 		14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */; };
+		14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */; };
 		EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */; };
 		EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */; };
 		EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */; };
@@ -889,6 +890,7 @@
 		D0E1F2A3B4C5D6E7F8A9B0C1 /* PvPStatsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PvPStatsWidget.swift; sourceTree = "<group>"; };
 		D145DE1A5F794907BB756397 /* CombatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatDetailView.swift; sourceTree = "<group>"; };
 		00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatModels.swift; sourceTree = "<group>"; };
+		00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveStanceBonuses.swift; sourceTree = "<group>"; };
 		3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleViewModel.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleView.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatComponents.swift; sourceTree = "<group>"; };
@@ -1711,6 +1713,7 @@
 				905D68B4D4A3598717E969FB /* DailyLoginRewardDef.swift */,
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
 				00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */,
+				00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */,
 				218B22634BDF8DD52EFCB0D6 /* Item.swift */,
 				E188C114F17088F505906852 /* LeaderboardEntry.swift */,
 				MAIL0001REF00001 /* MailMessage.swift */,
@@ -2249,6 +2252,7 @@
 				F7351EE68E034A74CB95BDA8 /* CombatData.swift in Sources */,
 				1A7DF9C3B54B8D9F9E96C63D /* CombatDetailView.swift in Sources */,
 				14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */,
+				14CC2B9AC158AE1764C87593 /* InteractiveStanceBonuses.swift in Sources */,
 				EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */,
 				EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */,
 				EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */,

@@ -14,11 +14,12 @@ struct TalentTreeCanvas: View {
     let nodes: [PassiveNode]
     let connections: [PassiveConnection]
     let isUnlocked: (PassiveNode) -> Bool
+    let isPending: (PassiveNode) -> Bool
     let isUnlockable: (PassiveNode) -> Bool
     let onTap: (PassiveNode) -> Void
 
-    private let nodePadding: CGFloat = 24         // keep nodes from touching edges
-    private let minNeighborDistance: CGFloat = 20 // center-to-center px between closest nodes
+    private let nodePadding: CGFloat = 36         // keep nodes from touching edges
+    private let minNeighborDistance: CGFloat = 64 // center-to-center px between closest nodes (≥ max node size 56 + breathing room)
 
     // MARK: - Bounding box of the tree in backend coordinates
     private var bounds: (minX: Double, maxX: Double, minY: Double, maxY: Double) {
@@ -70,20 +71,26 @@ struct TalentTreeCanvas: View {
         )
     }
 
-    private func state(for node: PassiveNode) -> TalentNodeView.State {
+    private func state(for node: PassiveNode) -> TalentNodeView.NodeState {
         if isUnlocked(node) { return .unlocked }
+        if isPending(node) { return .pending }
         if isUnlockable(node) { return .unlockable }
         return .locked
     }
 
+    /// Pending counts as gold-dim for connection purposes — visually hints
+    /// the staged path without overstating it as fully unlocked.
     private func connectionColor(_ conn: PassiveConnection, nodeMap: [String: PassiveNode]) -> Color {
         guard let from = nodeMap[conn.fromId], let to = nodeMap[conn.toId] else {
             return DarkFantasyTheme.borderSubtle
         }
+        let fromActive = isUnlocked(from) || isPending(from)
+        let toActive = isUnlocked(to) || isPending(to)
         let fromUnlocked = isUnlocked(from)
         let toUnlocked = isUnlocked(to)
         if fromUnlocked && toUnlocked { return DarkFantasyTheme.gold }
-        if fromUnlocked || toUnlocked { return DarkFantasyTheme.goldDim }
+        if fromActive && toActive { return DarkFantasyTheme.goldDim }
+        if fromActive || toActive { return DarkFantasyTheme.goldDim }
         return DarkFantasyTheme.borderSubtle
     }
 
@@ -106,7 +113,7 @@ struct TalentTreeCanvas: View {
                     context.stroke(
                         path,
                         with: .color(connectionColor(conn, nodeMap: nodeMap)),
-                        lineWidth: isBoth ? 3 : 2
+                        lineWidth: isBoth ? 4 : 3
                     )
                 }
             }

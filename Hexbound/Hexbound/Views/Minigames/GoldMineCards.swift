@@ -5,7 +5,7 @@ import SwiftUI
 /// Full-width expandable card for each mine slot. Collapsed shows thumbnail,
 /// name, status, and shaft progress. Expanded reveals stats, lore, progress
 /// bar, and action buttons. Mine art is used as 10% opacity background.
-private struct MineShaftCard: View {
+struct MineShaftCard: View {
     let index: Int
     let vm: GoldMineViewModel
     let isExpanded: Bool
@@ -635,7 +635,7 @@ private struct MineShaftCard: View {
 
 // MARK: - Locked Mine Card
 
-private struct LockedMineCard: View {
+struct LockedMineCard: View {
     let slotNumber: Int
     let vm: GoldMineViewModel
 
@@ -709,7 +709,7 @@ private struct LockedMineCard: View {
 // Pure SwiftUI — no timers, no state mutation.
 // Uses TimelineView + Canvas to compute particles from current time.
 
-private struct MiningSparklesOverlay: View {
+struct MiningSparklesOverlay: View {
     let tint: Color
 
     // Pre-computed particle seeds — golden ratio for quasi-random spread
@@ -760,7 +760,7 @@ private struct MiningSparklesOverlay: View {
     }
 }
 
-private struct MineParticleSeed {
+struct MineParticleSeed {
     let x: CGFloat
     let xDrift: CGFloat
     let size: CGFloat
