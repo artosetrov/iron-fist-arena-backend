@@ -18,11 +18,13 @@ struct TalentNodeView: View {
     let node: PassiveNode
     let state: State
 
-    // Tier-based size (tier 5 ultimate > tier 3 keystone > rest)
+    // Tier-based size (tier 5 ultimate > tier 3 keystone > rest).
+    // Kept below `minNeighborDistance` (20px in TalentTreeCanvas) so
+    // adjacent nodes never overlap at the tightest packing.
     var size: CGFloat {
-        if node.tier >= 5 { return 76 }   // ultimate
-        if node.tier == 3 { return 64 }   // keystone
-        return 52
+        if node.tier >= 5 { return 22 }   // ultimate
+        if node.tier == 3 { return 18 }   // keystone
+        return 16
     }
 
     private var strokeColor: Color {
@@ -72,7 +74,7 @@ struct TalentNodeView: View {
             // Cost badge for unlockable, non-start nodes
             if state == .unlockable && !node.isStartNode {
                 costBadge
-                    .offset(x: size * 0.35, y: -size * 0.35)
+                    .offset(x: size * 0.6, y: -size * 0.6)
             }
         }
         .frame(width: size, height: size)
@@ -151,6 +153,6 @@ struct TalentNodeView: View {
                 .font(DarkFantasyTheme.badge)
                 .foregroundStyle(DarkFantasyTheme.gold)
         }
-        .frame(width: 18, height: 18)
+        .frame(width: 12, height: 12)
     }
 }

@@ -17,10 +17,8 @@ struct TalentTreeCanvas: View {
     let isUnlockable: (PassiveNode) -> Bool
     let onTap: (PassiveNode) -> Void
 
-    private let nodePadding: CGFloat = 60      // keep nodes from touching edges
-    private let pixelsPerUnit: CGFloat = 110   // backend coord unit → screen px
-    private let maxNodeSize: CGFloat = 76      // largest node (ultimate) — used for collision guarantee
-    private let minNodeGap: CGFloat = 20       // empty space between two adjacent nodes
+    private let nodePadding: CGFloat = 24         // keep nodes from touching edges
+    private let minNeighborDistance: CGFloat = 20 // center-to-center px between closest nodes
 
     // MARK: - Bounding box of the tree in backend coordinates
     private var bounds: (minX: Double, maxX: Double, minY: Double, maxY: Double) {
@@ -45,10 +43,9 @@ struct TalentTreeCanvas: View {
         return minDelta == .greatestFiniteMagnitude ? 1 : minDelta
     }
 
-    /// Effective scale: large enough that closest-pair spacing >= maxNodeSize + minNodeGap.
+    /// Effective scale: closest pair sits exactly `minNeighborDistance` px apart (center-to-center).
     private var effectiveScale: CGFloat {
-        let required = (maxNodeSize + minNodeGap) / CGFloat(minNodeDelta)
-        return max(pixelsPerUnit, required)
+        minNeighborDistance / CGFloat(minNodeDelta)
     }
 
     /// Intrinsic canvas size derived from backend coord range × scale.

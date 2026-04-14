@@ -135,10 +135,29 @@ struct InteractiveBattleView: View {
     // MARK: - Zone Badges
 
     private var zoneBadgesRow: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            ZoneBadge(label: "Attack", zone: vm.selectedAttackZone)
-            ZoneBadge(label: "Defend", zone: vm.selectedDefendZone)
+        // Two rows × two columns: [YOU / OPPONENT] × [Attack / Defend].
+        // Opponent zones stay hidden ("?") during .predict/.resolving and reveal
+        // during .reveal (via `lastOpponentZones`, which the VM clears on the
+        // next predict tick).
+        VStack(spacing: LayoutConstants.spaceXS) {
+            HStack(spacing: LayoutConstants.spaceSM) {
+                stanceSideLabel("YOU", color: DarkFantasyTheme.gold)
+                ZoneBadge(label: "Attack", zone: vm.selectedAttackZone)
+                ZoneBadge(label: "Defend", zone: vm.selectedDefendZone)
+            }
+            HStack(spacing: LayoutConstants.spaceSM) {
+                stanceSideLabel("FOE", color: DarkFantasyTheme.danger)
+                ZoneBadge(label: "Attack", zone: vm.lastOpponentZones?.attack)
+                ZoneBadge(label: "Defend", zone: vm.lastOpponentZones?.defend)
+            }
         }
+    }
+
+    private func stanceSideLabel(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(DarkFantasyTheme.badge)
+            .foregroundStyle(color)
+            .frame(width: 36, alignment: .leading)
     }
 
     // MARK: - Predict Panel (timer + pickers + strike + skip)
@@ -362,16 +381,18 @@ private struct DuelFighterCard: View {
 
 private struct ZoneBadge: View {
     let label: String
-    let zone: InteractiveBodyZone
+    /// `nil` → unknown stance (opponent during predict/resolving); renders "?".
+    let zone: InteractiveBodyZone?
 
     var body: some View {
         VStack(spacing: LayoutConstants.space2XS) {
             Text(label)
                 .font(DarkFantasyTheme.caption)
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
-            Text(zone.rawValue.uppercased())
+            Text(zoneText)
                 .font(DarkFantasyTheme.cardTitle)
                 .foregroundStyle(zoneColor)
+                .animation(.easeInOut(duration: 0.25), value: zone)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, LayoutConstants.spaceSM)
@@ -385,7 +406,13 @@ private struct ZoneBadge: View {
         )
     }
 
+    private var zoneText: String {
+        guard let zone else { return "?" }
+        return zone.rawValue.uppercased()
+    }
+
     private var zoneColor: Color {
+        guard let zone else { return DarkFantasyTheme.textTertiary }
         switch zone {
         case .head: return DarkFantasyTheme.zoneHead
         case .chest: return DarkFantasyTheme.zoneChest
