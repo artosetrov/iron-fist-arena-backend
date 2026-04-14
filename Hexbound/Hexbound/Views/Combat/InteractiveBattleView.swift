@@ -35,7 +35,6 @@ struct InteractiveBattleView: View {
 
             VStack(spacing: LayoutConstants.spaceMD) {
                 duelHeader
-                zoneBadgesRow
                 Spacer(minLength: 0)
                 predictPanel
             }
@@ -84,30 +83,82 @@ struct InteractiveBattleView: View {
     /// Slide-in offsets + hit flash also live here.
     private var duelHeader: some View {
         HStack(alignment: .top, spacing: LayoutConstants.spaceMD) {
-            DuelFighterCard(
-                side: .player,
-                profile: vm.attackerProfile,
-                currentHp: vm.state.attackerHp,
-                maxHp: vm.state.attackerMaxHp,
-                slideX: vm.playerSlideX,
-                flash: vm.playerFlash,
-                popups: vm.damagePopups.filter { !$0.onDefender }
-            )
-            .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
-                [FighterAnchorKey.Entry(side: .player, bounds: $0)]
+            // YOU
+            VStack(spacing: LayoutConstants.spaceXS) {
+                DuelFighterCard(
+                    side: .player,
+                    profile: vm.attackerProfile,
+                    currentHp: vm.state.attackerHp,
+                    maxHp: vm.state.attackerMaxHp,
+                    slideX: vm.playerSlideX,
+                    flash: vm.playerFlash,
+                    popups: vm.damagePopups.filter { !$0.onDefender }
+                )
+                .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
+                    [FighterAnchorKey.Entry(side: .player, bounds: $0)]
+                }
+                stanceOverlayRow(
+                    attack: vm.selectedAttackZone,
+                    defend: vm.selectedDefendZone,
+                    isGhost: false
+                )
+                if let playerLabel = vm.lastActiveFiredLabel {
+                    ActiveFireBanner(actionType: playerLabel, isOpponent: false)
+                        .id("you-fire-\(playerLabel)")
+                }
             }
-            DuelFighterCard(
-                side: .enemy,
-                profile: vm.defenderProfile,
-                currentHp: vm.state.defenderHp,
-                maxHp: vm.state.defenderMaxHp,
-                slideX: vm.enemySlideX,
-                flash: vm.enemyFlash,
-                popups: vm.damagePopups.filter { $0.onDefender }
-            )
-            .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
-                [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
+            .frame(maxWidth: .infinity, alignment: .top)
+
+            // FOE
+            VStack(spacing: LayoutConstants.spaceXS) {
+                DuelFighterCard(
+                    side: .enemy,
+                    profile: vm.defenderProfile,
+                    currentHp: vm.state.defenderHp,
+                    maxHp: vm.state.defenderMaxHp,
+                    slideX: vm.enemySlideX,
+                    flash: vm.enemyFlash,
+                    popups: vm.damagePopups.filter { $0.onDefender }
+                )
+                .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
+                    [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
+                }
+                stanceOverlayRow(
+                    attack: vm.lastOpponentZones?.attack,
+                    defend: vm.lastOpponentZones?.defend,
+                    isGhost: true
+                )
+                if !vm.opponentActives.isEmpty {
+                    OpponentActivesPreview(actives: vm.opponentActives)
+                }
+                // Intent hint — "LIKELY HITS: CHEST" style pill, visible
+                // only during the predict window once we have ≥2 rounds
+                // of signal. Ghost styling signals "read, not a tell".
+                if vm.phase.isPredicting,
+                   let likely = vm.likelyOpponentAttack {
+                    EnemyIntentPill(channel: .attack, likelyZone: likely)
+                        .transition(.opacity)
+                }
+                if let oppLabel = vm.lastOpponentActiveFiredLabel {
+                    ActiveFireBanner(actionType: oppLabel, isOpponent: true)
+                        .id("opp-fire-\(oppLabel)")
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .top)
+        }
+        .animation(.easeInOut(duration: 0.2), value: vm.lastActiveFiredLabel)
+        .animation(.easeInOut(duration: 0.2), value: vm.lastOpponentActiveFiredLabel)
+        .animation(.easeInOut(duration: 0.25), value: vm.likelyOpponentAttack)
+    }
+
+    /// Compact row of Attack / Defend `StanceOverlay` chips under a fighter
+    /// card. Opponent side uses `isGhost = true` to dim until reveal.
+    private func stanceOverlayRow(attack: InteractiveBodyZone?,
+                                  defend: InteractiveBodyZone?,
+                                  isGhost: Bool) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
+            StanceOverlay(kind: .attack, zone: attack, isGhost: isGhost)
+            StanceOverlay(kind: .defend, zone: defend, isGhost: isGhost)
         }
     }
 
@@ -132,53 +183,7 @@ struct InteractiveBattleView: View {
         }
     }
 
-    // MARK: - Zone Badges
-
-    private var zoneBadgesRow: some View {
-        // Two rows × two columns: [YOU / OPPONENT] × [Attack / Defend].
-        // Opponent zones stay hidden ("?") during .predict/.resolving and reveal
-        // during .reveal (via `lastOpponentZones`, which the VM clears on the
-        // next predict tick).
-        VStack(spacing: LayoutConstants.spaceXS) {
-            HStack(spacing: LayoutConstants.spaceSM) {
-                stanceSideLabel("YOU", color: DarkFantasyTheme.gold)
-                ZoneBadge(label: "Attack", zone: vm.selectedAttackZone)
-                ZoneBadge(label: "Defend", zone: vm.selectedDefendZone)
-            }
-            HStack(spacing: LayoutConstants.spaceSM) {
-                stanceSideLabel("FOE", color: DarkFantasyTheme.danger)
-                ZoneBadge(label: "Attack", zone: vm.lastOpponentZones?.attack)
-                ZoneBadge(label: "Defend", zone: vm.lastOpponentZones?.defend)
-                if !vm.opponentActives.isEmpty {
-                    OpponentActivesPreview(actives: vm.opponentActives)
-                        .padding(.leading, LayoutConstants.spaceXS)
-                }
-                if let oppLabel = vm.lastOpponentActiveFiredLabel {
-                    ActiveFireBanner(actionType: oppLabel, isOpponent: true)
-                        .padding(.leading, LayoutConstants.spaceXS)
-                        .id("opp-fire-\(oppLabel)")
-                }
-            }
-            if let playerLabel = vm.lastActiveFiredLabel {
-                HStack {
-                    ActiveFireBanner(actionType: playerLabel, isOpponent: false)
-                    Spacer()
-                }
-                .id("you-fire-\(playerLabel)")
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: vm.lastActiveFiredLabel)
-        .animation(.easeInOut(duration: 0.2), value: vm.lastOpponentActiveFiredLabel)
-    }
-
-    private func stanceSideLabel(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(DarkFantasyTheme.badge)
-            .foregroundStyle(color)
-            .frame(width: 36, alignment: .leading)
-    }
-
-    // MARK: - Predict Panel (timer + pickers + strike + skip)
+    // MARK: - Predict Panel (pickers + actives + bottom bar)
 
     @ViewBuilder
     private var predictPanel: some View {
@@ -202,15 +207,11 @@ struct InteractiveBattleView: View {
         default:
             // .predict / .resolving / .reveal — controls stay mounted so layout
             // doesn't jump, but get disabled while the server is resolving.
-            VStack(spacing: LayoutConstants.spaceMD) {
-                PredictTimerBar(
-                    remaining: vm.predictTimeRemaining,
-                    total: InteractiveBattleViewModel.predictWindowSeconds
-                )
-                InteractivePredictView(vm: vm)
-                    .disabled(vm.phase.isBusy)
-                    .opacity(vm.phase.isBusy ? 0.6 : 1.0)
-            }
+            // Timer is integrated into the STRIKE button (TimerRingStrikeButton)
+            // — no separate PredictTimerBar anymore.
+            InteractivePredictView(vm: vm)
+                .disabled(vm.phase.isBusy)
+                .opacity(vm.phase.isBusy ? 0.6 : 1.0)
         }
     }
 
@@ -395,120 +396,14 @@ private struct DuelFighterCard: View {
     }
 }
 
-// MARK: - Zone Badge (Attack / Defend display)
-
-private struct ZoneBadge: View {
-    let label: String
-    /// `nil` → unknown stance (opponent during predict/resolving); renders "?".
-    let zone: InteractiveBodyZone?
-
-    var body: some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            Text(label)
-                .font(DarkFantasyTheme.caption)
-                .foregroundStyle(DarkFantasyTheme.textTertiary)
-            Text(zoneText)
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(zoneColor)
-                .animation(.easeInOut(duration: 0.25), value: zone)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(DarkFantasyTheme.bgSecondary.opacity(0.6))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .stroke(zoneColor.opacity(0.4), lineWidth: 1)
-        )
-    }
-
-    private var zoneText: String {
-        guard let zone else { return "?" }
-        return zone.rawValue.uppercased()
-    }
-
-    private var zoneColor: Color {
-        guard let zone else { return DarkFantasyTheme.textTertiary }
-        switch zone {
-        case .head: return DarkFantasyTheme.zoneHead
-        case .chest: return DarkFantasyTheme.zoneChest
-        case .legs: return DarkFantasyTheme.zoneLegs
-        }
-    }
-}
-
-// MARK: - Predict Timer (bigger, ornamental, with countdown text)
-
-private struct PredictTimerBar: View {
-    let remaining: Double
-    let total: Double
-
-    private var fraction: Double {
-        guard total > 0 else { return 0 }
-        return max(0, min(1, remaining / total))
-    }
-
-    private var isCritical: Bool { remaining <= 2.0 }
-
-    private var barColor: Color {
-        isCritical ? DarkFantasyTheme.danger : DarkFantasyTheme.gold
-    }
-
-    var body: some View {
-        VStack(spacing: LayoutConstants.space2XS) {
-            HStack {
-                Text("CHOOSE YOUR STANCE")
-                    .font(DarkFantasyTheme.badge)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                Spacer()
-                Text(String(format: "%.1fs", max(0, remaining)))
-                    .font(DarkFantasyTheme.cardTitle.monospacedDigit())
-                    .foregroundStyle(barColor)
-                    .contentTransition(.numericText())
-            }
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgSecondary)
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(barColor)
-                        .frame(width: max(0, geo.size.width * fraction))
-                        .animation(.linear(duration: 0.1), value: remaining)
-                }
-            }
-            .frame(height: 14)
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
-            )
-        }
-    }
-}
-
-// MARK: - Predict View (zone pickers + STRIKE + SKIP)
+// MARK: - Predict View (zone pickers + actives + commit bar)
 
 struct InteractivePredictView: View {
     @Bindable var vm: InteractiveBattleViewModel
 
     var body: some View {
         VStack(spacing: LayoutConstants.spaceMD) {
-            if !vm.playerActives.isEmpty {
-                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
-                    Text("ACTIVE SKILLS")
-                        .font(DarkFantasyTheme.uiLabel)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    ActiveSkillsHUD(
-                        actives: vm.playerActives,
-                        pendingSlot: vm.pendingActiveSlot,
-                        isInteractive: true,
-                        onTap: { vm.toggleActiveSlot($0) }
-                    )
-                }
-            }
-
+            // 1) Stance pickers — ATTACK + DEFEND
             zonePicker(
                 title: "ATTACK",
                 selection: Binding(
@@ -524,22 +419,50 @@ struct InteractivePredictView: View {
                 )
             )
 
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Button(action: { vm.submitStrike() }) {
-                    Text("STRIKE")
-                        .font(DarkFantasyTheme.buttonLabel)
-                        .frame(maxWidth: .infinity)
+            // 2) Active skills — sit directly beneath the picker rows
+            //    so the player's gaze travels naturally from stance →
+            //    talents → commit button.
+            if !vm.playerActives.isEmpty {
+                VStack(alignment: .leading, spacing: LayoutConstants.spaceXS) {
+                    Text("ACTIVE SKILLS")
+                        .font(DarkFantasyTheme.uiLabel)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
+                    ActiveSkillsHUD(
+                        actives: vm.playerActives,
+                        pendingSlot: vm.pendingActiveSlot,
+                        isInteractive: true,
+                        onTap: { vm.toggleActiveSlot($0) }
+                    )
                 }
-                .buttonStyle(PrimaryButtonStyle())
+            }
 
+            // 3) Bottom bar — SKIP on the left, STRIKE (with integrated
+            //    radial timer) on the right. Equal-weight so the CTAs
+            //    form a balanced commit row.
+            HStack(spacing: LayoutConstants.spaceSM) {
                 Button(action: { vm.skipAndSubmit() }) {
                     Text("SKIP")
                         .font(DarkFantasyTheme.buttonLabelCompact)
-                        .frame(maxWidth: 120)
+                        .frame(maxWidth: .infinity, minHeight: LayoutConstants.buttonHeightLG)
                 }
                 .buttonStyle(SecondaryButtonStyle())
+                .frame(maxWidth: .infinity)
+
+                TimerRingStrikeButton(
+                    remainingFraction: timerFraction,
+                    isCritical: vm.predictTimeRemaining <= 1.5,
+                    isBusy: false,
+                    action: { vm.submitStrike() }
+                )
+                .frame(maxWidth: .infinity)
             }
         }
+    }
+
+    private var timerFraction: Double {
+        let total = InteractiveBattleViewModel.predictWindowSeconds
+        guard total > 0 else { return 0 }
+        return max(0, min(1, vm.predictTimeRemaining / total))
     }
 
     private func zonePicker(title: String, selection: Binding<InteractiveBodyZone>) -> some View {

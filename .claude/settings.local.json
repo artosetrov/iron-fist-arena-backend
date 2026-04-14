@@ -383,7 +383,14 @@
       "Bash(/opt/homebrew/bin/pipx ensurepath:*)",
       "Bash(PIPX_DEFAULT_PYTHON=/opt/homebrew/bin/python3.12 /opt/homebrew/bin/pipx install /Users/artosetrov/graphify)",
       "Bash(/Users/artosetrov/.local/bin/graphify --help)",
-      "Bash(/Users/artosetrov/.local/bin/graphify install:*)"
+      "Bash(/Users/artosetrov/.local/bin/graphify install:*)",
+      "Bash(find Hexbound/Hexbound -name \"*.swift\" -exec wc -l {} \\\\;)",
+      "Read(//tmp/**)",
+      "Bash(xcodebuild -project Hexbound.xcodeproj -scheme Hexbound -destination 'platform=iOS Simulator,name=iPhone 17' build)",
+      "Bash(mv ViewModels/BuyStatPointsViewModel.swift Views/Hero/BuyStatPointsViewModel.swift)",
+      "Bash(mv ViewModels/CharacterSelectionViewModel.swift Views/Auth/CharacterSelectionViewModel.swift)",
+      "Bash(mv ViewModels/PassiveTreeViewModel.swift Views/Hero/Talents/PassiveTreeViewModel.swift)",
+      "Bash(mv ViewModels/SessionSummaryViewModel.swift Views/SessionSummary/SessionSummaryViewModel.swift)"
     ]
   },
   "enabledMcpjsonServers": [

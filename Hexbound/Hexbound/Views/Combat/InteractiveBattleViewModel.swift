@@ -57,6 +57,52 @@ final class InteractiveBattleViewModel {
     /// Opponent's historical zone pattern (for read strip). Empty in pure-blind mode.
     var opponentPattern: [InteractiveBodyZone] = []
 
+    // MARK: - Intent Hint (Phase 4 — Variant B2)
+
+    /// Rolling history of opponent attack zones, most recent appended last.
+    /// Populated from each `/strike` response's `oppZones.attack`. Capped at
+    /// `intentHistoryCap` to keep the hint weighted toward recent behavior.
+    var opponentAttackHistory: [InteractiveBodyZone] = []
+
+    /// Rolling history of opponent defend zones, same shape as above.
+    var opponentDefendHistory: [InteractiveBodyZone] = []
+
+    /// Number of rounds before the intent hint becomes visible. Below this we
+    /// don't have enough signal to claim a pattern.
+    static let intentMinimumRounds: Int = 2
+
+    /// How many recent rounds the mode picker considers.
+    static let intentHistoryCap: Int = 5
+
+    /// Most-frequent attack zone in the recent history — or `nil` when we
+    /// don't have enough data yet. View surfaces this via `EnemyIntentPill`.
+    var likelyOpponentAttack: InteractiveBodyZone? {
+        Self.mostFrequent(opponentAttackHistory,
+                          minimum: Self.intentMinimumRounds)
+    }
+
+    /// Most-frequent defend zone in the recent history (same rules).
+    var likelyOpponentDefend: InteractiveBodyZone? {
+        Self.mostFrequent(opponentDefendHistory,
+                          minimum: Self.intentMinimumRounds)
+    }
+
+    /// Plurality vote over a zone history. Ties break by most-recent pick,
+    /// which matches the "they just did X, probably again" player instinct.
+    private static func mostFrequent(_ history: [InteractiveBodyZone],
+                                     minimum: Int) -> InteractiveBodyZone? {
+        guard history.count >= minimum else { return nil }
+        var counts: [InteractiveBodyZone: Int] = [:]
+        for zone in history { counts[zone, default: 0] += 1 }
+        let maxCount = counts.values.max() ?? 0
+        // Tiebreak: walk history from newest → oldest and take the first
+        // zone whose count equals `maxCount`.
+        for zone in history.reversed() where counts[zone] == maxCount {
+            return zone
+        }
+        return nil
+    }
+
     // MARK: - Phase 3: Active Slots
 
     /// Player's 3 equipped actives with live cooldown state (0 = ready).
@@ -273,6 +319,10 @@ final class InteractiveBattleViewModel {
             playerActives = actives.p1
             opponentActives = actives.p2
         }
+        // Fresh match — wipe any prior-match intent history so the hint
+        // rebuilds from this duel's observations only.
+        opponentAttackHistory.removeAll(keepingCapacity: true)
+        opponentDefendHistory.removeAll(keepingCapacity: true)
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
@@ -345,6 +395,18 @@ final class InteractiveBattleViewModel {
             lastOpponentTurn = opp
         }
         lastOpponentZones = response.oppZones
+
+        // Intent hint — append this round's opponent zones and clamp the
+        // history to the most recent `intentHistoryCap` entries so the
+        // mode picker stays weighted toward recent behavior.
+        opponentAttackHistory.append(response.oppZones.attack)
+        opponentDefendHistory.append(response.oppZones.defend)
+        if opponentAttackHistory.count > Self.intentHistoryCap {
+            opponentAttackHistory.removeFirst(opponentAttackHistory.count - Self.intentHistoryCap)
+        }
+        if opponentDefendHistory.count > Self.intentHistoryCap {
+            opponentDefendHistory.removeFirst(opponentDefendHistory.count - Self.intentHistoryCap)
+        }
 
         let outcome = InteractiveStrikeOutcome.classify(
             turn: response.playerStrike,

@@ -17,6 +17,9 @@
 		0633DF2BB85E20A857E8C066 /* gold_mine_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2E4A238B86CA38072EB508BC /* gold_mine_2.wav */; };
 		077118977CC731268E612611 /* hit_rogue_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 24090127D9B899EB94AB3CF2 /* hit_rogue_3.wav */; };
 		078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */; };
+		078686F8A1B2C3D4E5F6A7B8 /* HubBannerCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337A1B2C3D4E5F6A7B8 /* HubBannerCards.swift */; };
+		078686F8B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift */; };
+		078686F8C1D2E3F4A5B6C7D8 /* HubInfoCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337C1D2E3F4A5B6C7D8 /* HubInfoCards.swift */; };
 		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */; };
 		0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */; };
@@ -48,6 +51,7 @@
 		14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */; };
 		EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */; };
 		EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */; };
+		EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */; };
 		36E49A6359B79F0A8FEBB178 /* ActiveSkillsHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */; };
 		1A9A8B92543201D94529BB29 /* footstep_stone.wav in Resources */ = {isa = PBXBuildFile; fileRef = 16C348EE5C05E7DFD7F6A04B /* footstep_stone.wav */; };
 		1BDC4E98CDE7ACA78658823C /* DarkFantasyTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F11BB0848FCB358D6CBFB2 /* DarkFantasyTheme.swift */; };
@@ -215,6 +219,7 @@
 		79FBF4FB6F8D83F37182A20F /* hit_physical_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = BCDBBF3509176ACAC513D82A /* hit_physical_4.wav */; };
 		7A3B9C4E5D6F7A8B9C0D1E2F /* ShimmerModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B4C0D5E6F7A8B9C0D1E2F3A /* ShimmerModifier.swift */; };
 		7A638F9F02B2EE21F9C95645 /* ContrabandState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */; };
+		7A638FA0C2D3E4F5A6B7C8D9 /* CurrencyPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8DE5AFC2D3E4F5A6B7C8D9 /* CurrencyPackage.swift */; };
 		7B44816E6A46753CCB089F0F /* hit_rogue_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8DBFB18E010F12630B565F22 /* hit_rogue_2.wav */; };
 		7B9C1D3E5F7A9B1C3D5E7F8A /* SessionExpiredModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9B0C1D2E3F4A5B6C7D8E9F /* SessionExpiredModalView.swift */; };
 		7B9C1D3E5F7A9B1C3D5E7F8B /* Social.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9C1D3E5F7A9B1C3D5E7F8C /* Social.swift */; };
@@ -624,6 +629,7 @@
 		5B7E9C0D1C2B3A4F5E6D7C8B /* FortuneWheelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FortuneWheelViewModel.swift; sourceTree = "<group>"; };
 		5D5F6595D6C57E4ACFD70E88 /* DungeonRoomDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DungeonRoomDetailView.swift; sourceTree = "<group>"; };
 		5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContrabandState.swift; sourceTree = "<group>"; };
+		5D8DE5AFC2D3E4F5A6B7C8D9 /* CurrencyPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyPackage.swift; sourceTree = "<group>"; };
 		5E160EA5CEA60F2AB037A705 /* ItemCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCardView.swift; sourceTree = "<group>"; };
 		5E723480C1D3F6A742172D95 /* hit_physical.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_physical.wav; sourceTree = "<group>"; };
 		5E9F432E444EE871124DC12E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -684,6 +690,9 @@
 		7fef1d006041a00fbf98fdc7 /* GoldMineShaftPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldMineShaftPicker.swift; sourceTree = "<group>"; };
 		80E4997E41611CFBDEC3A73B /* footstep_stone_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep_stone_2.wav; sourceTree = "<group>"; };
 		80F114B8328DB94BA3BC07B4 /* AchievementsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsDetailView.swift; sourceTree = "<group>"; };
+		81E2A337A1B2C3D4E5F6A7B8 /* HubBannerCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubBannerCards.swift; sourceTree = "<group>"; };
+		81E2A337B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubFloatingControls.swift; sourceTree = "<group>"; };
+		81E2A337C1D2E3F4A5B6C7D8 /* HubInfoCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubInfoCards.swift; sourceTree = "<group>"; };
 		81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
 		8295F58FEE8531E138102511 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		8295F58FEE8531E138102512 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
@@ -852,6 +861,7 @@
 		00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatModels.swift; sourceTree = "<group>"; };
 		3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleViewModel.swift; sourceTree = "<group>"; };
 		ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveBattleView.swift; sourceTree = "<group>"; };
+		ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveCombatComponents.swift; sourceTree = "<group>"; };
 		67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSkillsHUD.swift; sourceTree = "<group>"; };
 		D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItem.swift; sourceTree = "<group>"; };
 		D269D22916F1CEDA9ED0476F /* merchant_greet.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = merchant_greet.wav; sourceTree = "<group>"; };
@@ -1235,6 +1245,7 @@
 				2FB747C6FDAB2BFE84A10570 /* AuthBackground.swift */,
 				4E1229239D447F7D8DC2DB37 /* AuthView.swift */,
 				F8DD0E2272E1A6BBCFFAE766 /* CharacterSelectionView.swift */,
+				CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */,
 				E77652C9FE7EBA66EE8BDC30 /* OnboardingCinematicView.swift */,
 				A1B2C3D4E5F60718A9B0C1D3 /* ClassSelectionStepView.swift */,
 				B1F2A3B4C5D6E7F809A1B2C3 /* EmailConfirmationView.swift */,
@@ -1401,6 +1412,7 @@
 				2AC33F4DE1089A000F90E2A9 /* CombatViewModel.swift */,
 				67B0AAF82E734AA30913CE8A /* ActiveSkillsHUD.swift */,
 				ADD9D293DEF3252016A60BDE /* InteractiveBattleView.swift */,
+				ADD9D293DEF3252016A60BDF /* InteractiveCombatComponents.swift */,
 				3CCB56DBB2ADF91EB9F471BC /* InteractiveBattleViewModel.swift */,
 				C432FC1973DEA4743369E3C8 /* LootDetailView.swift */,
 			);
@@ -1469,6 +1481,7 @@
 		77A1F551D664A30E420847C2 /* SessionSummary */ = {
 			isa = PBXGroup;
 			children = (
+				C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */,
 				200396381DBAD59E7A4E025A /* SessionSummaryView.swift */,
 			);
 			path = SessionSummary;
@@ -1530,6 +1543,7 @@
 			isa = PBXGroup;
 			children = (
 				f258edcf70612de2b763c15f /* BuyStatPointsView.swift */,
+				15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */,
 				20BBF308478B5B2817B50708 /* HeroDetailView.swift */,
 				5AB28E8F5F2F9E8128879CC0 /* Talents */,
 			);
@@ -1543,6 +1557,7 @@
 				BA69617C3057861267B75898 /* TalentTreeCanvas.swift */,
 				0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */,
 				9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */,
+				184C00B6D8CC428DEE63E9F4 /* PassiveTreeViewModel.swift */,
 				004389D00C793F9780C63EB6 /* TalentsTabView.swift */,
 			);
 			path = Talents;
@@ -1615,7 +1630,10 @@
 				C1A00001CITY00000007 /* CityBuildingView.swift */,
 				C1A00002EFCT00000002 /* CityMapEffects.swift */,
 				C1A00001CITY00000008 /* CityMapView.swift */,
+				81E2A337A1B2C3D4E5F6A7B8 /* HubBannerCards.swift */,
 				07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */,
+				81E2A337B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift */,
+				81E2A337C1D2E3F4A5B6C7D8 /* HubInfoCards.swift */,
 				81E2A337BA5EDD13AC2FF2F3 /* HubView.swift */,
 				D8E46B20C184654286C13C40 /* StanceSelectorDetailView.swift */,
 				ED9C9599BC7FEA09D41E975A /* StanceSelectorViewModel.swift */,
@@ -1666,6 +1684,7 @@
 				D1F6C9A51B569CEB01D7CC90 /* ShopItem.swift */,
 				776542cff60cc81ecdff074b /* StatPurchase.swift */,
 				5D8DE5AEE459AFEA552A47EA /* ContrabandState.swift */,
+				5D8DE5AFC2D3E4F5A6B7C8D9 /* CurrencyPackage.swift */,
 				OFFER001REF00001 /* ShopOffer.swift */,
 				62CD513D5B1711C8822F3588 /* Enums */,
 			);
@@ -1834,10 +1853,6 @@
 		VMDL0001GRP00001 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				15b217676336fcf2f3894469 /* BuyStatPointsViewModel.swift */,
-				CSVW0001REF000000000001 /* CharacterSelectionViewModel.swift */,
-				184C00B6D8CC428DEE63E9F4 /* PassiveTreeViewModel.swift */,
-				C19E58EABF5212122B0E5E5A /* SessionSummaryViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -2191,6 +2206,7 @@
 				14CC2B9AC158AE1764C87592 /* InteractiveCombatModels.swift in Sources */,
 				EA9A680515E0DF2B2A5C74F8 /* InteractiveBattleViewModel.swift in Sources */,
 				EF866E653C04845EA39DFFAC /* InteractiveBattleView.swift in Sources */,
+				EF866E653C04845EA39DFFAD /* InteractiveCombatComponents.swift in Sources */,
 				36E49A6359B79F0A8FEBB178 /* ActiveSkillsHUD.swift in Sources */,
 				78A8F4968E6F8D3680AD9FA0 /* CombatFXAssetMap.swift in Sources */,
 				89D21D4D3ACC331487541D6C /* CombatFXImageOverlay.swift in Sources */,
@@ -2267,6 +2283,9 @@
 				C1A00002EFCT00000001 /* CityMapEffects.swift in Sources */,
 				C1A00001CITY00000004 /* CityMapView.swift in Sources */,
 				07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */,
+				078686F8A1B2C3D4E5F6A7B8 /* HubBannerCards.swift in Sources */,
+				078686F8B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift in Sources */,
+				078686F8C1D2E3F4A5B6C7D8 /* HubInfoCards.swift in Sources */,
 				078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */,
 				51E2F782E669CC65903D964A /* InventoryService.swift in Sources */,
 				686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */,
@@ -2348,6 +2367,7 @@
 				B48178011544C313F250402F /* ShopDetailView.swift in Sources */,
 				319EBA8EDCD2DAD9FF12F314 /* ShopItem.swift in Sources */,
 				7A638F9F02B2EE21F9C95645 /* ContrabandState.swift in Sources */,
+				7A638FA0C2D3E4F5A6B7C8D9 /* CurrencyPackage.swift in Sources */,
 				5F7E8825E76DE222DFE1F5C3 /* ContrabandWidget.swift in Sources */,
 				OFFER001BLD00001 /* ShopOffer.swift in Sources */,
 				OFFER001BLD00002 /* ShopOfferBannerView.swift in Sources */,
