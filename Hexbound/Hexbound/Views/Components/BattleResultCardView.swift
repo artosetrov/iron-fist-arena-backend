@@ -59,6 +59,9 @@ struct BattleResultCardView: View {
     // Victory stars
     @State private var revealedStars: Int = 0
 
+    // Combat log section (collapsed by default)
+    @State private var showCombatLog: Bool = false
+
     var body: some View {
         ZStack {
             // Dimmed background
@@ -214,6 +217,13 @@ struct BattleResultCardView: View {
             if !config.lootItems.isEmpty {
                 lootSection
                     .opacity(showLoot ? 1 : 0)
+            }
+
+            // Combat log (optional — PvP/Arena) — collapsible round summary
+            if !config.combatLog.isEmpty {
+                combatLogSection
+                    .padding(.horizontal, LayoutConstants.cardPadding)
+                    .opacity(showButtons ? 1 : 0)
             }
 
             // Buttons inside card — tight to loot
@@ -631,6 +641,115 @@ struct BattleResultCardView: View {
         .glowPulse(color: rarityColor, intensity: item.rarityTier >= 3 ? 0.5 : 0, isActive: isRevealed && item.rarityTier >= 3)
     }
 
+    // MARK: - Combat Log (optional)
+
+    @ViewBuilder
+    private var combatLogSection: some View {
+        VStack(spacing: LayoutConstants.spaceXS) {
+            // Header — tap to toggle
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    showCombatLog.toggle()
+                }
+                HapticManager.light()
+            } label: {
+                HStack(spacing: LayoutConstants.spaceSM) {
+                    Image(systemName: "scroll.fill")
+                        .font(DarkFantasyTheme.body)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Text("COMBAT LOG")
+                        .font(DarkFantasyTheme.body.weight(.semibold))
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .tracking(1.2)
+                    Spacer(minLength: 0)
+                    Text("\(config.combatLog.count) rounds")
+                        .font(DarkFantasyTheme.caption)
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                    Image(systemName: "chevron.down")
+                        .font(DarkFantasyTheme.caption.bold())
+                        .foregroundStyle(DarkFantasyTheme.textTertiary)
+                        .rotationEffect(.degrees(showCombatLog ? 180 : 0))
+                }
+                .padding(.horizontal, LayoutConstants.spaceMD)
+                .padding(.vertical, LayoutConstants.spaceSM)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(DarkFantasyTheme.bgTertiary.opacity(0.5))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                                .stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+
+            if showCombatLog {
+                VStack(spacing: LayoutConstants.space2XS) {
+                    ForEach(Array(config.combatLog.enumerated()), id: \.offset) { index, entry in
+                        combatLogRow(index: index + 1, entry: entry)
+                    }
+                }
+                .padding(.vertical, LayoutConstants.spaceXS)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func combatLogRow(index: Int, entry: CombatLogEntry) -> some View {
+        // Outcome label + color
+        let label: String = {
+            if entry.isMiss { return "MISS" }
+            if entry.isDodge { return "DODGE" }
+            if entry.heal > 0 { return "+\(entry.heal) HP" }
+            if entry.isCrit { return "CRIT −\(entry.damage)" }
+            if entry.isBlocked { return "BLOCKED −\(entry.damage)" }
+            return "−\(entry.damage)"
+        }()
+        let color: Color = {
+            if entry.isMiss || entry.isDodge { return DarkFantasyTheme.textTertiary }
+            if entry.heal > 0 { return DarkFantasyTheme.success }
+            if entry.isCrit { return DarkFantasyTheme.danger }
+            if entry.isBlocked { return DarkFantasyTheme.textSecondary }
+            return DarkFantasyTheme.textPrimary
+        }()
+
+        HStack(spacing: LayoutConstants.spaceSM) {
+            // Round number chip
+            Text("\(index)")
+                .font(DarkFantasyTheme.caption.bold())
+                .foregroundStyle(DarkFantasyTheme.textTertiary)
+                .monospacedDigit()
+                .frame(width: 20, alignment: .trailing)
+
+            // Arrow: player → or ← opponent
+            Image(systemName: entry.isPlayerAttacking ? "arrow.right" : "arrow.left")
+                .font(DarkFantasyTheme.caption.bold())
+                .foregroundStyle(entry.isPlayerAttacking ? DarkFantasyTheme.goldBright : DarkFantasyTheme.danger)
+                .frame(width: 14)
+
+            // Attacker name
+            Text(entry.attackerName)
+                .font(DarkFantasyTheme.caption)
+                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                .lineLimit(1)
+
+            Spacer(minLength: 0)
+
+            // Outcome
+            Text(label)
+                .font(DarkFantasyTheme.caption.bold())
+                .foregroundStyle(color)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, LayoutConstants.spaceSM)
+        .padding(.vertical, LayoutConstants.space2XS)
+        .background(
+            RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                .fill(index % 2 == 0 ? DarkFantasyTheme.bgTertiary.opacity(0.25) : Color.clear)
+        )
+    }
+
     // MARK: - Buttons
 
     @ViewBuilder
@@ -1002,8 +1121,25 @@ struct BattleResultConfig {
     let lootItems: [LootItemDisplay]
     let onLootTap: ((Int) -> Void)?
 
+    // Combat log (optional — PvP/Arena shows turn-by-turn recap)
+    var combatLog: [CombatLogEntry] = []
+
     // Buttons
     let buttons: [ResultButton]
+}
+
+/// Turn-by-turn display entry for the collapsible Combat Log section in the
+/// result modal. Built by CombatResultDetailView from CombatData.combatLog.
+struct CombatLogEntry: Identifiable {
+    let id = UUID()
+    let isPlayerAttacking: Bool
+    let attackerName: String
+    let damage: Int
+    let heal: Int
+    let isCrit: Bool
+    let isMiss: Bool
+    let isDodge: Bool
+    let isBlocked: Bool
 }
 
 struct XPBarConfig {

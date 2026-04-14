@@ -193,6 +193,25 @@ struct CombatResultDetailView: View {
                     goBack()
                 }))
             }
+            // View Opponent profile after PvP
+            if let enemy = combatData?.enemy {
+                buttons.append(ResultButton(title: "VIEW OPPONENT", icon: "person.crop.circle", style: .secondary, action: {
+                    let enemyId = enemy.id
+                    let enemyName = enemy.characterName
+                    appState.combatData = nil
+                    appState.combatResult = nil
+                    appState.invalidateCache("quests")
+                    appState.mainPath = NavigationPath()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.navigationDelay) {
+                        appState.mainPath.append(
+                            AppRoute.characterProfile(
+                                characterId: enemyId,
+                                characterName: enemyName
+                            )
+                        )
+                    }
+                }))
+            }
             // Send message to opponent after PvP
             if let enemy = combatData?.enemy {
                 buttons.append(ResultButton(title: "SEND MESSAGE", assetIcon: "hud-inbox", style: .secondary, action: {
@@ -247,6 +266,29 @@ struct CombatResultDetailView: View {
         let charLevel = displayLevel
         let xpNeededValue = xpNeededForLevel(charLevel)
 
+        // Build combat log entries (PvP / Arena only — dungeon rewards hide it)
+        let combatLogEntries: [CombatLogEntry] = {
+            guard let data = combatData, source == "arena" || source == "pvp" || source == "challenge" else {
+                return []
+            }
+            let playerId = data.player.id
+            let playerName = data.player.characterName
+            let enemyName = data.enemy.characterName
+            return data.combatLog.map { log in
+                let isPlayerAttacking = log.attackerId == playerId
+                return CombatLogEntry(
+                    isPlayerAttacking: isPlayerAttacking,
+                    attackerName: isPlayerAttacking ? playerName : enemyName,
+                    damage: log.damage,
+                    heal: log.heal ?? 0,
+                    isCrit: log.isCrit,
+                    isMiss: log.isMiss,
+                    isDodge: log.isDodge,
+                    isBlocked: log.isBlocked
+                )
+            }
+        }()
+
         return BattleResultConfig(
             isVictory: isWin,
             title: isWin ? "VICTORY!" : "DEFEAT",
@@ -270,6 +312,7 @@ struct CombatResultDetailView: View {
                     selectedLootIndex = index
                 }
             },
+            combatLog: combatLogEntries,
             buttons: buttons
         )
     }
