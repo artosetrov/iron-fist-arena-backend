@@ -55,6 +55,15 @@ vi.mock('@/lib/game/guild-challenge', () => ({
 }))
 
 vi.mock('@/lib/game/premium', () => ({
+  PREMIUM_ENTITLEMENT_USER_SELECT: {
+    premiumUntil: true,
+    premiumSubscription: {
+      select: {
+        expiresAt: true,
+        status: true,
+      },
+    },
+  },
   goldBonusMultiplier: mockGoldBonusMultiplier,
 }))
 
@@ -118,6 +127,7 @@ describe('POST /api/dungeon-rush/resolve', () => {
 
     const tx = {
       // Called via `lockDungeonRunForUpdate(tx, runId)` helper.
+      $queryRaw: vi.fn(async () => []),
       $queryRawUnsafe: vi.fn(async () => [
         {
           id: liveRun.id,
@@ -129,12 +139,21 @@ describe('POST /api/dungeon-rush/resolve', () => {
         },
       ]),
       character: {
+        findUnique: vi.fn(async () => ({
+          inventorySlots: 20,
+          currentXp: playerState.xp,
+          level: 1,
+        })),
         update: vi.fn(async ({ data }: { data: { currentXp?: { increment: number } } }) => {
           playerState.xp += data.currentXp?.increment ?? 0
           return { id: 'char-1' }
         }),
       },
       user: {
+        findUnique: vi.fn(async () => ({
+          gold: playerState.gold,
+          gems: 0,
+        })),
         update: vi.fn(async ({ data }: { data: { gold?: { increment: number } } }) => {
           playerState.gold += data.gold?.increment ?? 0
           return { id: 'user-1', gold: playerState.gold }

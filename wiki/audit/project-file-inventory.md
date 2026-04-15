@@ -11,8 +11,8 @@ updated: 2026-04-15
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
 - Tracked files: 4760
-- Untracked project-owned files: 38
-- In-scope files listed here: 4798
+- Untracked project-owned files: 39
+- In-scope files listed here: 4799
 
 ## Excluded Generated / Vendor Areas
 
@@ -46,7 +46,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 10
 - sounds: 33
 - User: 1059
-- wiki: 60
+- wiki: 61
 
 ## File List By Block
 
@@ -4845,7 +4845,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (56)
+### wiki (57)
 
 - wiki/audit/audit-index.md
 - wiki/audit/block-001-root-files.md
@@ -4876,6 +4876,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-026-backend-shop-consumable-pricing-parity.md _(untracked)_
 - wiki/audit/block-027-shop-legacy-client-surface-and-pricing-docs.md _(untracked)_
 - wiki/audit/block-028-backend-contraband-reward-contract-build-fix.md _(untracked)_
+- wiki/audit/block-029-backend-ci-premium-mock-drift-tests.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

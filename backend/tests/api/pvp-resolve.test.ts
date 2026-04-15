@@ -172,6 +172,15 @@ vi.mock('@/lib/game/npc-bots', () => ({
 }))
 
 vi.mock('@/lib/game/premium', () => ({
+  PREMIUM_ENTITLEMENT_USER_SELECT: {
+    premiumUntil: true,
+    premiumSubscription: {
+      select: {
+        expiresAt: true,
+        status: true,
+      },
+    },
+  },
   goldBonusMultiplier: mockGoldBonusMultiplier,
 }))
 

@@ -68,7 +68,8 @@
 - [[block-026-backend-shop-consumable-pricing-parity]] — backend direct-sale consumable allowlist and pricing parity across shop listing, purchase, and active-slot picker metadata
 - [[block-027-shop-legacy-client-surface-and-pricing-docs]] — dead iOS legacy potion-purchase client path cleanup plus explicit pricing-policy docs alignment
 - [[block-028-backend-contraband-reward-contract-build-fix]] — backend contraband reward typing parity with shared reward grants after the production build break
+- [[block-029-backend-ci-premium-mock-drift-tests]] — backend GitHub CI failure from stale premium test mocks and outdated shared reward transaction mocks
 
 ---
 
-*60 in-scope wiki files | 58 wiki pages (13 systems, 11 decisions, 3 entities, 30 audit, 1 schema) + index/log | Last updated: 2026-04-15*
+*61 in-scope wiki files | 59 wiki pages (13 systems, 11 decisions, 3 entities, 31 audit, 1 schema) + index/log | Last updated: 2026-04-15*
