@@ -15,7 +15,7 @@ import { currentDailyValue } from '@/lib/game/daily-counter'
 import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { rateLimit } from '@/lib/rate-limit'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 interface DungeonRunFightState {
@@ -96,8 +96,8 @@ export async function POST(
           level: true, maxHp: true, avatar: true, cha: true, luk: true,
           // W3.D4 — daily training XP DR fields
           dungeonClearsToday: true, dungeonClearsDate: true,
-          // W3.D5 — Premium Forever gold multiplier
-          user: { select: { premiumUntil: true } },
+          // Premium entitlement (Forever or active subscription) for gold bonus
+          user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
         },
       }),
       prisma.dungeonRun.findFirst({

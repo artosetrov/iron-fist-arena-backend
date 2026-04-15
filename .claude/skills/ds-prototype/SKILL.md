@@ -10,6 +10,8 @@ You create clickable prototypes in the **Figma Screens file** by connecting scre
 
 **Screens file:** `PalemJ36B97ZdC0cd8jzv4`
 
+Verify this file key against the current Figma context before writing prototype links.
+
 ## Prerequisites
 
 1. Load `figma-use` skill BEFORE any `use_figma` calls
@@ -259,6 +261,6 @@ return allFrames.map(f => ({
 }));
 ```
 
-**Expected:** 80+ connections across 48 screens.
+**Expected:** prototype coverage for the current screen inventory. Historical baseline was 80+ connections across 48 screens; refresh the target count when screen inventory changes.
 
 Take screenshots of each flow's starting screen to visually verify the blue prototype arrows are visible.

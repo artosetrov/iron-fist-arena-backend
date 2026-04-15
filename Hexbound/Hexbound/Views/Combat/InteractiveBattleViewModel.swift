@@ -143,6 +143,15 @@ final class InteractiveBattleViewModel {
     /// Label for the opponent AI's fired active this round (Phase 3.B).
     var lastOpponentActiveFiredLabel: String? = nil
 
+    /// Phase 4.C — `consumable_type` that fired on the most recent player
+    /// strike. Drives `ConsumableFireBanner` and is cleared on the next strike
+    /// response (or by the view's auto-dismiss timer after ~1.5s).
+    var lastPlayerConsumableFired: String? = nil
+
+    /// Phase 4.C — same shape for the opponent. Reserved (opponent AI does not
+    /// fire consumables today — see `InteractiveStrikeResponse.opponentConsumableFired`).
+    var lastOpponentConsumableFired: String? = nil
+
     // MARK: - VFX / SFX State
 
     /// Canvas particle VFX (sparks, flashes). Mounted by the view as an overlay.
@@ -306,6 +315,8 @@ final class InteractiveBattleViewModel {
         lastOpponentZones = nil
         lastActiveFiredLabel = nil
         lastOpponentActiveFiredLabel = nil
+        lastPlayerConsumableFired = nil
+        lastOpponentConsumableFired = nil
         predictTimeRemaining = Self.predictWindowSeconds
         startPredictTimer()
         phase = .predict
@@ -369,10 +380,22 @@ final class InteractiveBattleViewModel {
         state.defenderHp = response.defender.currentHp
         attackerProfile = FighterProfile(snapshot: response.attacker)
         defenderProfile = FighterProfile(snapshot: response.defender)
-        if let actives = response.actives {
-            playerActives = actives.p1
-            opponentActives = actives.p2
-        }
+        playerActives = response.actives?.p1 ?? []
+        opponentActives = response.actives?.p2 ?? []
+        state.serverFinished = false
+        state.serverWinnerId = nil
+        pendingActiveSlot = nil
+        lastOutcome = nil
+        lastTurn = nil
+        lastOpponentTurn = nil
+        lastOpponentZones = nil
+        lastActiveFiredLabel = nil
+        lastOpponentActiveFiredLabel = nil
+        lastPlayerConsumableFired = nil
+        lastOpponentConsumableFired = nil
+        currentExchange = nil
+        battleLog.removeAll(keepingCapacity: true)
+        damagePopups.removeAll(keepingCapacity: true)
         // Fresh match — wipe any prior-match intent history so the hint
         // rebuilds from this duel's observations only.
         opponentAttackHistory.removeAll(keepingCapacity: true)
@@ -413,14 +436,66 @@ final class InteractiveBattleViewModel {
                 body: request
             )
             await applyStrikeResponse(response)
-        } catch let APIError.clientError(status, _, _) where status == 404 {
-            phase = .unavailable
-        } catch let APIError.clientError(status, _, _) where status == 410 {
-            phase = .error(message: "Match timed out")
+        } catch let apiError as APIError {
+            if handleRecoverableStrikeError(apiError) {
+                return
+            }
+            switch apiError {
+            case .clientError(let status, _, _) where status == 404:
+                phase = .unavailable
+            case .clientError(let status, _, _) where status == 410:
+                phase = .error(message: "Match timed out")
+            default:
+                phase = .error(message: apiError.userMessage)
+            }
         } catch {
-            let msg = (error as? APIError)?.errorDescription ?? "Strike failed"
-            phase = .error(message: msg)
+            phase = .error(message: "Strike failed")
         }
+    }
+
+    /// Recoverable server-side reconcile path: the match snapshot still had a
+    /// potion slot, but the real inventory no longer does. In that case the
+    /// backend strips the slot from the match, returns updated actives, and the
+    /// duel should continue from predict instead of terminating the whole flow.
+    private func handleRecoverableStrikeError(_ apiError: APIError) -> Bool {
+        guard apiError.statusCode == 409,
+              let payload = apiError.responsePayload,
+              let code = payload["code"] as? String,
+              code == "OUT_OF_CONSUMABLE" else {
+            return false
+        }
+
+        if let reconciledActives = decodeActivesState(from: payload["actives"]) {
+            playerActives = reconciledActives.p1
+            opponentActives = reconciledActives.p2
+        }
+
+        pendingActiveSlot = nil
+        lastStrikeWasSkipped = false
+        currentExchange = nil
+        phase = .predict
+        startPredictTimer()
+
+        let removedConsumableType = payload["removed_consumable_type"] as? String
+        let consumableName = removedConsumableType.flatMap { ConsumableCatalog.displayName(for: $0) } ?? "Potion"
+        appState.showToast(
+            "\(consumableName) unavailable",
+            subtitle: "That slot was removed from this match.",
+            type: .info
+        )
+        return true
+    }
+
+    private func decodeActivesState(from rawValue: Any?) -> InteractiveActivesState? {
+        guard let rawValue,
+              JSONSerialization.isValidJSONObject(rawValue),
+              let data = try? JSONSerialization.data(withJSONObject: rawValue) else {
+            return nil
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try? decoder.decode(InteractiveActivesState.self, from: data)
     }
 
     private func applyStrikeResponse(_ response: InteractiveStrikeResponse) async {
@@ -431,6 +506,11 @@ final class InteractiveBattleViewModel {
         }
         lastActiveFiredLabel = response.playerActiveLabel
         lastOpponentActiveFiredLabel = response.opponentActiveLabel
+        // Phase 4.C — surface consumable fire to the HUD banner. Server
+        // emits these fields only on strikes where a potion actually fired,
+        // so assignment-without-guard is safe (nil on normal rounds).
+        lastPlayerConsumableFired = response.playerConsumableFired
+        lastOpponentConsumableFired = response.opponentConsumableFired
         pendingActiveSlot = nil
         // Phase 4 polish — SFX per fired active. Opponent and player fire on
         // the same tick; dispatch both with a tiny stagger so they don't step
@@ -442,12 +522,20 @@ final class InteractiveBattleViewModel {
                 await MainActor.run { Self.playActiveFireSFX(labelRaw: label) }
             }
         }
+        // Dedicated potion SFX — distinct from talent-fire SFX. Fires once on
+        // the round the player drinks. Uses the `.potionUse` case from SFXCatalog
+        // so the moment never lands silently.
+        if response.playerConsumableFired != nil {
+            SFXManager.shared.play(.potionUse)
+        }
 
         state.strikes.append(response.playerStrike)
         if let opp = response.opponentStrike {
             state.strikes.append(opp)
             lastOpponentTurn = opp
         }
+        state.serverFinished = response.matchFinished
+        state.serverWinnerId = response.winnerId
         lastOpponentZones = response.oppZones
 
         // Intent hint — append this round's opponent zones and clamp the
@@ -474,7 +562,7 @@ final class InteractiveBattleViewModel {
         // picker for the log card the moment phase flips to `.reveal`.
         let playerName  = attackerProfile?.name ?? "You"
         let enemyName   = defenderProfile?.name ?? "Enemy"
-        let roundNumber = max(1, response.strikeIndex)
+        let roundNumber = response.strikeIndex + 1
         let exchange = RoundExchange.build(
             from: response,
             roundNumber: roundNumber,
@@ -721,7 +809,8 @@ final class InteractiveBattleViewModel {
                 body: body
             )
             finalCombatData = data
-            phase = .finished(winnerId: state.winnerId ?? state.defenderId)
+            let winnerId = data.result.winnerId ?? state.winnerId ?? state.defenderId
+            phase = .finished(winnerId: winnerId)
         } catch let APIError.clientError(status, _, _) where status == 404 {
             phase = .unavailable
         } catch {
@@ -764,6 +853,10 @@ extension InteractiveBattleViewModel.Phase {
         case .resolving, .reveal, .completing: return true
         default: return false
         }
+    }
+    var isSummary: Bool {
+        if case .summary = self { return true }
+        return false
     }
 }
 

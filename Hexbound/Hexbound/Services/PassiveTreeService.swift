@@ -10,6 +10,31 @@ import Foundation
 
 @MainActor
 final class PassiveTreeService {
+    private struct UnlockBody: Encodable {
+        let characterId: String
+        let nodeId: String
+    }
+
+    private struct RespecBody: Encodable {
+        let characterId: String
+    }
+
+    private struct ActiveSlotMutationBody: Encodable {
+        let characterId: String
+        let slotIndex: Int
+        let nodeId: String?
+        let consumableType: String?
+    }
+
+    private struct ActiveSlotBatchSaveBody: Encodable {
+        let characterId: String
+        let slots: [ActiveSlotLoadoutEntry]
+    }
+
+    private struct MutationSuccessResponse: Decodable {
+        let success: Bool
+    }
+
     private let appState: AppState
 
     init(appState: AppState) {
@@ -56,17 +81,12 @@ final class PassiveTreeService {
     /// Spends one or more passive points to unlock a node. Server validates connectivity + cost.
     func unlock(characterId: String, nodeId: String) async -> PassiveUnlockResponse? {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "node_id": nodeId
-            ]
-            let raw = try await APIClient.shared.postRaw(APIEndpoints.passivesUnlock, body: body)
-            let data = try JSONSerialization.data(withJSONObject: raw)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let decoded = try decoder.decode(PassiveUnlockResponse.self, from: data)
+            let response: PassiveUnlockResponse = try await APIClient.shared.post(
+                APIEndpoints.passivesUnlock,
+                body: UnlockBody(characterId: characterId, nodeId: nodeId)
+            )
             HapticManager.light()
-            return decoded
+            return response
         } catch let error as APIError {
             switch error {
             case .clientError(_, let message, _):
@@ -105,12 +125,15 @@ final class PassiveTreeService {
     @discardableResult
     func equipActiveSlot(characterId: String, slotIndex: Int, nodeId: String) async -> Bool {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "slot_index": slotIndex,
-                "node_id": nodeId
-            ]
-            _ = try await APIClient.shared.postRaw(APIEndpoints.passivesActiveSlots, body: body)
+            let _: MutationSuccessResponse = try await APIClient.shared.post(
+                APIEndpoints.passivesActiveSlots,
+                body: ActiveSlotMutationBody(
+                    characterId: characterId,
+                    slotIndex: slotIndex,
+                    nodeId: nodeId,
+                    consumableType: nil
+                )
+            )
             HapticManager.light()
             return true
         } catch let error as APIError {
@@ -132,12 +155,15 @@ final class PassiveTreeService {
     @discardableResult
     func equipConsumableSlot(characterId: String, slotIndex: Int, consumableType: String) async -> Bool {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "slot_index": slotIndex,
-                "consumable_type": consumableType
-            ]
-            _ = try await APIClient.shared.postRaw(APIEndpoints.passivesActiveSlots, body: body)
+            let _: MutationSuccessResponse = try await APIClient.shared.post(
+                APIEndpoints.passivesActiveSlots,
+                body: ActiveSlotMutationBody(
+                    characterId: characterId,
+                    slotIndex: slotIndex,
+                    nodeId: nil,
+                    consumableType: consumableType
+                )
+            )
             HapticManager.light()
             return true
         } catch let error as APIError {
@@ -177,27 +203,10 @@ final class PassiveTreeService {
     @discardableResult
     func saveLoadout(characterId: String, slots: [ActiveSlotLoadoutEntry]) async -> Bool {
         do {
-            let slotsBody: [[String: Any]] = slots.map { slot in
-                var dict: [String: Any] = ["slot_index": slot.slotIndex]
-                // Explicit NSNull preserves the nil across JSONSerialization and
-                // matches the backend's `node_id?: string | null` shape.
-                if let nodeId = slot.nodeId {
-                    dict["node_id"] = nodeId
-                } else {
-                    dict["node_id"] = NSNull()
-                }
-                if let ct = slot.consumableType {
-                    dict["consumable_type"] = ct
-                } else {
-                    dict["consumable_type"] = NSNull()
-                }
-                return dict
-            }
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "slots": slotsBody
-            ]
-            _ = try await APIClient.shared.postRaw(APIEndpoints.passivesActiveSlotsBatch, body: body)
+            let _: MutationSuccessResponse = try await APIClient.shared.post(
+                APIEndpoints.passivesActiveSlotsBatch,
+                body: ActiveSlotBatchSaveBody(characterId: characterId, slots: slots)
+            )
             HapticManager.light()
             return true
         } catch let error as APIError {
@@ -219,12 +228,10 @@ final class PassiveTreeService {
     /// Refunds all points, deletes all unlocked nodes, spends RESPEC_GEM_COST gems.
     func respec(characterId: String) async -> PassiveRespecResponse? {
         do {
-            let body: [String: Any] = ["character_id": characterId]
-            let raw = try await APIClient.shared.postRaw(APIEndpoints.passivesRespec, body: body)
-            let data = try JSONSerialization.data(withJSONObject: raw)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let decoded = try decoder.decode(PassiveRespecResponse.self, from: data)
+            let decoded: PassiveRespecResponse = try await APIClient.shared.post(
+                APIEndpoints.passivesRespec,
+                body: RespecBody(characterId: characterId)
+            )
             HapticManager.medium()
             return decoded
         } catch let error as APIError {

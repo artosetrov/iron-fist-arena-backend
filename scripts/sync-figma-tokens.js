@@ -192,17 +192,6 @@ const FIGMA_TO_SWIFT_SPACING = {
 FIGMA_TO_SWIFT_COLOR['bg/card-gradient-start'] = 'bgCardGradientStart';
 FIGMA_TO_SWIFT_COLOR['bg/card-gradient-end'] = 'bgCardGradientEnd';
 
-// ─── Helpers ───
-
-function hexToInt(hex) {
-  return parseInt(hex.replace('#', ''), 16);
-}
-
-function extractSwiftHex(line) {
-  const match = line.match(/0x([0-9A-Fa-f]{6})/);
-  return match ? '#' + match[1].toLowerCase() : null;
-}
-
 // ─── Main ───
 
 function main() {
@@ -212,8 +201,22 @@ function main() {
     console.error('   Use Claude Code: "export figma tokens" to generate it.');
     process.exit(1);
   }
+  if (!fs.existsSync(THEME_FILE) || !fs.existsSync(LAYOUT_FILE)) {
+    console.error('❌ Swift token files not found. Expected:');
+    console.error(`   - ${THEME_FILE}`);
+    console.error(`   - ${LAYOUT_FILE}`);
+    process.exit(1);
+  }
 
   const tokens = JSON.parse(fs.readFileSync(TOKENS_FILE, 'utf8'));
+  if (!Array.isArray(tokens.primitives) || !Array.isArray(tokens.spacing)) {
+    console.error('❌ figma-tokens.json has unexpected shape.');
+    console.error('   Expected arrays: { primitives: [...], spacing: [...] }');
+    process.exit(2);
+  }
+
+  const primitives = tokens.primitives;
+  const spacing = tokens.spacing;
   const themeContent = fs.readFileSync(THEME_FILE, 'utf8');
   const layoutContent = fs.readFileSync(LAYOUT_FILE, 'utf8');
 
@@ -228,7 +231,7 @@ function main() {
   // ─── Check Primitives ───
   console.log('── PRIMITIVES (Color Tokens) ──\n');
 
-  for (const prim of tokens.primitives) {
+  for (const prim of primitives) {
     const swiftName = FIGMA_TO_SWIFT_COLOR[prim.name];
     if (!swiftName) {
       console.log(`  ⚠️  No Swift mapping for Figma primitive: ${prim.name}`);
@@ -259,7 +262,7 @@ function main() {
   // ─── Check Spacing ───
   console.log('\n── SPACING & RADIUS ──\n');
 
-  for (const sp of tokens.spacing) {
+  for (const sp of spacing) {
     const swiftName = FIGMA_TO_SWIFT_SPACING[sp.name];
     if (!swiftName) {
       console.log(`  ⚠️  No Swift mapping for Figma spacing: ${sp.name}`);

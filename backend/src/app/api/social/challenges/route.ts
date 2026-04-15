@@ -5,16 +5,13 @@ import { runCombat, initCombatConfig } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import { getKFactor } from '@/lib/game/elo'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
-import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import {
   getStaminaConfig,
   getGoldRewardsConfig,
   getXpRewardsConfig,
-  getFirstWinBonusConfig,
 } from '@/lib/game/live-config'
 import {
   chaGoldBonus,
-  streakGoldMultiplier,
   levelScaledReward,
 } from '@/lib/game/balance'
 import { cacheDeletePrefix } from '@/lib/cache'
@@ -22,22 +19,13 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { degradeEquipment } from '@/lib/game/durability'
 import { createBattleResultMail, createBattleInviteMail, updateBattleInviteStatus } from '@/lib/game/battle-mail'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 const MAX_PENDING_CHALLENGES = 5
 const CHALLENGE_EXPIRY_HOURS = 24
 const MAX_CHALLENGES_PER_DAY = 10
 const CHALLENGE_GOLD_MULTIPLIER = 1.2
-
-function isNewUtcDay(date: Date | null): boolean {
-  if (!date) return true
-  const today = new Date()
-  today.setUTCHours(0, 0, 0, 0)
-  const d = new Date(date)
-  d.setUTCHours(0, 0, 0, 0)
-  return d.getTime() < today.getTime()
-}
 
 /**
  * GET /api/social/challenges?character_id=xxx
@@ -405,8 +393,7 @@ async function handleAccept(character: any, body: any) {
   })
 
   // --- Run the fight (reuse combat engine) ---
-  const [STAMINA, GOLD_REWARDS, XP_REWARDS] = await Promise.all([
-    getStaminaConfig(),
+  const [GOLD_REWARDS, XP_REWARDS] = await Promise.all([
     getGoldRewardsConfig(),
     getXpRewardsConfig(),
   ])
@@ -449,8 +436,8 @@ async function handleAccept(character: any, body: any) {
         pvpRating: true, pvpCalibrationGames: true, highestPvpRank: true,
         firstWinToday: true, firstWinDate: true,
         currentHp: true,
-        // W3.D5 — Premium Forever gold multiplier
-        user: { select: { premiumUntil: true } },
+        // Premium entitlement (Forever or active subscription) for gold bonus
+        user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
       },
     }),
     prisma.character.findUnique({
@@ -460,8 +447,8 @@ async function handleAccept(character: any, body: any) {
         pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
         pvpRating: true, pvpCalibrationGames: true, highestPvpRank: true,
         currentHp: true,
-        // W3.D5 — Premium Forever gold multiplier
-        user: { select: { premiumUntil: true } },
+        // Premium entitlement (Forever or active subscription) for gold bonus
+        user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
       },
     }),
   ])

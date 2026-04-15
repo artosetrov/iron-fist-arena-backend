@@ -69,7 +69,7 @@ When invoked as a subagent, run the full verification script and return the repo
 
 ## Auto-Trigger Rules
 
-The parent Claude agent SHOULD automatically spawn this as a subagent:
+The parent agent may run this as a subagent only when the user explicitly requested subagents/parallel agent work and the current environment permits delegation:
 - After a large refactor touching 5+ files
 - Before discussing deployment
 - When the user asks "is everything working?"

@@ -2,25 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { bpXpForLevel } from '@/lib/game/balance'
+import { formatRewardTypeName } from '@/lib/game/reward-display'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
-
-function formatRewardName(rewardType: string): string {
-  switch (rewardType) {
-    case 'gold': return 'Gold'
-    case 'gems': return 'Gems'
-    case 'xp': return 'XP'
-    case 'stamina': return 'Stamina'
-    case 'chest': return 'Chest'
-    case 'skin': return 'Skin'
-    case 'item': return 'Item'
-    case 'consumable': return 'Consumable'
-    case 'cosmetic': return 'Cosmetic'
-    case 'title': return 'Title'
-    case 'frame': return 'Frame'
-    case 'effect': return 'Effect'
-    default: return rewardType
-  }
-}
 
 /**
  * Calculate the current BP level from total bpXp.
@@ -79,7 +62,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get battle pass and rewards in parallel (both depend only on season)
-    let [battlePass, rewards] = await Promise.all([
+    const [existingBattlePass, rewards] = await Promise.all([
       prisma.battlePass.findFirst({
         where: { characterId, seasonId: activeSeason.id },
       }),
@@ -88,6 +71,8 @@ export async function GET(req: NextRequest) {
         orderBy: [{ bpLevel: 'asc' }, { isPremium: 'asc' }],
       }),
     ])
+
+    let battlePass = existingBattlePass
 
     if (!battlePass) {
       battlePass = await prisma.battlePass.create({
@@ -123,7 +108,7 @@ export async function GET(req: NextRequest) {
       .map((r) => ({
         level: r.bpLevel,
         reward_type: r.rewardType,
-        reward_name: formatRewardName(r.rewardType),
+        reward_name: formatRewardTypeName(r.rewardType),
         amount: r.rewardAmount,
         claimed: r.claimed,
       }))
@@ -133,7 +118,7 @@ export async function GET(req: NextRequest) {
       .map((r) => ({
         level: r.bpLevel,
         reward_type: r.rewardType,
-        reward_name: formatRewardName(r.rewardType),
+        reward_name: formatRewardTypeName(r.rewardType),
         amount: r.rewardAmount,
         claimed: r.claimed,
       }))

@@ -185,6 +185,7 @@ struct ActiveQuestBanner: View {
         guard claimingId == nil else { return }
         claimingId = quest.id
         let questId = quest.id
+        let previousLevel = appState.currentCharacter?.level
 
         // Progress-fill loader — start at 0, animate to 1 over ~0.9s. This
         // gives immediate feedback that the tap was registered without
@@ -209,6 +210,16 @@ struct ActiveQuestBanner: View {
                 self.appState.showToast("Failed to claim quest", subtitle: "Please try again", type: .error)
                 return
             }
+
+            self.appState.applyAuthoritativeRewardState(
+                gold: result.gold,
+                gems: result.gems,
+                xp: result.xp,
+                leveledUp: result.leveledUp,
+                newLevel: result.newLevel,
+                statPointsAwarded: result.statPointsAwarded,
+                previousLevel: previousLevel
+            )
 
             // ── Commit on confirmed success ──
             // Snap progress to 100% first so the loader never disappears

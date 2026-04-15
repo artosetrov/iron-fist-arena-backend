@@ -426,6 +426,9 @@ async function main() {
     // Check if already exists
     const existing = await prisma.dungeon.findUnique({ where: { slug: dungeon.slug } });
     if (existing) {
+      // Existing slugs are treated as owned live content. Re-runs intentionally
+      // do not reconcile changed definitions; use an explicit repair or
+      // migration if a shipped dungeon needs to be updated.
       console.log(`  ⏭️  ${dungeon.name} (${dungeon.slug}) already exists — skipping`);
       continue;
     }

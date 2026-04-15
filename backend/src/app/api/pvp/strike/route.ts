@@ -5,6 +5,8 @@ import { rateLimit } from '@/lib/rate-limit'
 import { initCombatConfig, resolveSingleStrike, type SingleStrikeInput } from '@/lib/game/combat'
 import { loadCombatCharacter } from '@/lib/game/combat-loader'
 import type { BodyZone } from '@/lib/game/balance'
+import { ConsumableType } from '@prisma/client'
+import { invalidateActiveSlotsCache } from '@/lib/game/active-slots'
 
 /**
  * POST /api/pvp/strike — Interactive Combat v1 (FEATURE-FLAGGED, MATCH-AWARE)
@@ -83,7 +85,9 @@ interface ActiveSlotSnapshot {
   // Phase 4.B: snapshots may be talent OR consumable. Field is absent in
   // pre-4.B matches — treat missing `kind` as 'talent' for backward compat.
   kind?: 'talent' | 'consumable'
-  node_id: number | null
+  // UUID string — passive_nodes.id is `String @id @default(uuid())` in Prisma.
+  // Typing as `number` caused iOS decode crash (incident 2026-04-14).
+  node_id: string | null
   node_key: string | null
   // Consumable-only (null for talent).
   consumable_type?: string | null
@@ -105,6 +109,16 @@ function isConsumableSlot(slot: ActiveSlotSnapshot): boolean {
 interface InteractiveActivesState {
   p1: ActiveSlotSnapshot[]
   p2: ActiveSlotSnapshot[]
+}
+
+function removePlayerActiveSlot(
+  actives: InteractiveActivesState,
+  slotIndex: number,
+): InteractiveActivesState {
+  return {
+    p1: actives.p1.filter((slot) => slot.slot_index !== slotIndex),
+    p2: actives.p2,
+  }
 }
 
 /**
@@ -135,11 +149,23 @@ function shouldExecute(currentHp: number, maxHp: number, magnitude: number): boo
   return pct > 0 && pct <= Math.max(0, magnitude)
 }
 
-function decrementCooldowns(actives: ActiveSlotSnapshot[]): ActiveSlotSnapshot[] {
-  return actives.map((a) => ({
-    ...a,
-    cooldown_remaining: Math.max(0, a.cooldown_remaining - 1),
-  }))
+function advanceActivesAfterRound(
+  actives: ActiveSlotSnapshot[],
+  firedSlotIndex: number | null,
+): ActiveSlotSnapshot[] {
+  return actives.map((slot) => {
+    if (firedSlotIndex !== null && slot.slot_index === firedSlotIndex) {
+      if (isConsumableSlot(slot)) {
+        return { ...slot, consumed: true }
+      }
+      return { ...slot, cooldown_remaining: slot.cooldown_max }
+    }
+
+    return {
+      ...slot,
+      cooldown_remaining: Math.max(0, slot.cooldown_remaining - 1),
+    }
+  })
 }
 
 /**
@@ -151,8 +177,7 @@ function decrementCooldowns(actives: ActiveSlotSnapshot[]): ActiveSlotSnapshot[]
  *      healthy (> 0.7 HP) — i.e. good kill window or low-risk aggression
  *   4. shield_self — if opponent is below 0.5 HP AND player has a ready
  *      active that isn't already on cooldown (incoming heavy hit likely)
- *   5. stun_enemy — if player has ≥ 1 ready active (denies their next fire)
- *   6. burst_damage — fallback when nothing else fits but burst is ready
+ *   5. burst_damage — fallback when nothing else fits but burst is ready
  * Returns the chosen slot or null.
  */
 function pickOpponentActive(
@@ -165,9 +190,15 @@ function pickOpponentActive(
 ): ActiveSlotSnapshot | null {
   // Phase 4.B: exclude consumable slots from AI. Consumables belong to a
   // specific player's inventory — the opponent-AI must not decrement the
-  // user's real potions. Talent slots only.
+  // user's real potions. Also exclude stun_enemy for now: player-side stun is
+  // implemented as "skip the counter this round", but the AI acts second, so
+  // picking stun_enemy would currently be a no-op while still burning cooldown.
   const ready = opponentActives.filter(
-    (a) => a.cooldown_remaining === 0 && a.action_type && !isConsumableSlot(a)
+    (a) =>
+      a.cooldown_remaining === 0 &&
+      a.action_type &&
+      a.action_type !== 'stun_enemy' &&
+      !isConsumableSlot(a)
   )
   if (ready.length === 0) return null
 
@@ -203,17 +234,11 @@ function pickOpponentActive(
     if (shield) return shield
   }
 
-  // Tier 5 — stun to deny player's next active (only useful if they have one)
-  if (playerHasReadyActive) {
-    const stun = ready.find((a) => a.action_type === 'stun_enemy')
-    if (stun) return stun
-  }
-
-  // Tier 6 — fallback burst when all else fails but we have it ready
+  // Tier 5 — fallback burst when all else fails but we have it ready
   const burstFallback = ready.find((a) => a.action_type === 'burst_damage')
   if (burstFallback) return burstFallback
 
-  // Tier 7 — take any shield/heal/stun to at least use the cooldown
+  // Final fallback — take any remaining non-stun talent to at least use the cooldown
   return ready[0] ?? null
 }
 
@@ -479,25 +504,16 @@ export async function POST(req: NextRequest) {
     }
 
     // --- Phase 3: update actives state (set fired cooldown OR consumed flag, tick all others) ---
-    //   Talent fires → set cooldown_remaining = cooldown_max, tick others down.
-    //   Consumable fires → set consumed = true (cooldown_max is 0, so ticking is a no-op).
-    const markFired = (a: ActiveSlotSnapshot): ActiveSlotSnapshot => {
-      if (isConsumableSlot(a)) return { ...a, consumed: true }
-      return { ...a, cooldown_remaining: a.cooldown_max }
-    }
-    const updatedP1 = decrementCooldowns(
-      firedPlayerActive
-        ? actives.p1.map((a) =>
-            a.slot_index === firedPlayerActive.slot_index ? markFired(a) : a
-          )
-        : actives.p1
+    //   Talent fires → set cooldown_remaining = cooldown_max.
+    //   Consumable fires → set consumed = true.
+    //   All OTHER slots tick down by 1 at end of round.
+    const updatedP1 = advanceActivesAfterRound(
+      actives.p1,
+      firedPlayerActive?.slot_index ?? null,
     )
-    const updatedP2 = decrementCooldowns(
-      firedOppActive
-        ? actives.p2.map((a) =>
-            a.slot_index === firedOppActive.slot_index ? markFired(a) : a
-          )
-        : actives.p2
+    const updatedP2 = advanceActivesAfterRound(
+      actives.p2,
+      firedOppActive?.slot_index ?? null,
     )
     const newActives: InteractiveActivesState = { p1: updatedP1, p2: updatedP2 }
 
@@ -546,9 +562,46 @@ export async function POST(req: NextRequest) {
     } catch (txErr) {
       if (txErr instanceof Error) {
         if (txErr.message === 'OUT_OF_CONSUMABLE') {
+          const reconciledActives =
+            firedSlotIndex !== null
+              ? removePlayerActiveSlot(actives, firedSlotIndex)
+              : actives
+          // Strip the impossible potion slot from the persisted match snapshot
+          // so the client can recover in-place instead of getting stuck in a
+          // retry loop that keeps failing the same round.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const reconciled = await (prisma.pvpMatch.updateMany as any)({
+            where: { id: match_id, interactiveStrikeIndex: strikeIndex, status: 'in_progress' },
+            data: { interactiveActives: reconciledActives },
+          })
+          if (reconciled.count === 0) {
+            return NextResponse.json(
+              { error: 'Match state changed, please retry' },
+              { status: 409 }
+            )
+          }
+          await Promise.all([
+            invalidateActiveSlotsCache(match.player1Id),
+            firedSlotIndex !== null && firedPlayerActive?.consumable_type
+              ? prisma.characterActiveSlot.deleteMany({
+                  where: {
+                    characterId: match.player1Id,
+                    slotIndex: firedSlotIndex,
+                    consumableType: firedPlayerActive.consumable_type as ConsumableType,
+                  },
+                })
+              : Promise.resolve(),
+          ])
           return NextResponse.json(
-            { error: 'You have no potions of this type left' },
-            { status: 400 }
+            {
+              error: 'You have no potions of this type left',
+              code: 'OUT_OF_CONSUMABLE',
+              recoverable: true,
+              actives: reconciledActives,
+              removed_slot_index: firedSlotIndex,
+              removed_consumable_type: firedPlayerActive?.consumable_type ?? null,
+            },
+            { status: 409 }
           )
         }
         if (txErr.message === 'MATCH_STATE_CHANGED') {
@@ -559,6 +612,10 @@ export async function POST(req: NextRequest) {
         }
       }
       throw txErr
+    }
+
+    if (firedIsConsumable && firedPlayerActive?.consumable_type) {
+      await invalidateActiveSlotsCache(match.player1Id)
     }
 
     return NextResponse.json({

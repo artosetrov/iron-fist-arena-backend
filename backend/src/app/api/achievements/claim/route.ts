@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { getAchievementCatalog } from '@/lib/game/achievement-catalog'
-import { applyLevelUp } from '@/lib/game/progression'
-import { awardBattlePassXp } from '@/lib/game/battle-pass'
+import { claimAchievementReward } from '@/lib/game/achievement-claims'
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
 import { getBattlePassConfig } from '@/lib/game/live-config'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -33,68 +32,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid achievement key' }, { status: 400 })
     }
 
-    // Atomic read-check-write in interactive transaction with FOR UPDATE
-    const result = await prisma.$transaction(async (tx) => {
-      // Verify character ownership
-      const character = await tx.character.findUnique({
-        where: { id: character_id },
-        select: { id: true, userId: true },
-      })
-
-      if (!character) throw new Error('CHARACTER_NOT_FOUND')
-      if (character.userId !== user.id) throw new Error('FORBIDDEN')
-
-      // Lock the achievement row with FOR UPDATE via raw query
-      const achievements = await tx.$queryRawUnsafe<any[]>(
-        `SELECT id, progress, completed, reward_claimed AS "rewardClaimed"
-         FROM achievements
-         WHERE character_id = $1 AND achievement_key = $2
-         FOR UPDATE`,
-        character_id, achievement_key
-      )
-
-      const achievement = achievements[0]
-      if (!achievement) throw new Error('ACHIEVEMENT_NOT_FOUND')
-
-      const isCompleted = achievement.completed || achievement.progress >= def.target
-      if (!isCompleted) throw new Error('NOT_COMPLETED')
-      if (achievement.rewardClaimed) throw new Error('ALREADY_CLAIMED')
-
-      // Apply reward
-      if (def.rewardType === 'gold') {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gold: { increment: def.rewardAmount } },
-        })
-      } else if (def.rewardType === 'gems') {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: def.rewardAmount } },
-        })
-      } else if (def.rewardType === 'xp') {
-        await tx.character.update({
-          where: { id: character_id },
-          data: { currentXp: { increment: def.rewardAmount } },
-        })
-      }
-
-      // Mark as completed and claimed
-      await tx.achievement.update({
-        where: { id: achievement.id },
-        data: { completed: true, rewardClaimed: true },
-      })
-
-      return { rewardType: def.rewardType, rewardAmount: def.rewardAmount }
+    const BATTLE_PASS = await getBattlePassConfig()
+    const result = await claimAchievementReward({
+      userId: user.id,
+      characterId: character_id,
+      achievementKey: achievement_key,
+      achievementDef: def,
+      battlePassXpAward: BATTLE_PASS.BP_XP_PER_ACHIEVEMENT,
     })
 
-    // Award Battle Pass XP for achievement claim
-    const BATTLE_PASS = await getBattlePassConfig()
-    await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_ACHIEVEMENT)
-
-    // Check for level-up if XP was awarded (outside tx is fine)
-    let levelUpResult = null
-    if (result.rewardType === 'xp') {
-      levelUpResult = await applyLevelUp(prisma, character_id)
+    if (result.rewardGrantResult.levelUpResult?.leveledUp) {
+      await Promise.all([
+        invalidateSkillCache(character_id),
+        invalidatePassiveCache(character_id),
+      ])
     }
 
     return NextResponse.json({
@@ -103,16 +54,27 @@ export async function POST(req: NextRequest) {
         type: result.rewardType,
         amount: result.rewardAmount,
       },
-      leveled_up: levelUpResult?.leveledUp ?? false,
-      new_level: levelUpResult?.newLevel,
-      stat_points_awarded: levelUpResult?.statPointsAwarded,
+      reward_gold: result.rewardType === 'gold' ? result.rewardAmount : 0,
+      reward_gems: result.rewardType === 'gems' ? result.rewardAmount : 0,
+      reward_xp: result.rewardType === 'xp' ? result.rewardAmount : 0,
+      gold: result.rewardGrantResult.gold,
+      gems: result.rewardGrantResult.gems,
+      xp: result.rewardGrantResult.xp,
+      leveled_up: result.rewardGrantResult.levelUpResult?.leveledUp ?? false,
+      new_level: result.rewardGrantResult.levelUpResult?.newLevel,
+      stat_points_awarded: result.rewardGrantResult.levelUpResult?.statPointsAwarded,
     })
-  } catch (error: any) {
-    if (error.message === 'CHARACTER_NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    if (error.message === 'ACHIEVEMENT_NOT_FOUND') return NextResponse.json({ error: 'Achievement not found' }, { status: 404 })
-    if (error.message === 'NOT_COMPLETED') return NextResponse.json({ error: 'Achievement not yet completed' }, { status: 400 })
-    if (error.message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Reward already claimed' }, { status: 400 })
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      if (error.message === 'CHARACTER_NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      if (error.message === 'ACHIEVEMENT_NOT_FOUND') return NextResponse.json({ error: 'Achievement not found' }, { status: 404 })
+      if (error.message === 'NOT_COMPLETED') return NextResponse.json({ error: 'Achievement not yet completed' }, { status: 400 })
+      if (error.message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Reward already claimed' }, { status: 400 })
+      if (error.message === 'UNSUPPORTED_REWARD_TYPE') {
+        return NextResponse.json({ error: 'Achievement reward is misconfigured' }, { status: 500 })
+      }
+    }
 
     console.error('claim achievement error:', error)
     return NextResponse.json(

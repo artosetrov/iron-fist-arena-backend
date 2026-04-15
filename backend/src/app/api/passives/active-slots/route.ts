@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { cacheDelete, cacheGet, cacheSet } from '@/lib/cache'
+import { cacheGet, cacheSet } from '@/lib/cache'
 import { rateLimit } from '@/lib/rate-limit'
 import { ConsumableType } from '@prisma/client'
-import { getGameConfig } from '@/lib/game/config'
+import {
+  ACTIVE_SLOT_CONSUMABLES,
+  activeSlotsCacheKey,
+  invalidateActiveSlotsCache,
+} from '@/lib/game/active-slots'
+import { getConsumablePrice } from '@/lib/game/consumable-pricing'
 
 // Interactive Combat v1 — Phase 4.A
 // CRUD for character active-skill slots. A slot can hold EITHER a passive-talent
@@ -19,33 +24,6 @@ import { getGameConfig } from '@/lib/game/config'
 
 const CACHE_TTL = 5 * 60 * 1000
 const MAX_SLOTS = 3
-const cacheKey = (characterId: string) => `active-slots:char:${characterId}`
-
-// Consumables allowed in active slots in Phase 4 scope. Non-health potions (stamina,
-// scrolls, shards) are intentionally excluded — they don't fit the combat model.
-const ALLOWED_CONSUMABLES: readonly ConsumableType[] = [
-  'health_potion_small',
-  'health_potion_medium',
-  'health_potion_large',
-] as const
-
-const DEFAULT_CONSUMABLE_PRICES: Record<ConsumableType, number> = {
-  stamina_potion_small: 100,
-  stamina_potion_medium: 250,
-  stamina_potion_large: 500,
-  health_potion_small: 150,
-  health_potion_medium: 350,
-  health_potion_large: 700,
-  protection_scroll: 0,
-  legendary_shard: 0,
-}
-
-async function getConsumablePrice(type: ConsumableType): Promise<number> {
-  return getGameConfig<number>(
-    `consumable.price.${type}`,
-    DEFAULT_CONSUMABLE_PRICES[type],
-  )
-}
 
 export type SlotResponse = {
   slot_index: number
@@ -93,11 +71,19 @@ export async function GET(req: NextRequest) {
     // cache with the slot payload (prices can change via GameConfig mid-session).
     const consumablesMetaPromise = buildConsumablesMeta(characterId)
 
-    const cached = await cacheGet<SlotResponse[]>(cacheKey(characterId))
+    const cached = await cacheGet<SlotResponse[]>(activeSlotsCacheKey(characterId))
     if (cached) {
       const consumablesMeta = await consumablesMetaPromise
+      const reconciled = await reconcileUnavailableConsumableSlots(
+        characterId,
+        cached,
+        buildOwnedConsumableMap(consumablesMeta),
+      )
+      if (reconciled !== cached) {
+        await cacheSet(activeSlotsCacheKey(characterId), reconciled, CACHE_TTL)
+      }
       return NextResponse.json({
-        slots: cached,
+        slots: reconciled,
         max_slots: MAX_SLOTS,
         consumables_meta: consumablesMeta,
       })
@@ -163,10 +149,15 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    await cacheSet(cacheKey(characterId), payload, CACHE_TTL)
     const consumablesMeta = await consumablesMetaPromise
+    const reconciled = await reconcileUnavailableConsumableSlots(
+      characterId,
+      payload,
+      buildOwnedConsumableMap(consumablesMeta),
+    )
+    await cacheSet(activeSlotsCacheKey(characterId), reconciled, CACHE_TTL)
     return NextResponse.json({
-      slots: payload,
+      slots: reconciled,
       max_slots: MAX_SLOTS,
       consumables_meta: consumablesMeta,
     })
@@ -210,9 +201,9 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
-    if (hasConsumable && !ALLOWED_CONSUMABLES.includes(consumable_type as ConsumableType)) {
+    if (hasConsumable && !ACTIVE_SLOT_CONSUMABLES.includes(consumable_type as ConsumableType)) {
       return NextResponse.json(
-        { error: `consumable_type must be one of: ${ALLOWED_CONSUMABLES.join(', ')}` },
+        { error: `consumable_type must be one of: ${ACTIVE_SLOT_CONSUMABLES.join(', ')}` },
         { status: 400 },
       )
     }
@@ -259,6 +250,18 @@ export async function POST(req: NextRequest) {
         // IS NOT NULL enforces max-1-consumable. If another consumable row exists,
         // it must be at this same slot_index (we're about to replace it anyway); if
         // it's at a different slot, explicitly delete it to satisfy the constraint.
+        const ownedConsumable = await tx.consumableInventory.findUnique({
+          where: {
+            characterId_consumableType: {
+              characterId: character_id,
+              consumableType: consumable_type as ConsumableType,
+            },
+          },
+          select: { quantity: true },
+        })
+        if (!ownedConsumable || ownedConsumable.quantity < 1) {
+          throw new Error('CONSUMABLE_NOT_OWNED')
+        }
         const existingConsumable = await tx.characterActiveSlot.findFirst({
           where: { characterId: character_id, consumableType: { not: null } },
           select: { id: true, slotIndex: true },
@@ -283,7 +286,7 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    await cacheDelete(cacheKey(character_id))
+    await invalidateActiveSlotsCache(character_id)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
@@ -294,6 +297,7 @@ export async function POST(req: NextRequest) {
         NODE_NOT_ACTIVATABLE: { msg: 'This talent is not activatable', status: 400 },
         NODE_NOT_UNLOCKED: { msg: 'Unlock this talent first', status: 400 },
         CLASS_RESTRICTED: { msg: 'This talent is not available for your class', status: 400 },
+        CONSUMABLE_NOT_OWNED: { msg: 'Own this potion before equipping it', status: 400 },
       }
       const mapped = map[error.message]
       if (mapped) return NextResponse.json({ error: mapped.msg }, { status: mapped.status })
@@ -334,7 +338,7 @@ export async function DELETE(req: NextRequest) {
       where: { characterId, slotIndex },
     })
 
-    await cacheDelete(cacheKey(characterId))
+    await invalidateActiveSlotsCache(characterId)
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('active-slots DELETE error:', error)
@@ -349,21 +353,21 @@ async function buildConsumablesMeta(characterId: string): Promise<ConsumableMeta
     prisma.consumableInventory.findMany({
       where: {
         characterId,
-        consumableType: { in: ALLOWED_CONSUMABLES as unknown as ConsumableType[] },
+        consumableType: { in: ACTIVE_SLOT_CONSUMABLES as unknown as ConsumableType[] },
       },
       select: { consumableType: true, quantity: true },
     }),
     prisma.item.findMany({
-      where: { catalogId: { in: ALLOWED_CONSUMABLES as unknown as string[] } },
+      where: { catalogId: { in: ACTIVE_SLOT_CONSUMABLES as unknown as string[] } },
       select: { catalogId: true, itemName: true, description: true, rarity: true },
     }),
-    Promise.all(ALLOWED_CONSUMABLES.map(getConsumablePrice)),
+    Promise.all(ACTIVE_SLOT_CONSUMABLES.map(getConsumablePrice)),
   ])
 
   const ownedByType = new Map(inventoryRows.map((r) => [r.consumableType, r.quantity]))
   const itemByCatalog = new Map(itemRows.map((r) => [r.catalogId, r]))
 
-  return ALLOWED_CONSUMABLES.map((type, i) => {
+  return ACTIVE_SLOT_CONSUMABLES.map((type, i) => {
     const item = itemByCatalog.get(type)
     return {
       consumable_type: type,
@@ -374,6 +378,42 @@ async function buildConsumablesMeta(characterId: string): Promise<ConsumableMeta
       owned_count: ownedByType.get(type) ?? 0,
     }
   })
+}
+
+function buildOwnedConsumableMap(consumablesMeta: ConsumableMeta[]): Map<ConsumableType, number> {
+  return new Map(consumablesMeta.map((meta) => [
+    meta.consumable_type,
+    meta.owned_count,
+  ]))
+}
+
+async function reconcileUnavailableConsumableSlots(
+  characterId: string,
+  slots: SlotResponse[],
+  ownedByType: Map<ConsumableType, number>,
+): Promise<SlotResponse[]> {
+  const staleSlots = slots.filter((slot) => {
+    if (slot.kind !== 'consumable' || !slot.consumable_type) {
+      return false
+    }
+    return (ownedByType.get(slot.consumable_type) ?? 0) < 1
+  })
+  if (staleSlots.length === 0) return slots
+
+  await prisma.characterActiveSlot.deleteMany({
+    where: {
+      characterId,
+      OR: staleSlots.map((slot) => ({
+        slotIndex: slot.slot_index,
+        consumableType: slot.consumable_type as ConsumableType,
+      })),
+    },
+  })
+
+  return slots.filter((slot) => !staleSlots.some((stale) =>
+    stale.slot_index === slot.slot_index &&
+    stale.consumable_type === slot.consumable_type
+  ))
 }
 
 function prettifyConsumableType(type: ConsumableType): string {

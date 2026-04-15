@@ -149,7 +149,7 @@ Return the audit in the format above. Start with `⛔ CRITICAL UX ISSUES` if the
 
 ## Auto-Trigger Rules
 
-The parent Claude agent SHOULD automatically spawn this as a subagent:
+The parent agent may run this as a subagent only when the user explicitly requested subagents/parallel agent work and the current environment permits delegation:
 - When a new screen/view is created from scratch
 - When the user asks "is this good?" about a UI
 - After major UI refactors

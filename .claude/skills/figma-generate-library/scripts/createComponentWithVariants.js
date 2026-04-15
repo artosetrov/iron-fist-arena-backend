@@ -27,7 +27,7 @@
  *     produces 6 variants.
  *   - `baseProps`: Visual properties applied to every variant.
  *   - `page`: The PageNode to create components on (must be set as current page by caller).
- * @param {string} [runId] - Optional dsb_run_id to tag every node.
+ * @param {string} [runId] - Optional shared `dsb/run_id` to tag every node.
  * @returns {Promise<{
  *   componentSet: ComponentSetNode,
  *   variants: ComponentNode[]
@@ -85,11 +85,11 @@ async function createComponentWithVariants(config, runId) {
       comp.paddingRight = baseProps.padding.right ?? 0
     }
 
-    // Plugin data
+    // Shared plugin data for idempotency and cleanup across use_figma runs
     const variantKey = axisNames.map((ax, i) => `${ax}:${combo[i]}`).join('|')
-    comp.setPluginData('dsb_key', `component/${name}/${variantKey}`)
+    comp.setSharedPluginData('dsb', 'key', `component/${name}/${variantKey}`)
     if (runId) {
-      comp.setPluginData('dsb_run_id', runId)
+      comp.setSharedPluginData('dsb', 'run_id', runId)
     }
 
     page.appendChild(comp)
@@ -99,9 +99,9 @@ async function createComponentWithVariants(config, runId) {
   // Combine into a component set
   const componentSet = figma.combineAsVariants(components, page)
   componentSet.name = name
-  componentSet.setPluginData('dsb_key', `componentSet/${name}`)
+  componentSet.setSharedPluginData('dsb', 'key', `componentSet/${name}`)
   if (runId) {
-    componentSet.setPluginData('dsb_run_id', runId)
+    componentSet.setSharedPluginData('dsb', 'run_id', runId)
   }
 
   // Grid layout — variants stack at (0, 0) after combineAsVariants; reposition them.

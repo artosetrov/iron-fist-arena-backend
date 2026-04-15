@@ -57,12 +57,40 @@ final class ShopViewModel {
         self.cache = cache
         self.service = ShopService(appState: appState)
         self.inventoryService = InventoryService(appState: appState)
+        // Hydrate contraband from cache instantly so the widget renders the
+        // cooldown ticker / available card on shop entry without waiting for
+        // the network. The actual loadContraband() call will revalidate in
+        // the background.
+        if let cached = cache.cachedContraband() {
+            contrabandState = ContrabandUIState.from(cached)
+            if case .cooldown = contrabandState {
+                scavengerClaimedThisSession = true
+            }
+        }
     }
 
     var gold: Int { appState.currentCharacter?.gold ?? 0 }
     var gems: Int { appState.currentCharacter?.gems ?? 0 }
     var playerLevel: Int { appState.currentCharacter?.level ?? 1 }
     var playerClass: String { appState.currentCharacter?.characterClass.rawValue ?? "warrior" }
+
+    private func applyClaimedRewardState(
+        gold: Int,
+        gems: Int,
+        xp: Int,
+        leveledUp: Bool?,
+        newLevel: Int?,
+        statPointsAwarded: Int?
+    ) {
+        appState.applyAuthoritativeRewardState(
+            gold: gold,
+            gems: gems,
+            xp: xp,
+            leveledUp: leveledUp,
+            newLevel: newLevel,
+            statPointsAwarded: statPointsAwarded
+        )
+    }
 
     var filteredItems: [ShopItem] {
         let types = Self.tabTypes[selectedTab]
@@ -164,6 +192,7 @@ final class ShopViewModel {
                 APIEndpoints.shopContraband,
                 params: ["character_id": charId]
             )
+            cache.cacheContraband(response)
             contrabandState = ContrabandUIState.from(response)
             // If Scavenger is in cooldown on load, it was already claimed —
             // so unlock SPECIAL OFFERS immediately.
@@ -174,7 +203,12 @@ final class ShopViewModel {
             #if DEBUG
             print("[ShopVM] Failed to load contraband: \(error)")
             #endif
-            contrabandState = .error
+            // Keep stale cache visible if we already had one — don't blank
+            // the widget on a transient network error. Only flip to .error
+            // when there is no cache to fall back to.
+            if cache.cachedContraband() == nil {
+                contrabandState = .error
+            }
             // On error, don't block offers
             scavengerClaimedThisSession = true
         }
@@ -216,11 +250,14 @@ final class ShopViewModel {
                 body: ["character_id": charId]
             )
             if response.success {
-                if var char = appState.currentCharacter {
-                    char.gold = response.gold
-                    char.gems = response.gems
-                    appState.currentCharacter = char
-                }
+                applyClaimedRewardState(
+                    gold: response.gold,
+                    gems: response.gems,
+                    xp: response.xp,
+                    leveledUp: response.leveledUp,
+                    newLevel: response.newLevel,
+                    statPointsAwarded: response.statPointsAwarded
+                )
                 scavengerClaimedThisSession = true
                 // Show reward modal instead of toast
                 claimRewardConfig = .fromOfferContents(
@@ -228,6 +265,9 @@ final class ShopViewModel {
                     subtitle: "Drop #\(response.claimNumber)",
                     contents: response.contents
                 )
+                // Cache is now stale — drop it so the next shop open doesn't
+                // serve the pre-claim "available" snapshot.
+                cache.invalidateContraband()
                 // Optimistic: flip to cooldown placeholder immediately so the
                 // widget switches state without waiting for a network trip.
                 // A fire-and-forget refresh syncs the exact `nextAvailableAt`.
@@ -311,11 +351,14 @@ final class ShopViewModel {
                     body: ["character_id": charId, "offer_id": offer.id]
                 )
                 if response.success {
-                    if var char = appState.currentCharacter {
-                        char.gold = response.gold
-                        char.gems = response.gems
-                        appState.currentCharacter = char
-                    }
+                    applyClaimedRewardState(
+                        gold: response.gold,
+                        gems: response.gems,
+                        xp: response.xp,
+                        leveledUp: response.leveledUp,
+                        newLevel: response.newLevel,
+                        statPointsAwarded: response.statPointsAwarded
+                    )
                     // Show reward modal with the offer's contents
                     claimRewardConfig = .fromOfferContents(
                         title: "REWARD\nCLAIMED!",

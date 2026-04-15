@@ -1,5 +1,7 @@
 -- Interactive Combat v1 — Phase 1.3: Mark 8 MVP activatable talents.
 -- Idempotent: UPDATE-based, safe to re-run.
+-- Requires the passive tree base catalog from `passive-tree.sql` to already
+-- exist; missing node_key rows are silently skipped by these UPDATEs.
 -- Nodes chosen: 1 tier-5 ultimate + 1 tier-3 keystone per class (4 classes × 2 = 8).
 
 -- WARRIOR

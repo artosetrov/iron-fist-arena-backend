@@ -82,6 +82,8 @@ export async function POST(req: NextRequest) {
         data: {
           tutorialStep: 3,
           tutorialSkipped: true,
+          tutorialCompleted: true,
+          tutorialCompletedAt: new Date(),
           currentStamina: Math.min(
             character.current_stamina + WELCOME_GIFT.staminaBonus,
             character.max_stamina + WELCOME_GIFT.staminaBonus

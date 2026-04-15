@@ -32,8 +32,8 @@
 | `GET` | `/api/shop/items` | Список товаров |
 | `GET` | `/api/shop/offers` | Спецпредложения |
 | `POST` | `/api/shop/buy` | Покупка за gold |
-| `POST` | `/api/shop/buy-consumable` | Покупка расходника |
-| `POST` | `/api/shop/buy-potion` | Покупка зелья |
+| `POST` | `/api/shop/buy-consumable` | Каноническая покупка direct-sale расходника |
+| `POST` | `/api/shop/buy-potion` | Legacy compatibility route для старых stamina-potion клиентов |
 | `POST` | `/api/shop/buy-gems` | IAP gems |
 | `POST` | `/api/shop/buy-gold` | Обмен gems → gold |
 | `POST` | `/api/shop/upgrade` | Апгрейд предмета |

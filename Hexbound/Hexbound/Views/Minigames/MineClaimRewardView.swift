@@ -28,7 +28,7 @@ struct MineClaimRewardView: View {
                             .resizable()
                             .interpolation(.high)
                             .scaledToFit()
-                            .frame(width: 64, height: 64)
+                            .frame(width: 128, height: 128)
                             .shadow(color: DarkFantasyTheme.gold.opacity(0.6), radius: 12, y: 4)
 
                         Text("MINE HAUL")
@@ -39,26 +39,25 @@ struct MineClaimRewardView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                // Reward rows
+                // Rewards — single centered horizontal line (matches ClaimRewardModalView)
                 if showRewards {
-                    VStack(spacing: LayoutConstants.spaceMD) {
+                    HStack(spacing: LayoutConstants.spaceLG) {
                         if goldEarned > 0 {
-                            rewardRow(
+                            rewardItem(
                                 icon: "shop-gold-tier1",
-                                label: "Gold",
                                 value: animatedGold,
                                 color: DarkFantasyTheme.gold
                             )
                         }
                         if gemsEarned > 0 {
-                            rewardRow(
+                            rewardItem(
                                 icon: "icon-gem",
-                                label: "Gems",
                                 value: animatedGems,
                                 color: DarkFantasyTheme.cyan
                             )
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
 
@@ -82,32 +81,20 @@ struct MineClaimRewardView: View {
         .onAppear { runEntryAnimation() }
     }
 
-    private func rewardRow(icon: String, label: String, value: Int, color: Color) -> some View {
-        HStack(spacing: LayoutConstants.spaceMD) {
+    private func rewardItem(icon: String, value: Int, color: Color) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image(icon)
                 .resizable()
                 .interpolation(.high)
                 .scaledToFit()
-                .frame(width: 36, height: 36)
-
-            Text(label)
-                .font(DarkFantasyTheme.cardTitle)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-
-            Spacer()
+                .frame(width: 32, height: 32)
 
             Text("+\(value)")
                 .font(DarkFantasyTheme.title)
                 .foregroundStyle(color)
+                .monospacedDigit()
                 .contentTransition(.numericText(value: Double(value)))
         }
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, LayoutConstants.spaceMS)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
-                .fill(DarkFantasyTheme.bgCardGradientStart.opacity(0.8))
-                .stroke(color.opacity(0.3), lineWidth: 1)
-        )
     }
 
     private func dismiss() {

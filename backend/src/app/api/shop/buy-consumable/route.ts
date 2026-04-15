@@ -3,30 +3,12 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
 import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
-import { getGameConfig } from '@/lib/game/config'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
-
-// Hardcoded fallbacks — overridden by GameConfig consumable.price.* keys
-const DEFAULT_CONSUMABLE_PRICES: Record<ConsumableType, number> = {
-  stamina_potion_small: 100,
-  stamina_potion_medium: 250,
-  stamina_potion_large: 500,
-  health_potion_small: 150,
-  health_potion_medium: 350,
-  health_potion_large: 700,
-  // Not sold directly in the consumable shop — granted via Adventurer's Bundles
-  // (IAP). Kept here so the Record<ConsumableType, number> is exhaustive.
-  protection_scroll: 0,
-  legendary_shard: 0,
-}
-
-async function getConsumablePrice(type: ConsumableType): Promise<number> {
-  return getGameConfig<number>(
-    `consumable.price.${type}`,
-    DEFAULT_CONSUMABLE_PRICES[type],
-  )
-}
+import {
+  getConsumablePrice,
+  isDirectPurchaseConsumableType,
+} from '@/lib/game/consumable-pricing'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -47,10 +29,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validate consumable type
-    if (!Object.values(ConsumableType).includes(consumable_type as ConsumableType)) {
+    // Only direct-sale potions belong in this route. Other enum values are
+    // reward/offers-only and must not be buyable through direct API calls.
+    if (
+      typeof consumable_type !== 'string' ||
+      !isDirectPurchaseConsumableType(consumable_type)
+    ) {
       return NextResponse.json(
-        { error: `Invalid consumable_type. Must be one of: ${Object.values(ConsumableType).join(', ')}` },
+        { error: 'Invalid consumable_type. Must be a direct-sale potion type' },
         { status: 400 }
       )
     }

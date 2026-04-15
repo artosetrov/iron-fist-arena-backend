@@ -4,6 +4,12 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 
+function maxDate(a: Date | null, b: Date | null): Date | null {
+  if (!a) return b
+  if (!b) return a
+  return a.getTime() >= b.getTime() ? a : b
+}
+
 /**
  * POST /api/auth/upgrade-guest-oauth
  *
@@ -134,6 +140,11 @@ export async function POST(req: NextRequest) {
 
     // 4. Transfer all data from guest user to OAuth user inside a transaction
     await prisma.$transaction(async (tx) => {
+      const existingOAuthDbUser = await tx.user.findUnique({
+        where: { id: oauthUserId },
+        select: { premiumUntil: true },
+      })
+
       // Ensure OAuth user record exists in Prisma
       const displayName =
         oauthData.user.user_metadata?.full_name ||
@@ -149,7 +160,10 @@ export async function POST(req: NextRequest) {
           lastLogin: new Date(),
           // Carry over premium/gems from guest
           gems: guestDbUser.gems,
-          premiumUntil: guestDbUser.premiumUntil,
+          premiumUntil: maxDate(
+            existingOAuthDbUser?.premiumUntil ?? null,
+            guestDbUser.premiumUntil,
+          ),
         },
         create: {
           id: oauthUserId,
@@ -193,6 +207,39 @@ export async function POST(req: NextRequest) {
       if (guestGemCard) {
         await tx.dailyGemCard.deleteMany({ where: { userId: oauthUserId } })
         await tx.dailyGemCard.update({
+          where: { userId: guestUser.id },
+          data: { userId: oauthUserId },
+        })
+      }
+
+      // Transfer Premium Pass subscription row without dropping entitlement.
+      const [guestPremiumSubscription, oauthPremiumSubscription] = await Promise.all([
+        tx.premiumSubscription.findUnique({ where: { userId: guestUser.id } }),
+        tx.premiumSubscription.findUnique({ where: { userId: oauthUserId } }),
+      ])
+
+      if (guestPremiumSubscription && oauthPremiumSubscription) {
+        if (guestPremiumSubscription.expiresAt.getTime() > oauthPremiumSubscription.expiresAt.getTime()) {
+          await tx.premiumSubscription.update({
+            where: { userId: oauthUserId },
+            data: {
+              productId: guestPremiumSubscription.productId,
+              originalTransactionId: guestPremiumSubscription.originalTransactionId,
+              latestTransactionId: guestPremiumSubscription.latestTransactionId,
+              startedAt: guestPremiumSubscription.startedAt,
+              expiresAt: guestPremiumSubscription.expiresAt,
+              autoRenew: guestPremiumSubscription.autoRenew,
+              status: guestPremiumSubscription.status,
+              latestReceipt: guestPremiumSubscription.latestReceipt,
+            },
+          })
+        }
+
+        await tx.premiumSubscription.delete({
+          where: { userId: guestUser.id },
+        })
+      } else if (guestPremiumSubscription) {
+        await tx.premiumSubscription.update({
           where: { userId: guestUser.id },
           data: { userId: oauthUserId },
         })

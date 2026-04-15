@@ -222,63 +222,6 @@ struct CapMeterView: View {
     }
 }
 
-// MARK: - Mini hero card
-
-/// Minimal hero strip used at the bottom of the mini-game. Just avatar +
-/// class/level. Keeps the player grounded without dominating the play area.
-struct MinigameHeroCard: View {
-    let characterName: String
-    let className: String
-    let characterClass: CharacterClass
-    let level: Int
-    let avatarKey: String?
-
-    var body: some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
-            // Avatar
-            Group {
-                if let avatarKey, !avatarKey.isEmpty {
-                    AvatarImageView(
-                        skinKey: avatarKey,
-                        characterClass: characterClass,
-                        size: 48
-                    )
-                } else {
-                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                        .fill(DarkFantasyTheme.bgTertiary)
-                        .frame(width: LayoutConstants.icon2XL, height: LayoutConstants.icon2XL)
-                }
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
-                    .stroke(DarkFantasyTheme.gold.opacity(0.4), lineWidth: 1)
-            )
-
-            VStack(alignment: .leading, spacing: LayoutConstants.space2XS) {
-                Text(characterName)
-                    .font(DarkFantasyTheme.uiLabel.bold())
-                    .foregroundStyle(DarkFantasyTheme.textPrimary)
-                    .lineLimit(1)
-                Text("\(className.uppercased()) • LV \(level)")
-                    .font(DarkFantasyTheme.caption)
-                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    .tracking(1.0)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, LayoutConstants.spaceMD)
-        .padding(.vertical, LayoutConstants.spaceSM)
-        .background(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .fill(DarkFantasyTheme.bgSecondary.opacity(0.85))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: LayoutConstants.cardRadius)
-                .stroke(DarkFantasyTheme.gold.opacity(0.25), lineWidth: 1)
-        )
-    }
-}
-
 // MARK: - Mini-game view
 
 /// 60-second falling-drops mini-game triggered after a Collect All.
@@ -361,6 +304,14 @@ struct GoldMineMiniGameView: View {
 
             if !showResults {
                 VStack(spacing: LayoutConstants.spaceMD) {
+                    // Standard back arrow (HubLogoButton) — matches all other
+                    // screens. Triggers the skip confirmation dialog so the
+                    // player can't accidentally burn the bonus round.
+                    HStack {
+                        HubLogoButton(action: { showSkipConfirm = true })
+                            .disabled(isSubmitting)
+                        Spacer()
+                    }
                     topHud
                     // Wave banner
                     WaveBannerView(text: waveBannerText, isVisible: $showWaveBanner)
@@ -368,7 +319,6 @@ struct GoldMineMiniGameView: View {
                     ComboBannerView(combo: combo)
                         .animation(MotionConstants.snappy, value: combo)
                     Spacer(minLength: 0)
-                    bottomBar
                 }
                 .padding(.horizontal, LayoutConstants.spaceMD)
                 .padding(.vertical, LayoutConstants.spaceMD)
@@ -423,10 +373,13 @@ struct GoldMineMiniGameView: View {
                     .scaledToFill()
                     .frame(width: geo.size.width, height: geo.size.height)
                     .clipped()
+                // 3× darker than the previous 0.55 → 0.85 gradient:
+                // image visibility reduced from ~45%/15% → ~15%/5%, so the
+                // playfield reads as a mood-lit cavern rather than a lit scene.
                 LinearGradient(
                     colors: [
-                        DarkFantasyTheme.bgPrimary.opacity(0.55),
                         DarkFantasyTheme.bgPrimary.opacity(0.85),
+                        DarkFantasyTheme.bgPrimary.opacity(0.95),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -574,30 +527,6 @@ struct GoldMineMiniGameView: View {
             .scaledToFit()
             .frame(width: LayoutConstants.mineDropGemSize, height: LayoutConstants.mineDropGemSize)
             .shadow(color: DarkFantasyTheme.cyan.opacity(0.55), radius: 12, y: 4)
-    }
-
-    private var bottomBar: some View {
-        VStack(spacing: LayoutConstants.spaceSM) {
-            if let character {
-                MinigameHeroCard(
-                    characterName: character.characterName,
-                    className: character.characterClass.displayName,
-                    characterClass: character.characterClass,
-                    level: character.level,
-                    avatarKey: character.avatar
-                )
-            }
-            HStack(spacing: LayoutConstants.spaceSM) {
-                Button {
-                    showSkipConfirm = true
-                } label: {
-                    Text("SKIP")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
-                .disabled(isSubmitting)
-            }
-        }
     }
 
     // MARK: - Submitting interstitial

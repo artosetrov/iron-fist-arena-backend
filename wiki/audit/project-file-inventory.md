@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-04-14
+updated: 2026-04-15
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 4744
-- Untracked project-owned files: 12
-- In-scope files listed here: 4756
+- Tracked files: 4760
+- Untracked project-owned files: 37
+- In-scope files listed here: 4797
 
 ## Excluded Generated / Vendor Areas
 
@@ -33,12 +33,12 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills: 17
 - [root]: 27
 - admin: 203
-- backend: 324
+- backend: 336
 - Buildings: 21
-- docs: 168
+- docs: 170
 - figma-assets: 333
 - graphify-out: 869
-- Hexbound: 1491
+- Hexbound: 1495
 - onboarding-assets: 10
 - prototypes: 4
 - PVP: 6
@@ -46,7 +46,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 10
 - sounds: 33
 - User: 1059
-- wiki: 35
+- wiki: 59
 
 ## File List By Block
 
@@ -458,7 +458,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (324)
+### backend (326)
 
 - backend/.env.example
 - backend/.gitignore
@@ -498,9 +498,13 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/prisma/migrations/20260413_fix_schema_drift/migration.sql
 - backend/prisma/migrations/20260413_interactive_actives_snapshot/migration.sql
 - backend/prisma/migrations/20260413_interactive_combat_v1/migration.sql
+- backend/prisma/migrations/20260414_active_slot_consumables/migration.sql
 - backend/prisma/migrations/20260414_consumable_type_extras/migration.sql
 - backend/prisma/migrations/20260414_premium_subscription/migration.sql
 - backend/prisma/migrations/20260414_stamina_cap_180/migration.sql
+- backend/prisma/migrations/20260415_add_missing_event_type_values/migration.sql _(untracked)_
+- backend/prisma/migrations/20260415_backfill_tutorial_completion_state/migration.sql _(untracked)_
+- backend/prisma/migrations/migration_lock.toml _(untracked)_
 - backend/prisma/schema.prisma
 - backend/prisma/seed-balance.ts
 - backend/prisma/seed-battle-pass.ts
@@ -639,6 +643,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/minigames/shell-game/play/route.ts
 - backend/src/app/api/minigames/shell-game/start/route.ts
 - backend/src/app/api/minigames/shell-game/status/route.ts
+- backend/src/app/api/passives/active-slots/batch/route.ts
 - backend/src/app/api/passives/active-slots/route.ts
 - backend/src/app/api/passives/character/route.ts
 - backend/src/app/api/passives/respec/route.ts
@@ -712,6 +717,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/combat-simulator.ts
 - backend/src/lib/game/combat.ts
 - backend/src/lib/game/config.ts
+- backend/src/lib/game/consumable-pricing.ts _(untracked)_
+- backend/src/lib/game/consumable-effects.ts
 - backend/src/lib/game/daily-counter.ts
 - backend/src/lib/game/daily-login.ts
 - backend/src/lib/game/daily-quests.ts
@@ -739,6 +746,10 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/npc-bots.ts
 - backend/src/lib/game/passives.ts
 - backend/src/lib/game/premium.ts
+- backend/src/lib/game/active-slots.ts _(untracked)_
+- backend/src/lib/game/achievement-claims.ts _(untracked)_
+- backend/src/lib/game/reward-grants.ts _(untracked)_
+- backend/src/lib/game/reward-display.ts _(untracked)_
 - backend/src/lib/game/progression.ts
 - backend/src/lib/game/shaft-catalog.ts
 - backend/src/lib/game/skills.ts
@@ -809,7 +820,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (168)
+### docs (170)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -941,6 +952,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/MIGRATION_PLAN.md
 - docs/ORCHESTRATOR.md
 - docs/PROJECT_INDEX.md
+- docs/_COMMUNITY_Community 284.md _(untracked)_
 - docs/retro/RETRO_2026-03-21.md
 - docs/retro/RETRO_2026-03-22.md
 - docs/retro/RETRO_2026-03-23.md
@@ -964,6 +976,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-04-11.md
 - docs/retro/RETRO_2026-04-12.md
 - docs/retro/RETRO_2026-04-13.md
+- docs/retro/RETRO_2026-04-14.md _(untracked)_
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -2188,7 +2201,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - graphify-out/graph.json
 - graphify-out/manifest.json
 
-### Hexbound (1491)
+### Hexbound (1494)
 
 - Hexbound/.gitignore
 - Hexbound/.swiftlint.yml
@@ -2229,6 +2242,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Models/Enums/PvPRank.swift
 - Hexbound/Hexbound/Models/InteractiveCombatModels.swift
 - Hexbound/Hexbound/Models/InteractiveStanceBonuses.swift
+- Hexbound/Hexbound/Models/ConsumableCatalog.swift _(untracked)_
 - Hexbound/Hexbound/Models/Item.swift
 - Hexbound/Hexbound/Models/LeaderboardEntry.swift
 - Hexbound/Hexbound/Models/MailMessage.swift
@@ -3461,6 +3475,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/BattlePass/BPRewardNodeView.swift
 - Hexbound/Hexbound/Views/BattlePass/SeasonSummaryModalView.swift
 - Hexbound/Hexbound/Views/Combat/ActiveSkillsHUD.swift
+- Hexbound/Hexbound/Views/Combat/BattleSummaryView.swift
 - Hexbound/Hexbound/Views/Combat/CombatDetailView.swift
 - Hexbound/Hexbound/Views/Combat/CombatLogRow.swift
 - Hexbound/Hexbound/Views/Combat/CombatResultDetailView.swift
@@ -3579,6 +3594,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Hero/HeroDetailView.swift
 - Hexbound/Hexbound/Views/Hero/HeroInventoryTab.swift
 - Hexbound/Hexbound/Views/Hero/HeroStatsTab.swift
+- Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift _(untracked)_
+- Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift _(untracked)_
 - Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift
 - Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift
 - Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift
@@ -4828,18 +4845,42 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (35)
+### wiki (55)
 
-- wiki/audit/audit-index.md _(untracked)_
-- wiki/audit/block-001-root-files.md _(untracked)_
-- wiki/audit/block-002-repo-automation.md _(untracked)_
-- wiki/audit/block-003-claude-operational-safety.md _(untracked)_
-- wiki/audit/project-file-inventory.md _(untracked)_
-- wiki/decisions/balance-audit-findings.md _(untracked)_
-- wiki/decisions/bug-patterns.md _(untracked)_
-- wiki/decisions/design-principles.md _(untracked)_
+- wiki/audit/audit-index.md
+- wiki/audit/block-001-root-files.md
+- wiki/audit/block-002-repo-automation.md
+- wiki/audit/block-003-claude-operational-safety.md
+- wiki/audit/block-004-claude-product-governance-skills.md _(untracked)_
+- wiki/audit/block-005-claude-figma-design-system-skills.md _(untracked)_
+- wiki/audit/block-006-project-scripts.md _(untracked)_
+- wiki/audit/block-007-backend-root-prisma-foundation.md _(untracked)_
+- wiki/audit/block-008-prisma-migrations-baseline-early-deltas.md _(untracked)_
+- wiki/audit/block-009-prisma-migrations-onboarding-gold-and-w3d5.md _(untracked)_
+- wiki/audit/block-010-prisma-migrations-hotfixes-stash-interactive-premium.md _(untracked)_
+- wiki/audit/block-011-backend-passives-interactive-combat-runtime.md _(untracked)_
+- wiki/audit/block-012-backend-stash-contraband-premium-runtime.md _(untracked)_
+- wiki/audit/block-013-backend-reward-premium-parity.md _(untracked)_
+- wiki/audit/block-014-shared-reward-grants-shop-mail-rush-sync.md _(untracked)_
+- wiki/audit/block-015-claim-progression-achievements-quests-battle-pass.md _(untracked)_
+- wiki/audit/block-016-backend-daily-login-battle-pass-reward-contracts.md _(untracked)_
+- wiki/audit/block-017-ios-claim-services-authoritative-reward-sync.md _(untracked)_
+- wiki/audit/block-018-ios-typed-achievements-quests-loaders.md _(untracked)_
+- wiki/audit/block-019-ios-contract-fixes-battle-pass-shop-leaderboard.md _(untracked)_
+- wiki/audit/block-020-inventory-typed-snapshots-legacy-consumables.md _(untracked)_
+- wiki/audit/block-021-item-stat-authority-consumable-catalog.md _(untracked)_
+- wiki/audit/block-022-ios-active-skill-picker-passive-tree-contracts.md _(untracked)_
+- wiki/audit/block-023-ios-interactive-combat-terminal-state-and-round-log.md _(untracked)_
+- wiki/audit/block-024-interactive-combat-consumable-recovery.md _(untracked)_
+- wiki/audit/block-025-backend-active-slot-consumable-ownership-reconciliation.md _(untracked)_
+- wiki/audit/block-026-backend-shop-consumable-pricing-parity.md _(untracked)_
+- wiki/audit/block-027-shop-legacy-client-surface-and-pricing-docs.md _(untracked)_
+- wiki/audit/project-file-inventory.md
+- wiki/decisions/balance-audit-findings.md
+- wiki/decisions/bug-patterns.md
+- wiki/decisions/design-principles.md
 - wiki/decisions/rebalance-w3d3.md
-- wiki/decisions/why-auto-generated-balance-docs.md _(untracked)_
+- wiki/decisions/why-auto-generated-balance-docs.md
 - wiki/decisions/why-battle-fatigue.md
 - wiki/decisions/why-diminishing-refills.md
 - wiki/decisions/why-exponential-upgrades.md
@@ -4852,16 +4893,16 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/index.md
 - wiki/log.md
 - wiki/schema.md
-- wiki/systems/achievements.md _(untracked)_
+- wiki/systems/achievements.md
 - wiki/systems/combat.md
 - wiki/systems/dungeons.md
 - wiki/systems/economy.md
 - wiki/systems/gold-mine.md
-- wiki/systems/interactive-combat.md _(untracked)_
+- wiki/systems/interactive-combat.md
 - wiki/systems/minigames.md
 - wiki/systems/passive-tree.md
 - wiki/systems/progression.md
 - wiki/systems/pvp-rating.md
-- wiki/systems/social.md _(untracked)_
+- wiki/systems/social.md
 - wiki/systems/stamina.md
 - wiki/systems/stance-system.md

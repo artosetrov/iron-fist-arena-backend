@@ -269,7 +269,7 @@ async function main() {
   console.log(`  🏰 Found ${allDungeons.length} dungeons\n`);
 
   let totalDrops = 0;
-  let skippedSlugs: string[] = [];
+  const skippedSlugs: string[] = [];
 
   for (const [slug, drops] of Object.entries(DUNGEON_DROPS)) {
     const dungeon = dungeonBySlug.get(slug);

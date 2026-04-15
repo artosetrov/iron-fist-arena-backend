@@ -1,10 +1,12 @@
 import { getAuthUser } from '@/lib/auth';
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader';
+import { grantRewardEntries } from '@/lib/game/reward-grants';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
 import { NextRequest, NextResponse } from 'next/server';
 
 type Attachment = {
-  type: 'gold' | 'gems' | 'xp' | 'item';
+  type: 'gold' | 'gems' | 'xp' | 'item' | 'consumable';
   amount?: number;
   itemId?: string;
 };
@@ -77,42 +79,20 @@ export async function POST(
         select: { attachments: true },
       });
 
-      const attachments: Attachment[] = (message?.attachments as Attachment[]) || [];
+      const attachments: Attachment[] = Array.isArray(message?.attachments)
+        ? (message?.attachments as Attachment[])
+        : [];
       if (!attachments || attachments.length === 0) throw new Error('NO_ATTACHMENTS');
 
-      // Calculate totals for each attachment type
-      let goldToAdd = 0;
-      let gemsToAdd = 0;
-      let xpToAdd = 0;
-
-      for (const attachment of attachments) {
-        if (attachment.type === 'gold') {
-          goldToAdd += attachment.amount || 0;
-        } else if (attachment.type === 'gems') {
-          gemsToAdd += attachment.amount || 0;
-        } else if (attachment.type === 'xp') {
-          xpToAdd += attachment.amount || 0;
-        }
-      }
-
-      // Update user gold and gems
-      if (goldToAdd > 0 || gemsToAdd > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: {
-            ...(goldToAdd > 0 ? { gold: { increment: goldToAdd } } : {}),
-            ...(gemsToAdd > 0 ? { gems: { increment: gemsToAdd } } : {}),
-          },
-        });
-      }
-
-      // Update character xp
-      if (xpToAdd > 0) {
-        await tx.character.update({
-          where: { id: character_id },
-          data: { currentXp: { increment: xpToAdd } },
-        });
-      }
+      const rewardResult = await grantRewardEntries(tx, {
+        userId: user.id,
+        characterId: character_id,
+        rewards: attachments.map((attachment) => ({
+          type: attachment.type,
+          id: attachment.itemId ?? null,
+          quantity: attachment.amount ?? 0,
+        })),
+      });
 
       // Mark mail as claimed and read (atomically after lock)
       await tx.mailRecipient.update({
@@ -125,16 +105,31 @@ export async function POST(
         },
       });
 
-      return attachments;
+      return { attachments, rewardResult };
     });
 
-    return NextResponse.json({ success: true, claimed: claimedAttachments });
+    if (claimedAttachments.rewardResult.levelUpResult?.leveledUp) {
+      await invalidateSkillCache(character_id);
+      await invalidatePassiveCache(character_id);
+    }
+
+    return NextResponse.json({
+      success: true,
+      claimed: claimedAttachments.attachments,
+      gold: claimedAttachments.rewardResult.gold,
+      gems: claimedAttachments.rewardResult.gems,
+      xp: claimedAttachments.rewardResult.xp,
+      leveled_up: claimedAttachments.rewardResult.levelUpResult?.leveledUp ?? false,
+      new_level: claimedAttachments.rewardResult.levelUpResult?.newLevel,
+      stat_points_awarded: claimedAttachments.rewardResult.levelUpResult?.statPointsAwarded,
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'MAIL_NOT_FOUND') return NextResponse.json({ error: 'Mail not found' }, { status: 404 });
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       if (error.message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Mail already claimed' }, { status: 400 });
       if (error.message === 'NO_ATTACHMENTS') return NextResponse.json({ error: 'No attachments to claim' }, { status: 400 });
+      if (error.message === 'INVENTORY_FULL') return NextResponse.json({ error: 'Inventory is full' }, { status: 400 });
     }
     console.error('Mail claim error:', error);
     return NextResponse.json(

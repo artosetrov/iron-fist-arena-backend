@@ -26,7 +26,7 @@ TOKENS_DIR=...               # root directory of token files
 CONTRACTS_DIR=...            # root directory of contract files
 ```
 
-If `.component-contracts` is missing, tell the user to copy `.component-contracts.example` and fill in their values before proceeding.
+If `.component-contracts` is missing, stop before any Figma write and ask the user for the Figma file key plus token/contract directories, or create a safe `.component-contracts.example` in a separate setup step. Do not reference a non-existent example file as if it already exists.
 
 ---
 

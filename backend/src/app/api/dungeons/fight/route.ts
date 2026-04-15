@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
-import { generateDungeonFloor, getDungeonBossCount, generateDungeonFloorFromDB, getDungeonBossCountFromDB, type Enemy } from '@/lib/game/dungeon'
+import { generateDungeonFloorFromDB, getDungeonBossCountFromDB, type Enemy } from '@/lib/game/dungeon'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { applyLevelUp } from '@/lib/game/progression'
@@ -15,7 +15,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
 import { rateLimit } from '@/lib/rate-limit'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 interface DungeonFightState {
@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
         select: {
           id: true, userId: true, characterName: true, class: true, origin: true,
           level: true, maxHp: true, cha: true, luk: true, avatar: true,
-          // W3.D5 — Premium Forever gold multiplier
-          user: { select: { premiumUntil: true } },
+          // Premium entitlement (Forever or active subscription) for gold bonus
+          user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
         },
       }),
       prisma.dungeonRun.findFirst({

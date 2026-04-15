@@ -23,7 +23,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultiplier } from '@/lib/game/events'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 /**
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
       freePvpToday: true, freePvpDate: true, firstWinToday: true, firstWinDate: true,
       highestPvpRank: true,
-      user: { select: { premiumUntil: true } },
+      user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
     } as const
     const [attacker, defender] = await Promise.all([
       prisma.character.findUnique({ where: { id: match.player1Id }, select }),

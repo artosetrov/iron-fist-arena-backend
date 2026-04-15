@@ -12,6 +12,11 @@ enum QuestServiceError: Error {
     case network(Error)
 }
 
+private struct DailyQuestsResponse: Codable {
+    let quests: [Quest]
+    let dailyBonusClaimed: Bool
+}
+
 /// Result returned by a successful quest claim.
 ///
 /// BUG-51 (QA 2026-04-10): before this struct existed, `claimQuest` returned a
@@ -19,11 +24,29 @@ enum QuestServiceError: Error {
 /// struct BEFORE the API call — which meant the celebration banner fired even
 /// on failure, and the gold/XP HUD never updated because the character refresh
 /// was a detached background `Task` that the ViewModel never awaited. Returning
-/// the server-confirmed rewards + awaiting the refresh fixes both halves.
-struct QuestClaimResult {
+/// the server-confirmed reward deltas plus authoritative post-claim totals fixes
+/// both halves without an extra refresh round-trip.
+struct QuestClaimResult: Codable {
+    let success: Bool
     let rewardGold: Int
     let rewardXp: Int
     let rewardGems: Int
+    let gold: Int
+    let gems: Int
+    let xp: Int
+    let leveledUp: Bool
+    let newLevel: Int?
+    let statPointsAwarded: Int?
+}
+
+struct QuestBonusClaimResult: Codable {
+    let success: Bool
+    let rewardGold: Int
+    let rewardXp: Int
+    let rewardGems: Int
+    let gold: Int
+    let gems: Int
+    let xp: Int
     let leveledUp: Bool
     let newLevel: Int?
     let statPointsAwarded: Int?
@@ -45,22 +68,22 @@ final class QuestService {
             throw QuestServiceError.noCharacter
         }
         do {
-            let data = try await APIClient.shared.getRaw(
+            let response: DailyQuestsResponse = try await APIClient.shared.get(
                 APIEndpoints.questsDaily,
                 params: ["character_id": charId]
             )
-            guard let questsData = data["quests"] as? [[String: Any]] else {
-                throw QuestServiceError.decoding
-            }
-            let jsonData = try JSONSerialization.data(withJSONObject: questsData)
-            let decoder = JSONDecoder()
-            let quests = try decoder.decode([Quest].self, from: jsonData)
-            let bonusClaimed = data["daily_bonus_claimed"] as? Bool ?? false
-            appState.cachedTypedQuests = quests
-            appState.cachedBonusClaimedToday = bonusClaimed
-            return (quests, bonusClaimed)
+            appState.cachedTypedQuests = response.quests
+            appState.cachedBonusClaimedToday = response.dailyBonusClaimed
+            return (response.quests, response.dailyBonusClaimed)
         } catch let error as QuestServiceError {
             throw error
+        } catch let error as APIError {
+            if case .decodingError = error {
+                throw QuestServiceError.decoding
+            }
+            throw QuestServiceError.network(error)
+        } catch is DecodingError {
+            throw QuestServiceError.decoding
         } catch {
             throw QuestServiceError.network(error)
         }
@@ -69,66 +92,37 @@ final class QuestService {
     /// Claims a daily quest reward.
     ///
     /// Returns the server-confirmed rewards on success, or `nil` on any
-    /// failure. The function **awaits the character refresh inline** so the
-    /// caller observes the fresh `gold` / `currentXp` on `appState.currentCharacter`
-    /// immediately upon return — no background racing with the UI (BUG-51).
+    /// failure. The response now includes both reward deltas and post-claim
+    /// authoritative totals, so callers can update `AppState.currentCharacter`
+    /// immediately without an extra character refresh round-trip.
     func claimQuest(questId: String) async -> QuestClaimResult? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let result = try await APIClient.shared.postRaw(
+            let result: QuestClaimResult = try await APIClient.shared.post(
                 APIEndpoints.questsDaily,
                 body: ["character_id": charId, "quest_id": questId, "action": "claim"]
             )
-            // Server must echo success: true AND the reward values. If the
-            // response is missing either, treat as failure so the ViewModel
-            // doesn't show a false-positive celebration.
-            guard (result["success"] as? Bool) == true else { return nil }
-
-            let rewardGold = result["reward_gold"] as? Int ?? 0
-            let rewardXp = result["reward_xp"] as? Int ?? 0
-            let rewardGems = result["reward_gems"] as? Int ?? 0
-            let leveledUp = result["leveled_up"] as? Bool ?? false
-            let newLevel = result["new_level"] as? Int
-            let statPoints = result["stat_points_awarded"] as? Int
-
-            // Await the refresh BEFORE returning — the ViewModel relies on
-            // `appState.currentCharacter.gold` being up to date when this call
-            // completes so the HUD shows +150g / +80 XP immediately.
-            await refreshCharacter()
-
-            return QuestClaimResult(
-                rewardGold: rewardGold,
-                rewardXp: rewardXp,
-                rewardGems: rewardGems,
-                leveledUp: leveledUp,
-                newLevel: newLevel,
-                statPointsAwarded: statPoints,
-            )
+            guard result.success else { return nil }
+            return result
         } catch {
             appState.showToast("Failed to claim quest", subtitle: "Quest may not be completed yet", type: .error)
             return nil
         }
     }
 
-    func claimBonus() async -> Bool {
-        guard let charId = appState.currentCharacter?.id else { return false }
+    func claimBonus() async -> QuestBonusClaimResult? {
+        guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            _ = try await APIClient.shared.postRaw(
+            let result: QuestBonusClaimResult = try await APIClient.shared.post(
                 APIEndpoints.questsDailyBonus,
                 body: ["character_id": charId]
             )
+            guard result.success else { return nil }
             appState.cachedBonusClaimedToday = true
-            // Refresh character in background (don't block UI)
-            Task { [weak self] in await self?.refreshCharacter() }
-            return true
+            return result
         } catch {
             appState.showToast("Bonus already claimed today", type: .info)
-            return false
+            return nil
         }
-    }
-
-    private func refreshCharacter() async {
-        let charService = CharacterService(appState: appState)
-        await charService.loadCharacter()
     }
 }

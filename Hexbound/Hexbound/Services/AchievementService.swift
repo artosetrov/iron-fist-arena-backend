@@ -1,5 +1,22 @@
 import Foundation
 
+private struct AchievementListResponse: Codable {
+    let achievements: [Achievement]?
+    let data: [Achievement]?
+}
+
+struct AchievementClaimResult: Codable {
+    let rewardGold: Int
+    let rewardGems: Int
+    let rewardXp: Int
+    let gold: Int
+    let gems: Int
+    let xp: Int
+    let leveledUp: Bool
+    let newLevel: Int?
+    let statPointsAwarded: Int?
+}
+
 @MainActor
 final class AchievementService {
     private let appState: AppState
@@ -11,42 +28,26 @@ final class AchievementService {
     func loadAchievements() async -> [Achievement] {
         guard let charId = appState.currentCharacter?.id else { return [] }
         do {
-            let data = try await APIClient.shared.getRaw(
+            let response: AchievementListResponse = try await APIClient.shared.get(
                 APIEndpoints.achievements,
                 params: ["character_id": charId]
             )
-            let achievementsData: [[String: Any]]
-            if let arr = data["achievements"] as? [[String: Any]] {
-                achievementsData = arr
-            } else if let arr = data["data"] as? [[String: Any]] {
-                achievementsData = arr
-            } else {
-                return []
-            }
-            let jsonData = try JSONSerialization.data(withJSONObject: achievementsData)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode([Achievement].self, from: jsonData)
+            return response.achievements ?? response.data ?? []
         } catch {
             return []
         }
     }
 
-    func claim(achievementKey: String) async -> Bool {
-        guard let charId = appState.currentCharacter?.id else { return false }
+    func claim(achievementKey: String) async -> AchievementClaimResult? {
+        guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            _ = try await APIClient.shared.postRaw(
+            let result: AchievementClaimResult = try await APIClient.shared.post(
                 APIEndpoints.achievementsClaim,
                 body: ["character_id": charId, "achievement_key": achievementKey]
             )
-            // Refresh character in background (don't block UI)
-            Task {
-                let charService = CharacterService(appState: self.appState)
-                await charService.loadCharacter()
-            }
-            return true
+            return result
         } catch {
-            return false
+            return nil
         }
     }
 }

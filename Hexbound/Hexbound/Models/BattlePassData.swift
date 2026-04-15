@@ -9,16 +9,6 @@ struct BattlePassData: Codable {
     var freeRewards: [BPReward]
     var premiumRewards: [BPReward]
 
-    enum CodingKeys: String, CodingKey {
-        case seasonName = "season_name"
-        case currentLevel = "current_level"
-        case currentXp = "current_xp"
-        case xpToNext = "xp_to_next"
-        case hasPremium = "has_premium"
-        case freeRewards = "free_rewards"
-        case premiumRewards = "premium_rewards"
-    }
-
     var xpProgress: Double {
         guard xpToNext > 0 else { return 0 }
         return min(Double(currentXp) / Double(xpToNext), 1.0)
@@ -36,13 +26,6 @@ struct BPReward: Codable, Identifiable {
 
     // Track is injected after decoding
     var track: String = "free"
-
-    enum CodingKeys: String, CodingKey {
-        case level
-        case rewardType = "reward_type"
-        case rewardName = "reward_name"
-        case amount, claimed
-    }
 
     var icon: String {
         switch rewardType {
@@ -81,4 +64,23 @@ struct BPReward: Codable, Identifiable {
         default: nil
         }
     }
+}
+
+struct BattlePassClaimResponse: Codable {
+    let level: Int
+    let rewards: [BattlePassClaimReward]
+    let gold: Int?
+    let gems: Int?
+    let xp: Int?
+    let leveledUp: Bool
+    let newLevel: Int?
+    let statPointsAwarded: Int?
+}
+
+struct BattlePassClaimReward: Codable, Equatable {
+    let rewardType: String
+    let rewardName: String
+    let rewardId: String?
+    let rewardAmount: Int
+    let isPremium: Bool
 }

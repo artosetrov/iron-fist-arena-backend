@@ -23,6 +23,7 @@
 		078686F8A1B2C3D4E5F6A7B8 /* HubBannerCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337A1B2C3D4E5F6A7B8 /* HubBannerCards.swift */; };
 		078686F8B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337B1C2D3E4F5A6B7C8 /* HubFloatingControls.swift */; };
 		078686F8C1D2E3F4A5B6C7D8 /* HubInfoCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81E2A337C1D2E3F4A5B6C7D8 /* HubInfoCards.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* ConsumableCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* ConsumableCatalog.swift */; };
 		07A1B2C3D4E5F6A7B8C9D0E1 /* HubEditorDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B2C3D4E5F6A7B8C9D0E1F2 /* HubEditorDetailView.swift */; };
 		0B58867E1D94FBCA4EEB8006 /* DailyLoginPopupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60E971F241AD9E751E06B942 /* DailyLoginPopupViewModel.swift */; };
 		0B58867E1D94FBCA4EEB8007 /* DailyLoginDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC84A62ED896D7BFE13A0592 /* DailyLoginDetailView.swift */; };
@@ -520,6 +521,8 @@
 		30671C7B75A67D1130AC71D0 /* TalentDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */; };
 		65C3D8AE9FD0C3158DC88B51 /* ActiveSlotsBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */; };
 		DEBB0F1E7C783B18110447A6 /* TalentsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 004389D00C793F9780C63EB6 /* TalentsTabView.swift */; };
+		6D34FBE6119113305C6C2C4F /* ActiveSkillPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E925EC05D2C1055DFED0A6 /* ActiveSkillPickerSheet.swift */; };
+		72D9B5705C2CE0880FF65B44 /* ActiveSkillPickerRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E194302E35DA6172282D22 /* ActiveSkillPickerRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -572,6 +575,7 @@
 		20BBF308478B5B2817B50708 /* HeroDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroDetailView.swift; sourceTree = "<group>"; };
 		20BBF308478B5B2817B50709 /* HeroInventoryTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroInventoryTab.swift; sourceTree = "<group>"; };
 		20BBF308478B5B2817B5070A /* HeroStatsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroStatsTab.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* ConsumableCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumableCatalog.swift; sourceTree = "<group>"; };
 		218B22634BDF8DD52EFCB0D6 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		21EB5EE4AA980ADB311B3FFB /* hit_magical.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = hit_magical.wav; sourceTree = "<group>"; };
 		2213FD96DD8374E3C8F83A20 /* RegisterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewModel.swift; sourceTree = "<group>"; };
@@ -1033,6 +1037,8 @@
 		0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalentDetailSheet.swift; sourceTree = "<group>"; };
 		9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSlotsBar.swift; sourceTree = "<group>"; };
 		004389D00C793F9780C63EB6 /* TalentsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TalentsTabView.swift; sourceTree = "<group>"; };
+		E4E925EC05D2C1055DFED0A6 /* ActiveSkillPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSkillPickerSheet.swift; sourceTree = "<group>"; };
+		F0E194302E35DA6172282D22 /* ActiveSkillPickerRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveSkillPickerRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1616,6 +1622,8 @@
 				BA69617C3057861267B75898 /* TalentTreeCanvas.swift */,
 				0C60C159A4E39FD608AFD1F0 /* TalentDetailSheet.swift */,
 				9B9C3FA2CAB0FB0B99700A3E /* ActiveSlotsBar.swift */,
+				E4E925EC05D2C1055DFED0A6 /* ActiveSkillPickerSheet.swift */,
+				F0E194302E35DA6172282D22 /* ActiveSkillPickerRow.swift */,
 				184C00B6D8CC428DEE63E9F4 /* PassiveTreeViewModel.swift */,
 				004389D00C793F9780C63EB6 /* TalentsTabView.swift */,
 			);
@@ -1734,6 +1742,7 @@
 				3255DFA1B490BDF49ECA2E47 /* DungeonInfo.swift */,
 				00010FCAE2BA5A78E7D1F77F /* InteractiveCombatModels.swift */,
 				00010FCAE2BA5A78E7D1F780 /* InteractiveStanceBonuses.swift */,
+				A1B2C3D4E5F60718293A4B5D /* ConsumableCatalog.swift */,
 				218B22634BDF8DD52EFCB0D6 /* Item.swift */,
 				E188C114F17088F505906852 /* LeaderboardEntry.swift */,
 				MAIL0001REF00001 /* MailMessage.swift */,
@@ -2375,6 +2384,7 @@
 				078686F87EDE5E48CEDB9486 /* HubView.swift in Sources */,
 				51E2F782E669CC65903D964A /* InventoryService.swift in Sources */,
 				686C1E3DC89210E398D031FF /* InventoryViewModel.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* ConsumableCatalog.swift in Sources */,
 				9284496670692885430BC264 /* Item.swift in Sources */,
 				F162051F66C8DD0A2339E9D5 /* ItemCardView.swift in Sources */,
 				8380A79FD977F53D662B3661 /* ItemDetailActions.swift in Sources */,
@@ -2522,6 +2532,8 @@
 				8FD77418B5A4ACF5991FD11F /* TalentTreeCanvas.swift in Sources */,
 				30671C7B75A67D1130AC71D0 /* TalentDetailSheet.swift in Sources */,
 				65C3D8AE9FD0C3158DC88B51 /* ActiveSlotsBar.swift in Sources */,
+				6D34FBE6119113305C6C2C4F /* ActiveSkillPickerSheet.swift in Sources */,
+				72D9B5705C2CE0880FF65B44 /* ActiveSkillPickerRow.swift in Sources */,
 				DEBB0F1E7C783B18110447A6 /* TalentsTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

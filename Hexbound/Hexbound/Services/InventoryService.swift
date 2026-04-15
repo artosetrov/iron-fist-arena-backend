@@ -2,6 +2,91 @@ import Foundation
 
 @MainActor
 final class InventoryService {
+    private struct InventoryMutationBody: Encodable {
+        let characterId: String
+        let inventoryId: String
+    }
+
+    private struct InventorySnapshotResponse: Codable {
+        let equipment: [EquipmentInventoryEntry]
+        let consumables: [ConsumableInventoryEntry]
+        let inventorySlots: Int
+
+        func toItems(
+            consumableMapper: (ConsumableInventoryEntry) -> Item?
+        ) -> [Item] {
+            equipment.map { $0.toItem() } + consumables.compactMap(consumableMapper)
+        }
+    }
+
+    private struct EquipmentInventoryEntry: Codable {
+        let id: String
+        let upgradeLevel: Int
+        let durability: Int
+        let maxDurability: Int
+        let isEquipped: Bool
+        let equippedSlot: String?
+        let rolledStats: [String: Int]?
+        let isTwoHanded: Bool?
+        let effectiveStats: [String: Int]?
+        let item: InventoryItemRecord
+
+        func toItem() -> Item {
+            Item(
+                id: id,
+                itemName: item.itemName,
+                itemType: item.itemType,
+                rarity: item.rarity,
+                itemLevel: item.itemLevel,
+                upgradeLevel: upgradeLevel,
+                isEquipped: isEquipped,
+                equippedSlot: equippedSlot,
+                baseStats: item.baseStats,
+                rolledStats: rolledStats,
+                buyPrice: item.buyPrice,
+                sellPrice: item.sellPrice,
+                setName: item.setName,
+                specialEffect: item.specialEffect,
+                uniquePassive: item.uniquePassive,
+                durability: durability,
+                maxDurability: maxDurability,
+                description: item.description,
+                catalogId: item.catalogId,
+                classRestriction: item.classRestriction,
+                imageUrl: item.imageUrl,
+                imageKey: item.imageKey,
+                quantity: nil,
+                consumableType: nil,
+                isTwoHanded: isTwoHanded,
+                authoritativeEffectiveStats: effectiveStats
+            )
+        }
+    }
+
+    private struct InventoryItemRecord: Codable {
+        let itemName: String
+        let itemType: ItemType
+        let rarity: ItemRarity
+        let itemLevel: Int
+        let baseStats: [String: Int]?
+        let setName: String?
+        let specialEffect: String?
+        let uniquePassive: String?
+        let imageUrl: String?
+        let imageKey: String?
+        let classRestriction: String?
+        let description: String?
+        let catalogId: String?
+        let buyPrice: Int?
+        let sellPrice: Int?
+    }
+
+    private struct ConsumableInventoryEntry: Codable {
+        let id: String
+        let consumableType: String
+        let quantity: Int
+    }
+
     private let appState: AppState
 
     init(appState: AppState) {
@@ -13,36 +98,12 @@ final class InventoryService {
     func loadInventory() async -> [Item] {
         guard let charId = appState.currentCharacter?.id else { return [] }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: InventorySnapshotResponse = try await APIClient.shared.get(
                 APIEndpoints.inventory,
                 params: ["character_id": charId]
             )
-            // Update inventorySlots from response
-            if let slots = response["inventorySlots"] as? Int {
-                appState.currentCharacter?.inventorySlots = slots
-            }
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            var allItems: [Item] = []
-
-            // Parse equipment
-            let itemsArray = extractEquipmentArray(from: response)
-            let flattened = flattenEquipmentItems(itemsArray)
-            if let jsonData = try? JSONSerialization.data(withJSONObject: flattened) {
-                if let equipItems = try? decoder.decode([Item].self, from: jsonData) {
-                    allItems.append(contentsOf: equipItems)
-                } else {
-                    #if DEBUG
-                    print("[InventoryService] Failed to decode equipment items")
-                    #endif
-                }
-            }
-
-            // Parse consumables
-            if let consumablesArray = response["consumables"] as? [[String: Any]] {
-                let consumableItems = consumablesArray.compactMap { mapConsumableToItem($0) }
-                allItems.append(contentsOf: consumableItems)
-            }
+            appState.currentCharacter?.inventorySlots = response.inventorySlots
+            let allItems = response.toItems(consumableMapper: mapConsumableToItem)
 
             appState.cachedInventory = allItems
             return allItems
@@ -68,18 +129,15 @@ final class InventoryService {
     func equip(inventoryId: String) async -> [Item]? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "inventory_id": inventoryId
-            ]
-            let response = try await APIClient.shared.postRaw(
+            let response: InventorySnapshotResponse = try await APIClient.shared.post(
                 APIEndpoints.inventoryEquip,
-                body: body
+                body: InventoryMutationBody(characterId: charId, inventoryId: inventoryId)
             )
             // FTUE: mark gear up complete on first equip
             TutorialManager.shared.completeFTUEObjective(.gearUp)
             HapticManager.light()
-            return parseInventoryResponse(response)
+            appState.currentCharacter?.inventorySlots = response.inventorySlots
+            return response.toItems(consumableMapper: mapConsumableToItem)
         } catch let error as APIError {
             if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)
@@ -98,16 +156,13 @@ final class InventoryService {
     func unequip(inventoryId: String) async -> [Item]? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "inventory_id": inventoryId
-            ]
-            let response = try await APIClient.shared.postRaw(
+            let response: InventorySnapshotResponse = try await APIClient.shared.post(
                 APIEndpoints.inventoryUnequip,
-                body: body
+                body: InventoryMutationBody(characterId: charId, inventoryId: inventoryId)
             )
             HapticManager.light()
-            return parseInventoryResponse(response)
+            appState.currentCharacter?.inventorySlots = response.inventorySlots
+            return response.toItems(consumableMapper: mapConsumableToItem)
         } catch {
             appState.showToast("Unequip failed", subtitle: "Check connection and try again", type: .error)
             return nil
@@ -262,116 +317,28 @@ final class InventoryService {
 
     // MARK: - Helpers
 
-    /// Extracts the equipment array from the API response.
-    /// Backend returns { "equipment": [...] }
-    private func extractEquipmentArray(from response: [String: Any]) -> [[String: Any]] {
-        if let items = response["equipment"] as? [[String: Any]] {
-            return items
-        } else if let items = response["items"] as? [[String: Any]] {
-            return items
-        } else if let items = response["inventory"] as? [[String: Any]] {
-            return items
-        }
-        #if DEBUG
-        print("[InventoryService] No equipment/items/inventory key found in response. Keys: \(response.keys.sorted())")
-        #endif
-        return []
-    }
-
-    /// Flattens nested EquipmentInventory + Item structure into flat Item dicts.
-    /// Backend returns: { id, upgradeLevel, isEquipped, ..., item: { itemName, itemType, rarity, ... } }
-    /// iOS expects:     { id, upgradeLevel, isEquipped, itemName, itemType, rarity, ... }
-    private func flattenEquipmentItems(_ items: [[String: Any]]) -> [[String: Any]] {
-        items.map { entry in
-            var flat = entry
-            if let nested = entry["item"] as? [String: Any] {
-                for (key, value) in nested {
-                    // Parent id (EquipmentInventory.id) takes precedence over nested Item.id
-                    if key == "id" { continue }
-                    flat[key] = value
-                }
-            }
-            flat.removeValue(forKey: "item")
-            return flat
-        }
-    }
-
-    /// Parses an inventory response from equip/unequip endpoints.
-    private func parseInventoryResponse(_ response: [String: Any]) -> [Item]? {
-        let itemsArray = extractEquipmentArray(from: response)
-        guard !itemsArray.isEmpty else {
-            #if DEBUG
-            print("[InventoryService] parseInventoryResponse: empty equipment array")
-            #endif
-            return nil
-        }
-        let flattened = flattenEquipmentItems(itemsArray)
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: flattened) else { return nil }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        do {
-            let items = try decoder.decode([Item].self, from: jsonData)
-            // Note: cachedInventory is updated by the caller (InventoryViewModel) — don't double-set here
-            return items
-        } catch {
-            #if DEBUG
-            print("[InventoryService] parseInventoryResponse decode error: \(error)")
-            #endif
-            return nil
-        }
-    }
-
     // MARK: - Consumable Helpers
 
-    private static let consumableDisplayNames: [String: String] = [
-        "stamina_potion_small": "Small Stamina Potion",
-        "stamina_potion_medium": "Medium Stamina Potion",
-        "stamina_potion_large": "Large Stamina Potion",
-        "health_potion_small": "Small Health Potion",
-        "health_potion_medium": "Medium Health Potion",
-        "health_potion_large": "Large Health Potion",
-    ]
+    /// Maps a consumable inventory entry to an Item for display in the inventory grid.
+    private func mapConsumableToItem(_ entry: ConsumableInventoryEntry) -> Item? {
+        guard entry.quantity > 0 else { return nil }
 
-    /// Bug #13: Consumable rarity map — must stay in sync with
-    /// `backend/prisma/migrations/20260320_seed_consumable_items/migration.sql`.
-    /// Previously all consumables showed as COMMON in inventory while Shop
-    /// correctly pulled rarity from the Items table, causing the "Shop says
-    /// RARE, Inventory says COMMON" mismatch for Large Stamina Potion etc.
-    private static let consumableRarities: [String: ItemRarity] = [
-        "stamina_potion_small":  .common,
-        "stamina_potion_medium": .uncommon,
-        "stamina_potion_large":  .rare,
-        "health_potion_small":   .common,
-        "health_potion_medium":  .uncommon,
-        "health_potion_large":   .rare,
-        "gem_pack_small":        .rare,
-        "gem_pack_medium":       .epic,
-        "gem_pack_large":        .legendary,
-    ]
-
-    /// Maps consumableType → local asset key in Assets.xcassets/Items/
-    private static let consumableImageKeys: [String: String] = [
-        "stamina_potion_small": "stamina_potion_small",
-        "stamina_potion_medium": "stamina_potion_medium",
-        "stamina_potion_large": "stamina_potion_large",
-        "health_potion_small": "health_potion_small",
-        "health_potion_medium": "health_potion_medium",
-        "health_potion_large": "health_potion_large",
-        "gem_pack_small": "gem_pack_small",
-        "gem_pack_medium": "gem_pack_medium",
-        "gem_pack_large": "gem_pack_large",
-    ]
-
-    /// Maps a ConsumableInventory JSON dict to an Item for display in the inventory grid.
-    private func mapConsumableToItem(_ dict: [String: Any]) -> Item? {
-        guard let id = dict["id"] as? String,
-              let consumableType = dict["consumableType"] as? String,
-              let quantity = dict["quantity"] as? Int,
-              quantity > 0 else { return nil }
-
-        let displayName = Self.consumableDisplayNames[consumableType] ?? consumableType.replacingOccurrences(of: "_", with: " ").capitalized
-        let imageKey = Self.consumableImageKeys[consumableType]
-        let rarity = Self.consumableRarities[consumableType] ?? .common
+        let id = entry.id
+        let consumableType = entry.consumableType
+        let quantity = entry.quantity
+        let canonicalID = ConsumableCatalog.canonicalID(
+            consumableType: consumableType,
+            catalogId: consumableType,
+            imageKey: nil
+        )
+        let displayName = canonicalID.map(ConsumableCatalog.displayName(for:))
+            ?? ConsumableCatalog.displayName(forKnownOrRaw: consumableType)
+        let imageKey = ConsumableCatalog.resolvedImageKey(
+            consumableType: consumableType,
+            catalogId: consumableType,
+            imageKey: nil
+        )
+        let rarity = canonicalID.flatMap(ConsumableCatalog.rarity(for:)) ?? .common
 
         return Item(
             id: id,

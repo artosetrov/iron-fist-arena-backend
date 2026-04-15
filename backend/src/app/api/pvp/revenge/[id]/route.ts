@@ -20,7 +20,7 @@ import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 function isFirstWinOfDay(firstWinDate: Date | null): boolean {
@@ -88,8 +88,8 @@ export async function POST(
     const [attacker, defender] = await Promise.all([
       prisma.character.findUnique({
         where: { id: revenge.victimId },
-        // W3.D5 — include user.premiumUntil for Premium Forever gold multiplier
-        include: { user: { select: { premiumUntil: true } } },
+        // Premium entitlement (Forever or active subscription) for gold bonus
+        include: { user: { select: PREMIUM_ENTITLEMENT_USER_SELECT } },
       }),
       prisma.character.findUnique({ where: { id: revenge.attackerId } }),
     ])
@@ -246,7 +246,7 @@ export async function POST(
     ])
 
     // Check for level-up after XP award
-    const levelUpResult = await applyLevelUp(prisma, attacker.id)
+    await applyLevelUp(prisma, attacker.id)
     await applyLevelUp(prisma, defender.id)
 
     // Update daily quest progress + weekly BP challenge

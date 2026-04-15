@@ -22,29 +22,8 @@ struct ShopItem: Codable, Identifiable {
     var imageUrl: String?
     var imageKey: String?
     var isTwoHanded: Bool?
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case catalogId = "catalog_id"
-        case itemName = "item_name"
-        case itemType = "item_type"
-        case rarity
-        case itemLevel = "item_level"
-        case requiredLevel = "required_level"
-        case goldPrice = "gold_price"
-        case gemPrice = "gem_price"
-        case sellPrice = "sell_price"
-        case baseStats = "base_stats"
-        case description
-        case specialEffect = "special_effect"
-        case uniquePassive = "unique_passive"
-        case setName = "set_name"
-        case consumableType = "consumable_type"
-        case classRestriction = "class_restriction"
-        case imageUrl = "image_url"
-        case imageKey = "image_key"
-        case isTwoHanded = "is_two_handed"
-    }
+    // APIClient already converts snake_case -> camelCase.
+    // Keep this DTO as plain camelCase to avoid double-conversion bugs.
 
     var isConsumable: Bool {
         itemType == "consumable" || itemType == "potion"
@@ -74,55 +53,31 @@ struct ShopItem: Codable, Identifiable {
         if !isConsumable {
             return imageKey
         }
-
-        // Remap legacy "pot_*" keys
-        if let key = imageKey, !key.isEmpty {
-            let remapped = Self.legacyKeyRemap[key]
-            if remapped != nil { return remapped }
-            return key
-        }
-
-        // Derive from consumableType
-        let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("stamina") && ct.contains("large") { return "stamina_potion_large" }
-        if ct.contains("stamina") && ct.contains("medium") { return "stamina_potion_medium" }
-        if ct.contains("stamina") { return "stamina_potion_small" }
-        if ct.contains("health") && ct.contains("large") { return "health_potion_large" }
-        if ct.contains("health") && ct.contains("medium") { return "health_potion_medium" }
-        if ct.contains("health") { return "health_potion_small" }
-        if ct.contains("gem_pack") && ct.contains("large") { return "gem_pack_large" }
-        if ct.contains("gem_pack") && ct.contains("medium") { return "gem_pack_medium" }
-        if ct.contains("gem_pack") { return "gem_pack_small" }
-        return nil
+        return ConsumableCatalog.resolvedImageKey(
+            consumableType: consumableType,
+            catalogId: catalogId,
+            imageKey: imageKey
+        )
     }
-
-    private static let legacyKeyRemap: [String: String] = [
-        "pot_stamina_small": "stamina_potion_small",
-        "pot_stamina_medium": "stamina_potion_medium",
-        "pot_stamina_large": "stamina_potion_large",
-        "pot_health_small": "health_potion_small",
-        "pot_health_medium": "health_potion_medium",
-        "pot_health_large": "health_potion_large",
-    ]
 
     /// SF Symbol icon for consumable items
     var consumableIcon: String? {
         guard isConsumable else { return nil }
-        let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("gem_pack") { return "diamond.fill" }
-        if ct.contains("health") { return "heart.fill" }
-        if ct.contains("stamina") { return "bolt.fill" }
-        return "cross.vial.fill"
+        return ConsumableCatalog.systemIcon(
+            consumableType: consumableType,
+            catalogId: catalogId,
+            imageKey: imageKey
+        ) ?? "cross.vial.fill"
     }
 
     /// Icon tint color for consumable items
     var consumableIconColor: Color? {
         guard isConsumable else { return nil }
-        let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("gem_pack") { return DarkFantasyTheme.cyan }
-        if ct.contains("health") { return DarkFantasyTheme.danger }
-        if ct.contains("stamina") { return DarkFantasyTheme.success }
-        return DarkFantasyTheme.goldBright
+        return ConsumableCatalog.systemIconColor(
+            consumableType: consumableType,
+            catalogId: catalogId,
+            imageKey: imageKey
+        ) ?? DarkFantasyTheme.goldBright
     }
 
     var level: Int {

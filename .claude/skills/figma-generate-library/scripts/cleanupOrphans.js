@@ -2,18 +2,18 @@
  * cleanupOrphans
  *
  * Finds and removes all Figma nodes (pages, frames, components, variables,
- * and variable collections) that were tagged with the given `dsb_run_id`
+ * and variable collections) that were tagged with the given shared `run_id`
  * by a previous build run. This is safe cleanup: it uses plugin data tags,
  * never name-prefix matching, so it cannot accidentally delete user-owned nodes.
  *
  * Use this when a build run fails mid-way and you need to reset to a clean
  * slate before retrying. The function traverses the entire document looking
- * for `dsb_run_id` plugin data matching `runId`.
+ * for shared plugin data `dsb/run_id` matching `runId`.
  *
  * Variables and variable collections are handled separately (they are not
  * scene nodes and cannot be discovered via node traversal).
  *
- * @param {string} runId - The dsb_run_id value to match (e.g. "ds-build-2024-001").
+ * @param {string} runId - The shared `dsb/run_id` value to match (e.g. "ds-build-2024-001").
  * @returns {Promise<{
  *   removedCount: number,
  *   removedIds: string[]
@@ -32,7 +32,7 @@ async function cleanupOrphans(runId) {
   const pagesToRemove = []
 
   for (const page of figma.root.children) {
-    if (page.getPluginData('dsb_run_id') === runId) {
+    if (page.getSharedPluginData('dsb', 'run_id') === runId) {
       pagesToRemove.push(page)
       continue
     }
@@ -42,7 +42,7 @@ async function cleanupOrphans(runId) {
 
     const nodesToRemove = []
     page.findAll((node) => {
-      if (node.getPluginData('dsb_run_id') === runId) {
+      if (node.getSharedPluginData('dsb', 'run_id') === runId) {
         nodesToRemove.push(node)
         return false // Don't descend — removing the parent removes its children
       }
@@ -77,7 +77,7 @@ async function cleanupOrphans(runId) {
   // --- Remove tagged variables ---
   const allVariables = await figma.variables.getLocalVariablesAsync()
   for (const variable of allVariables) {
-    if (variable.getPluginData('dsb_run_id') === runId) {
+    if (variable.getSharedPluginData('dsb', 'run_id') === runId) {
       removedIds.push(variable.id)
       variable.remove()
     }
@@ -87,7 +87,7 @@ async function cleanupOrphans(runId) {
   // Must be done after variables are removed
   const allCollections = await figma.variables.getLocalVariableCollectionsAsync()
   for (const collection of allCollections) {
-    if (collection.getPluginData('dsb_run_id') === runId) {
+    if (collection.getSharedPluginData('dsb', 'run_id') === runId) {
       removedIds.push(collection.id)
       collection.remove()
     }

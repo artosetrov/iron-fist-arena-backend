@@ -27,9 +27,9 @@ Read docs/09_rules_and_guidelines/ERROR_CATALOG.md
 
 ## Phase 1: Swift / Xcode (Hexbound/Hexbound/)
 
-### 1.1 — Grep-based checks (ERR-SW-001 → ERR-SW-006, ERR-SW-011 → ERR-SW-019)
+### 1.1 — Pattern checks with `rg` (ERR-SW-001 → ERR-SW-006, ERR-SW-011 → ERR-SW-019)
 
-Run each grep pattern from the catalog against `Hexbound/Hexbound/**/*.swift`.
+Run each pattern from the catalog against `Hexbound/Hexbound/**/*.swift`. Prefer `rg` because macOS `grep` can miss patterns that rely on `\w`, `\s`, or alternation.
 For each match, output:
 ```
 ⚠️ ERR-SW-XXX: [description]
@@ -37,56 +37,56 @@ For each match, output:
    Fix: [one-line fix from catalog]
 ```
 
-**Specific grep commands:**
+**Specific commands:**
 
 ```bash
 # ERR-SW-001: buttonStyle ternary
-grep -rn '\.buttonStyle(.*?.*\.primary.*:.*\.secondary)' Hexbound/Hexbound/ --include="*.swift"
+rg -n '\.buttonStyle\(.*\?.*\.primary.*:.*\.secondary' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-002: double @ViewBuilder
-grep -rn -A1 '@ViewBuilder' Hexbound/Hexbound/ --include="*.swift" | grep -B1 '@ViewBuilder.*@ViewBuilder'
+rg -n -A1 '@ViewBuilder' Hexbound/Hexbound -g '*.swift' | rg -B1 '@ViewBuilder.*@ViewBuilder'
 
 # ERR-SW-003: SFX .tap
-grep -rn 'SFXManager\.shared\.play(\.tap)' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'SFXManager\.shared\.play\(\.tap\)' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-004: serverError wrong destructuring
-grep -rn 'case \.serverError(let \w\+):' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'case \.serverError\(let [A-Za-z_][A-Za-z0-9_]*\):' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-005: bare color shorthand (excluding standard SwiftUI colors)
-grep -rn '\.foregroundStyle(\.\w\+)' Hexbound/Hexbound/ --include="*.swift" | grep -v 'DarkFantasyTheme\|\.primary\|\.secondary\|\.red\|\.blue\|\.white\|\.black\|\.clear\|\.gray\|\.accentColor'
+rg -n '\.foregroundStyle\(\.[A-Za-z_][A-Za-z0-9_]*\)' Hexbound/Hexbound -g '*.swift' | rg -v 'DarkFantasyTheme|\.primary|\.secondary|\.red|\.blue|\.white|\.black|\.clear|\.gray|\.accentColor'
 
 # ERR-SW-011: APIClient wrong label
-grep -rn 'APIClient\.shared\.\w\+Raw(\s*endpoint:' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'APIClient\.shared\.[A-Za-z_][A-Za-z0-9_]*Raw\(\s*endpoint:' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-012: queryItems parameter
-grep -rn 'APIClient\.shared\.\w\+(.*queryItems:' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'APIClient\.shared\.[A-Za-z_][A-Za-z0-9_]*\([^)]*queryItems:' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-014: PvPRank.displayName
-grep -rn 'PvPRank\.\w*\.displayName' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'PvPRank\.[A-Za-z0-9_]*\.displayName' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-015: hardcoded Color(hex:)
-grep -rn 'Color(hex:\|Color(red:\|Color(#' Hexbound/Hexbound/ --include="*.swift" | grep -v 'OrnamentalStyles\|DarkFantasyTheme'
+rg -n 'Color\(hex:|Color\(red:|Color\(#' Hexbound/Hexbound -g '*.swift' | rg -v 'OrnamentalStyles|DarkFantasyTheme'
 
 # ERR-SW-016: deprecated stat colors
-grep -rn 'DarkFantasyTheme\.stat\(STR\|AGI\|VIT\|INT\|WIS\|LCK\|DEX\|CHA\)' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'DarkFantasyTheme\.stat(STR|AGI|VIT|INT|WIS|LCK|DEX|CHA)' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-017: [self] in (retain cycles)
-grep -rn '\[self\] in' Hexbound/Hexbound/ --include="*.swift"
+rg -n '\[self\] in' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-019: currency SF Symbols
-grep -rn 'dollarsign\.circle\|systemName:.*"diamond"' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'dollarsign\.circle|systemName:.*"diamond"' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-020: force unwrap (randomElement()! etc)
-grep -rn 'randomElement()!' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'randomElement\(\)!' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-021: ToastType.success (doesn't exist)
-grep -rn 'ToastType\.success\|type: \.success' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'ToastType\.success|type: \.success' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-022: showToast wrong labels (title:, message:)
-grep -rn 'showToast(title:\|showToast.*message:' Hexbound/Hexbound/ --include="*.swift"
+rg -n 'showToast\(title:|showToast.*message:' Hexbound/Hexbound -g '*.swift'
 
 # ERR-SW-023: [weak self] in struct (SwiftUI views)
-grep -rn '\[weak self\]' Hexbound/Hexbound/Views/ --include="*.swift"
+rg -n '\[weak self\]' Hexbound/Hexbound/Views -g '*.swift'
 
 # ERR-SW-024: missing .compositingGroup() after 2+ ornamental overlays
 # (manual check — look for .surfaceLighting + .innerBorder without .compositingGroup before .shadow)
@@ -116,13 +116,13 @@ Pattern: @ViewBuilder\s*\n\s*@ViewBuilder
 **ERR-SW-009: Junk files in .xcodeproj**
 
 ```bash
-ls Hexbound/Hexbound.xcodeproj/ | grep -E '\.(bak|backup|tmp)$'
+find Hexbound/Hexbound.xcodeproj -maxdepth 1 -type f | rg '\.(bak|backup|tmp)$'
 ```
 
 **ERR-SW-010: Duplicate PBXBuildFile IDs**
 
 ```bash
-grep 'isa = PBXBuildFile' project.pbxproj | awk '{print $1}' | sort | uniq -d
+rg 'isa = PBXBuildFile' Hexbound/Hexbound.xcodeproj/project.pbxproj | awk '{print $1}' | sort | uniq -d
 ```
 
 ---
@@ -131,16 +131,16 @@ grep 'isa = PBXBuildFile' project.pbxproj | awk '{print $1}' | sort | uniq -d
 
 ```bash
 # ERR-TS-001: missing await on config functions
-grep -rn 'get\w\+Config(' backend/src/ --include="*.ts" | grep -v 'await\|function\|export\|async\|=>'
+rg -n 'get[A-Za-z0-9_]*Config\(' backend/src -g '*.ts' | rg -v 'await|function|export|async|=>'
 
 # ERR-TS-002: missing await on runCombat
-grep -rn 'runCombat(' backend/src/ --include="*.ts" | grep -v 'await\|function\|export\|async'
+rg -n 'runCombat\(' backend/src -g '*.ts' | rg -v 'await|function|export|async'
 
 # ERR-TS-003: missing await on calculateCurrentStamina
-grep -rn 'calculateCurrentStamina(' backend/src/ --include="*.ts" | grep -v 'await\|function\|export\|async'
+rg -n 'calculateCurrentStamina\(' backend/src -g '*.ts' | rg -v 'await|function|export|async'
 
 # ERR-TS-006: PII in logs
-grep -rn 'console\.\(log\|error\|warn\)(.*\(email\|password\|token\|secret\|apiKey\)' backend/src/ --include="*.ts"
+rg -n 'console\.(log|error|warn)\(.*(email|password|token|secret|apiKey)' backend/src -g '*.ts'
 
 # ERR-TS-009: junk files with spaces
 find backend/src/ -name "* *" -o -name "*\ 2*"
@@ -159,7 +159,7 @@ diff backend/prisma/schema.prisma admin/prisma/schema.prisma
 **ERR-DB-002: Merge conflict markers**
 
 ```bash
-grep -rn '^<<<<<<<\|^=======\s*$\|^>>>>>>>' . --include="*.swift" --include="*.ts" --include="*.tsx" --include="*.prisma" --include="*.md" | grep -v node_modules | grep -v ".git/"
+rg -n '^(<<<<<<<|=======\s*$|>>>>>>>)' . -g '*.swift' -g '*.ts' -g '*.tsx' -g '*.prisma' -g '*.md' -g '!node_modules/**' -g '!.git/**'
 ```
 
 ---

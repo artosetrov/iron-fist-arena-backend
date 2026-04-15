@@ -196,14 +196,15 @@ final class AppState {
     var levelUpNewLevel: Int = 0
     var levelUpStatPoints: Int = 0
 
-    func triggerLevelUpModal(newLevel: Int, statPoints: Int) {
+    func triggerLevelUpModal(newLevel: Int, statPoints: Int, previousLevel: Int? = nil) {
         levelUpNewLevel = newLevel
         levelUpStatPoints = statPoints
         // W2.D4 — enqueue building unlock ceremonies for every threshold
         // crossed between the old level and the new one. We use the character
         // cache's level as the "from" reference because server just returned
         // newLevel and the modal will reload character afterwards.
-        let fromLevel = (currentCharacter?.level ?? (newLevel - 1))
+        let rawFromLevel = previousLevel ?? (currentCharacter?.level ?? (newLevel - 1))
+        let fromLevel = min(rawFromLevel, newLevel - 1)
         enqueueBuildingUnlocks(fromLevel: fromLevel, toLevel: newLevel)
         enqueueModal(.levelUp)
     }
@@ -297,6 +298,54 @@ final class AppState {
     func reloadCharacter() async {
         let charService = CharacterService(appState: self)
         await charService.loadCharacter()
+    }
+
+    /// Apply server-authoritative reward / progression values to the cached
+    /// character so HUD-level state updates immediately after a claim.
+    @discardableResult
+    func applyAuthoritativeRewardState(
+        gold: Int? = nil,
+        gems: Int? = nil,
+        xp: Int? = nil,
+        leveledUp: Bool? = nil,
+        newLevel: Int? = nil,
+        statPointsAwarded: Int? = nil,
+        previousLevel: Int? = nil
+    ) -> Bool {
+        guard var char = currentCharacter else { return false }
+
+        let levelBefore = previousLevel ?? char.level
+
+        if let gold {
+            char.gold = gold
+        }
+        if let gems {
+            char.gems = gems
+        }
+        if let xp {
+            char.experience = xp
+        }
+
+        let didLevelUp = leveledUp == true && newLevel != nil
+
+        if didLevelUp, let newLevel {
+            char.level = newLevel
+        }
+        if didLevelUp, let statPointsAwarded, statPointsAwarded > 0 {
+            char.statPoints = (char.statPoints ?? 0) + statPointsAwarded
+        }
+
+        currentCharacter = char
+
+        if didLevelUp, let newLevel {
+            triggerLevelUpModal(
+                newLevel: newLevel,
+                statPoints: statPointsAwarded ?? 0,
+                previousLevel: levelBefore
+            )
+        }
+
+        return didLevelUp
     }
 
     func showToast(_ title: String, subtitle: String = "", type: ToastType = .info, actionLabel: String? = nil, action: (() -> Void)? = nil) {

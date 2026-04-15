@@ -72,66 +72,36 @@ final class BattlePassViewModel {
         guard rewardState(reward) == .claimable else { return }
         guard !claimingLevels.contains(level) else { return }
         claimingLevels.insert(level)
-
-        // ── Optimistic UI: mark claimed instantly ──
-        if var bp = data {
-            if reward.track == "premium" {
-                for i in bp.premiumRewards.indices where bp.premiumRewards[i].level == level {
-                    bp.premiumRewards[i].claimed = true
-                }
-            } else {
-                for i in bp.freeRewards.indices where bp.freeRewards[i].level == level {
-                    bp.freeRewards[i].claimed = true
-                }
-            }
-            data = bp
-            cache.cacheBattlePass(bp)
-        }
-        HapticManager.success()
+        let previousLevel = appState.currentCharacter?.level
 
         // ── Await API call (not fire-and-forget) ──
-        var claimSucceeded = true
         do {
-            try await service.claimReward(level: level)
+            let response = try await service.claimReward(level: level)
+
+            applyClaimResponse(response)
+            appState.applyAuthoritativeRewardState(
+                gold: response.gold,
+                gems: response.gems,
+                xp: response.xp,
+                leveledUp: response.leveledUp,
+                newLevel: response.newLevel,
+                statPointsAwarded: response.statPointsAwarded,
+                previousLevel: previousLevel
+            )
+            if response.rewards.contains(where: { $0.rewardType == "item" || $0.rewardType == "consumable" }) {
+                appState.cachedInventory = nil
+            }
+            HapticManager.success()
+
+            claimRewardConfig = buildClaimRewardConfig(response: response)
         } catch let error as BattlePassClaimError {
             if case .alreadyClaimed = error {
-                // Optimistic state is correct, just refresh
+                appState.showToast("Already claimed", subtitle: error.toastSubtitle, type: .info)
             } else {
-                claimSucceeded = false
                 appState.showToast("Claim failed", subtitle: error.toastSubtitle, type: .error)
             }
         } catch {
-            claimSucceeded = false
             appState.showToast("Claim failed", subtitle: "Check connection and try again", type: .error)
-        }
-
-        // Show reward modal on success
-        if claimSucceeded {
-            let goldAmount = reward.rewardType == "gold" ? reward.amount : 0
-            let gemsAmount = reward.rewardType == "gems" ? reward.amount : 0
-            let xpAmount = reward.rewardType == "xp" ? reward.amount : 0
-
-            var loot: [ClaimLootItem] = []
-            if reward.rewardType == "item" || reward.rewardType == "consumable" {
-                loot.append(ClaimLootItem(
-                    id: reward.id,
-                    name: reward.rewardName,
-                    quantity: reward.amount,
-                    imageKey: nil,
-                    fallbackIcon: reward.rewardType == "consumable" ? "cross.vial" : "shippingbox",
-                    rarity: reward.track == "premium" ? .epic : .rare,
-                    rarityColor: reward.track == "premium" ? DarkFantasyTheme.rarityEpic : DarkFantasyTheme.rarityRare
-                ))
-            }
-
-            claimRewardConfig = ClaimRewardConfig(
-                title: "BATTLE PASS\nREWARD!",
-                subtitle: "Level \(reward.level) — \(reward.track == "premium" ? "Premium" : "Free")",
-                goldReward: goldAmount,
-                gemsReward: gemsAmount,
-                xpReward: xpAmount,
-                lootItems: loot
-            )
         }
 
         // ── Always refresh to sync with server truth ──
@@ -166,6 +136,104 @@ final class BattlePassViewModel {
                 appState.showToast("Purchase failed", subtitle: "Try again", type: .error)
             }
         }
+    }
+
+    private func applyClaimResponse(_ response: BattlePassClaimResponse) {
+        guard var bp = data else { return }
+
+        for reward in response.rewards {
+            if reward.isPremium {
+                for index in bp.premiumRewards.indices where bp.premiumRewards[index].level == response.level {
+                    bp.premiumRewards[index].claimed = true
+                }
+            } else {
+                for index in bp.freeRewards.indices where bp.freeRewards[index].level == response.level {
+                    bp.freeRewards[index].claimed = true
+                }
+            }
+        }
+
+        data = bp
+        cache.cacheBattlePass(bp)
+    }
+
+    private func buildClaimRewardConfig(response: BattlePassClaimResponse) -> ClaimRewardConfig {
+        let goldReward = response.rewards
+            .filter { $0.rewardType == "gold" }
+            .reduce(0) { $0 + $1.rewardAmount }
+        let gemsReward = response.rewards
+            .filter { $0.rewardType == "gems" }
+            .reduce(0) { $0 + $1.rewardAmount }
+        let xpReward = response.rewards
+            .filter { $0.rewardType == "xp" }
+            .reduce(0) { $0 + $1.rewardAmount }
+
+        let lootItems = response.rewards.compactMap { reward -> ClaimLootItem? in
+            let trackRarity: ItemRarity = reward.isPremium ? .epic : .rare
+            let trackColor = reward.isPremium ? DarkFantasyTheme.rarityEpic : DarkFantasyTheme.rarityRare
+
+            switch reward.rewardType {
+            case "item", "chest":
+                return ClaimLootItem(
+                    id: reward.rewardId ?? "\(response.level)-\(reward.rewardType)",
+                    name: reward.rewardName,
+                    quantity: reward.rewardAmount,
+                    imageKey: nil,
+                    fallbackIcon: "shippingbox",
+                    rarity: trackRarity,
+                    rarityColor: trackColor
+                )
+            case "consumable":
+                return ClaimLootItem(
+                    id: reward.rewardId ?? "\(response.level)-consumable",
+                    name: reward.rewardName,
+                    quantity: reward.rewardAmount,
+                    imageKey: nil,
+                    fallbackIcon: "cross.vial",
+                    rarity: trackRarity,
+                    rarityColor: trackColor
+                )
+            case "stamina":
+                return ClaimLootItem(
+                    id: reward.rewardId ?? "\(response.level)-stamina",
+                    name: reward.rewardName,
+                    quantity: reward.rewardAmount,
+                    imageKey: nil,
+                    fallbackIcon: "bolt.fill",
+                    rarity: .uncommon,
+                    rarityColor: DarkFantasyTheme.rarityUncommon
+                )
+            case "skin", "title", "frame", "effect", "cosmetic":
+                return ClaimLootItem(
+                    id: reward.rewardId ?? "\(response.level)-\(reward.rewardType)",
+                    name: reward.rewardName,
+                    quantity: reward.rewardAmount,
+                    imageKey: nil,
+                    fallbackIcon: "sparkles",
+                    rarity: .epic,
+                    rarityColor: DarkFantasyTheme.rarityEpic
+                )
+            default:
+                return nil
+            }
+        }
+
+        let tracks = Set(response.rewards.map { $0.isPremium ? "Premium" : "Free" })
+        let subtitle: String
+        if tracks.count == 2 {
+            subtitle = "Level \(response.level) — Free + Premium"
+        } else {
+            subtitle = "Level \(response.level) — \(tracks.first ?? "Reward")"
+        }
+
+        return ClaimRewardConfig(
+            title: "BATTLE PASS\nREWARD!",
+            subtitle: subtitle,
+            goldReward: goldReward,
+            gemsReward: gemsReward,
+            xpReward: xpReward,
+            lootItems: lootItems
+        )
     }
 }
 

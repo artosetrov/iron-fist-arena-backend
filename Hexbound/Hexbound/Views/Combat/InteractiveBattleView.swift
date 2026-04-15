@@ -92,7 +92,8 @@ struct InteractiveBattleView: View {
                     maxHp: vm.state.attackerMaxHp,
                     slideX: vm.playerSlideX,
                     flash: vm.playerFlash,
-                    popups: vm.damagePopups.filter { !$0.onDefender }
+                    popups: vm.damagePopups.filter { !$0.onDefender },
+                    compact: vm.phase.isSummary
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .player, bounds: $0)]
@@ -100,13 +101,21 @@ struct InteractiveBattleView: View {
                 // Player stance always resolves to a confirmed selection:
                 // the VM defaults to .chest and the picker keeps a current
                 // choice at all times, so both chips are always .confirmed.
-                StanceBonusChipStack(
-                    attackMode: .confirmed(vm.selectedAttackZone),
-                    defendMode: .confirmed(vm.selectedDefendZone)
-                )
+                // Hidden in `.summary` — the post-battle log is the focus there
+                // and the stance chips add noise without informing the recap.
+                if !vm.phase.isSummary {
+                    StanceBonusChipStack(
+                        attackMode: .confirmed(vm.selectedAttackZone),
+                        defendMode: .confirmed(vm.selectedDefendZone)
+                    )
+                }
                 if let playerLabel = vm.lastActiveFiredLabel {
                     ActiveFireBanner(actionType: playerLabel, isOpponent: false)
                         .id("you-fire-\(playerLabel)")
+                }
+                if let potionType = vm.lastPlayerConsumableFired {
+                    ConsumableFireBanner(consumableType: potionType, isOpponent: false)
+                        .id("you-potion-\(potionType)")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .top)
@@ -120,7 +129,8 @@ struct InteractiveBattleView: View {
                     maxHp: vm.state.defenderMaxHp,
                     slideX: vm.enemySlideX,
                     flash: vm.enemyFlash,
-                    popups: vm.damagePopups.filter { $0.onDefender }
+                    popups: vm.damagePopups.filter { $0.onDefender },
+                    compact: vm.phase.isSummary
                 )
                 .anchorPreference(key: FighterAnchorKey.self, value: .bounds) {
                     [FighterAnchorKey.Entry(side: .enemy, bounds: $0)]
@@ -132,10 +142,13 @@ struct InteractiveBattleView: View {
                 // We don't know the opponent's upcoming DEF from the
                 // intent heuristic alone, so DEF stays hidden during
                 // predict. ATK is where the tell lives.
-                StanceBonusChipStack(
-                    attackMode: opponentAttackChipMode,
-                    defendMode: opponentDefendChipMode
-                )
+                // Hidden in `.summary` — see player-side comment above.
+                if !vm.phase.isSummary {
+                    StanceBonusChipStack(
+                        attackMode: opponentAttackChipMode,
+                        defendMode: opponentDefendChipMode
+                    )
+                }
                 if !vm.opponentActives.isEmpty {
                     OpponentActivesPreview(actives: vm.opponentActives)
                 }
@@ -143,11 +156,17 @@ struct InteractiveBattleView: View {
                     ActiveFireBanner(actionType: oppLabel, isOpponent: true)
                         .id("opp-fire-\(oppLabel)")
                 }
+                if let oppPotion = vm.lastOpponentConsumableFired {
+                    ConsumableFireBanner(consumableType: oppPotion, isOpponent: true)
+                        .id("opp-potion-\(oppPotion)")
+                }
             }
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .animation(.easeInOut(duration: 0.2), value: vm.lastActiveFiredLabel)
         .animation(.easeInOut(duration: 0.2), value: vm.lastOpponentActiveFiredLabel)
+        .animation(.easeInOut(duration: 0.2), value: vm.lastPlayerConsumableFired)
+        .animation(.easeInOut(duration: 0.2), value: vm.lastOpponentConsumableFired)
         .animation(.easeInOut(duration: 0.25), value: vm.likelyOpponentAttack)
         .animation(.easeInOut(duration: 0.25), value: vm.selectedAttackZone)
         .animation(.easeInOut(duration: 0.25), value: vm.selectedDefendZone)
@@ -328,6 +347,10 @@ private struct DuelFighterCard: View {
     var slideX: CGFloat = 0
     var flash: Bool = false
     var popups: [DamagePopup] = []
+    /// When true the avatar tile renders at ~half its normal width.
+    /// Used by the `.summary` phase so the post-battle log gets the
+    /// vertical room it needs without dropping the YOU/ENEMY identity.
+    var compact: Bool = false
 
     private var borderColor: Color {
         side == .player ? DarkFantasyTheme.success : DarkFantasyTheme.danger
@@ -345,7 +368,10 @@ private struct DuelFighterCard: View {
 
             avatarTile
                 .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: .infinity)
+                // `compact` halves the avatar (≈half-card width). Stroke,
+                // clip, flash overlay and popups all chain BEFORE the
+                // outer centering frame so they hug the smaller tile.
+                .frame(maxWidth: compact ? 80 : .infinity)
                 .overlay(
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
                         .stroke(borderColor, lineWidth: 2)
@@ -368,6 +394,9 @@ private struct DuelFighterCard: View {
                 }
                 // Attacker slide-in X offset (per side)
                 .offset(x: slideX)
+                // Outer centering frame — keeps the tile horizontally
+                // centered inside its column even when `compact` shrinks it.
+                .frame(maxWidth: .infinity)
 
             Text(profile?.name.uppercased() ?? "…")
                 .font(DarkFantasyTheme.cardTitle)

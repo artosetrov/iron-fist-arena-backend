@@ -2,6 +2,8 @@
 
 These findings should be checked by the Oracle agent during backend reviews, in addition to its standard checklist.
 
+Note: this addendum is a historical 2026-03-25 snapshot. Treat the status table below as "status at the time of that audit"; verify against the current code and the main `qa-audit/SKILL.md` registry before reporting any item as still open.
+
 ## New Check: Security & Rate Limiting
 
 - **Auth routes MUST have rate limiting.** Login and registration endpoints need 5 attempts/min per IP+email. Flag any auth route without rate limiting middleware.
@@ -16,7 +18,7 @@ These findings should be checked by the Oracle agent during backend reviews, in 
 - **Pattern:** `findMany({ where: { id: { in: ids } } })` + Map lookup, NOT `Promise.all(map(id => findUnique(id)))`.
 - **Known past incidents:** `shop/items/route.ts` (160ms overhead), `social/messages/route.ts` (N+1 on character lookups).
 
-## Known Open Issues (track status)
+## Historical Open Issues (revalidate current status)
 
 | ID | Severity | Issue | Status |
 |---|---|---|---|

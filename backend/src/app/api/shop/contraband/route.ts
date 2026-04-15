@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ConsumableType } from '@prisma/client'
+import { type Prisma } from '@prisma/client'
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
+import { grantRewardEntries } from '@/lib/game/reward-grants'
 
 // ──── Contraband System ────
 //
@@ -196,23 +198,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'character_id is required' }, { status: 400 })
     }
 
-    const character = await prisma.character.findUnique({
-      where: { id: characterId },
-      select: { id: true, userId: true, level: true },
-    })
+    // Run character lookup, last-claim lookup, and total-claim count in
+    // parallel — they have no inter-dependency. Saves one round-trip vs.
+    // the previous sequential character → findFirst → count chain.
+    const [character, lastClaim, totalClaims] = await Promise.all([
+      prisma.character.findUnique({
+        where: { id: characterId },
+        select: { id: true, userId: true, level: true },
+      }),
+      prisma.contrabandClaim.findFirst({
+        where: { characterId },
+        orderBy: { claimedAt: 'desc' },
+      }),
+      prisma.contrabandClaim.count({ where: { characterId } }),
+    ])
     if (!character || character.userId !== user.id) {
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
-
-    // Get last contraband claim for this character
-    const lastClaim = await prisma.contrabandClaim.findFirst({
-      where: { characterId },
-      orderBy: { claimedAt: 'desc' },
-    })
-
-    const totalClaims = lastClaim
-      ? await prisma.contrabandClaim.count({ where: { characterId } })
-      : 0
 
     const nextClaimNumber = totalClaims + 1
     const now = new Date()
@@ -331,93 +333,37 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // Grant contents
-      let goldGrant = 0
-      let gemsGrant = 0
-      let xpGrant = 0
-
-      for (const item of contents) {
-        switch (item.type) {
-          case 'gold':
-            goldGrant += item.quantity
-            break
-          case 'gems':
-            gemsGrant += item.quantity
-            break
-          case 'xp':
-            xpGrant += item.quantity
-            break
-          case 'consumable':
-            if (item.id) {
-              await tx.consumableInventory.upsert({
-                where: {
-                  characterId_consumableType: {
-                    characterId: character_id,
-                    consumableType: item.id as ConsumableType,
-                  },
-                },
-                update: { quantity: { increment: item.quantity } },
-                create: {
-                  characterId: character_id,
-                  consumableType: item.id as ConsumableType,
-                  quantity: item.quantity,
-                },
-              })
-            }
-            break
-        }
-      }
-
-      if (goldGrant > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gold: { increment: goldGrant } },
-        })
-      }
-      if (gemsGrant > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: gemsGrant } },
-        })
-      }
-      if (xpGrant > 0) {
-        await tx.character.update({
-          where: { id: character_id },
-          data: { currentXp: { increment: xpGrant } },
-        })
-      }
+      const rewardResult = await grantRewardEntries(tx, {
+        userId: user.id,
+        characterId: character_id,
+        rewards: contents,
+      })
 
       // Record the claim
       await tx.contrabandClaim.create({
         data: {
           characterId: character_id,
-          contents: contents as any,
+          contents: contents as Prisma.InputJsonValue,
           price,
           currency: 'gold',
           claimNumber,
         },
       })
 
-      // Return updated balances
-      const [updatedChar, updatedUser] = await Promise.all([
-        tx.character.findUnique({
-          where: { id: character_id },
-          select: { currentXp: true },
-        }),
-        tx.user.findUnique({
-          where: { id: user.id },
-          select: { gold: true, gems: true },
-        }),
-      ])
-
       return {
-        gold: updatedUser?.gold ?? 0,
-        gems: updatedUser?.gems ?? 0,
-        xp: updatedChar?.currentXp ?? 0,
+        gold: rewardResult.gold,
+        gems: rewardResult.gems,
+        xp: rewardResult.xp,
+        levelUpResult: rewardResult.levelUpResult,
         contents,
         claim_number: claimNumber,
       }
     }, { isolationLevel: 'Serializable', timeout: 10000 })
+
+    if (result.levelUpResult?.leveledUp) {
+      await invalidateSkillCache(character_id)
+      await invalidatePassiveCache(character_id)
+    }
 
     return NextResponse.json({
       success: true,
@@ -426,13 +372,19 @@ export async function POST(req: NextRequest) {
       xp: result.xp,
       contents: result.contents,
       claim_number: result.claim_number,
+      leveled_up: result.levelUpResult?.leveledUp ?? false,
+      new_level: result.levelUpResult?.newLevel,
+      stat_points_awarded: result.levelUpResult?.statPointsAwarded,
     })
-  } catch (error: any) {
-    if (error?.message === 'COOLDOWN_ACTIVE') {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'COOLDOWN_ACTIVE') {
       return NextResponse.json({ error: 'Contraband not yet available' }, { status: 400 })
     }
-    if (error?.message === 'INSUFFICIENT_GOLD') {
+    if (error instanceof Error && error.message === 'INSUFFICIENT_GOLD') {
       return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
+    }
+    if (error instanceof Error && error.message === 'INVENTORY_FULL') {
+      return NextResponse.json({ error: 'Inventory is full' }, { status: 400 })
     }
     console.error('contraband POST error:', error)
     return NextResponse.json({ error: 'Failed to claim contraband' }, { status: 500 })

@@ -238,4 +238,33 @@ else
 fi
 
 echo ""
+echo "## 9. Nested 'enum State' shadows SwiftUI.State"
+# Incident: 2026-04-14 commit 6244d17 — TalentNodeView had `enum State: Equatable` inside a View body,
+# which shadowed the SwiftUI @State property wrapper type and broke the build. Rename to NodeState /
+# ViewState / <Feature>State. See also feedback_check_all_callers.md.
+state_shadow=$(grep -rn -E '^\s*(private\s+|fileprivate\s+)?enum State\s*(:|\{)' Hexbound/Hexbound/Views/ --include="*.swift" 2>/dev/null | grep -v '^\s*//')
+if [ -n "$state_shadow" ]; then
+  echo "⚠️  'enum State' inside Views/ shadows SwiftUI.State — rename (e.g. NodeState, ViewState):"
+  echo "$state_shadow"
+else
+  echo "✅ No 'enum State' shadows in Views/"
+fi
+
+echo ""
+echo "## 10. Monolithic Swift View files (>1000 lines)"
+# Incident: 2026-04-14 — split day. BattleResultCardView (1291), GoldMineDetailView (1170),
+# HeroDetailView (1358), DungeonRushDetailView (1464), ItemDetailSheet (1221), HubView (2034),
+# GuildHallDetailView (1931) all refactored to extension files. Soft-warn when any Swift file
+# in Hexbound/Hexbound crosses 1000 lines — time to split sections into extensions.
+if [ -d "Hexbound/Hexbound" ]; then
+  monoliths=$(find Hexbound/Hexbound -type f -name "*.swift" -exec wc -l {} + 2>/dev/null | awk '$1 > 1000 && $2 != "total" { print $1 " " $2 }' | sort -rn)
+  if [ -n "$monoliths" ]; then
+    echo "⚠️  Files >1000 lines — consider splitting into extension files or focused modules:"
+    echo "$monoliths" | head -10 | while IFS= read -r line; do echo "   $line"; done
+  else
+    echo "✅ No Swift files >1000 lines in Hexbound/Hexbound"
+  fi
+fi
+
+echo ""
 echo "=== SCAN COMPLETE ==="

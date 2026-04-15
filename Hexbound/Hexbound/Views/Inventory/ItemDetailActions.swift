@@ -365,6 +365,7 @@ extension ItemDetailSheet {
     @ViewBuilder
     var upgradeStatsPreview: some View {
         let stats = item.effectiveStats
+        let upgradeIncrement = item.upgradeIncrementPerStat
         if !stats.isEmpty {
             VStack(spacing: LayoutConstants.spaceXS) {
                 ForEach(stats.sorted(by: { $0.key < $1.key }), id: \.key) { key, currentValue in
@@ -379,10 +380,10 @@ extension ItemDetailSheet {
                         Text("→")
                             .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.textTertiary)
-                        Text("\(currentValue + 1)")
+                        Text("\(currentValue + upgradeIncrement)")
                             .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.success)
-                        Text("(+1)")
+                        Text("(+\(upgradeIncrement))")
                             .font(DarkFantasyTheme.body)
                             .foregroundStyle(DarkFantasyTheme.success.opacity(0.7))
                     }

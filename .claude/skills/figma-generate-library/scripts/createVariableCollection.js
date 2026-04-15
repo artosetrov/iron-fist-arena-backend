@@ -5,12 +5,12 @@
  * If `modeNames` has more than one entry, the first mode is renamed from
  * Figma's default "Mode 1" to the first name, and additional modes are added.
  *
- * Every created collection is tagged with `dsb_key` plugin data so it can be
- * found and cleaned up idempotently by `cleanupOrphans`.
+ * Every created collection is tagged with shared plugin data so it can be found
+ * and cleaned up idempotently by `cleanupOrphans`.
  *
  * @param {string} name - The display name of the collection (e.g. "Color", "Spacing").
  * @param {string[]} modeNames - Ordered list of mode names (e.g. ["Light", "Dark"] or ["Value"]).
- * @param {string} [runId] - Optional dsb_run_id to tag for cleanup.
+ * @param {string} [runId] - Optional shared `dsb/run_id` to tag for cleanup.
  * @returns {Promise<{
  *   collection: VariableCollection,
  *   modeIds: Record<string, string>
@@ -25,10 +25,10 @@ async function createVariableCollection(name, modeNames, runId) {
   // Create the collection — Figma always creates it with one mode named "Mode 1".
   const collection = figma.variables.createVariableCollection(name)
 
-  // Tag for idempotent cleanup
-  collection.setPluginData('dsb_key', `collection/${name}`)
+  // Tag for idempotent cleanup across use_figma runs
+  collection.setSharedPluginData('dsb', 'key', `collection/${name}`)
   if (runId) {
-    collection.setPluginData('dsb_run_id', runId)
+    collection.setSharedPluginData('dsb', 'run_id', runId)
   }
 
   // modeIds accumulator

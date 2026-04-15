@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ConsumableType } from '@prisma/client'
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
+import { grantRewardEntries } from '@/lib/game/reward-grants'
 
 interface OfferContent {
   type: 'gold' | 'gems' | 'item' | 'consumable' | 'xp'
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    const result = offers.map((offer: any) => ({
+    const result = offers.map((offer) => ({
       id: offer.id,
       key: offer.key,
       title: offer.title,
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
     const [character, offer] = await Promise.all([
       prisma.character.findUnique({
         where: { id: character_id },
-        select: { id: true, userId: true, level: true, currentXp: true },
+        select: { id: true, userId: true, level: true },
       }),
       prisma.shopOffer.findUnique({
         where: { id: offer_id },
@@ -184,10 +185,6 @@ export async function POST(req: NextRequest) {
       }
 
       // Re-check currency inside transaction (authoritative)
-      const freshChar = await tx.character.findUnique({
-        where: { id: character_id },
-        select: { id: true },
-      })
       const freshUser = await tx.user.findUnique({
         where: { id: user.id },
         select: { gold: true, gems: true },
@@ -213,62 +210,11 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // 2. Grant contents
-      let goldGrant = 0
-      let gemsGrant = 0
-      let xpGrant = 0
-
-      for (const item of contents) {
-        switch (item.type) {
-          case 'gold':
-            goldGrant += item.quantity
-            break
-          case 'gems':
-            gemsGrant += item.quantity
-            break
-          case 'xp':
-            xpGrant += item.quantity
-            break
-          case 'consumable':
-            if (item.id) {
-              await tx.consumableInventory.upsert({
-                where: {
-                  characterId_consumableType: {
-                    characterId: character_id,
-                    consumableType: item.id as ConsumableType,
-                  },
-                },
-                update: { quantity: { increment: item.quantity } },
-                create: {
-                  characterId: character_id,
-                  consumableType: item.id as ConsumableType,
-                  quantity: item.quantity,
-                },
-              })
-            }
-            break
-          // item type would need item creation logic — skip for now, handled via mail
-        }
-      }
-
-      if (goldGrant > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gold: { increment: goldGrant } },
-        })
-      }
-      if (gemsGrant > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: gemsGrant } },
-        })
-      }
-      if (xpGrant > 0) {
-        await tx.character.update({
-          where: { id: character_id },
-          data: { currentXp: { increment: xpGrant } },
-        })
-      }
+      const rewardResult = await grantRewardEntries(tx, {
+        userId: user.id,
+        characterId: character_id,
+        rewards: contents,
+      })
 
       // 3. Record purchase
       await tx.shopOfferPurchase.create({
@@ -280,37 +226,36 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Return updated balances from within transaction
-      const [updatedChar, updatedUser] = await Promise.all([
-        tx.character.findUnique({
-          where: { id: character_id },
-          select: { currentXp: true },
-        }),
-        tx.user.findUnique({
-          where: { id: user.id },
-          select: { gold: true, gems: true },
-        }),
-      ])
-
-      return { gold: updatedUser?.gold ?? 0, gems: updatedUser?.gems ?? 0, xp: updatedChar?.currentXp ?? 0 }
+      return rewardResult
     }, { isolationLevel: 'Serializable', timeout: 10000 })
+
+    if (result.levelUpResult?.leveledUp) {
+      await invalidateSkillCache(character_id)
+      await invalidatePassiveCache(character_id)
+    }
 
     return NextResponse.json({
       success: true,
       gold: result.gold,
       gems: result.gems,
       xp: result.xp,
+      leveled_up: result.levelUpResult?.leveledUp ?? false,
+      new_level: result.levelUpResult?.newLevel,
+      stat_points_awarded: result.levelUpResult?.statPointsAwarded,
     })
-  } catch (error: any) {
+  } catch (error) {
     // Handle known transaction errors with proper HTTP codes
-    if (error?.message === 'PURCHASE_LIMIT_REACHED') {
+    if (error instanceof Error && error.message === 'PURCHASE_LIMIT_REACHED') {
       return NextResponse.json({ error: 'Purchase limit reached' }, { status: 400 })
     }
-    if (error?.message === 'INSUFFICIENT_GOLD') {
+    if (error instanceof Error && error.message === 'INSUFFICIENT_GOLD') {
       return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
     }
-    if (error?.message === 'INSUFFICIENT_GEMS') {
+    if (error instanceof Error && error.message === 'INSUFFICIENT_GEMS') {
       return NextResponse.json({ error: 'Not enough gems' }, { status: 400 })
+    }
+    if (error instanceof Error && error.message === 'INVENTORY_FULL') {
+      return NextResponse.json({ error: 'Inventory is full' }, { status: 400 })
     }
     console.error('purchase offer error:', error)
     return NextResponse.json({ error: 'Failed to purchase offer' }, { status: 500 })

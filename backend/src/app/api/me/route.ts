@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getPremiumExpiresAt, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 
 export async function GET(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
         email: true,
         username: true,
         gems: true,
-        premiumUntil: true,
+        ...PREMIUM_ENTITLEMENT_USER_SELECT,
         role: true,
         createdAt: true,
         lastLogin: true,
@@ -25,7 +26,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ user: dbUser })
+    return NextResponse.json({
+      user: {
+        ...dbUser,
+        premiumUntil: getPremiumExpiresAt(dbUser),
+      },
+    })
   } catch (error) {
     console.error('me error:', error)
     return NextResponse.json(

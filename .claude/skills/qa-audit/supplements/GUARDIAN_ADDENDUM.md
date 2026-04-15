@@ -2,6 +2,8 @@
 
 These findings should be checked by the Guardian agent during iOS code reviews, in addition to its standard checklist.
 
+Note: this addendum is a historical 2026-03-25 snapshot. Treat the status table below as "status at the time of that audit"; verify against the current code and the main `qa-audit/SKILL.md` registry before reporting any item as still open.
+
 ## New Check: Force Unwraps
 
 - **Zero force unwrap policy.** Grep for `randomElement()!` — found 5 instances in animation views (CoinFlyAnimationView, SpinningRaysView, particle systems).
@@ -30,7 +32,7 @@ These findings should be checked by the Guardian agent during iOS code reviews, 
 
 - **`.compositingGroup()` is MANDATORY after 2+ ornamental overlays.** Check that surfaceLighting + innerBorder + cornerBrackets stacks end with `.compositingGroup()` BEFORE `.shadow()`.
 
-## Known Open Issues (track status)
+## Historical Open Issues (revalidate current status)
 
 | ID | Severity | Issue | Status |
 |---|---|---|---|

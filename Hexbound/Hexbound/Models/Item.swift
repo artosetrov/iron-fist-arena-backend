@@ -27,6 +27,7 @@ struct Item: Codable, Identifiable {
     var quantity: Int?
     var consumableType: String?
     var isTwoHanded: Bool?
+    var authoritativeEffectiveStats: [String: Int]? = nil
 
     // No CodingKeys needed — Prisma sends camelCase which matches
     // Swift property names directly (itemName, itemType, etc.)
@@ -49,8 +50,13 @@ struct Item: Codable, Identifiable {
         return stats
     }
 
-    /// Stats including upgrade bonus (+1 per upgrade level per stat that exists on the item)
+    /// Stats including upgrade bonus. Prefer the authoritative server snapshot
+    /// when present; otherwise fall back to the local legacy computation.
     var effectiveStats: [String: Int] {
+        if let authoritativeEffectiveStats, !authoritativeEffectiveStats.isEmpty {
+            return authoritativeEffectiveStats
+        }
+
         let base = totalStats
         let level = upgradeLevel ?? 0
         guard level > 0 else { return base }
@@ -61,9 +67,31 @@ struct Item: Codable, Identifiable {
         return result
     }
 
-    /// The total upgrade bonus per stat (upgradeLevel × 1)
+    /// The total upgrade bonus currently applied per stat.
     var upgradeBonusPerStat: Int {
-        upgradeLevel ?? 0
+        if let authoritativeEffectiveStats,
+           let baseStats,
+           let level = upgradeLevel,
+           level > 0 {
+            for key in authoritativeEffectiveStats.keys.sorted() {
+                if let baseValue = baseStats[key],
+                   let effectiveValue = authoritativeEffectiveStats[key] {
+                    return max(0, effectiveValue - baseValue)
+                }
+            }
+        }
+        return upgradeLevel ?? 0
+    }
+
+    /// Best-effort preview for the next upgrade step per stat.
+    /// When the item already carries authoritative stats from the backend,
+    /// derive the per-level increment from them; otherwise use the legacy +1 fallback.
+    var upgradeIncrementPerStat: Int {
+        if let level = upgradeLevel, level > 0 {
+            let totalBonus = upgradeBonusPerStat
+            return max(1, totalBonus / level)
+        }
+        return 1
     }
 
     /// Sum of all effective stats — used for quick power comparison
@@ -105,57 +133,32 @@ struct Item: Codable, Identifiable {
         if itemType != .consumable {
             return imageKey
         }
-
-        // Remap legacy "pot_*" keys to Supabase asset names
-        if let key = imageKey, !key.isEmpty {
-            let remapped = Self.legacyKeyRemap[key]
-            if remapped != nil { return remapped }
-            return key
-        }
-
-        // No imageKey from backend — derive from consumableType
-        let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("stamina") && ct.contains("large") { return "stamina_potion_large" }
-        if ct.contains("stamina") && ct.contains("medium") { return "stamina_potion_medium" }
-        if ct.contains("stamina") { return "stamina_potion_small" }
-        if ct.contains("health") && ct.contains("large") { return "health_potion_large" }
-        if ct.contains("health") && ct.contains("medium") { return "health_potion_medium" }
-        if ct.contains("health") { return "health_potion_small" }
-        if ct.contains("gem_pack") && ct.contains("large") { return "gem_pack_large" }
-        if ct.contains("gem_pack") && ct.contains("medium") { return "gem_pack_medium" }
-        if ct.contains("gem_pack") { return "gem_pack_small" }
-        return nil
+        return ConsumableCatalog.resolvedImageKey(
+            consumableType: consumableType,
+            catalogId: catalogId,
+            imageKey: imageKey
+        )
     }
-
-    /// Legacy imageKey → current Supabase asset name remap
-    private static let legacyKeyRemap: [String: String] = [
-        "pot_stamina_small": "stamina_potion_small",
-        "pot_stamina_medium": "stamina_potion_medium",
-        "pot_stamina_large": "stamina_potion_large",
-        "pot_health_small": "health_potion_small",
-        "pot_health_medium": "health_potion_medium",
-        "pot_health_large": "health_potion_large",
-    ]
 
     // MARK: - Consumable Icon Helpers
 
     /// SF Symbol name for consumable items based on consumableType
     var consumableIcon: String? {
         guard itemType == .consumable else { return nil }
-        let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("gem_pack") { return "diamond.fill" }
-        if ct.contains("health") { return "heart.fill" }
-        if ct.contains("stamina") { return "bolt.fill" }
-        return "cross.vial.fill"
+        return ConsumableCatalog.systemIcon(
+            consumableType: consumableType,
+            catalogId: catalogId,
+            imageKey: imageKey
+        ) ?? "cross.vial.fill"
     }
 
     /// Tint color for consumable SF Symbol
     var consumableIconColor: Color? {
         guard itemType == .consumable else { return nil }
-        let ct = consumableType ?? catalogId ?? ""
-        if ct.contains("gem_pack") { return DarkFantasyTheme.cyan }
-        if ct.contains("health") { return DarkFantasyTheme.danger }
-        if ct.contains("stamina") { return DarkFantasyTheme.success }
-        return DarkFantasyTheme.goldBright
+        return ConsumableCatalog.systemIconColor(
+            consumableType: consumableType,
+            catalogId: catalogId,
+            imageKey: imageKey
+        ) ?? DarkFantasyTheme.goldBright
     }
 }

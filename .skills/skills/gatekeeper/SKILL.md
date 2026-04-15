@@ -174,7 +174,7 @@ When invoked as a subagent, run `scripts/preflight_check.sh` first, then supplem
 
 ## Auto-Trigger Rules
 
-The parent Claude agent SHOULD automatically spawn this as a subagent:
+The parent agent may run this as a subagent only when the user explicitly requested subagents/parallel agent work and the current environment permits delegation:
 - Before any `git commit` operation
 - After completing a feature or bugfix task
 - When the user says "done", "finished", "ready to push"

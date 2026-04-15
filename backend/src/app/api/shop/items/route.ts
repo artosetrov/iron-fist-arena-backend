@@ -2,29 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ItemType, Rarity } from '@prisma/client'
-import { getGameConfig } from '@/lib/game/config'
 import { TWO_HANDED_CATALOG_IDS } from '@/lib/game/item-constants'
 import { GEM_PACKS, isGemPackCatalogId } from '@/lib/game/gem-packs'
-
-// Hardcoded price fallbacks — overridden by GameConfig consumable.price.* keys
-// Economy v2 — consumable prices increased ~25-35% to create recurring gold sink pressure
-const DEFAULT_CONSUMABLE_PRICES: Record<string, number> = {
-  stamina_potion_small: 150,   // was 100
-  stamina_potion_medium: 300,  // was 250
-  stamina_potion_large: 600,   // was 500
-  health_potion_small: 200,    // was 150
-  health_potion_medium: 400,   // was 350
-  health_potion_large: 800,    // was 700
-}
+import {
+  DIRECT_PURCHASE_CONSUMABLES,
+  getConsumablePriceMap,
+  isDirectPurchaseConsumableType,
+} from '@/lib/game/consumable-pricing'
 
 // Gem pack required levels and fallback prices are now the single source of truth
 // in @/lib/game/gem-packs — shared with /api/shop/buy-gems so listing and transaction
 // agree on amounts and prices. Do NOT duplicate these values here.
 const GEM_PACK_REQUIRED_LEVELS: Record<string, number> = Object.fromEntries(
   Object.values(GEM_PACKS).map((p) => [p.catalogId, p.requiredLevel])
-)
-const GEM_PACK_FALLBACK_PRICES: Record<string, number> = Object.fromEntries(
-  Object.values(GEM_PACKS).map((p) => [p.catalogId, p.goldPrice])
 )
 
 // Calculate fallback price for equipment items with buyPrice = 0
@@ -188,23 +178,21 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // Batch-load all consumable prices from GameConfig ONCE (fix N+1)
-    const consumablePriceMap = new Map<string, number>()
-    const priceKeys = Object.keys(DEFAULT_CONSUMABLE_PRICES)
-    await Promise.all(
-      priceKeys.map(async (key) => {
-        const price = await getGameConfig<number>(
-          `consumable.price.${key}`,
-          DEFAULT_CONSUMABLE_PRICES[key]
-        )
-        consumablePriceMap.set(key, price)
-      })
-    )
+    // Batch-load all direct-sale consumable prices from GameConfig once so
+    // listing and transactional routes share the same fallback contract.
+    const consumablePriceMap = await getConsumablePriceMap(DIRECT_PURCHASE_CONSUMABLES)
 
     // Transform consumable items — use pre-loaded GameConfig prices
     const consumableShopItems = consumableItems.map((item) => {
         const catalogId = item.catalogId
         const isGemPack = catalogId.startsWith('gem_pack')
+        const directSaleConsumableType = isDirectPurchaseConsumableType(catalogId)
+          ? catalogId
+          : null
+
+        if (!isGemPack && !directSaleConsumableType) {
+          return null
+        }
 
         // For gem packs, check required level
         if (isGemPack) {
@@ -214,8 +202,8 @@ export async function GET(req: NextRequest) {
 
         // Use pre-loaded price from GameConfig (only for potions, not gem packs)
         let goldPrice = item.buyPrice
-        if (!isGemPack && consumablePriceMap.has(catalogId)) {
-          goldPrice = consumablePriceMap.get(catalogId)!
+        if (!isGemPack && directSaleConsumableType) {
+          goldPrice = consumablePriceMap.get(directSaleConsumableType) ?? item.buyPrice
         }
 
         // Gem packs: ALWAYS use the canonical value from GEM_PACKS, ignore DB.

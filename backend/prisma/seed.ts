@@ -2,6 +2,8 @@ import { PrismaClient, CharacterClass, CharacterOrigin, ItemType, Rarity } from 
 import { randomUUID } from 'crypto'
 
 const prisma = new PrismaClient()
+const DEFAULT_SUPABASE_URL = 'https://gqnyozmqbhgzprsftdzp.supabase.co'
+const SUPABASE_PUBLIC_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/$/, '')
 
 const CLASSES: CharacterClass[] = ['warrior', 'rogue', 'mage', 'tank']
 const ORIGINS: CharacterOrigin[] = ['human', 'orc', 'skeleton', 'demon', 'dogfolk']
@@ -24,10 +26,6 @@ const NAME_SUFFIXES = [
   'Mark', 'Reaver', 'Fang', 'Blaze', 'Strike', 'Guard', 'Blade', 'Horn',
   'Maw', 'Skull', 'Heart', 'Bite', 'Shade', 'Spark', 'Grip',
 ]
-
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -412,7 +410,7 @@ async function main() {
         setName: item.setName ?? null,
         dropChance: item.dropChance ?? 0,
         imageKey: item.imageKey ?? item.catalogId,
-        imageUrl: `https://gqnyozmqbhgzprsftdzp.supabase.co/storage/v1/object/public/assets/items/${item.imageKey ?? item.catalogId}.png`,
+        imageUrl: `${SUPABASE_PUBLIC_URL}/storage/v1/object/public/assets/items/${item.imageKey ?? item.catalogId}.png`,
       },
     })
     itemsCreated++

@@ -27,30 +27,32 @@
 - Подсчитай: Test files (`find backend/src -name "*.test.*" -o -name "*.spec.*" | wc -l`)
 - Составь таблицу по системам: PvP, Dungeons, Shop, Inventory, BattlePass, DailyQuests, Achievements, GoldMine, ShellGame, Social, Auth, Leaderboards, DailyLogin
 
-### Phase 2 — Запусти 4 параллельных агента
+### Phase 2 — Проверь 4 аудиторских потока
 
-**Agent 1: Backend Audit**
+Если пользователь явно попросил субагентов/параллельную агентную работу и текущая среда это разрешает, эти потоки можно выполнять параллельно. В остальных случаях проходи их последовательно в текущем агенте, без автозапуска Agent tool.
+
+**Stream 1: Backend Audit**
 - Для каждого route handler: проверь try/catch, auth guard, input validation, rate limiting
 - Проверь transaction safety на economy routes (Serializable + FOR UPDATE)
 - Проверь combat: серверный PRNG, детерминизм, no client influence
 - Проверь await на async functions (getConfig, runCombat, calculateCurrentStamina)
 - Проверь PII в логах
 
-**Agent 2: iOS Client Audit**
+**Stream 2: iOS Client Audit**
 - Для каждого ViewModel: @MainActor, @Observable, error handling
 - Force unwraps: `grep -rn '!' Hexbound/Hexbound/ --include="*.swift"` — фильтруй осмысленные
 - Design system compliance: нет hardcoded Color(), используются DarkFantasyTheme tokens
 - Cache TTL: все GameDataCache entries имеют TTL
 - Optimistic UI: все mutating actions обновляют UI до ответа API
 
-**Agent 3: Economy Audit**
+**Stream 3: Economy Audit**
 - Посчитай daily gold income (все источники) vs daily gold sinks
 - Проверь passive vs active income ratio (Gold Mine vs PvP/Dungeons)
 - Проверь exploit vectors: daily login timing, concurrent claims, TOCTOU
 - Проверь IAP validation (client-side vs server-side)
 - Проверь shell game RTP и server-authoritative
 
-**Agent 4: Database Audit**
+**Stream 4: Database Audit**
 - Schema sync: `diff backend/prisma/schema.prisma admin/prisma/schema.prisma`
 - Missing indexes: check frequently queried fields
 - Missing timestamps: models without createdAt/updatedAt

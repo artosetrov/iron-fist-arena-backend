@@ -65,6 +65,7 @@ struct Achievement: Codable, Identifiable {
         var parts: [String] = []
         if let gold = reward.gold, gold > 0 { parts.append("\(gold) Gold") }
         if let gems = reward.gems, gems > 0 { parts.append("\(gems) Gems") }
+        if let xp = reward.xp, xp > 0 { parts.append("\(xp) XP") }
         if let title = reward.title { parts.append("Title: \(title)") }
         if let frame = reward.frame { parts.append("Frame: \(frame)") }
         return parts.joined(separator: ", ")
@@ -74,6 +75,7 @@ struct Achievement: Codable, Identifiable {
 struct AchievementReward: Codable {
     let gold: Int?
     let gems: Int?
+    let xp: Int?
     let title: String?
     let frame: String?
 }

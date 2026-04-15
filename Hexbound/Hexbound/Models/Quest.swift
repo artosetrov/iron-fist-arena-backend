@@ -13,14 +13,8 @@ struct Quest: Codable, Identifiable, Equatable {
     let rewardGold: Int
     let rewardXp: Int
     let rewardGems: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case id, type, title, description, icon, target, progress, completed
-        case rewardClaimed = "reward_claimed"
-        case rewardGold = "reward_gold"
-        case rewardXp = "reward_xp"
-        case rewardGems = "reward_gems"
-    }
+    // APIClient already converts snake_case -> camelCase.
+    // Keep this DTO as plain camelCase to avoid double-conversion bugs.
 
     var progressFraction: Double {
         guard target > 0 else { return 0 }

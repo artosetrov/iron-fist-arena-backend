@@ -24,7 +24,7 @@
  *   - `description`: Optional subtitle displayed below the heading.
  *   - `sections`: Ordered list of sections. Each section gets its own frame
  *     with a heading and is passed to `contentFn` for population.
- * @param {string} [runId] - Optional dsb_run_id to tag every created node.
+ * @param {string} [runId] - Optional shared `dsb/run_id` to tag every created node.
  * @returns {Promise<{
  *   page: PageNode,
  *   titleNode: TextNode,
@@ -55,8 +55,8 @@ async function createDocumentationPage(pageName, config, runId) {
   await figma.setCurrentPageAsync(page)
 
   if (runId) {
-    page.setPluginData('dsb_run_id', runId)
-    page.setPluginData('dsb_key', `page/${pageName}`)
+    page.setSharedPluginData('dsb', 'run_id', runId)
+    page.setSharedPluginData('dsb', 'key', `page/${pageName}`)
   }
 
   const frameIds = []
@@ -81,8 +81,8 @@ async function createDocumentationPage(pageName, config, runId) {
   page.appendChild(root)
 
   if (runId) {
-    root.setPluginData('dsb_run_id', runId)
-    root.setPluginData('dsb_key', `frame/root/${pageName}`)
+    root.setSharedPluginData('dsb', 'run_id', runId)
+    root.setSharedPluginData('dsb', 'key', `frame/root/${pageName}`)
   }
 
   frameIds.push(root.id)
@@ -128,8 +128,8 @@ async function createDocumentationPage(pageName, config, runId) {
     root.appendChild(sectionFrame)
 
     if (runId) {
-      sectionFrame.setPluginData('dsb_run_id', runId)
-      sectionFrame.setPluginData('dsb_key', `frame/section/${pageName}/${section.name}`)
+      sectionFrame.setSharedPluginData('dsb', 'run_id', runId)
+      sectionFrame.setSharedPluginData('dsb', 'key', `frame/section/${pageName}/${section.name}`)
     }
 
     // Section heading

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ConsumableType } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { canClaimDailyLogin, shouldResetStreak, getDailyReward } from '@/lib/game/daily-login'
@@ -7,7 +8,25 @@ import {
   hasPremium,
   hasPremiumGemsClaimedToday,
   PREMIUM_DAILY_GEMS,
+  PREMIUM_ENTITLEMENT_USER_SELECT,
 } from '@/lib/game/premium'
+
+type LockedDailyLoginRow = {
+  currentDay: number
+  lastClaimDate: Date | null
+  streak: number
+  totalClaims: number
+}
+
+type LockedUserRow = {
+  id: string
+  gold: number
+  gems: number
+}
+
+function isConsumableType(value: string): value is ConsumableType {
+  return Object.values(ConsumableType).includes(value as ConsumableType)
+}
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -41,7 +60,7 @@ export async function POST(req: NextRequest) {
     // Atomic claim in interactive transaction with row lock
     const result = await prisma.$transaction(async (tx) => {
       // Lock the daily login row with FOR UPDATE
-      const rows = await tx.$queryRawUnsafe<any[]>(
+      const rows = await tx.$queryRawUnsafe<LockedDailyLoginRow[]>(
         `SELECT id, current_day AS "currentDay", last_claim_date AS "lastClaimDate",
                 streak, total_claims AS "totalClaims"
          FROM daily_login_rewards
@@ -50,11 +69,11 @@ export async function POST(req: NextRequest) {
         character_id
       )
 
-      let loginReward = rows[0]
+      let loginReward: LockedDailyLoginRow = rows[0]
 
       if (!loginReward) {
         // Create initial record inside the transaction
-        loginReward = await tx.dailyLoginReward.create({
+        const createdLoginReward = await tx.dailyLoginReward.create({
           data: {
             characterId: character_id,
             currentDay: 1,
@@ -62,6 +81,12 @@ export async function POST(req: NextRequest) {
             totalClaims: 0,
           },
         })
+        loginReward = {
+          currentDay: createdLoginReward.currentDay,
+          lastClaimDate: createdLoginReward.lastClaimDate,
+          streak: createdLoginReward.streak,
+          totalClaims: createdLoginReward.totalClaims,
+        }
       }
 
       // Check eligibility with locked data
@@ -89,17 +114,20 @@ export async function POST(req: NextRequest) {
           data: { gems: { increment: reward.amount } },
         })
       } else if (reward.type === 'consumable' && reward.itemId) {
+        if (!isConsumableType(reward.itemId)) {
+          throw new Error('INVALID_CONSUMABLE_REWARD')
+        }
         await tx.consumableInventory.upsert({
           where: {
             characterId_consumableType: {
               characterId: character_id,
-              consumableType: reward.itemId as any,
+              consumableType: reward.itemId,
             },
           },
           update: { quantity: { increment: reward.amount } },
           create: {
             characterId: character_id,
-            consumableType: reward.itemId as any,
+            consumableType: reward.itemId,
             quantity: reward.amount,
           },
         })
@@ -122,9 +150,27 @@ export async function POST(req: NextRequest) {
       // base daily reward. Applied inside the same transaction so premium
       // claim + daily reward are atomic. `hasPremiumGemsClaimedToday` compares
       // UTC day to prevent double-claim across streak resets.
+      const [lockedUser] = await tx.$queryRawUnsafe<LockedUserRow[]>(
+        `SELECT id, gold, gems
+           FROM users
+          WHERE id = $1
+          FOR UPDATE`,
+        user.id
+      )
+
+      if (!lockedUser) {
+        throw new Error('USER_NOT_FOUND')
+      }
+
+      const gold = lockedUser.gold
+      let gems = lockedUser.gems
+
       const currentUser = await tx.user.findUnique({
         where: { id: user.id },
-        select: { premiumUntil: true, premiumGemClaimDate: true },
+        select: {
+          ...PREMIUM_ENTITLEMENT_USER_SELECT,
+          premiumGemClaimDate: true,
+        },
       })
       let premiumGemsAwarded = 0
       if (
@@ -140,9 +186,10 @@ export async function POST(req: NextRequest) {
           },
         })
         premiumGemsAwarded = PREMIUM_DAILY_GEMS
+        gems += PREMIUM_DAILY_GEMS
       }
 
-      return { reward, updatedLogin, premiumGemsAwarded }
+      return { reward, updatedLogin, premiumGemsAwarded, gold, gems }
     })
 
     return NextResponse.json({
@@ -150,19 +197,28 @@ export async function POST(req: NextRequest) {
         type: result.reward.type,
         amount: result.reward.amount,
         itemId: result.reward.itemId ?? null,
+        displayName: result.reward.displayName,
+        displayIcon: result.reward.displayIcon,
       },
       currentDay: result.updatedLogin.currentDay,
       streak: result.updatedLogin.streak,
       totalClaims: result.updatedLogin.totalClaims,
+      lastClaimDate: result.updatedLogin.lastClaimDate,
+      canClaim: false,
+      gold: result.gold,
+      gems: result.gems,
       // W3.D5 — Premium Forever bonus gems (0 if not premium or already claimed today)
       premiumGemsAwarded: result.premiumGemsAwarded,
     })
-  } catch (error: any) {
-    if (error.message === 'ALREADY_CLAIMED') {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ALREADY_CLAIMED') {
       return NextResponse.json(
         { error: 'Daily login reward already claimed today' },
         { status: 400 }
       )
+    }
+    if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
     console.error('claim daily login error:', error)
     return NextResponse.json(

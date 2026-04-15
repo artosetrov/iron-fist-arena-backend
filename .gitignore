@@ -15,6 +15,7 @@ User/sprites/
 User/dange.png
 combat-fx-prototype/
 .claude/agent-bus/
+.claude/tmp/
 .git-backups/
 
 # Editor config (Obsidian, etc.)

@@ -69,34 +69,18 @@ struct ShopOffer: Codable, Identifiable {
     /// snake_case identifiers in the UI.
     var displayDescription: String? {
         guard var desc = description else { return nil }
-        for key in Self.knownItemKeys.keys {
+        for key in ConsumableCatalog.knownIDs {
             if desc.contains(key) {
-                desc = desc.replacingOccurrences(of: key, with: Self.knownItemKeys[key] ?? key)
+                desc = desc.replacingOccurrences(of: key, with: ConsumableCatalog.displayName(for: key))
             }
         }
         return desc
     }
 
-    /// Bug #11: proper display names for all catalog items that might appear
-    /// in bundle descriptions or offer content lists. Must stay in sync with
-    /// `backend/prisma/migrations/*_seed_consumable_items/migration.sql`.
-    private static let knownItemKeys: [String: String] = [
-        "stamina_potion_small":  "Small Stamina Potion",
-        "stamina_potion_medium": "Medium Stamina Potion",
-        "stamina_potion_large":  "Large Stamina Potion",
-        "health_potion_small":   "Small Health Potion",
-        "health_potion_medium":  "Medium Health Potion",
-        "health_potion_large":   "Large Health Potion",
-        "gem_pack_small":        "Small Gem Pack",
-        "gem_pack_medium":       "Medium Gem Pack",
-        "gem_pack_large":        "Large Gem Pack",
-    ]
-
     /// Converts internal item keys to display names. Prefers the curated
-    /// `knownItemKeys` table, then falls back to a cosmetic snake_case split.
+    /// shared consumable catalog, then falls back to a cosmetic snake_case split.
     private static func displayName(for key: String) -> String {
-        if let curated = knownItemKeys[key] { return curated }
-        return key.replacingOccurrences(of: "_", with: " ").capitalized
+        ConsumableCatalog.displayName(forKnownOrRaw: key)
     }
 }
 
@@ -115,4 +99,7 @@ struct OfferPurchaseResponse: Codable {
     let gold: Int
     let gems: Int
     let xp: Int
+    let leveledUp: Bool?
+    let newLevel: Int?
+    let statPointsAwarded: Int?
 }

@@ -1,0 +1,156 @@
+---
+title: Audit Block 004 — Claude Product and Governance Skills
+category: audit
+tags: [audit, claude, skills, governance, qa]
+sources:
+  - .claude/skills/admin-coverage/
+  - .claude/skills/analytics-audit/
+  - .claude/skills/api-contract-check/
+  - .claude/skills/cdo/
+  - .claude/skills/error-scanner/
+  - .claude/skills/qa-audit/
+  - .claude/skills/*/SKILL.md
+updated: 2026-04-15
+---
+
+# Audit Block 004 — Claude Product and Governance Skills
+
+## Scope
+
+This is the second `.claude/` audit block. It covers product, design, QA, security, release, and governance skill documents that are not Figma/reference-library files and not the runnable operational scripts already covered in [[block-003-claude-operational-safety]].
+
+- **Files audited in this sub-block:** 53
+- **Primary file type:** Markdown skill protocols plus one JSON state file
+- **Status:** Fixed documentation hazards; revalidation decisions remain
+- **Related pages:** [[audit-index]], [[project-file-inventory]], [[block-003-claude-operational-safety]]
+
+Ignored runtime files observed but not counted in inventory because `.gitignore` excludes `.claude/agent-bus/`: `.claude/agent-bus/PROTOCOL.md`, `.claude/agent-bus/AGENT_HEADER.md`, `.claude/agent-bus/chronicler.md`. CDO depends on these files at runtime, so unsafe cleanup wording was corrected in the local protocol as a side effect of this block.
+
+## Summary
+
+- Most files are role/checklist documents with clear ownership and no direct application code.
+- The biggest risks were process risks: instructions that could auto-launch subagents, delete bus protocol files, run stale QA findings as current truth, or silently miss scanner matches on macOS.
+- Safe fixes were applied to `cdo`, `qa-audit`, `chronicler`, `instant-retro`, `economy-safety`, `error-scanner`, and QA addenda.
+- No product source files were changed in this block.
+
+## Problems Fixed In This Block
+
+| Priority | Problem | Risk | Fix |
+|----------|---------|------|-----|
+| P1 | `cdo` still contained pipeline examples and cleanup commands that could be read as default automatic subagent orchestration. | Conflicts with careful single-agent audit mode; accidental fan-out and loss of control. | Reframed CDO as optional only when the user explicitly requests delegation and the runtime permits it. |
+| P1 | CDO/agent-bus cleanup examples used `rm .claude/agent-bus/*.md` while saying "except protocol". | Literal command would delete `PROTOCOL.md` and `AGENT_HEADER.md`. | Replaced with `find ... ! -name 'PROTOCOL.md' ! -name 'AGENT_HEADER.md' -delete`. |
+| P1 | `qa-audit` required "4 parallel agents" unconditionally. | Violates environments where subagents are not allowed or not requested. | Renamed to four audit streams; subagents are allowed only with explicit user request and runtime permission. |
+| P1 | `error-scanner` used macOS-fragile `grep` regexes with `\w`, `\s`, and alternation. | Scanner can silently miss known bug patterns. | Converted commands to `rg`-compatible patterns and fixed pbxproj/backend/conflict scans. |
+| P2 | QA addenda from 2026-03-25 marked issues OPEN that conflict with the main QA registry. | Stale docs could resurrect fixed issues or misreport release readiness. | Marked addenda as historical snapshots requiring live revalidation. |
+| P2 | `economy-safety` treated historical balance/exploit issues as current facts. | False positives or wrong risk framing during economy review. | Reframed as historical regression checks and corrected daily-login wording. |
+| P2 | `instant-retro` had an unbounded `git log --since` path and fallback without `--no-merges`. | Retro can be slow/noisy on long histories. | Added bounded `--max-count=200` guidance and no-merge fallback. |
+| P2 | `chronicler` still said the parent should automatically spawn it. | Encourages background subagent work without explicit user request. | Reworded as optional delegated use only when explicitly requested/permitted. |
+
+## File Records
+
+| Path | Name / Zone | Purpose / What It Does | Depends On | Used By | Main Functions / Components | Business Rules | Problems Found | Fixed | Separate Decision | Status |
+|------|-------------|------------------------|------------|---------|-----------------------------|----------------|----------------|-------|-------------------|--------|
+| `.claude/skills/admin-coverage/SKILL.md` | Admin coverage check | Verifies whether features have admin CRUD, config, visibility, and Prisma sync. | `docs/05_admin_panel/ADMIN_CAPABILITIES.md`, backend/admin Prisma schemas. | Claude admin/release audits. | Feature classifier, admin page check, live-config check, gap output. | Manageable features need admin support and live tunability when appropriate. | No direct defect; role is clear. | None. | Revalidate admin docs in the admin block. | OK |
+| `.claude/skills/analytics-audit/SKILL.md` | Analytics instrumentation audit | Checks event/funnel/economy/error tracking coverage. | iOS analytics hooks, backend transaction/combat/reward logs. | Product analytics and release-readiness reviews. | Event inventory, backend tracking, client tracking, funnel coverage. | Key player actions and economy movements must be observable. | No direct defect; lacks proof current SDK is integrated. | None. | Audit actual analytics implementation later. | OK |
+| `.claude/skills/api-contract-check/SKILL.md` | API contract consistency | Compares route responses, Swift models, APIClient usage, and error handling. | `backend/src/app/api`, `Hexbound/Hexbound/Models`, APIClient. | Cross-system and feature-readiness checks. | Endpoint inventory, response shape review, model mapping, error path check. | Frontend/backend contracts must stay synchronized. | No direct defect. | None. | Run against active API block later. | OK |
+| `.claude/skills/architect/SKILL.md` | Game director review | Reviews features against vision, core loop, cross-system fit, and quality gate. | Product pillars, game systems docs, feature proposals. | CDO/project planning. | Pillar check, core loop impact, verdict template. | Changes should strengthen the RPG/PvP loop and avoid scope dilution. | No direct defect. | None. | Decide whether role-agent docs should live in repo or personal skill library. | OK |
+| `.claude/skills/arena/SKILL.md` | PvP designer | Reviews matchmaking fairness, rating health, win/loss feel, exploits, class PvP impact. | Combat/PvP docs, arena/rating code. | PvP feature review. | Matchmaking, rating, anti-exploit, class balance checklist. | PvP should be fair, readable, and not farmable. | No direct defect. | None. | Validate against current PvP implementation later. | OK |
+| `.claude/skills/ascent/SKILL.md` | Progression designer | Reviews power curve, goals, pacing, class progression, anti-patterns. | Progression docs, balance constants, class data. | Progression/economy planning. | Power curve analysis, pacing check, phase impact template. | Progression should avoid walls, dead zones, and unclear goals. | No direct defect. | None. | Validate against current progression curves later. | OK |
+| `.claude/skills/beacon/SKILL.md` | Community/retention designer | Reviews social hooks, re-engagement, social pressure, network effects. | Social/liveops docs and features. | Social/retention review. | Social hook and retention output templates. | Retention should avoid toxic pressure. | No direct defect. | None. | Social implementation audit later. | OK |
+| `.claude/skills/bladework/SKILL.md` | Combat designer | Reviews combat readability, pacing, feedback, counterplay, exploit/stalemate risk. | Combat docs, combat UI/backend logic. | Combat feature review. | Mobile readability, juice, exploit detection. | Combat should be readable on mobile and avoid infinite/stale loops. | No direct defect. | None. | Compare with current combat formulas later. | OK |
+| `.claude/skills/blueprint/SKILL.md` | Design system architect | Checks token use, violations, component reuse, and patterns. | DarkFantasyTheme, Swift views, design docs. | Design-system audits. | Token verification, violation scan, component reuse. | UI should use design-system tokens and reusable components. | Overlaps with `design-compliance`, `canvas`, and `screen`. | None. | Consolidate design-system review roles after design block. | OK |
+| `.claude/skills/calendar/SKILL.md` | LiveOps designer | Reviews daily/weekly/seasonal loops, battle pass, events, comeback mechanics. | LiveOps/battle-pass/daily systems. | Retention and release planning. | Daily loop, weekly loop, event checklist. | LiveOps should support cadence without toxic FOMO/burnout. | No direct defect. | None. | Validate actual event tooling later. | OK |
+| `.claude/skills/canvas/SKILL.md` | UI art director | Reviews visual hierarchy, premium feel, DS compliance, readability, consistency. | SwiftUI screens, DarkFantasyTheme, design docs. | UI polish reviews. | Premium feel, hierarchy, readability checklist. | Visual polish must not break readability or DS rules. | Overlaps with other design review roles. | None. | Consolidate or clarify boundaries in design-system block. | OK |
+| `.claude/skills/cdo/SKILL.md` | Optional orchestrator | Defines multi-agent routing, pipeline construction, agent bus, synthesis, verification. | `.claude/agent-bus/`, skill files, explicit subagent-capable runtime. | Only when user explicitly requests orchestration/delegation. | Classification, sequential/parallel/hybrid pipelines, bus protocol, verify phase. | No subagents unless user explicitly asks and environment permits; bus cleanup must preserve protocol/header. | Default-orchestrator wording, unsafe cleanup command examples, broad non-Hexbound domain map inside project repo. | Reframed as optional; replaced unsafe bus cleanup command. | Decide whether broad personal domains belong in this project repo. | Fixed |
+| `.claude/skills/chronicler/SKILL.md` | Retrospective agent | Gathers evidence, analyzes repeated mistakes, propagates rule/scanner/docs updates. | Git history, scanner scripts, docs/rules. | Retros and process improvement. | Evidence gathering, pattern analysis, scanner enhancement guidelines. | Repeated manual fixes should become rules/scanners/docs. | Still recommended automatic spawning. | Changed to optional subagent only by explicit request/permitted runtime. | Deduplicate with `.skills/skills/chronicler` and `hexbound-retro`. | Fixed |
+| `.claude/skills/conductor/SKILL.md` | Executive producer | Assesses scope, priority, sequencing, and scope creep. | Feature request context, roadmap/product goals. | Planning and release sequencing. | Scope assessment, delivery plan, deferred-v2 list. | Avoid scope creep and identify blockers early. | No direct defect. | None. | May overlap with CDO/strategist. | OK |
+| `.claude/skills/console/SKILL.md` | Admin/live tuning engineer | Checks tunability, safety, admin capabilities for feature values. | live-config, admin panel, backend config. | Admin/liveops review. | Tunability, safety, required admin work. | Tunable values need safe admin surfaces. | No direct defect. | None. | Validate with admin block. | OK |
+| `.claude/skills/cross-system-review/SKILL.md` | Integration review | Maps feature impact across iOS, backend, admin, DB, game systems, docs, deploy. | Full project structure. | Multi-system changes and release checks. | Impact map, contract verification, regression/deploy order. | DB migration before backend/admin/iOS when schema changes. | No direct defect. | None. | Good candidate for canonical cross-system checklist. | OK |
+| `.claude/skills/depths/SKILL.md` | Dungeon/PvE designer | Reviews dungeon structure, difficulty curve, rewards, replay value, boss design. | Dungeon docs/code/balance tables. | PvE feature reviews. | Structure, difficulty, reward, boss checklist. | PvE should have fair risk/reward and replay value. | No direct defect. | None. | Validate against dungeon implementation later. | OK |
+| `.claude/skills/design-compliance/SKILL.md` | Design-system compliance | Gives command/checklist for token, corner radius, SFX, symbols, components, states. | Swift views, DarkFantasyTheme, SFX names. | UI/design-system review. | Token verification, grep checks, severity. | No hardcoded colors, wrong currency symbols, or missing states. | Grep checks are documentation-only and overlap with scripts. | None. | Convert to runnable scanner or merge with guardian scanner later. | OK |
+| `.claude/skills/doc-freshness/SKILL.md` | Documentation freshness | Checks docs index, CLAUDE rules, schema/API/screens/admin docs freshness. | `docs/`, schema, API routes, Swift screens. | Docs audits. | Index, schema-vs-docs, API-vs-docs, screen/admin freshness. | Docs should match current code and source-of-truth paths. | No direct defect. | None. | Run in docs block; may uncover stale docs. | OK |
+| `.claude/skills/economy-safety/SKILL.md` | Economy safety review | Checks sources/sinks, exploit vectors, progression impact, admin readiness. | Balance/economy docs, backend routes, live config. | Economy changes and release reviews. | Sources/sinks, change impact, exploit checks, regression checks. | Rewards must be server-authoritative, non-farmable, and tunable. | Historical 2026-03-25 issues were worded as current facts. | Reframed as historical regression checks; daily-login wording corrected. | Revalidate listed balance issues against current docs/code. | Fixed |
+| `.claude/skills/ember/SKILL.md` | Creative director | Reviews thematic fit, visual identity, emotional beats, naming. | Lore/art/product identity. | Narrative/brand/content reviews. | Thematic fit, visual identity, naming template. | Names/copy should support dark fantasy tone. | No direct defect. | None. | Content/lore source of truth to validate later. | OK |
+| `.claude/skills/engine/SKILL.md` | Gameplay engineer | Reviews server authority, formulas, race conditions, integration. | Backend game logic, combat/economy formulas. | Gameplay implementation reviews. | Formula correctness, race-condition checklist. | Combat/economy outcomes should be server-authoritative. | No direct defect. | None. | Validate against backend gameplay routes later. | OK |
+| `.claude/skills/error-scanner/SKILL.md` | Known-error scanner | Scan-only protocol for ERROR_CATALOG patterns across Swift, backend, Prisma. | `docs/09_rules_and_guidelines/ERROR_CATALOG.md`, project source. | Pre-commit/QA scans. | Swift patterns, pbxproj checks, TypeScript async/PII checks, conflict scan. | Known bug patterns should be found consistently and not auto-fixed. | macOS-fragile grep regexes and stale pbxproj command path. | Converted to `rg` patterns; fixed pbxproj/backend/conflict commands. | Consider moving commands into a real script with tests. | Fixed |
+| `.claude/skills/feature-readiness/SKILL.md` | Feature readiness | Checklist for frontend/backend/schema/admin/game-design/analytics/docs/QA completeness. | Full feature surface. | Done-definition and release checks. | Eight readiness dimensions and output template. | "Done" means user states, backend, admin, docs, analytics, QA all covered. | No direct defect. | None. | Could become canonical definition of done. | OK |
+| `.claude/skills/flow/SKILL.md` | UX director | Reviews 3-second test, tap count, ergonomics, states, flow completeness. | Screens, navigation, UX principles. | UX reviews. | 3-second test, thumb zone, state coverage. | Primary action should be obvious and reachable. | No direct defect. | None. | Validate with screen audit later. | OK |
+| `.claude/skills/fortress/SKILL.md` | Database/integrity engineer | Reviews schema safety, backend/admin Prisma sync, integrity, migrations. | Prisma schemas, migrations, DB access patterns. | DB changes and release gates. | Schema safety, migration verification. | Schema files must stay synchronized and migrations must be verified. | No direct defect. | None. | Use alongside schema drift script. | OK |
+| `.claude/skills/gate/SKILL.md` | Release manager | Reviews change inventory, pre-deploy checklist, deploy sequence, rollback plan. | CI/build/deploy docs and scripts. | Release planning. | Risk level, pre-deploy, rollback verdict. | Releases need build, migration, env, and rollback coverage. | No direct defect. | None. | Overlaps with herald/release-checklist. | OK |
+| `.claude/skills/gauntlet/SKILL.md` | Gameplay QA tester | Reviews fun, exploit risk, frustration, pacing. | Gameplay features, economy/combat flows. | QA/gameplay reviews. | Fun score, exploit/frustration/pacing template. | A feature can be technically correct and still not fun. | No direct defect. | None. | Validate via manual playtest later. | OK |
+| `.claude/skills/heartbeat/SKILL.md` | Core loop designer | Reviews loop position, loop health, session design, one-more-round hooks. | Core loop docs, session systems. | Product/game-design reviews. | Loop position, reward/spend/growth/re-entry checks. | Features should strengthen the core loop. | No direct defect. | None. | Compare to live UX later. | OK |
+| `.claude/skills/instant-retro/SKILL.md` | Session retro | Summarizes work since last retro by git history, diff stat, status, transcripts. | Git history, optional Cowork transcripts, `last-retro.json`. | Retro/progress reports. | Date range, data gathering, domain grouping, state update. | Retro should distinguish done vs unfinished and update state intentionally. | Unbounded git-log path and mutable tracked state dependency. | Added bounded log guidance and no-merge fallback. | Move `last-retro.json` out of tracked project files or confirm it is intentional. | Fixed |
+| `.claude/skills/instant-retro/last-retro.json` | Retro state | Stores timestamp, commit, summary, and retro count from last retro. | `instant-retro/SKILL.md`, git HEAD. | Instant retro workflow. | `timestamp`, `commit`, `summary`, `retro_count`. | State should reflect the latest retro if this workflow is used. | Mutable session state is tracked in repo and can become stale/noisy. | JSON validity checked. | Candidate to de-track or relocate to local state. | Needs review |
+| `.claude/skills/ledger/SKILL.md` | Economy QA analyst | Reviews farm loops, arbitrage, inflation, concurrent exploit risk. | Economy routes/balance docs. | Economy QA. | Farm/arbitrage/inflation/concurrency verdict. | Economy loops must not produce unbounded or double-claim rewards. | No direct defect. | None. | Validate actual economy routes later. | OK |
+| `.claude/skills/lens/SKILL.md` | Data analyst | Defines events, success metrics, failure signals, funnels, sample thresholds. | Analytics/event tracking. | Product analytics reviews. | Event design, metric/funnel framework. | Metrics need measurable success/failure definitions. | No direct defect. | None. | Pair with analytics implementation audit. | OK |
+| `.claude/skills/liveops-readiness/SKILL.md` | LiveOps readiness | Checks config, content management, economy levers, monitoring, rollback. | Admin/live-config/monitoring/deploy. | Release/liveops checks. | Five-section readiness checklist. | Live content should be changeable, observable, and reversible. | No direct defect. | None. | Validate with admin and deploy blocks. | OK |
+| `.claude/skills/lore/SKILL.md` | Narrative designer | Reviews thematic consistency, class fantasy, copy quality. | Lore/product copy/class identities. | Copy/content review. | Theme, tone, copy suggestions. | Product copy should match Hexbound tone. | No direct defect. | None. | Build canonical lore source if absent. | OK |
+| `.claude/skills/monetization-mirror/SKILL.md` | Monetization analyst | Reviews P2W risk, value perception, pressure, whale safety, conversion. | Economy/IAP/shop systems. | Monetization feature review. | P2W, pressure, whale, conversion verdict. | Monetization should be ethical and not pay-to-win. | No direct defect. | None. | Validate IAP/server receipt flow later. | OK |
+| `.claude/skills/nexus/SKILL.md` | Systems designer | Maps systems, traces impact, checks contradictions and integration updates. | System docs/code across domains. | Cross-system design review. | System map, impact trace, contradiction check. | Multi-system changes need explicit side effects and updates. | No direct defect. | None. | Overlaps with cross-system-review; keep one canonical map later. | OK |
+| `.claude/skills/project-audit/SKILL.md` | Full project audit | High-level health check across iOS, backend, schema, API, DS, admin, docs, game systems, release, analytics. | All major project areas and other skills. | Broad project health checks. | Ten audit zones and final priority summary. | Full audit must cover code, docs, release, analytics, and liveops. | No direct defect; overlaps with current wiki audit request but not file-by-file enough by itself. | None. | Could be updated to require wiki file records if kept. | OK |
+| `.claude/skills/psyche/SKILL.md` | Player motivation analyst | Reviews motivation drivers, emotional arc, craving loops, anti-frustration, retention signals. | Product/game systems and UX flows. | Retention/product review. | Motivation driver matrix and verdict. | Features should have emotional hooks without unfair frustration. | No direct defect. | None. | Validate with user flow audit later. | OK |
+| `.claude/skills/pulse/SKILL.md` | Motion/feedback designer | Reviews responsiveness, animation rules, transitions, reward juice, GPU performance. | SwiftUI screens/animations, CLAUDE rules. | UI/motion reviews. | Responsiveness, animation compliance, performance. | Motion should be responsive and GPU-conscious. | No direct defect. | None. | Compare with current animation code later. | OK |
+| `.claude/skills/qa-audit/SKILL.md` | Full game QA audit | Coordinates backend/iOS/economy/database QA and produces release-readiness verdict. | CLAUDE.md, balance/API/schema docs, project code. | Release QA and full game audits. | Preparation, system map, four audit streams, scoring, report sections. | Release verdict must be evidence-based across backend/client/economy/DB. | Required unconditional "4 parallel agents"; baseline issues are dated. | Converted agents to audit streams with explicit subagent gating. | Revalidate 2026-03-25 known-issues registry against current code. | Fixed |
+| `.claude/skills/qa-audit/supplements/GUARDIAN_ADDENDUM.md` | iOS QA addendum | Historical iOS checks for force unwraps, error surfacing, TTL, toast API, compositing. | Guardian/iOS reviews, Swift code. | QA audit supplement. | Force unwrap, error, cache TTL, toast, compositing checks. | Old findings must be revalidated before being reported as current. | Status table said OPEN while main registry marks some fixed. | Added historical snapshot warning and renamed section. | Revalidate each listed issue in iOS block. | Fixed |
+| `.claude/skills/qa-audit/supplements/ORACLE_ADDENDUM.md` | Backend QA addendum | Historical backend checks for rate limiting, PII logs, daily login cooldown, IAP, N+1. | Oracle/backend reviews. | QA audit supplement. | Security, rate limiting, N+1, known issues. | Backend findings must be checked against current routes. | Status table said OPEN while main registry marks auth rate limiting fixed. | Added historical snapshot warning and renamed section. | Revalidate each listed issue in backend block. | Fixed |
+| `.claude/skills/release-checklist/SKILL.md` | Release stability checklist | Pre-deploy checklist for code quality, backend/admin build, schema sync, iOS build, env, rollback. | CI/build/deploy tooling. | Release manager/herald flow. | Seven pre-deploy sections and verdict. | No secrets, no console PII, synced schema, rollback ready. | No direct defect. | None. | Integrate with CI/herald after deploy block. | OK |
+| `.claude/skills/scales/SKILL.md` | Balance designer | Reviews current balance, formulas, class parity, power budget, dominance. | Balance constants/docs, combat/economy formulas. | Balance changes. | Formula verification, class/meta impact, verdict. | Balance changes should not create dominance or class unfairness. | No direct defect. | None. | Validate after balance/code block. | OK |
+| `.claude/skills/screen/SKILL.md` | Client engineer | Reviews Swift architecture, DS code, performance, CLAUDE compliance. | SwiftUI views/ViewModels, DarkFantasyTheme. | iOS code reviews. | Architecture, DS, performance, compliance checklist. | UI state must live in ViewModels; code should avoid heavy body work. | No direct defect. | None. | Validate against Swift files later. | OK |
+| `.claude/skills/scroll/SKILL.md` | Documentation architect | Checks doc impact, freshness, source-of-truth, findability. | `docs/`, CLAUDE.md, source changes. | Documentation reviews. | Docs-to-update/create, stale docs, CLAUDE updates. | Docs need source-of-truth clarity and discoverability. | No direct defect. | None. | Run during docs block. | OK |
+| `.claude/skills/server/SKILL.md` | Backend engineer | Reviews API design, TypeScript quality, data safety, performance. | Backend routes/services/Prisma. | Backend reviews. | API design, validation, transactions, query performance. | API endpoints need validation, auth, data safety, and efficient DB access. | No direct defect. | None. | Validate route-by-route later. | OK |
+| `.claude/skills/shield/SKILL.md` | QA director | Reviews blast radius, test plan, economy safety, release readiness, veto power. | Feature scope, tests, release checklist. | QA/release decisioning. | Risk level, test plan, blocking issues, verdict. | QA can block release when risk is high. | No direct defect. | None. | Pair with actual test matrix later. | OK |
+| `.claude/skills/signal/SKILL.md` | Anti-cheat/security engineer | Reviews trust boundaries, rate limiting, auth, data security, economy security. | Backend APIs, auth, economy routes. | Security reviews. | Client trust, rate limit, auth, PII/secrets, economy safety. | Client cannot be trusted for rewards, combat, or purchases. | No direct defect. | None. | Validate in backend/security blocks. | OK |
+| `.claude/skills/strategist/SKILL.md` | Product strategist | Reviews player/product value, retention, monetization, growth, analytics. | Product goals, analytics, roadmap. | Product planning. | Value, retention, monetization, growth, metric verdict. | Build decisions should be tied to player value and measurable outcomes. | No direct defect. | None. | Overlaps with conductor/psyche/lens; clarify boundaries later. | OK |
+| `.claude/skills/tempo/SKILL.md` | Performance engineer | Reviews GPU, loading, network, memory. | SwiftUI screens, backend requests, assets. | Performance review. | GPU/loading/network/memory checklist. | Avoid expensive overlays, slow loads, over-fetching, memory leaks. | No direct defect. | None. | Validate during Swift/admin/backend performance audit. | OK |
+| `.claude/skills/vault/SKILL.md` | Economy designer | Reviews sources/sinks, daily flow, exploit vectors, six-month projection. | Economy docs, balance constants, routes. | Economy design review. | Currency impact, source/sink, inflation/exploit verdict. | Economy changes should stay sustainable over time. | No direct defect. | None. | Pair with ledger/economy-safety during economy audit. | OK |
+
+## Cross-Block Consistency Fixes
+
+These files were already covered in earlier blocks but were safely corrected while auditing this block because the same hazards appeared in product/governance wording:
+
+| Path | Reason | Fix |
+|------|--------|-----|
+| `.claude/skills/herald/SKILL.md` | Stale Xcode scheme referenced `IronFistArena`. | Updated to `Hexbound` project/scheme command. |
+| `.claude/skills/herald/scripts/deploy.sh` | Same stale Xcode scheme in deploy flow. | Updated to `Hexbound` project/scheme command; shell syntax rechecked. |
+| `.skills/skills/herald/SKILL.md` | Duplicate stale Xcode scheme. | Updated to `Hexbound` project/scheme command. |
+| `.skills/skills/herald/scripts/deploy.sh` | Duplicate stale Xcode scheme. | Updated to `Hexbound` project/scheme command; shell syntax rechecked. |
+| `.claude/skills/blacksmith/SKILL.md` | Subagent wording could imply automatic delegation. | Reworded to explicit-request/permitted-runtime only. |
+| `.skills/skills/blacksmith/SKILL.md` | Same duplicate wording. | Reworded consistently. |
+| `.claude/skills/gatekeeper/SKILL.md` | Subagent wording could imply automatic delegation. | Reworded consistently. |
+| `.skills/skills/gatekeeper/SKILL.md` | Same duplicate wording. | Reworded consistently. |
+| `.claude/skills/mirror/SKILL.md` | Subagent wording could imply automatic delegation. | Reworded consistently. |
+| `.skills/skills/mirror/SKILL.md` | Same duplicate wording. | Reworded consistently. |
+| `.skills/skills/chronicler/SKILL.md` | Duplicate auto-spawn wording. | Reworded consistently. |
+
+## Duplicate Logic Found
+
+- `project-audit`, `qa-audit`, and `cdo` all describe broad project audit orchestration. Only this wiki audit is currently file-by-file.
+- `blueprint`, `design-compliance`, `canvas`, `screen`, `pulse`, and `flow` overlap on SwiftUI/design-system review.
+- `vault`, `ledger`, `economy-safety`, `scales`, and `monetization-mirror` overlap on economy safety but from different lenses.
+- Agent Bus boilerplate is repeated across most skill files; that is consistent but brittle if the bus protocol changes.
+- `.claude/skills` and `.skills/skills` duplicate several operational skills; canonical ownership remains unresolved from [[block-003-claude-operational-safety]].
+
+## Files Without Clear Project Role
+
+- `.claude/skills/cdo/SKILL.md` includes non-Hexbound domains (Amazon, finance, marketing, sales, office docs). It may be a personal/global orchestrator rather than a Hexbound project file.
+- `.claude/skills/instant-retro/last-retro.json` is mutable local state but is tracked in the project.
+- Ignored `.claude/agent-bus/chronicler.md` is runtime output, not a source-of-truth document.
+
+## Candidates For Removal / De-Tracking
+
+- `.claude/skills/instant-retro/last-retro.json` — candidate to move to ignored local state.
+- `.claude/skills/cdo/SKILL.md` — candidate to move to a personal/global skill repo unless Hexbound explicitly wants project-local orchestration.
+- `.claude/agent-bus/chronicler.md` — ignored runtime output; safe candidate for local cleanup, not a project source file.
+
+## Documentation Missing Or Stale
+
+- QA known issues from March 25, 2026 need live revalidation; this block only fixed stale wording.
+- Economy historical concerns need current balance-code comparison.
+- The role-agent set has no single canonical map that says which skill owns which decision; CDO partially covers this but mixes in non-project domains.
+- Agent Bus protocol is ignored by git but referenced by many tracked skill docs; decide whether protocol/header are generated local runtime files or tracked project docs.
+
+## Verification
+
+- Searched `.claude/skills` and `.skills/skills` for stale `IronFistArena`, unconditional parallel-agent phrasing, unsafe agent-bus cleanup, and GNU-only `grep -P`/`grep -oP`; no remaining matches in audited areas.
+- `instant-retro/last-retro.json` parses as JSON.
+- Herald deploy scripts pass `bash -n` after scheme update.

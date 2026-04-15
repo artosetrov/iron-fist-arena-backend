@@ -1,22 +1,41 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # git-watcher.sh — Watches for .git-trigger file and auto-commits
 # Run this in a terminal tab: ./scripts/git-watcher.sh
 # Claude creates .git-trigger with commit message → this script commits & pushes
 #
-# Asset sync: Automatically runs sync-assets.sh before each commit to pull
-# latest assets from Supabase Storage into the Xcode bundle.
+# Asset sync: optionally runs sync-assets.sh before each commit when
+# HEXBOUND_AUTO_SYNC_ASSETS=1 is set in the shell environment.
 # =============================================================================
 
-REPO_DIR="/Users/artosetrov/Documents/Cursor AI/PVP RPG"
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
 TRIGGER="$REPO_DIR/.git-trigger"
 SYNC_SCRIPT="$REPO_DIR/scripts/sync-assets.sh"
+AUTO_SYNC_ASSETS="${HEXBOUND_AUTO_SYNC_ASSETS:-0}"
+
+clear_stale_lock() {
+  local lock_file="$1"
+  if [ ! -e "$lock_file" ]; then
+    return 0
+  fi
+
+  if command -v lsof >/dev/null 2>&1 && lsof "$lock_file" >/dev/null 2>&1; then
+    echo "❌ Git lock is active: $lock_file"
+    return 1
+  fi
+
+  echo "⚠️  Clearing stale Git lock: $lock_file"
+  rm -f "$lock_file"
+}
 
 echo "🔮 Git watcher started. Watching for $TRIGGER..."
 
 while true; do
   if [ -f "$TRIGGER" ]; then
-    MSG=$(cat "$TRIGGER")
+    MSG="$(<"$TRIGGER")"
     rm -f "$TRIGGER"
 
     echo ""
@@ -24,10 +43,16 @@ while true; do
     echo "---"
 
     cd "$REPO_DIR"
-    rm -f .git/index.lock .git/HEAD.lock
+    clear_stale_lock .git/index.lock || continue
+    clear_stale_lock .git/HEAD.lock || continue
+    CURRENT_BRANCH="$(git branch --show-current)"
+    if [ -z "$CURRENT_BRANCH" ]; then
+      echo "❌ Detached HEAD; skipping auto-push."
+      continue
+    fi
 
-    # 🎨 Auto-sync assets from Supabase before committing
-    if [ -x "$SYNC_SCRIPT" ]; then
+    # 🎨 Optional asset sync from Supabase before committing
+    if [ "$AUTO_SYNC_ASSETS" = "1" ] && [ -x "$SYNC_SCRIPT" ]; then
       echo "🎨 Syncing assets from Supabase..."
       "$SYNC_SCRIPT" --pre-commit 2>&1 | tail -5
       echo "---"
@@ -39,12 +64,16 @@ while true; do
       echo "Nothing to commit."
     else
       git commit -m "$MSG"
-      git push origin main
+      git push origin "$CURRENT_BRANCH"
 
       # Push admin subtree if admin/ changed
-      if git diff HEAD~1 --name-only | grep -q "^admin/"; then
+      if git diff-tree --no-commit-id --name-only -r HEAD | grep -q "^admin/"; then
         echo "📜 Admin changed — pushing subtree..."
-        git subtree push --prefix=admin admin-deploy main
+        if git remote get-url admin-deploy >/dev/null 2>&1; then
+          git subtree push --prefix=admin admin-deploy main
+        else
+          echo "Admin remote 'admin-deploy' not configured — skipping subtree push."
+        fi
       fi
 
       echo "✅ Done!"

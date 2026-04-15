@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ConsumableType } from '@prisma/client'
+import { calculateCurrentHp } from '@/lib/game/hp-regen'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { rateLimit } from '@/lib/rate-limit'
+import {
+  getHpRestorePercent,
+  getStaminaRestore,
+  isHealthPotion,
+  isStaminaPotion,
+} from '@/lib/game/consumable-effects'
 
-/**
- * Stamina restore amounts by item name.
- */
-const STAMINA_RESTORE: Record<string, number> = {
-  'Small Stamina Potion': 30,
-  'Medium Stamina Potion': 60,
-  'Large Stamina Potion': 999,
+const LEGACY_CONSUMABLE_BY_NAME: Record<string, ConsumableType> = {
+  'Small Stamina Potion': 'stamina_potion_small',
+  'Medium Stamina Potion': 'stamina_potion_medium',
+  'Large Stamina Potion': 'stamina_potion_large',
+  'Small Health Potion': 'health_potion_small',
+  'Medium Health Potion': 'health_potion_medium',
+  'Large Health Potion': 'health_potion_large',
 }
 
 /**
@@ -66,40 +74,98 @@ export async function POST(req: NextRequest) {
     }
 
     const itemName = inventoryItem.item.itemName
-    const staminaRestore = STAMINA_RESTORE[itemName]
+    const catalogConsumableType =
+      inventoryItem.item.catalogId &&
+      Object.values(ConsumableType).includes(inventoryItem.item.catalogId as ConsumableType)
+        ? inventoryItem.item.catalogId as ConsumableType
+        : null
+    const consumableType = catalogConsumableType ?? LEGACY_CONSUMABLE_BY_NAME[itemName]
 
-    if (staminaRestore == null) {
+    if (!consumableType) {
+      return NextResponse.json(
+        { error: 'Unknown consumable effect for this item' },
+        { status: 400 },
+      )
+    }
+    const now = new Date()
+    if (isStaminaPotion(consumableType)) {
+      const staminaResult = await calculateCurrentStamina(
+        character.currentStamina,
+        character.maxStamina,
+        character.lastStaminaUpdate ?? now,
+      )
+
+      if (staminaResult.stamina >= character.maxStamina) {
+        return NextResponse.json(
+          { error: 'Stamina is already full' },
+          { status: 400 },
+        )
+      }
+
+      const staminaRestore = await getStaminaRestore(consumableType)
+      const newStamina = Math.min(staminaResult.stamina + staminaRestore, character.maxStamina)
+
+      await prisma.$transaction([
+        prisma.equipmentInventory.delete({ where: { id: inventory_id } }),
+        prisma.character.update({
+          where: { id: character_id },
+          data: {
+            currentStamina: newStamina,
+            lastStaminaUpdate: now,
+          },
+        }),
+      ])
+
+      // Update daily + weekly quest progress
+      await Promise.all([
+        updateDailyQuestProgress(prisma, character_id, 'consumable_use'),
+        updateWeeklyChallengeProgress(prisma, character_id, 'consumable_use'),
+      ])
+
+      return NextResponse.json({
+        used: true,
+        consumable_type: consumableType,
+        itemName,
+        stamina: {
+          before: staminaResult.stamina,
+          after: newStamina,
+          max: character.maxStamina,
+          restored: newStamina - staminaResult.stamina,
+        },
+      })
+    }
+
+    if (!isHealthPotion(consumableType)) {
       return NextResponse.json(
         { error: 'Unknown consumable effect for this item' },
         { status: 400 },
       )
     }
 
-    // Calculate current stamina with regen
-    const staminaResult = await calculateCurrentStamina(
-      character.currentStamina,
-      character.maxStamina,
-      character.lastStaminaUpdate ?? new Date(),
+    const hpResult = await calculateCurrentHp(
+      character.currentHp,
+      character.maxHp,
+      character.lastHpUpdate ?? now,
     )
 
-    if (staminaResult.stamina >= character.maxStamina) {
+    if (hpResult.hp >= character.maxHp) {
       return NextResponse.json(
-        { error: 'Stamina is already full' },
+        { error: 'Health is already full' },
         { status: 400 },
       )
     }
 
-    const newStamina = Math.min(staminaResult.stamina + staminaRestore, character.maxStamina)
-    const now = new Date()
+    const hpRestorePercent = await getHpRestorePercent(consumableType)
+    const restoreAmount = Math.floor(character.maxHp * hpRestorePercent / 100)
+    const newHp = Math.min(hpResult.hp + restoreAmount, character.maxHp)
 
-    // Delete item and update stamina in a transaction
     await prisma.$transaction([
       prisma.equipmentInventory.delete({ where: { id: inventory_id } }),
       prisma.character.update({
         where: { id: character_id },
         data: {
-          currentStamina: newStamina,
-          lastStaminaUpdate: now,
+          currentHp: newHp,
+          lastHpUpdate: now,
         },
       }),
     ])
@@ -113,12 +179,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       used: true,
+      consumable_type: consumableType,
       itemName,
-      stamina: {
-        before: staminaResult.stamina,
-        after: newStamina,
-        max: character.maxStamina,
-        restored: newStamina - staminaResult.stamina,
+      health: {
+        before: hpResult.hp,
+        after: newHp,
+        max: character.maxHp,
+        restored: newHp - hpResult.hp,
       },
     })
   } catch (error) {

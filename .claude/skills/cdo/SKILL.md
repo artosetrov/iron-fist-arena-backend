@@ -1,16 +1,14 @@
 ---
 name: cdo
 description: >
-  CDO v2 — АВТОПИЛОТ. Принимает ЛЮБОЙ запрос, мгновенно определяет нужных агентов, запускает pipeline (цепочка/параллель), агенты передают контекст друг другу через CDO. Пользователь получает готовый результат. Не спрашивает "какого агента вызвать?" — решает сам. Не спрашивает "запустить?" — запускает. Покрывает ВСЮ экосистему: Hexbound Studio (30+), Amazon Team (12), Finance Office (15+), Design, Data, Engineering, Marketing, Product, Sales, документы.
+  CDO v2 — опциональный оркестратор. Используй только когда пользователь явно просит оркестрацию, делегирование или параллельную агентную работу, и только если текущая среда разрешает запуск субагентов.
 
-  MANDATORY: Это дефолтный режим для ЛЮБОГО запроса. Единственное исключение — если задача на 100% попадает в один конкретный скилл (напр. "задеплой" → herald). Во всех остальных случаях — CDO принимает и маршрутизирует.
-
-  Triggers: ЛЮБОЙ запрос. "CDO", "оркестратор", "сделай", "проверь", "добавь фичу", "полный аудит", "утренний бриф", "morning brief", "что по делам", или просто описание задачи без указания агента.
+  Triggers: "CDO", "оркестратор", "запусти агентов", "разбей на субагентов", "параллельно агентами", "делегируй".
 ---
 
-# CDO v2 — Autonomous Agent Orchestrator
+# CDO v2 — Optional Agent Orchestrator
 
-> **Принцип: ZERO-ASK EXECUTION.** Пользователь описывает задачу → CDO строит pipeline → агенты работают цепочкой → результат приходит готовый.
+> **Safety override:** Не автозапускай CDO как дефолтный режим. Не запускай субагентов, если пользователь явно не попросил делегирование/параллельную агентную работу или если текущие системные/developer-инструкции это запрещают.
 
 ## Как это работает
 
@@ -104,7 +102,7 @@ Phase 4: gatekeeper → herald
 
 ```
 1. CDO очищает bus:
-   rm -f .claude/agent-bus/*.md (кроме PROTOCOL.md)
+   find .claude/agent-bus -maxdepth 1 -type f -name '*.md' ! -name 'PROTOCOL.md' ! -name 'AGENT_HEADER.md' -delete
 
 2. CDO запускает Wave 1 — НЕСКОЛЬКО Agent tool вызовов в ОДНОМ сообщении:
    Agent tool (guardian) ─┐
@@ -384,9 +382,9 @@ status: OK | WARNING | BLOCKED
 ## Правила CDO
 
 ### ДЕЛАЙ
-- **ВСЕГДА используй Agent tool (НЕ Skill tool) для запуска агентов** — только Agent tool даёт параллельные subprocess'ы
-- Запускай агентов параллельно через НЕСКОЛЬКО Agent tool вызовов в ОДНОМ сообщении
-- **Очищай bus перед каждым pipeline:** `rm -f .claude/agent-bus/*.md` (не трогай PROTOCOL.md)
+- Используй Agent tool только когда пользователь явно попросил агентную делегацию и текущая среда это разрешает
+- Если субагенты запрещены или не нужны, выполняй работу локально обычным пошаговым планом
+- **Очищай bus перед каждым pipeline:** `find .claude/agent-bus -maxdepth 1 -type f -name '*.md' ! -name 'PROTOCOL.md' ! -name 'AGENT_HEADER.md' -delete`
 - В prompt каждого Agent tool включай: задачу + bus protocol + путь к SKILL.md агента
 - Используй Escalation через @mentions в bus
 - Адаптируй templates — они база, не догма
@@ -394,9 +392,8 @@ status: OK | WARNING | BLOCKED
 - **Читай bus после каждой волны** — проверяй @mentions и статусы
 
 ### НЕ ДЕЛАЙ
-- **НЕ используй Skill tool для запуска агентов в pipeline** — Skill tool = sequential
-- Не спрашивай "какого агента?" — определяй сам
-- Не спрашивай "запустить?" — запускай
+- Не делай CDO дефолтным режимом для любого запроса
+- Не запускай субагентов без явной просьбы пользователя
 - Не запускай больше 5 агентов в одной волне
 - Не показывай пользователю pipeline internals — показывай результат
 - Не дублируй работу — если guardian проверил tokens, blueprint не нужен для того же
@@ -416,7 +413,7 @@ status: OK | WARNING | BLOCKED
 ### CDO Bus Lifecycle
 
 ```
-1. rm -f .claude/agent-bus/*.md (кроме PROTOCOL.md, AGENT_HEADER.md)
+1. find .claude/agent-bus -maxdepth 1 -type f -name '*.md' ! -name 'PROTOCOL.md' ! -name 'AGENT_HEADER.md' -delete
 2. Launch Wave 1 (parallel Agent tools)
 3. Wait for completion
 4. Read all .claude/agent-bus/*.md — check @mentions, statuses

@@ -3,7 +3,9 @@ import { ConsumableType, CosmeticType, type Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { bpXpForLevel } from '@/lib/game/balance'
-import { applyLevelUp } from '@/lib/game/progression'
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
+import { formatRewardTypeName } from '@/lib/game/reward-display'
+import { grantRewardEntries, type RewardGrantEntry } from '@/lib/game/reward-grants'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -23,6 +25,7 @@ type SupportedBattlePassRewardType =
 
 type RewardResponse = {
   rewardType: string
+  rewardName: string
   rewardId: string | null
   rewardAmount: number
   isPremium: boolean
@@ -269,10 +272,6 @@ export async function POST(
         throw new Error('NO_CLAIMABLE_REWARDS')
       }
 
-      let goldIncrement = 0
-      let gemsIncrement = 0
-      let xpIncrement = 0
-
       const staminaBefore = (await calculateCurrentStamina(
         lockedCharacter.current_stamina,
         lockedCharacter.max_stamina,
@@ -280,8 +279,7 @@ export async function POST(
       )).stamina
       let staminaAfter = staminaBefore
 
-      const pendingItemIds: string[] = []
-      const pendingConsumables = new Map<ConsumableType, number>()
+      const rewardEntries: RewardGrantEntry[] = []
       const pendingCosmetics = new Map<string, { type: CosmeticType; refId: string }>()
       const claimedRewards: RewardResponse[] = []
 
@@ -298,13 +296,13 @@ export async function POST(
 
         switch (rewardType) {
           case 'gold':
-            goldIncrement += reward.rewardAmount
+            rewardEntries.push({ type: 'gold', quantity: reward.rewardAmount })
             break
           case 'gems':
-            gemsIncrement += reward.rewardAmount
+            rewardEntries.push({ type: 'gems', quantity: reward.rewardAmount })
             break
           case 'xp':
-            xpIncrement += reward.rewardAmount
+            rewardEntries.push({ type: 'xp', quantity: reward.rewardAmount })
             break
           case 'stamina':
             staminaAfter = Math.min(
@@ -316,11 +314,11 @@ export async function POST(
             if (!reward.rewardId || !isConsumableType(reward.rewardId)) {
               throw new Error(`INVALID_REWARD_CONFIG:${reward.id}`)
             }
-
-            pendingConsumables.set(
-              reward.rewardId,
-              (pendingConsumables.get(reward.rewardId) ?? 0) + reward.rewardAmount,
-            )
+            rewardEntries.push({
+              type: 'consumable',
+              id: reward.rewardId,
+              quantity: reward.rewardAmount,
+            })
             break
           }
           case 'item':
@@ -328,19 +326,11 @@ export async function POST(
             if (!reward.rewardId) {
               throw new Error(`INVALID_REWARD_CONFIG:${reward.id}`)
             }
-
-            const item = await tx.item.findUnique({
-              where: { id: reward.rewardId },
-              select: { id: true },
+            rewardEntries.push({
+              type: 'item',
+              id: reward.rewardId,
+              quantity: reward.rewardAmount,
             })
-
-            if (!item) {
-              throw new Error(`INVALID_REWARD_CONFIG:${reward.id}`)
-            }
-
-            for (let i = 0; i < reward.rewardAmount; i += 1) {
-              pendingItemIds.push(item.id)
-            }
             break
           }
           case 'skin':
@@ -372,20 +362,11 @@ export async function POST(
 
         claimedRewards.push({
           rewardType: reward.rewardType,
+          rewardName: formatRewardTypeName(reward.rewardType),
           rewardId: reward.rewardId,
           rewardAmount: reward.rewardAmount,
           isPremium: reward.isPremium,
         })
-      }
-
-      if (pendingItemIds.length > 0) {
-        const inventoryCount = await tx.equipmentInventory.count({
-          where: { characterId: character_id },
-        })
-
-        if (inventoryCount + pendingItemIds.length > lockedCharacter.inventory_slots) {
-          throw new Error('INVENTORY_FULL')
-        }
       }
 
       for (const reward of claimableRewards) {
@@ -398,61 +379,18 @@ export async function POST(
         })
       }
 
-      // Gold now lives on User
-      if (goldIncrement > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gold: { increment: goldIncrement } },
-        })
-      }
+      const rewardGrantResult = await grantRewardEntries(tx, {
+        userId: user.id,
+        characterId: character_id,
+        rewards: rewardEntries,
+      })
 
-      if (
-        xpIncrement > 0 ||
-        staminaAfter !== staminaBefore
-      ) {
+      if (staminaAfter !== staminaBefore) {
         await tx.character.update({
           where: { id: character_id },
           data: {
-            ...(xpIncrement > 0 ? { currentXp: { increment: xpIncrement } } : {}),
-            ...(staminaAfter !== staminaBefore
-              ? {
-                  currentStamina: staminaAfter,
-                  lastStaminaUpdate: now,
-                }
-              : {}),
-          },
-        })
-      }
-
-      if (gemsIncrement > 0) {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gems: { increment: gemsIncrement } },
-        })
-      }
-
-      for (const [consumableType, quantity] of pendingConsumables.entries()) {
-        await tx.consumableInventory.upsert({
-          where: {
-            characterId_consumableType: {
-              characterId: character_id,
-              consumableType,
-            },
-          },
-          update: { quantity: { increment: quantity } },
-          create: {
-            characterId: character_id,
-            consumableType,
-            quantity,
-          },
-        })
-      }
-
-      for (const itemId of pendingItemIds) {
-        await tx.equipmentInventory.create({
-          data: {
-            characterId: character_id,
-            itemId,
+            currentStamina: staminaAfter,
+            lastStaminaUpdate: now,
           },
         })
       }
@@ -478,22 +416,28 @@ export async function POST(
         }
       }
 
-      const levelUpResult = xpIncrement > 0
-        ? await applyLevelUp(tx, character_id)
-        : null
-
       return {
         claimedRewards,
-        levelUpResult,
+        rewardGrantResult,
       }
     })
+
+    if (result.rewardGrantResult.levelUpResult?.leveledUp) {
+      await Promise.all([
+        invalidateSkillCache(character_id),
+        invalidatePassiveCache(character_id),
+      ])
+    }
 
     return NextResponse.json({
       level: targetLevel,
       rewards: result.claimedRewards,
-      leveled_up: result.levelUpResult?.leveledUp ?? false,
-      new_level: result.levelUpResult?.newLevel,
-      stat_points_awarded: result.levelUpResult?.statPointsAwarded,
+      gold: result.rewardGrantResult.gold,
+      gems: result.rewardGrantResult.gems,
+      xp: result.rewardGrantResult.xp,
+      leveled_up: result.rewardGrantResult.levelUpResult?.leveledUp ?? false,
+      new_level: result.rewardGrantResult.levelUpResult?.newLevel,
+      stat_points_awarded: result.rewardGrantResult.levelUpResult?.statPointsAwarded,
     })
   } catch (error) {
     if (error instanceof Error) {

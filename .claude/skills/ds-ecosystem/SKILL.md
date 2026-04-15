@@ -8,7 +8,9 @@ description: |
 
 Ты строишь полную Figma-экосистему Hexbound: все экраны, все токены, все компоненты, все состояния. Результат: любой экран собирается только из DS, full 1:1 parity с кодом.
 
-## Текущее состояние (на 2026-04-03)
+## Текущее состояние (исторический снимок на 2026-04-03)
+
+Перед выполнением обнови этот снимок из текущего Swift-кода, `docs/07_ui_ux/SCREEN_INVENTORY.md`, Figma metadata и wiki `[[screens]]`. Не считай числа ниже актуальными без повторной проверки.
 
 ### УЖЕ ГОТОВО (DS файл: `uDjXIz7CdJxcEOI5jCBcjY`)
 - ✅ 359 design tokens (188 Primitives + 158 Semantic + 14 Spacing)
@@ -37,7 +39,7 @@ description: |
 
 Зафиксируй полный инвентарь из Swift кода:
 
-**48 экранов по категориям:**
+**Исторический список экранов по категориям:**
 
 | Категория | Экраны |
 |---|---|
@@ -155,7 +157,7 @@ Buttons(6), Cards(1), Dividers(1), TabSwitcher(1), ProgressBars(1), Badges&Pills
 ### ЭТАП 9: QA COVERAGE (используй `ds-qa-coverage` скилл)
 
 Финальная проверка:
-- Все 48 экранов покрыты
+- Все экраны из актуального screen inventory покрыты
 - Все состояния покрыты (min 3: default, loading, empty/error)
 - Все компоненты используются
 - Нет orphaned компонентов
@@ -165,7 +167,7 @@ Buttons(6), Cards(1), Dividers(1), TabSwitcher(1), ProgressBars(1), Badges&Pills
 ### ЭТАП 10: ОТЧЁТ
 
 Выдай:
-1. Полный список экранов (48) + состояний
+1. Полный список экранов из актуального inventory + состояний
 2. Полный список токенов (359)
 3. Полный список компонентов (45+)
 4. Что было добавлено
@@ -178,7 +180,7 @@ Buttons(6), Cards(1), Dividers(1), TabSwitcher(1), ProgressBars(1), Badges&Pills
 1. ds-code-audit → найти inline-паттерны
 2. ds-extract-component → извлечь в Swift + Figma DS
 3. ds-figma-sync → проверить паритет токенов
-4. ds-screen-builder → собрать все 48 экранов
+4. ds-screen-builder → собрать все экраны из актуального inventory
 5. ds-prototype → подключить flow
 6. ds-qa-coverage → финальная проверка
 ```

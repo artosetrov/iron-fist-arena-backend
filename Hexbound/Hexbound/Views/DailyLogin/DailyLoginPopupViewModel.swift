@@ -79,28 +79,11 @@ final class DailyLoginPopupViewModel {
         // Fire API in background — don't block UI
         Task { [weak self] in
             guard let self else { return }
-            let updatedData = await service.claimReward()
+            let claimResponse = await service.claimReward()
             isClaiming = false
-            if let data = updatedData {
-                loginData = data
-
-                // Show reward modal — parse reward from the daily reward table
-                let rewards = DailyReward.rewards(from: cache)
-                if let todayReward = rewards.first(where: { $0.day == currentDay }) {
-                    // Parse gold/xp from label (e.g. "150 Gold", "50 XP")
-                    let goldAmount = Self.parseRewardAmount(todayReward.label, type: "Gold")
-                    let xpAmount = Self.parseRewardAmount(todayReward.label, type: "XP")
-                    let gemsAmount = Self.parseRewardAmount(todayReward.label, type: "Gems")
-
-                    claimRewardConfig = ClaimRewardConfig(
-                        title: "DAILY REWARD\nCLAIMED!",
-                        subtitle: "Day \(currentDay)",
-                        goldReward: goldAmount,
-                        gemsReward: gemsAmount,
-                        xpReward: xpAmount,
-                        lootItems: []
-                    )
-                }
+            if let claimResponse {
+                loginData = claimResponse.status
+                claimRewardConfig = buildClaimRewardConfig(from: claimResponse, claimedDay: currentDay)
             } else {
                 // Revert on failure
                 hasClaimed = false
@@ -150,15 +133,43 @@ final class DailyLoginPopupViewModel {
         appState.dismissDailyLoginPopup()
     }
 
-    // MARK: - Reward Parsing
+    private func buildClaimRewardConfig(
+        from response: DailyLoginClaimResponse,
+        claimedDay: Int
+    ) -> ClaimRewardConfig {
+        let reward = response.reward.rewardDef
+        var goldReward = 0
+        var gemsReward = response.premiumGemsAwarded
+        var lootItems: [ClaimLootItem] = []
 
-    /// Extracts a numeric amount from reward label like "150 Gold" or "50 XP".
-    private static func parseRewardAmount(_ label: String, type: String) -> Int {
-        let lowered = label.lowercased()
-        let typeKey = type.lowercased()
-        guard lowered.contains(typeKey) else { return 0 }
-        // Extract first number from the label
-        let digits = label.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-        return Int(digits) ?? 0
+        switch reward.type {
+        case "gold":
+            goldReward = reward.amount
+        case "gems":
+            gemsReward += reward.amount
+        case "consumable":
+            lootItems = [
+                ClaimLootItem(
+                    id: reward.itemId ?? "daily-login-consumable-\(claimedDay)",
+                    name: reward.resolvedLabel,
+                    quantity: reward.amount,
+                    imageKey: reward.assetName,
+                    fallbackIcon: "cross.vial",
+                    rarity: .uncommon,
+                    rarityColor: DarkFantasyTheme.rarityUncommon
+                )
+            ]
+        default:
+            break
+        }
+
+        return ClaimRewardConfig(
+            title: "DAILY REWARD\nCLAIMED!",
+            subtitle: "Day \(claimedDay)",
+            goldReward: goldReward,
+            gemsReward: gemsReward,
+            xpReward: 0,
+            lootItems: lootItems
+        )
     }
 }

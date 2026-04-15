@@ -106,6 +106,12 @@ struct MailUnreadResponse: Codable {
 struct MailClaimResponse: Codable {
     let success: Bool
     let claimed: [MailAttachment]?
+    let gold: Int?
+    let gems: Int?
+    let xp: Int?
+    let leveledUp: Bool?
+    let newLevel: Int?
+    let statPointsAwarded: Int?
 }
 
 /// Structured data parsed from battle_invite mail body (JSON)

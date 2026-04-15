@@ -47,6 +47,8 @@ private struct ActiveSkillSlotButton: View {
     private var isOnCooldown: Bool { (slot?.cooldownRemaining ?? 0) > 0 }
     private var isReady: Bool { slot?.isReady == true }
     private var canTap: Bool { isInteractive && isReady }
+    private var isConsumable: Bool { slot?.isConsumable == true }
+    private var isConsumed: Bool { slot?.consumed == true }
 
     private var strokeColor: Color {
         if isArmed { return DarkFantasyTheme.gold }
@@ -56,7 +58,10 @@ private struct ActiveSkillSlotButton: View {
 
     private var iconColor: Color {
         if isEmpty { return DarkFantasyTheme.textDisabled }
-        if isOnCooldown { return DarkFantasyTheme.textDisabled }
+        if isOnCooldown || isConsumed { return DarkFantasyTheme.textDisabled }
+        // Consumables (potions) use a green tint so players can instantly
+        // distinguish them from gold-tinted talent actives in the HUD.
+        if isConsumable { return DarkFantasyTheme.success }
         return DarkFantasyTheme.gold
     }
 
@@ -70,6 +75,11 @@ private struct ActiveSkillSlotButton: View {
 
                 if let slot, let action = slot.talentAction {
                     Image(systemName: action.sfSymbol)
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                } else if let slot, slot.isConsumable {
+                    // Consumable slot (Phase 4.C) — potion vial icon.
+                    Image(systemName: "cross.vial.fill")
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(iconColor)
                 } else {
@@ -95,6 +105,16 @@ private struct ActiveSkillSlotButton: View {
                         .foregroundStyle(DarkFantasyTheme.textPrimary)
                         .contentTransition(.numericText(countsDown: true))
                         .id("cd-\(slotIndex)-\(slot.cooldownRemaining)")
+                } else if isConsumable && isConsumed {
+                    // Phase 4.C — one-shot consumable already fired this duel.
+                    // Mirror cooldown-overlay styling so the slot reads as
+                    // "spent" without introducing a new visual vocabulary.
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                        .fill(Color.black.opacity(0.55))
+                    Text("USED")
+                        .font(DarkFantasyTheme.badge)
+                        .tracking(1)
+                        .foregroundStyle(DarkFantasyTheme.textSecondary)
                 }
             }
             .frame(width: 56, height: 56)
@@ -130,6 +150,7 @@ private struct ActiveSkillSlotButton: View {
 
     private var accessibilityLabel: String {
         guard let slot else { return "Empty active slot \(slotIndex + 1)" }
+        if isConsumable && isConsumed { return "\(slot.name), used this battle" }
         if isOnCooldown { return "\(slot.name), cooldown \(slot.cooldownRemaining) rounds" }
         if isArmed { return "\(slot.name), armed" }
         return "\(slot.name), ready"
@@ -237,6 +258,77 @@ struct ActiveFireBanner: View {
                 // "no scale animations" rule.
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
                     .fill(s.color.opacity(glowPulse))
+                    .blur(radius: 12)
+                    .allowsHitTesting(false)
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
+            .onAppear {
+                glowPulse = 0.55
+                withAnimation(.easeOut(duration: 0.6)) {
+                    glowPulse = 0.0
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Consumable Fire Banner (Phase 4.C)
+
+/// Transient banner shown when a player fires a consumable (health potion).
+/// Visually distinct from `ActiveFireBanner` — green success tint + potion icon —
+/// so players register "I drank a potion" separately from "I fired a talent".
+/// Caller nils the `consumableType` binding after ~1.5s to dismiss.
+struct ConsumableFireBanner: View {
+    let consumableType: String?
+    let isOpponent: Bool
+
+    @State private var glowPulse: CGFloat = 0.0
+
+    /// Human-readable label derived from the server's `consumable_type`. We
+    /// intentionally avoid pulling the full `ConsumableMeta` registry here —
+    /// the banner is a momentary cue, not a catalog row.
+    private var label: String {
+        guard let raw = consumableType else { return "POTION" }
+        switch raw {
+        case "health_potion_small":  return "SMALL POTION"
+        case "health_potion_medium": return "MEDIUM POTION"
+        case "health_potion_large":  return "LARGE POTION"
+        default:
+            // Fallback: humanize the snake_case key ("foo_bar" -> "FOO BAR").
+            return raw.replacingOccurrences(of: "_", with: " ").uppercased()
+        }
+    }
+
+    private var tint: Color {
+        // Opponent potions (reserved for Phase 5+) should read as a threat,
+        // so tint red in that case; player potions are a positive moment.
+        isOpponent ? DarkFantasyTheme.danger : DarkFantasyTheme.success
+    }
+
+    var body: some View {
+        if consumableType != nil {
+            HStack(spacing: LayoutConstants.spaceXS) {
+                Image(systemName: "cross.vial.fill")
+                    .font(.system(size: 12, weight: .bold))
+                Text(label + "!")
+                    .font(DarkFantasyTheme.buttonLabelCompact)
+                    .tracking(2)
+            }
+            .foregroundStyle(tint)
+            .padding(.horizontal, LayoutConstants.spaceMS)
+            .padding(.vertical, LayoutConstants.spaceXS)
+            .background(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(DarkFantasyTheme.bgElevated.opacity(0.92))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .stroke(tint.opacity(0.7), lineWidth: 1)
+            )
+            .background(
+                // Mirrors ActiveFireBanner — opacity-only pulsing glow.
+                RoundedRectangle(cornerRadius: LayoutConstants.radiusSM)
+                    .fill(tint.opacity(glowPulse))
                     .blur(radius: 12)
                     .allowsHitTesting(false)
             )

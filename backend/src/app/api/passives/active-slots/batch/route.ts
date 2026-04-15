@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { cacheDelete } from '@/lib/cache'
 import { rateLimit } from '@/lib/rate-limit'
 import { ConsumableType } from '@prisma/client'
+import {
+  ACTIVE_SLOT_CONSUMABLES,
+  invalidateActiveSlotsCache,
+} from '@/lib/game/active-slots'
 
 // Interactive Combat v1 — Phase 4.A
 // Atomic "save loadout" endpoint. The Active Skill Picker commits the full
@@ -32,13 +35,6 @@ import { ConsumableType } from '@prisma/client'
 // Cache is invalidated on success.
 
 const MAX_SLOTS = 3
-const cacheKey = (characterId: string) => `active-slots:char:${characterId}`
-
-const ALLOWED_CONSUMABLES: readonly ConsumableType[] = [
-  'health_potion_small',
-  'health_potion_medium',
-  'health_potion_large',
-] as const
 
 type SlotPayload = {
   slot_index: number
@@ -116,6 +112,27 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      const consumableTypes = slots
+        .map((s) => s.consumable_type)
+        .filter((type): type is ConsumableType => !!type)
+
+      if (consumableTypes.length > 0) {
+        const ownedConsumables = await tx.consumableInventory.findMany({
+          where: {
+            characterId: character_id,
+            consumableType: { in: consumableTypes },
+            quantity: { gt: 0 },
+          },
+          select: { consumableType: true },
+        })
+        const ownedSet = new Set(ownedConsumables.map((row) => row.consumableType))
+        for (const consumableType of consumableTypes) {
+          if (!ownedSet.has(consumableType)) {
+            throw new Error('CONSUMABLE_NOT_OWNED')
+          }
+        }
+      }
+
       // Wipe + rewrite. The partial-unique indexes on (character_id, node_id) and
       // (character_id) WHERE consumable_type IS NOT NULL catch any caller mistake
       // that slipped through validation.
@@ -135,7 +152,7 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    await cacheDelete(cacheKey(character_id))
+    await invalidateActiveSlotsCache(character_id)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
@@ -146,6 +163,7 @@ export async function POST(req: NextRequest) {
         NODE_NOT_ACTIVATABLE: { msg: 'This talent is not activatable', status: 400 },
         NODE_NOT_UNLOCKED: { msg: 'Unlock this talent first', status: 400 },
         CLASS_RESTRICTED: { msg: 'This talent is not available for your class', status: 400 },
+        CONSUMABLE_NOT_OWNED: { msg: 'Own this potion before equipping it', status: 400 },
       }
       const mapped = map[error.message]
       if (mapped) return NextResponse.json({ error: mapped.msg }, { status: mapped.status })
@@ -181,10 +199,10 @@ function validateSlotsPayload(slots: SlotPayload[]):
     if (hasNode && hasConsumable) {
       return { error: 'A slot cannot hold both a talent and a consumable' }
     }
-    if (hasConsumable) {
-      if (!ALLOWED_CONSUMABLES.includes(s.consumable_type as ConsumableType)) {
+      if (hasConsumable) {
+      if (!ACTIVE_SLOT_CONSUMABLES.includes(s.consumable_type as ConsumableType)) {
         return {
-          error: `consumable_type must be one of: ${ALLOWED_CONSUMABLES.join(', ')}`,
+          error: `consumable_type must be one of: ${ACTIVE_SLOT_CONSUMABLES.join(', ')}`,
         }
       }
       consumableCount += 1

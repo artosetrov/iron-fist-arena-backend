@@ -50,7 +50,7 @@ cd ..
 
 # iOS — build check (simulator only)
 cd Hexbound
-xcodebuild -scheme IronFistArena -destination 'platform=iOS Simulator,name=iPhone 16' build 2>&1 | tail -20
+xcodebuild -project Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' build 2>&1 | tail -20
 cd ..
 ```
 

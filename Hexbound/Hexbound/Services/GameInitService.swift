@@ -63,6 +63,7 @@ final class GameInitService {
             if let quests = response["quests"] as? [[String: Any]] {
                 appState.cachedQuests = quests
                 let questDecoder = JSONDecoder()
+                questDecoder.keyDecodingStrategy = .convertFromSnakeCase
                 if let questData = try? JSONSerialization.data(withJSONObject: quests),
                    let typedQuests = try? questDecoder.decode([Quest].self, from: questData) {
                     appState.cachedTypedQuests = typedQuests

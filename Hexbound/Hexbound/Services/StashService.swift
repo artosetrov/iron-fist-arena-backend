@@ -2,6 +2,79 @@ import Foundation
 
 @MainActor
 final class StashService {
+    private struct StashPayload: Codable {
+        let items: [StashItemEntry]
+        let maxSlots: Int
+        let usedSlots: Int
+
+        func toResponse() -> StashResponse {
+            StashResponse(
+                items: items.map { $0.toItem() },
+                maxSlots: maxSlots,
+                usedSlots: usedSlots
+            )
+        }
+    }
+
+    private struct StashItemEntry: Codable {
+        let id: String
+        let upgradeLevel: Int
+        let durability: Int
+        let maxDurability: Int
+        let rolledStats: [String: Int]?
+        let effectiveStats: [String: Int]?
+        let item: StashCatalogItem
+
+        func toItem() -> Item {
+            Item(
+                id: id,
+                itemName: item.itemName,
+                itemType: item.itemType,
+                rarity: item.rarity,
+                itemLevel: item.itemLevel,
+                upgradeLevel: upgradeLevel,
+                isEquipped: false,
+                equippedSlot: nil,
+                baseStats: item.baseStats,
+                rolledStats: rolledStats,
+                buyPrice: item.buyPrice,
+                sellPrice: item.sellPrice,
+                setName: item.setName,
+                specialEffect: item.specialEffect,
+                uniquePassive: item.uniquePassive,
+                durability: durability,
+                maxDurability: maxDurability,
+                description: item.description,
+                catalogId: item.catalogId,
+                classRestriction: item.classRestriction,
+                imageUrl: item.imageUrl,
+                imageKey: item.imageKey,
+                quantity: nil,
+                consumableType: nil,
+                isTwoHanded: nil,
+                authoritativeEffectiveStats: effectiveStats
+            )
+        }
+    }
+
+    private struct StashCatalogItem: Codable {
+        let itemName: String
+        let itemType: ItemType
+        let rarity: ItemRarity
+        let itemLevel: Int
+        let baseStats: [String: Int]?
+        let setName: String?
+        let specialEffect: String?
+        let uniquePassive: String?
+        let imageUrl: String?
+        let imageKey: String?
+        let classRestriction: String?
+        let description: String?
+        let catalogId: String?
+        let buyPrice: Int?
+        let sellPrice: Int?
+    }
+
     private let appState: AppState
 
     init(appState: AppState) {
@@ -13,8 +86,8 @@ final class StashService {
     /// Fetches all items in the account-level stash.
     func loadStash() async -> StashResponse? {
         do {
-            let response = try await APIClient.shared.getRaw(APIEndpoints.stash)
-            return parseStashResponse(response)
+            let response: StashPayload = try await APIClient.shared.get(APIEndpoints.stash)
+            return response.toResponse()
         } catch {
             #if DEBUG
             print("[StashService] loadStash error: \(error)")
@@ -84,55 +157,6 @@ final class StashService {
         }
     }
 
-    // MARK: - Parsing
-
-    private func parseStashResponse(_ response: [String: Any]) -> StashResponse? {
-        let maxSlots = response["maxSlots"] as? Int ?? 100
-        let usedSlots = response["usedSlots"] as? Int ?? 0
-
-        guard let itemsArray = response["items"] as? [[String: Any]] else {
-            return StashResponse(items: [], maxSlots: maxSlots, usedSlots: usedSlots)
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-        let flattened = flattenStashItems(itemsArray)
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: flattened) else {
-            return StashResponse(items: [], maxSlots: maxSlots, usedSlots: usedSlots)
-        }
-
-        do {
-            let items = try decoder.decode([Item].self, from: jsonData)
-            return StashResponse(items: items, maxSlots: maxSlots, usedSlots: usedSlots)
-        } catch {
-            #if DEBUG
-            print("[StashService] decode error: \(error)")
-            #endif
-            return StashResponse(items: [], maxSlots: maxSlots, usedSlots: usedSlots)
-        }
-    }
-
-    /// Flattens nested StashItem + Item structure into flat Item dicts.
-    /// Backend returns: { id, upgradeLevel, ..., item: { itemName, itemType, ... } }
-    /// iOS expects:     { id, upgradeLevel, itemName, itemType, ... }
-    private func flattenStashItems(_ items: [[String: Any]]) -> [[String: Any]] {
-        items.map { entry in
-            var flat = entry
-            if let nested = entry["item"] as? [String: Any] {
-                for (key, value) in nested {
-                    if key == "id" { continue }
-                    flat[key] = value
-                }
-            }
-            flat.removeValue(forKey: "item")
-            // Merge effectiveStats into flat item
-            if let effectiveStats = entry["effectiveStats"] as? [String: Any] {
-                flat["effectiveStats"] = effectiveStats
-            }
-            return flat
-        }
-    }
 }
 
 // MARK: - Stash Response

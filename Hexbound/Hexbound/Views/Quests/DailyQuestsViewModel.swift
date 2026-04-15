@@ -118,15 +118,15 @@ final class DailyQuestsViewModel {
     ///
     /// New flow:
     /// 1. Show a subtle in-flight state (`claimingQuestId`) only.
-    /// 2. Await the server — `QuestService.claimQuest` now awaits the
-    ///    character refresh internally, so on return `appState.currentCharacter`
-    ///    already holds the new gold/XP.
+    /// 2. Await the server and apply its authoritative `gold/gems/xp/level`
+    ///    payload directly into `AppState.currentCharacter`.
     /// 3. On success: commit optimistic `rewardClaimed`, haptic, celebration
     ///    with the REAL reward values from the server ("+150g  +80 XP").
     /// 4. On failure: keep state untouched, show error toast.
     func claimQuest(_ quest: Quest) async {
         guard claimingQuestId == nil else { return } // prevent double-tap
         claimingQuestId = quest.id
+        let previousLevel = appState.currentCharacter?.level
 
         // ── Fire API first — no optimistic celebration ──
         let result = await service.claimQuest(questId: quest.id)
@@ -136,6 +136,16 @@ final class DailyQuestsViewModel {
             appState.showToast("Quest claim failed", subtitle: "Try again", type: .error)
             return
         }
+
+        appState.applyAuthoritativeRewardState(
+            gold: result.gold,
+            gems: result.gems,
+            xp: result.xp,
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel,
+            statPointsAwarded: result.statPointsAwarded,
+            previousLevel: previousLevel
+        )
 
         // ── Commit local state now that the server confirmed ──
         if let idx = quests.firstIndex(where: { $0.id == quest.id }) {
@@ -168,29 +178,38 @@ final class DailyQuestsViewModel {
 
     func claimBonus() async {
         guard !bonusClaimedToday, !isClaimingBonus else { return }
-
-        // ── Optimistic UI: mark bonus claimed instantly ──
         isClaimingBonus = true
+        let previousLevel = appState.currentCharacter?.level
+
+        let result = await service.claimBonus()
+        isClaimingBonus = false
+
+        guard let result else {
+            appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)
+            return
+        }
+
+        appState.applyAuthoritativeRewardState(
+            gold: result.gold,
+            gems: result.gems,
+            xp: result.xp,
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel,
+            statPointsAwarded: result.statPointsAwarded,
+            previousLevel: previousLevel
+        )
+
         bonusClaimedToday = true
+        cache.cacheDailyQuests(quests, bonusClaimed: true)
         HapticManager.success()
 
-        // ── Fire API — keep isClaimingBonus until done ──
-        let success = await service.claimBonus()
-        isClaimingBonus = false
-        if success {
-            // Show reward modal for daily bonus
-            claimRewardConfig = ClaimRewardConfig(
-                title: "DAILY BONUS\nCLAIMED!",
-                subtitle: "All quests completed",
-                goldReward: 500,
-                gemsReward: 10,
-                xpReward: 0,
-                lootItems: []
-            )
-        } else {
-            // Revert on failure
-            bonusClaimedToday = false
-            appState.showToast("Bonus claim failed", subtitle: "Try again", type: .error)
-        }
+        claimRewardConfig = ClaimRewardConfig(
+            title: "DAILY BONUS\nCLAIMED!",
+            subtitle: "All quests completed",
+            goldReward: result.rewardGold,
+            gemsReward: result.rewardGems,
+            xpReward: result.rewardXp,
+            lootItems: []
+        )
     }
 }

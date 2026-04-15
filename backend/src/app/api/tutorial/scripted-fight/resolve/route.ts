@@ -33,7 +33,8 @@ import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
  *
  * SECURITY:
  *   - Ownership check (character.userId === user.id)
- *   - Replay guard (tutorialCompleted gate at start of transaction)
+ *   - Replay guard (tutorialCompleted/tutorialSkipped/tutorialStep gate at
+ *     start of transaction)
  *   - Rate limit 3/60s
  *   - No stamina cost, no ELO mutation, no daily quest tracking,
  *     no battle pass, no durability — fully isolated from real game state
@@ -123,9 +124,11 @@ export async function POST(req: NextRequest) {
           user_id: string
           level: number
           tutorial_completed: boolean
+          tutorial_skipped: boolean
+          tutorial_step: number
         }>
       >(
-        `SELECT id, user_id, level, tutorial_completed
+        `SELECT id, user_id, level, tutorial_completed, tutorial_skipped, tutorial_step
          FROM "characters"
          WHERE id = $1
          FOR UPDATE`,
@@ -138,7 +141,11 @@ export async function POST(req: NextRequest) {
       if (characterLocked.user_id !== user.id) {
         throw new Error('FORBIDDEN')
       }
-      if (characterLocked.tutorial_completed) {
+      if (
+        characterLocked.tutorial_completed ||
+        characterLocked.tutorial_skipped ||
+        characterLocked.tutorial_step >= 3
+      ) {
         throw new Error('ALREADY_COMPLETED')
       }
 

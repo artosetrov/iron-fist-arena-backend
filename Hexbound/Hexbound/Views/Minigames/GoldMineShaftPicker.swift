@@ -105,29 +105,100 @@ struct ShaftPickerSheet: View {
     let onPick: (ShaftKey) -> Void
     let onCancel: () -> Void
 
+    @State private var showCard = false
+
+    private let accentColor = DarkFantasyTheme.goldBright
+
     var body: some View {
+        ZStack {
+            // Dimmed backdrop — taps cancel the picker
+            DarkFantasyTheme.bgModal
+                .ignoresSafeArea()
+                .onTapGesture { onCancel() }
+
+            // Radial glow accent
+            RadialGradient(
+                colors: [
+                    accentColor.opacity(0.18),
+                    accentColor.opacity(0.04),
+                    Color.clear
+                ],
+                center: .center,
+                startRadius: 0,
+                endRadius: 280
+            )
+            .ignoresSafeArea()
+            .opacity(showCard ? 1 : 0)
+            .allowsHitTesting(false)
+
+            // Main card — full DS chrome (matches ClaimRewardModalView pattern)
+            ScrollView(.vertical, showsIndicators: false) {
+                cardContent
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.modalRadius))
+            .background(
+                RadialGlowBackground(
+                    baseColor: DarkFantasyTheme.bgPrimary,
+                    glowColor: DarkFantasyTheme.bgSecondary,
+                    glowIntensity: 0.4,
+                    cornerRadius: LayoutConstants.modalRadius
+                )
+            )
+            .surfaceLighting(cornerRadius: LayoutConstants.modalRadius, topHighlight: 0.10, bottomShadow: 0.16)
+            .innerBorder(cornerRadius: LayoutConstants.modalRadius - 3, inset: 3, color: accentColor.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: LayoutConstants.modalRadius)
+                    .stroke(accentColor.opacity(0.5), lineWidth: 2)
+            )
+            .cornerBrackets(color: accentColor.opacity(0.4), length: 18, thickness: 2.0)
+            .cornerDiamonds(color: accentColor.opacity(0.5), size: 6)
+            .shadow(color: accentColor.opacity(0.3), radius: 20, y: 4)
+            .shadow(color: DarkFantasyTheme.bgAbyss.opacity(0.6), radius: 12, y: 6)
+            .padding(.horizontal, LayoutConstants.screenPadding)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxHeight: UIScreen.main.bounds.height * 0.78)
+            .opacity(showCard ? 1 : 0)
+        }
+        .onAppear {
+            withAnimation(MotionConstants.dramatic) {
+                showCard = true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var cardContent: some View {
         VStack(spacing: LayoutConstants.spaceLG) {
             header
+                .padding(.top, LayoutConstants.spaceLG)
+
+            GoldDivider()
+                .padding(.horizontal, LayoutConstants.spaceMD)
+
             shaftList
+
             Button {
+                HapticManager.light()
                 onCancel()
             } label: {
                 Text("CANCEL")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.compactOutline(color: DarkFantasyTheme.borderMedium, fillOpacity: 0.15))
-            .padding(.horizontal, LayoutConstants.spaceMD)
+            .padding(.horizontal, LayoutConstants.cardPadding)
+
+            Spacer().frame(height: LayoutConstants.spaceMD)
         }
-        .padding(.vertical, LayoutConstants.spaceLG)
-        .background(DarkFantasyTheme.bgPrimary.ignoresSafeArea())
     }
 
     private var header: some View {
         VStack(spacing: LayoutConstants.spaceXS) {
             Text("CHOOSE YOUR SHAFT")
                 .font(DarkFantasyTheme.section)
-                .foregroundStyle(DarkFantasyTheme.goldBright)
+                .foregroundStyle(accentColor)
                 .tracking(1.5)
+                .shadow(color: accentColor.opacity(0.3), radius: 8)
             Text("Commit to one shaft for the full expedition cycle.")
                 .font(DarkFantasyTheme.body)
                 .foregroundStyle(DarkFantasyTheme.textSecondary)
@@ -151,7 +222,7 @@ struct ShaftPickerSheet: View {
                 }
             }
         }
-        .padding(.horizontal, LayoutConstants.spaceMD)
+        .padding(.horizontal, LayoutConstants.cardPadding)
     }
 }
 

@@ -1,7 +1,7 @@
 ---
 name: ds-qa-coverage
 description: |
-  DS QA Coverage — final quality assurance pass for the complete Figma ecosystem. Verifies: all 48 screens present, all states covered, all components used correctly, zero inline styles, zero orphaned elements, full token binding coverage, prototype connections complete, naming conventions consistent. Use this skill as the LAST step after all screens are built and prototyped. Trigger: "qa coverage", "финальная проверка", "ds qa", "coverage check", "всё ли покрыто", "final check", "проверь покрытие", "quality check figma".
+  DS QA Coverage — final quality assurance pass for the complete Figma ecosystem. Verifies: all current screen-inventory entries present, all states covered, all components used correctly, zero inline styles, zero orphaned elements, full token binding coverage, prototype connections complete, naming conventions consistent. Use this skill as the LAST step after all screens are built and prototyped. Trigger: "qa coverage", "финальная проверка", "ds qa", "coverage check", "всё ли покрыто", "final check", "проверь покрытие", "quality check figma".
 ---
 
 # DS QA Coverage
@@ -11,6 +11,8 @@ You run the **final quality assurance pass** on the complete Hexbound Figma ecos
 **DS file:** `uDjXIz7CdJxcEOI5jCBcjY`
 **Screens file:** `PalemJ36B97ZdC0cd8jzv4`
 
+Verify these keys against the current Figma context before auditing; stale file keys produce false coverage results.
+
 ## Prerequisites
 
 1. Load `figma-use` skill BEFORE any `use_figma` calls
@@ -18,6 +20,8 @@ You run the **final quality assurance pass** on the complete Hexbound Figma ecos
 3. ALL prototype flows should be connected (`ds-prototype`)
 
 ## Check 1: Screen Coverage
+
+Use the current source of truth before counting: `docs/07_ui_ux/SCREEN_INVENTORY.md`, the Swift view tree, and wiki `[[screens]]`. The checklist below is a historical baseline and must be refreshed when screens are added, renamed, or removed.
 
 ### 1a. Screen Count
 
@@ -46,11 +50,11 @@ return {
 };
 ```
 
-**Expected:** ≥48 screens (48 primary + states)
+**Expected:** every current primary screen from the inventory plus required state variants. Historical baseline: at least 53 primary entries were listed here.
 
 ### 1b. Screen Inventory Checklist
 
-Every screen from the master list must be present:
+Every screen from the refreshed master list must be present. Historical baseline:
 
 | # | Screen | Status |
 |---|---|---|
@@ -382,7 +386,7 @@ return cardsWithoutShadow;
 
 | Metric | Weight | 100% = |
 |---|---|---|
-| Screen coverage | 25% | 48/48 screens |
+| Screen coverage | 25% | 100% of current screen inventory |
 | State coverage | 15% | ≥3 states per screen |
 | Token binding (fills) | 15% | 0 unbound |
 | Token binding (text) | 10% | 0 unlinked |

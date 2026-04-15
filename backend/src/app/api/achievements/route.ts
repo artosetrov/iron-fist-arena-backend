@@ -98,6 +98,8 @@ export async function GET(req: NextRequest) {
           ? { gold: rewardAmount }
           : rewardType === 'gems'
           ? { gems: rewardAmount }
+          : rewardType === 'xp'
+          ? { xp: rewardAmount }
           : rewardType === 'title'
           ? { title: def?.rewardId ?? 'unknown' }
           : rewardType === 'frame'

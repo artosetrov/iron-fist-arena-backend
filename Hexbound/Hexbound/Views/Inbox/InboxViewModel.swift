@@ -193,10 +193,24 @@ final class InboxViewModel {
             guard let self else { return }
             defer { claimingMessageIds.remove(messageId) }
             do {
-                let _: MailClaimResponse = try await apiClient.post(
+                let response: MailClaimResponse = try await apiClient.post(
                     "/api/mail/\(messageId)/claim",
                     body: ["character_id": characterId]
                 )
+                let previousLevel = appState.currentCharacter?.level
+
+                appState.applyAuthoritativeRewardState(
+                    gold: response.gold,
+                    gems: response.gems,
+                    xp: response.xp,
+                    leveledUp: response.leveledUp,
+                    newLevel: response.newLevel,
+                    statPointsAwarded: response.statPointsAwarded,
+                    previousLevel: previousLevel
+                )
+                if response.claimed?.contains(where: { $0.type == "item" || $0.type == "consumable" }) == true {
+                    appState.cachedInventory = nil
+                }
             } catch {
                 // Revert on failure
                 if let revertIdx = messages.firstIndex(where: { $0.id == messageId }) {

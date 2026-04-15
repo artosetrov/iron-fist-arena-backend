@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { QuestType } from '@prisma/client'
-import { applyLevelUp } from '@/lib/game/progression'
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { getBattlePassConfig } from '@/lib/game/live-config'
+import { grantRewardEntries } from '@/lib/game/reward-grants'
 
 // Quest generation config (fallback)
 const QUEST_POOL: {
@@ -200,7 +201,7 @@ export async function POST(req: NextRequest) {
 
     if (action === 'claim') {
       // Atomic read-check-write to prevent double-claim
-      const quest = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         // Set lock timeout to prevent indefinite hangs on concurrent claims
         await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '5s'`)
         // Lock the quest row with FOR UPDATE (table mapped to "daily_quests", columns are snake_case)
@@ -214,45 +215,44 @@ export async function POST(req: NextRequest) {
         if (q.progress < q.target) throw new Error('NOT_COMPLETED')
         if (q.completed) throw new Error('ALREADY_CLAIMED')
 
-        // Mark claimed + award rewards
+        const rewardResult = await grantRewardEntries(tx, {
+          userId: user.id,
+          characterId: character_id,
+          rewards: [
+            { type: 'gold', quantity: q.reward_gold },
+            { type: 'xp', quantity: q.reward_xp },
+            { type: 'gems', quantity: q.reward_gems },
+          ],
+        })
+
         await tx.dailyQuest.update({
           where: { id: quest_id },
           data: { completed: true },
         })
-        // Gold now lives on User, XP still on Character
-        await tx.user.update({
-          where: { id: user.id },
-          data: { gold: { increment: q.reward_gold } },
-        })
-        await tx.character.update({
-          where: { id: character_id },
-          data: { currentXp: { increment: q.reward_xp } },
-        })
-        // Award gems if quest has gem reward (gems live on User, not Character)
-        if (q.reward_gems > 0) {
-          await tx.user.update({
-            where: { id: user.id },
-            data: { gems: { increment: q.reward_gems } },
-          })
-        }
 
-        return q
+        await awardBattlePassXp(tx, character_id, BATTLE_PASS.BP_XP_PER_QUEST)
+
+        return { quest: q, rewardResult }
       })
 
-      // Award Battle Pass XP for quest completion
-      await awardBattlePassXp(prisma, character_id, BATTLE_PASS.BP_XP_PER_QUEST)
-
-      // Check for level-up after XP award
-      const levelUpResult = await applyLevelUp(prisma, character_id)
+      if (result.rewardResult.levelUpResult?.leveledUp) {
+        await Promise.all([
+          invalidateSkillCache(character_id),
+          invalidatePassiveCache(character_id),
+        ])
+      }
 
       return NextResponse.json({
         success: true,
-        reward_gold: quest.reward_gold,
-        reward_xp: quest.reward_xp,
-        reward_gems: quest.reward_gems,
-        leveled_up: levelUpResult?.leveledUp ?? false,
-        new_level: levelUpResult?.newLevel,
-        stat_points_awarded: levelUpResult?.statPointsAwarded,
+        reward_gold: result.quest.reward_gold,
+        reward_xp: result.quest.reward_xp,
+        reward_gems: result.quest.reward_gems,
+        gold: result.rewardResult.gold,
+        gems: result.rewardResult.gems,
+        xp: result.rewardResult.xp,
+        leveled_up: result.rewardResult.levelUpResult?.leveledUp ?? false,
+        new_level: result.rewardResult.levelUpResult?.newLevel,
+        stat_points_awarded: result.rewardResult.levelUpResult?.statPointsAwarded,
       })
     }
 

@@ -280,7 +280,7 @@ return 'PASS';
 
 ### Asset Import (xcassets → Figma)
 
-Script: `bash scripts/export-assets-for-figma.sh` — exports all PNG from `Assets.xcassets` into `figma-assets/` by category:
+Script: `bash scripts/export-assets-for-figma.sh` — exports supported image assets from `Assets.xcassets` into `figma-assets/` by category (`png`, `jpg`, `jpeg`, `pdf`):
 
 | Folder | Content | Count |
 |---|---|---|
@@ -296,13 +296,13 @@ Figma DS has matching `Assets / *` pages with **350 named placeholder components
 **To fill placeholders with actual images:**
 1. Open the `Assets / *` page in Figma
 2. Select a placeholder component
-3. Cmd+Shift+K → choose PNG from `figma-assets/<folder>/` → place as fill
-4. Or: drag PNG from Finder onto the component
+3. Cmd+Shift+K → choose asset from `figma-assets/<folder>/` → place as fill
+4. Or: drag the exported asset from Finder onto the component
 
 **When adding new art to `Assets.xcassets`:**
 1. Re-run `bash scripts/export-assets-for-figma.sh`
 2. Create new component on matching Figma page (via `use_figma` or manually)
-3. Import PNG into the component
+3. Import the exported asset into the component
 
 ## Asset Pipeline Rules (CRITICAL)
 
@@ -363,7 +363,7 @@ git subtree push --prefix=admin admin-deploy main
 
 ### Git Watcher (VM Auto-Commit)
 
-Script at `scripts/git-watcher.sh` — user runs it on Mac terminal. To trigger: `echo "commit message" > .git-trigger`. Watcher does `git add -A && git commit && git push`. Use this when direct `git commit` fails due to `index.lock`.
+Script at `scripts/git-watcher.sh` — user runs it on Mac terminal. To trigger: `echo "commit message" > .git-trigger`. Watcher does `git add -A && git commit && git push` on the current branch. Optional asset sync runs only when `HEXBOUND_AUTO_SYNC_ASSETS=1` is set. If a Git lock exists, the script clears it only when it is stale.
 
 ### Merge Conflict Resolution
 

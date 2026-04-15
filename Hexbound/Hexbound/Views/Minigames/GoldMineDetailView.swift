@@ -74,17 +74,22 @@ struct GoldMineDetailView: View {
                     slotAnchors = next
                 }
                 // MARK: Variant D mini-game presentation
-                .sheet(isPresented: Binding(
-                    get: { vm.showShaftPicker },
-                    set: { vm.showShaftPicker = $0 }
-                )) {
-                    ShaftPickerSheet(
-                        unlockedShafts: vm.unlockedShafts,
-                        currentSlotLevel: vm.goldMineSlots,
-                        onPick: { vm.pickShaft($0) },
-                        onCancel: { vm.showShaftPicker = false }
-                    )
+                // Shaft picker is a DS-styled overlay (not a native sheet) so it
+                // carries the full modal chrome — gold border, brackets, diamonds,
+                // radial glow — and never shows the iOS sheet's grey backing.
+                .overlay {
+                    if vm.showShaftPicker {
+                        ShaftPickerSheet(
+                            unlockedShafts: vm.unlockedShafts,
+                            currentSlotLevel: vm.goldMineSlots,
+                            onPick: { vm.pickShaft($0) },
+                            onCancel: { vm.showShaftPicker = false }
+                        )
+                        .transition(.opacity)
+                        .zIndex(900)
+                    }
                 }
+                .animation(MotionConstants.snappy, value: vm.showShaftPicker)
                 .fullScreenCover(item: Binding(
                     get: { vm.pendingMinigameSession },
                     set: { vm.pendingMinigameSession = $0 }

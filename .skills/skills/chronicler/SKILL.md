@@ -175,9 +175,9 @@ When invoked as a subagent, the caller should pass:
 
 Return the retro report in the format above. If rules or agents were updated, list every file changed with a one-line summary of the change.
 
-## Auto-Trigger Rules
+## Suggested Use
 
-The parent Claude agent SHOULD automatically consider spawning this agent:
+The parent agent may run this as a subagent only when the user explicitly requested subagents/parallel agent work and the current environment permits delegation:
 - At the end of a session where multiple code fixes were applied
 - After running all 5 agents (full audit)
 - When the user mentions improving the process

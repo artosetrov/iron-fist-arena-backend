@@ -29,9 +29,13 @@ description: |
 ```bash
 git log --oneline --since="<timestamp>" --no-merges
 ```
+Если диапазон большой, ограничь вывод последними 200 коммитами, чтобы ретро не зависало на длинной истории:
+```bash
+git log --oneline --since="<timestamp>" --no-merges --max-count=200
+```
 Если `--since` не работает (VM может не иметь точных дат), используй:
 ```bash
-git log --oneline -50
+git log --oneline -50 --no-merges
 ```
 и фильтруй вручную по дате из коммитов.
 

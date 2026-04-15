@@ -11,6 +11,8 @@ You verify and fix 1:1 parity between the Hexbound Swift design system and the F
 **Figma DS file:** `uDjXIz7CdJxcEOI5jCBcjY`
 **Figma Screens file:** `PalemJ36B97ZdC0cd8jzv4`
 
+Verify these file keys with the user or current Figma context before making changes; they are project defaults, not proof that the active file is still current.
+
 ## Prerequisites
 
 1. Load `figma-use` skill BEFORE any `use_figma` calls

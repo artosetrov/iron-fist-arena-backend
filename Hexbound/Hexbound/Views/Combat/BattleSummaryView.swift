@@ -58,8 +58,7 @@ struct BattleSummaryView: View {
     }
 
     private var playerWon: Bool {
-        // Server-authoritative check: player wins if their HP > 0 at end.
-        vm.state.attackerHp > 0 && vm.state.defenderHp <= 0
+        vm.state.winnerId == vm.state.attackerId
     }
 
     // MARK: - Log card

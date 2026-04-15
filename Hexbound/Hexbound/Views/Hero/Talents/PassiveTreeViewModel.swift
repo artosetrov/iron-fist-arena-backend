@@ -317,16 +317,24 @@ final class PassiveTreeViewModel {
         activeSlots.first(where: { $0.nodeId == nodeId })?.slotIndex
     }
 
+    /// First free slot in the current active-skill loadout, or nil when full.
+    func firstFreeActiveSlotIndex() -> Int? {
+        let taken = Set(activeSlots.map(\.slotIndex))
+        for i in 0..<maxActiveSlots where !taken.contains(i) { return i }
+        return nil
+    }
+
     /// Equip node into first free slot, or replace the given slotIndex if provided.
     func equipActive(node: PassiveNode, slotIndex explicit: Int? = nil) {
         guard canEquip(node), !isMutating else { return }
-        let targetSlot: Int = {
-            if let s = explicit { return s }
-            // Prefer a free slot; else slot 0
-            let taken = Set(activeSlots.map(\.slotIndex))
-            for i in 0..<maxActiveSlots where !taken.contains(i) { return i }
-            return 0
-        }()
+        guard let targetSlot = explicit ?? firstFreeActiveSlotIndex() else {
+            appState.showToast(
+                "Active slots full",
+                subtitle: "Use Edit to replace a skill",
+                type: .info
+            )
+            return
+        }
 
         let prev = activeSlots
         // Optimistic: remove any existing slot for same slotIndex OR same node, then append.

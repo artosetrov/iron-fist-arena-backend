@@ -22,6 +22,7 @@ struct ActiveSlotsBar: View {
                     slotView(for: index)
                 }
             }
+            editButton
         }
         .padding(LayoutConstants.spaceMD)
         .background(
@@ -54,11 +55,10 @@ struct ActiveSlotsBar: View {
     private func slotView(for index: Int) -> some View {
         let slot = vm.activeSlots.first(where: { $0.slotIndex == index })
         Button {
-            if slot != nil {
-                vm.clearActive(slotIndex: index)
-                HapticManager.light()
-            }
-            // Empty slot tap is a no-op; user equips via TalentDetailSheet.
+            // Tap ALWAYS opens the picker (Phase 4.C). Clearing moved to the
+            // picker sheet itself — single point of truth for loadout edits.
+            vm.openActiveSkillPicker(focusedSlotIndex: index)
+            HapticManager.light()
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
@@ -86,12 +86,44 @@ struct ActiveSlotsBar: View {
     }
 
     private func filledSlot(_ slot: ActiveSlot) -> some View {
-        let sfSymbol = slot.activeActionType?.sfSymbol ?? "sparkles"
+        let sfSymbol: String = {
+            switch slot.kind {
+            case .talent:     return slot.activeActionType?.sfSymbol ?? "sparkles"
+            case .consumable: return "cross.vial.fill"
+            }
+        }()
         return Image(systemName: sfSymbol)
             .resizable()
             .scaledToFit()
             .foregroundStyle(DarkFantasyTheme.gold)
             .padding(LayoutConstants.spaceSM)
+    }
+
+    /// Explicit "Edit" affordance — the single entry point for the picker.
+    /// Also helps discoverability when all 3 slots are already filled.
+    private var editButton: some View {
+        Button {
+            vm.openActiveSkillPicker(focusedSlotIndex: nil)
+            HapticManager.light()
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(DarkFantasyTheme.gold)
+                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
+                .padding(LayoutConstants.spaceSM)
+                .background(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .fill(DarkFantasyTheme.bgTertiary)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: LayoutConstants.radiusMD)
+                        .stroke(DarkFantasyTheme.gold.opacity(0.5), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isMutating)
+        .accessibilityLabel("Edit active skills loadout")
     }
 
     private var emptySlot: some View {

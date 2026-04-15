@@ -11,6 +11,46 @@ struct DailyLoginData: Codable {
     // and APIClient.decoder uses .convertFromSnakeCase which passes camelCase through unchanged.
 }
 
+struct DailyLoginClaimReward: Codable {
+    let type: String
+    let amount: Int
+    let itemId: String?
+    let displayName: String?
+    let displayIcon: String?
+
+    var rewardDef: DailyLoginRewardDef {
+        DailyLoginRewardDef(
+            type: type,
+            amount: amount,
+            itemId: itemId,
+            displayName: displayName,
+            displayIcon: displayIcon
+        )
+    }
+}
+
+struct DailyLoginClaimResponse: Codable {
+    let reward: DailyLoginClaimReward
+    let currentDay: Int
+    let streak: Int
+    let totalClaims: Int
+    let lastClaimDate: String?
+    let canClaim: Bool
+    let gold: Int
+    let gems: Int
+    let premiumGemsAwarded: Int
+
+    var status: DailyLoginData {
+        DailyLoginData(
+            currentDay: currentDay,
+            streak: streak,
+            totalClaims: totalClaims,
+            lastClaimDate: lastClaimDate,
+            canClaim: canClaim
+        )
+    }
+}
+
 // MARK: - Daily Rewards Definition
 //
 // W1.D3 SSoT refactor (2026-04-10): the 7-day reward table is no longer

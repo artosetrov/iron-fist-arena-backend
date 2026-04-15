@@ -117,31 +117,23 @@ extension DungeonRushDetailView {
 
             OrnamentalDivider()
 
-            if vm.accumulatedGold > 0 {
-                rewardRow(label: "Gold", value: "+\(vm.accumulatedGold)",
-                          valueColor: DarkFantasyTheme.goldBright, iconName: "icon-gold")
-            }
-            if vm.accumulatedXp > 0 {
-                rewardRow(label: "Experience", value: "+\(vm.accumulatedXp)",
-                          valueColor: DarkFantasyTheme.xpRing, iconName: "icon-xp")
-            }
-            if vm.accumulatedItems > 0 {
-                HStack {
-                    Image("reward-loot")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-                    Text("Items Found")
-                        .font(DarkFantasyTheme.body)
-                        .foregroundStyle(DarkFantasyTheme.textSecondary)
-                    Spacer()
-                    Text("\(vm.accumulatedItems)")
-                        .font(DarkFantasyTheme.section)
-                        .foregroundStyle(DarkFantasyTheme.cyan)
-                        .monospacedDigit()
+            // Single centered horizontal line (matches ClaimRewardModalView pattern)
+            HStack(spacing: LayoutConstants.spaceLG) {
+                if vm.accumulatedGold > 0 {
+                    rewardItem(value: "+\(vm.accumulatedGold)",
+                               valueColor: DarkFantasyTheme.goldBright, iconName: "icon-gold")
                 }
-                .padding(.vertical, LayoutConstants.space2XS)
+                if vm.accumulatedXp > 0 {
+                    rewardItem(value: "+\(vm.accumulatedXp)",
+                               valueColor: DarkFantasyTheme.xpRing, iconName: "icon-xp")
+                }
+                if vm.accumulatedItems > 0 {
+                    rewardItem(value: "×\(vm.accumulatedItems)",
+                               valueColor: DarkFantasyTheme.cyan, iconName: "reward-loot")
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, LayoutConstants.space2XS)
         }
         .padding(LayoutConstants.cardPadding)
         .background(
@@ -161,22 +153,17 @@ extension DungeonRushDetailView {
     }
 
     @ViewBuilder
-    func rewardRow(label: String, value: String, valueColor: Color, iconName: String) -> some View {
-        HStack {
+    func rewardItem(value: String, valueColor: Color, iconName: String) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image(iconName)
                 .resizable()
                 .scaledToFit()
-                .frame(width: LayoutConstants.iconSM, height: LayoutConstants.iconSM)
-            Text(label)
-                .font(DarkFantasyTheme.body)
-                .foregroundStyle(DarkFantasyTheme.textSecondary)
-            Spacer()
+                .frame(width: 32, height: 32)
             Text(value)
                 .font(DarkFantasyTheme.section)
                 .foregroundStyle(valueColor)
                 .monospacedDigit()
         }
-        .padding(.vertical, LayoutConstants.space2XS)
     }
 
     // MARK: - Defeat Message

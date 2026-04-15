@@ -4,12 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { ConsumableType } from '@prisma/client'
 import { updateDailyQuestProgress } from '@/lib/game/daily-quests'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
-
-const POTION_PRICES: Record<string, number> = {
-  stamina_potion_small: 100,
-  stamina_potion_medium: 250,
-  stamina_potion_large: 500,
-}
+import { isStaminaPotion, STAMINA_POTION_TYPES } from '@/lib/game/consumable-effects'
+import { getConsumablePrice } from '@/lib/game/consumable-pricing'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -26,14 +22,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validate potion type
-    const price = POTION_PRICES[potion_type]
-    if (price === undefined) {
+    if (
+      typeof potion_type !== 'string' ||
+      !Object.values(ConsumableType).includes(potion_type as ConsumableType) ||
+      !isStaminaPotion(potion_type as ConsumableType)
+    ) {
       return NextResponse.json(
-        { error: `Invalid potion_type. Must be one of: ${Object.keys(POTION_PRICES).join(', ')}` },
+        { error: `Invalid potion_type. Must be one of: ${Array.from(STAMINA_POTION_TYPES).join(', ')}` },
         { status: 400 }
       )
     }
+    const price = await getConsumablePrice(potion_type as ConsumableType)
 
     // Use interactive transaction with row-level lock to prevent TOCTOU
     const result = await prisma.$transaction(async (tx) => {

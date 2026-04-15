@@ -133,7 +133,7 @@ else
     warn "xcodebuild not available — iOS build skipped"
   else
     echo "  Building iOS..."
-    if (cd Hexbound && xcodebuild -scheme IronFistArena -destination 'platform=iOS Simulator,name=iPhone 16' build 2>&1 | tail -5); then
+    if (cd Hexbound && xcodebuild -project Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' build 2>&1 | tail -5); then
       pass "iOS build"
     else
       fail "iOS build failed"

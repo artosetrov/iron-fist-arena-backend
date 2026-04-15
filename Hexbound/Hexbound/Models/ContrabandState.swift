@@ -38,6 +38,9 @@ struct ContrabandClaimResponse: Codable {
     let xp: Int
     let contents: [OfferContent]
     let claimNumber: Int
+    let leveledUp: Bool?
+    let newLevel: Int?
+    let statPointsAwarded: Int?
 }
 
 // MARK: - Parsed Contraband UI State

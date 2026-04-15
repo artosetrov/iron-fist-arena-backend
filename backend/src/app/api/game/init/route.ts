@@ -18,6 +18,7 @@ import {
   getBattlePassConfig,
   getGemCostsConfig,
 } from '@/lib/game/live-config'
+import { getPremiumExpiresAt, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { resolveAllFlags } from '@/lib/game/feature-flags'
 import { QuestType } from '@prisma/client'
 
@@ -161,7 +162,7 @@ export async function GET(req: NextRequest) {
           username: true,
           gold: true,
           gems: true,
-          premiumUntil: true,
+          ...PREMIUM_ENTITLEMENT_USER_SELECT,
           role: true,
           createdAt: true,
           lastLogin: true,
@@ -315,7 +316,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      user: userRecord,
+      user: userRecord
+        ? {
+            ...userRecord,
+            premiumUntil: getPremiumExpiresAt(userRecord),
+          }
+        : null,
       character: {
         ...character,
         currentStamina: staminaResult.stamina,

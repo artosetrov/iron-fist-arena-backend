@@ -547,6 +547,7 @@ struct QuestRewardWidget: View {
         claimingId = quest.id
 
         let questId = quest.id
+        let previousLevel = appState.currentCharacter?.level
         Task {
             let service = QuestService(appState: appState)
             let result = await service.claimQuest(questId: questId)
@@ -566,6 +567,16 @@ struct QuestRewardWidget: View {
                 )
                 return
             }
+
+            appState.applyAuthoritativeRewardState(
+                gold: result.gold,
+                gems: result.gems,
+                xp: result.xp,
+                leveledUp: result.leveledUp,
+                newLevel: result.newLevel,
+                statPointsAwarded: result.statPointsAwarded,
+                previousLevel: previousLevel
+            )
 
             if let idx = appState.cachedTypedQuests?.firstIndex(where: { $0.id == questId }) {
                 withAnimation(.easeOut(duration: 0.3)) {

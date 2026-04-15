@@ -94,11 +94,11 @@ Phase 4: INTEGRATION + QA (final pass)
 8. **Position variants after combineAsVariants** — they stack at (0,0). Manually grid-layout + resize.
 9. **INSTANCE_SWAP for icons** — never create a variant per icon. Cap variant matrices: if Size × Style × State > 30 combinations, split into sub-component.
 10. **Deterministic naming** — use consistent, unique node names for idempotent cleanup and resumability. Track created node IDs via return values and the state ledger.
-11. **No destructive cleanup** — cleanup scripts identify nodes by name convention or returned IDs, not by guessing.
+11. **No destructive cleanup** — cleanup scripts identify nodes by shared plugin data or returned IDs, not by guessing.
 12. **Validate before proceeding** — never build on unvalidated work. `get_metadata` after every create, `get_screenshot` after each component.
 13. **NEVER parallelize `use_figma` calls** — Figma state mutations must be strictly sequential. Even if your tool supports parallel calls, never run two use_figma calls simultaneously.
 14. **Never hallucinate Node IDs** — always read IDs from the state ledger returned by previous calls. Never reconstruct or guess an ID from memory.
-15. **Use the helper scripts** — embed scripts from `scripts/` into your use_figma calls. Don't write 200-line inline scripts from scratch.
+15. **Use this skill's helper scripts** — embed scripts from this directory's `scripts/` folder into your use_figma calls. Don't write 200-line inline scripts from scratch.
 16. **Explicit phase approval** — at each checkpoint, name the next phase explicitly. "looks good" is not approval to proceed to Phase 3 if you asked about Phase 1.
 
 ---
@@ -311,5 +311,5 @@ Reusable Plugin API helper functions. Embed in `use_figma` calls:
 | [bindVariablesToComponent.js](scripts/bindVariablesToComponent.js) | Bind design tokens to all component visual properties |
 | [createDocumentationPage.js](scripts/createDocumentationPage.js) | Create a page with title + description + section structure |
 | [validateCreation.js](scripts/validateCreation.js) | Verify created nodes match expected counts, names, structure |
-| [cleanupOrphans.js](scripts/cleanupOrphans.js) | Remove orphaned nodes by name convention or state ledger IDs |
+| [cleanupOrphans.js](scripts/cleanupOrphans.js) | Remove orphaned nodes by shared `dsb/run_id` tags |
 | [rehydrateState.js](scripts/rehydrateState.js) | Scan file for all pages, components, variables by name; returns full `{key → nodeId}` map for state reconstruction |

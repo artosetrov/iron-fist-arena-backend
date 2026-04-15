@@ -2,7 +2,8 @@
 -- passive-tree.sql — MVP passive-tree catalog (50 nodes, ~78 edges)
 -- Phase 1 of Talents feature.
 -- Idempotent: wipes passive_connections + passive_nodes before re-inserting.
--- Safe to re-run.
+-- NOT safe on a live database with real player progression: it also deletes
+-- `character_passives`, so treat this as bootstrap / controlled reset only.
 -- =============================================================================
 --
 -- Structure:

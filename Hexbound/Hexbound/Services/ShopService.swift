@@ -1,5 +1,11 @@
 import Foundation
 
+private struct ShopItemsResponse: Codable {
+    let items: [ShopItem]?
+    let shopItems: [ShopItem]?
+    let characterLevel: Int?
+}
+
 @MainActor
 final class ShopService {
     private let appState: AppState
@@ -13,21 +19,11 @@ final class ShopService {
     func getItems() async -> [ShopItem] {
         guard let charId = appState.currentCharacter?.id else { return [] }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: ShopItemsResponse = try await APIClient.shared.get(
                 APIEndpoints.shopItems,
                 params: ["character_id": charId]
             )
-            let itemsArray: [[String: Any]]
-            if let items = response["items"] as? [[String: Any]] {
-                itemsArray = items
-            } else if let items = response["shop_items"] as? [[String: Any]] {
-                itemsArray = items
-            } else {
-                itemsArray = []
-            }
-            let jsonData = try JSONSerialization.data(withJSONObject: itemsArray)
-            let decoder = JSONDecoder()
-            return try decoder.decode([ShopItem].self, from: jsonData)
+            return response.items ?? response.shopItems ?? []
         } catch {
             appState.showToast("Failed to load shop", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                 Task { @MainActor in
@@ -127,29 +123,6 @@ final class ShopService {
                 appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             }
             return false
-        } catch {
-            appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
-            return false
-        }
-    }
-
-    // MARK: - Buy Potion (Legacy)
-
-    func buyPotion(potionType: String) async -> Bool {
-        guard let charId = appState.currentCharacter?.id else { return false }
-        do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "potion_type": potionType
-            ]
-            let response = try await APIClient.shared.postRaw(
-                APIEndpoints.shopBuyPotion,
-                body: body
-            )
-            updateCharacter(from: response)
-            // BUG-58: legacy potion purchase also tracks gold_spent now.
-            refreshDailyQuestsAfterGoldSpend()
-            return true
         } catch {
             appState.showToast("Purchase failed", subtitle: "Check your gold balance and try again", type: .error)
             return false

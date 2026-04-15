@@ -73,6 +73,12 @@ struct TalentsTabView: View {
             .presentationDetents([.medium])
             .presentationBackground(DarkFantasyTheme.bgSecondary)
         }
+        .sheet(isPresented: $vm.showActiveSkillPicker) {
+            ActiveSkillPickerSheet(vm: vm)
+                .presentationDetents([.large])
+                .presentationBackground(DarkFantasyTheme.bgSecondary)
+                .presentationDragIndicator(.visible)
+        }
         .alert("Reset all talents?", isPresented: $vm.showRespecConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Reset — \(respecGemCost) gems", role: .destructive) {

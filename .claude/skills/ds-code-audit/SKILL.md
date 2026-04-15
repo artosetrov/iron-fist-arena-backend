@@ -19,7 +19,7 @@ You are auditing the Hexbound iOS codebase for design system compliance and comp
 6. `CLAUDE.md` — project rules (root)
 7. `Hexbound/CLAUDE.md` — iOS-specific rules
 
-## Phase 1: Automated Token Scan (grep-based)
+## Phase 1: Automated Token Scan (`rg`-based)
 
 Run ALL of these. Zero tolerance for violations.
 
@@ -27,52 +27,54 @@ Run ALL of these. Zero tolerance for violations.
 cd "$(git rev-parse --show-toplevel)"
 
 echo "=== 1. Invented font tokens ==="
-grep -rn 'DarkFantasyTheme\.\(largeTitleFont\|titleFont\|bodyFont\|bodyBoldFont\|headlineFont\|subtitleFont\|captionFont\)' Hexbound/ --include="*.swift" || echo "CLEAN"
+rg -n 'DarkFantasyTheme\.(largeTitleFont|titleFont|bodyFont|bodyBoldFont|headlineFont|subtitleFont|captionFont)' Hexbound -g '*.swift' || echo "CLEAN"
 
 echo "=== 2. Invented spacing tokens ==="
-grep -rn 'LayoutConstants\.\(spacing\|padding\|margin\)[A-Z]' Hexbound/ --include="*.swift" || echo "CLEAN"
+rg -n 'LayoutConstants\.(spacing|padding|margin)[A-Z]' Hexbound -g '*.swift' || echo "CLEAN"
 
 echo "=== 3. Hardcoded hex colors in Views ==="
-grep -rn 'Color(hex:' Hexbound/Hexbound/Views/ --include="*.swift" || echo "CLEAN"
+rg -n 'Color\(hex:' Hexbound/Hexbound/Views -g '*.swift' || echo "CLEAN"
 
 echo "=== 4. Hardcoded system fonts ==="
-grep -rn '\.font(\.system(size:' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'design: .monospaced\|design: .rounded\|// emoji\|// keep\|// SF Symbol\|pillIconSize\|textCard\|iconSize' || echo "CLEAN"
+rg -n '\.font\(\.system\(size:' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'design: .monospaced|design: .rounded|// emoji|// keep|// SF Symbol|pillIconSize|textCard|iconSize' || echo "CLEAN"
 
 echo "=== 5. Raw Color.xxx in Views ==="
-grep -rn 'Color\.red\|Color\.orange\|Color\.green\|Color\.blue\|Color\.gray' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'DarkFantasyTheme\|// keep\|SurfaceLighting\|OrnamentalStyles' || echo "CLEAN"
+rg -n 'Color\.(red|orange|green|blue|gray)' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'DarkFantasyTheme|// keep|SurfaceLighting|OrnamentalStyles' || echo "CLEAN"
 
 echo "=== 6. SF Symbol currency icons ==="
-grep -rn 'dollarsign\.circle\|diamond\.fill.*currency' Hexbound/Hexbound/Views/ --include="*.swift" || echo "CLEAN"
+rg -n 'dollarsign\.circle|diamond\.fill.*currency' Hexbound/Hexbound/Views -g '*.swift' || echo "CLEAN"
 
 echo "=== 7. Hardcoded cornerRadius literals ==="
-grep -rn 'RoundedRectangle(cornerRadius: [0-9]' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'cornerRadius: 0\|cornerRadius: 1\b' || echo "CLEAN"
+rg -n 'RoundedRectangle\(cornerRadius: [0-9]' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'cornerRadius: 0|cornerRadius: 1\b' || echo "CLEAN"
 
 echo "=== 8. Hardcoded spacing in VStack/HStack ==="
-grep -rn 'VStack(spacing: [0-9]\|HStack(spacing: [0-9]' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'spacing: 0\|LayoutConstants\|// keep' || echo "CLEAN"
+rg -n 'VStack\(spacing: [0-9]|HStack\(spacing: [0-9]' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'spacing: 0|LayoutConstants|// keep' || echo "CLEAN"
 
 echo "=== 9. Hardcoded padding values ==="
-grep -rn '\.padding([^)]*[0-9]\+)' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'LayoutConstants\|// keep\|\.padding(0)\|\.padding()' || echo "CLEAN"
+rg -n '\.padding\([^)]*[0-9]+\)' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'LayoutConstants|// keep|\.padding\(0\)|\.padding\(\)' || echo "CLEAN"
 
 echo "=== 10. Raw Divider() usage ==="
-grep -rn 'Divider()' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'GoldDivider\|OrnamentalDivider\|EtchedGroove\|// keep\|statDivider\|SwiftUI menu' || echo "CLEAN"
+rg -n 'Divider\(\)' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'GoldDivider|OrnamentalDivider|EtchedGroove|// keep|statDivider|SwiftUI menu' || echo "CLEAN"
 
 echo "=== 11. Rectangle as divider ==="
-grep -rn 'Rectangle()\.fill.*frame(height: 1)' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'EtchedGroove\|// keep' || echo "CLEAN"
+rg -n 'Rectangle\(\)\.fill.*frame\(height: 1\)' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'EtchedGroove|// keep' || echo "CLEAN"
 
 echo "=== 12. Button without .buttonStyle ==="
-grep -rn 'Button(' Hexbound/Hexbound/Views/ --include="*.swift" -l | while read f; do
-  buttons=$(grep -c 'Button(' "$f")
-  styles=$(grep -c '\.buttonStyle(' "$f")
+rg -n 'Button\(' Hexbound/Hexbound/Views -g '*.swift' -l | while read f; do
+  buttons=$(rg -c 'Button\(' "$f" || true)
+  styles=$(rg -c '\.buttonStyle\(' "$f" || true)
+  buttons=${buttons:-0}
+  styles=${styles:-0}
   if [ "$buttons" -gt "$styles" ]; then
     echo "$f: $buttons Button() vs $styles .buttonStyle()"
   fi
 done || echo "CLEAN"
 
 echo "=== 13. Hardcoded frame dimensions ==="
-grep -rn '\.frame(width: [0-9]\+, height: [0-9]\+)' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'LayoutConstants\|// keep\|// layout\|Dev/' || echo "CLEAN"
+rg -n '\.frame\(width: [0-9]+, height: [0-9]+\)' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'LayoutConstants|// keep|// layout|Dev/' || echo "CLEAN"
 
 echo "=== 14. Merge conflict markers ==="
-grep -rn '^<<<<<<<\|^=======\$\|^>>>>>>>' . --include="*.swift" --include="*.ts" --include="*.prisma" | grep -v node_modules | grep -v ".git/" || echo "CLEAN"
+rg -n '^(<<<<<<<|=======$|>>>>>>>)' . -g '*.swift' -g '*.ts' -g '*.prisma' -g '!node_modules/**' -g '!.git/**' || echo "CLEAN"
 ```
 
 **Every finding must be either FIXED or marked with `// keep` comment + justification.**
@@ -93,13 +95,13 @@ Search for **repeated inline UI patterns** that appear 2+ times and should be ex
 
 ```bash
 # Find identical padding+background+cornerRadius combos (badge pattern)
-grep -rn '\.padding.*\.background.*\.clipShape\|\.padding.*\.background.*RoundedRectangle' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'Components/'
+rg -n '\.padding.*\.background.*\.clipShape|\.padding.*\.background.*RoundedRectangle' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'Components/'
 
 # Find repeated Text+font+foregroundStyle+padding combos
-grep -rn '\.font(DarkFantasyTheme\.caption\.bold())' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'Components/'
+rg -n '\.font\(DarkFantasyTheme\.caption\.bold\(\)\)' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'Components/'
 
 # Find views with inline gradient backgrounds (should be tokens or components)
-grep -rn 'LinearGradient(' Hexbound/Hexbound/Views/ --include="*.swift" | grep -v 'Theme/\|Components/' | head -30
+rg -n 'LinearGradient\(' Hexbound/Hexbound/Views -g '*.swift' | rg -v 'Theme/|Components/' | head -30
 ```
 
 ### Classification:
@@ -118,7 +120,7 @@ Cross-reference all files in `Views/Components/` with actual usage:
 # For each component, check if it's actually used
 for f in Hexbound/Hexbound/Views/Components/*.swift; do
   name=$(basename "$f" .swift)
-  count=$(grep -rl "$name" Hexbound/Hexbound/Views/ --include="*.swift" | grep -v "$f" | wc -l)
+  count=$(rg -l "$name" Hexbound/Hexbound/Views -g '*.swift' | rg -v "$f" | wc -l)
   echo "$name: used in $count files"
 done
 ```
@@ -134,8 +136,8 @@ Check if ALL tokens from Theme files are actually used in Views:
 
 ```bash
 # Extract all static let names from DarkFantasyTheme
-grep 'static let' Hexbound/Hexbound/Theme/DarkFantasyTheme.swift | sed 's/.*static let \([a-zA-Z]*\).*/\1/' | while read token; do
-  count=$(grep -rl "DarkFantasyTheme\.$token" Hexbound/Hexbound/Views/ --include="*.swift" | wc -l)
+rg 'static let' Hexbound/Hexbound/Theme/DarkFantasyTheme.swift | sed 's/.*static let \([a-zA-Z]*\).*/\1/' | while read token; do
+  count=$(rg -l "DarkFantasyTheme\\.$token" Hexbound/Hexbound/Views -g '*.swift' | wc -l)
   if [ "$count" -eq 0 ]; then
     echo "UNUSED TOKEN: DarkFantasyTheme.$token"
   fi

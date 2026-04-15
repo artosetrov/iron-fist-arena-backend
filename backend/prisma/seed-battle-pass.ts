@@ -7,21 +7,19 @@ import { PrismaClient } from '@prisma/client'
 import { BATTLE_PASS_MILESTONE_CATALOG_IDS } from './battle-pass-milestones'
 
 const prisma = new PrismaClient()
+type BattlePassRewardSeedType = 'gold' | 'gems' | 'xp' | 'stamina' | 'item'
 
 async function main() {
   console.log('Seeding battle pass data...')
 
-  // Create Season 1 (active for 90 days from now)
+  // Create Season 1 once. Re-runs should not roll the live window forward.
   const now = new Date()
   const endDate = new Date(now)
   endDate.setDate(endDate.getDate() + 90)
 
   const season = await prisma.season.upsert({
     where: { number: 1 },
-    update: {
-      startAt: now,
-      endAt: endDate,
-    },
+    update: {},
     create: {
       number: 1,
       theme: 'Season 1: Dark Forge',
@@ -30,7 +28,7 @@ async function main() {
     },
   })
 
-  console.log(`Season created/updated: ${season.id} (${season.theme})`)
+  console.log(`Season ensured: ${season.id} (${season.theme})`)
 
   const milestoneItems = await prisma.item.findMany({
     where: {
@@ -55,7 +53,10 @@ async function main() {
     }
   }
 
-  // Delete existing rewards for this season to re-seed
+  // Delete existing rewards for this season to re-seed.
+  // Operator warning: this rewrites reward rows for Season 1 and is meant for
+  // bootstrap / controlled repair flows, not casual use on a live season with
+  // claimed rewards.
   await prisma.battlePassReward.deleteMany({
     where: { seasonId: season.id },
   })
@@ -64,7 +65,7 @@ async function main() {
   const rewards: {
     bpLevel: number
     isPremium: boolean
-    rewardType: string
+    rewardType: BattlePassRewardSeedType
     rewardId: string | null
     rewardAmount: number
   }[] = []

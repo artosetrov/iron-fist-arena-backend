@@ -16,6 +16,8 @@ You build Hexbound app screens in the **Figma Screens file** using ONLY componen
 **DS file:** `uDjXIz7CdJxcEOI5jCBcjY`
 **DS library key:** `lk-1e3d5b13e106c557d2ec56c3ac95231374bc21a6136997e732d7a804ec4d86c11297eee6bd376c1bc936574dd6ba4ddea2380be439e8701a5408d7daaff18fb4`
 
+Verify these keys against the current Figma context before writing; do not build into a stale Screens or DS file.
+
 ## HARD RULES (violate any = delete and rebuild)
 
 1. **ZERO hardcoded colors** — every fill/stroke/text color bound to Color collection variable

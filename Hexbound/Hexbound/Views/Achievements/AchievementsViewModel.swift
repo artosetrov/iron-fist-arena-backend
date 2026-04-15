@@ -68,8 +68,26 @@ final class AchievementsViewModel {
     func claim(_ achievement: Achievement) async {
         guard !claimingKeys.contains(achievement.key) else { return }
         claimingKeys.insert(achievement.key)
+        let previousLevel = appState.currentCharacter?.level
 
-        // ── Optimistic UI: mark claimed instantly ──
+        let result = await service.claim(achievementKey: achievement.key)
+        claimingKeys.remove(achievement.key)
+
+        guard let result else {
+            appState.showToast("Claim failed. Try again.", type: .error)
+            return
+        }
+
+        appState.applyAuthoritativeRewardState(
+            gold: result.gold,
+            gems: result.gems,
+            xp: result.xp,
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel,
+            statPointsAwarded: result.statPointsAwarded,
+            previousLevel: previousLevel
+        )
+
         if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
             achievements[idx].rewardClaimed = true
         }
@@ -77,27 +95,14 @@ final class AchievementsViewModel {
         HapticManager.success()
         SFXManager.shared.play(.sealStamp)
 
-        // ── API call (runs after UI update thanks to await suspension) ──
-        let success = await service.claim(achievementKey: achievement.key)
-        claimingKeys.remove(achievement.key)
-        if success {
-            // Show reward modal
-            claimRewardConfig = ClaimRewardConfig(
-                title: "ACHIEVEMENT\nUNLOCKED!",
-                subtitle: achievement.title,
-                goldReward: achievement.reward?.gold ?? 0,
-                gemsReward: achievement.reward?.gems ?? 0,
-                xpReward: 0,
-                lootItems: []
-            )
-        } else {
-            // Revert on failure
-            if let idx = achievements.firstIndex(where: { $0.key == achievement.key }) {
-                achievements[idx].rewardClaimed = false
-            }
-            cache.cacheAchievements(achievements)
-            appState.showToast("Claim failed. Try again.", type: .error)
-        }
+        claimRewardConfig = ClaimRewardConfig(
+            title: "CLAIMED!",
+            subtitle: achievement.title,
+            goldReward: result.rewardGold,
+            gemsReward: result.rewardGems,
+            xpReward: result.rewardXp,
+            lootItems: []
+        )
     }
 
     // MARK: - Auto-Select Tab (H4 fix)

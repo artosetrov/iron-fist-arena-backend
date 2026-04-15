@@ -443,6 +443,7 @@ final class DungeonRushViewModel {
             let rewards = result["rewards"] as? [String: Any]
             accumulatedGold = rewards?["totalGold"] as? Int ?? accumulatedGold
             accumulatedXp = rewards?["totalXp"] as? Int ?? accumulatedXp
+            applyCharacterRewardState(from: result)
 
             // Count loot
             if let lootItems = result["loot"] as? [[String: Any]], !lootItems.isEmpty {
@@ -465,13 +466,6 @@ final class DungeonRushViewModel {
 
             // Advance to next room
             advanceFromResult(result)
-
-            // Check level up
-            if let leveledUp = result["leveled_up"] as? Bool, leveledUp,
-               let newLevel = result["new_level"] as? Int {
-                let statPoints = result["stat_points_awarded"] as? Int ?? 3
-                appState.triggerLevelUpModal(newLevel: newLevel, statPoints: statPoints)
-            }
         } else {
             isGameOver = true
             appState.showToast("Defeated!", subtitle: "Rewards saved — try again anytime", type: .error)
@@ -492,6 +486,7 @@ final class DungeonRushViewModel {
         let rewards = result["rewards"] as? [String: Any]
         accumulatedGold = rewards?["totalGold"] as? Int ?? accumulatedGold
         accumulatedXp = rewards?["totalXp"] as? Int ?? accumulatedXp
+        applyCharacterRewardState(from: result)
 
         switch type {
         case "treasure":
@@ -528,6 +523,40 @@ final class DungeonRushViewModel {
 
         // Advance
         advanceFromResult(result)
+    }
+
+    private func applyCharacterRewardState(from result: [String: Any]) {
+        guard let char = appState.currentCharacter else { return }
+        let previousLevel = char.level
+        var resolvedGold: Int?
+        var resolvedXp: Int?
+
+        if let rewards = result["rewards"] as? [String: Any],
+           let goldDelta = rewards["gold"] as? Int,
+           goldDelta != 0 {
+            resolvedGold = char.gold + goldDelta
+        }
+
+        if let currentXp = result["current_xp"] as? Int {
+            resolvedXp = currentXp
+        } else if let rewards = result["rewards"] as? [String: Any],
+                  let xpDelta = rewards["xp"] as? Int,
+                  xpDelta != 0 {
+            resolvedXp = (char.experience ?? 0) + xpDelta
+        }
+
+        let leveledUp = result["leveled_up"] as? Bool ?? false
+        let newLevel = result["new_level"] as? Int
+        let statPointsAwarded = result["stat_points_awarded"] as? Int ?? 0
+
+        appState.applyAuthoritativeRewardState(
+            gold: resolvedGold,
+            xp: resolvedXp,
+            leveledUp: leveledUp,
+            newLevel: newLevel,
+            statPointsAwarded: statPointsAwarded,
+            previousLevel: previousLevel
+        )
     }
 
     // MARK: - Private: Advance to Next Room

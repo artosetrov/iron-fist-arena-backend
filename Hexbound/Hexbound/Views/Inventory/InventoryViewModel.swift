@@ -162,16 +162,8 @@ final class InventoryViewModel {
         appState.showToast("Equipped \(item.displayName)", type: .reward)
 
         if let updated = await service.equip(inventoryId: item.id) {
-            // BUG-62 (2026-04-11): merge only the equipment slice from
-            // the server response — the /api/inventory/equip endpoint
-            // returns `{ equipment: [...] }` (NO consumables). Previously
-            // we replaced `items = updated` outright whenever the
-            // equipped-id set disagreed with the optimistic prediction,
-            // which silently erased every consumable (potions, gems…)
-            // from inventory until the next full `loadInventory()`.
-            // Now we keep existing consumables and replace only the
-            // equipment part.
-            mergeEquipmentResponse(updated)
+            items = updated
+            appState.cachedInventory = updated
         } else {
             // Rollback on failure
             items = previousItems
@@ -189,49 +181,13 @@ final class InventoryViewModel {
         appState.showToast("Unequipped \(item.displayName)", type: .info)
 
         if let updated = await service.unequip(inventoryId: item.id) {
-            // BUG-62: merge only the equipment slice (see note in equip).
-            mergeEquipmentResponse(updated)
+            items = updated
+            appState.cachedInventory = updated
         } else {
             items = previousItems
             appState.cachedInventory = previousItems
             appState.showToast("Failed to unequip", subtitle: "Inventory may be full", type: .error)
         }
-    }
-
-    /// Merge an equipment-only server response into `items`, preserving
-    /// consumables. Skipped when the equipped-id set already matches the
-    /// optimistic prediction AND the equipment rows are byte-equivalent —
-    /// that's the happy path (most equips), and a no-op avoids a pointless
-    /// full-grid re-render.
-    private func mergeEquipmentResponse(_ serverEquipment: [Item]) {
-        let consumables = items.filter { $0.itemType == .consumable }
-        let currentEquipment = items.filter { $0.itemType != .consumable }
-
-        // Fast equality: same count + same (id, isEquipped, equippedSlot,
-        // durability, upgradeLevel) per id. Anything else means the server
-        // changed something (auto-swap of two-handed weapon, corrected
-        // ring slot, durability tick, upgrade, …) and we must apply it.
-        if serverEquipment.count == currentEquipment.count {
-            let serverMap = Dictionary(uniqueKeysWithValues: serverEquipment.map { ($0.id, $0) })
-            let allMatch = currentEquipment.allSatisfy { local in
-                guard let remote = serverMap[local.id] else { return false }
-                return local.isEquipped == remote.isEquipped
-                    && local.equippedSlot == remote.equippedSlot
-                    && local.durability == remote.durability
-                    && local.upgradeLevel == remote.upgradeLevel
-            }
-            if allMatch {
-                // Optimistic prediction matches — skip the re-render entirely.
-                appState.cachedInventory = items
-                return
-            }
-        }
-
-        // Server disagreed with optimistic prediction: apply equipment
-        // slice verbatim, keep consumables intact.
-        let merged = serverEquipment + consumables
-        items = merged
-        appState.cachedInventory = merged
     }
 
     func sell(_ item: Item) async {

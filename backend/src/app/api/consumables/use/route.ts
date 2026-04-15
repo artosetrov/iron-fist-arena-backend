@@ -13,6 +13,7 @@ import {
   isStaminaPotion,
   isHealthPotion,
 } from '@/lib/game/consumable-effects'
+import { invalidateActiveSlotsCache } from '@/lib/game/active-slots'
 
 /**
  * POST /api/consumables/use
@@ -162,6 +163,7 @@ export async function POST(req: NextRequest) {
       updateDailyQuestProgress(prisma, character_id, 'consumable_use'),
       // W3.D5 — Weekly BP challenge: Alchemist slot
       updateWeeklyChallengeProgress(prisma, character_id, 'consumable_use'),
+      isHealthPotion(ctEnum) ? invalidateActiveSlotsCache(character_id) : Promise.resolve(),
     ])
 
     if (result.kind === 'stamina') {

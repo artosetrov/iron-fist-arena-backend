@@ -33,7 +33,8 @@ import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
  *
  * Security notes:
  *   - Double-check character.userId === user.id (ownership)
- *   - Gate on tutorialCompleted to prevent replay-for-rewards exploits
+ *   - Gate on tutorialCompleted/tutorialSkipped/tutorialStep to prevent
+ *     replay-for-rewards exploits across legacy and skip paths
  *   - Rate limited at 5/60s (higher than resolve because preload is cheap)
  *
  * See: docs/07_ui_ux/W2_D3_SCRIPTED_FIGHT_DESIGN.md
@@ -66,6 +67,8 @@ export async function POST(req: NextRequest) {
         id: true,
         userId: true,
         tutorialCompleted: true,
+        tutorialSkipped: true,
+        tutorialStep: true,
       },
     })
 
@@ -75,7 +78,11 @@ export async function POST(req: NextRequest) {
     if (character.userId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    if (character.tutorialCompleted) {
+    if (
+      character.tutorialCompleted ||
+      character.tutorialSkipped ||
+      character.tutorialStep >= 3
+    ) {
       return NextResponse.json(
         { error: 'Tutorial already completed', alreadyCompleted: true },
         { status: 409 },

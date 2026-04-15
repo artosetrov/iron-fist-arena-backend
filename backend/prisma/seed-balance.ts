@@ -97,7 +97,9 @@ const ITEM_BALANCE_PROFILES: { itemType: string; statWeights: Record<string, num
 async function main() {
   console.log('Seeding item balance configuration...')
 
-  // Seed GameConfig values
+  // Seed GameConfig values.
+  // Intentionally bootstrap-only: existing keys are left untouched so this
+  // script does not overwrite operator-tuned live config on re-run.
   let created = 0
   let skipped = 0
 
@@ -120,7 +122,9 @@ async function main() {
 
   console.log(`GameConfig: ${created} created, ${skipped} skipped (already exist)`)
 
-  // Seed ItemBalanceProfile values
+  // Seed ItemBalanceProfile values.
+  // Same rule as GameConfig above: re-runs fill gaps but do not reconcile
+  // changed defaults for already-seeded item types.
   let profilesCreated = 0
   let profilesSkipped = 0
 

@@ -1,5 +1,17 @@
 import Foundation
 
+private struct BattlePassBuyPremiumResponse: Codable {
+    struct BattlePassSummary: Codable {
+        let id: String
+        let premium: Bool
+        let bpXp: Int
+    }
+
+    let battlePass: BattlePassSummary
+    let gemsRemaining: Int
+    let cost: Int
+}
+
 @MainActor
 final class BattlePassService {
     private let appState: AppState
@@ -11,13 +23,10 @@ final class BattlePassService {
     func loadBattlePass() async -> BattlePassData? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let data = try await APIClient.shared.getRaw(
+            var bp: BattlePassData = try await APIClient.shared.get(
                 APIEndpoints.battlePass,
                 params: ["character_id": charId]
             )
-            let jsonData = try JSONSerialization.data(withJSONObject: data)
-            let decoder = JSONDecoder()
-            var bp = try decoder.decode(BattlePassData.self, from: jsonData)
             // Tag tracks
             var free = bp.freeRewards
             for i in free.indices { free[i].track = "free" }
@@ -40,17 +49,16 @@ final class BattlePassService {
 
     /// Claims all eligible rewards at the given BP level.
     /// Throws on failure so callers can show context-specific messages.
-    func claimReward(level: Int) async throws {
+    func claimReward(level: Int) async throws -> BattlePassClaimResponse {
         guard let charId = appState.currentCharacter?.id else {
             throw BattlePassClaimError.noCharacter
         }
         do {
-            _ = try await APIClient.shared.postRaw(
+            let response: BattlePassClaimResponse = try await APIClient.shared.post(
                 APIEndpoints.battlePassClaim(level),
                 body: ["character_id": charId]
             )
-            // Refresh character in background (don't block UI)
-            Task { [weak self] in await self?.refreshCharacter() }
+            return response
         } catch let error as APIError {
             switch error {
             case .clientError(let code, let msg, _):
@@ -70,23 +78,27 @@ final class BattlePassService {
             default:
                 throw BattlePassClaimError.serverError(error.localizedDescription)
             }
+        } catch let error as DecodingError {
+            throw BattlePassClaimError.serverError(error.localizedDescription)
         }
     }
 
     func buyPremium() async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            _ = try await APIClient.shared.postRaw(
+            let response: BattlePassBuyPremiumResponse = try await APIClient.shared.post(
                 APIEndpoints.battlePassBuyPremium,
                 body: ["character_id": charId]
             )
-            // Refresh character in background (don't block UI)
-            Task { [weak self] in await self?.refreshCharacter() }
+            if var char = appState.currentCharacter {
+                char.gems = response.gemsRemaining
+                appState.currentCharacter = char
+            }
             return true
         } catch let error as APIError {
             let subtitle: String
             switch error {
-            case .serverError(_, let msg):
+            case .clientError(_, let msg, _), .serverError(_, let msg):
                 if msg.contains("Not enough gems") {
                     subtitle = "Not enough gems"
                 } else if msg.contains("already premium") {
@@ -105,11 +117,6 @@ final class BattlePassService {
             appState.showToast("Failed to buy premium", subtitle: "Check connection and try again", type: .error)
             return false
         }
-    }
-
-    private func refreshCharacter() async {
-        let charService = CharacterService(appState: appState)
-        await charService.loadCharacter()
     }
 }
 

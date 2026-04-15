@@ -23,7 +23,7 @@ Two currencies: Gold (soft, earned) and Gems (premium, mostly IAP).
 - Equipment purchase: 100–8,000g
 - Upgrades: exponential 150 × 1.4^N (+1 to +10) — **dominant whale sink**
 - Repairs: 120 + level × 20 + rarity multiplier
-- Potions: 125–875g
+- Potions: live-configurable via `GameConfig` (`consumable.price.*`). Code fallback baseline currently matches the seeded catalog: stamina `100/250/500`, health `150/350/700`.
 - Skills: learn 200g, upgrade 500 + 500 × rank
 - Inventory expansion: 5,000g/slot (28 base → 58 max)
 
@@ -58,7 +58,7 @@ Verified via 1000-player Monte Carlo simulator. CI gate prevents drift.
 
 ### W3.D3 Rebalance (2026-04-10)
 
-Win streak capped +50% (was +100%). CHA gold bonus capped 80% (was 125%). Repair costs raised. Consumable prices +25%. See [[rebalance-w3d3]].
+Win streak capped +50% (was +100%). CHA gold bonus capped 80% (was 125%). Repair costs raised. Consumable price increase is documented as intended policy, but the repo-visible code fallback still stays on seeded potion prices unless `GameConfig` overrides are present. See [[rebalance-w3d3]].
 
 ## See Also
 

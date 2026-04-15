@@ -71,6 +71,9 @@ final class GameDataCache {
     private(set) var incomingChallenges: [IncomingChallenge] = []
     private var incomingChallengesFetchedAt: Date?
 
+    private(set) var contrabandResponse: ContrabandResponse?
+    private var contrabandFetchedAt: Date?
+
     // MARK: - Feature Flags (resolved server-side, keyed by flag key)
 
     private(set) var featureFlags: [String: Any] = [:]
@@ -526,6 +529,27 @@ final class GameDataCache {
         incomingChallengesFetchedAt = nil
     }
 
+    // MARK: - Contraband Cache
+    //
+    // Cooldown state is monotonic: until the player claims, `nextAvailableAt`
+    // does not change. So we cache the last response and serve it instantly
+    // on shop entry; revalidation runs in the background (stale-while-
+    // revalidate). On claim we invalidate so the next entry refetches.
+
+    func cachedContraband() -> ContrabandResponse? {
+        return contrabandResponse
+    }
+
+    func cacheContraband(_ data: ContrabandResponse) {
+        contrabandResponse = data
+        contrabandFetchedAt = Date()
+    }
+
+    func invalidateContraband() {
+        contrabandResponse = nil
+        contrabandFetchedAt = nil
+    }
+
     // MARK: - Reset
 
     func invalidateAll() {
@@ -558,6 +582,8 @@ final class GameDataCache {
         socialStatusFetchedAt = nil
         incomingChallenges = []
         incomingChallengesFetchedAt = nil
+        contrabandResponse = nil
+        contrabandFetchedAt = nil
         opponentProfiles = [:]
         opponentProfilesFetchedAt = [:]
         featureFlags = [:]

@@ -137,5 +137,8 @@ export async function invalidateSkillCache(characterId: string): Promise<void> {
 }
 
 export async function invalidatePassiveCache(characterId: string): Promise<void> {
-  await cacheDelete(`passives:char:${characterId}`)
+  await Promise.all([
+    cacheDelete(`passives:char:${characterId}`),
+    cacheDelete(`passives:char:v2:${characterId}`),
+  ])
 }

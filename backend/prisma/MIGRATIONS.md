@@ -22,6 +22,29 @@ npm run db:seed
 
 Do not use `db:push` for shared, staging, or production databases.
 
+Important: `npm run db:seed` currently runs only `prisma/seed.ts`, which seeds
+the core item catalog and PvP bot roster. Feature-specific bootstrap data still
+requires explicit follow-up steps.
+
+Common follow-up seeds after a fresh bootstrap:
+
+```bash
+npx tsx prisma/seed-balance.ts
+npx tsx prisma/seed-dungeons.ts
+npx tsx prisma/seed-dungeon-drops.ts
+npx tsx prisma/seed-battle-pass.ts
+```
+
+Passive tree SQL is also separate on purpose because it is destructive reset
+logic, not a casual idempotent seed:
+
+```bash
+psql "$DATABASE_URL" -f prisma/seeds/passive-tree.sql
+psql "$DATABASE_URL" -f prisma/seeds/passive-tree-activatable.sql
+```
+
+Run only the feature seeds your environment actually needs.
+
 ## Existing database without `_prisma_migrations`
 
 If the database already has the game tables but Prisma history is missing:

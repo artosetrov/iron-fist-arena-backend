@@ -17,7 +17,7 @@ updated: 2026-04-14
 | Win streak cap | +100% at 8+ | +50% at 5+ | Top players farming too much gold via streaks |
 | CHA gold bonus cap | +125% | +80% | CHA-stacking builds broke economy simulation |
 | Repair costs | base formula | +25% | Durability system needed stronger sink |
-| Consumable prices | base | +25% | Potions were too cheap relative to gold income |
+| Consumable prices | base | +25% target policy | Potions were too cheap relative to gold income |
 | Stamina refill (1st) | 30 gems | 50 gems | Refills were too accessible, compress session length |
 | Gold mine boost | 3 gems | 15 gems | Was essentially free, no real decision |
 | Protection scroll | 50 gems | 40 gems | Slight buff to offset repair cost increase |
@@ -33,6 +33,10 @@ Post-rebalance simulation results:
 - Casual: 57.9% (target 55–65%) ✓
 - Active: 62.3% (target 60–70%) ✓
 - Whale: 74.3% (target 70–80%) ✓
+
+## Implementation Note
+
+The repo currently documents the potion price increase as intended rebalance policy, but the visible code fallback still follows the seeded catalog baseline (`100/250/500` stamina, `150/350/700` health) unless `GameConfig` overrides are supplied. Treat the +25% potion increase as a rollout requirement, not as a guaranteed fallback baked into every route.
 
 ## See Also
 

@@ -83,12 +83,12 @@ struct ComponentName: View {
 
 For every instance of the inline pattern:
 
-1. `grep -rn` to find ALL occurrences
+1. `rg -n` to find ALL occurrences
 2. Replace each with the new component
 3. Verify the parameters match the original inline code
 4. Run CDO scan to confirm no violations introduced
 
-**CRITICAL:** After refactoring, grep ALL callers to make sure nothing broke. Common mistakes:
+**CRITICAL:** After refactoring, search ALL callers with `rg` to make sure nothing broke. Common mistakes:
 - Missing import
 - Parameter name mismatch
 - Optional vs required parameter
@@ -96,7 +96,7 @@ For every instance of the inline pattern:
 
 ## Step 5: Create Figma DS Component
 
-Use `figma-use` skill with fileKey `uDjXIz7CdJxcEOI5jCBcjY`.
+Use `figma-use` skill with the current verified DS file key. Historical default: `uDjXIz7CdJxcEOI5jCBcjY`; verify before writing.
 
 ### Determine the correct Figma page:
 
@@ -150,14 +150,14 @@ Use `figma-use` skill with fileKey `uDjXIz7CdJxcEOI5jCBcjY`.
 Run full CDO scan:
 ```bash
 # Token violations
-grep -rn 'DarkFantasyTheme\.\(largeTitleFont\|titleFont\|bodyFont\)' Hexbound/ --include="*.swift"
-grep -rn 'LayoutConstants\.\(spacing\|padding\|margin\)[A-Z]' Hexbound/ --include="*.swift"
+rg -n 'DarkFantasyTheme\.(largeTitleFont|titleFont|bodyFont)' Hexbound -g '*.swift'
+rg -n 'LayoutConstants\.(spacing|padding|margin)[A-Z]' Hexbound -g '*.swift'
 
 # Component actually used
-grep -rn 'ComponentName' Hexbound/Hexbound/Views/ --include="*.swift" | wc -l
+rg -n 'ComponentName' Hexbound/Hexbound/Views -g '*.swift' | wc -l
 
 # pbxproj valid
-grep 'ComponentName' Hexbound/Hexbound.xcodeproj/project.pbxproj | wc -l  # Should be 4
+rg 'ComponentName' Hexbound/Hexbound.xcodeproj/project.pbxproj | wc -l  # Should be 4
 ```
 
 Take a Figma screenshot of the new component to visually verify.

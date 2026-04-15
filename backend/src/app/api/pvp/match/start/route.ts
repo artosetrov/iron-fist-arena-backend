@@ -118,7 +118,11 @@ export async function POST(req: NextRequest) {
     // shape downstream so the strike-resolver + client only see one list.
     type TalentRow = {
       slot_index: number
-      node_id: number
+      // passive_nodes.id is a UUID string (Prisma `String @id @default(uuid())`),
+      // NOT an integer. Typing it as `number` caused iOS /match/start to crash
+      // with "type mismatch Int at actives.p1.[0].nodeId" once any talent was
+      // equipped (incident 2026-04-14).
+      node_id: string
       node_key: string
       name: string
       icon: string | null
@@ -148,8 +152,13 @@ export async function POST(req: NextRequest) {
                   COALESCE(i.item_name, s.consumable_type::text) AS name,
                   i.image_key AS icon
              FROM character_active_slots s
+             JOIN consumable_inventory ci
+               ON ci.character_id = s.character_id
+              AND ci.consumable_type = s.consumable_type
              LEFT JOIN items i ON i.catalog_id = s.consumable_type::text
-             WHERE s.character_id = $1 AND s.consumable_type IS NOT NULL
+             WHERE s.character_id = $1
+               AND s.consumable_type IS NOT NULL
+               AND ci.quantity > 0
              ORDER BY s.slot_index`,
           charId
         ),
@@ -176,7 +185,7 @@ export async function POST(req: NextRequest) {
       const talentSnaps = slots.talentRows.map((r) => ({
         slot_index: r.slot_index,
         kind: 'talent' as const,
-        node_id: r.node_id as number | null,
+        node_id: r.node_id as string | null,
         node_key: r.node_key as string | null,
         consumable_type: null as string | null,
         name: r.name,
@@ -193,7 +202,7 @@ export async function POST(req: NextRequest) {
         return {
           slot_index: r.slot_index,
           kind: 'consumable' as const,
-          node_id: null as number | null,
+          node_id: null as string | null,
           node_key: null as string | null,
           consumable_type: r.consumable_type,
           name: r.name ?? r.consumable_type,

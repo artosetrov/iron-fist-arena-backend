@@ -22,7 +22,7 @@
  *     and converted to {r, g, b, a} automatically.
  *   - `scopes`: Array of VariableScope strings. Omit to use [] (hidden/primitive).
  *   - `codeSyntax`: Platform code syntax strings. Omit to skip.
- * @param {string} [runId] - Optional dsb_run_id to tag every variable.
+ * @param {string} [runId] - Optional shared `dsb/run_id` to tag every variable.
  * @returns {Promise<{variables: Record<string, Variable>}>}
  *   `variables` maps each token name to its created Variable object.
  */
@@ -33,10 +33,10 @@ async function createSemanticTokens(collection, modeIds, tokenMap, runId) {
     // Create the variable
     const variable = figma.variables.createVariable(token.name, collection, token.type)
 
-    // Tag for cleanup
-    variable.setPluginData('dsb_key', `variable/${token.name}`)
+    // Tag for cleanup and idempotency across use_figma runs
+    variable.setSharedPluginData('dsb', 'key', `variable/${token.name}`)
     if (runId) {
-      variable.setPluginData('dsb_run_id', runId)
+      variable.setSharedPluginData('dsb', 'run_id', runId)
     }
 
     // Set values for each mode

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Figma → Swift Token Sync
 #
 # Step 1: Export tokens from Figma DS via Claude Code MCP
@@ -10,8 +10,11 @@
 #
 # This script runs Step 2 only. Step 1 requires Figma MCP connection.
 
-set -e
-cd "$(dirname "$0")/.."
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$REPO_DIR"
 
 if [ ! -f figma-tokens.json ]; then
   echo "❌ figma-tokens.json not found."

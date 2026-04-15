@@ -71,9 +71,6 @@ struct StanceSelectorDetailView: View {
 
                         // Zone Matching — compact single row
                         zoneMatchingCompact()
-
-                        // Current stance confirmation
-                        stanceConfirmation(vm)
                     }
                     .padding(.top, LayoutConstants.spaceSM)
                     .padding(.bottom, LayoutConstants.space2XL)
@@ -288,14 +285,4 @@ struct StanceSelectorDetailView: View {
         .padding(.horizontal, LayoutConstants.screenPadding)
     }
 
-    // MARK: - Stance Confirmation (compact summary below selectors)
-
-    @ViewBuilder
-    private func stanceConfirmation(_ vm: StanceSelectorViewModel) -> some View {
-        StanceDisplayView(
-            attack: vm.attackZone,
-            defense: vm.defenseZone
-        )
-        .padding(.horizontal, LayoutConstants.screenPadding)
-    }
 }

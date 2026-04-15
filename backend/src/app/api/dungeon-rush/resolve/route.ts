@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
+import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
 import { chaGoldBonus } from '@/lib/game/balance'
 import {
   resolveEvent,
@@ -12,13 +13,12 @@ import {
   isCombatRoom,
   TOTAL_RUSH_ROOMS,
   RUSH_BUFFS,
-  RUSH_ARTIFACTS,
   type RushState,
 } from '@/lib/game/dungeon-rush'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
-import { getBattlePassConfig } from '@/lib/game/live-config'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { grantRewardEntries } from '@/lib/game/reward-grants'
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
   let activeRoomType: string | null = null
 
   try {
-    const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
     const { character_id, run_id, action, artifact_id } = body
 
@@ -49,8 +48,8 @@ export async function POST(req: NextRequest) {
         where: { id: character_id, userId: user.id },
         select: {
           id: true, cha: true,
-          // W3.D5 — Premium Forever gold multiplier
-          user: { select: { premiumUntil: true } },
+          // Premium entitlement (Forever or active subscription) for gold bonus
+          user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
         },
       }),
       prisma.dungeonRun.findFirst({
@@ -263,23 +262,21 @@ export async function POST(req: NextRequest) {
           throw new Error('RUSH_ROOM_TYPE_INVALID')
       }
 
+      let rewardResult: Awaited<ReturnType<typeof grantRewardEntries>> | null = null
+
       // W3.D5 — Premium Forever +10% gold applied LAST (after CHA / event)
       if (goldReward > 0) {
         goldReward = Math.floor(goldReward * goldBonusMultiplier(character.user))
       }
       if (goldReward > 0 || xpReward > 0) {
-        if (goldReward > 0) {
-          await tx.user.update({
-            where: { id: user.id },
-            data: { gold: { increment: goldReward } },
-          })
-        }
-        if (xpReward > 0) {
-          await tx.character.update({
-            where: { id: character_id },
-            data: { currentXp: { increment: xpReward } },
-          })
-        }
+        rewardResult = await grantRewardEntries(tx, {
+          userId: user.id,
+          characterId: character_id,
+          rewards: [
+            ...(goldReward > 0 ? [{ type: 'gold' as const, quantity: goldReward }] : []),
+            ...(xpReward > 0 ? [{ type: 'xp' as const, quantity: xpReward }] : []),
+          ],
+        })
       }
 
       const updatedRooms = [...lockedState.rooms]
@@ -313,6 +310,10 @@ export async function POST(req: NextRequest) {
             totalXp,
             floorsCleared: lockedState.floorsCleared,
           },
+          current_xp: rewardResult?.xp ?? null,
+          leveled_up: rewardResult?.levelUpResult?.leveledUp ?? false,
+          new_level: rewardResult?.levelUpResult?.newLevel,
+          stat_points_awarded: rewardResult?.levelUpResult?.statPointsAwarded,
           nextRoom: null,
           nextEnemy: undefined,
         }
@@ -354,6 +355,10 @@ export async function POST(req: NextRequest) {
           totalXp,
           floorsCleared: newState.floorsCleared,
         },
+        current_xp: rewardResult?.xp ?? null,
+        leveled_up: rewardResult?.levelUpResult?.leveledUp ?? false,
+        new_level: rewardResult?.levelUpResult?.newLevel,
+        stat_points_awarded: rewardResult?.levelUpResult?.statPointsAwarded,
         nextRoom: {
           index: nextRoom.index,
           type: nextRoom.type,
@@ -370,6 +375,11 @@ export async function POST(req: NextRequest) {
       incrementGuildChallenge(prisma, 'gold_earned', resolvedRoom.rewards.gold).catch(() => {})
     }
 
+    if (resolvedRoom.leveled_up) {
+      await invalidateSkillCache(character_id)
+      await invalidatePassiveCache(character_id)
+    }
+
     return NextResponse.json({
       ...resolvedRoom.roomResult,
       rushComplete: resolvedRoom.rushComplete,
@@ -377,6 +387,10 @@ export async function POST(req: NextRequest) {
       buffs: resolvedRoom.buffs,
       artifacts: state.artifacts ?? [],
       rewards: resolvedRoom.rewards,
+      current_xp: resolvedRoom.current_xp,
+      leveled_up: resolvedRoom.leveled_up,
+      new_level: resolvedRoom.new_level,
+      stat_points_awarded: resolvedRoom.stat_points_awarded,
       ...(resolvedRoom.nextRoom ? { nextRoom: resolvedRoom.nextRoom } : {}),
       ...(resolvedRoom.nextEnemy ? { nextEnemy: resolvedRoom.nextEnemy } : {}),
     })

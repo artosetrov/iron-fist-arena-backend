@@ -9,17 +9,20 @@ Hexbound Sound Downloader — P0 MVP Sounds
     python3 scripts/download_sounds.py
 
 Требования: Python 3.7+ (requests и beautifulsoup4 не нужны — используем только stdlib)
+
+Важно: это bootstrap-скрипт для курированного Pixabay seed-набора, а не
+канонический source of truth для production-аудио. Актуальные bundle-имена и
+вариации живут в `Hexbound/Hexbound/Persistence/SFXCatalog.swift`.
 """
 
-import os
 import re
-import json
 import time
 import urllib.request
 import urllib.parse
 import urllib.error
 import ssl
 from pathlib import Path
+from typing import Optional
 
 # ============================================================
 # КОНФИГУРАЦИЯ — Курированные Pixabay страницы для каждого звука
@@ -97,7 +100,7 @@ def fetch_url(url: str) -> str:
         return resp.read().decode("utf-8", errors="replace")
 
 
-def search_pixabay_sfx(query: str) -> str | None:
+def search_pixabay_sfx(query: str) -> Optional[str]:
     """Search Pixabay SFX and return first result page URL."""
     encoded = urllib.parse.quote(query)
     search_url = f"https://pixabay.com/sound-effects/search/{encoded}/"
@@ -112,7 +115,7 @@ def search_pixabay_sfx(query: str) -> str | None:
     return None
 
 
-def search_pixabay_music(query: str) -> str | None:
+def search_pixabay_music(query: str) -> Optional[str]:
     """Search Pixabay Music and return first result page URL."""
     encoded = urllib.parse.quote(query)
     search_url = f"https://pixabay.com/music/search/{encoded}/"
@@ -126,7 +129,7 @@ def search_pixabay_music(query: str) -> str | None:
     return None
 
 
-def extract_cdn_url(page_url: str) -> str | None:
+def extract_cdn_url(page_url: str) -> Optional[str]:
     """Extract CDN download URL from a Pixabay sound/music page."""
     try:
         html = fetch_url(page_url)
@@ -157,15 +160,18 @@ def download_file(url: str, output_path: Path) -> bool:
 
 
 def process_sound(filename: str, subfolder: str, source: str, description: str,
-                  base_dir: Path, is_music: bool = False) -> bool:
+                  base_dir: Path, is_music: bool = False) -> str:
     """Process one sound: resolve URL → extract CDN → download."""
     output_dir = base_dir / "sounds" / subfolder
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / filename
 
     if output_path.exists():
-        print(f"  ⏭ Уже есть: {filename}")
-        return True
+        if output_path.stat().st_size > 100:
+            print(f"  ⏭ Уже есть: {filename}")
+            return "skipped"
+        print(f"  ⚠ Поврежденный файл, перекачиваю: {filename}")
+        output_path.unlink()
 
     print(f"\n{'🎵' if is_music else '🔊'} {filename} — {description}")
 
@@ -179,7 +185,7 @@ def process_sound(filename: str, subfolder: str, source: str, description: str,
             page_url = search_pixabay_sfx(query)
         if not page_url:
             print(f"  ❌ Ничего не найдено для \"{query}\"")
-            return False
+            return "failed"
         print(f"  📄 Найдено: {page_url.split('/')[-2]}")
     else:
         page_url = source
@@ -189,11 +195,11 @@ def process_sound(filename: str, subfolder: str, source: str, description: str,
     cdn_url = extract_cdn_url(page_url)
     if not cdn_url:
         print(f"  ❌ CDN URL не найден на странице")
-        return False
+        return "failed"
 
     # Step 3: Download
     time.sleep(0.5)  # Вежливая задержка между запросами
-    return download_file(cdn_url, output_path)
+    return "downloaded" if download_file(cdn_url, output_path) else "failed"
 
 
 # ============================================================
@@ -225,12 +231,10 @@ def main():
 
     for filename, subfolder, source, desc in SOUNDS:
         result = process_sound(filename, subfolder, source, desc, base_dir)
-        if result:
-            output_path = base_dir / "sounds" / subfolder / filename
-            if output_path.stat().st_size > 100:
-                success += 1
-            else:
-                skipped += 1
+        if result == "downloaded":
+            success += 1
+        elif result == "skipped":
+            skipped += 1
         else:
             failed += 1
             failed_list.append(filename)
@@ -242,12 +246,10 @@ def main():
 
     for filename, subfolder, source, desc in MUSIC:
         result = process_sound(filename, subfolder, source, desc, base_dir, is_music=True)
-        if result:
-            output_path = base_dir / "sounds" / subfolder / filename
-            if output_path.stat().st_size > 100:
-                success += 1
-            else:
-                skipped += 1
+        if result == "downloaded":
+            success += 1
+        elif result == "skipped":
+            skipped += 1
         else:
             failed += 1
             failed_list.append(filename)

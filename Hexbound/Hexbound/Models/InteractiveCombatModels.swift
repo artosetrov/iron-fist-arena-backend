@@ -87,7 +87,11 @@ struct InteractiveActiveSlotSnapshot: Decodable, Sendable, Hashable, Identifiabl
     let slotIndex: Int
     let kind: ActiveSlotKind
     /// `nil` when kind == .consumable.
-    let nodeId: Int?
+    /// UUID string — `passive_nodes.id` is a `String @id @default(uuid())`
+    /// in Prisma, NOT an integer. Decoding as Int crashes /match/start with
+    /// "type mismatch Int at actives.p1.[0].nodeId" the moment any talent
+    /// is equipped (real incident 2026-04-14).
+    let nodeId: String?
     /// `nil` when kind == .consumable.
     let nodeKey: String?
     /// Set only when kind == .consumable (e.g. `health_potion_medium`).
@@ -122,7 +126,7 @@ struct InteractiveActiveSlotSnapshot: Decodable, Sendable, Hashable, Identifiabl
         let c = try decoder.container(keyedBy: DecodingKey.self)
         slotIndex = try c.decode(Int.self, forKey: .slotIndex)
         kind = (try? c.decode(ActiveSlotKind.self, forKey: .kind)) ?? .talent
-        nodeId = try c.decodeIfPresent(Int.self, forKey: .nodeId)
+        nodeId = try c.decodeIfPresent(String.self, forKey: .nodeId)
         nodeKey = try c.decodeIfPresent(String.self, forKey: .nodeKey)
         consumableType = try c.decodeIfPresent(String.self, forKey: .consumableType)
         name = try c.decode(String.self, forKey: .name)
@@ -286,12 +290,19 @@ struct InteractiveMatchState: Sendable {
     let attackerMaxHp: Int
     let defenderMaxHp: Int
     var strikes: [InteractiveStrikeTurn] = []
+    /// Server-authoritative terminal state. Needed for max-round wins where
+    /// both fighters may still be alive and HP alone can't infer the winner.
+    var serverFinished: Bool = false
+    var serverWinnerId: String? = nil
 
     var isFinished: Bool {
-        attackerHp <= 0 || defenderHp <= 0
+        serverFinished || attackerHp <= 0 || defenderHp <= 0
     }
 
     var winnerId: String? {
+        if let serverWinnerId {
+            return serverWinnerId
+        }
         if defenderHp <= 0 { return attackerId }
         if attackerHp <= 0 { return defenderId }
         return nil

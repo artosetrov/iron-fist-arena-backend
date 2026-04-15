@@ -1,34 +1,43 @@
 // =============================================================================
-// premium.ts — Premium Forever entitlement helpers (W3.D5 — IAP-02)
+// premium.ts — Premium entitlement helpers (W3.D5 — IAP-02)
 // =============================================================================
 //
-// Premium Forever is a one-time $9.99 IAP that grants:
-//   1. +10% gold multiplier on ALL gold income (PvP wins, dungeons, chests)
-//   2. +25 gems/day claim on Daily Login
-//   3. "Chosen" cosmetic title
-//   4. Ad-free (existing behavior, not relevant to backend)
+// Premium can come from two sources:
+//   1. Premium Forever (premiumUntil set far in the future)
+//   2. Premium Pass subscription (premiumSubscription row)
+//
+// Shared benefits:
+//   1. +10% gold multiplier on ALL gold income
+//   2. +25 gems/day on Daily Login
+//   3. Premium cosmetic/title entitlements handled elsewhere
 //
 // Design notes:
 //   - The gold multiplier is applied at the END of the reward stack — after
-//     CHA bonus, streak, level scaling — so it doesn't compound with CHA
-//     (which is capped at +80%, see W3.D3 CHA_GOLD_BONUS_CAP). Protecting
-//     the sink-ratio work from W3.D3 is explicit.
-//   - Ownership check uses premiumUntil > now. For Premium Forever the value
-//     is set to 2099-12-31 in verify-receipt, so effectively any user with a
-//     future premiumUntil date is a Premium holder.
+//     CHA bonus, streak, level scaling — so it doesn't compound with CHA.
 //   - hasPremium() is pure — give it the fields it needs, it doesn't touch
 //     the DB. This lets callers batch-fetch at the top of a transaction.
 
+export const PREMIUM_ENTITLEMENT_USER_SELECT = {
+  premiumUntil: true,
+  premiumSubscription: {
+    select: {
+      expiresAt: true,
+      status: true,
+    },
+  },
+} as const
+
+const ACTIVE_PREMIUM_SUBSCRIPTION_STATUSES = new Set(['active', 'grace_period'])
+
+export interface PremiumSubscriptionFields {
+  readonly expiresAt: Date
+  readonly status: string
+}
+
 export interface PremiumUserFields {
   readonly premiumUntil: Date | null
-  // Phase 2 (2026-04-14) — Premium Pass subscription. Null for users without a
-  // subscription row, or for legacy Premium Forever owners (who use premiumUntil).
-  // hasPremium() returns true if EITHER source is active — so grandfathered
-  // Forever owners keep access indefinitely, and subscribers get access while
-  // their subscription is in good standing.
-  // Pass the expiresAt value from the PremiumSubscription row, but ONLY when
-  // status is 'active' or 'grace_period' — expired/refunded rows should be null.
   readonly activeSubscriptionExpiresAt?: Date | null
+  readonly premiumSubscription?: PremiumSubscriptionFields | null
 }
 
 /** Premium gold bonus — +10% on all gold income. */
@@ -37,17 +46,40 @@ export const PREMIUM_GOLD_MULTIPLIER = 1.10
 /** Premium daily gems — 25 gems claimable once per UTC day. */
 export const PREMIUM_DAILY_GEMS = 25
 
+export function getActivePremiumSubscriptionExpiresAt(
+  subscription: PremiumSubscriptionFields | null | undefined,
+): Date | null {
+  if (!subscription) return null
+  return ACTIVE_PREMIUM_SUBSCRIPTION_STATUSES.has(subscription.status)
+    ? subscription.expiresAt
+    : null
+}
+
+export function getPremiumExpiresAt(
+  user: PremiumUserFields,
+): Date | null {
+  const subscriptionExpiresAt =
+    user.activeSubscriptionExpiresAt
+    ?? getActivePremiumSubscriptionExpiresAt(user.premiumSubscription)
+
+  if (!user.premiumUntil) return subscriptionExpiresAt
+  if (!subscriptionExpiresAt) return user.premiumUntil
+
+  return user.premiumUntil.getTime() >= subscriptionExpiresAt.getTime()
+    ? user.premiumUntil
+    : subscriptionExpiresAt
+}
+
 /**
- * Is this user currently a Premium Forever (or any future premium SKU)
- * holder? Premium is active iff premiumUntil is set AND in the future.
+ * Is this user currently Premium via Forever ownership or an active Pass?
  */
 export function hasPremium(
   user: PremiumUserFields,
   now: Date = new Date(),
 ): boolean {
   const nowMs = now.getTime()
-  if (user.premiumUntil && user.premiumUntil.getTime() > nowMs) return true
-  if (user.activeSubscriptionExpiresAt && user.activeSubscriptionExpiresAt.getTime() > nowMs) return true
+  const premiumExpiresAt = getPremiumExpiresAt(user)
+  if (premiumExpiresAt && premiumExpiresAt.getTime() > nowMs) return true
   return false
 }
 

@@ -238,9 +238,10 @@ struct ClaimRewardModalView: View {
 
     @ViewBuilder
     private var rewardsSection: some View {
-        VStack(spacing: LayoutConstants.spaceMS) {
+        // All rewards on a single horizontal line, centered as one group.
+        HStack(spacing: LayoutConstants.spaceLG) {
             if config.goldReward > 0 {
-                rewardRow(
+                rewardItem(
                     iconImage: "icon-gold",
                     value: goldDisplay,
                     color: DarkFantasyTheme.goldBright
@@ -248,7 +249,7 @@ struct ClaimRewardModalView: View {
             }
 
             if config.gemsReward > 0 {
-                rewardRow(
+                rewardItem(
                     iconImage: "icon-gems",
                     value: gemsDisplay,
                     color: DarkFantasyTheme.purple
@@ -256,34 +257,32 @@ struct ClaimRewardModalView: View {
             }
 
             if config.xpReward > 0 {
-                rewardRow(
+                rewardItem(
                     iconImage: "reward-xp",
                     value: xpDisplay,
                     color: DarkFantasyTheme.xpRing
                 )
             }
         }
+        .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, LayoutConstants.spaceSM)
         .padding(.horizontal, LayoutConstants.spaceLG)
     }
 
     @ViewBuilder
-    private func rewardRow(iconImage: String, value: Int, color: Color) -> some View {
-        HStack(spacing: LayoutConstants.spaceSM) {
+    private func rewardItem(iconImage: String, value: Int, color: Color) -> some View {
+        HStack(spacing: LayoutConstants.spaceXS) {
             Image(iconImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 36, height: 36)
+                .frame(width: 32, height: 32)
 
             Text("+\(value)")
                 .font(DarkFantasyTheme.title)
                 .foregroundStyle(color)
                 .monospacedDigit()
                 .contentTransition(.numericText())
-
-            Spacer()
         }
-        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Loot
@@ -296,13 +295,15 @@ struct ClaimRewardModalView: View {
                 .foregroundStyle(DarkFantasyTheme.textTertiary)
                 .tracking(2)
 
-            // Grid of loot items — uses standard ItemCardView, same as shop/inventory
-            let columns = Array(repeating: GridItem(.flexible(), spacing: LayoutConstants.shopGap), count: min(config.lootItems.count, 3))
-            LazyVGrid(columns: columns, spacing: LayoutConstants.shopGap) {
+            // Fixed-size loot tiles (96×96) matching inventory item size, centered.
+            // Uses the standard ItemCardView for single-source-of-truth rendering.
+            HStack(spacing: LayoutConstants.inventoryGap) {
                 ForEach(config.lootItems) { item in
                     lootItemCard(item)
+                        .frame(width: 96, height: 96)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(.horizontal, LayoutConstants.cardPadding)
     }
@@ -391,6 +392,16 @@ struct ClaimRewardModalView: View {
     private func rollUp(to target: Int, binding: Binding<Int>, duration: Double) {
         guard target > 0 else { return }
         let steps = 12
+        // Small rewards (≤ steps) would render 0-frames mid-animation due to
+        // floor(target * i / steps) = 0 for early steps. Snap to final value
+        // immediately so the user never sees a misleading "+0" frame.
+        guard target > steps else {
+            withAnimation(.easeOut(duration: 0.18)) {
+                binding.wrappedValue = target
+            }
+            HapticManager.light()
+            return
+        }
         let stepDuration = duration / Double(steps)
         for i in 1...steps {
             DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(i)) {

@@ -40,11 +40,11 @@ Check for:
 - Are the key values in `live-config.ts`?
 - Can the change be reverted quickly?
 
-### Phase 6 — Known Balance Issues (from QA Audit 2026-03-25)
-Check if the change affects any of these known balance concerns:
+### Phase 6 — Historical Balance / Exploit Regression Checks
+These checks come from QA Audit 2026-03-25. Revalidate against current code and balance docs before treating any item as still open:
 - **Gold Mine dominance**: Passive income (800-2200g/day) is 4.4x stronger than active PvP (150-500g/day). Any change that increases passive income or reduces active rewards worsens this.
 - **Repair costs too low**: Currently ~16% of daily income. Should be 30-50% for meaningful gold sink decisions.
-- **Daily login calendar-day exploit**: Uses UTC day check, not 24h cooldown. Double-claim possible around midnight UTC.
+- **Daily login cooldown regression**: Historical calendar-day exploit was marked fixed in the QA registry. Verify the current route still uses a cooldown instead of a UTC calendar-day check.
 - **Shell game 50% RTP**: High house edge but server-authoritative. Not exploitable, but watch if RTP changes affect retention.
 - **IAP validation client-side only**: No server-side receipt validation. Jailbroken device risk.
 

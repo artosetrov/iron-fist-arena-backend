@@ -27,7 +27,7 @@ import { degradeEquipment } from '@/lib/game/durability'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { getActiveEventMultipliers, applyEventGoldMultiplier, applyEventXpMultiplier } from '@/lib/game/events'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 function isNewUtcDay(date: Date | null): boolean {
@@ -110,8 +110,8 @@ export async function POST(req: NextRequest) {
       pvpLosses: true,
       pvpWinStreak: true,
       pvpLossStreak: true,
-      // W3.D5 — include user.premiumUntil for Premium Forever gold multiplier
-      user: { select: { premiumUntil: true } },
+      // Premium entitlement (Forever or active subscription) for gold bonus
+      user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
     } as const
 
     const [attacker, defender] = await Promise.all([

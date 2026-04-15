@@ -1,5 +1,5 @@
 /**
- * Scans the entire Figma file for nodes tagged with dsb_* pluginData
+ * Scans the entire Figma file for nodes tagged with dsb sharedPluginData
  * and returns a complete state map for session recovery.
  *
  * Use this at the start of every new session, after context truncation,
@@ -19,27 +19,27 @@ async function rehydrateState(runId) {
     await figma.setCurrentPageAsync(page)
 
     // Check the page itself
-    const pageRunId = page.getPluginData('dsb_run_id')
-    const pageKey = page.getPluginData('dsb_key')
+    const pageRunId = page.getSharedPluginData('dsb', 'run_id')
+    const pageKey = page.getSharedPluginData('dsb', 'key')
     if (pageKey && (!runId || pageRunId === runId)) {
       taggedNodes[pageKey] = {
         nodeId: page.id,
         type: page.type,
         name: page.name,
-        phase: page.getPluginData('dsb_phase') || 'unknown',
+        phase: page.getSharedPluginData('dsb', 'phase') || 'unknown',
       }
     }
 
     // Scan all descendants
     page.findAll((node) => {
-      const nodeRunId = node.getPluginData('dsb_run_id')
-      const nodeKey = node.getPluginData('dsb_key')
+      const nodeRunId = node.getSharedPluginData('dsb', 'run_id')
+      const nodeKey = node.getSharedPluginData('dsb', 'key')
       if (nodeKey && (!runId || nodeRunId === runId)) {
         taggedNodes[nodeKey] = {
           nodeId: node.id,
           type: node.type,
           name: node.name,
-          phase: node.getPluginData('dsb_phase') || 'unknown',
+          phase: node.getSharedPluginData('dsb', 'phase') || 'unknown',
         }
       }
       return false // don't collect, just scan

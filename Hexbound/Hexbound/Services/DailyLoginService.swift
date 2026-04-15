@@ -25,21 +25,24 @@ final class DailyLoginService {
 
     // MARK: - Claim Reward
 
-    func claimReward() async -> DailyLoginData? {
+    func claimReward() async -> DailyLoginClaimResponse? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = ["character_id": charId]
-            _ = try await APIClient.shared.postRaw(
+            let response: DailyLoginClaimResponse = try await APIClient.shared.post(
                 APIEndpoints.dailyLoginClaim,
-                body: body
+                body: ["character_id": charId]
             )
+
+            appState.applyAuthoritativeRewardState(
+                gold: response.gold,
+                gems: response.gems
+            )
+            if response.reward.type == "consumable" {
+                appState.cachedInventory = nil
+            }
+
             appState.showToast("Reward claimed!", type: .reward)
-            // Reload character + re-fetch status in parallel
-            let charService = CharacterService(appState: appState)
-            async let charRefresh: Void = charService.loadCharacter()
-            async let status = getStatus()
-            _ = await charRefresh
-            return await status
+            return response
         } catch {
             appState.showToast("Failed to claim reward", subtitle: "Check connection and try again", type: .error)
             return nil

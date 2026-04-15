@@ -29,7 +29,7 @@ import { cacheDeletePrefix } from '@/lib/cache'
 import { updateMultipleAchievements } from '@/lib/game/achievements'
 import { createBattleResultMail } from '@/lib/game/battle-mail'
 import { isNpcBot, generateBotCombatStats } from '@/lib/game/npc-bots'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { BOT_TICKET_SECRET_MISSING, createBotBattleTicketId } from '@/lib/game/bot-ticket'
 
@@ -130,8 +130,8 @@ export async function POST(req: NextRequest) {
       pvpLosses: true,
       pvpWinStreak: true,
       pvpLossStreak: true,
-      // W3.D5 — include user.premiumUntil for Premium Forever gold multiplier
-      user: { select: { premiumUntil: true } },
+      // Premium entitlement (Forever or active subscription) for gold bonus
+      user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
     } as const
 
     const [attacker, defender] = await Promise.all([
@@ -604,8 +604,8 @@ async function resolveBotFight(
       highestPvpRank: true, cha: true, level: true, luk: true, characterName: true,
       class: true, origin: true, maxHp: true,
       pvpWins: true, pvpLosses: true, pvpWinStreak: true, pvpLossStreak: true,
-      // W3.D5 — Premium Forever gold multiplier source
-      user: { select: { premiumUntil: true } },
+      // Premium entitlement (Forever or active subscription) for gold bonus
+      user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
     },
   })
 
@@ -625,7 +625,6 @@ async function resolveBotFight(
   const combatResult = await runCombat(attackerStats, botStats, battle_seed)
   const attackerWon = combatResult.winnerId === attacker.id
   const winnerId = combatResult.winnerId
-  const loserId = combatResult.loserId
 
   const clientMatchesServer = client_winner_id === winnerId
   if (!clientMatchesServer) {

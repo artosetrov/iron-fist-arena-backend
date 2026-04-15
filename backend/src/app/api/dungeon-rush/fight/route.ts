@@ -4,11 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { rateLimit } from '@/lib/rate-limit'
 import { runCombat, type CharacterStats } from '@/lib/game/combat'
 import { loadCombatCharacter, invalidateSkillCache, invalidatePassiveCache } from '@/lib/game/combat-loader'
-import { applyLevelUp } from '@/lib/game/progression'
 import { rollAndPersistLoot, type LootResponseItem } from '@/lib/game/loot'
 import { chaGoldBonus } from '@/lib/game/balance'
 import { lockDungeonRunForUpdate } from '@/lib/game/dungeon-run-lock'
-import { getBattlePassConfig } from '@/lib/game/live-config'
 import {
   generateRushEnemy,
   getRoomRewards,
@@ -28,7 +26,8 @@ import {
   type RushArtifact,
 } from '@/lib/game/dungeon-rush'
 import { incrementGuildChallenge } from '@/lib/game/guild-challenge'
-import { goldBonusMultiplier } from '@/lib/game/premium'
+import { goldBonusMultiplier, PREMIUM_ENTITLEMENT_USER_SELECT } from '@/lib/game/premium'
+import { grantRewardEntries } from '@/lib/game/reward-grants'
 import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 
 export async function POST(req: NextRequest) {
@@ -42,7 +41,6 @@ export async function POST(req: NextRequest) {
   let activeRunId: string | null = null
 
   try {
-    const BATTLE_PASS = await getBattlePassConfig()
     const body = await req.json()
     const { character_id, run_id } = body
 
@@ -60,8 +58,8 @@ export async function POST(req: NextRequest) {
         select: {
           id: true, characterName: true, class: true, origin: true, level: true,
           maxHp: true, avatar: true, cha: true, luk: true,
-          // W3.D5 — Premium Forever gold multiplier
-          user: { select: { premiumUntil: true } },
+          // Premium entitlement (Forever or active subscription) for gold bonus
+          user: { select: PREMIUM_ENTITLEMENT_USER_SELECT },
         },
       }),
       prisma.dungeonRun.findFirst({
@@ -324,15 +322,18 @@ export async function POST(req: NextRequest) {
       if (lockedRoom.resolved) throw new Error('RUSH_ROOM_RESOLVED')
       if (!isCombatRoom(lockedRoom.type)) throw new Error('RUSH_ROOM_NON_COMBAT')
 
-      // Gold now lives on User; XP, HP stay on Character
-      await tx.user.update({
-        where: { id: user.id },
-        data: { gold: { increment: goldReward } },
+      const rewardResult = await grantRewardEntries(tx, {
+        userId: user.id,
+        characterId: character_id,
+        rewards: [
+          ...(goldReward > 0 ? [{ type: 'gold' as const, quantity: goldReward }] : []),
+          ...(xpReward > 0 ? [{ type: 'xp' as const, quantity: xpReward }] : []),
+        ],
       })
+
       await tx.character.update({
         where: { id: character_id },
         data: {
-          currentXp: { increment: xpReward },
           currentHp: playerPostCombatHp,
           lastHpUpdate: new Date(),
         },
@@ -354,6 +355,10 @@ export async function POST(req: NextRequest) {
           totalGold,
           totalXp,
           floorsCleared,
+          current_xp: rewardResult.xp,
+          leveled_up: rewardResult.levelUpResult?.leveledUp ?? false,
+          new_level: rewardResult.levelUpResult?.newLevel,
+          stat_points_awarded: rewardResult.levelUpResult?.statPointsAwarded,
           nextRoom: null,
           nextEnemy: undefined,
         }
@@ -391,6 +396,10 @@ export async function POST(req: NextRequest) {
         totalGold,
         totalXp,
         floorsCleared,
+        current_xp: rewardResult.xp,
+        leveled_up: rewardResult.levelUpResult?.leveledUp ?? false,
+        new_level: rewardResult.levelUpResult?.newLevel,
+        stat_points_awarded: rewardResult.levelUpResult?.statPointsAwarded,
         nextRoom: {
           index: nextRoom.index,
           type: nextRoom.type,
@@ -415,11 +424,8 @@ export async function POST(req: NextRequest) {
       updateWeeklyChallengeProgress(prisma, character_id, 'dungeons_complete').catch(() => {})
     }
 
-    // Check for level-up after XP award
-    const levelUpResult = await applyLevelUp(prisma, character_id)
-
     // Invalidate caches if character leveled up
-    if (levelUpResult?.leveledUp) {
+    if (updatedRushState.leveled_up) {
       await invalidateSkillCache(character_id)
       await invalidatePassiveCache(character_id)
     }
@@ -438,7 +444,7 @@ export async function POST(req: NextRequest) {
           gold_reward: goldReward,
           xp_reward: xpReward,
           turns_taken: combatResult.totalTurns,
-          leveled_up: levelUpResult?.leveledUp ?? false,
+          leveled_up: updatedRushState.leveled_up,
         },
         victory: true,
         rushComplete: true,
@@ -453,9 +459,10 @@ export async function POST(req: NextRequest) {
           floorsCleared: updatedRushState.floorsCleared,
         },
         loot,
-        leveled_up: levelUpResult?.leveledUp ?? false,
-        new_level: levelUpResult?.newLevel,
-        stat_points_awarded: levelUpResult?.statPointsAwarded,
+        current_xp: updatedRushState.current_xp,
+        leveled_up: updatedRushState.leveled_up,
+        new_level: updatedRushState.new_level,
+        stat_points_awarded: updatedRushState.stat_points_awarded,
       })
     }
 
@@ -467,7 +474,7 @@ export async function POST(req: NextRequest) {
         gold_reward: goldReward,
         xp_reward: xpReward,
         turns_taken: combatResult.totalTurns,
-        leveled_up: levelUpResult?.leveledUp ?? false,
+        leveled_up: updatedRushState.leveled_up,
       },
       victory: true,
       rushComplete: false,
@@ -482,9 +489,10 @@ export async function POST(req: NextRequest) {
         floorsCleared: updatedRushState.floorsCleared,
       },
       loot,
-      leveled_up: levelUpResult?.leveledUp ?? false,
-      new_level: levelUpResult?.newLevel,
-      stat_points_awarded: levelUpResult?.statPointsAwarded,
+      current_xp: updatedRushState.current_xp,
+      leveled_up: updatedRushState.leveled_up,
+      new_level: updatedRushState.new_level,
+      stat_points_awarded: updatedRushState.stat_points_awarded,
       nextRoom: updatedRushState.nextRoom!,
       nextEnemy: updatedRushState.nextEnemy,
       buffs: state.buffs,
