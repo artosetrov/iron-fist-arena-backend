@@ -293,3 +293,12 @@ Completed the next shop/docs cleanup block:
 - **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` succeeds and `git diff --check` passes
 - **Inventory refresh:** updated current counts to 4797 in-scope files and added the new audit page to `[[project-file-inventory]]`
 - **Open decisions:** decide whether backend `/api/shop/buy-potion` should stay indefinitely as compatibility surface or be retired after a version cutoff
+
+## [2026-04-15] audit | Block 028 backend contraband reward contract build fix
+
+Completed a focused backend build-blocker fix:
+- **Created:** `[[block-028-backend-contraband-reward-contract-build-fix]]`
+- **Files audited:** 2 backend reward-contract files
+- **Fixes:** aligned `shop/contraband` loot generation with the shared `RewardGrantEntry` contract, removed local type widening to `{ type: string }[]`, added explicit JSON serialization for persisted claim contents, and restored production-build compatibility for the contraband reward-grant path without weakening shared reward typing
+- **Verification:** `npm run build` in `backend/` succeeds and `git diff --check` passes after the patch
+- **Inventory refresh:** updated current counts to 4798 in-scope files and added the new audit page to `[[project-file-inventory]]`

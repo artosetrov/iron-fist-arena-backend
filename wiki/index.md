@@ -67,7 +67,8 @@
 - [[block-025-backend-active-slot-consumable-ownership-reconciliation]] — backend active-slot potion ownership validation, cache reconciliation, and zero-quantity cleanup
 - [[block-026-backend-shop-consumable-pricing-parity]] — backend direct-sale consumable allowlist and pricing parity across shop listing, purchase, and active-slot picker metadata
 - [[block-027-shop-legacy-client-surface-and-pricing-docs]] — dead iOS legacy potion-purchase client path cleanup plus explicit pricing-policy docs alignment
+- [[block-028-backend-contraband-reward-contract-build-fix]] — backend contraband reward typing parity with shared reward grants after the production build break
 
 ---
 
-*59 in-scope wiki files | 57 wiki pages (13 systems, 11 decisions, 3 entities, 29 audit, 1 schema) + index/log | Last updated: 2026-04-15*
+*60 in-scope wiki files | 58 wiki pages (13 systems, 11 decisions, 3 entities, 30 audit, 1 schema) + index/log | Last updated: 2026-04-15*

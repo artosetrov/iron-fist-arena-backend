@@ -3,7 +3,7 @@ import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { type Prisma } from '@prisma/client'
 import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
-import { grantRewardEntries } from '@/lib/game/reward-grants'
+import { grantRewardEntries, type RewardGrantEntry } from '@/lib/game/reward-grants'
 
 // ──── Contraband System ────
 //
@@ -21,7 +21,7 @@ const COOLDOWN_SECONDS = 2 * 60 * 60 // 2 hours
 // ──── Loot Pool ────
 
 interface LootItem {
-  type: 'gold' | 'gems' | 'consumable' | 'xp'
+  type: Extract<RewardGrantEntry['type'], 'gold' | 'gems' | 'consumable' | 'xp'>
   id?: string
   quantity: number
   weight: number // relative probability
@@ -113,7 +113,7 @@ function generateLoot(
   characterId: string,
   claimNumber: number,
   level: number
-): { type: string; id?: string; quantity: number }[] {
+): RewardGrantEntry[] {
   const tier = LOOT_TIERS.find(
     (t) => level >= t.minLevel && level <= t.maxLevel
   ) ?? LOOT_TIERS[0]
@@ -124,7 +124,7 @@ function generateLoot(
   const totalWeight = tier.pool.reduce((sum, item) => sum + item.weight, 0)
   const pickCount = rng() < 0.4 ? 2 : 3 // 40% chance of 2 items, 60% of 3
 
-  const picked: { type: string; id?: string; quantity: number }[] = []
+  const picked: RewardGrantEntry[] = []
   const usedIndices = new Set<number>()
 
   for (let i = 0; i < pickCount; i++) {
@@ -139,14 +139,22 @@ function generateLoot(
             if (!usedIndices.has(idx)) {
               usedIndices.add(idx)
               const item = tier.pool[idx]
-              picked.push({ type: item.type, ...(item.id ? { id: item.id } : {}), quantity: item.quantity })
+              picked.push(
+                item.id
+                  ? { type: item.type, id: item.id, quantity: item.quantity }
+                  : { type: item.type, quantity: item.quantity },
+              )
               break
             }
           }
         } else {
           usedIndices.add(j)
           const item = tier.pool[j]
-          picked.push({ type: item.type, ...(item.id ? { id: item.id } : {}), quantity: item.quantity })
+          picked.push(
+            item.id
+              ? { type: item.type, id: item.id, quantity: item.quantity }
+              : { type: item.type, quantity: item.quantity },
+          )
         }
         break
       }
@@ -164,6 +172,16 @@ function getGoldCost(level: number): number {
     (t) => level >= t.minLevel && level <= t.maxLevel
   ) ?? LOOT_TIERS[0]
   return tier.goldCostBase
+}
+
+function serializeContrabandContents(
+  rewards: readonly RewardGrantEntry[],
+): Prisma.InputJsonArray {
+  return rewards.map((reward): Prisma.InputJsonObject => (
+    reward.id
+      ? { type: reward.type, id: reward.id, quantity: reward.quantity }
+      : { type: reward.type, quantity: reward.quantity }
+  ))
 }
 
 // ──── Lore flavor text ────
@@ -343,7 +361,7 @@ export async function POST(req: NextRequest) {
       await tx.contrabandClaim.create({
         data: {
           characterId: character_id,
-          contents: contents as Prisma.InputJsonValue,
+          contents: serializeContrabandContents(contents),
           price,
           currency: 'gold',
           claimNumber,
