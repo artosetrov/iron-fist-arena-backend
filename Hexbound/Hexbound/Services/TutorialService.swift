@@ -14,6 +14,12 @@ import Foundation
 /// The client's only job is to (1) show the pre-fight preview, (2) POST resolve,
 /// (3) display the victory overlay with rewards.
 ///
+/// Contract note:
+/// - canonical backend fields are snake_case (`forced_stance`, `level_up`,
+///   `item_catalog_key`, `sanity_check_passed`)
+/// - the shared `APIClient` decoder uses `convertFromSnakeCase`, so this client
+///   still accepts the earlier camelCase aliases without a separate raw bridge
+///
 /// See: docs/07_ui_ux/W2_D3_SCRIPTED_FIGHT_DESIGN.md
 @MainActor
 final class TutorialService {
@@ -26,13 +32,28 @@ final class TutorialService {
     // MARK: - Preload
 
     struct PreloadResult {
-        let hero: [String: Any]
-        let opponent: [String: Any]
+        let hero: HeroPreview
+        let opponent: OpponentPreview
         let forcedStance: ForcedStance
         let scripted: Bool
     }
 
-    struct ForcedStance {
+    struct HeroPreview: Decodable {
+        let characterClass: CharacterClass
+        let maxHp: Int
+
+        enum CodingKeys: String, CodingKey {
+            case characterClass = "class"
+            case maxHp
+        }
+    }
+
+    struct OpponentPreview: Decodable {
+        let name: String
+        let maxHp: Int
+    }
+
+    struct ForcedStance: Codable {
         let attack: String
         let defense: String
     }
@@ -41,29 +62,16 @@ final class TutorialService {
     /// Returns nil if preload fails or tutorial was already completed.
     func preloadScriptedFight(characterId: String) async -> PreloadResult? {
         do {
-            let response = try await APIClient.shared.postRaw(
+            let response: ScriptedFightPreloadResponse = try await APIClient.shared.post(
                 "/tutorial/scripted-fight/preload",
-                body: ["character_id": characterId],
+                body: ScriptedFightPreloadRequest(characterId: characterId)
             )
 
-            guard
-                let hero = response["hero"] as? [String: Any],
-                let opponent = response["opponent"] as? [String: Any],
-                let stanceDict = response["forcedStance"] as? [String: Any],
-                let attack = stanceDict["attack"] as? String,
-                let defense = stanceDict["defense"] as? String
-            else {
-                #if DEBUG
-                print("[TutorialService] Preload decode failure:", response)
-                #endif
-                return nil
-            }
-
             return PreloadResult(
-                hero: hero,
-                opponent: opponent,
-                forcedStance: ForcedStance(attack: attack, defense: defense),
-                scripted: (response["scripted"] as? Bool) ?? true,
+                hero: response.hero,
+                opponent: response.opponent,
+                forcedStance: response.forcedStance,
+                scripted: response.scripted ?? true
             )
         } catch let apiErr as APIError {
             // 409 ALREADY_COMPLETED is expected if the player somehow re-enters the flow.
@@ -83,24 +91,23 @@ final class TutorialService {
     // MARK: - Resolve
 
     struct ResolveResult {
-        let combat: [String: Any]
         let rewards: Rewards
         let levelUp: LevelUpInfo?
         let unlocks: [String]
-        let sanityCheckPassed: Bool
     }
 
-    struct Rewards {
+    struct Rewards: Decodable {
         let gold: Int
         let xp: Int
         let itemCatalogKey: String
         let itemName: String?
     }
 
-    struct LevelUpInfo {
+    struct LevelUpInfo: Decodable {
         let leveledUp: Bool
         let newLevel: Int
         let statPointsAwarded: Int
+        let passivePointsAwarded: Int
     }
 
     /// Resolve the scripted fight on the server — runs deterministic combat,
@@ -111,52 +118,18 @@ final class TutorialService {
         stance: ForcedStance,
     ) async -> ResolveResult? {
         do {
-            let response = try await APIClient.shared.postRaw(
+            let response: ScriptedFightResolveResponse = try await APIClient.shared.post(
                 "/tutorial/scripted-fight/resolve",
-                body: [
-                    "character_id": characterId,
-                    "stance": [
-                        "attack": stance.attack,
-                        "defense": stance.defense,
-                    ],
-                ],
+                body: ScriptedFightResolveRequest(
+                    characterId: characterId,
+                    stance: stance
+                )
             )
 
-            guard
-                let combat = response["combat"] as? [String: Any],
-                let rewardsDict = response["rewards"] as? [String: Any],
-                let gold = rewardsDict["gold"] as? Int,
-                let xp = rewardsDict["xp"] as? Int,
-                let itemKey = rewardsDict["itemCatalogKey"] as? String
-            else {
-                #if DEBUG
-                print("[TutorialService] Resolve decode failure:", response)
-                #endif
-                return nil
-            }
-
-            let itemName = rewardsDict["itemName"] as? String
-
-            var levelUpInfo: LevelUpInfo? = nil
-            if let lu = response["levelUp"] as? [String: Any],
-               let leveled = lu["leveledUp"] as? Bool
-            {
-                levelUpInfo = LevelUpInfo(
-                    leveledUp: leveled,
-                    newLevel: (lu["newLevel"] as? Int) ?? 1,
-                    statPointsAwarded: (lu["statPointsAwarded"] as? Int) ?? 0,
-                )
-            }
-
-            let unlocks = (response["unlocks"] as? [String]) ?? []
-            let sanityPassed = (response["sanityCheckPassed"] as? Bool) ?? true
-
             return ResolveResult(
-                combat: combat,
-                rewards: Rewards(gold: gold, xp: xp, itemCatalogKey: itemKey, itemName: itemName),
-                levelUp: levelUpInfo,
-                unlocks: unlocks,
-                sanityCheckPassed: sanityPassed,
+                rewards: response.rewards,
+                levelUp: response.levelUp,
+                unlocks: response.unlocks
             )
         } catch {
             #if DEBUG
@@ -167,4 +140,26 @@ final class TutorialService {
             return nil
         }
     }
+}
+
+private struct ScriptedFightPreloadRequest: Encodable {
+    let characterId: String
+}
+
+private struct ScriptedFightPreloadResponse: Decodable {
+    let hero: TutorialService.HeroPreview
+    let opponent: TutorialService.OpponentPreview
+    let forcedStance: TutorialService.ForcedStance
+    let scripted: Bool?
+}
+
+private struct ScriptedFightResolveRequest: Encodable {
+    let characterId: String
+    let stance: TutorialService.ForcedStance
+}
+
+private struct ScriptedFightResolveResponse: Decodable {
+    let rewards: TutorialService.Rewards
+    let levelUp: TutorialService.LevelUpInfo?
+    let unlocks: [String]
 }

@@ -75,6 +75,7 @@ struct BattlePassClaimResponse: Codable {
     let leveledUp: Bool
     let newLevel: Int?
     let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
 }
 
 struct BattlePassClaimReward: Codable, Equatable {

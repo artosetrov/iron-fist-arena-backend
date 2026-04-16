@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Mail,
   Users,
-  Eye,
   Gift,
   Plus,
   Trash2,
@@ -82,7 +81,6 @@ type AttachmentType = 'gold' | 'gems' | 'xp'
 export function MailClient({ initialMessages, stats }: MailClientProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const [isPending, startTransition] = useTransition()
 
   const [messages, setMessages] = useState(initialMessages)
   const [isComposeOpen, setIsComposeOpen] = useState(false)
@@ -104,6 +102,7 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
   >([])
   const [expiresAt, setExpiresAt] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const paginatedMessages = messages.slice(
     (currentPage - 1) * itemsPerPage,
@@ -167,31 +166,29 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
 
     setIsSending(true)
     try {
-      startTransition(async () => {
-        await sendMail({
-          subject,
-          body,
-          senderName,
-          targetType,
-          targetCharacterId: targetType === 'character' ? characterId : undefined,
-          targetFilter: targetType === 'segment' ? {
-            minLevel: minLevel ? Number(minLevel) : undefined,
-            maxLevel: maxLevel ? Number(maxLevel) : undefined,
-            class: characterClass || undefined,
-          } : undefined,
-          attachments: attachments.length > 0 ? attachments : undefined,
-          expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-        })
-        
-        toast({
-          title: 'Success',
-          description: 'Mail sent successfully',
-        })
-        
-        resetForm()
-        setIsComposeOpen(false)
-        router.refresh()
+      await sendMail({
+        subject,
+        body,
+        senderName,
+        targetType,
+        targetCharacterId: targetType === 'character' ? characterId : undefined,
+        targetFilter: targetType === 'segment' ? {
+          minLevel: minLevel ? Number(minLevel) : undefined,
+          maxLevel: maxLevel ? Number(maxLevel) : undefined,
+          class: characterClass || undefined,
+        } : undefined,
+        attachments: attachments.length > 0 ? attachments : undefined,
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
       })
+
+      toast({
+        title: 'Success',
+        description: 'Mail sent successfully',
+      })
+
+      resetForm()
+      setIsComposeOpen(false)
+      router.refresh()
     } catch (error) {
       toast({
         title: 'Error',
@@ -207,25 +204,26 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
   const handleDeleteMail = async () => {
     if (!deleteId) return
 
-    startTransition(async () => {
-      try {
-        await deleteMailMessage(deleteId)
-        setMessages(messages.filter((m) => m.id !== deleteId))
-        setDeleteId(null)
-        toast({
-          title: 'Success',
-          description: 'Mail deleted successfully',
-        })
-        router.refresh()
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description:
-            error instanceof Error ? error.message : 'Failed to delete mail',
-          variant: 'destructive',
-        })
-      }
-    })
+    setIsDeleting(true)
+    try {
+      await deleteMailMessage(deleteId)
+      setMessages((current) => current.filter((m) => m.id !== deleteId))
+      setDeleteId(null)
+      toast({
+        title: 'Success',
+        description: 'Mail deleted successfully',
+      })
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete mail',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const readRate = stats.totalRecipients > 0 ? Math.round((stats.totalRead / stats.totalRecipients) * 100) : 0
@@ -476,10 +474,10 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
               </Button>
               <Button
                 onClick={handleSendMail}
-                disabled={isSending || isPending}
+                disabled={isSending}
                 className="gap-2"
               >
-                {isSending || isPending ? (
+                {isSending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Sending...
@@ -556,7 +554,7 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
                             variant="ghost"
                             size="sm"
                             onClick={() => setDeleteId(message.id)}
-                            disabled={isPending}
+                            disabled={isDeleting}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -608,14 +606,14 @@ export function MailClient({ initialMessages, stats }: MailClientProps) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)} disabled={isPending}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteMail}
-              disabled={isPending}
-            >
-              {isPending ? 'Deleting...' : 'Delete'}
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)} disabled={isDeleting}>Cancel</Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteMail}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

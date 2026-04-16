@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,7 +36,6 @@ export function ProfilesClient({
   profiles: Profile[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editWeights, setEditWeights] = useState<Record<string, number>>({})
   const [editPower, setEditPower] = useState(1.0)
@@ -77,7 +76,7 @@ export function ProfilesClient({
       setSavedId(profile.id)
       setTimeout(() => setSavedId(null), 2000)
       setMessage('')
-      startTransition(() => router.refresh())
+      router.refresh()
     } catch {
       setMessage(`Failed to save ${profile.itemType}`)
     } finally {
@@ -107,11 +106,11 @@ export function ProfilesClient({
                 </div>
                 {isEditing ? (
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={savingId === profile.id || isPending}>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={savingId === profile.id}>
                       <X className="h-3 w-3" />
                     </Button>
-                    <Button size="sm" onClick={() => saveProfile(profile)} disabled={savingId === profile.id || isPending}>
-                      <Save className="h-3 w-3" />
+                    <Button size="sm" onClick={() => saveProfile(profile)} disabled={savingId !== null}>
+                      <Save className={`h-3 w-3 ${savingId === profile.id ? 'animate-pulse' : ''}`} />
                     </Button>
                   </div>
                 ) : savedId === profile.id ? (

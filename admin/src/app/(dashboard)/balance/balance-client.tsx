@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { batchUpdateBalanceConfigs } from '@/actions/balance'
 import { updateConfig, seedDefaultConfigs } from '@/actions/config'
@@ -401,7 +401,6 @@ export function BalanceClient({
   configs: ConfigItem[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [editedValues, setEditedValues] = useState<Record<string, string>>({})
   const [editedUpgrades, setEditedUpgrades] = useState<number[] | null>(null)
   const [editedRefillMultipliers, setEditedRefillMultipliers] = useState<number[] | null>(null)
@@ -409,6 +408,9 @@ export function BalanceClient({
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [seedMessage, setSeedMessage] = useState('')
+  const [savingKey, setSavingKey] = useState<string | null>(null)
+  const [isSavingAll, setIsSavingAll] = useState(false)
+  const [isSeeding, setIsSeeding] = useState(false)
 
   // Map config entries by key for fast lookup
   const configMap = useMemo(() => {
@@ -510,20 +512,21 @@ export function BalanceClient({
     }
 
     setError('')
-    startTransition(async () => {
-      try {
-        await updateConfig(key, parsedValue)
-        setSavedKeys((prev) => new Set(prev).add(key))
-        setEditedValues((prev) => {
-          const next = { ...prev }
-          delete next[key]
-          return next
-        })
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
-      }
-    })
+    setSavingKey(key)
+    try {
+      await updateConfig(key, parsedValue)
+      setSavedKeys((prev) => new Set(prev).add(key))
+      setEditedValues((prev) => {
+        const next = { ...prev }
+        delete next[key]
+        return next
+      })
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSavingKey(null)
+    }
   }
 
   // Save all pending changes at once
@@ -552,19 +555,20 @@ export function BalanceClient({
 
     setError('')
     setSuccessMsg('')
-    startTransition(async () => {
-      try {
-        await batchUpdateBalanceConfigs(updates)
-        setSavedKeys(new Set(updates.map((u) => u.key)))
-        setEditedValues({})
-        setEditedUpgrades(null)
-        setEditedRefillMultipliers(null)
-        setSuccessMsg(`Saved ${updates.length} balance value${updates.length > 1 ? 's' : ''}`)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
-      }
-    })
+    setIsSavingAll(true)
+    try {
+      await batchUpdateBalanceConfigs(updates)
+      setSavedKeys(new Set(updates.map((u) => u.key)))
+      setEditedValues({})
+      setEditedUpgrades(null)
+      setEditedRefillMultipliers(null)
+      setSuccessMsg(`Saved ${updates.length} balance value${updates.length > 1 ? 's' : ''}`)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setIsSavingAll(false)
+    }
   }
 
   // Discard all changes
@@ -579,15 +583,16 @@ export function BalanceClient({
   async function handleSeed() {
     setSeedMessage('')
     setError('')
-    startTransition(async () => {
-      try {
-        const result = await seedDefaultConfigs()
-        setSeedMessage(`Seeded ${result.created} configs (${result.skipped} already existed)`)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to seed')
-      }
-    })
+    setIsSeeding(true)
+    try {
+      const result = await seedDefaultConfigs()
+      setSeedMessage(`Seeded ${result.created} configs (${result.skipped} already existed)`)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to seed')
+    } finally {
+      setIsSeeding(false)
+    }
   }
 
   // Calculate rarity sum for validation
@@ -668,10 +673,12 @@ export function BalanceClient({
             variant={hasEdit ? 'default' : 'outline'}
             className="h-8 w-8"
             onClick={() => handleSaveSingle(field.key)}
-            disabled={!hasEdit || isPending}
+            disabled={!hasEdit || isSavingAll || isSeeding || savingKey !== null}
             title="Save this field"
           >
-            {isSaved ? (
+            {savingKey === field.key ? (
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            ) : isSaved ? (
               <Check className="h-3.5 w-3.5 text-green-400" />
             ) : (
               <Save className="h-3.5 w-3.5" />
@@ -824,9 +831,9 @@ export function BalanceClient({
           <p className="text-sm text-muted-foreground mb-4">
             Seed the default balance values to get started.
           </p>
-          <Button onClick={handleSeed} disabled={isPending}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isPending ? 'animate-spin' : ''}`} />
-            {isPending ? 'Seeding...' : 'Seed Default Balance'}
+          <Button onClick={handleSeed} disabled={isSeeding}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSeeding ? 'animate-spin' : ''}`} />
+            {isSeeding ? 'Seeding...' : 'Seed Default Balance'}
           </Button>
           {seedMessage && (
             <p className="mt-3 text-sm text-green-400">{seedMessage}</p>
@@ -916,8 +923,8 @@ export function BalanceClient({
 
       {/* Actions row */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={handleSeed} disabled={isPending}>
-          <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isPending ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="sm" onClick={handleSeed} disabled={isSeeding}>
+          <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isSeeding ? 'animate-spin' : ''}`} />
           Seed Missing Defaults
         </Button>
         {seedMessage && (
@@ -965,12 +972,12 @@ export function BalanceClient({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleDiscardAll} disabled={isPending}>
+              <Button variant="outline" size="sm" onClick={handleDiscardAll} disabled={isSavingAll || isSeeding || savingKey !== null}>
                 <X className="mr-1.5 h-3.5 w-3.5" />
                 Discard
               </Button>
-              <Button size="sm" onClick={handleSaveAll} disabled={isPending}>
-                {isPending ? (
+              <Button size="sm" onClick={handleSaveAll} disabled={isSavingAll || isSeeding || savingKey !== null}>
+                {isSavingAll ? (
                   <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Save className="mr-1.5 h-3.5 w-3.5" />

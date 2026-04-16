@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // GET — list all events (paginated, newest first)
 export async function GET(req: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const page = parseInt(req.nextUrl.searchParams.get('page') ?? '1')
     const limit = parseInt(req.nextUrl.searchParams.get('limit') ?? '20')
     const activeOnly = req.nextUrl.searchParams.get('active') === 'true'
@@ -30,6 +36,11 @@ export async function GET(req: NextRequest) {
 // POST — create a new event
 export async function POST(req: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json()
     const { eventKey, title, description, eventType, config, startAt, endAt, isActive } = body
 
@@ -83,6 +94,11 @@ export async function POST(req: NextRequest) {
 // PATCH — update an existing event
 export async function PATCH(req: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await req.json()
     const { id, ...updates } = body
 
@@ -109,6 +125,11 @@ export async function PATCH(req: NextRequest) {
 // DELETE — deactivate an event (soft delete)
 export async function DELETE(req: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const id = req.nextUrl.searchParams.get('id')
     if (!id) {
       return NextResponse.json({ error: 'Event id is required' }, { status: 400 })

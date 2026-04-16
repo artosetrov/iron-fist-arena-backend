@@ -122,6 +122,7 @@ export async function POST(
       leveled_up: claimedAttachments.rewardResult.levelUpResult?.leveledUp ?? false,
       new_level: claimedAttachments.rewardResult.levelUpResult?.newLevel,
       stat_points_awarded: claimedAttachments.rewardResult.levelUpResult?.statPointsAwarded,
+      passive_points_awarded: claimedAttachments.rewardResult.levelUpResult?.passivePointsAwarded,
     });
   } catch (error) {
     if (error instanceof Error) {

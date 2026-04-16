@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -39,7 +39,6 @@ export function ConfigEditorClient({
   configs: ConfigEntry[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Record<string, string>>(
     Object.fromEntries(
@@ -93,7 +92,7 @@ export function ConfigEditorClient({
         return next
       }), 2000)
       setMessage('')
-      startTransition(() => router.refresh())
+      router.refresh()
     } catch {
       setMessage(`Failed to save ${key}`)
     } finally {
@@ -145,9 +144,11 @@ export function ConfigEditorClient({
                       size="sm"
                       variant={savedKeys.has(config.key) ? 'default' : 'outline'}
                       onClick={() => saveConfig(config.key)}
-                      disabled={isPending || savingKey === config.key}
+                      disabled={savingKey !== null}
                     >
-                      {savedKeys.has(config.key) ? (
+                      {savingKey === config.key ? (
+                        <><Save className="h-3 w-3 mr-1 animate-pulse" /> Saving</>
+                      ) : savedKeys.has(config.key) ? (
                         <><Check className="h-3 w-3 mr-1" /> Saved</>
                       ) : (
                         <><Save className="h-3 w-3 mr-1" /> Save</>

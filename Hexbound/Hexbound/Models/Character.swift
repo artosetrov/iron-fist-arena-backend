@@ -353,3 +353,35 @@ enum StatGroup: String, CaseIterable {
 // MARK: - PvPStatsProvider Conformance
 
 extension Character: PvPStatsProvider {}
+
+struct CharactersListResponse: Decodable {
+    let characters: [Character]
+
+    private enum CodingKeys: String, CodingKey {
+        case characters
+        case data
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let characters = try container.decodeIfPresent([Character].self, forKey: .characters) {
+            self.characters = characters
+            return
+        }
+
+        if let characters = try container.decodeIfPresent([Character].self, forKey: .data) {
+            self.characters = characters
+            return
+        }
+
+        if let singleCharacter = try? Character(from: decoder) {
+            self.characters = [singleCharacter]
+            return
+        }
+
+        throw DecodingError.dataCorrupted(
+            .init(codingPath: decoder.codingPath, debugDescription: "Expected characters list response")
+        )
+    }
+}

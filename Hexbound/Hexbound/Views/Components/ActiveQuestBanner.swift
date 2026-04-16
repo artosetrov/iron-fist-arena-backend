@@ -218,6 +218,7 @@ struct ActiveQuestBanner: View {
                 leveledUp: result.leveledUp,
                 newLevel: result.newLevel,
                 statPointsAwarded: result.statPointsAwarded,
+                passivePointsAwarded: result.passivePointsAwarded,
                 previousLevel: previousLevel
             )
 

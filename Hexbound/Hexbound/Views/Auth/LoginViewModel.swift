@@ -1,6 +1,12 @@
 import SwiftUI
 import AuthenticationServices
 
+private struct OAuthSignInRequest: Encodable {
+    let idToken: String
+    let accessToken: String?
+    let provider: String
+}
+
 @MainActor @Observable
 final class LoginViewModel {
     var email = ""
@@ -57,18 +63,15 @@ final class LoginViewModel {
             isLoading = true; errorMessage = ""
 
             do {
-                let body: [String: Any] = ["id_token": idToken, "provider": "apple"]
-                let data = try await APIClient.shared.postRaw(APIEndpoints.authApple, body: body)
+                let body = OAuthSignInRequest(idToken: idToken, accessToken: nil, provider: "apple")
+                let data: AuthSessionEnvelope = try await APIClient.shared.post(
+                    APIEndpoints.authApple,
+                    body: body
+                )
 
-                guard let accessToken = data["access_token"] as? String,
-                      let refreshToken = data["refresh_token"] as? String else {
-                    isLoading = false; errorMessage = "Invalid server response"
-                    return
-                }
-
-                KeychainManager.shared.saveAccessToken(accessToken)
-                KeychainManager.shared.saveRefreshToken(refreshToken)
-                await APIClient.shared.setAuthToken(accessToken)
+                KeychainManager.shared.saveAccessToken(data.accessToken)
+                KeychainManager.shared.saveRefreshToken(data.refreshToken)
+                await APIClient.shared.setAuthToken(data.accessToken)
 
                 let charResult = await authService?.loadCharactersPublic() ?? .noCharacter
 
@@ -102,22 +105,19 @@ final class LoginViewModel {
         do {
             let googleResult = try await GoogleSignInHelper.signIn()
 
-            let body: [String: Any] = [
-                "id_token": googleResult.idToken,
-                "access_token": googleResult.accessToken,
-                "provider": "google"
-            ]
-            let data = try await APIClient.shared.postRaw(APIEndpoints.authGoogle, body: body)
+            let body = OAuthSignInRequest(
+                idToken: googleResult.idToken,
+                accessToken: googleResult.accessToken,
+                provider: "google"
+            )
+            let data: AuthSessionEnvelope = try await APIClient.shared.post(
+                APIEndpoints.authGoogle,
+                body: body
+            )
 
-            guard let accessToken = data["access_token"] as? String,
-                  let refreshToken = data["refresh_token"] as? String else {
-                isLoading = false; errorMessage = "Invalid server response"
-                return
-            }
-
-            KeychainManager.shared.saveAccessToken(accessToken)
-            KeychainManager.shared.saveRefreshToken(refreshToken)
-            await APIClient.shared.setAuthToken(accessToken)
+            KeychainManager.shared.saveAccessToken(data.accessToken)
+            KeychainManager.shared.saveRefreshToken(data.refreshToken)
+            await APIClient.shared.setAuthToken(data.accessToken)
 
             let charResult = await authService?.loadCharactersPublic() ?? .noCharacter
 

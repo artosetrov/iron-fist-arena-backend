@@ -86,6 +86,7 @@ final class BattlePassViewModel {
                 leveledUp: response.leveledUp,
                 newLevel: response.newLevel,
                 statPointsAwarded: response.statPointsAwarded,
+                passivePointsAwarded: response.passivePointsAwarded,
                 previousLevel: previousLevel
             )
             if response.rewards.contains(where: { $0.rewardType == "item" || $0.rewardType == "consumable" }) {

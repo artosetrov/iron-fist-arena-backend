@@ -39,7 +39,6 @@ struct BattlePassDetailView: View {
                         .padding(.vertical, LayoutConstants.spaceSM)
                     }
                 } else if vm.errorMessage != nil {
-                    // TODO: Add error property to ViewModel
                     ErrorStateView.loadFailed { Task { await vm.loadBattlePass() } }
                 } else if let _ = vm.data {
                     ScrollView {

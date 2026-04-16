@@ -51,7 +51,7 @@ final class GameDataCache {
     private(set) var dungeonList: [DungeonInfo] = []
     private var dungeonListFetchedAt: Date?
 
-    private(set) var goldMineSlots: [[String: Any]] = []
+    private(set) var goldMineSlots: [GoldMineSlotResponse] = []
     var goldMineMaxSlots: Int = 3
     private var goldMineFetchedAt: Date?
 
@@ -76,17 +76,13 @@ final class GameDataCache {
 
     // MARK: - Feature Flags (resolved server-side, keyed by flag key)
 
-    private(set) var featureFlags: [String: Any] = [:]
+    private(set) var featureFlags: [String: Bool] = [:]
 
     func isFeatureEnabled(_ key: String) -> Bool {
-        featureFlags[key] as? Bool ?? false
+        featureFlags[key] ?? false
     }
 
-    func featureFlagValue<T>(_ key: String, default defaultValue: T) -> T {
-        featureFlags[key] as? T ?? defaultValue
-    }
-
-    func cacheFeatureFlags(_ flags: [String: Any]) {
+    func cacheFeatureFlags(_ flags: [String: Bool]) {
         featureFlags = flags
     }
 
@@ -124,19 +120,6 @@ final class GameDataCache {
 
     func cacheHubLayout(_ layout: [String: BuildingOverride]) {
         hubLayout = layout
-    }
-
-    func cacheHubLayout(from dict: [String: Any]) {
-        var result: [String: BuildingOverride] = [:]
-        for (buildingId, value) in dict {
-            if let coords = value as? [String: Any],
-               let x = coords["x"] as? Double,
-               let y = coords["y"] as? Double {
-                let size = coords["size"] as? Double
-                result[buildingId] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: size.map { CGFloat($0) })
-            }
-        }
-        hubLayout = result
     }
 
     func loadHubLayoutFromDisk() {
@@ -186,19 +169,6 @@ final class GameDataCache {
 
     func cacheDungeonMapLayout(_ layout: [String: BuildingOverride]) {
         dungeonMapLayout = layout
-    }
-
-    func cacheDungeonMapLayout(from dict: [String: Any]) {
-        var result: [String: BuildingOverride] = [:]
-        for (buildingId, value) in dict {
-            if let coords = value as? [String: Any],
-               let x = coords["x"] as? Double,
-               let y = coords["y"] as? Double {
-                let size = coords["size"] as? Double
-                result[buildingId] = BuildingOverride(x: CGFloat(x), y: CGFloat(y), size: size.map { CGFloat($0) })
-            }
-        }
-        dungeonMapLayout = result
     }
 
     func loadDungeonMapLayoutFromDisk() {
@@ -403,16 +373,20 @@ final class GameDataCache {
 
     // MARK: - Gold Mine Cache
 
-    func cachedGoldMine() -> (slots: [[String: Any]], maxSlots: Int)? {
+    func cachedGoldMine() -> (slots: [GoldMineSlotResponse], maxSlots: Int)? {
         guard let fetchedAt = goldMineFetchedAt,
               Date().timeIntervalSince(fetchedAt) < goldMineTTL else { return nil }
         return (goldMineSlots, goldMineMaxSlots)
     }
 
-    func cacheGoldMine(slots: [[String: Any]], maxSlots: Int) {
+    func cacheGoldMine(slots: [GoldMineSlotResponse], maxSlots: Int) {
         goldMineSlots = slots
         goldMineMaxSlots = maxSlots
         goldMineFetchedAt = Date()
+    }
+
+    func cacheGoldMine(status: GoldMineStatusResponse) {
+        cacheGoldMine(slots: status.slots, maxSlots: status.maxSlots)
     }
 
     func invalidateGoldMine() {
@@ -628,52 +602,6 @@ struct GameConfig {
     // lifecycle; when false, classic /pvp/prepare → /pvp/resolve flow is used.
     // Sourced from `INTERACTIVE_COMBAT_V1` env flag on server.
     let interactiveCombatEnabled: Bool
-
-    init(from dict: [String: Any]) {
-        staminaMax = dict["staminaMax"] as? Int ?? 120
-        staminaRegenMinutes = dict["staminaRegenMinutes"] as? Int ?? 8
-        pvpStaminaCost = dict["pvpStaminaCost"] as? Int ?? 10
-        freePvpPerDay = dict["freePvpPerDay"] as? Int ?? 3
-        upgradeChances = dict["upgradeChances"] as? [Int] ?? [100, 100, 100, 100, 100, 80, 60, 40, 25, 15]
-        maxLevel = dict["maxLevel"] as? Int ?? 50
-        statPointsPerLevel = dict["statPointsPerLevel"] as? Int ?? 3
-        pvpWinGold = dict["pvpWinGold"] as? Int ?? 100
-        pvpLossGold = dict["pvpLossGold"] as? Int ?? 30
-        pvpWinXp = dict["pvpWinXp"] as? Int ?? 80
-        pvpLossXp = dict["pvpLossXp"] as? Int ?? 20
-        critMultiplier = dict["critMultiplier"] as? Double ?? 1.5
-        maxCritChance = dict["maxCritChance"] as? Int ?? 50
-        maxDodgeChance = dict["maxDodgeChance"] as? Int ?? 30
-        dailyLoginRewards = Self.parseDailyRewards(dict["dailyLoginRewards"])
-
-        let gemCosts = dict["gemCosts"] as? [String: Any] ?? [:]
-        goldMineSlotCostGems = gemCosts["goldMineSlotCost"] as? Int ?? 50
-        goldMineBoostGems = gemCosts["goldMineBoost"] as? Int ?? 3
-        staminaRefillGems = gemCosts["staminaRefill"] as? Int ?? 30
-        extraPvpCombatGems = gemCosts["extraPvpCombat"] as? Int ?? 50
-
-        interactiveCombatEnabled = dict["interactiveCombatEnabled"] as? Bool ?? false
-    }
-
-    // MARK: - Daily login rewards parsing
-
-    private static func parseDailyRewards(_ raw: Any?) -> [DailyLoginRewardDef] {
-        guard let array = raw as? [[String: Any]], !array.isEmpty else {
-            #if DEBUG
-            print("[GameConfig] dailyLoginRewards missing — using bundled fallback")
-            #endif
-            return Self.fallbackDailyRewards
-        }
-        guard let data = try? JSONSerialization.data(withJSONObject: array),
-              let parsed = try? JSONDecoder().decode([DailyLoginRewardDef].self, from: data),
-              parsed.count == 7 else {
-            #if DEBUG
-            print("[GameConfig] dailyLoginRewards parse failed (count=\(array.count)) — using bundled fallback")
-            #endif
-            return Self.fallbackDailyRewards
-        }
-        return parsed
-    }
 
     /// Bundled fallback mirror of `backend/src/lib/game/balance.ts`
     /// `DAILY_LOGIN_REWARDS`. Used only when:

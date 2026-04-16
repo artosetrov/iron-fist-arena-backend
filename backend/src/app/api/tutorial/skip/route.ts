@@ -7,6 +7,8 @@ import {
   WELCOME_GIFT,
   REFERRAL_BONUS,
   generateReferralCode,
+  getReferralLinkValues,
+  normalizeReferralCode,
 } from '@/lib/game/tutorial'
 import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
 
@@ -61,16 +63,28 @@ export async function POST(req: NextRequest) {
       // Handle referral
       let isReferred = false
       if (referral_code) {
+        const normalizedReferralCode = normalizeReferralCode(referral_code)
         const referralRecord = await tx.character.findUnique({
-          where: { referralCode: referral_code },
-          select: { id: true },
+          where: { referralCode: normalizedReferralCode },
+          select: { id: true, referralCode: true },
         })
         if (referralRecord && referralRecord.id !== character_id) {
-          await tx.character.update({
-            where: { id: character_id },
-            data: { referredBy: referralRecord.id },
+          const referrerCode = referralRecord.referralCode ?? normalizedReferralCode
+          const referralCount = await tx.character.count({
+            where: {
+              referredBy: {
+                in: getReferralLinkValues(referralRecord.id, referrerCode),
+              },
+            },
           })
-          isReferred = true
+
+          if (referralCount < REFERRAL_BONUS.maxReferrals) {
+            await tx.character.update({
+              where: { id: character_id },
+              data: { referredBy: referralRecord.id },
+            })
+            isReferred = true
+          }
         }
       }
 

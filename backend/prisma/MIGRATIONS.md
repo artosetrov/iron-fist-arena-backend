@@ -86,3 +86,20 @@ repair them with:
 ```bash
 npm run db:fix:battle-pass-rewards
 ```
+
+## Referral qualification reward backfill
+
+Block 075 makes future referral qualification payouts idempotent, but old invitees who had already
+reached the threshold before that block landed may still need a one-time repair.
+
+Start with a dry run:
+
+```bash
+npm run db:fix:referral-rewards
+```
+
+If the summary looks correct, apply it explicitly:
+
+```bash
+npm run db:fix:referral-rewards -- --apply
+```

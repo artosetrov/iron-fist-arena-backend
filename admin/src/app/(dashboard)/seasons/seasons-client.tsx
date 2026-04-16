@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,13 +39,14 @@ function getSeasonStatus(season: Season): { label: string; variant: 'default' | 
 
 export function SeasonsClient({ seasons }: { seasons: Season[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editingSeason, setEditingSeason] = useState<Season | null>(null)
   const [deletingSeason, setDeletingSeason] = useState<Season | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   function toDatetimeLocal(dateStr: string) {
     if (!dateStr) return ''
@@ -77,48 +78,50 @@ export function SeasonsClient({ seasons }: { seasons: Season[] }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setIsSaving(true)
 
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/seasons', {
-          method: editingSeason ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            editingSeason
-              ? { id: editingSeason.id, ...form, startAt: new Date(form.startAt).toISOString(), endAt: new Date(form.endAt).toISOString() }
-              : { ...form, startAt: new Date(form.startAt).toISOString(), endAt: new Date(form.endAt).toISOString() }
-          ),
-        })
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to save season')
-          return
-        }
-        setDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save season')
+    try {
+      const res = await fetch('/api/seasons', {
+        method: editingSeason ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          editingSeason
+            ? { id: editingSeason.id, ...form, startAt: new Date(form.startAt).toISOString(), endAt: new Date(form.endAt).toISOString() }
+            : { ...form, startAt: new Date(form.startAt).toISOString(), endAt: new Date(form.endAt).toISOString() }
+        ),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to save season')
+        return
       }
-    })
+      setDialogOpen(false)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save season')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleDelete() {
     if (!deletingSeason) return
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/seasons?id=${deletingSeason.id}`, { method: 'DELETE' })
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to delete season')
-          return
-        }
-        setDeleteDialogOpen(false)
-        setDeletingSeason(null)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/seasons?id=${deletingSeason.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to delete season')
+        return
       }
-    })
+      setDeleteDialogOpen(false)
+      setDeletingSeason(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -243,9 +246,11 @@ export function SeasonsClient({ seasons }: { seasons: Season[] }) {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : editingSeason ? 'Update Season' : 'Create Season'}
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : editingSeason ? 'Update Season' : 'Create Season'}
               </Button>
             </div>
           </form>
@@ -262,9 +267,11 @@ export function SeasonsClient({ seasons }: { seasons: Season[] }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

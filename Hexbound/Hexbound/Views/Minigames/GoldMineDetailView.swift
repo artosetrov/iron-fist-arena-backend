@@ -223,8 +223,8 @@ struct GoldMineDetailView: View {
 
     func updateMineHint() {
         guard let vm else { return }
-        let readySlotsCount = vm.slots.filter { ($0["status"] as? String) == "ready" }.count
-        let activeSlotsCount = vm.slots.filter { ($0["status"] as? String) == "mining" }.count
+        let readySlotsCount = vm.slots.filter { vm.slotStatus($0) == "ready" }.count
+        let activeSlotsCount = vm.slots.filter { vm.slotStatus($0) == "mining" }.count
         let allSlotsBusy = activeSlotsCount == vm.maxSlots && readySlotsCount == 0
         let quests = appState.cachedTypedQuests ?? cache.cachedDailyQuests()?.quests ?? []
         mineHint = ContextualHintProvider.mineHint(
@@ -381,4 +381,3 @@ struct GoldMineDetailView: View {
         }
     }
 }
-

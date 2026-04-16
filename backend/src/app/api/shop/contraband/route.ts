@@ -393,6 +393,7 @@ export async function POST(req: NextRequest) {
       leveled_up: result.levelUpResult?.leveledUp ?? false,
       new_level: result.levelUpResult?.newLevel,
       stat_points_awarded: result.levelUpResult?.statPointsAwarded,
+      passive_points_awarded: result.levelUpResult?.passivePointsAwarded,
     })
   } catch (error) {
     if (error instanceof Error && error.message === 'COOLDOWN_ACTIVE') {

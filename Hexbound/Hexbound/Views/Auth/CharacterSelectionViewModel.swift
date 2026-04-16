@@ -22,57 +22,8 @@ final class CharacterSelectionViewModel {
         error = nil
 
         do {
-            let result = try await APIClient.shared.getRaw(APIEndpoints.characters)
-
-            var charArray: [[String: Any]] = []
-            if let characters = result["characters"] as? [[String: Any]] {
-                charArray = characters
-            } else if let data = result["data"] as? [[String: Any]] {
-                charArray = data
-            } else if result["id"] != nil {
-                // Single character returned directly
-                charArray = [result]
-            } else if let errMessage = result["error"] as? String {
-                // Backend returned an error envelope
-                throw NSError(
-                    domain: "CharacterSelection",
-                    code: -1,
-                    userInfo: [NSLocalizedDescriptionKey: "Server: \(errMessage)"]
-                )
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-            var decoded: [Character] = []
-            var decodeErrors: [String] = []
-            for charData in charArray {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                do {
-                    let character = try decoder.decode(Character.self, from: jsonData)
-                    decoded.append(character)
-                } catch {
-                    let name = (charData["characterName"] as? String)
-                        ?? (charData["character_name"] as? String)
-                        ?? (charData["id"] as? String)
-                        ?? "unknown"
-                    decodeErrors.append("\(name): \(error.localizedDescription)")
-                    #if DEBUG
-                    print("[CharacterSelectionVM] decode failed for \(name): \(error)")
-                    #endif
-                }
-            }
-
-            // If backend returned characters but NONE decoded — surface that as an error
-            // (instead of silently showing empty state).
-            if !charArray.isEmpty && decoded.isEmpty {
-                let detail = decodeErrors.first ?? "unknown decode error"
-                throw NSError(
-                    domain: "CharacterSelection",
-                    code: -2,
-                    userInfo: [NSLocalizedDescriptionKey: "Decode failed (\(charArray.count) heroes): \(detail)"]
-                )
-            }
+            let result: CharactersListResponse = try await APIClient.shared.get(APIEndpoints.characters)
+            let decoded = result.characters
 
             // Sort by level descending (highest level first)
             characters = decoded.sorted { $0.level > $1.level }

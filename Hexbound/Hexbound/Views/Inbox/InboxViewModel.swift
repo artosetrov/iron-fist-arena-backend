@@ -206,6 +206,7 @@ final class InboxViewModel {
                     leveledUp: response.leveledUp,
                     newLevel: response.newLevel,
                     statPointsAwarded: response.statPointsAwarded,
+                    passivePointsAwarded: response.passivePointsAwarded,
                     previousLevel: previousLevel
                 )
                 if response.claimed?.contains(where: { $0.type == "item" || $0.type == "consumable" }) == true {

@@ -150,6 +150,12 @@ struct InteractiveActivesState: Decodable, Sendable {
     let p2: [InteractiveActiveSlotSnapshot]
 }
 
+struct InteractiveRecoverableStrikePayload: Decodable, Sendable {
+    let code: String
+    let actives: InteractiveActivesState?
+    let removedConsumableType: String?
+}
+
 // MARK: - Strike Request (v2 — match-aware)
 
 struct InteractiveStrikeRequest: Encodable, Sendable {

@@ -79,16 +79,12 @@ final class ShellGameViewModel {
     func loadStatus() async {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
-            let data = try await APIClient.shared.getRaw(
+            let data: ShellGameStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.shellGameStatus,
                 params: ["character_id": charId]
             )
-            if let remaining = data["plays_remaining"] as? Int {
-                playsRemaining = remaining
-            }
-            if let limit = data["plays_limit"] as? Int {
-                playsLimit = limit
-            }
+            playsRemaining = data.playsRemaining
+            playsLimit = data.playsLimit
         } catch {
             // Keep defaults (20/20) — non-critical
         }
@@ -112,32 +108,15 @@ final class ShellGameViewModel {
         appState.currentCharacter?.gold = savedGold - selectedBet
 
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: ShellGameStartResponse = try await APIClient.shared.post(
                 APIEndpoints.shellGameStart,
-                body: [
-                    "character_id": charId,
-                    "bet_amount": selectedBet
-                ]
+                body: ShellGameStartRequest(characterId: charId, betAmount: selectedBet)
             )
-            let sid = data["session_id"] as? String
-
-            guard let sid else {
-                isPlaying = false
-                appState.currentCharacter?.gold = savedGold // revert
-                return nil
-            }
-
-            sessionId = sid
+            sessionId = data.sessionId
 
             // Update plays from server response if available
-            if let remaining = data["plays_remaining"] as? Int {
-                playsRemaining = remaining
-            } else {
-                playsRemaining = max(0, playsRemaining - 1)
-            }
-            if let limit = data["plays_limit"] as? Int {
-                playsLimit = limit
-            }
+            playsRemaining = data.playsRemaining
+            playsLimit = data.playsLimit
 
             return Int.random(in: 0...2)
         } catch let error as APIError {
@@ -173,18 +152,14 @@ final class ShellGameViewModel {
         selectedCup = cup
 
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: ShellGameGuessResponse = try await APIClient.shared.post(
                 APIEndpoints.shellGameGuess,
-                body: [
-                    "character_id": charId,
-                    "session_id": sessionId,
-                    "chosen_cup": cup
-                ]
+                body: ShellGameGuessRequest(characterId: charId, sessionId: sessionId, chosenCup: cup)
             )
 
-            winningCup = data["winning_cup"] as? Int
-            let won = data["won"] as? Bool ?? false
-            winAmount = data["win_amount"] as? Int ?? 0
+            winningCup = data.winningCup
+            let won = data.won
+            winAmount = data.winAmount
             isPlaying = false
 
             if won {
@@ -193,9 +168,7 @@ final class ShellGameViewModel {
                 result = "lose"
             }
 
-            if let newGold = data["gold"] as? Int {
-                appState.currentCharacter?.gold = newGold
-            }
+            appState.currentCharacter?.gold = data.gold
             appState.invalidateCache("quests")
         } catch {
             isPlaying = false

@@ -359,6 +359,7 @@ export async function POST(req: NextRequest) {
           leveled_up: rewardResult.levelUpResult?.leveledUp ?? false,
           new_level: rewardResult.levelUpResult?.newLevel,
           stat_points_awarded: rewardResult.levelUpResult?.statPointsAwarded,
+          passive_points_awarded: rewardResult.levelUpResult?.passivePointsAwarded,
           nextRoom: null,
           nextEnemy: undefined,
         }
@@ -400,6 +401,7 @@ export async function POST(req: NextRequest) {
         leveled_up: rewardResult.levelUpResult?.leveledUp ?? false,
         new_level: rewardResult.levelUpResult?.newLevel,
         stat_points_awarded: rewardResult.levelUpResult?.statPointsAwarded,
+        passive_points_awarded: rewardResult.levelUpResult?.passivePointsAwarded,
         nextRoom: {
           index: nextRoom.index,
           type: nextRoom.type,
@@ -463,6 +465,7 @@ export async function POST(req: NextRequest) {
         leveled_up: updatedRushState.leveled_up,
         new_level: updatedRushState.new_level,
         stat_points_awarded: updatedRushState.stat_points_awarded,
+        passive_points_awarded: updatedRushState.passive_points_awarded,
       })
     }
 
@@ -493,6 +496,7 @@ export async function POST(req: NextRequest) {
       leveled_up: updatedRushState.leveled_up,
       new_level: updatedRushState.new_level,
       stat_points_awarded: updatedRushState.stat_points_awarded,
+      passive_points_awarded: updatedRushState.passive_points_awarded,
       nextRoom: updatedRushState.nextRoom!,
       nextEnemy: updatedRushState.nextEnemy,
       buffs: state.buffs,

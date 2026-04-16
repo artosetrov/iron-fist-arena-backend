@@ -3,16 +3,16 @@ title: Project File Inventory
 category: audit
 tags: [audit, inventory, files]
 sources: [git ls-files, git ls-files --others --exclude-standard]
-updated: 2026-04-15
+updated: 2026-04-16
 ---
 
 # Project File Inventory
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 4792
-- Untracked project-owned files: 64
-- In-scope files listed here: 4856
+- Tracked files: 4854
+- Untracked project-owned files: 59
+- In-scope files listed here: 4913
 
 ## Excluded Generated / Vendor Areas
 
@@ -33,20 +33,19 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .skills: 17
 - [root]: 27
 - admin: 217
-- backend: 354
+- backend: 361
 - Buildings: 21
-- docs: 170
+- docs: 171
 - figma-assets: 333
 - graphify-out: 869
 - Hexbound: 1495
 - onboarding-assets: 10
 - prototypes: 4
-- PVP: 6
 - qa-reports: 3
 - scripts: 10
 - sounds: 33
 - User: 1059
-- wiki: 90
+- wiki: 140
 
 ## File List By Block
 
@@ -252,7 +251,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - terms.html
 - UI_RESPONSIVENESS_AUDIT.md
 
-### admin (217)
+### admin (215)
 
 - admin/.gitignore
 - admin/ADMIN_MOBILE_UX_AUDIT.md
@@ -388,16 +387,16 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/app/(dashboard)/tables/[tableName]/table-client.tsx
 - admin/src/app/(dashboard)/tables/page.tsx
 - admin/src/app/api/admin/item-balance/apply-suggestions/route.ts
-- admin/src/app/api/admin/item-balance/config/route.ts _(untracked)_
-- admin/src/app/api/admin/item-balance/profiles/route.ts _(untracked)_
+- admin/src/app/api/admin/item-balance/config/route.ts
+- admin/src/app/api/admin/item-balance/profiles/route.ts
 - admin/src/app/api/admin/item-balance/simulate/combat/route.ts
 - admin/src/app/api/admin/item-balance/simulate/item-impact/route.ts
 - admin/src/app/api/admin/item-balance/simulate/matchups/route.ts
 - admin/src/app/api/admin/item-balance/suggest/route.ts
 - admin/src/app/api/admin/item-balance/validate/route.ts
-- admin/src/app/api/admin/passives/connections/route.ts _(untracked)_
-- admin/src/app/api/admin/passives/route.ts _(untracked)_
-- admin/src/app/api/admin/skills/route.ts _(untracked)_
+- admin/src/app/api/admin/passives/connections/route.ts
+- admin/src/app/api/admin/passives/route.ts
+- admin/src/app/api/admin/skills/route.ts
 - admin/src/app/api/auth/login/route.ts
 - admin/src/app/api/auth/logout/route.ts
 - admin/src/app/api/dungeon-map-layout/route.ts
@@ -448,23 +447,21 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/hooks/use-toast.ts
 - admin/src/lib/audit-log.ts
 - admin/src/lib/auth.ts
-- admin/src/lib/achievement-definitions.ts _(untracked)_
-- admin/src/lib/appearance-skins.ts _(untracked)_
-- admin/src/lib/battle-pass-rewards.ts _(untracked)_
-- admin/src/lib/backend-admin.ts _(untracked)_
-- admin/src/lib/backend-api.ts _(untracked)_
-- admin/src/lib/combat-sim.ts
+- admin/src/lib/achievement-definitions.ts
+- admin/src/lib/appearance-skins.ts
+- admin/src/lib/battle-pass-rewards.ts
+- admin/src/lib/backend-admin.ts
+- admin/src/lib/backend-api.ts
 - admin/src/lib/design-tokens.json
 - admin/src/lib/ds-figma-map.json
-- admin/src/lib/feature-flags.ts _(untracked)_
+- admin/src/lib/feature-flags.ts
 - admin/src/lib/item-constants.ts
 - admin/src/lib/item-image-resolver.ts
-- admin/src/lib/item-validator.ts
 - admin/src/lib/prisma.ts
-- admin/src/lib/push-campaigns.ts _(untracked)_
-- admin/src/lib/quest-definitions.ts _(untracked)_
+- admin/src/lib/push-campaigns.ts
+- admin/src/lib/quest-definitions.ts
 - admin/src/lib/schema-introspection.ts
-- admin/src/lib/shop-offers.ts _(untracked)_
+- admin/src/lib/shop-offers.ts
 - admin/src/lib/supabase.ts
 - admin/src/lib/utils.ts
 - admin/src/types/dashboard.ts
@@ -472,7 +469,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (354)
+### backend (361)
 
 - backend/.env.example
 - backend/.gitignore
@@ -484,6 +481,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/prisma/battle-pass-milestones.ts
 - backend/prisma/battle-pass-reward-repair.ts
 - backend/prisma/fix-battle-pass-rewards.ts
+- backend/prisma/fix-referral-rewards.ts _(untracked)_
 - backend/prisma/MIGRATIONS.md
 - backend/prisma/migrations/20260306_baseline/migration.sql
 - backend/prisma/migrations/20260312_add_pvp_battle_tickets/migration.sql
@@ -503,7 +501,6 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/prisma/migrations/20260410_add_user_device_id/migration.sql
 - backend/prisma/migrations/20260410_w3d5_tiers_weekly_premium/migration.sql
 - backend/prisma/migrations/20260411_add_loot_relevance/migration.sql
-- backend/prisma/migrations/20260411_hotfix_gold_mine_minigame_variant_d_phase2/_hidden_hotfix/migration.sql
 - backend/prisma/migrations/20260411_hotfix_gold_mine_minigame_variant_d_phase2/migration.sql
 - backend/prisma/migrations/20260411_hotfix_gold_mine_shaft_columns/migration.sql
 - backend/prisma/migrations/20260412_add_contraband_claims/migration.sql
@@ -516,9 +513,11 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/prisma/migrations/20260414_consumable_type_extras/migration.sql
 - backend/prisma/migrations/20260414_premium_subscription/migration.sql
 - backend/prisma/migrations/20260414_stamina_cap_180/migration.sql
-- backend/prisma/migrations/20260415_add_missing_event_type_values/migration.sql _(untracked)_
-- backend/prisma/migrations/20260415_backfill_tutorial_completion_state/migration.sql _(untracked)_
-- backend/prisma/migrations/migration_lock.toml _(untracked)_
+- backend/prisma/migrations/20260415_add_missing_event_type_values/migration.sql
+- backend/prisma/migrations/20260415_add_referral_reward_claims/migration.sql _(untracked)_
+- backend/prisma/migrations/20260415_backfill_tutorial_completion_state/migration.sql
+- backend/prisma/migrations/migration_lock.toml
+- backend/prisma/referral-reward-backfill.ts _(untracked)_
 - backend/prisma/schema.prisma
 - backend/prisma/seed-balance.ts
 - backend/prisma/seed-battle-pass.ts
@@ -538,8 +537,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/achievements/route.ts
 - backend/src/app/api/admin/ban/route.ts
 - backend/src/app/api/admin/characters/route.ts
-- backend/src/app/api/admin/config/route.ts _(untracked)_
-- backend/src/app/api/admin/config/restore/route.ts _(untracked)_
+- backend/src/app/api/admin/config/route.ts
+- backend/src/app/api/admin/config/restore/route.ts
 - backend/src/app/api/admin/design-tokens/route.ts
 - backend/src/app/api/admin/dungeon-map-layout/route.ts
 - backend/src/app/api/admin/economy/route.ts
@@ -733,7 +732,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/combat-simulator.ts
 - backend/src/lib/game/combat.ts
 - backend/src/lib/game/config.ts
-- backend/src/lib/game/consumable-pricing.ts _(untracked)_
+- backend/src/lib/game/consumable-pricing.ts
 - backend/src/lib/game/consumable-effects.ts
 - backend/src/lib/game/daily-counter.ts
 - backend/src/lib/game/daily-login.ts
@@ -762,10 +761,10 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/lib/game/npc-bots.ts
 - backend/src/lib/game/passives.ts
 - backend/src/lib/game/premium.ts
-- backend/src/lib/game/active-slots.ts _(untracked)_
-- backend/src/lib/game/achievement-claims.ts _(untracked)_
-- backend/src/lib/game/reward-grants.ts _(untracked)_
-- backend/src/lib/game/reward-display.ts _(untracked)_
+- backend/src/lib/game/active-slots.ts
+- backend/src/lib/game/achievement-claims.ts
+- backend/src/lib/game/reward-grants.ts
+- backend/src/lib/game/reward-display.ts
 - backend/src/lib/game/progression.ts
 - backend/src/lib/game/shaft-catalog.ts
 - backend/src/lib/game/skills.ts
@@ -786,47 +785,51 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/auth-login.test.ts
 - backend/tests/api/auth-register.test.ts
 - backend/tests/api/battle-pass-claim.test.ts
-- backend/tests/api/admin-config.test.ts _(untracked)_
-- backend/tests/api/admin-config-restore.test.ts _(untracked)_
+- backend/tests/api/admin-config.test.ts
+- backend/tests/api/admin-config-restore.test.ts
 - backend/tests/api/dungeon-rush-resolve.test.ts
-- backend/tests/api/iap-apple-notifications.test.ts _(untracked)_
-- backend/tests/api/iap-restore-purchases.test.ts _(untracked)_
-- backend/tests/api/iap-verify-receipt.test.ts _(untracked)_
-- backend/tests/api/inventory-equip.test.ts _(untracked)_
+- backend/tests/api/iap-apple-notifications.test.ts
+- backend/tests/api/iap-restore-purchases.test.ts
+- backend/tests/api/iap-verify-receipt.test.ts
+- backend/tests/api/inventory-equip.test.ts
 - backend/tests/api/inventory-sell.test.ts
-- backend/tests/api/inventory-unequip.test.ts _(untracked)_
-- backend/tests/api/mail-list.test.ts _(untracked)_
+- backend/tests/api/inventory-unequip.test.ts
+- backend/tests/api/mail-list.test.ts
 - backend/tests/api/pvp-prepare-bot-ticket.test.ts
 - backend/tests/api/pvp-resolve.test.ts
-- backend/tests/api/social-challenges.test.ts _(untracked)_
-- backend/tests/api/social-messages.test.ts _(untracked)_
-- backend/tests/api/shell-game-guess.test.ts _(untracked)_
+- backend/tests/api/social-challenges.test.ts
+- backend/tests/api/social-messages.test.ts
+- backend/tests/api/shell-game-guess.test.ts
 - backend/tests/api/shell-game-play-deprecated.test.ts
 - backend/tests/api/shell-game-start.test.ts
-- backend/tests/api/tutorial-quest.test.ts _(untracked)_
+- backend/tests/api/tutorial-quest.test.ts
+- backend/tests/api/tutorial-referral.test.ts _(untracked)_
+- backend/tests/api/tutorial-scripted-fight-contracts.test.ts _(untracked)_
 - backend/tests/api/shop-buy.test.ts
 - backend/tests/api/stamina-refill.test.ts
-- backend/tests/helpers/next-request.ts _(untracked)_
-- backend/tests/lib/achievement-catalog.test.ts _(untracked)_
-- backend/tests/lib/feature-flags.test.ts _(untracked)_
+- backend/tests/helpers/next-request.ts
+- backend/tests/lib/achievement-catalog.test.ts
+- backend/tests/lib/feature-flags.test.ts
 - backend/tests/economy/sink-ratio.test.ts
 - backend/tests/lib/balance-gold.test.ts
 - backend/tests/lib/bot-ticket.test.ts
 - backend/tests/lib/cache.test.ts
 - backend/tests/lib/cha-miss.test.ts
 - backend/tests/lib/daily-counter.test.ts
-- backend/tests/lib/dungeon.test.ts _(untracked)_
+- backend/tests/lib/dungeon.test.ts
 - backend/tests/lib/elo.test.ts
-- backend/tests/lib/item-balance.test.ts _(untracked)_
-- backend/tests/lib/progression.test.ts _(untracked)_
+- backend/tests/lib/item-balance.test.ts
+- backend/tests/lib/progression.test.ts
 - backend/tests/lib/rate-limit.test.ts
 - backend/tests/lib/rogue-execute.test.ts
 - backend/tests/lib/stamina-refill-dr.test.ts
 - backend/tests/lib/stamina.test.ts
 - backend/tests/lib/tier.test.ts
 - backend/tests/lib/training-xp-dr.test.ts
+- backend/tests/lib/tutorial-referral-rewards.test.ts _(untracked)_
 - backend/tests/lib/weekly-challenges.test.ts
 - backend/tests/prisma/battle-pass-reward-repair.test.ts
+- backend/tests/prisma/referral-reward-backfill.test.ts _(untracked)_
 - backend/tsconfig.json
 - backend/vitest.config.ts
 
@@ -854,7 +857,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Buildings/Volcanic Forge.png
 - Buildings/Volcanic_Forge_nobg.png
 
-### docs (170)
+### docs (171)
 
 - docs/00_studio/STUDIO_COMMAND_CENTER.md
 - docs/01_source_of_truth/CLEANUP_REPORT.md
@@ -986,7 +989,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/MIGRATION_PLAN.md
 - docs/ORCHESTRATOR.md
 - docs/PROJECT_INDEX.md
-- docs/_COMMUNITY_Community 284.md _(untracked)_
+- docs/_COMMUNITY_Community 284.md
 - docs/retro/RETRO_2026-03-21.md
 - docs/retro/RETRO_2026-03-22.md
 - docs/retro/RETRO_2026-03-23.md
@@ -1010,7 +1013,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - docs/retro/RETRO_2026-04-11.md
 - docs/retro/RETRO_2026-04-12.md
 - docs/retro/RETRO_2026-04-13.md
-- docs/retro/RETRO_2026-04-14.md _(untracked)_
+- docs/retro/RETRO_2026-04-14.md
+- docs/retro/RETRO_2026-04-15.md
 - docs/rules/rules-admin.md
 - docs/rules/rules-art.md
 - docs/rules/rules-audio.md
@@ -2235,7 +2239,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - graphify-out/graph.json
 - graphify-out/manifest.json
 
-### Hexbound (1494)
+### Hexbound (1495)
 
 - Hexbound/.gitignore
 - Hexbound/.swiftlint.yml
@@ -2276,7 +2280,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Models/Enums/PvPRank.swift
 - Hexbound/Hexbound/Models/InteractiveCombatModels.swift
 - Hexbound/Hexbound/Models/InteractiveStanceBonuses.swift
-- Hexbound/Hexbound/Models/ConsumableCatalog.swift _(untracked)_
+- Hexbound/Hexbound/Models/ConsumableCatalog.swift
 - Hexbound/Hexbound/Models/Item.swift
 - Hexbound/Hexbound/Models/LeaderboardEntry.swift
 - Hexbound/Hexbound/Models/MailMessage.swift
@@ -3628,8 +3632,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - Hexbound/Hexbound/Views/Hero/HeroDetailView.swift
 - Hexbound/Hexbound/Views/Hero/HeroInventoryTab.swift
 - Hexbound/Hexbound/Views/Hero/HeroStatsTab.swift
-- Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift _(untracked)_
-- Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift _(untracked)_
+- Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerRow.swift
+- Hexbound/Hexbound/Views/Hero/Talents/ActiveSkillPickerSheet.swift
 - Hexbound/Hexbound/Views/Hero/Talents/ActiveSlotsBar.swift
 - Hexbound/Hexbound/Views/Hero/Talents/PassiveTreeViewModel.swift
 - Hexbound/Hexbound/Views/Hero/Talents/TalentDetailSheet.swift
@@ -3752,15 +3756,6 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - prototypes/victory-rewards/assets/reward-rating-up.png
 - prototypes/victory-rewards/assets/reward-xp.png
 - prototypes/victory-rewards/index.html
-
-### PVP (6)
-
-- PVP/.obsidian/app.json
-- PVP/.obsidian/appearance.json
-- PVP/.obsidian/core-plugins.json
-- PVP/.obsidian/graph.json
-- PVP/.obsidian/workspace.json
-- PVP/Welcome.md
 
 ### qa-reports (3)
 
@@ -4879,67 +4874,117 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (89)
+### wiki (139)
 
 - wiki/audit/audit-index.md
 - wiki/audit/block-001-root-files.md
 - wiki/audit/block-002-repo-automation.md
 - wiki/audit/block-003-claude-operational-safety.md
-- wiki/audit/block-004-claude-product-governance-skills.md _(untracked)_
-- wiki/audit/block-005-claude-figma-design-system-skills.md _(untracked)_
-- wiki/audit/block-006-project-scripts.md _(untracked)_
-- wiki/audit/block-007-backend-root-prisma-foundation.md _(untracked)_
-- wiki/audit/block-008-prisma-migrations-baseline-early-deltas.md _(untracked)_
-- wiki/audit/block-009-prisma-migrations-onboarding-gold-and-w3d5.md _(untracked)_
-- wiki/audit/block-010-prisma-migrations-hotfixes-stash-interactive-premium.md _(untracked)_
-- wiki/audit/block-011-backend-passives-interactive-combat-runtime.md _(untracked)_
-- wiki/audit/block-012-backend-stash-contraband-premium-runtime.md _(untracked)_
-- wiki/audit/block-013-backend-reward-premium-parity.md _(untracked)_
-- wiki/audit/block-014-shared-reward-grants-shop-mail-rush-sync.md _(untracked)_
-- wiki/audit/block-015-claim-progression-achievements-quests-battle-pass.md _(untracked)_
-- wiki/audit/block-016-backend-daily-login-battle-pass-reward-contracts.md _(untracked)_
-- wiki/audit/block-017-ios-claim-services-authoritative-reward-sync.md _(untracked)_
-- wiki/audit/block-018-ios-typed-achievements-quests-loaders.md _(untracked)_
-- wiki/audit/block-019-ios-contract-fixes-battle-pass-shop-leaderboard.md _(untracked)_
-- wiki/audit/block-020-inventory-typed-snapshots-legacy-consumables.md _(untracked)_
-- wiki/audit/block-021-item-stat-authority-consumable-catalog.md _(untracked)_
-- wiki/audit/block-022-ios-active-skill-picker-passive-tree-contracts.md _(untracked)_
-- wiki/audit/block-023-ios-interactive-combat-terminal-state-and-round-log.md _(untracked)_
-- wiki/audit/block-024-interactive-combat-consumable-recovery.md _(untracked)_
-- wiki/audit/block-025-backend-active-slot-consumable-ownership-reconciliation.md _(untracked)_
-- wiki/audit/block-026-backend-shop-consumable-pricing-parity.md _(untracked)_
-- wiki/audit/block-027-shop-legacy-client-surface-and-pricing-docs.md _(untracked)_
-- wiki/audit/block-028-backend-contraband-reward-contract-build-fix.md _(untracked)_
-- wiki/audit/block-029-backend-ci-premium-mock-drift-tests.md _(untracked)_
-- wiki/audit/block-030-backend-ci-contract-hardening-and-actions-upgrade.md _(untracked)_
-- wiki/audit/block-031-backend-route-tests-transaction-and-premium-fixtures.md _(untracked)_
-- wiki/audit/block-032-backend-api-tests-nextrequest-helper.md _(untracked)_
-- wiki/audit/block-033-backend-api-tests-request-cast-elimination.md _(untracked)_
-- wiki/audit/block-034-backend-auth-bot-minigame-guardrail-tests.md _(untracked)_
-- wiki/audit/block-035-backend-battle-pass-claim-test-contracts.md _(untracked)_
-- wiki/audit/block-036-backend-dungeon-rush-resolve-test-contracts.md _(untracked)_
-- wiki/audit/block-037-backend-pvp-resolve-test-contracts.md _(untracked)_
-- wiki/audit/block-038-backend-utility-routes-and-character-warning-cleanup.md _(untracked)_
-- wiki/audit/block-039-backend-rush-start-shop-race-hardening.md _(untracked)_
-- wiki/audit/block-040-backend-iap-receipt-idempotency-and-webhook-contracts.md _(untracked)_
-- wiki/audit/block-041-iap-compatibility-aliases-restore-and-ios-endpoints.md _(untracked)_
-- wiki/audit/block-042-backend-inventory-mail-quest-contract-hardening.md _(untracked)_
-- wiki/audit/block-043-backend-shell-game-transaction-and-session-hardening.md _(untracked)_
-- wiki/audit/block-044-backend-social-contracts-and-runtime-hardening.md _(untracked)_
-- wiki/audit/block-045-backend-tutorial-achievement-and-weekly-contracts.md _(untracked)_
-- wiki/audit/block-046-backend-feature-flags-progression-and-runtime-cleanup.md _(untracked)_
-- wiki/audit/block-047-backend-dungeon-item-balance-live-config-hardening.md _(untracked)_
-- wiki/audit/block-048-admin-item-balance-backend-proxy-alignment.md _(untracked)_
-- wiki/audit/block-049-admin-config-canonical-route-and-consumables-live-sync.md _(untracked)_
-- wiki/audit/block-050-admin-skills-passives-proxy-alignment.md _(untracked)_
-- wiki/audit/block-051-admin-active-config-editors-consistency.md _(untracked)_
-- wiki/audit/block-052-admin-balance-schema-parity-and-auth-hardening.md _(untracked)_
-- wiki/audit/block-053-admin-snapshots-restore-runtime-hardening.md _(untracked)_
-- wiki/audit/block-054-admin-settings-role-guards-and-feature-flag-contracts.md _(untracked)_
-- wiki/audit/block-055-admin-push-and-shop-offer-contract-hardening.md _(untracked)_
-- wiki/audit/block-056-admin-quests-and-battle-pass-contract-alignment.md _(untracked)_
-- wiki/audit/block-057-admin-achievements-runtime-parity.md _(untracked)_
-- wiki/audit/block-058-admin-appearances-and-design-system-preview-consistency.md _(untracked)_
+- wiki/audit/block-004-claude-product-governance-skills.md
+- wiki/audit/block-005-claude-figma-design-system-skills.md
+- wiki/audit/block-006-project-scripts.md
+- wiki/audit/block-007-backend-root-prisma-foundation.md
+- wiki/audit/block-008-prisma-migrations-baseline-early-deltas.md
+- wiki/audit/block-009-prisma-migrations-onboarding-gold-and-w3d5.md
+- wiki/audit/block-010-prisma-migrations-hotfixes-stash-interactive-premium.md
+- wiki/audit/block-011-backend-passives-interactive-combat-runtime.md
+- wiki/audit/block-012-backend-stash-contraband-premium-runtime.md
+- wiki/audit/block-013-backend-reward-premium-parity.md
+- wiki/audit/block-014-shared-reward-grants-shop-mail-rush-sync.md
+- wiki/audit/block-015-claim-progression-achievements-quests-battle-pass.md
+- wiki/audit/block-016-backend-daily-login-battle-pass-reward-contracts.md
+- wiki/audit/block-017-ios-claim-services-authoritative-reward-sync.md
+- wiki/audit/block-018-ios-typed-achievements-quests-loaders.md
+- wiki/audit/block-019-ios-contract-fixes-battle-pass-shop-leaderboard.md
+- wiki/audit/block-020-inventory-typed-snapshots-legacy-consumables.md
+- wiki/audit/block-021-item-stat-authority-consumable-catalog.md
+- wiki/audit/block-022-ios-active-skill-picker-passive-tree-contracts.md
+- wiki/audit/block-023-ios-interactive-combat-terminal-state-and-round-log.md
+- wiki/audit/block-024-interactive-combat-consumable-recovery.md
+- wiki/audit/block-025-backend-active-slot-consumable-ownership-reconciliation.md
+- wiki/audit/block-026-backend-shop-consumable-pricing-parity.md
+- wiki/audit/block-027-shop-legacy-client-surface-and-pricing-docs.md
+- wiki/audit/block-028-backend-contraband-reward-contract-build-fix.md
+- wiki/audit/block-029-backend-ci-premium-mock-drift-tests.md
+- wiki/audit/block-030-backend-ci-contract-hardening-and-actions-upgrade.md
+- wiki/audit/block-031-backend-route-tests-transaction-and-premium-fixtures.md
+- wiki/audit/block-032-backend-api-tests-nextrequest-helper.md
+- wiki/audit/block-033-backend-api-tests-request-cast-elimination.md
+- wiki/audit/block-034-backend-auth-bot-minigame-guardrail-tests.md
+- wiki/audit/block-035-backend-battle-pass-claim-test-contracts.md
+- wiki/audit/block-036-backend-dungeon-rush-resolve-test-contracts.md
+- wiki/audit/block-037-backend-pvp-resolve-test-contracts.md
+- wiki/audit/block-038-backend-utility-routes-and-character-warning-cleanup.md
+- wiki/audit/block-039-backend-rush-start-shop-race-hardening.md
+- wiki/audit/block-040-backend-iap-receipt-idempotency-and-webhook-contracts.md
+- wiki/audit/block-041-iap-compatibility-aliases-restore-and-ios-endpoints.md
+- wiki/audit/block-042-backend-inventory-mail-quest-contract-hardening.md
+- wiki/audit/block-043-backend-shell-game-transaction-and-session-hardening.md
+- wiki/audit/block-044-backend-social-contracts-and-runtime-hardening.md
+- wiki/audit/block-045-backend-tutorial-achievement-and-weekly-contracts.md
+- wiki/audit/block-046-backend-feature-flags-progression-and-runtime-cleanup.md
+- wiki/audit/block-047-backend-dungeon-item-balance-live-config-hardening.md
+- wiki/audit/block-048-admin-item-balance-backend-proxy-alignment.md
+- wiki/audit/block-049-admin-config-canonical-route-and-consumables-live-sync.md
+- wiki/audit/block-050-admin-skills-passives-proxy-alignment.md
+- wiki/audit/block-051-admin-active-config-editors-consistency.md
+- wiki/audit/block-052-admin-balance-schema-parity-and-auth-hardening.md
+- wiki/audit/block-053-admin-snapshots-restore-runtime-hardening.md
+- wiki/audit/block-054-admin-settings-role-guards-and-feature-flag-contracts.md
+- wiki/audit/block-055-admin-push-and-shop-offer-contract-hardening.md
+- wiki/audit/block-056-admin-quests-and-battle-pass-contract-alignment.md
+- wiki/audit/block-057-admin-achievements-runtime-parity.md
+- wiki/audit/block-058-admin-appearances-and-design-system-preview-consistency.md
+- wiki/audit/block-059-admin-design-system-residual-debt-and-warning-cleanup.md _(untracked)_
+- wiki/audit/block-060-admin-dungeon-map-and-editor-runtime-cleanup.md _(untracked)_
+- wiki/audit/block-061-admin-live-editors-async-state-hardening.md _(untracked)_
+- wiki/audit/block-062-admin-players-items-async-state-hardening.md _(untracked)_
+- wiki/audit/block-063-admin-feature-flags-operator-feedback-hardening.md _(untracked)_
+- wiki/audit/block-064-admin-config-and-balance-editor-async-state-hardening.md _(untracked)_
+- wiki/audit/block-065-admin-snapshots-and-item-balance-editor-async-state-hardening.md _(untracked)_
+- wiki/audit/block-066-admin-skills-and-passives-editor-async-state-hardening.md _(untracked)_
+- wiki/audit/block-067-admin-generic-table-shell-mutation-hardening.md _(untracked)_
+- wiki/audit/block-068-admin-achievements-and-item-balance-operator-feedback.md _(untracked)_
+- wiki/audit/block-069-admin-residual-transition-and-copy-cleanup.md _(untracked)_
+- wiki/audit/block-070-admin-events-api-auth-gap.md _(untracked)_
+- wiki/audit/block-071-ios-hub-daily-login-and-levelup-contract-cleanup.md _(untracked)_
+- wiki/audit/block-072-progression-passive-points-contract-parity.md _(untracked)_
+- wiki/audit/block-073-tutorial-scripted-fight-contract-and-victory-parity.md _(untracked)_
+- wiki/audit/block-074-tutorial-referral-rate-limit-and-storage-parity.md _(untracked)_
+- wiki/audit/block-075-referral-qualification-rewards-and-idempotency.md _(untracked)_
+- wiki/audit/block-076-referral-reward-backfill-tooling.md _(untracked)_
+- wiki/audit/block-077-ios-referral-and-tavern-typed-contract-cleanup.md _(untracked)_
+- wiki/audit/block-078-ios-tutorial-manager-typed-contract-cleanup.md _(untracked)_
+- wiki/audit/block-079-ios-dungeon-list-and-progress-typed-contracts.md _(untracked)_
+- wiki/audit/block-080-ios-dungeon-combat-and-rush-entry-typed-contracts.md _(untracked)_
+- wiki/audit/block-081-ios-dungeon-rush-resolve-and-shop-typed-contracts.md _(untracked)_
+- wiki/audit/block-082-ios-pending-loot-typed-presentation-contract.md _(untracked)_
+- wiki/audit/block-083-ios-character-service-typed-contract-cleanup.md _(untracked)_
+- wiki/audit/block-084-ios-character-list-typed-envelope-parity.md _(untracked)_
+- wiki/audit/block-085-ios-game-init-typed-bootstrap-and-cache-parity.md _(untracked)_
+- wiki/audit/block-086-ios-pvp-service-typed-list-contracts.md _(untracked)_
+- wiki/audit/block-087-ios-tutorial-service-typed-scripted-fight-contracts.md _(untracked)_
+- wiki/audit/block-088-ios-social-and-challenge-action-typed-contracts.md _(untracked)_
+- wiki/audit/block-089-ios-stash-transfer-typed-contracts.md _(untracked)_
+- wiki/audit/block-090-ios-auth-service-and-account-delete-typed-contracts.md _(untracked)_
+- wiki/audit/block-091-ios-oauth-signin-and-guest-upgrade-typed-contracts.md _(untracked)_
+- wiki/audit/block-092-ios-onboarding-name-and-character-create-typed-contracts.md _(untracked)_
+- wiki/audit/block-093-ios-shop-service-typed-purchase-and-repair-contracts.md _(untracked)_
+- wiki/audit/block-094-ios-inventory-service-sell-use-expand-typed-contracts.md _(untracked)_
+- wiki/audit/block-095-ios-battle-preloader-typed-pvp-contracts.md _(untracked)_
+- wiki/audit/block-096-ios-appearance-editor-typed-save-contract.md _(untracked)_
+- wiki/audit/block-097-ios-dungeon-rush-abandon-and-gold-mine-status-typed-contracts.md _(untracked)_
+- wiki/audit/block-098-ios-gold-mine-action-typed-contracts.md _(untracked)_
+- wiki/audit/block-099-ios-editor-layout-save-typed-contracts.md _(untracked)_
+- wiki/audit/block-100-ios-game-config-daily-login-parse-bridge-cleanup.md _(untracked)_
+- wiki/audit/block-101-ios-interactive-combat-reconcile-payload-bridge-cleanup.md _(untracked)_
+- wiki/audit/block-102-ios-network-infrastructure-raw-surface-retirement.md _(untracked)_
+- wiki/audit/block-103-ios-gold-mine-typed-state-and-cache-parity.md _(untracked)_
+- wiki/audit/block-104-ios-battle-preloader-combat-engine-typed-handoff.md _(untracked)_
+- wiki/audit/block-105-ios-typed-error-body-and-combat-model-bridge-cleanup.md _(untracked)_
+- wiki/audit/block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity.md _(untracked)_
+- wiki/audit/block-107-ios-dead-model-parse-bridge-cleanup.md _(untracked)_
+- wiki/audit/block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

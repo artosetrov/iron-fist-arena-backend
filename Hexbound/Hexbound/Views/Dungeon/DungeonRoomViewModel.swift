@@ -21,7 +21,7 @@ final class DungeonRoomViewModel {
     var showVictory = false
     var victoryGold = 0
     var victoryXP = 0
-    var victoryItems: [[String: Any]] = []
+    var victoryItems: [CombatLootItem] = []
     /// HP fraction after battle (0.0–1.0) for star rating. nil if unknown.
     var hpFractionAfterBattle: Double?
     /// Whether this fight levelled the hero up. Consumed by `DungeonVictoryView`
@@ -30,6 +30,7 @@ final class DungeonRoomViewModel {
     var victoryLeveledUp = false
     var victoryNewLevel: Int?
     var victoryStatPointsAwarded: Int = 0
+    var victoryPassivePointsAwarded: Int = 0
 
     // Defeat overlay
     var showDefeat = false
@@ -105,6 +106,10 @@ final class DungeonRoomViewModel {
         return Double(defeatedCount) / Double(dungeon.totalBosses)
     }
 
+    private static func pendingLootItem(_ item: CombatLootItem) -> PendingLootItem {
+        PendingLootItem(item)
+    }
+
     // MARK: - Load State
 
     func loadState() async {
@@ -126,9 +131,9 @@ final class DungeonRoomViewModel {
         // Only show spinner if we truly have zero dungeon data (first-ever open)
         isLoading = false // always keep UI interactive; API runs in background
 
-        let data = await service.getProgress()
+        let snapshot = await service.getProgress()
 
-        guard data != nil else {
+        guard snapshot != nil else {
             // Non-blocking error — dungeon is already shown from cache
             if dungeon == nil {
                 errorMessage = "Failed to load dungeon data. Check your connection and try again."
@@ -142,10 +147,10 @@ final class DungeonRoomViewModel {
         }
 
         // Check for active run
-        if let run = data?["activeRun"] as? [String: Any] {
-            let runDungeonId = run["dungeon_id"] as? String ?? run["dungeonId"] as? String ?? ""
-            runId = run["id"] as? String ?? ""
-            let floor = run["current_floor"] as? Int ?? run["currentFloor"] as? Int ?? 1
+        if let run = snapshot?.activeRun {
+            let runDungeonId = run.dungeonId
+            runId = run.id
+            let floor = run.currentFloor
 
             // If we didn't have a selected dungeon, use the run's dungeon
             if dungeon == nil, !runDungeonId.isEmpty {
@@ -162,12 +167,11 @@ final class DungeonRoomViewModel {
         }
 
         // Load saved progress for our dungeon
-        if let progress = data?["progress"] as? [String: Any],
-           let d = dungeon {
-            if let defeated = progress[d.id] as? Int {
-                // Use saved progress if greater than what active run says
-                defeatedCount = max(defeatedCount, defeated)
-            }
+        if let progress = snapshot?.progress,
+           let d = dungeon,
+           let defeated = progress[d.id] {
+            // Use saved progress if greater than what active run says
+            defeatedCount = max(defeatedCount, defeated)
         }
 
         // Default dungeon if nothing resolved
@@ -202,11 +206,7 @@ final class DungeonRoomViewModel {
             #endif
             let startResult = await service.start(dungeonId: dungeon?.id ?? "", difficulty: "normal")
             if let result = startResult {
-                // The start response returns run_id at top level
-                runId = result["run_id"] as? String
-                    ?? result["id"] as? String
-                    ?? (result["run"] as? [String: Any])?["id"] as? String
-                    ?? ""
+                runId = result.runId
             }
         }
 
@@ -230,20 +230,18 @@ final class DungeonRoomViewModel {
         }
 
         #if DEBUG
-        let hasPlayer = result["player"] != nil
-        let hasCombatLog = result["combat_log"] != nil
-        let victory = result["victory"] as? Bool
-        print("[DUNGEON-COMBAT] fight(): response keys=\(Array(result.keys)), hasPlayer=\(hasPlayer), hasCombatLog=\(hasCombatLog), victory=\(String(describing: victory))")
+        print("[DUNGEON-COMBAT] fight(): hasPlayer=true, turns=\(result.combatLog.count), victory=\(result.victory)")
         #endif
 
         // Store loot
-        let lootItems = result["loot"] as? [[String: Any]] ?? []
-        appState.pendingLoot = lootItems
+        let lootItems = result.loot ?? []
+        appState.pendingLoot = lootItems.map(Self.pendingLootItem)
 
         // Try to navigate to combat animation
-        if let combatData = parseCombatData(from: result) {
+        let combatData = result.combatData
+        if !combatData.combatLog.isEmpty {
             #if DEBUG
-            print("[DUNGEON-COMBAT] fight(): parseCombatData OK — navigating to combat screen")
+            print("[DUNGEON-COMBAT] fight(): typed combatData OK — navigating to combat screen")
             #endif
             appState.combatData = combatData
             // Store pending result to apply after combat animation
@@ -251,14 +249,14 @@ final class DungeonRoomViewModel {
             appState.mainPath.append(AppRoute.combat)
         } else {
             #if DEBUG
-            print("[DUNGEON-COMBAT] fight(): parseCombatData FAILED — applying result directly (no combat animation)")
+            print("[DUNGEON-COMBAT] fight(): empty combat log — applying result directly (no combat animation)")
             #endif
             // No animation — apply directly
             applyFightResult(result)
         }
     }
 
-    var pendingFightResult: [String: Any]?
+    var pendingFightResult: DungeonFightResponse?
 
     func applyPendingResult() {
         guard let result = pendingFightResult else { return }
@@ -266,35 +264,31 @@ final class DungeonRoomViewModel {
         applyFightResult(result)
     }
 
-    private func applyFightResult(_ result: [String: Any]) {
-        let won = result["victory"] as? Bool ?? false
+    private func applyFightResult(_ result: DungeonFightResponse) {
+        let won = result.victory
 
         if won {
             // Extract gold/xp from rewards or result
-            victoryGold = (result["rewards"] as? [String: Any])?["gold"] as? Int
-                ?? (result["result"] as? [String: Any])?["gold_reward"] as? Int
-                ?? 0
-            victoryXP = (result["rewards"] as? [String: Any])?["xp"] as? Int
-                ?? (result["result"] as? [String: Any])?["xp_reward"] as? Int
-                ?? 0
-            victoryItems = result["loot"] as? [[String: Any]] ?? []
+            victoryGold = result.rewards?.gold ?? result.result.goldReward ?? 0
+            victoryXP = result.rewards?.xp ?? result.result.xpReward ?? 0
+            victoryItems = result.loot ?? []
 
             // Extract level-up metadata — consumed by DungeonVictoryView to
             // animate the XP bar and trigger the level-up modal in sync with
             // the bar finishing its fill (mirrors arena/pvp flow).
-            let resultData = result["result"] as? [String: Any]
-            let leveledUp = (resultData?["leveled_up"] as? Bool) ?? false
-            let newLevel = resultData?["new_level"] as? Int
-            let statPoints = resultData?["stat_points_awarded"] as? Int ?? 3
+            let leveledUp = result.result.leveledUp ?? false
+            let newLevel = result.result.newLevel
+            let statPoints = result.result.statPointsAwarded ?? 3
+            let passivePoints = result.result.passivePointsAwarded ?? 0
             victoryLeveledUp = leveledUp
             victoryNewLevel = newLevel
             victoryStatPointsAwarded = leveledUp ? statPoints : 0
+            victoryPassivePointsAwarded = leveledUp ? passivePoints : 0
 
             // HP fraction for star rating (server sends playerHpPercent or we compute from character)
-            if let hpPct = result["playerHpPercent"] as? Double {
+            if let hpPct = result.playerHpPercent {
                 hpFractionAfterBattle = hpPct
-            } else if let rewards = result["rewards"] as? [String: Any],
-                      let hpPct = rewards["hpPercent"] as? Double {
+            } else if let hpPct = result.rewards?.hpPercent {
                 hpFractionAfterBattle = hpPct
             } else {
                 // Fallback: use current character HP if available
@@ -325,6 +319,9 @@ final class DungeonRoomViewModel {
                     if statPoints > 0 {
                         char.statPoints = (char.statPoints ?? 0) + statPoints
                     }
+                    if passivePoints > 0 {
+                        char.passivePointsAvailable = (char.passivePointsAvailable ?? 0) + passivePoints
+                    }
                 }
                 appState.currentCharacter = char
             }
@@ -335,8 +332,8 @@ final class DungeonRoomViewModel {
             // Notify rare+ drops as celebration, skip common/uncommon (shown in loot screen)
             if !victoryItems.isEmpty {
                 let first = victoryItems[0]
-                let name = first["name"] as? String ?? "Item"
-                let rarity = first["rarity"] as? String ?? "common"
+                let name = first.displayName
+                let rarity = first.rarity ?? "common"
                 let rarityEnum = ItemRarity(rawValue: rarity) ?? .common
 
                 // Only celebrate epic+ drops
@@ -351,7 +348,7 @@ final class DungeonRoomViewModel {
             }
 
             // Check if dungeon is now complete
-            let serverDungeonComplete = result["dungeonComplete"] as? Bool ?? false
+            let serverDungeonComplete = result.dungeonComplete ?? false
             if isDungeonComplete || serverDungeonComplete {
                 runId = ""
                 // FTUE: mark explore dungeon complete
@@ -370,11 +367,9 @@ final class DungeonRoomViewModel {
             runId = ""
 
             // Extract total progress earned during the run
-            let rewards = result["rewards"] as? [String: Any]
-            defeatTotalGold = rewards?["gold"] as? Int ?? 0
-            defeatTotalXP = rewards?["xp"] as? Int ?? 0
-            defeatFloorsCleared = rewards?["floorsCleared"] as? Int
-                ?? rewards?["floors_cleared"] as? Int ?? 0
+            defeatTotalGold = result.rewards?.gold ?? 0
+            defeatTotalXP = result.rewards?.xp ?? 0
+            defeatFloorsCleared = result.rewards?.floorsCleared ?? 0
 
             showDefeat = true
             HapticManager.error()
@@ -383,26 +378,6 @@ final class DungeonRoomViewModel {
             Task { [characterService] in
                 await characterService.loadCharacter()
             }
-        }
-    }
-
-    private func parseCombatData(from response: [String: Any]) -> CombatData? {
-        guard response["player"] != nil, response["combat_log"] != nil else {
-            #if DEBUG
-            print("[DUNGEON-COMBAT] parseCombatData: missing 'player' or 'combat_log' keys")
-            #endif
-            return nil
-        }
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: response)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(CombatData.self, from: jsonData)
-        } catch {
-            #if DEBUG
-            print("[DUNGEON-COMBAT] parseCombatData decode FAILED: \(error)")
-            #endif
-            return nil
         }
     }
 

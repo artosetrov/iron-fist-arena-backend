@@ -385,12 +385,10 @@ final class ArenaViewModel {
 
         // Notify about broken equipment
         let brokenItems = result.durabilityDegraded.filter {
-            ($0["durabilityAfter"] as? Int) == 0 && ($0["durabilityBefore"] as? Int ?? 0) > 0
+            $0.durabilityAfter == 0 && $0.durabilityBefore > 0
         }
         for item in brokenItems {
-            if let name = item["name"] as? String {
-                appState.showToast("\(name) broke!", subtitle: "Visit blacksmith to repair", type: .error)
-            }
+            appState.showToast("\(item.name) broke!", subtitle: "Visit blacksmith to repair", type: .error)
         }
 
         // Invalidate caches that depend on character state

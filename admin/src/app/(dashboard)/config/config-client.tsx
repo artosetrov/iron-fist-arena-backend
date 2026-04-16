@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateConfig, seedDefaultConfigs } from '@/actions/config'
 import { Button } from '@/components/ui/button'
@@ -42,12 +42,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function ConfigClient({ configs }: { configs: ConfigItem[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [editedValues, setEditedValues] = useState<Record<string, string>>({})
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set())
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [seedMessage, setSeedMessage] = useState('')
+  const [isSeeding, setIsSeeding] = useState(false)
 
   const categories = useMemo(() => {
     const cats = new Map<string, ConfigItem[]>()
@@ -98,35 +98,34 @@ export function ConfigClient({ configs }: { configs: ConfigItem[] }) {
     setSavingKey(config.key)
     setError('')
 
-    startTransition(async () => {
-      try {
-        await updateConfig(config.key, parsedValue)
-        setSavedKeys((prev) => new Set(prev).add(config.key))
-        setEditedValues((prev) => {
-          const next = { ...prev }
-          delete next[config.key]
-          return next
-        })
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
-      } finally {
-        setSavingKey(null)
-      }
-    })
+    try {
+      await updateConfig(config.key, parsedValue)
+      setSavedKeys((prev) => new Set(prev).add(config.key))
+      setEditedValues((prev) => {
+        const next = { ...prev }
+        delete next[config.key]
+        return next
+      })
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSavingKey(null)
+    }
   }
 
   async function handleSeed() {
     setSeedMessage('')
-    startTransition(async () => {
-      try {
-        const result = await seedDefaultConfigs()
-        setSeedMessage(`Seeded ${result.created} configs (${result.skipped} already existed)`)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to seed')
-      }
-    })
+    setIsSeeding(true)
+    try {
+      const result = await seedDefaultConfigs()
+      setSeedMessage(`Seeded ${result.created} configs (${result.skipped} already existed)`)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to seed')
+    } finally {
+      setIsSeeding(false)
+    }
   }
 
   if (configs.length === 0) {
@@ -135,9 +134,9 @@ export function ConfigClient({ configs }: { configs: ConfigItem[] }) {
         <CardContent className="flex flex-col items-center justify-center py-12">
           <Database className="h-12 w-12 mb-4 text-muted-foreground opacity-50" />
           <p className="text-muted-foreground mb-4">No configuration keys found.</p>
-          <Button onClick={handleSeed} disabled={isPending}>
+          <Button onClick={handleSeed} disabled={isSeeding}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            {isPending ? 'Seeding...' : 'Seed Default Configs'}
+            {isSeeding ? 'Seeding...' : 'Seed Default Configs'}
           </Button>
           {seedMessage && (
             <p className="mt-3 text-sm text-green-400">{seedMessage}</p>
@@ -156,7 +155,7 @@ export function ConfigClient({ configs }: { configs: ConfigItem[] }) {
       )}
 
       <div className="flex justify-end">
-        <Button variant="outline" onClick={handleSeed} disabled={isPending}>
+        <Button variant="outline" onClick={handleSeed} disabled={isSeeding}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Seed Defaults
         </Button>

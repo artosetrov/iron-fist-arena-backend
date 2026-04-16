@@ -19,7 +19,8 @@ import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
  *   {
  *     hero: CharacterStats,
  *     opponent: CharacterStats,
- *     forcedStance: { attack, defense },
+ *     forced_stance: { attack, defense },
+ *     forcedStance: { attack, defense }, // legacy compatibility alias
  *     scripted: true
  *   }
  *
@@ -103,6 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       hero,
       opponent: scripted.character,
+      forced_stance: scripted.forcedStance,
       forcedStance: scripted.forcedStance,
       scripted: true,
     })

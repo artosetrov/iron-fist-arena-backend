@@ -1,5 +1,39 @@
 import SwiftUI
 
+private struct ReferralRewardInfo: Codable {
+    let gold: Int
+    let gems: Int
+}
+
+private struct ReferralStatusResponse: Codable {
+    let referralCode: String
+    let referredBy: String?
+    let referredByCode: String?
+    let referredByCharacterId: String?
+    let referralCount: Int
+    let qualifiedCount: Int
+    let maxReferrals: Int
+    let referrerReward: ReferralRewardInfo
+}
+
+private struct ReferralApplyResponse: Codable {
+    let success: Bool
+    let bonusGold: Int
+    let referredBy: String?
+    let referredByCode: String?
+    let referredByCharacterId: String?
+}
+
+private struct ReferralApplyErrorPayload: Decodable {
+    let alreadyReferred: Bool?
+    let invalidCode: Bool?
+}
+
+private struct ReferralApplyRequest: Encodable {
+    let characterId: String
+    let referralCode: String
+}
+
 // MARK: - Referral Section (Settings)
 
 /// Displays referral code, share button, and "enter friend's code" input.
@@ -233,22 +267,18 @@ struct ReferralSectionView: View {
     private func loadReferralData() async {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: ReferralStatusResponse = try await APIClient.shared.get(
                 "/tutorial/referral",
                 params: ["character_id": charId]
             )
-            await MainActor.run {
-                self.referralCode = response["referralCode"] as? String
-                self.referralCount = response["referralCount"] as? Int ?? 0
-                self.qualifiedCount = response["qualifiedCount"] as? Int ?? 0
-                self.maxReferrals = response["maxReferrals"] as? Int ?? 20
-                self.alreadyReferred = (response["referredBy"] as? String) != nil
-            }
+            self.referralCode = response.referralCode
+            self.referralCount = response.referralCount
+            self.qualifiedCount = response.qualifiedCount
+            self.maxReferrals = response.maxReferrals
+            self.alreadyReferred = response.referredByCode != nil || response.referredBy != nil
+            self.loadFailed = false
         } catch {
-            print("Referral data load failed:", error)
-            await MainActor.run {
-                self.loadFailed = true
-            }
+            self.loadFailed = true
         }
     }
 
@@ -261,23 +291,23 @@ struct ReferralSectionView: View {
         defer { isApplying = false }
 
         do {
-            let response = try await APIClient.shared.postRaw(
+            let response: ReferralApplyResponse = try await APIClient.shared.post(
                 "/tutorial/referral",
-                body: ["character_id": charId, "referral_code": code]
+                body: ReferralApplyRequest(characterId: charId, referralCode: code)
             )
-            if let gold = response["bonusGold"] as? Int {
-                applyResult = .success(bonusGold: gold)
-                alreadyReferred = true
-                appState.showToast("+\(gold) gold from referral!", type: .success)
-                await appState.reloadCharacter()
-            }
+            applyResult = .success(bonusGold: response.bonusGold)
+            alreadyReferred = true
+            friendCode = ""
+            appState.showToast("+\(response.bonusGold) gold from referral!", type: .success)
+            await appState.reloadCharacter()
         } catch let error as APIError {
             switch error {
             case .clientError(_, let message, _):
-                if message.lowercased().contains("already referred") {
+                let payload = error.decodedResponseBody(ReferralApplyErrorPayload.self)
+                if payload?.alreadyReferred == true {
                     applyResult = .alreadyReferred
                     alreadyReferred = true
-                } else if message.lowercased().contains("invalid") || message.lowercased().contains("not found") {
+                } else if payload?.invalidCode == true {
                     applyResult = .invalidCode
                 } else if message.lowercased().contains("own referral") {
                     applyResult = .error("Can't use your own code")

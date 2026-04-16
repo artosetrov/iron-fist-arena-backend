@@ -352,6 +352,7 @@ export async function POST(req: NextRequest) {
         leveled_up: levelUpResult?.leveledUp ?? false,
         new_level: levelUpResult?.newLevel,
         stat_points_awarded: levelUpResult?.statPointsAwarded,
+        passive_points_awarded: levelUpResult?.passivePointsAwarded,
       },
       post_combat_hp: { player: attackerFinalHp, enemy: defenderFinalHp },
       rewards: { gold: goldReward, xp: xpReward },

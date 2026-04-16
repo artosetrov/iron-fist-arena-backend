@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -161,7 +161,7 @@ function emptyDrop(): DropForm {
 
 export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items: ItemOption[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
 
@@ -255,7 +255,7 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
 
   // ─── Save ──────────────────────────────────────────────
 
-  function handleSave() {
+  async function handleSave() {
     setError('')
     setSaved(false)
 
@@ -270,54 +270,55 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
       }
     }
 
-    startTransition(async () => {
-      try {
-        const body = {
-          name, slug, description, lore, levelReq, difficulty, dungeonType,
-          energyCost, imageUrl, backgroundUrl, imagePrompt, imageStyle,
-          isActive, sortOrder, goldReward, xpReward,
-          bosses: bosses.map((b) => ({
-            name: b.name, bossType: b.bossType, level: b.level, hp: b.hp,
-            damage: b.damage, defense: b.defense, speed: b.speed,
-            critChance: b.critChance, description: b.description, lore: b.lore,
-            imageUrl: b.imageUrl, imagePrompt: b.imagePrompt,
-            floorNumber: b.floorNumber, sortOrder: b.sortOrder,
-            abilities: b.abilities.map((a) => ({
-              name: a.name, abilityType: a.abilityType, damage: a.damage,
-              cooldown: a.cooldown, specialEffect: a.specialEffect, description: a.description,
-            })),
+    setIsSaving(true)
+    try {
+      const body = {
+        name, slug, description, lore, levelReq, difficulty, dungeonType,
+        energyCost, imageUrl, backgroundUrl, imagePrompt, imageStyle,
+        isActive, sortOrder, goldReward, xpReward,
+        bosses: bosses.map((b) => ({
+          name: b.name, bossType: b.bossType, level: b.level, hp: b.hp,
+          damage: b.damage, defense: b.defense, speed: b.speed,
+          critChance: b.critChance, description: b.description, lore: b.lore,
+          imageUrl: b.imageUrl, imagePrompt: b.imagePrompt,
+          floorNumber: b.floorNumber, sortOrder: b.sortOrder,
+          abilities: b.abilities.map((a) => ({
+            name: a.name, abilityType: a.abilityType, damage: a.damage,
+            cooldown: a.cooldown, specialEffect: a.specialEffect, description: a.description,
           })),
-          waves: waves.map((w) => ({
-            waveNumber: w.waveNumber,
-            enemies: w.enemies.map((e) => ({
-              enemyType: e.enemyType, level: e.level, count: e.count,
-            })),
+        })),
+        waves: waves.map((w) => ({
+          waveNumber: w.waveNumber,
+          enemies: w.enemies.map((e) => ({
+            enemyType: e.enemyType, level: e.level, count: e.count,
           })),
-          drops: drops.filter((d) => d.itemId).map((d) => ({
-            itemId: d.itemId, dropChance: d.dropChance,
-            minQuantity: d.minQuantity, maxQuantity: d.maxQuantity,
-          })),
-        }
-
-        const res = await fetch(`/api/dungeons/${dungeon.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to save')
-          return
-        }
-
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3000)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
+        })),
+        drops: drops.filter((d) => d.itemId).map((d) => ({
+          itemId: d.itemId, dropChance: d.dropChance,
+          minQuantity: d.minQuantity, maxQuantity: d.maxQuantity,
+        })),
       }
-    })
+
+      const res = await fetch(`/api/dungeons/${dungeon.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to save')
+        return
+      }
+
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // ─── Boss helpers ──────────────────────────────────────
@@ -438,9 +439,9 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
         <div className="flex items-center gap-3">
           {saved && <span className="text-sm text-green-400">Saved!</span>}
           {error && <span className="text-sm text-destructive max-w-md truncate">{error}</span>}
-          <Button onClick={handleSave} disabled={isPending}>
+          <Button onClick={handleSave} disabled={isSaving}>
             <Save className="mr-2 h-4 w-4" />
-            {isPending ? 'Saving...' : 'Save Dungeon'}
+            {isSaving ? 'Saving...' : 'Save Dungeon'}
           </Button>
         </div>
       </div>
@@ -656,6 +657,7 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
                         </div>
                         {boss.imageUrl && (
                           <div className="w-24 h-24 rounded-lg border border-border overflow-hidden bg-muted">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={boss.imageUrl} alt={boss.name} className="w-full h-full object-cover" />
                           </div>
                         )}
@@ -952,6 +954,7 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Dungeon Image Preview</Label>
                           <div className="w-48 h-32 rounded-lg border border-border overflow-hidden bg-muted">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={imageUrl} alt="Dungeon" className="w-full h-full object-cover" />
                           </div>
                         </div>
@@ -960,6 +963,7 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Background Preview</Label>
                           <div className="w-48 h-32 rounded-lg border border-border overflow-hidden bg-muted">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={backgroundUrl} alt="Background" className="w-full h-full object-cover" />
                           </div>
                         </div>
@@ -978,6 +982,7 @@ export function DungeonEditor({ dungeon, items }: { dungeon: DungeonData; items:
             <Card className="overflow-hidden">
               <div className="relative">
                 {imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={imageUrl} alt={name} className="w-full h-40 object-cover" />
                 ) : (
                   <div className="w-full h-40 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center">

@@ -566,7 +566,8 @@ class GuildHallViewModel {
                 firstWinBonus: nil,
                 leveledUp: nil,
                 newLevel: nil,
-                statPointsAwarded: nil
+                statPointsAwarded: nil,
+                passivePointsAwarded: nil
             )
 
             let combatData = CombatData(
@@ -607,6 +608,7 @@ class GuildHallViewModel {
                 leveledUp: false,
                 newLevel: nil,
                 statPointsAwarded: nil,
+                passivePointsAwarded: nil,
                 loot: [],
                 staminaCurrent: appState.currentCharacter?.currentStamina ?? 0,
                 staminaMax: appState.currentCharacter?.maxStamina ?? 180,

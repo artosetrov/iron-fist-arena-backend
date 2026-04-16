@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -49,8 +49,8 @@ export function BalanceDashboardClient({
   recentSims: SimRun[]
 }) {
   const router = useRouter()
-  const [, startTransition] = useTransition()
   const [validating, setValidating] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [validationResult, setValidationResult] = useState<{
     totalItems: number
     flaggedItems: number
@@ -60,22 +60,28 @@ export function BalanceDashboardClient({
 
   async function runValidation() {
     setValidating(true)
+    setValidationError(null)
     try {
       const res = await fetch('/api/admin/item-balance/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
       })
-      if (res.ok) {
-        const data = await res.json()
-        setValidationResult({
-          totalItems: data.totalItems,
-          flaggedItems: data.flaggedItems.length,
-          overpowered: data.stats.overpoweredCount,
-          underpowered: data.stats.underpoweredCount,
-        })
-        startTransition(() => router.refresh())
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Validation failed' }))
+        setValidationError(data.error ?? 'Validation failed')
+        return
       }
+      const data = await res.json()
+      setValidationResult({
+        totalItems: data.totalItems,
+        flaggedItems: data.flaggedItems.length,
+        overpowered: data.stats.overpoweredCount,
+        underpowered: data.stats.underpoweredCount,
+      })
+      router.refresh()
+    } catch (error) {
+      setValidationError(error instanceof Error ? error.message : 'Validation failed')
     } finally {
       setValidating(false)
     }
@@ -204,6 +210,13 @@ export function BalanceDashboardClient({
             </Button>
           </div>
         </CardHeader>
+        {validationError && (
+          <CardContent className="pt-0">
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {validationError}
+            </div>
+          </CardContent>
+        )}
         {validationResult && (
           <CardContent>
             <div className="grid grid-cols-4 gap-4 text-center">

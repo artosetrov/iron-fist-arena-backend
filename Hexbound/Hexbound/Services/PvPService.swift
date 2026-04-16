@@ -16,28 +16,35 @@ final class PvPService {
         // Retry once on failure (handles Vercel cold starts)
         for attempt in 0..<2 {
             do {
-                let response = try await APIClient.shared.getRaw(
+                let response: PvPOpponentsResponse = try await APIClient.shared.get(
                     APIEndpoints.pvpOpponents,
                     params: ["character_id": charId]
                 )
-                guard let opponentsArray = response["opponents"] as? [[String: Any]] else { return [] }
-                let jsonData = try JSONSerialization.data(withJSONObject: opponentsArray)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                do {
-                    return try decoder.decode([Opponent].self, from: jsonData)
-                } catch {
+                return response.opponents
+            } catch let apiError as APIError {
+                if case .decodingError(let error) = apiError {
                     #if DEBUG
                     print("[PvPService] Failed to decode opponents: \(error)")
                     #endif
                     return []
                 }
+                if attempt == 0 {
+                    try? await Task.sleep(for: .seconds(1))
+                    continue
+                }
+                let msg = apiError.errorDescription ?? "Failed to load opponents"
+                appState.showToast(msg, subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
+                    Task { @MainActor in
+                        _ = await self?.getOpponents()
+                    }
+                }
+                return []
             } catch {
                 if attempt == 0 {
                     try? await Task.sleep(for: .seconds(1))
                     continue
                 }
-                let msg = (error as? APIError)?.errorDescription ?? "Failed to load opponents"
+                let msg = "Failed to load opponents"
                 appState.showToast(msg, subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                     Task { @MainActor in
                         _ = await self?.getOpponents()
@@ -54,21 +61,18 @@ final class PvPService {
     func getRevengeList() async -> [RevengeEntry] {
         guard let charId = appState.currentCharacter?.id else { return [] }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: PvPRevengeListResponse = try await APIClient.shared.get(
                 APIEndpoints.pvpRevenge,
                 params: ["character_id": charId]
             )
-            guard let revengeArray = response["revenge_list"] as? [[String: Any]] else { return [] }
-            let jsonData = try JSONSerialization.data(withJSONObject: revengeArray)
-            let decoder = JSONDecoder()
-            do {
-                return try decoder.decode([RevengeEntry].self, from: jsonData)
-            } catch {
+            return response.revengeList
+        } catch let apiError as APIError {
+            if case .decodingError(let error) = apiError {
                 #if DEBUG
                 print("[PvPService] Failed to decode revenge list: \(error)")
                 #endif
-                return []
             }
+            return []
         } catch {
             #if DEBUG
             print("[PvPService] Failed to load revenge list: \(error)")
@@ -82,22 +86,18 @@ final class PvPService {
     func getHistory() async -> [MatchHistory] {
         guard let charId = appState.currentCharacter?.id else { return [] }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: PvPHistoryResponse = try await APIClient.shared.get(
                 APIEndpoints.pvpHistory,
                 params: ["character_id": charId]
             )
-            guard let historyArray = response["history"] as? [[String: Any]] else { return [] }
-            let jsonData = try JSONSerialization.data(withJSONObject: historyArray)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            do {
-                return try decoder.decode([MatchHistory].self, from: jsonData)
-            } catch {
+            return response.history
+        } catch let apiError as APIError {
+            if case .decodingError(let error) = apiError {
                 #if DEBUG
                 print("[PvPService] Failed to decode match history: \(error)")
                 #endif
-                return []
             }
+            return []
         } catch {
             #if DEBUG
             print("[PvPService] Failed to load match history: \(error)")
@@ -106,4 +106,16 @@ final class PvPService {
         }
     }
 
+}
+
+private struct PvPOpponentsResponse: Decodable {
+    let opponents: [Opponent]
+}
+
+private struct PvPRevengeListResponse: Decodable {
+    let revengeList: [RevengeEntry]
+}
+
+private struct PvPHistoryResponse: Decodable {
+    let history: [MatchHistory]
 }

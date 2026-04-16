@@ -48,26 +48,20 @@ struct HubView: View {
         let quests = tutorial.tutorialQuests
         // Find the first quest that isn't fully claimed
         if let activeQuest = quests.first(where: { quest in
-            let claimed = quest["rewardClaimed"] as? Bool ?? false
-            return !claimed
+            !quest.rewardClaimed
         }),
-           let questId = activeQuest["questId"] as? String,
-           let title = activeQuest["title"] as? String ?? questTitle(for: questId),
-           let npcMessage = activeQuest["npcMessage"] as? String ?? questNpcMessage(for: questId) {
-            let progress = activeQuest["progress"] as? Int ?? 0
-            let target = activeQuest["target"] as? Int ?? 1
-            let isCompleted = activeQuest["isCompleted"] as? Bool ?? false
-            let rewardClaimed = activeQuest["rewardClaimed"] as? Bool ?? false
+           let title = activeQuest.title ?? questTitle(for: activeQuest.questId),
+           let npcMessage = activeQuest.npcMessage ?? questNpcMessage(for: activeQuest.questId) {
             TutorialQuestBanner(
-                questId: questId,
+                questId: activeQuest.questId,
                 title: title,
                 npcMessage: npcMessage,
-                progress: progress,
-                target: target,
-                isCompleted: isCompleted,
-                rewardClaimed: rewardClaimed,
-                onTap: { navigateToQuestTarget(questId) },
-                onClaim: { claimQuestReward(questId) }
+                progress: activeQuest.progress,
+                target: activeQuest.target,
+                isCompleted: activeQuest.isCompleted,
+                rewardClaimed: activeQuest.rewardClaimed,
+                onTap: { navigateToQuestTarget(activeQuest.questId) },
+                onClaim: { claimQuestReward(activeQuest.questId) }
             )
         }
     }
@@ -96,7 +90,7 @@ struct HubView: View {
                 characterId: charId,
                 questId: questId
             )
-            if let gold = result?["goldAwarded"] as? Int, gold > 0 {
+            if let gold = result?.goldDelta, gold > 0 {
                 appState.showToast("Reward claimed! +\(gold) gold", type: .success)
             } else {
                 appState.showToast("Reward claimed!", type: .success)
@@ -487,26 +481,16 @@ struct HubView: View {
     /// a slot is "ready" if `status == ready` OR it's "mining" with an
     /// elapsed `ends_at` timestamp.
     private static func mineSlotCounts(
-        from cache: (slots: [[String: Any]], maxSlots: Int)?
+        from cache: (slots: [GoldMineSlotResponse], maxSlots: Int)?
     ) -> (ready: Int, idle: Int) {
         guard let cache else { return (0, 0) }
         var ready = 0
         var idle = 0
-        let now = Date()
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let fallback = ISO8601DateFormatter()
-        fallback.formatOptions = [.withInternetDateTime]
         for slot in cache.slots {
-            let raw = slot["status"] as? String ?? "idle"
-            if raw == "ready" {
+            let status = slot.resolvedStatus()
+            if status == .ready {
                 ready += 1
-            } else if raw == "mining", let endStr = slot["ends_at"] as? String {
-                let end = formatter.date(from: endStr) ?? fallback.date(from: endStr)
-                if let end, now >= end {
-                    ready += 1
-                }
-            } else if raw == "idle" {
+            } else if status == .idle {
                 idle += 1
             }
         }
@@ -609,17 +593,8 @@ struct HubView: View {
 
     private func prefetchDungeons() async {
         let dungeonService = DungeonService(appState: appState)
-        guard let data = await dungeonService.getProgress() else { return }
-        var progress: [String: Int] = [:]
-        if let p = data["progress"] as? [String: Any] {
-            for (key, value) in p {
-                if let defeated = value as? Int {
-                    progress[key] = defeated
-                } else if let info = value as? [String: Any] {
-                    progress[key] = info["defeated"] as? Int ?? 0
-                }
-            }
-        }
+        guard let snapshot = await dungeonService.getProgress() else { return }
+        let progress = snapshot.progress
         if !progress.isEmpty {
             await MainActor.run { cache.cacheDungeonProgress(progress) }
         }
@@ -637,14 +612,12 @@ struct HubView: View {
     private func prefetchGoldMine() async {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
-            let data = try await APIClient.shared.getRaw(
+            let data: GoldMineStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.goldMineStatus,
                 params: ["character_id": charId]
             )
-            let slots = data["slots"] as? [[String: Any]] ?? []
-            let maxSlots = data["max_slots"] as? Int ?? 3
             await MainActor.run {
-                cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+                cache.cacheGoldMine(status: data)
                 updateHubHint()
             }
         } catch {
@@ -811,4 +784,3 @@ struct HubView: View {
         }
     }
 }
-

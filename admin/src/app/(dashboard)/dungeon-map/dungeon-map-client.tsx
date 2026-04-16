@@ -35,7 +35,6 @@ export default function DungeonMapEditorClient() {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
   // Load saved layout from server
@@ -156,8 +155,9 @@ export default function DungeonMapEditorClient() {
 
       {/* Map area */}
       <div className="flex-1 overflow-auto bg-zinc-950 p-4">
-        <div ref={containerRef} className="relative inline-block" style={{ minWidth: '100%' }}>
+        <div className="relative inline-block" style={{ minWidth: '100%' }}>
           {/* Background image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             ref={imageRef}
             src="/dange.jpg"

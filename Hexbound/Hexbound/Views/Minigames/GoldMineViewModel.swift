@@ -1,11 +1,17 @@
 import SwiftUI
 
+private struct GoldMineCollectAllErrorPayload: Decodable {
+    let code: String
+    let slots: [GoldMineSlotResponse]?
+    let unplayedReadySlotIndices: [Int]?
+}
+
 @MainActor @Observable
 final class GoldMineViewModel {
     private let appState: AppState
     private let cache: GameDataCache
 
-    var slots: [[String: Any]] = []
+    var slots: [GoldMineSlotResponse] = []
     var maxSlots = 3
     var isLoading = false
     var actionSlotId: String?
@@ -75,12 +81,12 @@ final class GoldMineViewModel {
     /// Returns parsed stats for the given slot, or nil if not available.
     func slotStats(at index: Int) -> SlotStats? {
         guard index < slots.count else { return nil }
-        guard let statsDict = slots[index]["stats"] as? [String: Any] else { return nil }
+        guard let stats = slots[index].stats else { return nil }
         return SlotStats(
-            totalGoldMined: statsDict["total_gold_mined"] as? Int ?? 0,
-            sessionsCompleted: statsDict["sessions_completed"] as? Int ?? 0,
-            bestHaul: statsDict["best_haul"] as? Int ?? 0,
-            currentStreak: statsDict["current_streak"] as? Int ?? 0
+            totalGoldMined: stats.totalGoldMined,
+            sessionsCompleted: stats.sessionsCompleted,
+            bestHaul: stats.bestHaul,
+            currentStreak: stats.currentStreak
         )
     }
 
@@ -193,10 +199,6 @@ final class GoldMineViewModel {
         let gems: Int
     }
 
-    var activeSlots: [[String: Any]] {
-        slots.filter { ($0["status"] as? String) != nil }
-    }
-
     // MARK: - Load
 
     func loadStatus() async {
@@ -214,13 +216,13 @@ final class GoldMineViewModel {
         }
 
         do {
-            let data = try await APIClient.shared.getRaw(
+            let data: GoldMineStatusResponse = try await APIClient.shared.get(
                 APIEndpoints.goldMineStatus,
                 params: ["character_id": charId]
             )
-            slots = data["slots"] as? [[String: Any]] ?? []
-            maxSlots = data["max_slots"] as? Int ?? 3
-            cache.cacheGoldMine(slots: slots, maxSlots: maxSlots)
+            slots = data.slots
+            maxSlots = data.maxSlots
+            cache.cacheGoldMine(status: data)
             syncVisualCounters()
             isLoading = false
         } catch {
@@ -242,11 +244,9 @@ final class GoldMineViewModel {
 
         withAnimation(MotionConstants.smooth) {
             if slotIndex < slots.count {
-                var slot = slots[slotIndex]
-                slot["status"] = "mining"
-                slot["started_at"] = now
-                slot["ends_at"] = endsAt
-                slots[slotIndex] = slot
+                slots[slotIndex].status = .mining
+                slots[slotIndex].startedAt = now
+                slots[slotIndex].endsAt = endsAt
             }
             actionSlotId = nil
         }
@@ -255,14 +255,12 @@ final class GoldMineViewModel {
 
         // Background API call — update with real server values
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: GoldMineStartResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineStart,
-                body: ["character_id": charId, "slot_index": slotIndex]
+                body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
             )
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                withAnimation(MotionConstants.smooth) {
-                    slots = updatedSlots
-                }
+            withAnimation(MotionConstants.smooth) {
+                slots = data.slots
             }
         } catch {
             // Revert on failure
@@ -287,7 +285,7 @@ final class GoldMineViewModel {
         // Estimate collected gold from slot data
         let estimatedGold: Int = {
             guard let slot = slots[safe: slotIndex] else { return 0 }
-            return slot["gold_accumulated"] as? Int ?? slot["gold_mined"] as? Int ?? 50
+            return slot.reward ?? 50
         }()
 
         withAnimation(MotionConstants.smooth) {
@@ -295,13 +293,11 @@ final class GoldMineViewModel {
             // Previously we set status = "mining" but kept old started_at/ends_at,
             // which made the progress bar render stuck at 100%.
             if slotIndex < slots.count {
-                var slot = slots[slotIndex]
-                slot["status"] = "idle"
-                slot["started_at"] = nil
-                slot["ends_at"] = nil
-                slot["gold_accumulated"] = 0
-                slot["gold_mined"] = 0
-                slots[slotIndex] = slot
+                slots[slotIndex].status = .idle
+                slots[slotIndex].startedAt = nil
+                slots[slotIndex].endsAt = nil
+                slots[slotIndex].reward = nil
+                slots[slotIndex].gemReward = nil
             }
             appState.currentCharacter?.gold = (savedGold ?? 0) + estimatedGold
             actionSlotId = nil
@@ -311,21 +307,15 @@ final class GoldMineViewModel {
 
         // Background: actual API call
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: GoldMineCollectResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineCollect,
-                body: ["character_id": charId, "slot_index": slotIndex]
+                body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
             )
             // Update with real server values
             withAnimation(MotionConstants.smooth) {
-                if let updatedSlots = data["slots"] as? [[String: Any]] {
-                    slots = updatedSlots
-                }
-                if let newGold = data["gold"] as? Int {
-                    appState.currentCharacter?.gold = newGold
-                }
-                if let newGems = data["gems"] as? Int {
-                    appState.currentCharacter?.gems = newGems
-                }
+                slots = data.slots
+                appState.currentCharacter?.gold = data.gold
+                appState.currentCharacter?.gems = data.gems
             }
             syncVisualCounters()
             appState.invalidateCache("quests")
@@ -361,32 +351,27 @@ final class GoldMineViewModel {
         let goldBefore = appState.currentCharacter?.gold ?? 0
         let gemsBefore = appState.currentCharacter?.gems ?? 0
 
-        var body: [String: Any] = ["character_id": charId]
-        if let pickedShaftKey {
-            body["picked_shaft_key"] = pickedShaftKey.rawValue
-        }
-
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: GoldMineCollectAllResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineCollectAll,
-                body: body
+                body: GoldMineCollectAllRequest(
+                    characterId: charId,
+                    pickedShaftKey: pickedShaftKey
+                )
             )
 
             // Branch 1: server wants us to show the picker.
-            if let needs = data["needs_shaft_pick"] as? Bool, needs {
-                let unlockedRaw = (data["unlocked_shafts"] as? [String]) ?? []
-                unlockedShafts = unlockedRaw.compactMap { ShaftKey(rawValue: $0) }
+            if data.needsShaftPick == true {
+                unlockedShafts = data.unlockedShafts ?? []
                 shaftPickerSlotIndex = nil  // collectAll context
                 showShaftPicker = true
                 return
             }
 
             // Branch 2: success — update slots, gold, active shaft.
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                withAnimation(MotionConstants.smooth) { slots = updatedSlots }
-            }
-            let newGold = data["gold"] as? Int ?? goldBefore
-            let newGems = data["gems"] as? Int ?? gemsBefore
+            withAnimation(MotionConstants.smooth) { slots = data.slots }
+            let newGold = data.gold ?? goldBefore
+            let newGems = data.gems ?? gemsBefore
             appState.currentCharacter?.gold = newGold
             appState.currentCharacter?.gems = newGems
             syncVisualCounters()
@@ -400,17 +385,12 @@ final class GoldMineViewModel {
             }
 
             // Active shaft — may be nil if this cycle cleared the shaft.
-            if let shaftDict = data["active_shaft"] as? [String: Any],
-               let keyRaw = shaftDict["key"] as? String,
-               let key = ShaftKey(rawValue: keyRaw),
-               let progress = shaftDict["progress"] as? Int,
-               let total = shaftDict["total"] as? Int {
+            if let nextShaft = data.activeShaft {
                 let previousKey = activeShaft?.key
-                let nextShaft = ActiveShaft(key: key, progress: progress, total: total)
                 activeShaft = nextShaft
                 // If the shaft key flipped under us mid-cycle, treat as
                 // completion celebration for the previous shaft.
-                if let previousKey, previousKey != key {
+                if let previousKey, previousKey != nextShaft.key {
                     clearedShaftKey = previousKey
                 }
             } else {
@@ -428,15 +408,15 @@ final class GoldMineViewModel {
             // which slots are ready-but-unplayed. Auto-route the player into
             // the first one's bonus minigame so the flow stays one-tap.
             if apiError.statusCode == 409,
-               let payload = apiError.responsePayload,
-               let code = payload["code"] as? String,
-               code == "NO_PLAYABLE_SLOTS" {
+               let payload = apiError.decodedResponseBody(GoldMineCollectAllErrorPayload.self),
+               payload.code == "NO_PLAYABLE_SLOTS" {
                 // Keep the slots snapshot the server sent so the board
                 // reflects reality.
-                if let updatedSlots = payload["slots"] as? [[String: Any]] {
+                let updatedSlots = payload.slots ?? []
+                if !updatedSlots.isEmpty {
                     withAnimation(MotionConstants.smooth) { slots = updatedSlots }
                 }
-                let unplayed = (payload["unplayed_ready_slot_indices"] as? [Int]) ?? []
+                let unplayed = payload.unplayedReadySlotIndices ?? []
                 if let firstUnplayed = unplayed.first {
                     appState.showToast(
                         "Finish the bonus round",
@@ -479,43 +459,29 @@ final class GoldMineViewModel {
         isStartingSlotMinigame = true
         defer { isStartingSlotMinigame = false }
 
-        var body: [String: Any] = [
-            "character_id": charId,
-            "slot_index": slotIndex,
-        ]
-        if let pickedShaftKey {
-            body["picked_shaft_key"] = pickedShaftKey.rawValue
-        }
-
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: GoldMineSlotMinigameStartResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineSlotMinigameStart,
-                body: body
+                body: GoldMineSlotMinigameStartRequest(
+                    characterId: charId,
+                    slotIndex: slotIndex,
+                    pickedShaftKey: pickedShaftKey
+                )
             )
 
             // Shaft picker branch — remember which slot triggered it so
             // pickShaft routes back to startSlotMinigame (not collectAll).
-            if let needs = data["needs_shaft_pick"] as? Bool, needs {
-                let unlockedRaw = (data["unlocked_shafts"] as? [String]) ?? []
-                unlockedShafts = unlockedRaw.compactMap { ShaftKey(rawValue: $0) }
+            if data.needsShaftPick == true {
+                unlockedShafts = data.unlockedShafts ?? []
                 shaftPickerSlotIndex = slotIndex
                 showShaftPicker = true
                 return
             }
 
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                withAnimation(MotionConstants.smooth) { slots = updatedSlots }
-            }
-            if let shaftDict = data["active_shaft"] as? [String: Any],
-               let keyRaw = shaftDict["key"] as? String,
-               let key = ShaftKey(rawValue: keyRaw),
-               let progress = shaftDict["progress"] as? Int,
-               let total = shaftDict["total"] as? Int {
-                activeShaft = ActiveShaft(key: key, progress: progress, total: total)
-            }
+            withAnimation(MotionConstants.smooth) { slots = data.slots }
+            activeShaft = data.activeShaft
 
-            if let sessionDict = data["minigame_session"] as? [String: Any],
-               let session = Self.decodeMinigameSession(from: sessionDict) {
+            if let session = data.minigameSession {
                 pendingMinigameSession = session
                 HapticManager.medium()
             }
@@ -528,24 +494,18 @@ final class GoldMineViewModel {
         }
     }
 
-    /// Applies the raw response dict from /slot-minigame/submit. The view
+    /// Applies the typed response from /slot-minigame/submit. The view
     /// calls this via its `onFinish` callback once the 15s round ends or
     /// the player skips. No shaft update happens here — shaft progress is
     /// owned by /collect-all and /collect.
-    func applySlotMinigameResult(_ data: [String: Any]) {
-        let bonusGold = (data["bonus_gold"] as? Int) ?? 0
-        let bonusGems = (data["bonus_gems"] as? Int) ?? 0
+    func applySlotMinigameResult(_ data: GoldMineSlotMinigameSubmitResponse) {
+        let bonusGold = data.bonusGold
+        let bonusGems = data.bonusGems
 
         withAnimation(MotionConstants.smooth) {
-            if let newGold = data["gold"] as? Int {
-                appState.currentCharacter?.gold = newGold
-            }
-            if let newGems = data["gems"] as? Int {
-                appState.currentCharacter?.gems = newGems
-            }
-            if let updatedSlots = data["slots"] as? [[String: Any]] {
-                slots = updatedSlots
-            }
+            appState.currentCharacter?.gold = data.gold
+            appState.currentCharacter?.gems = data.gems
+            slots = data.slots
             pendingMinigameSession = nil
         }
         syncVisualCounters()
@@ -565,15 +525,14 @@ final class GoldMineViewModel {
 
     /// Slot dict accessor — true once the per-slot bonus minigame has been
     /// completed (server-side `minigame_played_at != null`).
-    func isSlotMinigamePlayed(_ slot: [String: Any]) -> Bool {
-        return (slot["minigame_played"] as? Bool) ?? false
+    func isSlotMinigamePlayed(_ slot: GoldMineSlotResponse) -> Bool {
+        slot.hasPlayedMinigame
     }
 
     /// Slot dict accessor — true when a minigame session is currently in
     /// flight for this slot (player backgrounded mid-round).
-    func hasInFlightMinigameSession(_ slot: [String: Any]) -> Bool {
-        guard let id = slot["minigame_session_id"] as? String else { return false }
-        return !id.isEmpty
+    func hasInFlightMinigameSession(_ slot: GoldMineSlotResponse) -> Bool {
+        slot.hasInFlightMinigameSession
     }
 
     /// Called by `ShaftPickerSheet` when the player confirms a shaft. Dismisses
@@ -639,16 +598,6 @@ final class GoldMineViewModel {
         clearedShaftKey = nil
     }
 
-    // Decodes the nested `minigame_session` dict returned by /collect-all
-    // into a typed `MinigameSessionInfo`. Uses JSONSerialization +
-    // JSONDecoder round-trip so CodingKeys drive field mapping.
-    private static func decodeMinigameSession(from dict: [String: Any]) -> MinigameSessionInfo? {
-        guard let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try? decoder.decode(MinigameSessionInfo.self, from: data)
-    }
-
     // MARK: - Boost
 
     func boost(slotIndex: Int) {
@@ -668,16 +617,12 @@ final class GoldMineViewModel {
         Task { [weak self] in
             guard let self else { return }
             do {
-                let data = try await APIClient.shared.postRaw(
+                let data: GoldMineBoostResponse = try await APIClient.shared.post(
                     APIEndpoints.goldMineBoost,
-                    body: ["character_id": charId, "slot_index": slotIndex]
+                    body: GoldMineSlotActionRequest(characterId: charId, slotIndex: slotIndex)
                 )
-                if let updatedSlots = data["slots"] as? [[String: Any]] {
-                    slots = updatedSlots
-                }
-                if let newGems = data["gems"] as? Int {
-                    appState.currentCharacter?.gems = newGems
-                }
+                slots = data.slots
+                appState.currentCharacter?.gems = data.gems
                 syncVisualCounters()
             } catch {
                 // Revert gems on failure
@@ -707,7 +652,21 @@ final class GoldMineViewModel {
         appState.currentCharacter?.gems = max(0, prevGems - slotCost)
         maxSlots += 1
         // Add an idle slot placeholder so UI shows the new slot immediately
-        slots.append(["status": "idle", "slot_index": maxSlots - 1])
+        slots.append(
+            GoldMineSlotResponse(
+                slotIndex: maxSlots - 1,
+                status: .idle,
+                sessionId: nil,
+                startedAt: nil,
+                endsAt: nil,
+                reward: nil,
+                gemReward: nil,
+                boosted: nil,
+                minigamePlayed: nil,
+                minigameSessionId: nil,
+                stats: nil
+            )
+        )
         HapticManager.success()
         appState.showToast("New mining slot unlocked!", type: .reward)
 
@@ -715,19 +674,13 @@ final class GoldMineViewModel {
         Task { [weak self] in
             guard let self else { return }
             do {
-                let data = try await APIClient.shared.postRaw(
+                let data: GoldMineBuySlotResponse = try await APIClient.shared.post(
                     APIEndpoints.goldMineBuySlot,
-                    body: ["character_id": charId]
+                    body: GoldMineCharacterRequest(characterId: charId)
                 )
-                if let newMax = data["max_slots"] as? Int {
-                    maxSlots = newMax
-                }
-                if let updatedSlots = data["slots"] as? [[String: Any]] {
-                    slots = updatedSlots
-                }
-                if let newGems = data["gems"] as? Int {
-                    appState.currentCharacter?.gems = newGems
-                }
+                maxSlots = data.maxSlots
+                slots = data.slots
+                appState.currentCharacter?.gems = data.gems
             } catch {
                 // Revert on failure
                 appState.currentCharacter?.gems = prevGems
@@ -741,17 +694,8 @@ final class GoldMineViewModel {
 
     // MARK: - Helpers
 
-    func slotStatus(_ slot: [String: Any]) -> String {
-        let raw = slot["status"] as? String ?? "idle"
-        // Client-side upgrade: if mining but time has elapsed, show as "ready"
-        if raw == "mining", let endStr = slot["ends_at"] as? String {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            if let endDate = formatter.date(from: endStr), endDate <= Date() {
-                return "ready"
-            }
-        }
-        return raw
+    func slotStatus(_ slot: GoldMineSlotResponse) -> String {
+        slot.resolvedStatus().rawValue
     }
 
     /// Gem cost for boosting a mining slot (server config with fallback).
@@ -759,11 +703,9 @@ final class GoldMineViewModel {
         cache.gameConfig?.goldMineBoostGems ?? 3
     }
 
-    func timeRemaining(_ slot: [String: Any]) -> String {
-        guard let endStr = slot["ends_at"] as? String else { return "" }
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let endDate = formatter.date(from: endStr) else { return "" }
+    func timeRemaining(_ slot: GoldMineSlotResponse) -> String {
+        guard let endStr = slot.endsAt,
+              let endDate = slotDate(from: endStr) else { return "" }
         let remaining = endDate.timeIntervalSinceNow
         if remaining <= 0 { return "Ready!" }
         let mins = Int(remaining) / 60
@@ -773,13 +715,11 @@ final class GoldMineViewModel {
     }
 
     /// Returns mining progress as 0.0–1.0 (0 = just started, 1 = done)
-    func miningProgress(_ slot: [String: Any]) -> Double {
-        guard let endStr = slot["ends_at"] as? String,
-              let startStr = slot["started_at"] as? String else { return 0 }
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        guard let endDate = formatter.date(from: endStr),
-              let startDate = formatter.date(from: startStr) else { return 0 }
+    func miningProgress(_ slot: GoldMineSlotResponse) -> Double {
+        guard let endStr = slot.endsAt,
+              let startStr = slot.startedAt,
+              let endDate = slotDate(from: endStr),
+              let startDate = slotDate(from: startStr) else { return 0 }
         let total = endDate.timeIntervalSince(startDate)
         guard total > 0 else { return 1 }
         let elapsed = Date().timeIntervalSince(startDate)
@@ -788,6 +728,21 @@ final class GoldMineViewModel {
 
     /// Number of currently active (mining or ready) slots
     var activeSlotCount: Int {
-        slots.filter { ($0["status"] as? String) == "mining" || ($0["status"] as? String) == "ready" }.count
+        slots.filter { slot in
+            let status = slot.resolvedStatus()
+            return status == .mining || status == .ready
+        }.count
+    }
+
+    private func slotDate(from raw: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: raw) {
+            return date
+        }
+
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: raw)
     }
 }

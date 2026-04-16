@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -79,7 +79,6 @@ function formatLabel(value: string) {
 
 export function SkillsClient({ skills }: { skills: Skill[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [search, setSearch] = useState('')
   const [filterClass, setFilterClass] = useState<string>('all')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -88,6 +87,8 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
   const [deletingSkill, setDeletingSkill] = useState<Skill | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const [isSavingSkill, setIsSavingSkill] = useState(false)
+  const [isDeletingSkill, setIsDeletingSkill] = useState(false)
 
   const filtered = useMemo(() => {
     return skills.filter((skill) => {
@@ -172,49 +173,51 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
       is_active: form.isActive,
     }
 
-    startTransition(async () => {
-      try {
-        const res = await fetch(SKILLS_API, {
-          method: editingSkill ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(
-            editingSkill ? { id: editingSkill.id, ...payload } : payload
-          ),
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setError(data.error || `Failed to ${editingSkill ? 'update' : 'create'} skill`)
-          return
-        }
-        setDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save skill')
+    setIsSavingSkill(true)
+    try {
+      const res = await fetch(SKILLS_API, {
+        method: editingSkill ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          editingSkill ? { id: editingSkill.id, ...payload } : payload
+        ),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || `Failed to ${editingSkill ? 'update' : 'create'} skill`)
+        return
       }
-    })
+      setDialogOpen(false)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save skill')
+    } finally {
+      setIsSavingSkill(false)
+    }
   }
 
   async function handleDelete() {
     if (!deletingSkill) return
-    startTransition(async () => {
-      try {
-        const res = await fetch(`${SKILLS_API}?id=${deletingSkill.id}`, {
-          method: 'DELETE',
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setError(data.error || 'Failed to delete skill')
-          return
-        }
-        setDeleteDialogOpen(false)
-        setDeletingSkill(null)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
+    setIsDeletingSkill(true)
+    try {
+      const res = await fetch(`${SKILLS_API}?id=${deletingSkill.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Failed to delete skill')
+        return
       }
-    })
+      setDeleteDialogOpen(false)
+      setDeletingSkill(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsDeletingSkill(false)
+    }
   }
 
   return (
@@ -315,6 +318,7 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={isSavingSkill || isDeletingSkill}
                         onClick={(e) => {
                           e.stopPropagation()
                           openEdit(skill)
@@ -325,6 +329,7 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={isSavingSkill || isDeletingSkill}
                         onClick={(e) => {
                           e.stopPropagation()
                           setDeletingSkill(skill)
@@ -587,11 +592,11 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
 
             {/* Footer buttons */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSavingSkill}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : editingSkill ? 'Update Skill' : 'Create Skill'}
+              <Button type="submit" disabled={isSavingSkill || isDeletingSkill}>
+                {isSavingSkill ? 'Saving...' : editingSkill ? 'Update Skill' : 'Create Skill'}
               </Button>
             </div>
           </form>
@@ -608,11 +613,11 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeletingSkill}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeletingSkill || isSavingSkill}>
+              {isDeletingSkill ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

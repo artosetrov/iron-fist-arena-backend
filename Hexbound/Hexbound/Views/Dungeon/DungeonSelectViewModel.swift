@@ -13,7 +13,7 @@ final class DungeonSelectViewModel {
     var dungeonProgress: [String: Int] = [:]
 
     // Active run (if any)
-    var currentRun: [String: Any]?
+    var currentRun: DungeonActiveRunSnapshot?
 
     private let cache: GameDataCache
 
@@ -93,11 +93,9 @@ final class DungeonSelectViewModel {
         async let progressData = service.getProgress()
 
         // Process dungeon list
-        if let rawDungeons = await serverDungeons {
-            let parsed = rawDungeons.compactMap { DungeonInfo.from(serverData: $0) }
-            if !parsed.isEmpty {
+        if let serverDungeonList = await serverDungeons, !serverDungeonList.isEmpty {
                 // Merge: prefer server data, but keep rich client data for known dungeons
-                dungeons = parsed.map { serverDungeon in
+                dungeons = serverDungeonList.map { serverDungeon in
                     // If we have a hardcoded version with richer data (loot, portraits), use it
                     if let local = DungeonInfo.fallback.first(where: { $0.id == serverDungeon.id }) {
                         return local
@@ -105,23 +103,13 @@ final class DungeonSelectViewModel {
                     return serverDungeon
                 }
                 cache.cacheDungeonList(dungeons)
-            }
         }
 
         // Process progress
         let data = await progressData
-        if let progress = data?["progress"] as? [String: Any] {
-            for (key, value) in progress {
-                if let defeated = value as? Int {
-                    dungeonProgress[key] = defeated
-                } else if let info = value as? [String: Any] {
-                    dungeonProgress[key] = info["defeated"] as? Int ?? 0
-                }
-            }
-        }
-
-        if let run = data?["activeRun"] as? [String: Any] {
-            currentRun = run
+        if let snapshot = data {
+            dungeonProgress = snapshot.progress
+            currentRun = snapshot.activeRun
         }
 
         cache.cacheDungeonProgress(dungeonProgress)

@@ -294,6 +294,7 @@ export async function POST(req: NextRequest) {
         leveled_up: result.rewardResult.levelUpResult?.leveledUp ?? false,
         new_level: result.rewardResult.levelUpResult?.newLevel,
         stat_points_awarded: result.rewardResult.levelUpResult?.statPointsAwarded,
+        passive_points_awarded: result.rewardResult.levelUpResult?.passivePointsAwarded,
       })
     }
 

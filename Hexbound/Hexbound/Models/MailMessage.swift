@@ -112,6 +112,7 @@ struct MailClaimResponse: Codable {
     let leveledUp: Bool?
     let newLevel: Int?
     let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
 }
 
 /// Structured data parsed from battle_invite mail body (JSON)

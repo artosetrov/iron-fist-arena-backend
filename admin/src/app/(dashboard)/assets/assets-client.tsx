@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { listAssets, uploadAsset, deleteAsset, getAssetUrl } from '@/actions/assets'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +21,6 @@ type AssetFile = {
 }
 
 export function AssetsClient() {
-  const [isPending, startTransition] = useTransition()
   const [bucket, setBucket] = useState('assets')
   const [path, setPath] = useState('')
   const [files, setFiles] = useState<AssetFile[]>([])
@@ -35,58 +34,66 @@ export function AssetsClient() {
   const [copied, setCopied] = useState(false)
   const [refreshKey, setRefreshKey] = useState(Date.now())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isResolvingUrl, setIsResolvingUrl] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const isBusy = isLoading || isUploading || isResolvingUrl || isDeleting
 
-  const loadFiles = useCallback(() => {
+  const loadFiles = useCallback(async () => {
     setError('')
-    startTransition(async () => {
-      try {
-        const data = await listAssets(bucket, path || undefined)
-        setFiles(data.filter((f) => f.name !== '.emptyFolderPlaceholder') as AssetFile[])
-        setLoaded(true)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load assets')
-      }
-    })
-  }, [bucket, path, startTransition])
+    setIsLoading(true)
+    try {
+      const data = await listAssets(bucket, path || undefined)
+      setFiles(data.filter((f) => f.name !== '.emptyFolderPlaceholder') as AssetFile[])
+      setLoaded(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load assets')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [bucket, path])
 
   function handleLoad() {
-    loadFiles()
+    void loadFiles()
   }
 
   async function handleUpload(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
     setError('')
     setMessage('')
+    setIsUploading(true)
 
-    startTransition(async () => {
-      try {
-        for (const file of Array.from(fileList)) {
-          const uploadPath = path ? `${path}/${file.name}` : file.name
-          const formData = new FormData()
-          formData.append('file', file)
-          await uploadAsset(bucket, uploadPath, formData)
-        }
-        setMessage(`Uploaded ${fileList.length} file(s) successfully.`)
-        setRefreshKey(Date.now())
-        loadFiles()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed')
+    try {
+      for (const file of Array.from(fileList)) {
+        const uploadPath = path ? `${path}/${file.name}` : file.name
+        const formData = new FormData()
+        formData.append('file', file)
+        await uploadAsset(bucket, uploadPath, formData)
       }
-    })
+      setMessage(`Uploaded ${fileList.length} file(s) successfully.`)
+      setRefreshKey(Date.now())
+      await loadFiles()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   async function handleViewUrl(fileName: string) {
     const filePath = path ? `${path}/${fileName}` : fileName
-    startTransition(async () => {
-      try {
-        const url = await getAssetUrl(bucket, filePath)
-        setSelectedUrl(url)
-        setUrlDialogOpen(true)
-        setCopied(false)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to get URL')
-      }
-    })
+    setIsResolvingUrl(true)
+    try {
+      const url = await getAssetUrl(bucket, filePath)
+      setSelectedUrl(url)
+      setUrlDialogOpen(true)
+      setCopied(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to get URL')
+    } finally {
+      setIsResolvingUrl(false)
+    }
   }
 
   async function handleCopy() {
@@ -103,17 +110,18 @@ export function AssetsClient() {
   async function handleDelete() {
     if (!deletingFile) return
     const filePath = path ? `${path}/${deletingFile}` : deletingFile
-    startTransition(async () => {
-      try {
-        await deleteAsset(bucket, filePath)
-        setMessage(`Deleted ${deletingFile}`)
-        setDeleteDialogOpen(false)
-        setDeletingFile(null)
-        loadFiles()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
-      }
-    })
+    setIsDeleting(true)
+    try {
+      await deleteAsset(bucket, filePath)
+      setMessage(`Deleted ${deletingFile}`)
+      setDeleteDialogOpen(false)
+      setDeletingFile(null)
+      await loadFiles()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   function getImagePreviewUrl(fileName: string) {
@@ -129,6 +137,7 @@ export function AssetsClient() {
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault()
+    if (isBusy) return
     handleUpload(e.dataTransfer.files)
   }
 
@@ -164,9 +173,9 @@ export function AssetsClient() {
             placeholder="e.g. items/weapons"
           />
         </div>
-        <Button onClick={handleLoad} disabled={isPending}>
+        <Button onClick={handleLoad} disabled={isBusy}>
           <FolderOpen className="mr-2 h-4 w-4" />
-          {isPending ? 'Loading...' : 'Browse'}
+          {isLoading ? 'Loading...' : 'Browse'}
         </Button>
       </div>
 
@@ -175,7 +184,9 @@ export function AssetsClient() {
         className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => {
+          if (!isBusy) fileInputRef.current?.click()
+        }}
       >
         <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
         <p className="text-sm text-muted-foreground">
@@ -189,6 +200,7 @@ export function AssetsClient() {
           type="file"
           multiple
           className="hidden"
+          disabled={isBusy}
           onChange={(e) => handleUpload(e.target.files)}
         />
       </div>
@@ -200,9 +212,9 @@ export function AssetsClient() {
             <p className="text-sm text-muted-foreground">
               {files.length} file(s) in {bucket}/{path || '(root)'}
             </p>
-            <Button variant="outline" size="sm" onClick={loadFiles} disabled={isPending}>
+            <Button variant="outline" size="sm" onClick={() => void loadFiles()} disabled={isBusy}>
               <RefreshCw className="mr-2 h-3 w-3" />
-              Refresh
+              {isLoading ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
 
@@ -238,6 +250,7 @@ export function AssetsClient() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={isBusy}
                         onClick={(e) => {
                           e.stopPropagation()
                           confirmDelete(file.name)
@@ -286,9 +299,11 @@ export function AssetsClient() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

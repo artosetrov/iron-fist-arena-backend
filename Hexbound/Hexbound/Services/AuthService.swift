@@ -7,6 +7,45 @@ enum AutoLoginResult {
     case noCharacter         // 0 heroes
 }
 
+private struct EmailAuthRequest: Encodable {
+    let email: String
+    let password: String
+}
+
+private struct RegisterRequest: Encodable {
+    let email: String
+    let password: String
+    let username: String
+}
+
+private struct GuestLoginRequest: Encodable {
+    let deviceId: String
+}
+
+private struct ForgotPasswordRequest: Encodable {
+    let email: String
+}
+
+struct AuthUserEnvelope: Decodable {
+    let id: String
+    let email: String?
+    let role: String?
+}
+
+struct AuthSessionEnvelope: Decodable {
+    let accessToken: String
+    let refreshToken: String
+    let expiresIn: Int?
+    let restored: Bool?
+    let needsConfirmation: Bool?
+    let user: AuthUserEnvelope?
+}
+
+private struct ForgotPasswordResponse: Decodable {
+    let success: Bool
+    let message: String
+}
+
 @MainActor
 final class AuthService {
     private let appState: AppState
@@ -21,19 +60,17 @@ final class AuthService {
 
     func login(email: String, password: String) async -> Result<Void, APIError> {
         do {
-            let body: [String: Any] = ["email": email, "password": password]
-            let result = try await APIClient.shared.postRaw(APIEndpoints.authLogin, body: body)
-
-            guard let accessToken = result["access_token"] as? String,
-                  let refreshToken = result["refresh_token"] as? String else {
-                return .failure(.noData)
-            }
+            let body = EmailAuthRequest(email: email, password: password)
+            let result: AuthSessionEnvelope = try await APIClient.shared.post(
+                APIEndpoints.authLogin,
+                body: body
+            )
 
             // Save tokens
-            KeychainManager.shared.saveAccessToken(accessToken)
-            KeychainManager.shared.saveRefreshToken(refreshToken)
+            KeychainManager.shared.saveAccessToken(result.accessToken)
+            KeychainManager.shared.saveRefreshToken(result.refreshToken)
             KeychainManager.shared.saveIsGuest(false)
-            await APIClient.shared.setAuthToken(accessToken)
+            await APIClient.shared.setAuthToken(result.accessToken)
 
             // Not a guest
             appState.isGuest = false
@@ -59,20 +96,19 @@ final class AuthService {
 
     func register(email: String, password: String, username: String) async -> Result<Bool, APIError> {
         do {
-            let body: [String: Any] = ["email": email, "password": password, "username": username]
-            let result = try await APIClient.shared.postRaw(APIEndpoints.authRegister, body: body)
+            let body = RegisterRequest(email: email, password: password, username: username)
+            let result: AuthSessionEnvelope = try await APIClient.shared.post(
+                APIEndpoints.authRegister,
+                body: body
+            )
 
-            let needsConfirmation = result["needs_confirmation"] as? Bool ?? false
+            let needsConfirmation = result.needsConfirmation ?? false
 
             if !needsConfirmation {
                 // Auto-login after register
-                guard let accessToken = result["access_token"] as? String,
-                      let refreshToken = result["refresh_token"] as? String else {
-                    return .failure(.noData)
-                }
-                KeychainManager.shared.saveAccessToken(accessToken)
-                KeychainManager.shared.saveRefreshToken(refreshToken)
-                await APIClient.shared.setAuthToken(accessToken)
+                KeychainManager.shared.saveAccessToken(result.accessToken)
+                KeychainManager.shared.saveRefreshToken(result.refreshToken)
+                await APIClient.shared.setAuthToken(result.accessToken)
 
                 // Setup 401 handler
                 setupUnauthorizedHandler()
@@ -97,18 +133,16 @@ final class AuthService {
             // Send stable deviceId so backend can restore existing guest progress
             // (rotates password server-side and returns a fresh session).
             let deviceId = KeychainManager.shared.deviceId
-            let body: [String: Any] = ["device_id": deviceId]
-            let result = try await APIClient.shared.postRaw(APIEndpoints.authGuestLogin, body: body)
+            let body = GuestLoginRequest(deviceId: deviceId)
+            let result: AuthSessionEnvelope = try await APIClient.shared.post(
+                APIEndpoints.authGuestLogin,
+                body: body
+            )
 
-            guard let accessToken = result["access_token"] as? String,
-                  let refreshToken = result["refresh_token"] as? String else {
-                return .failure(.noData)
-            }
-
-            KeychainManager.shared.saveAccessToken(accessToken)
-            KeychainManager.shared.saveRefreshToken(refreshToken)
+            KeychainManager.shared.saveAccessToken(result.accessToken)
+            KeychainManager.shared.saveRefreshToken(result.refreshToken)
             KeychainManager.shared.saveIsGuest(true)
-            await APIClient.shared.setAuthToken(accessToken)
+            await APIClient.shared.setAuthToken(result.accessToken)
 
             // Setup 401 handler
             setupUnauthorizedHandler()
@@ -195,8 +229,11 @@ final class AuthService {
 
     func forgotPassword(email: String) async -> Result<Void, APIError> {
         do {
-            let body: [String: Any] = ["email": email]
-            _ = try await APIClient.shared.postRaw(APIEndpoints.authForgotPassword, body: body)
+            let body = ForgotPasswordRequest(email: email)
+            let _: ForgotPasswordResponse = try await APIClient.shared.post(
+                APIEndpoints.authForgotPassword,
+                body: body
+            )
             return .success(())
         } catch let error as APIError {
             return .failure(error)
@@ -269,31 +306,9 @@ final class AuthService {
     /// If 2+, stores them on appState.userCharacters for selection screen.
     private func loadCharacters() async -> AutoLoginResult {
         do {
-            let result = try await APIClient.shared.getRaw(APIEndpoints.characters)
+            let result: CharactersListResponse = try await APIClient.shared.get(APIEndpoints.characters)
+            let decoded = result.characters.sorted { $0.level > $1.level }
 
-            // Parse character array from API response
-            var charArray: [[String: Any]] = []
-            if let characters = result["characters"] as? [[String: Any]] {
-                charArray = characters
-            } else if let data = result["data"] as? [[String: Any]] {
-                charArray = data
-            } else if result["id"] != nil {
-                charArray = [result]
-            }
-
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-            var decoded: [Character] = []
-            for charData in charArray {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                if let character = try? decoder.decode(Character.self, from: jsonData) {
-                    decoded.append(character)
-                }
-            }
-
-            // Sort by level descending
-            decoded.sort { $0.level > $1.level }
             appState.userCharacters = decoded
 
             switch decoded.count {

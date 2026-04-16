@@ -79,8 +79,8 @@ struct DailyLoginRewardDef: Codable, Equatable {
         "icon-stamina":           "icon-stamina",       // legacy
         "icon-stamina-small":     "icon-stamina",
         "icon-stamina-large":     "icon-stamina",
-        "icon-hp-potion-small":   "icon-stamina",       // TODO: replace with real HP potion asset
-        "icon-hp-potion-large":   "icon-stamina",       // TODO: replace with real HP potion asset
+        "icon-hp-potion-small":   "health_potion_small",
+        "icon-hp-potion-large":   "health_potion_large",
     ]
 
     /// Known-consumable label fallback. Used only when `displayName` is
@@ -99,9 +99,11 @@ struct DailyLoginRewardDef: Codable, Equatable {
         case "gold": return "icon-gold"
         case "gems": return "icon-gems"
         case "consumable":
-            // Every current consumable in daily login is a stamina potion.
-            // When HP potions ship, add a dedicated `displayIcon` on the server.
-            return "icon-stamina"
+            return ConsumableCatalog.resolvedImageKey(
+                consumableType: itemId,
+                catalogId: itemId,
+                imageKey: nil
+            ) ?? "icon-stamina"
         default:
             return "icon-gold"
         }

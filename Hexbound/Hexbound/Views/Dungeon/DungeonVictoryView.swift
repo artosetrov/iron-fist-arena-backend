@@ -40,29 +40,22 @@ struct DungeonVictoryView: View {
 
         // Convert dungeon loot items to LootItemDisplay
         let lootItems: [LootItemDisplay] = vm.victoryItems.map { item in
-            let name = item["name"] as? String ?? "Item"
-            let rawRarity = item["rarity"] as? String ?? "common"
+            let name = item.displayName
+            let rawRarity = item.rarity ?? "common"
             let rarity = ItemRarity(rawValue: rawRarity) ?? .common
-            let rawType = item["type"] as? String ?? "weapon"
+            let rawType = item.itemType ?? "weapon"
             let type = ItemType(rawValue: rawType)
-            let upgrade = item["upgrade_level"] as? Int ?? 0
-            let isGold = rawType == "gold" || rawType == "currency"
-            let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
-            let consumableType = item["consumable_type"] as? String ?? item["consumableType"] as? String
+            let upgrade = item.upgradeLevel ?? 0
+            let consumableType: String? = nil
 
-            let displayName: String
-            if isGold, let qty = quantity {
-                displayName = "\(qty) Gold"
-            } else {
-                displayName = upgrade > 0 ? "\(name) +\(upgrade)" : name
-            }
+            let displayName = upgrade > 0 ? "\(name) +\(upgrade)" : name
 
             return LootItemDisplay(
                 name: displayName,
                 rarityName: rarity.displayName,
                 rarityColor: DarkFantasyTheme.rarityColor(for: rarity),
-                imageKey: item["image_key"] as? String ?? item["imageKey"] as? String,
-                imageUrl: item["image_url"] as? String,
+                imageKey: item.imageKey,
+                imageUrl: item.imageUrl,
                 sfIcon: LootDetailView.consumableSFIcon(for: consumableType, type: rawType),
                 sfColor: LootDetailView.consumableSFColor(for: consumableType, type: rawType),
                 fallbackIcon: type?.icon ?? "shippingbox",
@@ -199,7 +192,11 @@ struct DungeonVictoryView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
                 if let newLvl = vm.victoryNewLevel {
                     let statPoints = vm.victoryStatPointsAwarded > 0 ? vm.victoryStatPointsAwarded : 3
-                    appState.triggerLevelUpModal(newLevel: newLvl, statPoints: statPoints)
+                    appState.triggerLevelUpModal(
+                        newLevel: newLvl,
+                        statPoints: statPoints,
+                        passivePoints: vm.victoryPassivePointsAwarded
+                    )
                 }
             }
         } else {

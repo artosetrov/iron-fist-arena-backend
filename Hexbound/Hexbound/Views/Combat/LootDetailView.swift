@@ -6,7 +6,7 @@ struct LootDetailView: View {
     @Environment(AppState.self) private var appState
     @State private var selectedLootIndex: Int? = nil
 
-    private var lootItems: [[String: Any]] {
+    private var lootItems: [PendingLootItem] {
         appState.pendingLoot
     }
 
@@ -28,32 +28,19 @@ struct LootDetailView: View {
 
     private func buildConfig() -> BattleResultConfig {
         let items = lootItems.map { item -> LootItemDisplay in
-            let name = item["name"] as? String ?? "Item"
-            let rawRarity = item["rarity"] as? String ?? "common"
-            let rarity = ItemRarity(rawValue: rawRarity) ?? .common
-            let rawType = item["type"] as? String ?? "weapon"
+            let rarity = ItemRarity(rawValue: item.rarityKey) ?? .common
+            let rawType = item.resolvedTypeKey
             let type = ItemType(rawValue: rawType)
-            let upgrade = item["upgrade_level"] as? Int ?? 0
-            let isGold = rawType == "gold" || rawType == "currency"
-            let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
-            let consumableType = item["consumable_type"] as? String ?? item["consumableType"] as? String
-
-            let displayName: String
-            if isGold, let qty = quantity {
-                displayName = "\(qty) Gold"
-            } else {
-                displayName = upgrade > 0 ? "\(name) +\(upgrade)" : name
-            }
 
             return LootItemDisplay(
-                name: displayName,
+                name: item.displayTitle,
                 rarityName: rarity.displayName,
                 rarityColor: DarkFantasyTheme.rarityColor(for: rarity),
-                imageKey: item["image_key"] as? String ?? item["imageKey"] as? String,
-                imageUrl: item["image_url"] as? String,
-                sfIcon: Self.consumableSFIcon(for: consumableType, type: rawType),
-                sfColor: Self.consumableSFColor(for: consumableType, type: rawType),
-                fallbackIcon: type?.icon ?? "shippingbox",
+                imageKey: item.imageKey,
+                imageUrl: item.imageUrl,
+                sfIcon: Self.consumableSFIcon(for: item.consumableType, type: rawType),
+                sfColor: Self.consumableSFColor(for: item.consumableType, type: rawType),
+                fallbackIcon: type?.icon ?? (item.isShard ? "diamond.fill" : "shippingbox"),
                 rarityTier: rarity.tier
             )
         }
@@ -86,25 +73,26 @@ struct LootDetailView: View {
     // MARK: - Loot Detail Modal
 
     @ViewBuilder
-    private func lootDetailModal(_ item: [String: Any]) -> some View {
-        let name = item["name"] as? String ?? "Item"
-        let rawRarity = item["rarity"] as? String ?? "common"
+    private func lootDetailModal(_ item: PendingLootItem) -> some View {
+        let name = item.displayName
+        let rawRarity = item.rarityKey
         let rarity = ItemRarity(rawValue: rawRarity) ?? .common
-        let rawType = item["type"] as? String ?? "weapon"
+        let rawType = item.resolvedTypeKey
         let type = ItemType(rawValue: rawType)
-        let level = item["item_level"] as? Int ?? item["level"] as? Int ?? 1
-        let upgrade = item["upgrade_level"] as? Int ?? 0
-        let lootImageUrl = item["image_url"] as? String
-        let lootImageKey = item["image_key"] as? String ?? item["imageKey"] as? String
+        let level = item.resolvedLevel
+        let upgrade = item.resolvedUpgradeLevel
+        let lootImageUrl = item.imageUrl
+        let lootImageKey = item.imageKey
         let rarityColor = DarkFantasyTheme.rarityColor(for: rarity)
-        let description = item["description"] as? String
-        let specialEffect = item["special_effect"] as? String
-        let stats = item["stats"] as? [String: Int] ?? item["base_stats"] as? [String: Int]
-        let isGold = rawType == "gold" || rawType == "currency"
-        let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
-        let consumableType = item["consumable_type"] as? String ?? item["consumableType"] as? String
+        let description = item.description
+        let specialEffect = item.specialEffect
+        let stats = item.resolvedStats
+        let isGold = item.isGoldLike
+        let quantity = item.resolvedQuantity
+        let consumableType = item.consumableType
         let sfIcon = Self.consumableSFIcon(for: consumableType, type: rawType)
         let sfColor = Self.consumableSFColor(for: consumableType, type: rawType)
+        let typeLabel = type?.displayName ?? (item.isShard ? "Shard" : rawType.capitalized)
 
         ZStack {
             DarkFantasyTheme.bgModal
@@ -128,7 +116,7 @@ struct LootDetailView: View {
                             imageUrl: lootImageUrl,
                             systemIcon: sfIcon,
                             systemIconColor: sfColor,
-                            placeholderIcon: type?.icon ?? "shippingbox"
+                            placeholderIcon: type?.icon ?? (item.isShard ? "diamond.fill" : "shippingbox")
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
                     }
@@ -147,16 +135,14 @@ struct LootDetailView: View {
                         }
 
                         HStack(spacing: LayoutConstants.spaceXS) {
-                            if let t = type {
-                                Text(t.displayName.lowercased())
-                                    .font(DarkFantasyTheme.body.weight(.semibold))
-                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                    .padding(.horizontal, LayoutConstants.spaceXS)
-                                    .padding(.vertical, LayoutConstants.space2XS)
-                                    .background(Capsule().fill(DarkFantasyTheme.bgTertiary))
-                                    .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
-                                    .accessibilityLabel("Item type: \(t.displayName)")
-                            }
+                            Text(typeLabel.lowercased())
+                                .font(DarkFantasyTheme.body.weight(.semibold))
+                                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                .padding(.horizontal, LayoutConstants.spaceXS)
+                                .padding(.vertical, LayoutConstants.space2XS)
+                                .background(Capsule().fill(DarkFantasyTheme.bgTertiary))
+                                .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
+                                .accessibilityLabel("Item type: \(typeLabel)")
 
                             Text(rarity.rawValue)
                                 .font(DarkFantasyTheme.body.weight(.semibold))
@@ -287,7 +273,7 @@ struct LootDetailView: View {
 
                 // Sell price
                 if !isGold {
-                    let sellPrice = item["sell_price"] as? Int ?? item["sellPrice"] as? Int ?? 0
+                    let sellPrice = item.resolvedSellPrice
                     if sellPrice > 0 {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Text("Sell:")
@@ -403,6 +389,7 @@ struct LootDetailView: View {
     // MARK: - Consumable Icon Helpers
 
     static func consumableSFIcon(for consumableType: String?, type: String) -> String? {
+        if type == "shard" { return "diamond.fill" }
         guard type == "consumable" else { return nil }
         let ct = consumableType ?? ""
         if ct.contains("gem_pack") { return "diamond.fill" }
@@ -412,6 +399,7 @@ struct LootDetailView: View {
     }
 
     static func consumableSFColor(for consumableType: String?, type: String) -> Color? {
+        if type == "shard" { return DarkFantasyTheme.cyan }
         guard type == "consumable" else { return nil }
         let ct = consumableType ?? ""
         if ct.contains("gem_pack") { return DarkFantasyTheme.cyan }

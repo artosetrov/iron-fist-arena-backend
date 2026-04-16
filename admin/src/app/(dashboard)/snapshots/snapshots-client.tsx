@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   createConfigSnapshot,
@@ -27,7 +27,6 @@ type Snapshot = {
 
 export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [snapshotName, setSnapshotName] = useState('')
   const [snapshotDesc, setSnapshotDesc] = useState('')
   const [error, setError] = useState('')
@@ -35,8 +34,11 @@ export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [rollbackConfirm, setRollbackConfirm] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  const [rollingBackId, setRollingBackId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  function handleCreateSnapshot() {
+  async function handleCreateSnapshot() {
     if (!snapshotName.trim()) {
       setError('Snapshot name is required')
       return
@@ -44,51 +46,51 @@ export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
 
     setError('')
     setSuccess('')
-
-    startTransition(async () => {
-      try {
-        await createConfigSnapshot(snapshotName, snapshotDesc || undefined)
-        setSnapshotName('')
-        setSnapshotDesc('')
-        setIsCreateDialogOpen(false)
-        setSuccess('Snapshot created successfully')
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to create snapshot')
-      }
-    })
+    setIsCreating(true)
+    try {
+      await createConfigSnapshot(snapshotName, snapshotDesc || undefined)
+      setSnapshotName('')
+      setSnapshotDesc('')
+      setIsCreateDialogOpen(false)
+      setSuccess('Snapshot created successfully')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create snapshot')
+    } finally {
+      setIsCreating(false)
+    }
   }
 
-  function handleRollback(snapshotId: string, snapshotName: string) {
+  async function handleRollback(snapshotId: string, snapshotName: string) {
     setRollbackConfirm(null)
     setError('')
     setSuccess('')
-
-    startTransition(async () => {
-      try {
-        const result = await rollbackToSnapshot(snapshotId)
-        setSuccess(`Rolled back to "${snapshotName}". Restored ${result.restoredCount} configs.`)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to rollback snapshot')
-      }
-    })
+    setRollingBackId(snapshotId)
+    try {
+      const result = await rollbackToSnapshot(snapshotId)
+      setSuccess(`Rolled back to "${snapshotName}". Restored ${result.restoredCount} configs.`)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rollback snapshot')
+    } finally {
+      setRollingBackId(null)
+    }
   }
 
-  function handleDelete(snapshotId: string) {
+  async function handleDelete(snapshotId: string) {
     setDeleteConfirm(null)
     setError('')
     setSuccess('')
-
-    startTransition(async () => {
-      try {
-        await deleteConfigSnapshot(snapshotId)
-        setSuccess('Snapshot deleted successfully')
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete snapshot')
-      }
-    })
+    setDeletingId(snapshotId)
+    try {
+      await deleteConfigSnapshot(snapshotId)
+      setSuccess('Snapshot deleted successfully')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete snapshot')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const getShortDate = (isoString: string) => {
@@ -148,9 +150,9 @@ export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
                       <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={handleCreateSnapshot} disabled={isPending}>
+                      <Button onClick={handleCreateSnapshot} disabled={isCreating}>
                         <Save className="mr-2 h-4 w-4" />
-                        {isPending ? 'Creating...' : 'Create Snapshot'}
+                        {isCreating ? 'Creating...' : 'Create Snapshot'}
                       </Button>
                     </div>
                   </div>
@@ -217,9 +219,9 @@ export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleCreateSnapshot} disabled={isPending}>
+                <Button onClick={handleCreateSnapshot} disabled={isCreating}>
                   <Save className="mr-2 h-4 w-4" />
-                  {isPending ? 'Creating...' : 'Create Snapshot'}
+                  {isCreating ? 'Creating...' : 'Create Snapshot'}
                 </Button>
               </div>
             </div>
@@ -282,9 +284,9 @@ export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
                               <Button
                                 variant="destructive"
                                 onClick={() => handleRollback(snapshot.id, snapshot.name)}
-                                disabled={isPending}
+                                disabled={rollingBackId === snapshot.id || deletingId !== null}
                               >
-                                {isPending ? 'Rolling back...' : 'Confirm Rollback'}
+                                {rollingBackId === snapshot.id ? 'Rolling back...' : 'Confirm Rollback'}
                               </Button>
                             </div>
                           </div>
@@ -321,9 +323,9 @@ export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
                               <Button
                                 variant="destructive"
                                 onClick={() => handleDelete(snapshot.id)}
-                                disabled={isPending}
+                                disabled={deletingId === snapshot.id || rollingBackId !== null}
                               >
-                                {isPending ? 'Deleting...' : 'Delete Snapshot'}
+                                {deletingId === snapshot.id ? 'Deleting...' : 'Delete Snapshot'}
                               </Button>
                             </div>
                           </div>

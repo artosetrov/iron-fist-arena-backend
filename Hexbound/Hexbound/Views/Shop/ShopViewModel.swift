@@ -80,7 +80,8 @@ final class ShopViewModel {
         xp: Int,
         leveledUp: Bool?,
         newLevel: Int?,
-        statPointsAwarded: Int?
+        statPointsAwarded: Int?,
+        passivePointsAwarded: Int?
     ) {
         appState.applyAuthoritativeRewardState(
             gold: gold,
@@ -88,7 +89,8 @@ final class ShopViewModel {
             xp: xp,
             leveledUp: leveledUp,
             newLevel: newLevel,
-            statPointsAwarded: statPointsAwarded
+            statPointsAwarded: statPointsAwarded,
+            passivePointsAwarded: passivePointsAwarded
         )
     }
 
@@ -256,7 +258,8 @@ final class ShopViewModel {
                     xp: response.xp,
                     leveledUp: response.leveledUp,
                     newLevel: response.newLevel,
-                    statPointsAwarded: response.statPointsAwarded
+                    statPointsAwarded: response.statPointsAwarded,
+                    passivePointsAwarded: response.passivePointsAwarded
                 )
                 scavengerClaimedThisSession = true
                 // Show reward modal instead of toast
@@ -357,7 +360,8 @@ final class ShopViewModel {
                         xp: response.xp,
                         leveledUp: response.leveledUp,
                         newLevel: response.newLevel,
-                        statPointsAwarded: response.statPointsAwarded
+                        statPointsAwarded: response.statPointsAwarded,
+                        passivePointsAwarded: response.passivePointsAwarded
                     )
                     // Show reward modal with the offer's contents
                     claimRewardConfig = .fromOfferContents(

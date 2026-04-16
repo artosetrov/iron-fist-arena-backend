@@ -186,7 +186,6 @@ export function AchievementsClient({
       toast.success(editingDef ? 'Achievement updated' : 'Achievement created')
       refresh()
     } catch (error) {
-      console.error(error)
       toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
@@ -203,7 +202,6 @@ export function AchievementsClient({
       toast.success('Achievement deleted')
       refresh()
     } catch (error) {
-      console.error(error)
       toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
@@ -216,7 +214,6 @@ export function AchievementsClient({
       toast.success(def.active ? 'Achievement deactivated' : 'Achievement activated')
       refresh()
     } catch (error) {
-      console.error(error)
       toast.error(getErrorMessage(error))
     }
   }
@@ -230,7 +227,6 @@ export function AchievementsClient({
       toast.success('Achievement definitions seeded')
       refresh()
     } catch (error) {
-      console.error(error)
       const message = getErrorMessage(error)
       setSeedResult(message)
       toast.error(message)

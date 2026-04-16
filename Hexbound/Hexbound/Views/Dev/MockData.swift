@@ -86,7 +86,8 @@ enum MockData {
             firstWinBonus: true,
             leveledUp: false,
             newLevel: nil,
-            statPointsAwarded: nil
+            statPointsAwarded: nil,
+            passivePointsAwarded: nil
         ),
         rewards: CombatRewards(gold: 350, xp: 280),
         loot: nil,
@@ -108,6 +109,7 @@ enum MockData {
         leveledUp: false,
         newLevel: nil,
         statPointsAwarded: nil,
+        passivePointsAwarded: nil,
         loot: [],
         staminaCurrent: 80,
         staminaMax: 120,

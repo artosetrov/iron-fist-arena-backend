@@ -1,5 +1,61 @@
 import SwiftUI
 
+private struct NameAvailabilityResponse: Decodable {
+    let available: Bool
+}
+
+private struct CharacterCreateRequest: Encodable {
+    let characterName: String
+    let characterClass: String
+    let origin: String
+    let gender: String
+    let avatar: String
+
+    private enum CodingKeys: String, CodingKey {
+        case characterName = "character_name"
+        case characterClass = "class"
+        case origin
+        case gender
+        case avatar
+    }
+}
+
+private struct CharacterCreateResponse: Decodable {
+    let character: Character
+
+    private enum CodingKeys: String, CodingKey {
+        case character
+        case data
+    }
+
+    private struct NestedCharacterResponse: Decodable {
+        let character: Character
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        if let character = try container.decodeIfPresent(Character.self, forKey: .character) {
+            self.character = character
+            return
+        }
+
+        if let nested = try container.decodeIfPresent(NestedCharacterResponse.self, forKey: .data) {
+            self.character = nested.character
+            return
+        }
+
+        if let character = try? Character(from: decoder) {
+            self.character = character
+            return
+        }
+
+        throw DecodingError.dataCorrupted(
+            .init(codingPath: decoder.codingPath, debugDescription: "Expected character create response")
+        )
+    }
+}
+
 @MainActor @Observable
 final class OnboardingViewModel {
     // 3-step wizard: 0 = Class, 1 = Appearance (race + gender + avatar), 2 = Name
@@ -264,13 +320,13 @@ final class OnboardingViewModel {
             }
 
             do {
-                let result = try await APIClient.shared.getRaw(
-                    "\(APIEndpoints.checkName)?name=\(name)"
+                let result: NameAvailabilityResponse = try await APIClient.shared.get(
+                    APIEndpoints.checkName,
+                    params: ["name": name]
                 )
                 guard !Task.isCancelled else { return }
 
-                let available = result["available"] as? Bool ?? false
-                let resolved: NameAvailability = available ? .available : .taken
+                let resolved: NameAvailability = result.available ? .available : .taken
                 nameCache[name.lowercased()] = (result: resolved, at: Date())
                 nameAvailability = resolved
             } catch {
@@ -394,61 +450,39 @@ final class OnboardingViewModel {
         }
 
         do {
-            let body: [String: Any] = [
-                "character_name": characterName,
-                "class": charClass.rawValue,
-                "origin": origin.rawValue,
-                "gender": gender.rawValue,
-                "avatar": skinKey
-            ]
+            let body = CharacterCreateRequest(
+                characterName: characterName,
+                characterClass: charClass.rawValue,
+                origin: origin.rawValue,
+                gender: gender.rawValue,
+                avatar: skinKey
+            )
 
-            let result = try await APIClient.shared.postRaw(
+            let result: CharacterCreateResponse = try await APIClient.shared.post(
                 APIEndpoints.characters,
                 body: body
             )
 
-            var charData: [String: Any]?
-            if let nested = result["character"] as? [String: Any] {
-                charData = nested
-            } else if let nested = result["data"] as? [String: Any],
-                      let inner = nested["character"] as? [String: Any] {
-                charData = inner
-            } else if result["id"] != nil {
-                charData = result
+            let character = result.character
+
+            appState.currentCharacter = character
+            appState.userCharacters.append(character)
+            if !allSkins.isEmpty {
+                cache.cacheSkins(allSkins)
             }
-
-            if let charData {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let character = try decoder.decode(Character.self, from: jsonData)
-
-                appState.currentCharacter = character
-                appState.userCharacters.append(character)
-                if !allSkins.isEmpty {
-                    cache.cacheSkins(allSkins)
-                }
-                // 2026-04-10 — scripted tutorial tunnel disabled (was broken).
-                // Skip cinematicOpen → scriptedTutorial → tutorialVictory, go straight to loreIntro.
-                // First hero flow is now:
-                //   loreIntro → game
-                // Additional heroes skip the whole onboarding tunnel as before.
-                if appState.userCharacters.count <= 1 {
-                    // First hero — straight to lore cinematic, skipping the broken tutorial fight
-                    appState.currentScreen = .loreIntro(heroName: character.characterName)
-                } else {
-                    // Additional hero — go to selection screen
-                    appState.currentScreen = .characterSelect
-                }
-                appState.authPath = NavigationPath()
+            // 2026-04-10 — scripted tutorial tunnel disabled (was broken).
+            // Skip cinematicOpen → scriptedTutorial → tutorialVictory, go straight to loreIntro.
+            // First hero flow is now:
+            //   loreIntro → game
+            // Additional heroes skip the whole onboarding tunnel as before.
+            if appState.userCharacters.count <= 1 {
+                // First hero — straight to lore cinematic, skipping the broken tutorial fight
+                appState.currentScreen = .loreIntro(heroName: character.characterName)
             } else {
-                if !allSkins.isEmpty {
-                    cache.cacheSkins(allSkins)
-                }
-                // Fallback — go to character selection
+                // Additional hero — go to selection screen
                 appState.currentScreen = .characterSelect
-                appState.authPath = NavigationPath()
             }
+            appState.authPath = NavigationPath()
 
             // BUG-08: give the destination view ~350 ms to mount + paint its
             // first frame under the overlay. 300 ms matches the currentScreen

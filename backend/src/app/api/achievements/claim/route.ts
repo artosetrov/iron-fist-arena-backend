@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       leveled_up: result.rewardGrantResult.levelUpResult?.leveledUp ?? false,
       new_level: result.rewardGrantResult.levelUpResult?.newLevel,
       stat_points_awarded: result.rewardGrantResult.levelUpResult?.statPointsAwarded,
+      passive_points_awarded: result.rewardGrantResult.levelUpResult?.passivePointsAwarded,
     })
   } catch (error: unknown) {
     if (error instanceof Error) {

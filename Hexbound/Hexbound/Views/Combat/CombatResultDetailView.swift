@@ -16,6 +16,7 @@ struct CombatResultDetailView: View {
     // don't depend on `result` (which gets nilled when user taps Continue)
     @State private var capturedNewLevel: Int? = nil
     @State private var capturedStatPoints: Int = 3
+    @State private var capturedPassivePoints: Int = 0
 
     // Loot detail modal
     @State private var selectedLootIndex: Int? = nil
@@ -126,6 +127,10 @@ struct CombatResultDetailView: View {
                     let old = appState.currentCharacter?.statPoints ?? 0
                     appState.currentCharacter?.statPoints = old + statPts
                 }
+                if let passivePts = res.passivePointsAwarded, passivePts > 0 {
+                    let old = appState.currentCharacter?.passivePointsAvailable ?? 0
+                    appState.currentCharacter?.passivePointsAvailable = old + passivePts
+                }
             }
 
             captureXpSnapshot()
@@ -144,32 +149,19 @@ struct CombatResultDetailView: View {
 
     private func buildConfig(_ res: CombatResultInfo) -> BattleResultConfig {
         let lootItems = appState.pendingLoot.enumerated().map { (index, item) -> LootItemDisplay in
-            let name = item["name"] as? String ?? "Item"
-            let rawRarity = item["rarity"] as? String ?? "common"
-            let rarity = ItemRarity(rawValue: rawRarity) ?? .common
-            let rawType = item["type"] as? String ?? "weapon"
+            let rarity = ItemRarity(rawValue: item.rarityKey) ?? .common
+            let rawType = item.resolvedTypeKey
             let type = ItemType(rawValue: rawType)
-            let upgrade = item["upgrade_level"] as? Int ?? 0
-            let isGold = rawType == "gold" || rawType == "currency"
-            let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
-            let consumableType = item["consumable_type"] as? String ?? item["consumableType"] as? String
-
-            let displayName: String
-            if isGold, let qty = quantity {
-                displayName = "\(qty) Gold"
-            } else {
-                displayName = upgrade > 0 ? "\(name) +\(upgrade)" : name
-            }
 
             return LootItemDisplay(
-                name: displayName,
+                name: item.displayTitle,
                 rarityName: rarity.displayName,
                 rarityColor: DarkFantasyTheme.rarityColor(for: rarity),
-                imageKey: item["image_key"] as? String ?? item["imageKey"] as? String,
-                imageUrl: item["image_url"] as? String,
-                sfIcon: LootDetailView.consumableSFIcon(for: consumableType, type: rawType),
-                sfColor: LootDetailView.consumableSFColor(for: consumableType, type: rawType),
-                fallbackIcon: type?.icon ?? "shippingbox",
+                imageKey: item.imageKey,
+                imageUrl: item.imageUrl,
+                sfIcon: LootDetailView.consumableSFIcon(for: item.consumableType, type: rawType),
+                sfColor: LootDetailView.consumableSFColor(for: item.consumableType, type: rawType),
+                fallbackIcon: type?.icon ?? (item.isShard ? "diamond.fill" : "shippingbox"),
                 rarityTier: rarity.tier
             )
         }
@@ -320,25 +312,26 @@ struct CombatResultDetailView: View {
     // MARK: - Loot Detail Modal (reused from old LootDetailView)
 
     @ViewBuilder
-    private func lootDetailModal(_ item: [String: Any]) -> some View {
-        let name = item["name"] as? String ?? "Item"
-        let rawRarity = item["rarity"] as? String ?? "common"
+    private func lootDetailModal(_ item: PendingLootItem) -> some View {
+        let name = item.displayName
+        let rawRarity = item.rarityKey
         let rarity = ItemRarity(rawValue: rawRarity) ?? .common
-        let rawType = item["type"] as? String ?? "weapon"
+        let rawType = item.resolvedTypeKey
         let type = ItemType(rawValue: rawType)
-        let level = item["item_level"] as? Int ?? item["level"] as? Int ?? 1
-        let upgrade = item["upgrade_level"] as? Int ?? 0
-        let lootImageUrl = item["image_url"] as? String
-        let lootImageKey = item["image_key"] as? String ?? item["imageKey"] as? String
+        let level = item.resolvedLevel
+        let upgrade = item.resolvedUpgradeLevel
+        let lootImageUrl = item.imageUrl
+        let lootImageKey = item.imageKey
         let rarityColor = DarkFantasyTheme.rarityColor(for: rarity)
-        let description = item["description"] as? String
-        let specialEffect = item["special_effect"] as? String
-        let stats = item["stats"] as? [String: Int] ?? item["base_stats"] as? [String: Int]
-        let isGold = rawType == "gold" || rawType == "currency"
-        let quantity = item["quantity"] as? Int ?? item["amount"] as? Int
-        let consumableType = item["consumable_type"] as? String ?? item["consumableType"] as? String
+        let description = item.description
+        let specialEffect = item.specialEffect
+        let stats = item.resolvedStats
+        let isGold = item.isGoldLike
+        let quantity = item.resolvedQuantity
+        let consumableType = item.consumableType
         let sfIcon = LootDetailView.consumableSFIcon(for: consumableType, type: rawType)
         let sfColor = LootDetailView.consumableSFColor(for: consumableType, type: rawType)
+        let typeLabel = type?.displayName ?? (item.isShard ? "Shard" : rawType.capitalized)
 
         ZStack {
             DarkFantasyTheme.bgModal
@@ -363,7 +356,7 @@ struct CombatResultDetailView: View {
                             imageUrl: lootImageUrl,
                             systemIcon: sfIcon,
                             systemIconColor: sfColor,
-                            placeholderIcon: type?.icon ?? "shippingbox"
+                            placeholderIcon: type?.icon ?? (item.isShard ? "diamond.fill" : "shippingbox")
                         )
                         .clipShape(RoundedRectangle(cornerRadius: LayoutConstants.cardRadius - 2))
                     }
@@ -382,15 +375,13 @@ struct CombatResultDetailView: View {
                         }
 
                         HStack(spacing: LayoutConstants.spaceXS) {
-                            if let t = type {
-                                Text(t.displayName.lowercased())
-                                    .font(DarkFantasyTheme.body.weight(.semibold))
-                                    .foregroundStyle(DarkFantasyTheme.textSecondary)
-                                    .padding(.horizontal, LayoutConstants.spaceXS)
-                                    .padding(.vertical, LayoutConstants.space2XS)
-                                    .background(Capsule().fill(DarkFantasyTheme.bgTertiary))
-                                    .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
-                            }
+                            Text(typeLabel.lowercased())
+                                .font(DarkFantasyTheme.body.weight(.semibold))
+                                .foregroundStyle(DarkFantasyTheme.textSecondary)
+                                .padding(.horizontal, LayoutConstants.spaceXS)
+                                .padding(.vertical, LayoutConstants.space2XS)
+                                .background(Capsule().fill(DarkFantasyTheme.bgTertiary))
+                                .overlay(Capsule().stroke(DarkFantasyTheme.borderSubtle, lineWidth: 1))
 
                             Text(rarity.rawValue)
                                 .font(DarkFantasyTheme.body.weight(.semibold))
@@ -516,7 +507,7 @@ struct CombatResultDetailView: View {
 
                 // Sell price
                 if !isGold {
-                    let sellPrice = item["sell_price"] as? Int ?? item["sellPrice"] as? Int ?? 0
+                    let sellPrice = item.resolvedSellPrice
                     if sellPrice > 0 {
                         HStack(spacing: LayoutConstants.spaceXS) {
                             Text("Sell:")
@@ -641,6 +632,7 @@ struct CombatResultDetailView: View {
         if leveledUp, let newLvl = newLevel {
             capturedNewLevel = newLvl
             capturedStatPoints = res.statPointsAwarded ?? 3
+            capturedPassivePoints = res.passivePointsAwarded ?? 0
         }
 
         if leveledUp, let newLvl = newLevel {
@@ -691,7 +683,11 @@ struct CombatResultDetailView: View {
                 // Use captured values — `result` may be nil if user tapped Continue
                 // before this callback fires (goBack() clears combatResult)
                 if let newLevel = capturedNewLevel {
-                    appState.triggerLevelUpModal(newLevel: newLevel, statPoints: capturedStatPoints)
+                    appState.triggerLevelUpModal(
+                        newLevel: newLevel,
+                        statPoints: capturedStatPoints,
+                        passivePoints: capturedPassivePoints
+                    )
                 }
             }
         } else {

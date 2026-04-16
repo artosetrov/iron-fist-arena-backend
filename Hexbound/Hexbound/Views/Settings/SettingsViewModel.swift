@@ -2,6 +2,11 @@ import SwiftUI
 
 @MainActor @Observable
 final class SettingsViewModel {
+    private struct DeleteAccountResponse: Decodable {
+        let success: Bool
+        let message: String?
+    }
+
     private let appState: AppState
     private let settings = SettingsManager.shared
 
@@ -63,7 +68,7 @@ final class SettingsViewModel {
         guard !isDeleting else { return }
         isDeleting = true
         do {
-            _ = try await APIClient.shared.postRaw("/api/user/delete")
+            let _: DeleteAccountResponse = try await APIClient.shared.post("/api/user/delete")
             isDeleting = false
             appState.logout()
         } catch {

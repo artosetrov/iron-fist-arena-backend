@@ -73,26 +73,6 @@ struct CombatConfig {
         rogueExecuteDamageBonus: 0.15
     )
 
-    init(from dict: [String: Any]) {
-        maxTurns = dict["max_turns"] as? Int ?? 15
-        minDamage = dict["min_damage"] as? Int ?? 1
-        critMultiplier = dict["crit_multiplier"] as? Double ?? 1.5
-        maxCritChance = dict["max_crit_chance"] as? Double ?? 50
-        maxDodgeChance = dict["max_dodge_chance"] as? Double ?? 30
-        rogueDodgeBonus = dict["rogue_dodge_bonus"] as? Double ?? 4
-        tankDamageReduction = dict["tank_damage_reduction"] as? Double ?? 0.85
-        damageVariance = dict["damage_variance"] as? Double ?? 0.10
-        poisonArmorPenetration = dict["poison_armor_penetration"] as? Double ?? 0.3
-        critPerLuk = dict["crit_per_luk"] as? Double ?? 0.6
-        critPerAgi = dict["crit_per_agi"] as? Double ?? 0.2
-        dodgePerAgi = dict["dodge_per_agi"] as? Double ?? 0.2
-        dodgePerLuk = dict["dodge_per_luk"] as? Double ?? 0.1
-        chaMissPerPoint = dict["cha_miss_per_point"] as? Double ?? 0.2
-        chaMissCap = dict["cha_miss_cap"] as? Double ?? 20
-        rogueExecuteHpThreshold = dict["rogue_execute_hp_threshold"] as? Double ?? 0.35
-        rogueExecuteDamageBonus = dict["rogue_execute_damage_bonus"] as? Double ?? 0.15
-    }
-
     init(maxTurns: Int, minDamage: Int, critMultiplier: Double, maxCritChance: Double,
          maxDodgeChance: Double, rogueDodgeBonus: Double, tankDamageReduction: Double,
          damageVariance: Double, poisonArmorPenetration: Double,
@@ -119,6 +99,54 @@ struct CombatConfig {
     }
 }
 
+struct CombatSkillEffect {
+    let heal: Int?
+
+    init(heal: Int? = nil) {
+        self.heal = heal
+    }
+}
+
+struct CombatSkill {
+    let id: String
+    let skillKey: String?
+    let name: String?
+    let damageBase: Double?
+    let damageScaling: [String: Double]
+    let damageType: String?
+    let targetType: String?
+    let cooldown: Int
+    let effect: CombatSkillEffect?
+    let rank: Int
+    let rankScaling: Double
+
+    init(
+        id: String,
+        skillKey: String?,
+        name: String?,
+        damageBase: Double?,
+        damageScaling: [String: Double] = [:],
+        damageType: String?,
+        targetType: String?,
+        cooldown: Int = 0,
+        effect: CombatSkillEffect? = nil,
+        rank: Int = 1,
+        rankScaling: Double = 0.1
+    ) {
+        self.id = id
+        self.skillKey = skillKey
+        self.name = name
+        self.damageBase = damageBase
+        self.damageScaling = damageScaling
+        self.damageType = damageType
+        self.targetType = targetType
+        self.cooldown = cooldown
+        self.effect = effect
+        self.rank = rank
+        self.rankScaling = rankScaling
+    }
+}
+
 // MARK: - Fighter Stats (from /prepare response)
 
 struct FighterStats {
@@ -138,30 +166,50 @@ struct FighterStats {
     let armor: Int
     let magicResist: Int
     let avatar: String?
-    let combatStance: [String: Any]?
-    let equippedSkills: [[String: Any]]
+    let combatStance: ParsedZoneStance?
+    let equippedSkills: [CombatSkill]
     let passiveBonuses: PassiveBonus
 
-    init(from dict: [String: Any]) {
-        id = dict["id"] as? String ?? ""
-        name = dict["name"] as? String ?? ""
-        characterClass = dict["class"] as? String ?? "warrior"
-        level = dict["level"] as? Int ?? 1
-        str = dict["str"] as? Int ?? 10
-        agi = dict["agi"] as? Int ?? 10
-        vit = dict["vit"] as? Int ?? 10
-        end = dict["end"] as? Int ?? 10
-        int = dict["int"] as? Int ?? 10
-        wis = dict["wis"] as? Int ?? 10
-        luk = dict["luk"] as? Int ?? 10
-        cha = dict["cha"] as? Int ?? 10
-        maxHp = dict["max_hp"] as? Int ?? 100
-        armor = dict["armor"] as? Int ?? 0
-        magicResist = dict["magic_resist"] as? Int ?? 0
-        avatar = dict["avatar"] as? String
-        combatStance = dict["combat_stance"] as? [String: Any]
-        equippedSkills = dict["equipped_skills"] as? [[String: Any]] ?? []
-        passiveBonuses = PassiveBonus(from: dict["passive_bonuses"] as? [String: Any] ?? [:])
+    init(
+        id: String,
+        name: String,
+        characterClass: String,
+        level: Int,
+        str: Int,
+        agi: Int,
+        vit: Int,
+        end: Int,
+        int: Int,
+        wis: Int,
+        luk: Int,
+        cha: Int,
+        maxHp: Int,
+        armor: Int,
+        magicResist: Int,
+        avatar: String?,
+        combatStance: ParsedZoneStance?,
+        equippedSkills: [CombatSkill],
+        passiveBonuses: PassiveBonus
+    ) {
+        self.id = id
+        self.name = name
+        self.characterClass = characterClass
+        self.level = level
+        self.str = str
+        self.agi = agi
+        self.vit = vit
+        self.end = end
+        self.int = int
+        self.wis = wis
+        self.luk = luk
+        self.cha = cha
+        self.maxHp = maxHp
+        self.armor = armor
+        self.magicResist = magicResist
+        self.avatar = avatar
+        self.combatStance = combatStance
+        self.equippedSkills = equippedSkills
+        self.passiveBonuses = passiveBonuses
     }
 }
 
@@ -173,13 +221,20 @@ struct PassiveBonus {
     let lifesteal: Double
     let damageReduction: Double
 
-    init(from dict: [String: Any]) {
-        flatDamage = dict["flat_damage"] as? Double ?? 0
-        percentDamage = dict["percent_damage"] as? Double ?? 0
-        flatCritChance = dict["flat_crit_chance"] as? Double ?? 0
-        flatDodgeChance = dict["flat_dodge_chance"] as? Double ?? 0
-        lifesteal = dict["lifesteal"] as? Double ?? 0
-        damageReduction = dict["damage_reduction"] as? Double ?? 0
+    init(
+        flatDamage: Double = 0,
+        percentDamage: Double = 0,
+        flatCritChance: Double = 0,
+        flatDodgeChance: Double = 0,
+        lifesteal: Double = 0,
+        damageReduction: Double = 0
+    ) {
+        self.flatDamage = flatDamage
+        self.percentDamage = percentDamage
+        self.flatCritChance = flatCritChance
+        self.flatDodgeChance = flatDodgeChance
+        self.lifesteal = lifesteal
+        self.damageReduction = damageReduction
     }
 }
 
@@ -228,25 +283,19 @@ struct ParsedZoneStance {
     let defense: String
 
     static let `default` = ParsedZoneStance(attack: "chest", defense: "chest")
+    private static let validZones: Set<String> = ["head", "chest", "legs"]
 
     init(attack: String, defense: String) {
         self.attack = attack
         self.defense = defense
     }
 
-    init(from dict: [String: Any]?) {
-        let validZones = ["head", "chest", "legs"]
-        guard let dict = dict,
-              let atk = dict["attack"] as? String,
-              let def = dict["defense"] as? String,
-              validZones.contains(atk),
-              validZones.contains(def)
-        else {
-            self = .default
-            return
+    init?(validatedAttack attack: String, defense: String) {
+        guard Self.validZones.contains(attack), Self.validZones.contains(defense) else {
+            return nil
         }
-        self.attack = atk
-        self.defense = def
+        self.attack = attack
+        self.defense = defense
     }
 }
 
@@ -291,8 +340,8 @@ final class CombatEngine {
         let hpA = player.maxHp
         let hpD = enemy.maxHp
 
-        let zoneA = ParsedZoneStance(from: player.combatStance)
-        let zoneD = ParsedZoneStance(from: enemy.combatStance)
+        let zoneA = player.combatStance ?? .default
+        let zoneD = enemy.combatStance ?? .default
         let stanceA = StanceModifiers.fromZones(myStance: zoneA, opponentStance: zoneD)
         let stanceD = StanceModifiers.fromZones(myStance: zoneD, opponentStance: zoneA)
         let passivesA = player.passiveBonuses
@@ -453,17 +502,15 @@ final class CombatEngine {
             putOnCooldown(cooldowns: &cooldownState, skill: skill)
 
             // Self-buff — no damage
-            if (skill["target_type"] as? String) == "self_buff" {
-                var selfHeal = 0
-                if let effect = skill["effect_json"] as? [String: Any],
-                   let heal = effect["heal"] as? Int { selfHeal = heal }
+            if skill.targetType == "self_buff" {
+                let selfHeal = skill.effect?.heal ?? 0
 
                 let turn = CombatLog(
                     attackerId: attacker.id, action: "skill", targetZone: attackerZone, defendZone: defenderZone,
                     damage: 0, isCrit: false, isMiss: false, isDodge: false, isBlocked: false,
                     statusApplied: nil, heal: selfHeal > 0 ? selfHeal : nil,
-                    damageType: skill["damage_type"] as? String,
-                    skillUsed: skill["name"] as? String
+                    damageType: skill.damageType,
+                    skillUsed: skill.name
                 )
                 return (turn, defenderHp, selfHeal)
             }
@@ -593,10 +640,10 @@ final class CombatEngine {
 
     // MARK: - Skills
 
-    private func selectSkill(skills: [[String: Any]], cooldowns: SkillCooldownState) -> [String: Any]? {
+    private func selectSkill(skills: [CombatSkill], cooldowns: SkillCooldownState) -> CombatSkill? {
         for skill in skills {
-            guard let key = skill["skill_key"] as? String,
-                  (skill["damage_base"] as? Double) != nil || (skill["damage_base"] as? Int) != nil
+            guard let key = skill.skillKey,
+                  skill.damageBase != nil
             else { continue }
             if (cooldowns[key] ?? 0) <= 0 {
                 return skill
@@ -605,10 +652,9 @@ final class CombatEngine {
         return nil
     }
 
-    private func putOnCooldown(cooldowns: inout SkillCooldownState, skill: [String: Any]) {
-        guard let key = skill["skill_key"] as? String else { return }
-        let cd = skill["cooldown"] as? Int ?? 0
-        cooldowns[key] = cd
+    private func putOnCooldown(cooldowns: inout SkillCooldownState, skill: CombatSkill) {
+        guard let key = skill.skillKey else { return }
+        cooldowns[key] = skill.cooldown
     }
 
     private func tickCooldowns(_ cooldowns: inout SkillCooldownState) {
@@ -619,33 +665,30 @@ final class CombatEngine {
         }
     }
 
-    private func calculateSkillDamage(skill: [String: Any], attacker: FighterStats) -> (rawDamage: Double, damageType: String, skillName: String) {
-        let dmgBase = (skill["damage_base"] as? Double) ?? Double(skill["damage_base"] as? Int ?? 0)
-        let dmgType = skill["damage_type"] as? String ?? "physical"
-        let name = skill["name"] as? String ?? "Skill"
+    private func calculateSkillDamage(skill: CombatSkill, attacker: FighterStats) -> (rawDamage: Double, damageType: String, skillName: String) {
+        let dmgBase = skill.damageBase ?? 0
+        let dmgType = skill.damageType ?? "physical"
+        let name = skill.name ?? "Skill"
 
         var total = dmgBase
-        if let scaling = skill["damage_scaling"] as? [String: Any] {
-            for (stat, mult) in scaling {
-                let multiplier = (mult as? Double) ?? Double(mult as? Int ?? 0)
-                let statVal: Int
-                switch stat {
-                case "str": statVal = attacker.str
-                case "agi": statVal = attacker.agi
-                case "int": statVal = attacker.int
-                case "wis": statVal = attacker.wis
-                case "vit": statVal = attacker.vit
-                case "end": statVal = attacker.end
-                case "luk": statVal = attacker.luk
-                default: statVal = 0
-                }
-                total += Double(statVal) * multiplier
+        for (stat, multiplier) in skill.damageScaling {
+            let statVal: Int
+            switch stat {
+            case "str": statVal = attacker.str
+            case "agi": statVal = attacker.agi
+            case "int": statVal = attacker.int
+            case "wis": statVal = attacker.wis
+            case "vit": statVal = attacker.vit
+            case "end": statVal = attacker.end
+            case "luk": statVal = attacker.luk
+            default: statVal = 0
             }
+            total += Double(statVal) * multiplier
         }
 
         // Rank scaling
-        let rank = skill["rank"] as? Int ?? 1
-        let rankScaling = (skill["rank_scaling"] as? Double) ?? 0.1
+        let rank = skill.rank
+        let rankScaling = skill.rankScaling
         total *= 1 + Double(rank - 1) * rankScaling
 
         return (total, dmgType, name)
@@ -688,7 +731,8 @@ final class CombatEngine {
             firstWinBonus: nil,
             leveledUp: nil,
             newLevel: nil,
-            statPointsAwarded: nil
+            statPointsAwarded: nil,
+            passivePointsAwarded: nil
         )
 
         return CombatData(
@@ -701,5 +745,3 @@ final class CombatEngine {
         )
     }
 }
-
-

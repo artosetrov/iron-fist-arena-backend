@@ -6,8 +6,6 @@ struct TopCurrencyBar: View {
     let character: Character?
     var onTapCurrency: (() -> Void)?
 
-    private var settings: SettingsManager { SettingsManager.shared }
-
     var body: some View {
         HStack(spacing: 0) {
             // Gold (animated tick-up)
@@ -145,9 +143,31 @@ struct DailyQuestsCard: View {
 // MARK: - Battle Pass Card
 
 struct BattlePassCard: View {
-    // TODO: wire real battle pass data from AppState
-    var level: Int = 7
-    var maxLevel: Int = 30
+    @Environment(GameDataCache.self) private var cache
+
+    private var battlePass: BattlePassData? {
+        cache.cachedBattlePass()
+    }
+
+    private var level: Int {
+        battlePass?.currentLevel ?? 0
+    }
+
+    private var maxLevel: Int {
+        let freeMax = battlePass?.freeRewards.map(\.level).max() ?? 0
+        let premiumMax = battlePass?.premiumRewards.map(\.level).max() ?? 0
+        return max(max(freeMax, premiumMax), 1)
+    }
+
+    private var subtitle: String {
+        guard let battlePass else { return "Loading battle pass..." }
+        return "\(battlePass.seasonName) • Level \(level)/\(maxLevel)"
+    }
+
+    private var progress: Double {
+        guard maxLevel > 0 else { return 0 }
+        return min(max(Double(level) / Double(maxLevel), 0), 1)
+    }
 
     var body: some View {
         HStack(spacing: LayoutConstants.spaceMS) {
@@ -159,7 +179,7 @@ struct BattlePassCard: View {
                 Text("BATTLE PASS")
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textPrimary)
-                Text("Season 1 • Level \(level)/\(maxLevel)")
+                Text(subtitle)
                     .font(DarkFantasyTheme.body)
                     .foregroundStyle(DarkFantasyTheme.textSecondary)
             }
@@ -172,7 +192,7 @@ struct BattlePassCard: View {
                         .fill(DarkFantasyTheme.bgTertiary)
                     RoundedRectangle(cornerRadius: LayoutConstants.radiusXS)
                         .fill(DarkFantasyTheme.gold)
-                        .frame(width: geo.size.width * (maxLevel > 0 ? Double(level) / Double(maxLevel) : 0))
+                        .frame(width: geo.size.width * progress)
                         .overlay(BarFillHighlight(cornerRadius: LayoutConstants.radiusXS))
                 }
             }

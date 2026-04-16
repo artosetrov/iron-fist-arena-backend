@@ -50,7 +50,7 @@ export function canModifyConfig(role: AdminRole) {
 }
 
 export function canManagePlayers(role: AdminRole) {
-  return true // all admin roles can manage players
+  return ALLOWED_ROLES.includes(role)
 }
 
 export function canManageUsers(role: AdminRole) {

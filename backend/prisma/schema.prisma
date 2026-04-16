@@ -145,6 +145,21 @@ model MilestoneClaim {
   @@map("milestone_claims")
 }
 
+model ReferralRewardClaim {
+  id                  String   @id @default(uuid())
+  referrerCharacterId String   @map("referrer_character_id")
+  inviteeCharacterId  String   @map("invitee_character_id")
+  qualifiedAt         DateTime @default(now()) @map("qualified_at")
+
+  referrerCharacter Character @relation("referral_reward_referrer", fields: [referrerCharacterId], references: [id], onDelete: Cascade)
+  inviteeCharacter  Character @relation("referral_reward_invitee", fields: [inviteeCharacterId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerCharacterId, inviteeCharacterId])
+  @@index([referrerCharacterId])
+  @@index([inviteeCharacterId])
+  @@map("referral_reward_claims")
+}
+
 model TutorialQuest {
   id            String    @id @default(uuid())
   characterId   String    @map("character_id")
@@ -437,6 +452,8 @@ model Character {
   challengesReceived  Challenge[] @relation("challenge_defender")
   milestoneClaims     MilestoneClaim[]
   tutorialQuests      TutorialQuest[]
+  referralRewardsGiven ReferralRewardClaim[] @relation("referral_reward_referrer")
+  referralRewardsReceived ReferralRewardClaim[] @relation("referral_reward_invitee")
 
   // W3.D5 — Weekly BP challenges (rotating, ISO-week)
   weeklyChallengeProgress WeeklyChallengeProgress[]

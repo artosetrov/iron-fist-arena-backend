@@ -21,6 +21,8 @@ struct VictoryOverlayView: View {
     @State private var xpRowOpacity: Double = 0
     @State private var itemRowOpacity: Double = 0
     @State private var levelUpRowOpacity: Double = 0
+    @State private var statPointsRowOpacity: Double = 0
+    @State private var passivePointsRowOpacity: Double = 0
     @State private var ctaOpacity: Double = 0
     @State private var didAdvance = false
 
@@ -95,6 +97,24 @@ struct VictoryOverlayView: View {
                             )
                             .opacity(levelUpRowOpacity)
                         }
+
+                        if rewards.statPointsAwarded > 0 {
+                            rewardRow(
+                                icon: "sparkles",
+                                text: "+\(rewards.statPointsAwarded) STAT \(rewards.statPointsAwarded == 1 ? "POINT" : "POINTS")",
+                                color: DarkFantasyTheme.gold,
+                            )
+                            .opacity(statPointsRowOpacity)
+                        }
+
+                        if rewards.passivePointsAwarded > 0 {
+                            rewardRow(
+                                icon: "hexagon.fill",
+                                text: "+\(rewards.passivePointsAwarded) PASSIVE \(rewards.passivePointsAwarded == 1 ? "POINT" : "POINTS")",
+                                color: DarkFantasyTheme.toastLevelUp,
+                            )
+                            .opacity(passivePointsRowOpacity)
+                        }
                     }
                 }
                 .padding(.horizontal, LayoutConstants.screenPadding)
@@ -161,6 +181,10 @@ struct VictoryOverlayView: View {
             withAnimation(.easeOut(duration: 0.4)) { itemRowOpacity = 1 }
             try? await Task.sleep(for: .milliseconds(250))
             withAnimation(.easeOut(duration: 0.4)) { levelUpRowOpacity = 1 }
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.easeOut(duration: 0.4)) { statPointsRowOpacity = 1 }
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.easeOut(duration: 0.4)) { passivePointsRowOpacity = 1 }
             try? await Task.sleep(for: .milliseconds(400))
             withAnimation(.easeOut(duration: 0.4)) { ctaOpacity = 1 }
         }

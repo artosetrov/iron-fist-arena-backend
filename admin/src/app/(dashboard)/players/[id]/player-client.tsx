@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   banPlayer, unbanPlayer, grantGold, grantGems, resetInventory,
@@ -129,7 +129,6 @@ export function PlayerDetailClient({
   purchases: Purchase[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [selectedChar, setSelectedChar] = useState<Character | null>(
     player.characters[0] ?? null
   )
@@ -139,6 +138,7 @@ export function PlayerDetailClient({
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [activeAction, setActiveAction] = useState<'gold' | 'gems' | 'ban' | 'reset' | null>(null)
 
   function showMessage(msg: string) {
     setMessage(msg)
@@ -151,68 +151,72 @@ export function PlayerDetailClient({
     setMessage('')
   }
 
-  function handleGrantGold() {
+  async function handleGrantGold() {
     if (!selectedChar || !goldAmount || Number(goldAmount) <= 0) return
-    startTransition(async () => {
-      try {
-        await grantGold(selectedChar.id, Number(goldAmount))
-        showMessage(`Granted ${goldAmount} gold to ${selectedChar.characterName}`)
-        setGoldAmount('')
-        router.refresh()
-      } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed to grant gold')
-      }
-    })
+    setActiveAction('gold')
+    try {
+      await grantGold(selectedChar.id, Number(goldAmount))
+      showMessage(`Granted ${goldAmount} gold to ${selectedChar.characterName}`)
+      setGoldAmount('')
+      router.refresh()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to grant gold')
+    } finally {
+      setActiveAction(null)
+    }
   }
 
-  function handleGrantGems() {
+  async function handleGrantGems() {
     if (!gemAmount || Number(gemAmount) <= 0) return
-    startTransition(async () => {
-      try {
-        await grantGems(player.id, Number(gemAmount))
-        showMessage(`Granted ${gemAmount} gems to ${player.username || player.email}`)
-        setGemAmount('')
-        router.refresh()
-      } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed to grant gems')
-      }
-    })
+    setActiveAction('gems')
+    try {
+      await grantGems(player.id, Number(gemAmount))
+      showMessage(`Granted ${gemAmount} gems to ${player.username || player.email}`)
+      setGemAmount('')
+      router.refresh()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to grant gems')
+    } finally {
+      setActiveAction(null)
+    }
   }
 
-  function handleBanToggle() {
-    startTransition(async () => {
-      try {
-        if (player.isBanned) {
-          await unbanPlayer(player.id)
-          showMessage('Player unbanned')
-        } else {
-          if (!banReason) {
-            showError('Ban reason is required')
-            return
-          }
-          await banPlayer(player.id, banReason)
-          showMessage('Player banned')
-          setBanReason('')
+  async function handleBanToggle() {
+    setActiveAction('ban')
+    try {
+      if (player.isBanned) {
+        await unbanPlayer(player.id)
+        showMessage('Player unbanned')
+      } else {
+        if (!banReason) {
+          showError('Ban reason is required')
+          return
         }
-        router.refresh()
-      } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed')
+        await banPlayer(player.id, banReason)
+        showMessage('Player banned')
+        setBanReason('')
       }
-    })
+      router.refresh()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed')
+    } finally {
+      setActiveAction(null)
+    }
   }
 
-  function handleResetInventory() {
+  async function handleResetInventory() {
     if (!selectedChar) return
-    startTransition(async () => {
-      try {
-        await resetInventory(selectedChar.id)
-        showMessage(`Inventory reset for ${selectedChar.characterName}`)
-        setResetDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        showError(err instanceof Error ? err.message : 'Failed to reset')
-      }
-    })
+    setActiveAction('reset')
+    try {
+      await resetInventory(selectedChar.id)
+      showMessage(`Inventory reset for ${selectedChar.characterName}`)
+      setResetDialogOpen(false)
+      router.refresh()
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to reset')
+    } finally {
+      setActiveAction(null)
+    }
   }
 
   return (
@@ -607,10 +611,10 @@ export function PlayerDetailClient({
             </div>
             <Button
               onClick={handleGrantGold}
-              disabled={isPending || !selectedChar || !goldAmount}
+              disabled={activeAction !== null || !selectedChar || !goldAmount}
             >
               <Coins className="mr-2 h-4 w-4" />
-              Grant Gold
+              {activeAction === 'gold' ? 'Granting...' : 'Grant Gold'}
             </Button>
           </div>
 
@@ -626,9 +630,9 @@ export function PlayerDetailClient({
                 onChange={(e) => setGemAmount(e.target.value)}
               />
             </div>
-            <Button onClick={handleGrantGems} disabled={isPending || !gemAmount}>
+            <Button onClick={handleGrantGems} disabled={activeAction !== null || !gemAmount}>
               <Gem className="mr-2 h-4 w-4" />
-              Grant Gems
+              {activeAction === 'gems' ? 'Granting...' : 'Grant Gems'}
             </Button>
           </div>
 
@@ -649,17 +653,17 @@ export function PlayerDetailClient({
             <Button
               variant={player.isBanned ? 'default' : 'destructive'}
               onClick={handleBanToggle}
-              disabled={isPending || (!player.isBanned && !banReason)}
+              disabled={activeAction !== null || (!player.isBanned && !banReason)}
             >
               {player.isBanned ? (
                 <>
                   <ShieldCheck className="mr-2 h-4 w-4" />
-                  Unban Player
+                  {activeAction === 'ban' ? 'Unbanning...' : 'Unban Player'}
                 </>
               ) : (
                 <>
                   <Ban className="mr-2 h-4 w-4" />
-                  Ban Player
+                  {activeAction === 'ban' ? 'Banning...' : 'Ban Player'}
                 </>
               )}
             </Button>
@@ -672,7 +676,7 @@ export function PlayerDetailClient({
             <Button
               variant="destructive"
               onClick={() => setResetDialogOpen(true)}
-              disabled={!selectedChar || isPending}
+              disabled={!selectedChar || activeAction !== null}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Reset Inventory {selectedChar ? `(${selectedChar.characterName})` : ''}
@@ -692,9 +696,11 @@ export function PlayerDetailClient({
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleResetInventory} disabled={isPending}>
-              {isPending ? 'Resetting...' : 'Reset Inventory'}
+            <Button variant="outline" onClick={() => setResetDialogOpen(false)} disabled={activeAction === 'reset'}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleResetInventory} disabled={activeAction === 'reset'}>
+              {activeAction === 'reset' ? 'Resetting...' : 'Reset Inventory'}
             </Button>
           </div>
         </DialogContent>

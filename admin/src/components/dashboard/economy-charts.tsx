@@ -2,7 +2,7 @@
 
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
+  XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts'
 import { ChartCard } from './chart-card'
 import { Badge } from '@/components/ui/badge'

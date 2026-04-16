@@ -144,11 +144,12 @@ final class FortuneWheelViewModel {
         }
 
         do {
-            let data = try await APIClient.shared.getRaw(
-                APIEndpoints.fortuneWheelStatus + "?character_id=\(charId)"
+            let data: FortuneWheelStatusResponse = try await APIClient.shared.get(
+                APIEndpoints.fortuneWheelStatus,
+                params: ["character_id": charId]
             )
-            spinsRemaining = data["spins_remaining"] as? Int ?? 10
-            spinsLimit = data["spins_limit"] as? Int ?? 10
+            spinsRemaining = data.spinsRemaining
+            spinsLimit = data.spinsLimit
         } catch {
             // Default to showing wheel, backend will enforce limits
         }
@@ -169,38 +170,24 @@ final class FortuneWheelViewModel {
         appState.currentCharacter?.gold -= selectedBet
 
         do {
-            let data = try await APIClient.shared.postRaw(
+            let data: FortuneWheelSpinResponse = try await APIClient.shared.post(
                 APIEndpoints.fortuneWheelSpin,
-                body: [
-                    "character_id": charId,
-                    "bet_amount": selectedBet
-                ]
+                body: FortuneWheelSpinRequest(characterId: charId, betAmount: selectedBet)
             )
 
-            let won = data["won"] as? Bool ?? false
-            let sectorIndex = data["sector_index"] as? Int ?? 0
-            let multiplier = data["multiplier"] as? Double ?? 0
-            let winAmount = data["win_amount"] as? Int ?? 0
-
             let spinResult = SpinResult(
-                won: won,
-                sectorIndex: sectorIndex,
-                multiplier: multiplier,
-                winAmount: winAmount
+                won: data.won,
+                sectorIndex: data.sectorIndex,
+                multiplier: data.multiplier,
+                winAmount: data.winAmount
             )
 
             // Update gold from server
-            if let newGold = data["gold"] as? Int {
-                appState.currentCharacter?.gold = newGold
-            }
+            appState.currentCharacter?.gold = data.gold
 
             // Update daily limit from server
-            if let remaining = data["spins_remaining"] as? Int {
-                spinsRemaining = remaining
-            }
-            if let limit = data["spins_limit"] as? Int {
-                spinsLimit = limit
-            }
+            spinsRemaining = data.spinsRemaining
+            spinsLimit = data.spinsLimit
 
             result = spinResult
             appState.invalidateCache("quests")

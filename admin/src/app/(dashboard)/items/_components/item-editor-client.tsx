@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,12 +60,13 @@ export function ItemEditorClient({
   fallbackImageKey = null,
 }: ItemEditorClientProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState<ItemFormData>(EMPTY_FORM)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [catalogIdManual, setCatalogIdManual] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   // Populate form from existing item
   useEffect(() => {
@@ -142,16 +143,17 @@ export function ItemEditorClient({
     const formData = new FormData()
     formData.append('file', file)
 
-    startTransition(async () => {
-      try {
-        const result = await uploadAsset('assets', uploadPath, formData)
-        updateField('imageUrl', result.publicUrl)
-        setSuccess('Image uploaded successfully.')
-        setTimeout(() => setSuccess(''), 3000)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Upload failed')
-      }
-    })
+    setIsUploading(true)
+    try {
+      const result = await uploadAsset('assets', uploadPath, formData)
+      updateField('imageUrl', result.publicUrl)
+      setSuccess('Image uploaded successfully.')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   function handleDrop(e: React.DragEvent) {
@@ -209,24 +211,25 @@ export function ItemEditorClient({
       imageKey: form.imageKey || form.catalogId || null,
     }
 
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/items', {
-          method: item ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(item ? { id: item.id, ...body } : body),
-        })
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to save item')
-          return
-        }
-        router.push('/items')
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save item')
+    setIsSaving(true)
+    try {
+      const res = await fetch('/api/items', {
+        method: item ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item ? { id: item.id, ...body } : body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to save item')
+        return
       }
-    })
+      router.push('/items')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save item')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -517,7 +520,9 @@ export function ItemEditorClient({
               className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
               onDrop={handleDrop}
               onDragOver={e => e.preventDefault()}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (!isUploading && !isSaving) fileInputRef.current?.click()
+              }}
             >
               <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
@@ -531,6 +536,7 @@ export function ItemEditorClient({
                 type="file"
                 accept=".png,.jpg,.jpeg,.webp"
                 className="hidden"
+                disabled={isUploading || isSaving}
                 onChange={e => handleImageUpload(e.target.files)}
               />
             </div>
@@ -645,9 +651,9 @@ export function ItemEditorClient({
           <Button type="button" variant="outline" onClick={() => router.push('/items')}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Items
           </Button>
-          <Button onClick={handleSave} disabled={isPending}>
+          <Button onClick={handleSave} disabled={isUploading || isSaving}>
             <Save className="h-4 w-4 mr-2" />
-            {isPending ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
+            {isSaving ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
           </Button>
         </div>
       </div>

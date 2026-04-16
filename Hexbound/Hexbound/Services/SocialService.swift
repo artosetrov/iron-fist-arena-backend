@@ -1,5 +1,20 @@
 import Foundation
 
+private struct SocialFriendActionRequest: Encodable {
+    let characterId: String
+    let targetId: String
+    let action: String
+}
+
+private struct SocialActionResponse: Decodable {
+    let message: String?
+}
+
+private struct FriendshipStatusRequest: Encodable {
+    let characterId: String
+    let targetId: String
+}
+
 @MainActor
 class SocialService {
     static let shared = SocialService()
@@ -44,12 +59,12 @@ class SocialService {
 
     private func performAction(characterId: String, targetId: String, action: String) async -> Bool {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "target_id": targetId,
-                "action": action,
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = SocialFriendActionRequest(
+                characterId: characterId,
+                targetId: targetId,
+                action: action
+            )
+            let _: SocialActionResponse = try await APIClient.shared.post(
                 APIEndpoints.socialFriends,
                 body: body
             )
@@ -65,19 +80,21 @@ class SocialService {
     /// Like performAction but returns nil on success, or error message on failure.
     private func performActionWithError(characterId: String, targetId: String, action: String) async -> String? {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "target_id": targetId,
-                "action": action,
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = SocialFriendActionRequest(
+                characterId: characterId,
+                targetId: targetId,
+                action: action
+            )
+            let _: SocialActionResponse = try await APIClient.shared.post(
                 APIEndpoints.socialFriends,
                 body: body
             )
-            return nil  // success
+            return nil
         } catch let apiError as APIError {
             switch apiError {
             case .serverError(_, let message):
+                return message
+            case .clientError(_, let message, _):
                 return message
             default:
                 return "Network error"
@@ -108,16 +125,15 @@ class SocialService {
 
     func getFriendshipStatus(characterId: String, targetId: String) async -> FriendshipButtonState {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "target_id": targetId,
-            ]
-            let raw = try await APIClient.shared.postRaw(
+            let body = FriendshipStatusRequest(
+                characterId: characterId,
+                targetId: targetId
+            )
+            let response: FriendshipStatusResponse = try await APIClient.shared.post(
                 APIEndpoints.socialStatus,
                 body: body
             )
-            guard let status = raw["status"] as? String else { return .none }
-            switch status {
+            switch response.status {
             case "friends": return .friends
             case "request_sent": return .requestSent
             case "request_received": return .requestReceived

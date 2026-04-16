@@ -314,6 +314,7 @@ export async function POST(req: NextRequest) {
           leveled_up: rewardResult?.levelUpResult?.leveledUp ?? false,
           new_level: rewardResult?.levelUpResult?.newLevel,
           stat_points_awarded: rewardResult?.levelUpResult?.statPointsAwarded,
+          passive_points_awarded: rewardResult?.levelUpResult?.passivePointsAwarded,
           nextRoom: null,
           nextEnemy: undefined,
         }
@@ -359,6 +360,7 @@ export async function POST(req: NextRequest) {
         leveled_up: rewardResult?.levelUpResult?.leveledUp ?? false,
         new_level: rewardResult?.levelUpResult?.newLevel,
         stat_points_awarded: rewardResult?.levelUpResult?.statPointsAwarded,
+        passive_points_awarded: rewardResult?.levelUpResult?.passivePointsAwarded,
         nextRoom: {
           index: nextRoom.index,
           type: nextRoom.type,
@@ -391,6 +393,7 @@ export async function POST(req: NextRequest) {
       leveled_up: resolvedRoom.leveled_up,
       new_level: resolvedRoom.new_level,
       stat_points_awarded: resolvedRoom.stat_points_awarded,
+      passive_points_awarded: resolvedRoom.passive_points_awarded,
       ...(resolvedRoom.nextRoom ? { nextRoom: resolvedRoom.nextRoom } : {}),
       ...(resolvedRoom.nextEnemy ? { nextEnemy: resolvedRoom.nextEnemy } : {}),
     })

@@ -5,6 +5,10 @@
 import { xpForLevel } from './balance';
 import { getPrestigeConfig, getPassivesConfig } from './live-config';
 import { updateMultipleAchievements } from './achievements';
+import {
+  awardReferralQualificationIfEligible,
+  type ReferralQualificationReward,
+} from './tutorial';
 
 // Re-export for convenience
 export { xpForLevel };
@@ -66,6 +70,16 @@ export async function applyLevelUp(
     },
   });
 
+  try {
+    result.referralRewardAwarded = await awardReferralQualificationIfEligible(
+      tx as unknown as Parameters<typeof awardReferralQualificationIfEligible>[0],
+      characterId,
+      result.newLevel,
+    ) ?? undefined;
+  } catch (error: unknown) {
+    console.error('Referral qualification reward error (level-up):', error);
+  }
+
   // Track level-up achievements (fire-and-forget — uses main prisma, not tx)
   try {
     const { prisma } = await import('@/lib/prisma');
@@ -104,6 +118,7 @@ export interface LevelUpResult {
   passivePointsAwarded: number;
   atMaxLevel: boolean;
   milestonesAwarded?: { level: number; gold: number; gems: number; title: string | null; description: string }[];
+  referralRewardAwarded?: ReferralQualificationReward;
 }
 
 export interface PrestigeResult {

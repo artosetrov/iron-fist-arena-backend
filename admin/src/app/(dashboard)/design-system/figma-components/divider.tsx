@@ -6,7 +6,6 @@ type DividerProps = {
 }
 
 export function DSDivider({ className, style = 'Gold' }: DividerProps) {
-  const isGold = style === 'Gold'
   const isOrnamental = style === 'Ornamental'
   const isEtched = style === 'Etched Groove'
 

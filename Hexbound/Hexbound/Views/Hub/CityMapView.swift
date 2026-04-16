@@ -23,11 +23,8 @@ struct CityMapView: View {
     private var questTargetBuildingId: String? {
         let quests = TutorialManager.shared.tutorialQuests
         for quest in quests {
-            let completed = quest["isCompleted"] as? Bool ?? false
-            let claimed = quest["rewardClaimed"] as? Bool ?? false
-            if !completed || !claimed,
-               let questId = quest["questId"] as? String,
-               let buildingId = Self.questBuildingMap[questId] {
+            if (!quest.isCompleted || !quest.rewardClaimed),
+               let buildingId = Self.questBuildingMap[quest.questId] {
                 return buildingId
             }
         }
@@ -278,7 +275,7 @@ struct CityMapView: View {
 
         // Gold Mine — slots ready to collect. Actionable → critical.
         case "gold-mine":
-            let ready = cache.goldMineSlots.filter { ($0["status"] as? String) == "ready" }.count
+            let ready = cache.goldMineSlots.filter { $0.resolvedStatus() == .ready }.count
             guard ready > 0 else { return .none }
             return .critical("READY", severity: 40 + ready * 2)
 

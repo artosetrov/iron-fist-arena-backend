@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -111,7 +111,6 @@ export function PassivesClient({
   connections: PassiveConnection[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
 
   // Node state
   const [search, setSearch] = useState('')
@@ -121,6 +120,8 @@ export function PassivesClient({
   const [deletingNode, setDeletingNode] = useState<PassiveNode | null>(null)
   const [nodeForm, setNodeForm] = useState(emptyNodeForm)
   const [nodeError, setNodeError] = useState('')
+  const [isSavingNode, setIsSavingNode] = useState(false)
+  const [isDeletingNode, setIsDeletingNode] = useState(false)
 
   // Connection state
   const [connDialogOpen, setConnDialogOpen] = useState(false)
@@ -129,6 +130,8 @@ export function PassivesClient({
   const [connFromId, setConnFromId] = useState('')
   const [connToId, setConnToId] = useState('')
   const [connError, setConnError] = useState('')
+  const [isCreatingConnection, setIsCreatingConnection] = useState(false)
+  const [isDeletingConnection, setIsDeletingConnection] = useState(false)
 
   // Filtered nodes
   const filteredNodes = useMemo(() => {
@@ -197,48 +200,50 @@ export function PassivesClient({
       payload.id = editingNode.id
     }
 
-    startTransition(async () => {
-      try {
-        const res = await fetch(PASSIVES_API, {
-          method: editingNode ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setNodeError(data.error || `Failed to save node (${res.status})`)
-          return
-        }
-        setNodeDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        setNodeError(err instanceof Error ? err.message : 'Failed to save node')
+    setIsSavingNode(true)
+    try {
+      const res = await fetch(PASSIVES_API, {
+        method: editingNode ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setNodeError(data.error || `Failed to save node (${res.status})`)
+        return
       }
-    })
+      setNodeDialogOpen(false)
+      router.refresh()
+    } catch (err) {
+      setNodeError(err instanceof Error ? err.message : 'Failed to save node')
+    } finally {
+      setIsSavingNode(false)
+    }
   }
 
   async function handleDeleteNode() {
     if (!deletingNode) return
 
-    startTransition(async () => {
-      try {
-        const res = await fetch(`${PASSIVES_API}?id=${deletingNode.id}`, {
-          method: 'DELETE',
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setNodeError(data.error || `Failed to delete node (${res.status})`)
-          return
-        }
-        setDeleteNodeDialogOpen(false)
-        setDeletingNode(null)
-        router.refresh()
-      } catch (err) {
-        setNodeError(err instanceof Error ? err.message : 'Failed to delete node')
+    setIsDeletingNode(true)
+    try {
+      const res = await fetch(`${PASSIVES_API}?id=${deletingNode.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setNodeError(data.error || `Failed to delete node (${res.status})`)
+        return
       }
-    })
+      setDeleteNodeDialogOpen(false)
+      setDeletingNode(null)
+      router.refresh()
+    } catch (err) {
+      setNodeError(err instanceof Error ? err.message : 'Failed to delete node')
+    } finally {
+      setIsDeletingNode(false)
+    }
   }
 
   // --- Connection CRUD ---
@@ -263,51 +268,53 @@ export function PassivesClient({
       return
     }
 
-    startTransition(async () => {
-      try {
-        const res = await fetch(PASSIVE_CONNECTIONS_API, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from_id: connFromId,
-            to_id: connToId,
-          }),
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setConnError(data.error || `Failed to create connection (${res.status})`)
-          return
-        }
-        setConnDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        setConnError(err instanceof Error ? err.message : 'Failed to create connection')
+    setIsCreatingConnection(true)
+    try {
+      const res = await fetch(PASSIVE_CONNECTIONS_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from_id: connFromId,
+          to_id: connToId,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setConnError(data.error || `Failed to create connection (${res.status})`)
+        return
       }
-    })
+      setConnDialogOpen(false)
+      router.refresh()
+    } catch (err) {
+      setConnError(err instanceof Error ? err.message : 'Failed to create connection')
+    } finally {
+      setIsCreatingConnection(false)
+    }
   }
 
   async function handleDeleteConn() {
     if (!deletingConn) return
 
-    startTransition(async () => {
-      try {
-        const res = await fetch(`${PASSIVE_CONNECTIONS_API}?id=${deletingConn.id}`, {
-          method: 'DELETE',
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          setConnError(data.error || `Failed to delete connection (${res.status})`)
-          return
-        }
-        setDeleteConnDialogOpen(false)
-        setDeletingConn(null)
-        router.refresh()
-      } catch (err) {
-        setConnError(err instanceof Error ? err.message : 'Failed to delete connection')
+    setIsDeletingConnection(true)
+    try {
+      const res = await fetch(`${PASSIVE_CONNECTIONS_API}?id=${deletingConn.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setConnError(data.error || `Failed to delete connection (${res.status})`)
+        return
       }
-    })
+      setDeleteConnDialogOpen(false)
+      setDeletingConn(null)
+      router.refresh()
+    } catch (err) {
+      setConnError(err instanceof Error ? err.message : 'Failed to delete connection')
+    } finally {
+      setIsDeletingConnection(false)
+    }
   }
 
   // --- Render ---
@@ -345,7 +352,7 @@ export function PassivesClient({
               className="pl-9"
             />
           </div>
-          <Button onClick={openCreateNode}>
+          <Button onClick={openCreateNode} disabled={isSavingNode || isDeletingNode}>
             <Plus className="mr-2 h-4 w-4" />
             Create Node
           </Button>
@@ -426,6 +433,7 @@ export function PassivesClient({
                         <Button
                           variant="ghost"
                           size="icon"
+                          disabled={isSavingNode || isDeletingNode}
                           onClick={() => openEditNode(node)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -433,6 +441,7 @@ export function PassivesClient({
                         <Button
                           variant="ghost"
                           size="icon"
+                          disabled={isSavingNode || isDeletingNode}
                           onClick={() => {
                             setDeletingNode(node)
                             setDeleteNodeDialogOpen(true)
@@ -465,7 +474,7 @@ export function PassivesClient({
 
         {/* Toolbar */}
         <div className="flex justify-end">
-          <Button onClick={openCreateConn}>
+          <Button onClick={openCreateConn} disabled={isCreatingConnection || isDeletingConnection}>
             <Plus className="mr-2 h-4 w-4" />
             Add Connection
           </Button>
@@ -516,6 +525,7 @@ export function PassivesClient({
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={isCreatingConnection || isDeletingConnection}
                         onClick={() => {
                           setDeletingConn(conn)
                           setDeleteConnDialogOpen(true)
@@ -772,11 +782,12 @@ export function PassivesClient({
                 type="button"
                 variant="outline"
                 onClick={() => setNodeDialogOpen(false)}
+                disabled={isSavingNode}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending
+              <Button type="submit" disabled={isSavingNode || isDeletingNode}>
+                {isSavingNode
                   ? 'Saving...'
                   : editingNode
                   ? 'Update Node'
@@ -798,11 +809,11 @@ export function PassivesClient({
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteNodeDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteNodeDialogOpen(false)} disabled={isDeletingNode}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteNode} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="destructive" onClick={handleDeleteNode} disabled={isDeletingNode || isSavingNode}>
+              {isDeletingNode ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>
@@ -858,11 +869,12 @@ export function PassivesClient({
                 type="button"
                 variant="outline"
                 onClick={() => setConnDialogOpen(false)}
+                disabled={isCreatingConnection}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Creating...' : 'Create Connection'}
+              <Button type="submit" disabled={isCreatingConnection || isDeletingConnection}>
+                {isCreatingConnection ? 'Creating...' : 'Create Connection'}
               </Button>
             </div>
           </form>
@@ -879,11 +891,11 @@ export function PassivesClient({
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteConnDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteConnDialogOpen(false)} disabled={isDeletingConnection}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteConn} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="destructive" onClick={handleDeleteConn} disabled={isDeletingConnection || isCreatingConnection}>
+              {isDeletingConnection ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

@@ -29,6 +29,10 @@ private struct ChallengeActionBody: Encodable {
     }
 }
 
+private struct ChallengeActionResponse: Decodable {
+    let message: String?
+}
+
 @MainActor
 final class ChallengeService {
     static let shared = ChallengeService()
@@ -131,12 +135,12 @@ final class ChallengeService {
         challengeId: String
     ) async throws {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "challenge_id": challengeId,
-                "action": "decline"
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = ChallengeActionBody(
+                characterId: characterId,
+                challengeId: challengeId,
+                action: "decline"
+            )
+            let _: ChallengeActionResponse = try await APIClient.shared.post(
                 APIEndpoints.socialChallenges,
                 body: body
             )
@@ -159,12 +163,12 @@ final class ChallengeService {
         challengeId: String
     ) async throws {
         do {
-            let body: [String: Any] = [
-                "character_id": characterId,
-                "challenge_id": challengeId,
-                "action": "cancel"
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = ChallengeActionBody(
+                characterId: characterId,
+                challengeId: challengeId,
+                action: "cancel"
+            )
+            let _: ChallengeActionResponse = try await APIClient.shared.post(
                 APIEndpoints.socialChallenges,
                 body: body
             )

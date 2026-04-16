@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateConfigsBatch } from '@/actions/config'
 import { Button } from '@/components/ui/button'
@@ -75,9 +75,9 @@ export function ConsumablesClient({
   configs: ConfigEntry[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   // Build config map
   const configMap = new Map(configs.map((c) => [c.key, c.value]))
@@ -113,28 +113,29 @@ export function ConsumablesClient({
   async function handleSaveAll() {
     setError('')
     setMessage('')
-    startTransition(async () => {
-      try {
-        const updates: { key: string; value: number }[] = []
+    setIsSaving(true)
+    try {
+      const updates: { key: string; value: number }[] = []
 
-        for (const [consumableKey, price] of Object.entries(prices)) {
-          updates.push({ key: `consumable.price.${consumableKey}`, value: price })
-        }
-        for (const [consumableKey, amount] of Object.entries(staminaRestore)) {
-          updates.push({ key: `consumable.stamina_restore.${consumableKey}`, value: amount })
-        }
-        for (const [consumableKey, percent] of Object.entries(hpRestore)) {
-          updates.push({ key: `consumable.hp_restore_percent.${consumableKey}`, value: percent })
-        }
-
-        await updateConfigsBatch(updates)
-
-        setMessage('All consumable configs saved and pushed live successfully.')
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
+      for (const [consumableKey, price] of Object.entries(prices)) {
+        updates.push({ key: `consumable.price.${consumableKey}`, value: price })
       }
-    })
+      for (const [consumableKey, amount] of Object.entries(staminaRestore)) {
+        updates.push({ key: `consumable.stamina_restore.${consumableKey}`, value: amount })
+      }
+      for (const [consumableKey, percent] of Object.entries(hpRestore)) {
+        updates.push({ key: `consumable.hp_restore_percent.${consumableKey}`, value: percent })
+      }
+
+      await updateConfigsBatch(updates)
+
+      setMessage('All consumable configs saved and pushed live successfully.')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -321,9 +322,9 @@ export function ConsumablesClient({
       <Separator />
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveAll} disabled={isPending} size="lg">
+        <Button onClick={handleSaveAll} disabled={isSaving} size="lg">
           <Save className="mr-2 h-4 w-4" />
-          {isPending ? 'Saving...' : 'Save All Consumable Config'}
+          {isSaving ? 'Saving...' : 'Save All Consumable Config'}
         </Button>
       </div>
     </div>

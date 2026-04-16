@@ -1,4 +1,5 @@
 import type { ConsumableType, PrismaClient } from '@prisma/client'
+import { logTutorialEvent } from './tutorial-analytics'
 
 /**
  * Tutorial & Onboarding — constants, quest definitions, and helper functions.
@@ -37,6 +38,8 @@ export const REFERRAL_BONUS = {
   /** Invitee level threshold for referrer reward */
   inviteeLevelThreshold: 5,
 }
+
+const REFERRAL_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8}$/
 
 // ── Building unlock levels ────────────────────────────────────────────
 // W2.D4 recalibration (2026-04-10): front-loaded schedule so the player
@@ -125,6 +128,50 @@ export interface TutorialQuestDef {
   npcMessage: string
   target: number
   rewards: TutorialQuestRewards
+}
+
+type ReferralQualificationCharacterReader = {
+  findUnique(args: {
+    where: { id: string }
+    select: {
+      referredBy: true
+    }
+  }): Promise<{ referredBy: string | null } | null>
+  findFirst(args: {
+    where: {
+      OR: Array<{ id?: string; referralCode?: string }>
+    }
+    select: {
+      id: true
+      userId: true
+      referralCode: true
+    }
+  }): Promise<{ id: string; userId: string; referralCode: string | null } | null>
+}
+
+type ReferralQualificationUserWriter = {
+  update(args: {
+    where: { id: string }
+    data: {
+      gold?: { increment: number }
+      gems?: { increment: number }
+    }
+  }): Promise<unknown>
+}
+
+type ReferralQualificationClaimWriter = {
+  create(args: {
+    data: {
+      referrerCharacterId: string
+      inviteeCharacterId: string
+    }
+  }): Promise<unknown>
+}
+
+export type ReferralQualificationExecutor = {
+  character: ReferralQualificationCharacterReader
+  user: ReferralQualificationUserWriter
+  referralRewardClaim: ReferralQualificationClaimWriter
 }
 
 export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
@@ -233,4 +280,111 @@ export function generateReferralCode(): string {
     code += chars[Math.floor(Math.random() * chars.length)]
   }
   return code
+}
+
+export function normalizeReferralCode(code: string): string {
+  return code.toUpperCase().trim()
+}
+
+export function getReferralLinkValues(referrerId: string, referralCode: string): string[] {
+  return Array.from(new Set([referrerId, normalizeReferralCode(referralCode)]))
+}
+
+export function isReferralCodeLike(value: string | null | undefined): boolean {
+  return typeof value === 'string' && REFERRAL_CODE_PATTERN.test(value.trim().toUpperCase())
+}
+
+export interface ReferralQualificationReward {
+  referrerCharacterId: string
+  referrerReferralCode: string | null
+  goldAwarded: number
+  gemsAwarded: number
+}
+
+export async function awardReferralQualificationIfEligible(
+  tx: ReferralQualificationExecutor,
+  inviteeCharacterId: string,
+  newLevel: number,
+): Promise<ReferralQualificationReward | null> {
+  if (newLevel < REFERRAL_BONUS.inviteeLevelThreshold) {
+    return null
+  }
+
+  const invitee = await tx.character.findUnique({
+    where: { id: inviteeCharacterId },
+    select: { referredBy: true },
+  })
+
+  if (!invitee?.referredBy) {
+    return null
+  }
+
+  const referrerLookup = normalizeReferralCode(invitee.referredBy)
+  const referrer = await tx.character.findFirst({
+    where: {
+      OR: [
+        { id: invitee.referredBy },
+        { referralCode: referrerLookup },
+      ],
+    },
+    select: {
+      id: true,
+      userId: true,
+      referralCode: true,
+    },
+  })
+
+  if (!referrer || referrer.id === inviteeCharacterId) {
+    return null
+  }
+
+  try {
+    await tx.referralRewardClaim.create({
+      data: {
+        referrerCharacterId: referrer.id,
+        inviteeCharacterId,
+      },
+    })
+  } catch (error) {
+    const duplicateCode = (error as { code?: string } | null)?.code
+    if (duplicateCode === 'P2002') {
+      return null
+    }
+    throw error
+  }
+
+  const currencyUpdate: {
+    gold?: { increment: number }
+    gems?: { increment: number }
+  } = {}
+  if (REFERRAL_BONUS.referrerGold > 0) {
+    currencyUpdate.gold = { increment: REFERRAL_BONUS.referrerGold }
+  }
+  if (REFERRAL_BONUS.referrerGems > 0) {
+    currencyUpdate.gems = { increment: REFERRAL_BONUS.referrerGems }
+  }
+
+  if (Object.keys(currencyUpdate).length > 0) {
+    await tx.user.update({
+      where: { id: referrer.userId },
+      data: currencyUpdate,
+    })
+  }
+
+  logTutorialEvent({
+    event: 'referral_qualified',
+    characterId: inviteeCharacterId,
+    referrerCharacterId: referrer.id,
+    referrerCode: referrer.referralCode,
+    qualifiedLevel: newLevel,
+    rewardGold: REFERRAL_BONUS.referrerGold,
+    rewardGems: REFERRAL_BONUS.referrerGems,
+  })
+
+  return {
+    referrerCharacterId: referrer.id,
+    referrerReferralCode: referrer.referralCode,
+    goldAwarded: REFERRAL_BONUS.referrerGold,
+    gemsAwarded: REFERRAL_BONUS.referrerGems,
+  }
 }

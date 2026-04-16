@@ -320,6 +320,7 @@ export async function POST(
       leveled_up: levelUpResult?.leveledUp ?? false,
       new_level: levelUpResult?.newLevel,
       stat_points_awarded: levelUpResult?.statPointsAwarded,
+      passive_points_awarded: levelUpResult?.passivePointsAwarded,
       durability_changes: durabilityResult.degraded,
     })
   } catch (error) {

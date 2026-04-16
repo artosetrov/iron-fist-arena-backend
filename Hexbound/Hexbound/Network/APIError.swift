@@ -124,6 +124,20 @@ enum APIError: LocalizedError {
         return nil
     }
 
+    /// Decode a typed view of the parsed 4xx response body. Keeps the one
+    /// raw JSON body extraction centralized in networking while letting
+    /// callers stay on typed DTOs for recoverable error flows.
+    func decodedResponseBody<T: Decodable>(_ type: T.Type) -> T? {
+        guard let body = responsePayload,
+              JSONSerialization.isValidJSONObject(body),
+              let data = try? JSONSerialization.data(withJSONObject: body) else {
+            return nil
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try? decoder.decode(T.self, from: data)
+    }
+
     /// HTTP status code for cases that carry one (4xx/5xx). Returns `nil`
     /// for transport/decoding/unknown errors. Lets callers branch on
     /// specific codes (e.g. 409 NO_PLAYABLE_SLOTS) without unwrapping
@@ -146,19 +160,5 @@ extension Error {
     /// Convenience — checks for `APIError.unauthorized` on any Error.
     var isUnauthorizedAPIError: Bool {
         (self as? APIError)?.isUnauthorized == true
-    }
-}
-
-struct APIResponse {
-    let success: Bool
-    let data: [String: Any]?
-    let error: String?
-    let statusCode: Int
-
-    init(data: [String: Any]? = nil, error: String? = nil, statusCode: Int = 200) {
-        self.success = error == nil && (200..<300).contains(statusCode)
-        self.data = data
-        self.error = error
-        self.statusCode = statusCode
     }
 }

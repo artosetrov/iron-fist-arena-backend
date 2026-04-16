@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, Swords, MessageSquare, ShieldAlert, Clock } from 'lucide-react'
+import { Users, Swords, MessageSquare, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 
 async function getSocialStats() {

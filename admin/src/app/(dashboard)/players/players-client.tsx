@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { searchPlayers, banPlayer, unbanPlayer } from '@/actions/players'
 import { Button } from '@/components/ui/button'
@@ -38,7 +38,6 @@ export function PlayersClient({
   pageSize: number
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [players, setPlayers] = useState(initialPlayers)
   const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(initialPage)
@@ -46,25 +45,34 @@ export function PlayersClient({
   const [banDialogOpen, setBanDialogOpen] = useState(false)
   const [banTarget, setBanTarget] = useState<Player | null>(null)
   const [banReason, setBanReason] = useState('')
+  const [error, setError] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [isMutating, setIsMutating] = useState(false)
 
   const totalPages = Math.ceil(total / pageSize)
 
-  function doSearch(q: string, p: number) {
-    startTransition(async () => {
+  async function doSearch(q: string, p: number) {
+    setError('')
+    setIsSearching(true)
+    try {
       const result = await searchPlayers(q, p)
       setPlayers(JSON.parse(JSON.stringify(result.users)))
       setTotal(result.total)
       setPage(result.page)
-    })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to search players')
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
-    doSearch(query, 1)
+    void doSearch(query, 1)
   }
 
   function handlePageChange(newPage: number) {
-    doSearch(query, newPage)
+    void doSearch(query, newPage)
   }
 
   function handleBan(player: Player) {
@@ -75,19 +83,31 @@ export function PlayersClient({
 
   async function confirmBan() {
     if (!banTarget) return
-    startTransition(async () => {
+    setError('')
+    setIsMutating(true)
+    try {
       if (banTarget.isBanned) {
         await unbanPlayer(banTarget.id)
       } else {
         await banPlayer(banTarget.id, banReason)
       }
       setBanDialogOpen(false)
-      doSearch(query, page)
-    })
+      await doSearch(query, page)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update player status')
+    } finally {
+      setIsMutating(false)
+    }
   }
 
   return (
     <>
+      {error && (
+        <div className="rounded-md bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSearch} className="flex gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -98,8 +118,8 @@ export function PlayersClient({
             className="pl-9"
           />
         </div>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Searching...' : 'Search'}
+        <Button type="submit" disabled={isSearching}>
+          {isSearching ? 'Searching...' : 'Search'}
         </Button>
       </form>
 
@@ -185,7 +205,7 @@ export function PlayersClient({
             <Button
               variant="outline"
               size="sm"
-              disabled={page <= 1 || isPending}
+              disabled={page <= 1 || isSearching}
               onClick={() => handlePageChange(page - 1)}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -193,7 +213,7 @@ export function PlayersClient({
             <Button
               variant="outline"
               size="sm"
-              disabled={page >= totalPages || isPending}
+              disabled={page >= totalPages || isSearching}
               onClick={() => handlePageChange(page + 1)}
             >
               <ChevronRight className="h-4 w-4" />
@@ -228,13 +248,15 @@ export function PlayersClient({
             </div>
           )}
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setBanDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setBanDialogOpen(false)} disabled={isMutating}>
+              Cancel
+            </Button>
             <Button
               variant={banTarget?.isBanned ? 'default' : 'destructive'}
               onClick={confirmBan}
-              disabled={isPending || (!banTarget?.isBanned && !banReason)}
+              disabled={isMutating || (!banTarget?.isBanned && !banReason)}
             >
-              {isPending ? 'Processing...' : banTarget?.isBanned ? 'Unban' : 'Ban Player'}
+              {isMutating ? 'Processing...' : banTarget?.isBanned ? 'Unban' : 'Ban Player'}
             </Button>
           </div>
         </DialogContent>

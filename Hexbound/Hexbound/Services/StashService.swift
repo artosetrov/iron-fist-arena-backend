@@ -2,6 +2,16 @@ import Foundation
 
 @MainActor
 final class StashService {
+    private struct StashActionRequest: Encodable {
+        let characterId: String
+        let equipmentId: String?
+        let stashItemId: String?
+    }
+
+    private struct StashActionResponse: Decodable {
+        let success: Bool
+    }
+
     private struct StashPayload: Codable {
         let items: [StashItemEntry]
         let maxSlots: Int
@@ -103,11 +113,12 @@ final class StashService {
     func deposit(equipmentId: String) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "equipment_id": equipmentId
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = StashActionRequest(
+                characterId: charId,
+                equipmentId: equipmentId,
+                stashItemId: nil
+            )
+            let _: StashActionResponse = try await APIClient.shared.post(
                 APIEndpoints.stashDeposit,
                 body: body
             )
@@ -133,11 +144,12 @@ final class StashService {
     func withdraw(stashItemId: String) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "stash_item_id": stashItemId
-            ]
-            _ = try await APIClient.shared.postRaw(
+            let body = StashActionRequest(
+                characterId: charId,
+                equipmentId: nil,
+                stashItemId: stashItemId
+            )
+            let _: StashActionResponse = try await APIClient.shared.post(
                 APIEndpoints.stashWithdraw,
                 body: body
             )

@@ -314,7 +314,7 @@ struct BattleInviteBanner: View {
                     xpReward: result.xpReward,
                     turnsTaken: result.totalTurns,
                     ratingChange: result.ratingChange,
-                    firstWinBonus: nil, leveledUp: nil, newLevel: nil, statPointsAwarded: nil
+                    firstWinBonus: nil, leveledUp: nil, newLevel: nil, statPointsAwarded: nil, passivePointsAwarded: nil
                 )
                 let combatData = CombatData(
                     player: playerFighter, enemy: enemyFighter,
@@ -336,7 +336,7 @@ struct BattleInviteBanner: View {
                     goldReward: result.goldReward, xpReward: result.xpReward,
                     ratingChange: result.ratingChange,
                     firstWinBonus: false, leveledUp: false,
-                    newLevel: nil, statPointsAwarded: nil,
+                    newLevel: nil, statPointsAwarded: nil, passivePointsAwarded: nil,
                     loot: [],
                     staminaCurrent: appState.currentCharacter?.currentStamina ?? 0,
                     staminaMax: appState.currentCharacter?.maxStamina ?? 180,
@@ -575,6 +575,7 @@ struct QuestRewardWidget: View {
                 leveledUp: result.leveledUp,
                 newLevel: result.newLevel,
                 statPointsAwarded: result.statPointsAwarded,
+                passivePointsAwarded: result.passivePointsAwarded,
                 previousLevel: previousLevel
             )
 

@@ -6,6 +6,8 @@ actor SupabaseAuthClient {
     private let authURL: String
     private let anonKey: String
     private let session: URLSession
+    private let decoder: JSONDecoder
+    private let encoder: JSONEncoder
 
     private init() {
         self.authURL = AppConstants.supabaseAuthURL
@@ -14,6 +16,10 @@ actor SupabaseAuthClient {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
         self.session = URLSession(configuration: config)
+        self.decoder = JSONDecoder()
+        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
+        self.encoder = JSONEncoder()
+        self.encoder.keyEncodingStrategy = .convertToSnakeCase
     }
 
     // MARK: - Token Refresh
@@ -28,8 +34,7 @@ actor SupabaseAuthClient {
         request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
 
-        let body: [String: String] = ["refresh_token": refreshToken]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try encoder.encode(SupabaseRefreshTokenRequest(refreshToken: refreshToken))
 
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
@@ -37,19 +42,19 @@ actor SupabaseAuthClient {
             throw APIError.unauthorized
         }
 
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let accessToken = json["access_token"] as? String,
-              let newRefreshToken = json["refresh_token"] as? String else {
+        let payload = try decodeResponse(SupabaseSessionResponse.self, from: data)
+        guard let accessToken = payload.accessToken,
+              let newRefreshToken = payload.refreshToken else {
             throw APIError.noData
         }
 
-        let expiresIn = json["expires_in"] as? Int ?? 3600
+        let expiresIn = payload.expiresIn ?? 3600
         return (accessToken, newRefreshToken, expiresIn)
     }
 
     // MARK: - Token Validation
 
-    func getUser(accessToken: String) async throws -> [String: Any] {
+    func getUser(accessToken: String) async throws -> SupabaseUserResponse {
         guard let url = URL(string: "\(authURL)/user") else {
             throw APIError.clientError(statusCode: 0, message: "Invalid auth URL", body: nil)
         }
@@ -64,10 +69,7 @@ actor SupabaseAuthClient {
             throw APIError.unauthorized
         }
 
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw APIError.noData
-        }
-        return json
+        return try decodeResponse(SupabaseUserResponse.self, from: data)
     }
 
     // MARK: - Resend Confirmation Email
@@ -82,8 +84,7 @@ actor SupabaseAuthClient {
         request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
         request.setValue(anonKey, forHTTPHeaderField: "apikey")
 
-        let body: [String: String] = ["type": "signup", "email": email]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try encoder.encode(SupabaseResendConfirmationRequest(type: "signup", email: email))
 
         let (_, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
@@ -92,34 +93,32 @@ actor SupabaseAuthClient {
         }
     }
 
-    // MARK: - Anonymous Sign In
-
-    func signInAnonymous() async throws -> (accessToken: String, refreshToken: String, user: [String: Any]) {
-        guard let url = URL(string: "\(authURL)/signup") else {
-            throw APIError.clientError(statusCode: 0, message: "Invalid auth URL", body: nil)
+    private func decodeResponse<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+        do {
+            return try decoder.decode(type, from: data)
+        } catch {
+            throw APIError.decodingError(error)
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(anonKey)", forHTTPHeaderField: "Authorization")
-        request.setValue(anonKey, forHTTPHeaderField: "apikey")
-
-        let body: [String: Any] = ["data": [:] as [String: Any]]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await session.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200..<300).contains(httpResponse.statusCode) else {
-            throw APIError.clientError(statusCode: 400, message: "Anonymous sign-in failed", body: nil)
-        }
-
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let accessToken = json["access_token"] as? String,
-              let refreshToken = json["refresh_token"] as? String,
-              let user = json["user"] as? [String: Any] else {
-            throw APIError.noData
-        }
-
-        return (accessToken, refreshToken, user)
     }
+}
+
+private struct SupabaseRefreshTokenRequest: Encodable {
+    let refreshToken: String
+}
+
+private struct SupabaseResendConfirmationRequest: Encodable {
+    let type: String
+    let email: String
+}
+
+struct SupabaseUserResponse: Decodable {
+    let id: String
+    let email: String?
+}
+
+private struct SupabaseSessionResponse: Decodable {
+    let accessToken: String?
+    let refreshToken: String?
+    let expiresIn: Int?
+    let user: SupabaseUserResponse?
 }

@@ -10,17 +10,6 @@ struct RevengeEntry: Codable, Identifiable {
     let ratingLost: Int
     let createdAt: String
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case attackerId = "attacker_id"
-        case attackerName = "attacker_name"
-        case attackerClass = "attacker_class"
-        case attackerLevel = "attacker_level"
-        case attackerRating = "attacker_rating"
-        case ratingLost = "rating_lost"
-        case createdAt = "created_at"
-    }
-
     var timeAgo: String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]

@@ -126,6 +126,7 @@ struct CombatResultInfo: Codable {
     let leveledUp: Bool?
     let newLevel: Int?
     let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
 
     // No custom CodingKeys — .convertFromSnakeCase handles it:
     // is_win → isWin, winner_id → winnerId, etc.
@@ -158,6 +159,103 @@ struct CombatLootItem: Codable, Identifiable {
 
     private enum CodingKeys: String, CodingKey {
         case id, itemName, name, itemType, rarity, itemLevel, upgradeLevel, baseStats, imageKey, imageUrl
+    }
+}
+
+struct PendingLootShard: Codable {
+    let tier: String
+    let amount: Int
+}
+
+struct PendingLootItem: Codable, Identifiable {
+    let id: String?
+    let itemName: String?
+    let name: String?
+    let type: String?
+    let itemType: String?
+    let rarity: String?
+    let itemLevel: Int?
+    let level: Int?
+    let upgradeLevel: Int?
+    let baseStats: [String: Int]?
+    let stats: [String: Int]?
+    let imageKey: String?
+    let imageUrl: String?
+    let sellPrice: Int?
+    let description: String?
+    let specialEffect: String?
+    let quantity: Int?
+    let amount: Int?
+    let consumableType: String?
+    let shard: PendingLootShard?
+
+    private let stableId: String = UUID().uuidString
+    var identifier: String { id ?? stableId }
+    var displayName: String { itemName ?? name ?? "Unknown Item" }
+    var resolvedTypeKey: String { type ?? itemType ?? "weapon" }
+    var rarityKey: String { rarity ?? "common" }
+    var resolvedLevel: Int { itemLevel ?? level ?? 1 }
+    var resolvedUpgradeLevel: Int { upgradeLevel ?? 0 }
+    var resolvedStats: [String: Int]? { stats ?? baseStats }
+    var resolvedQuantity: Int? { quantity ?? amount }
+    var resolvedSellPrice: Int { sellPrice ?? 0 }
+    var isGoldLike: Bool { resolvedTypeKey == "gold" || resolvedTypeKey == "currency" }
+    var isShard: Bool { resolvedTypeKey == "shard" || shard != nil }
+
+    var displayTitle: String {
+        if isGoldLike, let quantity = resolvedQuantity {
+            return "\(quantity) Gold"
+        }
+        if isShard, let shard {
+            return "\(shard.tier.capitalized) Shard x\(shard.amount)"
+        }
+        return resolvedUpgradeLevel > 0 ? "\(displayName) +\(resolvedUpgradeLevel)" : displayName
+    }
+
+    init(_ combatLoot: CombatLootItem) {
+        self.id = combatLoot.id
+        self.itemName = combatLoot.itemName
+        self.name = combatLoot.name
+        self.type = combatLoot.itemType
+        self.itemType = combatLoot.itemType
+        self.rarity = combatLoot.rarity
+        self.itemLevel = combatLoot.itemLevel
+        self.level = combatLoot.itemLevel
+        self.upgradeLevel = combatLoot.upgradeLevel
+        self.baseStats = combatLoot.baseStats
+        self.stats = nil
+        self.imageKey = combatLoot.imageKey
+        self.imageUrl = combatLoot.imageUrl
+        self.sellPrice = nil
+        self.description = nil
+        self.specialEffect = nil
+        self.quantity = nil
+        self.amount = nil
+        self.consumableType = nil
+        self.shard = nil
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case itemName
+        case name
+        case type
+        case itemType
+        case rarity
+        case itemLevel
+        case level
+        case upgradeLevel
+        case baseStats
+        case stats
+        case imageKey
+        case imageUrl
+        case sellPrice
+        case description
+        case specialEffect
+        case quantity
+        case amount
+        case consumableType
+        case shard
     }
 }
 

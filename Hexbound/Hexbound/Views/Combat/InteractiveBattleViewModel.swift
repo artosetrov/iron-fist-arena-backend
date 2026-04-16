@@ -459,13 +459,12 @@ final class InteractiveBattleViewModel {
     /// duel should continue from predict instead of terminating the whole flow.
     private func handleRecoverableStrikeError(_ apiError: APIError) -> Bool {
         guard apiError.statusCode == 409,
-              let payload = apiError.responsePayload,
-              let code = payload["code"] as? String,
-              code == "OUT_OF_CONSUMABLE" else {
+              let payload = apiError.decodedResponseBody(InteractiveRecoverableStrikePayload.self),
+              payload.code == "OUT_OF_CONSUMABLE" else {
             return false
         }
 
-        if let reconciledActives = decodeActivesState(from: payload["actives"]) {
+        if let reconciledActives = payload.actives {
             playerActives = reconciledActives.p1
             opponentActives = reconciledActives.p2
         }
@@ -476,7 +475,7 @@ final class InteractiveBattleViewModel {
         phase = .predict
         startPredictTimer()
 
-        let removedConsumableType = payload["removed_consumable_type"] as? String
+        let removedConsumableType = payload.removedConsumableType
         let consumableName = removedConsumableType.flatMap { ConsumableCatalog.displayName(for: $0) } ?? "Potion"
         appState.showToast(
             "\(consumableName) unavailable",
@@ -484,18 +483,6 @@ final class InteractiveBattleViewModel {
             type: .info
         )
         return true
-    }
-
-    private func decodeActivesState(from rawValue: Any?) -> InteractiveActivesState? {
-        guard let rawValue,
-              JSONSerialization.isValidJSONObject(rawValue),
-              let data = try? JSONSerialization.data(withJSONObject: rawValue) else {
-            return nil
-        }
-
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try? decoder.decode(InteractiveActivesState.self, from: data)
     }
 
     private func applyStrikeResponse(_ response: InteractiveStrikeResponse) async {

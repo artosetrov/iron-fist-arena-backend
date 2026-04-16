@@ -5,6 +5,9 @@ import { rateLimit } from '@/lib/rate-limit'
 import {
   REFERRAL_BONUS,
   generateReferralCode,
+  getReferralLinkValues,
+  isReferralCodeLike,
+  normalizeReferralCode,
 } from '@/lib/game/tutorial'
 import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
 
@@ -46,22 +49,48 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    const referralKeys = getReferralLinkValues(character.id, referralCode)
+    const linkedReferrer = character.referredBy
+      ? await prisma.character.findFirst({
+          where: {
+            OR: [
+              { id: character.referredBy },
+              { referralCode: normalizeReferralCode(character.referredBy) },
+            ],
+          },
+          select: {
+            id: true,
+            referralCode: true,
+          },
+        })
+      : null
+
+    const referredByCharacterId = linkedReferrer?.id ?? null
+    const referredByCode = linkedReferrer?.referralCode
+      ?? (character.referredBy && isReferralCodeLike(character.referredBy)
+        ? normalizeReferralCode(character.referredBy)
+        : null)
+
     // Count how many people used this code
     const referralCount = await prisma.character.count({
-      where: { referredBy: referralCode },
+      where: {
+        referredBy: { in: referralKeys },
+      },
     })
 
     // Count how many reached level threshold (referrer got rewarded)
     const qualifiedCount = await prisma.character.count({
       where: {
-        referredBy: referralCode,
+        referredBy: { in: referralKeys },
         level: { gte: REFERRAL_BONUS.inviteeLevelThreshold },
       },
     })
 
     return NextResponse.json({
       referralCode,
-      referredBy: character.referredBy ?? null,
+      referredBy: referredByCode ?? character.referredBy ?? null,
+      referredByCode,
+      referredByCharacterId,
       referralCount,
       qualifiedCount,
       maxReferrals: REFERRAL_BONUS.maxReferrals,
@@ -85,8 +114,9 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const limited = await rateLimit(`tutorial_referral:${user.id}`, 5, 60)
-  if (limited) return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
+  if (!(await rateLimit(`tutorial_referral:${user.id}`, 5, 60_000))) {
+    return NextResponse.json({ error: 'Rate limited' }, { status: 429 })
+  }
 
   try {
     const body = await req.json()
@@ -99,71 +129,79 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const code = (referral_code as string).toUpperCase().trim()
+    const code = normalizeReferralCode(referral_code as string)
 
-    const character = await prisma.character.findUnique({
-      where: { id: character_id },
-      select: {
-        id: true,
-        userId: true,
-        referredBy: true,
-        referralCode: true,
-      },
-    })
-
-    if (!character || character.userId !== user.id) {
-      return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    }
-
-    // Already has a referral
-    if (character.referredBy) {
-      return NextResponse.json(
-        { error: 'Already referred', alreadyReferred: true },
-        { status: 400 },
+    const result = await prisma.$transaction(async (tx) => {
+      const [character] = await tx.$queryRawUnsafe<
+        Array<{
+          id: string
+          user_id: string
+          referred_by: string | null
+          referral_code: string | null
+        }>
+      >(
+        `SELECT id, user_id, referred_by, referral_code
+         FROM characters
+         WHERE id = $1
+         FOR UPDATE`,
+        character_id,
       )
-    }
 
-    // Can't use own code
-    if (character.referralCode === code) {
-      return NextResponse.json(
-        { error: 'Cannot use your own referral code' },
-        { status: 400 },
+      if (!character || character.user_id !== user.id) {
+        throw new Error('CHARACTER_NOT_FOUND')
+      }
+
+      if (character.referred_by) {
+        throw new Error('ALREADY_REFERRED')
+      }
+
+      if (character.referral_code && normalizeReferralCode(character.referral_code) === code) {
+        throw new Error('OWN_CODE')
+      }
+
+      const [referrer] = await tx.$queryRawUnsafe<
+        Array<{ id: string; referral_code: string }>
+      >(
+        `SELECT id, referral_code
+         FROM characters
+         WHERE referral_code = $1
+         FOR UPDATE`,
+        code,
       )
-    }
 
-    // Validate code exists
-    const referrer = await prisma.character.findFirst({
-      where: { referralCode: code },
-      select: { id: true, referralCode: true },
-    })
+      if (!referrer) {
+        throw new Error('INVALID_CODE')
+      }
 
-    if (!referrer) {
-      return NextResponse.json(
-        { error: 'Invalid referral code', invalidCode: true },
-        { status: 400 },
-      )
-    }
+      if (referrer.id === character_id) {
+        throw new Error('OWN_CODE')
+      }
 
-    // Check referrer hasn't hit max
-    const referralCount = await prisma.character.count({
-      where: { referredBy: code },
-    })
+      const referralCount = await tx.character.count({
+        where: {
+          referredBy: {
+            in: getReferralLinkValues(referrer.id, referrer.referral_code),
+          },
+        },
+      })
 
-    if (referralCount >= REFERRAL_BONUS.maxReferrals) {
-      return NextResponse.json(
-        { error: 'Referral code has reached maximum uses' },
-        { status: 400 },
-      )
-    }
+      if (referralCount >= REFERRAL_BONUS.maxReferrals) {
+        throw new Error('MAX_REFERRALS_REACHED')
+      }
 
-    // Apply referral — mark on character, give bonus gold to user account
-    await prisma.character.update({
-      where: { id: character_id },
-      data: { referredBy: code },
-    })
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { gold: { increment: REFERRAL_BONUS.extraGold } },
+      await tx.character.update({
+        where: { id: character_id },
+        data: { referredBy: referrer.id },
+      })
+      await tx.user.update({
+        where: { id: user.id },
+        data: { gold: { increment: REFERRAL_BONUS.extraGold } },
+      })
+
+      return {
+        referrerId: referrer.id,
+        referrerCode: referrer.referral_code,
+      }
     })
 
     logTutorialEvent({
@@ -176,9 +214,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       bonusGold: REFERRAL_BONUS.extraGold,
-      referredBy: code,
+      referredBy: result.referrerCode,
+      referredByCode: result.referrerCode,
+      referredByCharacterId: result.referrerId,
     })
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'CHARACTER_NOT_FOUND') {
+        return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+      }
+      if (error.message === 'ALREADY_REFERRED') {
+        return NextResponse.json(
+          { error: 'Already referred', alreadyReferred: true },
+          { status: 400 },
+        )
+      }
+      if (error.message === 'OWN_CODE') {
+        return NextResponse.json(
+          { error: 'Cannot use your own referral code' },
+          { status: 400 },
+        )
+      }
+      if (error.message === 'INVALID_CODE') {
+        return NextResponse.json(
+          { error: 'Invalid referral code', invalidCode: true },
+          { status: 400 },
+        )
+      }
+      if (error.message === 'MAX_REFERRALS_REACHED') {
+        return NextResponse.json(
+          { error: 'Referral code has reached maximum uses' },
+          { status: 400 },
+        )
+      }
+    }
     console.error('POST /tutorial/referral error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

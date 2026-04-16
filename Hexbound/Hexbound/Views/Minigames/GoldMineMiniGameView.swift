@@ -238,7 +238,7 @@ struct GoldMineMiniGameView: View {
     /// Called with the raw /slot-minigame/submit response dict so the VM can
     /// patch gold/gems/slots without a strict Codable hop. Shaft state is
     /// owned by /collect-all and /collect — this payload never touches it.
-    let onFinish: ([String: Any]) -> Void
+    let onFinish: (GoldMineSlotMinigameSubmitResponse) -> Void
     let onSkip: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -257,7 +257,7 @@ struct GoldMineMiniGameView: View {
     @State private var isSubmitting: Bool = false
     @State private var showSkipConfirm: Bool = false
     @State private var showResults: Bool = false
-    @State private var serverResponse: [String: Any]?
+    @State private var serverResponse: GoldMineSlotMinigameSubmitResponse?
 
     // MARK: Wave state
     @State private var currentWave: MinigameWave = .warmup
@@ -832,21 +832,18 @@ struct GoldMineMiniGameView: View {
         gameEnded = true
 
         do {
-            var body: [String: Any] = [
-                "character_id": character?.id ?? "",
-                "session_id": session.id,
-                "caught_count": caughtCount,
-                "spawned_count": spawnedCount,
-                "gold_claimed_in_session": caughtGold,
-                "gems_claimed_in_session": caughtGems,
-                "skipped": skipped,
-            ]
-            if let slotIndex = session.slotIndex {
-                body["slot_index"] = slotIndex
-            }
-            let data = try await APIClient.shared.postRaw(
+            let data: GoldMineSlotMinigameSubmitResponse = try await APIClient.shared.post(
                 APIEndpoints.goldMineSlotMinigameSubmit,
-                body: body
+                body: GoldMineSlotMinigameSubmitRequest(
+                    characterId: character?.id ?? "",
+                    slotIndex: session.slotIndex,
+                    sessionId: session.id,
+                    caughtCount: caughtCount,
+                    spawnedCount: spawnedCount,
+                    goldClaimedInSession: caughtGold,
+                    gemsClaimedInSession: caughtGems,
+                    skipped: skipped
+                )
             )
             HapticManager.success()
             serverResponse = data

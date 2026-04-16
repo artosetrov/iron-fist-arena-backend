@@ -1,5 +1,16 @@
 import SwiftUI
 
+private struct AppearanceChangeRequest: Encodable {
+    let origin: CharacterOrigin?
+    let gender: CharacterGender?
+    let avatar: String?
+}
+
+private struct AppearanceChangeResponse: Decodable {
+    let character: Character
+    let gold: Int?
+}
+
 @MainActor @Observable
 final class AppearanceEditorViewModel {
     private let appState: AppState
@@ -243,11 +254,11 @@ final class AppearanceEditorViewModel {
         didSave = true
         errorMessage = ""
 
-        // Build request body
-        var body: [String: Any] = [:]
-        if selectedOrigin != prevOrigin { body["origin"] = selectedOrigin?.rawValue }
-        if selectedGender != prevGender { body["gender"] = selectedGender.rawValue }
-        if selectedSkinKey != prevAvatar { body["avatar"] = selectedSkinKey }
+        let request = AppearanceChangeRequest(
+            origin: selectedOrigin != prevOrigin ? selectedOrigin : nil,
+            gender: selectedGender != prevGender ? selectedGender : nil,
+            avatar: selectedSkinKey != prevAvatar ? selectedSkinKey : nil
+        )
 
         // Fire API in background
         let charId = char.id
@@ -255,18 +266,12 @@ final class AppearanceEditorViewModel {
             guard let self else { return }
             defer { isSaving = false }
             do {
-                let result = try await APIClient.shared.patchRaw(
+                let result: AppearanceChangeResponse = try await APIClient.shared.patch(
                     APIEndpoints.changeAppearance(charId),
-                    body: body
+                    body: request
                 )
                 // Update with server-confirmed character data
-                if let charData = result["character"] as? [String: Any] {
-                    let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    let updated = try decoder.decode(Character.self, from: jsonData)
-                    appState.currentCharacter = updated
-                }
+                appState.currentCharacter = result.character
             } catch {
                 // Revert on failure
                 appState.currentCharacter?.origin = prevOrigin

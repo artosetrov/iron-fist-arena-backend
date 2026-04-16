@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createEvent, updateEvent, deleteEvent, toggleEventActive } from '@/actions/events'
 import { Button } from '@/components/ui/button'
@@ -53,13 +53,15 @@ const emptyForm = {
 
 export function EventsClient({ events }: { events: Event[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [togglingEventId, setTogglingEventId] = useState<string | null>(null)
 
   function toDatetimeLocal(dateStr: string) {
     if (!dateStr) return ''
@@ -97,11 +99,17 @@ export function EventsClient({ events }: { events: Event[] }) {
     setDialogOpen(true)
   }
 
-  function handleToggleActive(event: Event) {
-    startTransition(async () => {
+  async function handleToggleActive(event: Event) {
+    setError('')
+    setTogglingEventId(event.id)
+    try {
       await toggleEventActive(event.id)
       router.refresh()
-    })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update event status')
+    } finally {
+      setTogglingEventId(null)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -116,49 +124,51 @@ export function EventsClient({ events }: { events: Event[] }) {
       return
     }
 
-    startTransition(async () => {
-      try {
-        if (editingEvent) {
-          await updateEvent(editingEvent.id, {
-            eventKey: form.eventKey,
-            title: form.title,
-            description: form.description,
-            eventType: form.eventType as 'boss_rush' | 'gold_rush' | 'class_spotlight' | 'tournament',
-            config: parsedConfig,
-            startAt: new Date(form.startAt),
-            endAt: new Date(form.endAt),
-          })
-        } else {
-          await createEvent({
-            eventKey: form.eventKey,
-            title: form.title,
-            description: form.description,
-            eventType: form.eventType as 'boss_rush' | 'gold_rush' | 'class_spotlight' | 'tournament',
-            config: parsedConfig,
-            startAt: new Date(form.startAt),
-            endAt: new Date(form.endAt),
-          })
-        }
-        setDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save event')
+    setIsSaving(true)
+    try {
+      if (editingEvent) {
+        await updateEvent(editingEvent.id, {
+          eventKey: form.eventKey,
+          title: form.title,
+          description: form.description,
+          eventType: form.eventType as 'boss_rush' | 'gold_rush' | 'class_spotlight' | 'tournament',
+          config: parsedConfig,
+          startAt: new Date(form.startAt),
+          endAt: new Date(form.endAt),
+        })
+      } else {
+        await createEvent({
+          eventKey: form.eventKey,
+          title: form.title,
+          description: form.description,
+          eventType: form.eventType as 'boss_rush' | 'gold_rush' | 'class_spotlight' | 'tournament',
+          config: parsedConfig,
+          startAt: new Date(form.startAt),
+          endAt: new Date(form.endAt),
+        })
       }
-    })
+      setDialogOpen(false)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save event')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleDelete() {
     if (!deletingEvent) return
-    startTransition(async () => {
-      try {
-        await deleteEvent(deletingEvent.id)
-        setDeleteDialogOpen(false)
-        setDeletingEvent(null)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
-      }
-    })
+    setIsDeleting(true)
+    try {
+      await deleteEvent(deletingEvent.id)
+      setDeleteDialogOpen(false)
+      setDeletingEvent(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -215,7 +225,7 @@ export function EventsClient({ events }: { events: Event[] }) {
                       <Switch
                         checked={event.isActive}
                         onCheckedChange={() => handleToggleActive(event)}
-                        disabled={isPending}
+                        disabled={togglingEventId === event.id || isSaving || isDeleting}
                       />
                       <span className="text-xs text-muted-foreground">
                         {event.isActive ? 'Active' : 'Inactive'}
@@ -349,11 +359,11 @@ export function EventsClient({ events }: { events: Event[] }) {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={isSaving}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Saving...' : editingEvent ? 'Update Event' : 'Create Event'}
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : editingEvent ? 'Update Event' : 'Create Event'}
               </Button>
             </div>
           </form>
@@ -370,9 +380,11 @@ export function EventsClient({ events }: { events: Event[] }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

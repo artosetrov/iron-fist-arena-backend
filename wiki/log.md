@@ -580,6 +580,136 @@ Completed the next admin editor/design-system block:
 - **Inventory refresh:** updated current counts to 4856 in-scope files and `90 in-scope wiki files / 88 wiki pages`
 - **Open decisions:** `design-system/ds-components-2.tsx` still contains likely-deprecated preview exports and `figma-components/divider.tsx` still carries its own small warning cleanup tail for a later block
 
+## [2026-04-15] audit | Block 059 admin design-system residual debt and warning cleanup
+
+Completed the next admin warning-cleanup block:
+- **Created:** `[[block-059-admin-design-system-residual-debt-and-warning-cleanup]]`
+- **Files audited:** 10 admin files across design-system, item preview, mail, social, dashboard charts, navigation, and auth helpers
+- **Fixes:** removed residual dead locals/imports from `divider`, `social`, `economy-charts`, `nav-items`, and `auth`; made the design-system page copy more honest about preview fidelity; used `fallbackImageKey` in the item preview’s borrowed-art hint; and, most importantly, replaced stale transition-based async handling in `mail-client` with explicit awaited send/delete flows plus dedicated `isDeleting` state so the operator UI no longer clears loading state too early
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms `HeroWidgetPreviews` / `StanceDisplayPreviews` are no longer live-imported by the design-system page
+- **Inventory refresh:** updated current counts to 4855 in-scope files and `91 in-scope wiki files / 89 wiki pages`
+- **Open decisions:** `design-system/ds-components-2.tsx` now clearly mixes still-used previews with likely-dead exports and should get its own keep/delete pass rather than ad hoc edits
+
+## [2026-04-15] audit | Block 060 admin dungeon map and editor runtime cleanup
+
+Completed the next admin editor/runtime block:
+- **Created:** `[[block-060-admin-dungeon-map-and-editor-runtime-cleanup]]`
+- **Files audited:** 2 admin dungeon editor files
+- **Fixes:** removed dead map-editor ref state, documented intentional plain `<img>` usage on the map/editor preview surfaces, and replaced the dungeon editor’s false `useTransition(async ...)` save lifecycle with a real awaited save path driven by `isSaving`
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the old `useTransition/isPending` save path is gone from this slice
+- **Inventory refresh:** updated current counts to 4856 in-scope files and `92 in-scope wiki files / 90 wiki pages`
+- **Open decisions:** the broad admin image/editor policy is now much cleaner, but there is still more remaining UI surface outside dungeons if we want the whole admin layer equally disciplined
+
+## [2026-04-15] audit | Block 061 admin live editors async-state hardening
+
+Completed the next admin mutation-safety block:
+- **Created:** `[[block-061-admin-live-editors-async-state-hardening]]`
+- **Files audited:** 4 admin live-editor clients across seasons, events, assets, and the dungeon index
+- **Fixes:** replaced false `useTransition(async ...)` loading semantics with explicit awaited `isSaving` / `isDeleting` / `isCreating` / storage-operation states, added per-row event toggle pending/error handling, made asset upload/delete await list refresh before clearing busy state, and disabled conflicting destructive controls while admin operations are in flight
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the old `useTransition/isPending` pattern is gone from this slice
+- **Inventory refresh:** updated current counts to 4857 in-scope files and `93 in-scope wiki files / 91 wiki pages`
+- **Open decisions:** the remaining admin async-state cleanup is now more contained and mostly lives in players/items/tables and a few older editor shells rather than the higher-risk live mutation surfaces
+
+## [2026-04-15] audit | Block 062 admin players and items async-state hardening
+
+Completed the next admin operator-safety block:
+- **Created:** `[[block-062-admin-players-items-async-state-hardening]]`
+- **Files audited:** 4 admin player/item operator screens
+- **Fixes:** replaced false transition-based loading semantics in player search/moderation, player grants/ban/reset actions, item deletion, and item image-upload/save flows; added explicit error rendering for player search failures; split item upload/save state; and aligned destructive/admin action labels with the actual request lifecycle
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the old `useTransition/isPending` pattern is gone from this slice
+- **Inventory refresh:** updated current counts to 4858 in-scope files and `94 in-scope wiki files / 92 wiki pages`
+- **Open decisions:** the remaining admin async-state debt is now concentrated in fewer legacy shells and should be finished as a focused consistency pass rather than scattered single-file fixes
+
+## [2026-04-15] audit | Block 063 admin feature flags operator feedback hardening
+
+Completed the next admin liveops feedback block:
+- **Created:** `[[block-063-admin-feature-flags-operator-feedback-hardening]]`
+- **Files audited:** 1 admin feature-flag editor client
+- **Fixes:** replaced `alert(...)` and console-only failure paths with inline operator feedback, added row-scoped pending state for flag toggles, separated delete-state from save-state, and made save/toggle/delete/seed actions all report outcomes through the same visible UI channel
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4859 in-scope files and `95 in-scope wiki files / 93 wiki pages`
+- **Open decisions:** most high-risk admin mutation surfaces now have truthful feedback; the remaining cleanup is increasingly about finishing consistency across older utility shells rather than plugging major operator blind spots
+
+## [2026-04-15] audit | Block 064 admin config and balance editor async-state hardening
+
+Completed the next admin live-config integrity block:
+- **Created:** `[[block-064-admin-config-and-balance-editor-async-state-hardening]]`
+- **Files audited:** 5 admin config/balance editor clients across settings, generic config, consumables, loot, and curated balance
+- **Fixes:** replaced false `useTransition(async ...)` loading semantics with explicit awaited save/seed state, added row-scoped role-update pending in `settings`, split row/bulk/seed state in `config` and `balance`, added dedicated bulk-save state to `consumables`, and introduced section-scoped pending state in `loot` so drop and rarity writes no longer borrow one ambiguous loading flag
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the old `useTransition/isPending` pattern is gone from this slice
+- **Inventory refresh:** updated current counts to 4860 in-scope files and `96 in-scope wiki files / 94 wiki pages`
+- **Open decisions:** the remaining admin async-state debt is now concentrated in older shells such as `snapshots`, `skills`, `passives`, and `tables`, rather than the core live config/balance screens
+
+## [2026-04-15] audit | Block 065 admin snapshots and item-balance editor async-state hardening
+
+Completed the next admin operator-trust block:
+- **Created:** `[[block-065-admin-snapshots-and-item-balance-editor-async-state-hardening]]`
+- **Files audited:** 3 admin clients across snapshots, item-balance config, and item-balance profiles
+- **Fixes:** replaced the generic snapshot pending state with explicit create/rollback/delete tracking, removed leftover transition-based refresh state from both item-balance editor screens, kept item-balance saves on their existing row-scoped identifiers, and aligned action labels/disabled states with the actual mutation in flight
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the old `useTransition/isPending` pattern is gone from this slice
+- **Inventory refresh:** updated current counts to 4861 in-scope files and `97 in-scope wiki files / 95 wiki pages`
+- **Open decisions:** the next obvious admin async-state pass is now `skills`, `passives`, and then the remaining generic `tables` shell
+
+## [2026-04-15] audit | Block 066 admin skills and passives editor async-state hardening
+
+Completed the next admin editor-consistency block:
+- **Created:** `[[block-066-admin-skills-and-passives-editor-async-state-hardening]]`
+- **Files audited:** 2 admin combat-content editor clients
+- **Fixes:** removed leftover transition-based pending state from both the skills editor and the passive-tree editor, split skill save/delete into explicit editor states, split passive-tree mutations into separate node-save, node-delete, connection-create, and connection-delete states, and aligned row/dialog controls with the real mutation currently running
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the old `useTransition/isPending` pattern is gone from this slice
+- **Inventory refresh:** updated current counts to 4862 in-scope files and `98 in-scope wiki files / 96 wiki pages`
+- **Open decisions:** the remaining obvious admin async-state shell is now `tables/[tableName]`; after that the backlog becomes much more incremental
+
+## [2026-04-15] audit | Block 067 admin generic table shell mutation hardening
+
+Completed the next admin shell-safety block:
+- **Created:** `[[block-067-admin-generic-table-shell-mutation-hardening]]`
+- **Files audited:** the generic table shell plus its shared data-table and dynamic-form dependencies
+- **Fixes:** wrapped create/update/delete handlers in `try/catch/finally` so thrown server-action errors cannot strand the shell in `isMutating`, separated navigation pending from mutation pending conceptually by keeping transition state only for routing/refresh, and restricted table dimming to navigation state instead of mixing it with mutation state
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms remaining transition usage in the shell is navigation-only
+- **Inventory refresh:** updated current counts to 4863 in-scope files and `99 in-scope wiki files / 97 wiki pages`
+- **Open decisions:** only a few small transition-wrapped refresh helpers remain in specialized admin screens; the large admin async-state cleanup is effectively down to residual polish rather than broad structural debt
+
+## [2026-04-15] audit | Block 068 admin achievements and item-balance operator feedback
+
+Completed the next residual admin polish block:
+- **Created:** `[[block-068-admin-achievements-and-item-balance-operator-feedback]]`
+- **Files audited:** 2 admin dashboard/editor clients
+- **Fixes:** removed routine `console.error(...)` noise from the achievements admin error path, added explicit validation-error rendering to the item-balance dashboard quick-validation card, and removed the extra transition-wrapped refresh helper from that dashboard screen
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the touched files no longer carry the old console/transition leftovers
+- **Inventory refresh:** updated current counts to 4864 in-scope files and `100 in-scope wiki files / 98 wiki pages`
+- **Open decisions:** remaining admin work is now mostly localized TODOs, a handful of intentionally kept console logs on server-side/API paths, and broader whole-project file-by-file completion outside this admin slice
+
+## [2026-04-15] audit | Block 071 iOS hub, daily login, and level-up contract cleanup
+
+Completed the next iOS runtime-truth block:
+- **Created:** `[[block-071-ios-hub-daily-login-and-levelup-contract-cleanup]]`
+- **Files audited:** 4 live/residual iOS files plus cache/catalog/progression reference files
+- **Fixes:** removed mock battle-pass values from `HubInfoCards`, wired the residual battle-pass card to cached live data, corrected daily-login HP potion icon mapping to real health-potion assets, routed consumable icon fallback through `ConsumableCatalog`, removed a stale battle-pass TODO comment, and simplified `LevelUpModalView` so it no longer shows invented passive-point and stamina-refill rewards
+- **Verification:** targeted grep over touched iOS files, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4867 in-scope files and `103 in-scope wiki files / 101 wiki pages`
+- **Open decisions:** `HubInfoCards.swift` still looks like a residual surface and deserves a later keep/delete pass; backend progression already computes `passivePointsAwarded`, but the iOS-facing level-up contract still needs an explicit end-to-end decision before that reward is shown again
+
+## [2026-04-15] audit | Block 069 admin residual transition and copy cleanup
+
+Completed the next tiny admin polish block:
+- **Created:** `[[block-069-admin-residual-transition-and-copy-cleanup]]`
+- **Files audited:** 1 admin feature-flag client and 1 dashboard chart component
+- **Fixes:** removed the last unnecessary transition-wrapped refresh helper from the feature-flag editor and replaced leaked `TODO` copy in the retention card with honest operator-facing wording
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and `rg` confirms the touched files no longer contain the old transition/TODO leftovers
+- **Inventory refresh:** updated current counts to 4865 in-scope files and `101 in-scope wiki files / 99 wiki pages`
+- **Open decisions:** the broad admin slice is now mostly in residual-polish territory; the next large value likely comes from returning to remaining non-admin project areas rather than squeezing more tiny admin cleanups
+
+## [2026-04-15] audit | Block 070 admin events API auth gap
+
+Completed the next admin security block:
+- **Created:** `[[block-070-admin-events-api-auth-gap]]`
+- **Files audited:** 1 admin API route
+- **Fixes:** added missing `getAdminUser()` guards to `GET`, `POST`, `PATCH`, and `DELETE` in the admin events route so unauthenticated callers now receive `401 Unauthorized` instead of reaching live event reads/writes
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, `git diff --check` passes, and a route-parity grep confirms the events route now matches the surrounding admin API auth pattern
+- **Inventory refresh:** updated current counts to 4866 in-scope files and `102 in-scope wiki files / 100 wiki pages`
+- **Open decisions:** the next security/contract value is likely in the remaining non-admin project slices; the admin API surface is now much more uniformly guarded
+
 ## [2026-04-15] audit | Block 056 admin quests and battle-pass alignment
 
 Completed the next live admin content block:
@@ -590,3 +720,279 @@ Completed the next live admin content block:
 - **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
 - **Inventory refresh:** updated current counts to 4851 in-scope files and `88 in-scope wiki files / 86 wiki pages`
 - **Open decisions:** battle-pass inline editing is now contract-safe, but a more guided `rewardType -> rewardId` transition UX would still be a nice operator upgrade later
+
+## [2026-04-15] audit | Block 072 progression passive-points contract parity
+
+Completed the next cross-system progression block:
+- **Created:** `[[block-072-progression-passive-points-contract-parity]]`
+- **Files audited:** 15 backend reward/resolve routes, 5 core iOS progression/result files, 14 iOS DTO/consumer files, plus progression/tutorial reference files
+- **Fixes:** exposed `passive_points_awarded` from the touched backend claim, purchase, PvP, dungeon, and Dungeon Rush level-up surfaces; added `passivePointsAwarded` to the corresponding iOS DTOs; extended `AppState.applyAuthoritativeRewardState(...)` so character state now increments `passivePointsAvailable`; re-enabled passive-point display in `LevelUpModalView` only when the value is actually server-backed; and repaired direct combat/dungeon victory flows so passive-point awards are no longer dropped before the ceremony
+- **Verification:** `npm run build` in `backend`, full `npx vitest run` in `backend` (`43/43` files, `288/288` tests), `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `rg -n 'passive_points_awarded|passivePointsAwarded' backend/src/app/api Hexbound/Hexbound -g'*.ts' -g'*.swift'`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4868 in-scope files and `104 in-scope wiki files / 102 wiki pages`
+- **Open decisions:** tutorial progression payloads still use a camelCase nested level-up shape while the main API uses snake_case, and backend level-up response assembly is still duplicated across many routes instead of living behind a shared helper
+
+## [2026-04-15] audit | Block 073 tutorial scripted-fight contract and victory parity
+
+Completed the next onboarding-contract block:
+- **Created:** `[[block-073-tutorial-scripted-fight-contract-and-victory-parity]]`
+- **Files audited:** 2 backend tutorial routes, 1 new backend route-test file, 3 live iOS onboarding files, plus progression/app-state references
+- **Fixes:** added canonical snake_case tutorial route fields (`forced_stance`, `level_up`, `item_catalog_key`, `sanity_check_passed`) while preserving legacy camelCase aliases for compatibility; updated `TutorialService` to prefer canonical keys but still accept the older aliases; removed dead local tutorial resolve fields that onboarding never used; and carried real `statPointsAwarded` / `passivePointsAwarded` through `TutorialRewardsPayload` so the first-fight victory overlay now shows the full truthful level-up reward instead of only `LEVEL N REACHED`
+- **Verification:** targeted `npx vitest run tests/api/tutorial-scripted-fight-contracts.test.ts tests/api/tutorial-quest.test.ts` in `backend`, `npm run build` in `backend`, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4870 in-scope files and `105 in-scope wiki files / 103 wiki pages`
+- **Open decisions:** tutorial progression still uses a nested progression object while most live reward routes use top-level progression fields, and `TutorialService` would still benefit from a future move off raw dictionary parsing entirely
+
+## [2026-04-15] audit | Block 074 tutorial referral rate-limit and storage parity
+
+Completed the next tutorial/referral runtime block:
+- **Created:** `[[block-074-tutorial-referral-rate-limit-and-storage-parity]]`
+- **Files audited:** 3 backend tutorial/referral routes, 1 backend helper file, 1 new backend route-test file, plus the iOS referral consumer reference
+- **Fixes:** repaired inverted referral rate-limit semantics and the broken `60ms` window, normalized referral codes before lookup, canonicalized new `referredBy` writes to the referrer's `character_id`, made referral stats/counts compatible with both legacy code-based links and canonical character-id links, aligned tutorial start/skip with the same max-referral policy, and added transaction-backed regression coverage for mixed-storage counting plus canonical referral writes
+- **Verification:** targeted backend ESLint, targeted tutorial/referral `vitest`, full backend `npx vitest run` (`45/45` files, `293/293` tests), `npm run build` in `backend`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4872 in-scope files and `106 in-scope wiki files / 104 wiki pages`
+- **Open decisions:** referrer rewards at the invitee level threshold are still not granted anywhere in live runtime even though the constants and stats surface already imply that behavior
+
+## [2026-04-15] audit | Block 075 referral qualification rewards and idempotency
+
+Completed the next referral/runtime block:
+- **Created:** `[[block-075-referral-qualification-rewards-and-idempotency]]`
+- **Files audited:** 2 backend runtime files, 1 Prisma schema file, 1 new migration, and 2 backend test files
+- **Fixes:** added `ReferralRewardClaim` as the idempotent persistence layer for referral qualification payouts, created the matching Prisma migration, implemented `awardReferralQualificationIfEligible(...)` in tutorial helpers, wired the payout into shared `applyLevelUp(...)` so it works across all common progression flows, and added direct regression coverage for one-time referral qualification rewards plus duplicate-claim handling
+- **Verification:** targeted backend ESLint, targeted referral reward `vitest`, full backend `npx vitest run` (`46/46` files, `295/295` tests), `npm run build` in `backend`, `python3 scripts/check_schema_drift.py --verbose`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4875 in-scope files and `107 in-scope wiki files / 105 wiki pages`
+- **Open decisions:** future payouts are now correct, but a separate product decision is still needed on whether to backfill already-qualified invitees from before this block
+
+## [2026-04-16] audit | Block 076 referral reward backfill tooling
+
+Completed the referral repair-safety block:
+- **Created:** `[[block-076-referral-reward-backfill-tooling]]`
+- **Files audited:** 2 backend Prisma repair files, 1 new backend Prisma test file, and 2 backend operator-surface files
+- **Fixes:** added `backfillReferralRewardClaims(...)` for historical referral payout reconciliation, added CLI wrapper `fix-referral-rewards.ts` with dry-run default and explicit `--apply`, covered mixed legacy/canonical referral resolution plus aggregated apply-mode currency updates in focused Prisma tests, and documented the repair commands in `backend/prisma/MIGRATIONS.md`
+- **Verification:** targeted backend ESLint, targeted referral repair `vitest`, full backend `npx vitest run` (`47/47` files, `297/297` tests), `npm run build` in `backend`, `python3 scripts/check_schema_drift.py --verbose`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4879 in-scope files and `108 in-scope wiki files / 106 wiki pages`
+- **Open decisions:** decide when to run the live `--apply` repair and where to archive the dry-run/apply summaries for future economy auditability
+
+## [2026-04-16] audit | Block 077 iOS referral and tavern typed contract cleanup
+
+Completed the next iOS contract-cleanup block:
+- **Created:** `[[block-077-ios-referral-and-tavern-typed-contract-cleanup]]`
+- **Files audited:** 1 shared iOS model file and 3 live iOS referral/minigame view-model or view files
+- **Fixes:** added typed request/response DTOs for Fortune Wheel and Shell Game, moved those live tavern flows off raw `getRaw/postRaw` dictionaries, switched Fortune Wheel status to canonical `params:`-based GET instead of manual query-string concatenation, and upgraded `ReferralSectionView` to typed request/response contracts plus payload-based error handling for `alreadyReferred` and `invalidCode`
+- **Verification:** `rg -n "getRaw\\(|postRaw\\(|JSONSerialization" ...` over the touched files returns clean, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4880 in-scope files and `109 in-scope wiki files / 107 wiki pages`
+- **Open decisions:** `DungeonService`, `DungeonSelectViewModel`, `DungeonRushViewModel`, and `TutorialManager` are the next obvious iOS typed-contract cleanup slice
+
+## [2026-04-16] audit | Block 078 iOS tutorial manager typed contract cleanup
+
+Completed the next iOS onboarding-contract block:
+- **Created:** `[[block-078-ios-tutorial-manager-typed-contract-cleanup]]`
+- **Files audited:** 1 iOS onboarding state manager and 2 live hub tutorial-quest consumers
+- **Fixes:** migrated `TutorialManager` off `getRaw/postRaw` and `[[String: Any]]` tutorial state onto typed tutorial DTOs and request bodies; converted hub and city-map tutorial quest consumers to `TutorialQuestState`; limited tutorial failure logging to `#if DEBUG`; and fixed the quest-claim toast path so it now reads the real backend `goldDelta` contract instead of the stale `goldAwarded` field
+- **Verification:** `rg -n "getRaw\\(|postRaw\\(|\\[String: Any\\]" Hexbound/Hexbound/Tutorial/TutorialManager.swift`, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4881 in-scope files and `110 in-scope wiki files / 108 wiki pages`
+- **Open decisions:** `DungeonService`, `DungeonSelectViewModel`, and `DungeonRushViewModel` remain the next typed-contract cleanup slice on iOS once the tutorial layer is fully settled
+
+## [2026-04-16] audit | Block 079 iOS dungeon list and progress typed contracts
+
+Completed the next iOS dungeon-contract block:
+- **Created:** `[[block-079-ios-dungeon-list-and-progress-typed-contracts]]`
+- **Files audited:** 1 iOS dungeon service, 2 live dungeon view models, and 1 hub prefetch consumer
+- **Fixes:** added typed dungeon catalog/progress DTOs in `DungeonService`, moved dungeon list loading and progress snapshots off raw dictionaries, converted `DungeonSelectViewModel` to typed active-run and progress state, converted `DungeonRoomViewModel` resume logic to typed `activeRun/progress`, and aligned hub dungeon prefetch with the same typed progress contract
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` and `git diff --check`
+- **Inventory refresh:** updated current counts to 4882 in-scope files and `111 in-scope wiki files / 109 wiki pages`
+- **Open decisions:** `DungeonService.start(...)`, `DungeonService.fight(...)`, and `DungeonRushViewModel` still live on raw result contracts and remain the next obvious iOS cleanup slice
+
+## [2026-04-16] audit | Block 080 iOS dungeon combat and rush entry typed contracts
+
+Completed the next iOS dungeon runtime-contract block:
+- **Created:** `[[block-080-ios-dungeon-combat-and-rush-entry-typed-contracts]]`
+- **Files audited:** 1 iOS dungeon service, 2 normal-dungeon runtime/view files, and 1 Dungeon Rush runtime file
+- **Fixes:** added typed DTOs for dungeon start/fight and rush status/start/fight in `DungeonService`, moved those mutation/status calls off raw dictionaries and onto typed `APIClient.get/post(...)`, replaced ad hoc combat JSON bridging with typed `combatData` helpers, converted `DungeonRoomViewModel` pending fight/victory handling onto typed responses, converted `DungeonVictoryView` loot rendering onto `CombatLootItem`, and moved the live Dungeon Rush start/status/fight path onto typed rooms/buffs/enemy/reward state while leaving resolve/shop raw for a later scoped block
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'func start\\(|func fight\\(|func rushStatus\\(|func rushStart\\(|func rushFight\\(' Hexbound/Hexbound/Services/DungeonService.swift`
+- **Inventory refresh:** updated current counts to 4883 in-scope files and `112 in-scope wiki files / 110 wiki pages`
+- **Open decisions:** `DungeonService.rushResolve(...)` and `DungeonService.rushShopBuy(...)` still return raw dictionaries, so the remaining rush event/treasure/shop surface should be cleaned up as its own follow-up block instead of widening this one further
+
+## [2026-04-16] audit | Block 081 iOS dungeon rush resolve and shop typed contracts
+
+Completed the follow-up rush mutation-contract block:
+- **Created:** `[[block-081-ios-dungeon-rush-resolve-and-shop-typed-contracts]]`
+- **Files audited:** 1 iOS dungeon service and 1 Dungeon Rush runtime view model
+- **Fixes:** added typed resolve/shop DTOs and request bodies in `DungeonService`, moved `rushResolve(...)` and `rushShopBuy(...)` off raw dictionaries and onto typed `APIClient.post(...)`, converted open-shop/leave-shop/resolve-room/shop-buy handling in `DungeonRushViewModel` onto typed responses, moved reward application and next-room advancement for non-combat rooms onto typed contracts, removed the now-unused raw buff parser, and fixed the real field-drift bug where the client looked for `gold` while the backend returned authoritative `playerGold`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'rushResolve\\(|rushShopBuy\\(' Hexbound/Hexbound/Services/DungeonService.swift`
+- **Inventory refresh:** updated current counts to 4884 in-scope files and `113 in-scope wiki files / 111 wiki pages`
+- **Open decisions:** the main remaining raw compatibility surface around rush is now the shared app-level `pendingLoot` dictionary path rather than the rush service boundary itself
+
+## [2026-04-16] audit | Block 082 iOS pending loot typed presentation contract
+
+Closed the shared loot-presentation seam after the dungeon and rush contract cleanup:
+- **Created:** `[[block-082-ios-pending-loot-typed-presentation-contract]]`
+- **Files audited:** 1 shared loot model file, 1 app-state file, 1 arena resolve service, 2 loot-producing view models, and 2 loot-consuming combat screens
+- **Fixes:** added typed `PendingLootItem` and `PendingLootShard`, moved `AppState.pendingLoot` off `[[String: Any]]`, typed `ResolveResult.loot` in `BattlePreloader`, replaced raw loot bridges in `DungeonRoomViewModel` and `DungeonRushViewModel`, and moved both `LootDetailView` and `CombatResultDetailView` onto typed loot properties with shard-aware icon fallback
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'pendingLoot: \\[\\[String: Any\\]\\]|lootDetailModal\\(_ item: \\[String: Any\\]\\)' Hexbound/Hexbound`
+- **Inventory refresh:** updated current counts to 4885 in-scope files and `114 in-scope wiki files / 112 wiki pages`
+- **Open decisions:** the reward contract is now typed end-to-end for the shared loot bucket, but `LootDetailView` and `CombatResultDetailView` still duplicate the same modal layout and should get a later keep/simplify pass
+
+## [2026-04-16] audit | Block 083 iOS character service typed contract cleanup
+
+Closed the next central iOS service boundary after the loot cleanup:
+- **Created:** `[[block-083-ios-character-service-typed-contract-cleanup]]`
+- **Files audited:** 1 live iOS character service
+- **Fixes:** moved character load, stat allocation, stat respec, buy-stat-points, purchase-status, and stance updates off `getRaw/postRaw + JSONSerialization` and onto typed `APIClient.get/post(...)`; changed stance save to trust the authoritative backend character snapshot; and replaced the dead `train()` call to a deprecated route with an explicit unavailable path instead of a hidden runtime failure
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'getRaw\\(|postRaw\\(|JSONSerialization' Hexbound/Hexbound/Services/CharacterService.swift`
+- **Inventory refresh:** updated current counts to 4886 in-scope files and `115 in-scope wiki files / 113 wiki pages`
+- **Open decisions:** neighboring services (`GameInitService`, `AuthService`, `CharacterSelectionViewModel`) still have older raw-decode paths, and `train()` should only come back if product wants a new live training contract instead of the deprecated simulate route
+
+## [2026-04-16] audit | Block 084 iOS character list typed envelope parity
+
+Closed the next shared hero-lifecycle contract slice:
+- **Created:** `[[block-084-ios-character-list-typed-envelope-parity]]`
+- **Files audited:** 1 shared character model file, 1 auth bootstrap service, and 1 character selection view model
+- **Fixes:** added a shared typed `CharactersListResponse` with compatibility fallback for canonical `characters`, legacy `data`, and single-character direct payloads; moved `AuthService.loadCharacters()` and `CharacterSelectionViewModel.loadCharacters()` off `getRaw + JSONSerialization`; and kept level sorting plus just-created hero auto-selection behavior intact
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'getRaw\\(|JSONSerialization' Hexbound/Hexbound/Services/AuthService.swift Hexbound/Hexbound/Views/Auth/CharacterSelectionViewModel.swift`
+- **Inventory refresh:** updated current counts to 4887 in-scope files and `116 in-scope wiki files / 114 wiki pages`
+- **Open decisions:** the shared roster loader is clean now, but `GameInitService` remains the next obvious raw bootstrap surface on the iOS side
+
+## [2026-04-16] audit | Block 085 iOS game/init typed bootstrap and cache parity
+
+Completed the next iOS bootstrap-contract block:
+- **Created:** `[[block-085-ios-game-init-typed-bootstrap-and-cache-parity]]`
+- **Files audited:** 1 iOS bootstrap service and 1 shared app-state file
+- **Fixes:** migrated `GameInitService` off `getRaw + JSONSerialization` onto a typed `GameInitResponse`; moved `currentUser` and `cachedDailyLogin` to typed snapshots; preserved fallback to `CharacterService.loadCharacter()`; localized arbitrary feature-flag JSON decoding to a small `JSONValue` bridge; and fixed startup inventory parity so `/api/game/init` consumables are now merged into `cachedInventory` instead of being dropped during bootstrap
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` and `rg -n 'getRaw\\(|JSONSerialization' Hexbound/Hexbound/Services/GameInitService.swift`
+- **Inventory refresh:** updated current counts to 4890 in-scope files and `117 in-scope wiki files / 115 wiki pages`
+- **Open decisions:** `activeEvents` and `achievementsSummary` are still shipped in `/api/game/init` but not yet consumed as authoritative client bootstrap state, and `cachedQuests` remains a legacy raw cache slot pending a later keep/delete pass
+
+## [2026-04-16] audit | Block 086 iOS PvP service typed list contracts
+
+Completed the next live iOS PvP-contract block:
+- **Created:** `[[block-086-ios-pvp-service-typed-list-contracts]]`
+- **Files audited:** 1 iOS PvP service and 1 shared PvP model file
+- **Fixes:** migrated opponents, revenge list, and match history loading in `PvPService` off `getRaw + JSONSerialization` onto typed response envelopes; preserved the existing retry/toast behavior for opponent loading; and removed stale snake_case coding keys from `RevengeEntry` so it cleanly decodes through the shared `APIClient` contract
+- **Verification:** `rg -n 'getRaw\\(|JSONSerialization|\\[String: Any\\]' Hexbound/Hexbound/Services/PvPService.swift Hexbound/Hexbound/Models/RevengeEntry.swift` and `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`
+- **Inventory refresh:** updated current counts to 4891 in-scope files and `118 in-scope wiki files / 116 wiki pages`
+- **Open decisions:** the remaining nearby follow-up is PvP mutation/profile parity, not the list-loading boundary itself
+
+## [2026-04-16] audit | Block 087 iOS tutorial service typed scripted-fight contracts
+
+Completed the next onboarding-contract cleanup block:
+- **Created:** `[[block-087-ios-tutorial-service-typed-scripted-fight-contracts]]`
+- **Files audited:** 1 iOS tutorial service and 1 onboarding view model
+- **Fixes:** migrated scripted-fight preload/resolve in `TutorialService` off `postRaw + [String: Any]` onto typed DTOs; replaced raw hero/opponent preview dictionaries with typed onboarding preview models; updated `TutorialFightViewModel` to read hero class and HP plus opponent name and HP from typed payloads; and let the shared `APIClient` decoder own snake_case/camelCase rollout compatibility instead of duplicating alias handling in client code
+- **Verification:** `rg -n 'getRaw\\(|postRaw\\(|JSONSerialization|\\[String: Any\\]' Hexbound/Hexbound/Services/TutorialService.swift Hexbound/Hexbound/Views/Onboarding/TutorialFightViewModel.swift` and `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`
+- **Inventory refresh:** updated current counts to 4892 in-scope files and `119 in-scope wiki files / 117 wiki pages`
+- **Open decisions:** the backend still ships `combat` and `sanity_check_passed` for the scripted fight, but the current iOS onboarding flow intentionally ignores them because it skips full replay and only shows the victory/result path
+
+## [2026-04-16] audit | Blocks 088-090 social, stash, and auth/account typed contracts
+
+Closed the next three iOS contract tails in one pass:
+- **Created:** `[[block-088-ios-social-and-challenge-action-typed-contracts]]`, `[[block-089-ios-stash-transfer-typed-contracts]]`, `[[block-090-ios-auth-service-and-account-delete-typed-contracts]]`
+- **Files audited:** 4 iOS services, 1 settings view model, and 1 shared social model file
+- **Fixes:** migrated social friend actions plus friendship-status lookup and challenge decline/cancel off raw `postRaw` bodies onto typed request/response DTOs; removed the duplicate local `FriendshipStatusResponse` that had started conflicting with the canonical shared social model; migrated stash deposit/withdraw onto typed transfer contracts; moved `AuthService` email login/register/guest-login/forgot-password off raw dictionaries onto a shared typed auth session envelope; and moved settings account deletion onto a typed delete-account response
+- **Verification:** `rg -n 'getRaw\\(|postRaw\\(|patchRaw\\(|JSONSerialization|\\[String: Any\\]'` over the touched files, `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and `git diff --check`
+- **Inventory refresh:** updated current counts to 4895 in-scope files and `122 in-scope wiki files / 120 wiki pages`
+- **Open decisions:** Apple/Google sign-in and guest-upgrade view models still carry their own raw auth payload handling, and `InventoryService`/`ShopService` remain the next larger live raw-contract slice
+
+## [2026-04-16] audit | Blocks 091-092 auth provider flows and onboarding typed contracts
+
+Closed the next auth-adjacent onboarding slice:
+- **Created:** `[[block-091-ios-oauth-signin-and-guest-upgrade-typed-contracts]]`, `[[block-092-ios-onboarding-name-and-character-create-typed-contracts]]`
+- **Files audited:** 1 shared auth service, 3 auth/onboarding view models, and 2 adjacent backend route contracts
+- **Fixes:** moved Apple/Google sign-in and guest email/OAuth upgrade off raw auth bodies onto typed request/response DTOs built around `AuthSessionEnvelope`; widened the shared auth envelopes so provider flows reuse the same contract instead of duplicating shapes; migrated onboarding name availability to typed query params; and replaced raw character-creation + manual `JSONSerialization` with a compatibility-aware typed `CharacterCreateResponse`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'postRaw\\(|getRaw\\(|patchRaw\\(|JSONSerialization|\\[String: Any\\]'` over the touched auth/onboarding files
+- **Inventory refresh:** updated current counts to 4897 in-scope files and `124 in-scope wiki files / 122 wiki pages`
+- **Open decisions:** the next obvious live raw-contract slice is now `ShopService`, not auth/onboarding
+
+## [2026-04-16] audit | Blocks 093-095 shop, inventory, and arena PvP typed contracts
+
+Closed the next central iOS live-contract slice:
+- **Created:** `[[block-093-ios-shop-service-typed-purchase-and-repair-contracts]]`, `[[block-094-ios-inventory-service-sell-use-expand-typed-contracts]]`, `[[block-095-ios-battle-preloader-typed-pvp-contracts]]`
+- **Files audited:** 3 core iOS runtime services, 1 arena resolve consumer, and 7 adjacent backend route contracts
+- **Fixes:** moved `ShopService` purchase/consumable/gems/repair/upgrade flows off raw dictionaries onto typed DTOs; moved `InventoryService` sell/use/expand flows onto typed DTOs with typed HP/stamina reconciliation; migrated `BattlePreloader` PvP prepare/resolve off `postRaw(...)` onto typed request/response contracts; and typed `durability_changes` all the way into `ArenaViewModel`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'postRaw\\(|getRaw\\(|patchRaw\\(|JSONSerialization|rawDictionary:'` over the touched files
+- **Inventory refresh:** updated current counts to 4900 in-scope files and `127 in-scope wiki files / 125 wiki pages`
+- **Open decisions:** `BattlePreloader` no longer owns a raw network boundary, but `CombatEngine` still keeps a local legacy dictionary bridge for stance and skill payloads, which should be treated as its own future simplify pass
+
+## [2026-04-16] audit | Block 096 iOS appearance editor typed save contract
+
+Closed the next player-facing profile contract tail:
+- **Created:** `[[block-096-ios-appearance-editor-typed-save-contract]]`
+- **Files audited:** 1 iOS profile view model and 1 adjacent backend route contract
+- **Fixes:** moved appearance save off raw `PATCH` bodies and manual `Character` re-decoding; added typed request/response DTOs in `AppearanceEditorViewModel`; and kept the existing optimistic-update plus revert-on-failure behavior intact while removing the raw transport layer
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'postRaw\\(|getRaw\\(|patchRaw\\(|JSONSerialization' Hexbound/Hexbound/Views/Profile/AppearanceEditorViewModel.swift`
+- **Inventory refresh:** updated current counts to 4901 in-scope files and `128 in-scope wiki files / 126 wiki pages`
+- **Open decisions:** the appearance save boundary is clean now; the remaining residual iOS raw-contract list is smaller and is drifting toward `DungeonService.rushAbandon`, `HubView` active-slot loading, and the larger Gold Mine/editor-only utility surfaces
+
+## [2026-04-16] audit | Block 097 iOS dungeon rush abandon and gold mine status typed contracts
+
+Closed the next live iOS contract tails around dungeons and hub prefetch:
+- **Created:** `[[block-097-ios-dungeon-rush-abandon-and-gold-mine-status-typed-contracts]]`
+- **Files audited:** 5 iOS files and 2 adjacent backend route contracts
+- **Fixes:** moved `DungeonService.rushAbandon()` off a raw mutation body; added shared typed gold mine status DTOs in `MinigameSession.swift`; routed both `HubView.prefetchGoldMine()` and `GoldMineViewModel.loadStatus()` through typed `GoldMineStatusResponse`; and centralized the narrow old-slot bridge in `GameDataCache.cacheGoldMine(status:)`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'postRaw\\(|getRaw\\(|patchRaw\\(|JSONSerialization'` over the touched dungeon/hub files
+- **Inventory refresh:** updated current counts to 4902 in-scope files and `129 in-scope wiki files / 127 wiki pages`
+- **Open decisions:** gold mine status is typed now, but the remaining mutation-heavy Gold Mine flows still keep the next honest raw-contract tail
+
+## [2026-04-16] audit | Blocks 098-099 Gold Mine actions and editor layout-save typed contracts
+
+Closed the next two residual iOS raw-mutation tails:
+- **Created:** `[[block-098-ios-gold-mine-action-typed-contracts]]`, `[[block-099-ios-editor-layout-save-typed-contracts]]`
+- **Files audited:** 3 Gold Mine runtime files, 2 debug/editor view files, and 2 adjacent admin layout-save routes
+- **Fixes:** moved Gold Mine collect, collect-all, boost, buy-slot, shaft-minigame start, and shaft-minigame submit flows off `postRaw(...)` onto typed request/response DTOs; removed the local Gold Mine minigame `JSONSerialization` bridge; and moved hub/dungeon-map debug layout saves onto typed `AdminLayoutSaveRequest/Response` contracts with the DTOs co-located in `HubEditorDetailView.swift` so the Xcode target stays self-consistent
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'postRaw\\(|getRaw\\(|patchRaw\\(|JSONSerialization'` over the touched Gold Mine and editor files
+- **Inventory refresh:** updated current counts to 4904 in-scope files and `131 in-scope wiki files / 129 wiki pages`
+- **Open decisions:** Gold Mine live action flows are typed now; the remaining residual work has shifted from product actions to smaller cache/infrastructure bridges
+
+## [2026-04-16] audit | Blocks 100-102 config parse bridge, combat reconcile bridge, and network infrastructure cleanup
+
+Closed the next infrastructure-focused iOS contract slice:
+- **Created:** `[[block-100-ios-game-config-daily-login-parse-bridge-cleanup]]`, `[[block-101-ios-interactive-combat-reconcile-payload-bridge-cleanup]]`, `[[block-102-ios-network-infrastructure-raw-surface-retirement]]`
+- **Files audited:** 2 shared iOS model/cache files, 2 interactive-combat files, and 2 network/auth infrastructure files
+- **Fixes:** replaced the game-config daily-login reward JSON round-trip with direct dictionary parsing; removed the recoverable `OUT_OF_CONSUMABLE` actives JSON round-trip from interactive combat by adding a narrow typed payload bridge; deleted dead `APIClient` raw helpers plus their `rawBody` plumbing; and moved `SupabaseAuthClient` refresh/user/resend flows onto typed DTOs while removing the dead anonymous sign-in helper
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, `rg -n '\\.getRaw\\(|\\.postRaw\\(|\\.patchRaw\\(' Hexbound/Hexbound -g'*.swift'`, and `rg -n 'JSONSerialization' Hexbound/Hexbound/Network/APIClient.swift Hexbound/Hexbound/Network/SupabaseAuthClient.swift`
+- **Inventory refresh:** updated current counts to 4907 in-scope files and `134 in-scope wiki files / 132 wiki pages`
+- **Open decisions:** residual `JSONSerialization` in `Hexbound` is now intentionally limited to generic error-payload extraction, and the remaining iOS tail is smaller contract-shape cleanup rather than a broad raw-network surface
+
+## [2026-04-16] audit | Block 103 iOS Gold Mine typed state and cache parity
+
+Closed the next Gold Mine state-layer cleanup:
+- **Created:** `[[block-103-ios-gold-mine-typed-state-and-cache-parity]]`
+- **Files audited:** 7 iOS model/cache/view files around Gold Mine state, hub badges, and contextual hints
+- **Fixes:** moved Gold Mine slot state and cache storage off `[[String: Any]]` onto `GoldMineSlotResponse`; added typed payload bridges plus resolved-status helpers for slot reconciliation; updated `GoldMineViewModel`, `GoldMineCards`, `GoldMineDetailView`, `HubView`, and `CityMapView` to consume typed slot state instead of raw dictionary keys; and kept the remaining generic `GameDataCache` dictionary bridges limited to feature flags and layout hydration, not Gold Mine runtime state
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n '\\[String: Any\\]|legacySlots|gold_accumulated|gold_mined|slot\\[\"'` over the touched Gold Mine files
+- **Inventory refresh:** updated current counts to 4908 in-scope files and `135 in-scope wiki files / 133 wiki pages`
+- **Open decisions:** the next honest iOS tail is no longer Gold Mine state, but the smaller internal bridge layer around `CombatEngine` and other typed-vs-foundation conversion helpers
+
+## [2026-04-16] audit | Block 104 iOS battle preloader and combat engine typed handoff
+
+Closed the next internal combat bridge:
+- **Created:** `[[block-104-ios-battle-preloader-combat-engine-typed-handoff]]`
+- **Files audited:** 2 iOS combat runtime files on the arena prepare/simulate hot path
+- **Fixes:** removed the last typed-to-dictionary handoff between `BattlePreloader` and `CombatEngine`; deleted `BattleJSONValue` plus `foundationObject` helpers; converted combat config, stance, passives, and equipped skills to direct typed engine models; corrected local `rank_scaling` decoding to match backend’s scalar payload; and updated the combat engine to operate on `CombatSkill`, typed `ParsedZoneStance`, and typed `PassiveBonus` instead of parsing `[String: Any]`
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'BattleJSONValue|foundationObject|init\\(from dict: \\[String: Any\\]\\)'` over the touched combat files
+- **Inventory refresh:** updated current counts to 4909 in-scope files and `136 in-scope wiki files / 134 wiki pages`
+- **Open decisions:** the arena combat handoff is typed now, so the next remaining iOS tails are smaller residual model-sharing and contract-reuse questions rather than any live raw battle bridge
+
+## [2026-04-16] audit | Blocks 105-107 typed error bodies, cache bridge retirement, and dead model parser cleanup
+
+Closed the next three narrow iOS residual blocks:
+- **Created:** `[[block-105-ios-typed-error-body-and-combat-model-bridge-cleanup]]`, `[[block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity]]`, `[[block-107-ios-dead-model-parse-bridge-cleanup]]`
+- **Files audited:** 6 recoverable flow/runtime files, 3 cache/bootstrap files, and 3 residual model files
+- **Fixes:**
+  - added typed recoverable error-body decoding on top of `APIError` and moved interactive combat, Gold Mine, and referral validation flows off local raw dictionaries;
+  - removed the dead `PendingLootItem(rawDictionary:)` escape hatch;
+  - removed dead raw quest/achievement cache fields plus dead raw layout cache entry points;
+  - narrowed feature flag caching to the boolean contract the iOS client actually uses;
+  - deleted dead Gold Mine slot payload constructors / legacy dictionary exports and removed the dead `DungeonInfo.from(serverData:)` parser;
+  - preserved `DailyLoginRewardDef.init(dictionary:)` because `GameConfig` fallback parsing still genuinely depends on it.
+- **Verification:** repeated `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'legacyDictionary|legacySlots|init\\(payload: \\[String: Any\\]\\)|GoldMinePayload\\.|DungeonInfo\\.from\\(serverData|cachedQuests|cachedAchievements|featureFlagValue\\(|cacheHubLayout\\(from|cacheDungeonMapLayout\\(from|foundationValue'`
+- **Inventory refresh:** updated current counts to 4912 in-scope files and `139 in-scope wiki files / 137 wiki pages`
+- **Open decisions:** feature flags are now cached as booleans only on iOS; if the app later needs structured flag payloads, it should add a typed flag model instead of reopening `[String: Any]`
+
+## [2026-04-16] audit | Block 108 intentional raw boundaries and dead APIResponse removal
+
+Closed the next narrow iOS infrastructure block:
+- **Created:** `[[block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal]]`
+- **Files audited:** 3 intentional infrastructure-boundary files plus 2 adjacent cleanup files whose dead raw fallback paths were still keeping the grep noisy
+- **Fixes:** removed dead `APIResponse`; retired the dead raw `GameConfig` initializer and the now-unneeded `DailyLoginRewardDef.init(dictionary:)`; and explicitly classified the remaining raw grep hits in `APIClient`/`APIError` and `KeychainManager` as intentional infrastructure boundaries rather than unfinished feature migration work
+- **Verification:** `xcodebuild -project Hexbound/Hexbound.xcodeproj -scheme Hexbound -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, `git diff --check`, and `rg -n 'APIResponse\\b|getRaw\\(|postRaw\\(|patchRaw\\(|JSONSerialization|\\[String: Any\\]|responsePayload' Hexbound/Hexbound -g'*.swift'`
+- **Inventory refresh:** updated current counts to 4913 in-scope files and `140 in-scope wiki files / 138 wiki pages`
+- **Open decisions:** no active feature-level raw JSON tail remains in `Hexbound`; remaining raw usage is intentionally centralized in networking or required by the system `Security` API

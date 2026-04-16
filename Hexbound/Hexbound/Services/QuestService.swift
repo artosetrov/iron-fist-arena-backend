@@ -37,6 +37,7 @@ struct QuestClaimResult: Codable {
     let leveledUp: Bool
     let newLevel: Int?
     let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
 }
 
 struct QuestBonusClaimResult: Codable {
@@ -50,6 +51,7 @@ struct QuestBonusClaimResult: Codable {
     let leveledUp: Bool
     let newLevel: Int?
     let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
 }
 
 @MainActor

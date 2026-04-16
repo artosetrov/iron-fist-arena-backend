@@ -15,8 +15,22 @@ struct MineShaftCard: View {
     @State private var previousStatus: String = ""
     @State private var progressTick: Date = Date()
 
-    private var slot: [String: Any] {
-        index < vm.slots.count ? vm.slots[index] : [:]
+    private var slot: GoldMineSlotResponse {
+        index < vm.slots.count
+            ? vm.slots[index]
+            : GoldMineSlotResponse(
+                slotIndex: index,
+                status: .idle,
+                sessionId: nil,
+                startedAt: nil,
+                endsAt: nil,
+                reward: nil,
+                gemReward: nil,
+                boosted: nil,
+                minigamePlayed: nil,
+                minigameSessionId: nil,
+                stats: nil
+            )
     }
     private var status: String { vm.slotStatus(slot) }
     private var isActing: Bool { vm.actionSlotId == "\(index)" }
@@ -548,7 +562,7 @@ struct MineShaftCard: View {
                     // Only show BOOST when the session is not already boosted.
                     // Server returns 400 ALREADY_BOOSTED otherwise, which surfaced as a
                     // misleading "not enough gems" toast.
-                    if !(slot["boosted"] as? Bool ?? false) {
+                    if !slot.isBoosted {
                         Button {
                             vm.boost(slotIndex: index)
                         } label: {

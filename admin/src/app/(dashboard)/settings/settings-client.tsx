@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { seedDefaultConfigs } from '@/actions/config'
 import { Button } from '@/components/ui/button'
@@ -33,45 +33,48 @@ export function SettingsClient({
   currentAdminId: string
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [isSeeding, setIsSeeding] = useState(false)
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
 
   async function handleSeedDefaults() {
     setMessage('')
     setError('')
-    startTransition(async () => {
-      try {
-        const result = await seedDefaultConfigs()
-        setMessage(`Seeded ${result.created} configs (${result.skipped} already existed, ${result.total} total defaults)`)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to seed configs')
-      }
-    })
+    setIsSeeding(true)
+    try {
+      const result = await seedDefaultConfigs()
+      setMessage(`Seeded ${result.created} configs (${result.skipped} already existed, ${result.total} total defaults)`)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to seed configs')
+    } finally {
+      setIsSeeding(false)
+    }
   }
 
   async function handleRoleChange(userId: string, newRole: string) {
     setMessage('')
     setError('')
-    startTransition(async () => {
-      try {
-        const res = await fetch('/api/settings/role', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, role: newRole }),
-        })
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to update role')
-          return
-        }
-        setMessage(`Role updated successfully`)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to update role')
+    setUpdatingUserId(userId)
+    try {
+      const res = await fetch('/api/settings/role', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, role: newRole }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to update role')
+        return
       }
-    })
+      setMessage('Role updated successfully')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update role')
+    } finally {
+      setUpdatingUserId(null)
+    }
   }
 
   return (
@@ -138,9 +141,9 @@ export function SettingsClient({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={handleSeedDefaults} disabled={isPending}>
+          <Button onClick={handleSeedDefaults} disabled={isSeeding}>
             <RefreshCw className="mr-2 h-4 w-4" />
-            {isPending ? 'Seeding...' : 'Seed Default Configs'}
+            {isSeeding ? 'Seeding...' : 'Seed Default Configs'}
           </Button>
         </CardContent>
       </Card>
@@ -188,7 +191,7 @@ export function SettingsClient({
                           <Select
                             value={user.role}
                             onValueChange={(v) => handleRoleChange(user.id, v)}
-                            disabled={isPending}
+                            disabled={isSeeding || updatingUserId === user.id}
                           >
                             <SelectTrigger className="w-[140px] h-8">
                               <SelectValue />

@@ -243,6 +243,18 @@ struct UpgradeGuestView: View {
 
 // MARK: - ViewModel
 
+private struct GuestUpgradeRequest: Encodable {
+    let email: String
+    let password: String
+    let username: String
+}
+
+private struct GuestOAuthUpgradeRequest: Encodable {
+    let idToken: String
+    let accessToken: String?
+    let provider: String
+}
+
 @MainActor @Observable
 final class UpgradeGuestViewModel {
     var email = ""
@@ -264,20 +276,20 @@ final class UpgradeGuestViewModel {
         errorMessage = nil
 
         do {
-            let body: [String: Any] = [
-                "email": email,
-                "password": password,
-                "username": username,
-            ]
-            let result = try await APIClient.shared.postRaw(APIEndpoints.authUpgradeGuest, body: body)
+            let body = GuestUpgradeRequest(
+                email: email,
+                password: password,
+                username: username
+            )
+            let result: AuthSessionEnvelope = try await APIClient.shared.post(
+                APIEndpoints.authUpgradeGuest,
+                body: body
+            )
 
             // Save new tokens
-            if let accessToken = result["access_token"] as? String,
-               let refreshToken = result["refresh_token"] as? String {
-                KeychainManager.shared.saveAccessToken(accessToken)
-                KeychainManager.shared.saveRefreshToken(refreshToken)
-                await APIClient.shared.setAuthToken(accessToken)
-            }
+            KeychainManager.shared.saveAccessToken(result.accessToken)
+            KeychainManager.shared.saveRefreshToken(result.refreshToken)
+            await APIClient.shared.setAuthToken(result.accessToken)
 
             // No longer a guest
             appState.isGuest = false
@@ -368,30 +380,21 @@ final class UpgradeGuestViewModel {
         errorMessage = nil
 
         do {
-            var body: [String: Any] = [
-                "id_token": idToken,
-                "provider": provider,
-            ]
-            if let accessToken {
-                body["access_token"] = accessToken
-            }
+            let body = GuestOAuthUpgradeRequest(
+                idToken: idToken,
+                accessToken: accessToken,
+                provider: provider
+            )
 
-            let result = try await APIClient.shared.postRaw(
+            let result: AuthSessionEnvelope = try await APIClient.shared.post(
                 APIEndpoints.authUpgradeGuestOAuth,
                 body: body
             )
 
             // Save new tokens from OAuth session
-            guard let newAccessToken = result["access_token"] as? String,
-                  let newRefreshToken = result["refresh_token"] as? String else {
-                errorMessage = "Invalid server response"
-                isLoading = false
-                return
-            }
-
-            KeychainManager.shared.saveAccessToken(newAccessToken)
-            KeychainManager.shared.saveRefreshToken(newRefreshToken)
-            await APIClient.shared.setAuthToken(newAccessToken)
+            KeychainManager.shared.saveAccessToken(result.accessToken)
+            KeychainManager.shared.saveRefreshToken(result.refreshToken)
+            await APIClient.shared.setAuthToken(result.accessToken)
 
             // No longer a guest
             appState.isGuest = false

@@ -57,12 +57,12 @@ final class TutorialFightViewModel {
         }
 
         // Extract hero display values
-        heroClass = result.hero["class"] as? String
-        heroMaxHp = (result.hero["maxHp"] as? Int) ?? 0
+        heroClass = result.hero.characterClass.displayName
+        heroMaxHp = result.hero.maxHp
 
         // Extract opponent display values
-        opponentName = result.opponent["name"] as? String
-        opponentMaxHp = (result.opponent["maxHp"] as? Int) ?? 0
+        opponentName = result.opponent.name
+        opponentMaxHp = result.opponent.maxHp
 
         forcedStance = result.forcedStance
         state = .ready
@@ -97,6 +97,8 @@ final class TutorialFightViewModel {
             itemCatalogKey: result.rewards.itemCatalogKey,
             leveledUp: result.levelUp?.leveledUp ?? false,
             newLevel: result.levelUp?.newLevel,
+            statPointsAwarded: result.levelUp?.statPointsAwarded ?? 0,
+            passivePointsAwarded: result.levelUp?.passivePointsAwarded ?? 0,
             unlocks: result.unlocks,
         )
 
@@ -144,5 +146,7 @@ struct TutorialRewardsPayload: Equatable {
     let itemCatalogKey: String
     let leveledUp: Bool
     let newLevel: Int?
+    let statPointsAwarded: Int
+    let passivePointsAwarded: Int
     let unlocks: [String]
 }

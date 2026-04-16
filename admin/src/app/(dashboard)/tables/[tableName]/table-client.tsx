@@ -46,7 +46,7 @@ export function TableClient({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
+  const [isNavigating, startNavigation] = useTransition()
 
   // Modal state
   const [editingRow, setEditingRow] = useState<Record<string, unknown> | null>(null)
@@ -80,7 +80,7 @@ export function TableClient({
           params.delete(key)
         }
       }
-      startTransition(() => {
+      startNavigation(() => {
         router.push(`${pathname}?${params.toString()}`)
       })
     },
@@ -113,18 +113,23 @@ export function TableClient({
     async (data: Record<string, unknown>) => {
       setIsMutating(true)
       setError(null)
-      const result = await createRecord(tableName, data)
-      setIsMutating(false)
+      try {
+        const result = await createRecord(tableName, data)
 
-      if ('error' in result) {
-        setError(result.error)
-        return
+        if ('error' in result) {
+          setError(result.error)
+          return
+        }
+
+        setCreatingNew(false)
+        startNavigation(() => {
+          router.refresh()
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to create record')
+      } finally {
+        setIsMutating(false)
       }
-
-      setCreatingNew(false)
-      startTransition(() => {
-        router.refresh()
-      })
     },
     [tableName, router]
   )
@@ -135,19 +140,24 @@ export function TableClient({
       setIsMutating(true)
       setError(null)
 
-      const pkValue = String(editingRow[primaryKeyColumn])
-      const result = await updateRecord(tableName, primaryKeyColumn, pkValue, data)
-      setIsMutating(false)
+      try {
+        const pkValue = String(editingRow[primaryKeyColumn])
+        const result = await updateRecord(tableName, primaryKeyColumn, pkValue, data)
 
-      if ('error' in result) {
-        setError(result.error)
-        return
+        if ('error' in result) {
+          setError(result.error)
+          return
+        }
+
+        setEditingRow(null)
+        startNavigation(() => {
+          router.refresh()
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update record')
+      } finally {
+        setIsMutating(false)
       }
-
-      setEditingRow(null)
-      startTransition(() => {
-        router.refresh()
-      })
     },
     [editingRow, tableName, primaryKeyColumn, router]
   )
@@ -157,18 +167,23 @@ export function TableClient({
     setIsMutating(true)
     setError(null)
 
-    const result = await deleteRecord(tableName, primaryKeyColumn, deletingPk)
-    setIsMutating(false)
+    try {
+      const result = await deleteRecord(tableName, primaryKeyColumn, deletingPk)
 
-    if ('error' in result) {
-      setError(result.error)
-      return
+      if ('error' in result) {
+        setError(result.error)
+        return
+      }
+
+      setDeletingPk(null)
+      startNavigation(() => {
+        router.refresh()
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete record')
+    } finally {
+      setIsMutating(false)
     }
-
-    setDeletingPk(null)
-    startTransition(() => {
-      router.refresh()
-    })
   }, [deletingPk, tableName, primaryKeyColumn, router])
 
   return (
@@ -176,14 +191,14 @@ export function TableClient({
       {/* Header actions */}
       <div className="flex items-center justify-between">
         <div />
-        <Button onClick={() => { setCreatingNew(true); setError(null) }}>
+        <Button onClick={() => { setCreatingNew(true); setError(null) }} disabled={isMutating}>
           <Plus className="mr-2 h-4 w-4" />
           New Record
         </Button>
       </div>
 
       {/* Data table */}
-      <div className={isPending ? 'opacity-60 pointer-events-none transition-opacity' : ''}>
+      <div className={isNavigating ? 'opacity-60 pointer-events-none transition-opacity' : ''}>
         <DataTable
           columns={columns}
           rows={rows}

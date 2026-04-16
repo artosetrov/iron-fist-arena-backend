@@ -13,28 +13,10 @@ final class CharacterService {
     func loadCharacter() async {
         guard let charId = appState.currentCharacter?.id else { return }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: CharacterEnvelope = try await APIClient.shared.get(
                 APIEndpoints.character(charId)
             )
-
-            // Parse character from response
-            if let charDict = response["character"] as? [String: Any] {
-                let jsonData = try JSONSerialization.data(withJSONObject: charDict)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let character = try decoder.decode(Character.self, from: jsonData)
-                appState.currentCharacter = character
-            }
-
-            // Update gold from user dict if available (gold is now account-level)
-            if let userDict = response["user"] as? [String: Any] {
-                if let gold = userDict["gold"] as? Int {
-                    appState.currentCharacter?.gold = gold
-                }
-                if let gems = userDict["gems"] as? Int {
-                    appState.currentCharacter?.gems = gems
-                }
-            }
+            appState.currentCharacter = response.character
         } catch {
             appState.showToast("Failed to load character", subtitle: "Check connection and try again", type: .error, actionLabel: "Retry") { [weak self] in
                 Task { @MainActor in
@@ -49,22 +31,12 @@ final class CharacterService {
     func allocateStats(statChanges: [String: Int]) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = statChanges
-            let response = try await APIClient.shared.postRaw(
+            let response: CharacterEnvelope = try await APIClient.shared.post(
                 APIEndpoints.allocateStats(charId),
-                body: body
+                body: statChanges
             )
-            if let charData = response["character"] as? [String: Any] {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let updated = try decoder.decode(Character.self, from: jsonData)
-                appState.currentCharacter = updated
-                appState.showToast("Stats saved!", type: .info)
-                return true
-            }
-            // Fallback: reload character
-            await loadCharacter()
+            appState.currentCharacter = response.character
+            appState.showToast("Stats saved!", type: .info)
             return true
         } catch {
             appState.showToast("Failed to save stats", subtitle: "Changes not applied — try again", type: .error)
@@ -77,21 +49,12 @@ final class CharacterService {
     func respecStats() async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = ["character_id": charId]
-            let response = try await APIClient.shared.postRaw(
+            let response: CharacterEnvelope = try await APIClient.shared.post(
                 APIEndpoints.respecStats(charId),
-                body: body
+                body: CharacterIdBody(characterId: charId)
             )
-            if let charData = response["character"] as? [String: Any] {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                let respecDecoder = JSONDecoder()
-                respecDecoder.keyDecodingStrategy = .convertFromSnakeCase
-                let updated = try respecDecoder.decode(Character.self, from: jsonData)
-                appState.currentCharacter = updated
-                appState.showToast("Stats reset!", type: .info)
-                return true
-            }
-            await loadCharacter()
+            appState.currentCharacter = response.character
+            appState.showToast("Stats reset!", type: .info)
             return true
         } catch {
             appState.showToast("Failed to reset stats", subtitle: "Check connection and try again", type: .error)
@@ -104,28 +67,14 @@ final class CharacterService {
     func buyStatPoints() async -> BuyStatPointsResult? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = ["character_id": charId]
-            let response = try await APIClient.shared.postRaw(
+            let response: BuyStatPointsResponse = try await APIClient.shared.post(
                 APIEndpoints.buyStatPoints(charId),
-                body: body
+                body: CharacterIdBody(characterId: charId)
             )
-            // Update character if returned
-            if let charData = response["character"] as? [String: Any] {
-                let jsonData = try JSONSerialization.data(withJSONObject: charData)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let updated = try decoder.decode(Character.self, from: jsonData)
+            if let updated = response.character {
                 appState.currentCharacter = updated
             }
-            // Parse purchase result
-            if let purchaseData = response["purchase"] as? [String: Any] {
-                let jsonData = try JSONSerialization.data(withJSONObject: purchaseData)
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                return try decoder.decode(BuyStatPointsResult.self, from: jsonData)
-            }
-            await loadCharacter()
-            return nil
+            return response.purchase
         } catch {
             appState.showToast("Purchase failed", subtitle: "Check connection and try again", type: .error)
             return nil
@@ -135,13 +84,10 @@ final class CharacterService {
     func getStatPurchaseStatus() async -> StatPurchaseStatus? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: StatPurchaseStatus = try await APIClient.shared.get(
                 APIEndpoints.statPurchaseStatus(charId)
             )
-            let jsonData = try JSONSerialization.data(withJSONObject: response)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(StatPurchaseStatus.self, from: jsonData)
+            return response
         } catch {
             return nil
         }
@@ -152,12 +98,11 @@ final class CharacterService {
     func setStance(attack: String, defense: String) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = ["stance": ["attack": attack, "defense": defense]]
-            let _ = try await APIClient.shared.postRaw(
+            let response: CharacterEnvelope = try await APIClient.shared.post(
                 APIEndpoints.setStance(charId),
-                body: body
+                body: SetStanceBody(stance: StanceSelectionBody(attack: attack, defense: defense))
             )
-            appState.currentCharacter?.combatStance = CombatStance(attack: attack, defense: defense)
+            appState.currentCharacter = response.character
             appState.showToast("Stance updated!", type: .info)
             return true
         } catch {
@@ -169,22 +114,33 @@ final class CharacterService {
     // MARK: - Train (Simulate Combat)
 
     func train() async -> Bool {
-        guard let charId = appState.currentCharacter?.id else { return false }
-        do {
-            let body: [String: Any] = ["character_id": charId]
-            let response = try await APIClient.shared.postRaw(
-                APIEndpoints.combatSimulate,
-                body: body
-            )
-            let jsonData = try JSONSerialization.data(withJSONObject: response)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let combatData = try decoder.decode(CombatData.self, from: jsonData)
-            appState.combatData = combatData
-            return true
-        } catch {
-            appState.showToast("Training failed", subtitle: "Check your stamina and try again", type: .error)
-            return false
-        }
+        appState.showToast(
+            "Training unavailable",
+            subtitle: "This client path still points at a deprecated combat endpoint",
+            type: .info
+        )
+        return false
     }
+}
+
+private struct CharacterEnvelope: Decodable {
+    let character: Character
+}
+
+private struct BuyStatPointsResponse: Decodable {
+    let character: Character?
+    let purchase: BuyStatPointsResult?
+}
+
+private struct CharacterIdBody: Encodable {
+    let characterId: String
+}
+
+private struct StanceSelectionBody: Encodable {
+    let attack: String
+    let defense: String
+}
+
+private struct SetStanceBody: Encodable {
+    let stance: StanceSelectionBody
 }

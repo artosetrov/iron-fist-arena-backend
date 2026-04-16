@@ -30,7 +30,7 @@ export function ItemPreviewCard({
   onClose,
   className,
   fallbackImageUrl = null,
-  fallbackImageKey: _fallbackImageKey = null,
+  fallbackImageKey = null,
 }: ItemPreviewCardProps) {
   const nonZeroStats = STAT_KEYS.filter(s => (form.stats[s.key] ?? 0) > 0)
   const hasEffects = form.specialEffect || form.uniquePassive
@@ -69,7 +69,9 @@ export function ItemPreviewCard({
                 {isBorrowed && (
                   <div
                     className="absolute bottom-0 left-0 right-0 bg-amber-500/90 text-[8px] font-bold text-center uppercase tracking-wider text-black px-1 py-0.5"
-                    title="Borrowed from a sibling item — upload real art"
+                    title={fallbackImageKey
+                      ? `Borrowed from ${fallbackImageKey} — upload real art`
+                      : 'Borrowed from a sibling item — upload real art'}
                   >
                     Borrowed
                   </div>

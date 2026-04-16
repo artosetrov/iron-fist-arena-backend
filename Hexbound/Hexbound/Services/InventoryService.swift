@@ -87,6 +87,41 @@ final class InventoryService {
         let quantity: Int
     }
 
+    private struct InventoryExpandRequest: Encodable {
+        let characterId: String
+    }
+
+    private struct InventorySellResponse: Decodable {
+        let gold: Int
+        let soldFor: Int
+    }
+
+    private struct ConsumableUseBody: Encodable {
+        let characterId: String
+        let consumableType: String
+    }
+
+    private struct ConsumableResourceDelta: Decodable {
+        let before: Int
+        let after: Int
+        let max: Int
+        let restored: Int
+    }
+
+    private struct ConsumableUseResponse: Decodable {
+        let used: Bool?
+        let consumableType: String?
+        let itemName: String?
+        let stamina: ConsumableResourceDelta?
+        let health: ConsumableResourceDelta?
+        let remainingQuantity: Int?
+    }
+
+    private struct InventoryExpandResponse: Decodable {
+        let inventorySlots: Int
+        let gold: Int
+    }
+
     private let appState: AppState
 
     init(appState: AppState) {
@@ -176,22 +211,14 @@ final class InventoryService {
     func sell(inventoryId: String) async -> SellResult? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "inventory_id": inventoryId
-            ]
-            let response = try await APIClient.shared.postRaw(
+            let response: InventorySellResponse = try await APIClient.shared.post(
                 APIEndpoints.inventorySell,
-                body: body
+                body: InventoryMutationBody(characterId: charId, inventoryId: inventoryId)
             )
-            let gold = response["gold"] as? Int
-            let soldFor = response["soldFor"] as? Int ?? response["sold_for"] as? Int ?? 0
-            if let gold {
-                appState.currentCharacter?.gold = gold
-                appState.cachedInventory = nil // invalidate so next load fetches fresh data
-                HapticManager.light()
-            }
-            return SellResult(gold: gold ?? 0, soldFor: soldFor)
+            appState.currentCharacter?.gold = response.gold
+            appState.cachedInventory = nil // invalidate so next load fetches fresh data
+            HapticManager.light()
+            return SellResult(gold: response.gold, soldFor: response.soldFor)
         } catch {
             appState.showToast("Sell failed", subtitle: "Unequip item first, then try again", type: .error)
             return nil
@@ -210,39 +237,29 @@ final class InventoryService {
     func useItem(inventoryId: String, consumableType: String? = nil) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let response: [String: Any]
+            let response: ConsumableUseResponse
 
             if let consumableType = consumableType {
                 // Consumable from consumableInventory — use /api/consumables/use
-                let body: [String: Any] = [
-                    "character_id": charId,
-                    "consumable_type": consumableType
-                ]
-                response = try await APIClient.shared.postRaw(
+                response = try await APIClient.shared.post(
                     APIEndpoints.consumablesUse,
-                    body: body
+                    body: ConsumableUseBody(characterId: charId, consumableType: consumableType)
                 )
             } else {
                 // Equipment-based consumable — use /api/inventory/use
-                let body: [String: Any] = [
-                    "character_id": charId,
-                    "inventory_id": inventoryId
-                ]
-                response = try await APIClient.shared.postRaw(
+                response = try await APIClient.shared.post(
                     APIEndpoints.inventoryUse,
-                    body: body
+                    body: InventoryMutationBody(characterId: charId, inventoryId: inventoryId)
                 )
             }
 
             // Update character stats from server response (corrects optimistic estimates)
             if var char = appState.currentCharacter {
-                if let stamina = response["stamina"] as? [String: Any],
-                   let after = stamina["after"] as? Int {
-                    char.currentStamina = after
+                if let stamina = response.stamina {
+                    char.currentStamina = stamina.after
                 }
-                if let health = response["health"] as? [String: Any],
-                   let after = health["after"] as? Int {
-                    char.currentHp = after
+                if let health = response.health {
+                    char.currentHp = health.after
                 }
                 appState.currentCharacter = char
             }
@@ -285,23 +302,18 @@ final class InventoryService {
     func expandInventory() async -> Int? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = ["character_id": charId]
-            let response = try await APIClient.shared.postRaw(
+            let response: InventoryExpandResponse = try await APIClient.shared.post(
                 APIEndpoints.inventoryExpand,
-                body: body
+                body: InventoryExpandRequest(characterId: charId)
             )
-            if let slots = response["inventorySlots"] as? Int,
-               let gold = response["gold"] as? Int {
-                // Single write-back to avoid @Observable re-entrant access
-                if var char = appState.currentCharacter {
-                    char.inventorySlots = slots
-                    char.gold = gold
-                    appState.currentCharacter = char
-                }
-                HapticManager.light()
-                return slots
+            // Single write-back to avoid @Observable re-entrant access
+            if var char = appState.currentCharacter {
+                char.inventorySlots = response.inventorySlots
+                char.gold = response.gold
+                appState.currentCharacter = char
             }
-            return nil
+            HapticManager.light()
+            return response.inventorySlots
         } catch let error as APIError {
             if case .clientError(_, let message, _) = error {
                 appState.showToast(message, type: .error)

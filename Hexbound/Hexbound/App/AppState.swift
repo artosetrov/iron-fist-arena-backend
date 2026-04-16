@@ -1,5 +1,17 @@
 import SwiftUI
 
+struct CurrentUserSnapshot: Codable {
+    let id: String
+    let email: String?
+    let username: String?
+    let gold: Int
+    let gems: Int
+    let premiumUntil: String?
+    let role: String?
+    let createdAt: String?
+    let lastLogin: String?
+}
+
 @MainActor @Observable
 final class AppState {
     // MARK: - App Screen (onboarding-reordered navigation)
@@ -36,11 +48,11 @@ final class AppState {
     }
     var isGuest = false
     var pendingConfirmationEmail: String?
-    var currentUser: [String: Any]?
+    var currentUser: CurrentUserSnapshot?
 
     /// True if the logged-in user has admin role (used to show dev tools)
     var isAdmin: Bool {
-        (currentUser?["role"] as? String) == "admin"
+        currentUser?.role == "admin"
     }
 
     // MARK: - Character
@@ -55,7 +67,7 @@ final class AppState {
     // MARK: - Combat
     var combatData: CombatData?
     var combatResult: CombatData?
-    var pendingLoot: [[String: Any]] = []
+    var pendingLoot: [PendingLootItem] = []
     var resolveResult: ResolveResult?
 
     // MARK: - Interactive Combat v1 Fallback
@@ -70,10 +82,8 @@ final class AppState {
 
     // MARK: - Cache
     var cachedInventory: [Item]?
-    var cachedQuests: [[String: Any]]?
     var cachedTypedQuests: [Quest]?
-    var cachedAchievements: [[String: Any]]?
-    var cachedDailyLogin: [String: Any]?
+    var cachedDailyLogin: DailyLoginData?
     var cachedBonusClaimedToday = false
 
     // MARK: - Dungeon
@@ -148,8 +158,7 @@ final class AppState {
     /// after /game/init populates `cachedDailyLogin`.
     func maybeEnqueueDailyLogin() {
         guard let cached = cachedDailyLogin,
-              let canClaim = cached["canClaim"] as? Bool,
-              canClaim else {
+              cached.canClaim else {
             dailyLoginCanClaim = false
             return
         }
@@ -195,10 +204,17 @@ final class AppState {
     var showLevelUpModal = false
     var levelUpNewLevel: Int = 0
     var levelUpStatPoints: Int = 0
+    var levelUpPassivePoints: Int = 0
 
-    func triggerLevelUpModal(newLevel: Int, statPoints: Int, previousLevel: Int? = nil) {
+    func triggerLevelUpModal(
+        newLevel: Int,
+        statPoints: Int,
+        passivePoints: Int = 0,
+        previousLevel: Int? = nil
+    ) {
         levelUpNewLevel = newLevel
         levelUpStatPoints = statPoints
+        levelUpPassivePoints = passivePoints
         // W2.D4 — enqueue building unlock ceremonies for every threshold
         // crossed between the old level and the new one. We use the character
         // cache's level as the "from" reference because server just returned
@@ -310,6 +326,7 @@ final class AppState {
         leveledUp: Bool? = nil,
         newLevel: Int? = nil,
         statPointsAwarded: Int? = nil,
+        passivePointsAwarded: Int? = nil,
         previousLevel: Int? = nil
     ) -> Bool {
         guard var char = currentCharacter else { return false }
@@ -334,6 +351,9 @@ final class AppState {
         if didLevelUp, let statPointsAwarded, statPointsAwarded > 0 {
             char.statPoints = (char.statPoints ?? 0) + statPointsAwarded
         }
+        if didLevelUp, let passivePointsAwarded, passivePointsAwarded > 0 {
+            char.passivePointsAvailable = (char.passivePointsAvailable ?? 0) + passivePointsAwarded
+        }
 
         currentCharacter = char
 
@@ -341,6 +361,7 @@ final class AppState {
             triggerLevelUpModal(
                 newLevel: newLevel,
                 statPoints: statPointsAwarded ?? 0,
+                passivePoints: passivePointsAwarded ?? 0,
                 previousLevel: levelBefore
             )
         }
@@ -416,9 +437,7 @@ final class AppState {
         pendingLoot = []
         resolveResult = nil
         cachedInventory = nil
-        cachedQuests = nil
         cachedTypedQuests = nil
-        cachedAchievements = nil
         cachedDailyLogin = nil
         cachedBonusClaimedToday = false
         UserDefaults.standard.removeObject(forKey: Self.dailyLoginShownKey)
@@ -432,8 +451,7 @@ final class AppState {
     func invalidateCache(_ key: String) {
         switch key {
         case "inventory": cachedInventory = nil
-        case "quests": cachedQuests = nil; cachedTypedQuests = nil
-        case "achievements": cachedAchievements = nil
+        case "quests": cachedTypedQuests = nil
         case "daily_login": cachedDailyLogin = nil
         default: break
         }

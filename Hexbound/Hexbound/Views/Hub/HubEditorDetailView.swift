@@ -2,6 +2,16 @@ import SwiftUI
 
 #if DEBUG
 
+typealias AdminLayoutSnapshot = [String: [String: CGFloat]]
+
+struct AdminLayoutSaveRequest: Encodable {
+    let layout: AdminLayoutSnapshot
+}
+
+struct AdminLayoutSaveResponse: Decodable {
+    let layout: AdminLayoutSnapshot?
+}
+
 // MARK: - Hub Editor Detail View (admin tool: drag buildings, save to server)
 
 struct HubEditorDetailView: View {
@@ -294,9 +304,9 @@ struct HubEditorDetailView: View {
 
         // 2. Try to persist to server (so all users get it)
         do {
-            let _ = try await APIClient.shared.postRaw(
+            let _: AdminLayoutSaveResponse = try await APIClient.shared.post(
                 APIEndpoints.adminHubLayout,
-                body: ["layout": layout]
+                body: AdminLayoutSaveRequest(layout: layout)
             )
             showToast("Saved to server!")
         } catch {

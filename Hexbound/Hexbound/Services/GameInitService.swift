@@ -22,58 +22,16 @@ final class GameInitService {
         cache.loadDungeonMapLayoutFromDisk()
 
         do {
-            let response = try await APIClient.shared.getRaw(
+            let response: GameInitResponse = try await APIClient.shared.get(
                 APIEndpoints.gameInit,
                 params: ["character_id": charId]
             )
 
-            // Parse character
-            if let charDict = response["character"] as? [String: Any] {
-                let charDecoder = JSONDecoder()
-                charDecoder.keyDecodingStrategy = .convertFromSnakeCase
-                if let charData = try? JSONSerialization.data(withJSONObject: charDict),
-                   let character = try? charDecoder.decode(Character.self, from: charData) {
-                    appState.currentCharacter = character
-                }
-            }
-
-            // Parse user (gold and gems live on User, not Character)
-            if let userDict = response["user"] as? [String: Any] {
-                appState.currentUser = userDict
-                if let gold = userDict["gold"] as? Int {
-                    appState.currentCharacter?.gold = gold
-                }
-                if let gems = userDict["gems"] as? Int {
-                    appState.currentCharacter?.gems = gems
-                }
-            }
-
-            // Parse inventory — same flattening as InventoryService
-            if let equipment = response["equipment"] as? [[String: Any]] {
-                let flattened = flattenEquipmentItems(equipment)
-                let itemDecoder = JSONDecoder()
-                itemDecoder.keyDecodingStrategy = .convertFromSnakeCase
-                if let jsonData = try? JSONSerialization.data(withJSONObject: flattened),
-                   let items = try? itemDecoder.decode([Item].self, from: jsonData) {
-                    appState.cachedInventory = items
-                }
-            }
-
-            // Parse quests
-            if let quests = response["quests"] as? [[String: Any]] {
-                appState.cachedQuests = quests
-                let questDecoder = JSONDecoder()
-                questDecoder.keyDecodingStrategy = .convertFromSnakeCase
-                if let questData = try? JSONSerialization.data(withJSONObject: quests),
-                   let typedQuests = try? questDecoder.decode([Quest].self, from: questData) {
-                    appState.cachedTypedQuests = typedQuests
-                }
-            }
-
-            // Parse daily login
-            if let dailyLogin = response["dailyLogin"] as? [String: Any] {
-                appState.cachedDailyLogin = dailyLogin
-            }
+            appState.currentCharacter = response.character
+            appState.currentUser = response.user
+            appState.cachedInventory = response.inventoryItems
+            appState.cachedTypedQuests = response.quests
+            appState.cachedDailyLogin = response.dailyLogin
 
             // BUG-53: auto-open the Daily Login modal at most once per local
             // calendar day. Decision happens here — the exact moment we know
@@ -83,33 +41,14 @@ final class GameInitService {
             // hub badge, so HubView no longer needs its own daily-login probe.
             appState.maybeEnqueueDailyLogin()
 
-            // Parse game config
-            if let config = response["config"] as? [String: Any] {
-                cache.gameConfig = GameConfig(from: config)
-            }
-
-            // Parse feature flags (resolved server-side)
-            if let flags = response["featureFlags"] as? [String: Any] {
-                cache.cacheFeatureFlags(flags)
-            }
-
-            // Parse hub layout (admin-defined building positions)
-            if let hubLayout = response["hubLayout"] as? [String: Any] {
-                cache.cacheHubLayout(from: hubLayout)
-            }
-
-            // Parse dungeon map layout (admin-defined dungeon node positions)
-            if let dungeonMapLayout = response["dungeonMapLayout"] as? [String: Any] {
-                cache.cacheDungeonMapLayout(from: dungeonMapLayout)
-            }
+            cache.gameConfig = GameConfig(config: response.config)
+            cache.cacheFeatureFlags(response.featureFlags.compactMapValues(\.boolValue))
+            cache.cacheHubLayout(mapLayout(response.hubLayout))
+            cache.cacheDungeonMapLayout(mapLayout(response.dungeonMapLayout))
 
             // Calculate server time delta for client-side stamina calculation
-            if let serverTimeStr = response["serverTime"] as? String {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                if let serverDate = formatter.date(from: serverTimeStr) {
-                    cache.serverTimeDelta = Date().timeIntervalSince(serverDate)
-                }
+            if let serverDate = Self.parseServerDate(response.serverTime) {
+                cache.serverTimeDelta = Date().timeIntervalSince(serverDate)
             }
 
             cache.isInitLoaded = true
@@ -141,18 +80,255 @@ final class GameInitService {
 
     // MARK: - Helpers
 
-    /// Same flattening as InventoryService — merges nested item fields into parent.
-    private func flattenEquipmentItems(_ items: [[String: Any]]) -> [[String: Any]] {
-        items.map { entry in
-            var flat = entry
-            if let nested = entry["item"] as? [String: Any] {
-                for (key, value) in nested {
-                    if key == "id" { continue }
-                    flat[key] = value
-                }
-            }
-            flat.removeValue(forKey: "item")
-            return flat
+    private func mapLayout(
+        _ layout: [String: LayoutOverridePayload]
+    ) -> [String: GameDataCache.BuildingOverride] {
+        layout.mapValues {
+            GameDataCache.BuildingOverride(
+                x: CGFloat($0.x),
+                y: CGFloat($0.y),
+                size: $0.size.map { CGFloat($0) }
+            )
+        }
+    }
+
+    private static func parseServerDate(_ value: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: value) {
+            return date
+        }
+
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: value)
+    }
+}
+
+private struct GameInitResponse: Decodable {
+    let user: CurrentUserSnapshot?
+    let character: Character
+    let equipment: [GameInitEquipmentInventoryEntry]
+    let consumables: [GameInitConsumableInventoryEntry]
+    let quests: [Quest]
+    let dailyLogin: DailyLoginData
+    let config: GameInitConfigPayload
+    let featureFlags: [String: JSONValue]
+    let hubLayout: [String: LayoutOverridePayload]
+    let dungeonMapLayout: [String: LayoutOverridePayload]
+    let serverTime: String
+
+    var inventoryItems: [Item] {
+        equipment.map(\.toItem) + consumables.compactMap(\.toItem)
+    }
+}
+
+private struct GameInitEquipmentInventoryEntry: Decodable {
+    let id: String
+    let upgradeLevel: Int
+    let durability: Int
+    let maxDurability: Int
+    let isEquipped: Bool
+    let equippedSlot: String?
+    let rolledStats: [String: Int]?
+    let item: GameInitItemRecord
+
+    var toItem: Item {
+        Item(
+            id: id,
+            itemName: item.itemName,
+            itemType: item.itemType,
+            rarity: item.rarity,
+            itemLevel: item.itemLevel,
+            upgradeLevel: upgradeLevel,
+            isEquipped: isEquipped,
+            equippedSlot: equippedSlot,
+            baseStats: item.baseStats,
+            rolledStats: rolledStats,
+            buyPrice: item.buyPrice,
+            sellPrice: item.sellPrice,
+            setName: item.setName,
+            specialEffect: item.specialEffect,
+            uniquePassive: item.uniquePassive,
+            durability: durability,
+            maxDurability: maxDurability,
+            description: item.description,
+            catalogId: item.catalogId,
+            classRestriction: item.classRestriction,
+            imageUrl: item.imageUrl,
+            imageKey: item.imageKey,
+            quantity: nil,
+            consumableType: nil
+        )
+    }
+}
+
+private struct GameInitItemRecord: Decodable {
+    let catalogId: String?
+    let itemName: String
+    let itemType: ItemType
+    let rarity: ItemRarity
+    let itemLevel: Int
+    let baseStats: [String: Int]?
+    let setName: String?
+    let specialEffect: String?
+    let uniquePassive: String?
+    let imageUrl: String?
+    let imageKey: String?
+    let classRestriction: String?
+    let description: String?
+    let buyPrice: Int?
+    let sellPrice: Int?
+}
+
+private struct GameInitConsumableInventoryEntry: Decodable {
+    let id: String
+    let consumableType: String
+    let quantity: Int
+
+    var toItem: Item? {
+        guard quantity > 0 else { return nil }
+
+        let canonicalID = ConsumableCatalog.canonicalID(
+            consumableType: consumableType,
+            catalogId: consumableType,
+            imageKey: nil
+        )
+        let displayName = canonicalID.map(ConsumableCatalog.displayName(for:))
+            ?? ConsumableCatalog.displayName(forKnownOrRaw: consumableType)
+        let imageKey = ConsumableCatalog.resolvedImageKey(
+            consumableType: consumableType,
+            catalogId: consumableType,
+            imageKey: nil
+        )
+        let rarity = canonicalID.flatMap(ConsumableCatalog.rarity(for:)) ?? .common
+
+        return Item(
+            id: id,
+            itemName: displayName,
+            itemType: .consumable,
+            rarity: rarity,
+            itemLevel: 1,
+            upgradeLevel: nil,
+            isEquipped: false,
+            equippedSlot: nil,
+            baseStats: nil,
+            rolledStats: nil,
+            buyPrice: nil,
+            sellPrice: nil,
+            setName: nil,
+            specialEffect: nil,
+            uniquePassive: nil,
+            durability: nil,
+            maxDurability: nil,
+            description: nil,
+            catalogId: consumableType,
+            classRestriction: nil,
+            imageUrl: nil,
+            imageKey: imageKey,
+            quantity: quantity,
+            consumableType: consumableType
+        )
+    }
+}
+
+private struct LayoutOverridePayload: Decodable {
+    let x: Double
+    let y: Double
+    let size: Double?
+}
+
+private struct GameInitConfigPayload: Decodable {
+    let staminaMax: Int
+    let staminaRegenMinutes: Int
+    let pvpStaminaCost: Int
+    let freePvpPerDay: Int
+    let upgradeChances: [Int]
+    let maxLevel: Int
+    let statPointsPerLevel: Int
+    let pvpWinGold: Int
+    let pvpLossGold: Int
+    let pvpWinXp: Int
+    let pvpLossXp: Int
+    let critMultiplier: Double
+    let maxCritChance: Int
+    let maxDodgeChance: Int
+    let dailyLoginRewards: [DailyLoginRewardDef]
+    let gemCosts: GameInitGemCosts
+    let interactiveCombatEnabled: Bool
+}
+
+private struct GameInitGemCosts: Decodable {
+    let goldMineSlotCost: Int
+    let goldMineBoost: Int
+    let staminaRefill: Int
+    let extraPvpCombat: Int
+}
+
+private extension GameConfig {
+    init(config: GameInitConfigPayload) {
+        staminaMax = config.staminaMax
+        staminaRegenMinutes = config.staminaRegenMinutes
+        pvpStaminaCost = config.pvpStaminaCost
+        freePvpPerDay = config.freePvpPerDay
+        upgradeChances = config.upgradeChances
+        maxLevel = config.maxLevel
+        statPointsPerLevel = config.statPointsPerLevel
+        pvpWinGold = config.pvpWinGold
+        pvpLossGold = config.pvpLossGold
+        pvpWinXp = config.pvpWinXp
+        pvpLossXp = config.pvpLossXp
+        critMultiplier = config.critMultiplier
+        maxCritChance = config.maxCritChance
+        maxDodgeChance = config.maxDodgeChance
+        dailyLoginRewards = config.dailyLoginRewards
+        goldMineSlotCostGems = config.gemCosts.goldMineSlotCost
+        goldMineBoostGems = config.gemCosts.goldMineBoost
+        staminaRefillGems = config.gemCosts.staminaRefill
+        extraPvpCombatGems = config.gemCosts.extraPvpCombat
+        interactiveCombatEnabled = config.interactiveCombatEnabled
+    }
+}
+
+private enum JSONValue: Decodable {
+    case string(String)
+    case number(Double)
+    case bool(Bool)
+    case array([JSONValue])
+    case object([String: JSONValue])
+    case null
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode(Double.self) {
+            self = .number(value)
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode([String: JSONValue].self) {
+            self = .object(value)
+        } else if let value = try? container.decode([JSONValue].self) {
+            self = .array(value)
+        } else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported JSON value in game/init payload"
+            )
+        }
+    }
+
+    var boolValue: Bool? {
+        switch self {
+        case .bool(let value):
+            return value
+        case .null:
+            return nil
+        default:
+            return nil
         }
     }
 }

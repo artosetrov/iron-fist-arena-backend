@@ -3,8 +3,10 @@ import SwiftUI
 // MARK: - Level Up Modal (Ceremony Upgrade — Sprint 1)
 // Full ornamental redesign: rotating rays, scale-in title, tick-up reward counters,
 // gold particle burst, unlock pills, shimmer CTA.
-// Server fields used: levelUpNewLevel, levelUpStatPoints
-// Future: passivePointsAwarded, staminaRefill, unlocks[] (when backend adds them)
+// Server-authoritative fields used today: levelUpNewLevel, levelUpStatPoints.
+// Building unlocks are derived from local unlock config crossed by the new level.
+// Keep this ceremony honest: do not surface extra reward rows unless the
+// backend actually returns them in the active claim/runtime contract.
 
 struct LevelUpModalView: View {
     @Environment(AppState.self) private var appState
@@ -24,7 +26,6 @@ struct LevelUpModalView: View {
     // Tick-up counters
     @State private var displayedStatPoints: Int = 0
     @State private var displayedPassivePoints: Int = 0
-    @State private var displayedStamina: Int = 0
 
     // Title entrance
     @State private var titleScale: CGFloat = 2.5
@@ -33,9 +34,7 @@ struct LevelUpModalView: View {
 
     private var newLevel: Int { appState.levelUpNewLevel }
     private var statPoints: Int { appState.levelUpStatPoints }
-    // TODO: Add when backend returns these fields
-    private var passivePoints: Int { 1 }
-    private var staminaRefill: Int { 120 }
+    private var passivePoints: Int { appState.levelUpPassivePoints }
 
     /// Lightweight row describing a single newly-unlocked building for the modal.
     private struct UnlockRow: Identifiable {
@@ -280,25 +279,17 @@ struct LevelUpModalView: View {
                 iconName: "star.fill",
                 iconColor: DarkFantasyTheme.goldBright,
                 label: "Stat Points",
-                value: displayedStatPoints,
-                targetValue: statPoints
+                value: displayedStatPoints
             )
 
-            rewardCard(
-                iconName: "sparkles",
-                iconColor: DarkFantasyTheme.purple,
-                label: "Passive Point",
-                value: displayedPassivePoints,
-                targetValue: passivePoints
-            )
-
-            rewardCard(
-                iconName: "bolt.fill",
-                iconColor: DarkFantasyTheme.stamina,
-                label: "Stamina Refill",
-                value: displayedStamina,
-                targetValue: staminaRefill
-            )
+            if passivePoints > 0 {
+                rewardCard(
+                    iconName: "sparkles",
+                    iconColor: DarkFantasyTheme.purple,
+                    label: passivePoints == 1 ? "Passive Point" : "Passive Points",
+                    value: displayedPassivePoints
+                )
+            }
         }
     }
 
@@ -307,8 +298,7 @@ struct LevelUpModalView: View {
         iconName: String,
         iconColor: Color,
         label: String,
-        value: Int,
-        targetValue: Int
+        value: Int
     ) -> some View {
         HStack(spacing: LayoutConstants.spaceMD) {
             // Icon in circle
@@ -525,7 +515,6 @@ struct LevelUpModalView: View {
                 withAnimation(.easeOut(duration: 0.08)) {
                     displayedStatPoints = Int(Double(statPoints) * fraction)
                     displayedPassivePoints = Int(Double(passivePoints) * fraction)
-                    displayedStamina = Int(Double(staminaRefill) * fraction)
                 }
             }
         }
@@ -534,7 +523,6 @@ struct LevelUpModalView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + MotionConstants.tickUpDuration + 0.05) {
             displayedStatPoints = statPoints
             displayedPassivePoints = passivePoints
-            displayedStamina = staminaRefill
         }
     }
 
@@ -556,7 +544,6 @@ struct LevelUpModalView: View {
         titleOpacity = 0
         displayedStatPoints = 0
         displayedPassivePoints = 0
-        displayedStamina = 0
     }
 }
 
@@ -595,4 +582,3 @@ private struct ShieldShape: Shape {
         return path
     }
 }
-

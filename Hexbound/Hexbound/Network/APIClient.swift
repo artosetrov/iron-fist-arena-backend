@@ -84,31 +84,13 @@ actor APIClient {
         _ = try await request(method: "DELETE", endpoint: endpoint)
     }
 
-    // MARK: - Raw Requests (for dynamic/untyped responses)
-
-    func getRaw(_ endpoint: String, params: [String: String] = [:]) async throws -> [String: Any] {
-        let data = try await request(method: "GET", endpoint: endpoint, params: params)
-        return try parseJSON(data)
-    }
-
-    func postRaw(_ endpoint: String, body: [String: Any] = [:]) async throws -> [String: Any] {
-        let data = try await request(method: "POST", endpoint: endpoint, rawBody: body)
-        return try parseJSON(data)
-    }
-
-    func patchRaw(_ endpoint: String, body: [String: Any] = [:]) async throws -> [String: Any] {
-        let data = try await request(method: "PATCH", endpoint: endpoint, rawBody: body)
-        return try parseJSON(data)
-    }
-
     // MARK: - Core Request
 
     private func request(
         method: String,
         endpoint: String,
         params: [String: String] = [:],
-        body: Encodable? = nil,
-        rawBody: [String: Any]? = nil
+        body: Encodable? = nil
     ) async throws -> Data {
         // Phase 2 (2026-04-13, M-1): dedup concurrent GETs. Same
         // endpoint+params → one URLSession task shared across callers.
@@ -129,8 +111,7 @@ actor APIClient {
             return try await task.value
         }
         return try await performRequest(
-            method: method, endpoint: endpoint, params: params,
-            body: body, rawBody: rawBody
+            method: method, endpoint: endpoint, params: params, body: body
         )
     }
 
@@ -145,8 +126,7 @@ actor APIClient {
         method: String,
         endpoint: String,
         params: [String: String] = [:],
-        body: Encodable? = nil,
-        rawBody: [String: Any]? = nil
+        body: Encodable? = nil
     ) async throws -> Data {
         // Build URL
         guard var components = URLComponents(url: baseURL.appendingPathComponent(endpoint), resolvingAgainstBaseURL: false) else {
@@ -169,8 +149,6 @@ actor APIClient {
         // Body
         if let body = body {
             urlRequest.httpBody = try encoder.encode(body)
-        } else if let rawBody = rawBody {
-            urlRequest.httpBody = try JSONSerialization.data(withJSONObject: rawBody)
         }
 
         // Execute
@@ -195,8 +173,7 @@ actor APIClient {
                     // in-flight Task for this GET, and re-entering
                     // `request()` would deadlock awaiting ourselves.
                     return try await performRequest(
-                        method: method, endpoint: endpoint,
-                        params: params, body: body, rawBody: rawBody
+                        method: method, endpoint: endpoint, params: params, body: body
                     )
                 }
                 onUnauthorized?()
@@ -248,15 +225,6 @@ actor APIClient {
         let result = await task.value
         refreshTask = nil
         return result
-    }
-
-    // MARK: - Helpers
-
-    private func parseJSON(_ data: Data) throws -> [String: Any] {
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw APIError.noData
-        }
-        return json
     }
 
     private func extractErrorMessage(from data: Data) -> String? {

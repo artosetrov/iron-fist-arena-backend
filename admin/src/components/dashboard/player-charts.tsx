@@ -83,7 +83,7 @@ export function PlayerCharts({ players }: { players: PlayerSnapshot }) {
           </ChartCard>
         </div>
 
-        <ChartCard title="Retention" description="TODO: Requires login event tracking">
+        <ChartCard title="Retention" description="Available after login event tracking is enabled">
           <div className="flex items-center justify-around py-6">
             <RetentionBadge label="D1" value={players.retentionD1} />
             <RetentionBadge label="D7" value={players.retentionD7} />

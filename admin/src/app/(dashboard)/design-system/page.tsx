@@ -6,7 +6,7 @@ export default function DesignSystemPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Design System</h1>
         <p className="text-muted-foreground">
-          Hexbound DS — tokens, components, and screens. Mirrors Figma DS and SwiftUI code 1:1.
+          Hexbound DS — shared tokens, Figma-aligned component previews, and live reference screens.
         </p>
       </div>
       <DesignSystemClient />

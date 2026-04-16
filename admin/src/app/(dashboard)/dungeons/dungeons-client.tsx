@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,11 +42,12 @@ const TYPE_COLORS: Record<string, string> = {
 
 export function DungeonsClient({ dungeons }: { dungeons: DungeonSummary[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [search, setSearch] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletingDungeon, setDeletingDungeon] = useState<DungeonSummary | null>(null)
   const [error, setError] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filtered = dungeons.filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -54,7 +55,9 @@ export function DungeonsClient({ dungeons }: { dungeons: DungeonSummary[] }) {
   )
 
   function handleCreate() {
-    startTransition(async () => {
+    void (async () => {
+      setError('')
+      setIsCreating(true)
       try {
         const res = await fetch('/api/dungeons', {
           method: 'POST',
@@ -70,8 +73,10 @@ export function DungeonsClient({ dungeons }: { dungeons: DungeonSummary[] }) {
         router.push(`/dungeons/${dungeon.id}`)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to create dungeon')
+      } finally {
+        setIsCreating(false)
       }
-    })
+    })()
   }
 
   function openDelete(d: DungeonSummary) {
@@ -81,21 +86,22 @@ export function DungeonsClient({ dungeons }: { dungeons: DungeonSummary[] }) {
 
   async function handleDelete() {
     if (!deletingDungeon) return
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/dungeons/${deletingDungeon.id}`, { method: 'DELETE' })
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to delete dungeon')
-          return
-        }
-        setDeleteDialogOpen(false)
-        setDeletingDungeon(null)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/dungeons/${deletingDungeon.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to delete dungeon')
+        return
       }
-    })
+      setDeleteDialogOpen(false)
+      setDeletingDungeon(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -117,9 +123,9 @@ export function DungeonsClient({ dungeons }: { dungeons: DungeonSummary[] }) {
             className="pl-9"
           />
         </div>
-        <Button onClick={handleCreate} disabled={isPending}>
+        <Button onClick={handleCreate} disabled={isCreating}>
           <Plus className="mr-2 h-4 w-4" />
-          {isPending ? 'Creating...' : 'Create New Dungeon'}
+          {isCreating ? 'Creating...' : 'Create New Dungeon'}
         </Button>
       </div>
 
@@ -218,9 +224,11 @@ export function DungeonsClient({ dungeons }: { dungeons: DungeonSummary[] }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

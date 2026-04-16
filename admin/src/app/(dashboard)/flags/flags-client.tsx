@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -62,7 +62,6 @@ export function FlagsClient({
   stats: FeatureFlagStats
 }) {
   const router = useRouter()
-  const [, startTransition] = useTransition()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -72,10 +71,14 @@ export function FlagsClient({
   const [deletingFlag, setDeletingFlag] = useState<FeatureFlagRecord | null>(null)
   const [form, setForm] = useState<FeatureFlagFormData>(EMPTY_FEATURE_FLAG_FORM)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [togglingFlagId, setTogglingFlagId] = useState<string | null>(null)
   const [seedResult, setSeedResult] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
-  const refresh = () => startTransition(() => router.refresh())
+  const refresh = () => router.refresh()
   const updateField = (field: keyof FeatureFlagFormData, value: string) => {
     setForm((current) => ({ ...current, [field]: value }))
   }
@@ -83,6 +86,8 @@ export function FlagsClient({
   const openCreate = () => {
     setEditingFlag(null)
     setForm(EMPTY_FEATURE_FLAG_FORM)
+    setError(null)
+    setMessage(null)
     setDialogOpen(true)
   }
 
@@ -106,11 +111,14 @@ export function FlagsClient({
       class: targeting?.class ?? '',
       userIds: targeting?.userIds?.join(', ') ?? '',
     })
+    setError(null)
+    setMessage(null)
     setDialogOpen(true)
   }
 
   const handleSave = async () => {
     setSaving(true)
+    setError(null)
     try {
       const parsedValue = sanitizeFeatureFlagValue(form.flagType, form.value)
       const targeting = sanitizeFeatureFlagTargeting({
@@ -145,47 +153,59 @@ export function FlagsClient({
       }
 
       setDialogOpen(false)
+      setMessage(editingFlag ? 'Feature flag updated.' : 'Feature flag created.')
       refresh()
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Save failed')
+      setError(error instanceof Error ? error.message : 'Save failed')
     } finally {
       setSaving(false)
     }
   }
 
   const handleToggle = async (flag: FeatureFlagRecord) => {
+    setError(null)
+    setTogglingFlagId(flag.id)
     try {
       await toggleFeatureFlag(flag.id)
+      setMessage(`Flag ${flag.key} ${flag.isActive ? 'disabled' : 'enabled'}.`)
       refresh()
     } catch (error) {
-      console.error(error)
+      setError(error instanceof Error ? error.message : 'Toggle failed')
+    } finally {
+      setTogglingFlagId(null)
     }
   }
 
   const handleDelete = async () => {
     if (!deletingFlag) return
 
-    setSaving(true)
+    setDeleting(true)
+    setError(null)
     try {
       await deleteFeatureFlag(deletingFlag.id)
       setDeleteDialogOpen(false)
+      setMessage(`Flag ${deletingFlag.key} deleted.`)
       refresh()
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Delete failed')
+      setError(error instanceof Error ? error.message : 'Delete failed')
     } finally {
-      setSaving(false)
+      setDeleting(false)
     }
   }
 
   const handleSeed = async () => {
     setSeeding(true)
     setSeedResult(null)
+    setError(null)
     try {
       const result = await seedDefaultFlags()
       setSeedResult(`Created ${result.created}, skipped ${result.skipped}`)
+      setMessage('Default feature flags seeded.')
       refresh()
     } catch (error) {
-      setSeedResult(error instanceof Error ? error.message : 'Seed failed')
+      const msg = error instanceof Error ? error.message : 'Seed failed'
+      setSeedResult(msg)
+      setError(msg)
     } finally {
       setSeeding(false)
     }
@@ -217,6 +237,17 @@ export function FlagsClient({
 
   return (
     <>
+      {error && (
+        <div className="rounded-md bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+      {message && (
+        <div className="rounded-md bg-green-600/10 border border-green-600/30 px-4 py-3 text-sm text-green-400">
+          {message}
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -350,28 +381,34 @@ export function FlagsClient({
                       <span className="text-xs text-muted-foreground">{flag.environment}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={() => handleToggle(flag)} className="flex items-center gap-1 text-xs" title="Toggle">
+                      <button
+                        onClick={() => handleToggle(flag)}
+                        className="flex items-center gap-1 text-xs"
+                        title="Toggle"
+                        disabled={togglingFlagId === flag.id}
+                      >
                         {flag.isActive ? (
                           <>
                             <ToggleRight className="h-4 w-4 text-green-400" />
-                            <span className="text-green-400">Active</span>
+                            <span className="text-green-400">{togglingFlagId === flag.id ? 'Updating...' : 'Active'}</span>
                           </>
                         ) : (
                           <>
                             <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Off</span>
+                            <span className="text-muted-foreground">{togglingFlagId === flag.id ? 'Updating...' : 'Off'}</span>
                           </>
                         )}
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(flag)}>
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(flag)} disabled={togglingFlagId === flag.id}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
+                          disabled={togglingFlagId === flag.id}
                           onClick={() => {
                             setDeletingFlag(flag)
                             setDeleteDialogOpen(true)
@@ -577,9 +614,9 @@ export function FlagsClient({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={saving}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={saving}>
-              {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>

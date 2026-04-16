@@ -102,4 +102,5 @@ struct OfferPurchaseResponse: Codable {
     let leveledUp: Bool?
     let newLevel: Int?
     let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
 }

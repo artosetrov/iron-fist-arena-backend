@@ -26,8 +26,21 @@ import { logTutorialEvent } from '@/lib/game/tutorial-analytics'
  * Response:
  *   {
  *     combat: CombatResult,
- *     rewards: { gold, xp, itemCatalogKey, itemName? },
- *     levelUp: { leveledUp, newLevel, ... } | null,
+ *     rewards: {
+ *       gold,
+ *       xp,
+ *       item_catalog_key,
+ *       itemCatalogKey, // legacy compatibility alias
+ *       itemName?
+ *     },
+ *     level_up: {
+ *       leveled_up,
+ *       new_level,
+ *       stat_points_awarded,
+ *       passive_points_awarded,
+ *       at_max_level
+ *     } | null,
+ *     levelUp: { leveledUp, newLevel, ... } | null, // legacy compatibility alias
  *     unlocks: string[]  // building keys unlocked at new level
  *   }
  *
@@ -225,11 +238,20 @@ export async function POST(req: NextRequest) {
       rewards: {
         gold: TUTORIAL_FIGHT_REWARDS.gold,
         xp: TUTORIAL_FIGHT_REWARDS.xp,
+        item_catalog_key: TUTORIAL_FIGHT_REWARDS.itemCatalogKey,
         itemCatalogKey: TUTORIAL_FIGHT_REWARDS.itemCatalogKey,
         itemName: txResult.itemName,
       },
+      level_up: txResult.levelUp ? {
+        leveled_up: txResult.levelUp.leveledUp,
+        new_level: txResult.levelUp.newLevel,
+        stat_points_awarded: txResult.levelUp.statPointsAwarded,
+        passive_points_awarded: txResult.levelUp.passivePointsAwarded,
+        at_max_level: txResult.levelUp.atMaxLevel,
+      } : null,
       levelUp: txResult.levelUp,
       unlocks: txResult.unlocks,
+      sanity_check_passed: heroWon,
       sanityCheckPassed: heroWon,
     })
   } catch (error) {

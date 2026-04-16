@@ -34,6 +34,275 @@ struct BattlePrepareData {
     }
 }
 
+private struct PvpPrepareRequest: Encodable {
+    let characterId: String
+    let opponentId: String?
+    let revengeId: String?
+}
+
+private struct BattleCombatStancePayload: Decodable {
+    let attack: String?
+    let defense: String?
+
+    func toParsedZoneStance() -> ParsedZoneStance? {
+        guard let attack, let defense else {
+            return nil
+        }
+        return ParsedZoneStance(validatedAttack: attack, defense: defense)
+    }
+}
+
+private struct BattlePassiveBonusesPayload: Decodable {
+    let flatDamage: Double?
+    let percentDamage: Double?
+    let flatCritChance: Double?
+    let flatDodgeChance: Double?
+    let lifesteal: Double?
+    let damageReduction: Double?
+
+    func toPassiveBonus() -> PassiveBonus {
+        PassiveBonus(
+            flatDamage: flatDamage ?? 0,
+            percentDamage: percentDamage ?? 0,
+            flatCritChance: flatCritChance ?? 0,
+            flatDodgeChance: flatDodgeChance ?? 0,
+            lifesteal: lifesteal ?? 0,
+            damageReduction: damageReduction ?? 0
+        )
+    }
+}
+
+private struct BattleSkillEffectPayload: Decodable {
+    let heal: Int?
+}
+
+private struct BattleEquippedSkillPayload: Decodable {
+    let id: String
+    let skillKey: String?
+    let name: String?
+    let damageBase: Int?
+    let damageScaling: [String: Double]?
+    let damageType: String?
+    let targetType: String?
+    let cooldown: Int?
+    let effectJson: BattleSkillEffectPayload?
+    let rank: Int?
+    let rankScaling: Double?
+
+    func toCombatSkill() -> CombatSkill {
+        CombatSkill(
+            id: id,
+            skillKey: skillKey,
+            name: name,
+            damageBase: damageBase.map(Double.init),
+            damageScaling: damageScaling ?? [:],
+            damageType: damageType,
+            targetType: targetType,
+            cooldown: cooldown ?? 0,
+            effect: CombatSkillEffect(heal: effectJson?.heal),
+            rank: rank ?? 1,
+            rankScaling: rankScaling ?? 0.1
+        )
+    }
+}
+
+private struct BattleFighterStatsPayload: Decodable {
+    let id: String
+    let name: String
+    let characterClass: String
+    let level: Int
+    let str: Int
+    let agi: Int
+    let vit: Int
+    let end: Int
+    let int: Int
+    let wis: Int
+    let luk: Int
+    let cha: Int
+    let maxHp: Int
+    let armor: Int
+    let magicResist: Int
+    let avatar: String?
+    let combatStance: BattleCombatStancePayload?
+    let equippedSkills: [BattleEquippedSkillPayload]?
+    let passiveBonuses: BattlePassiveBonusesPayload?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case characterClass = "class"
+        case level
+        case str
+        case agi
+        case vit
+        case end
+        case int
+        case wis
+        case luk
+        case cha
+        case maxHp
+        case armor
+        case magicResist
+        case avatar
+        case combatStance
+        case equippedSkills
+        case passiveBonuses
+    }
+
+    func toFighterStats() -> FighterStats {
+        FighterStats(
+            id: id,
+            name: name,
+            characterClass: characterClass,
+            level: level,
+            str: str,
+            agi: agi,
+            vit: vit,
+            end: end,
+            int: int,
+            wis: wis,
+            luk: luk,
+            cha: cha,
+            maxHp: maxHp,
+            armor: armor,
+            magicResist: magicResist,
+            avatar: avatar,
+            combatStance: combatStance?.toParsedZoneStance(),
+            equippedSkills: (equippedSkills ?? []).map { $0.toCombatSkill() },
+            passiveBonuses: passiveBonuses?.toPassiveBonus() ?? PassiveBonus()
+        )
+    }
+}
+
+private struct BattleCombatConfigPayload: Decodable {
+    let maxTurns: Int?
+    let minDamage: Int?
+    let critMultiplier: Double?
+    let maxCritChance: Double?
+    let maxDodgeChance: Double?
+    let rogueDodgeBonus: Double?
+    let tankDamageReduction: Double?
+    let damageVariance: Double?
+    let poisonArmorPenetration: Double?
+    let critPerLuk: Double?
+    let critPerAgi: Double?
+    let dodgePerAgi: Double?
+    let dodgePerLuk: Double?
+    let chaMissPerPoint: Double?
+    let chaMissCap: Double?
+    let rogueExecuteHpThreshold: Double?
+    let rogueExecuteDamageBonus: Double?
+
+    func toCombatConfig() -> CombatConfig {
+        let defaults = CombatConfig.default
+        return CombatConfig(
+            maxTurns: maxTurns ?? defaults.maxTurns,
+            minDamage: minDamage ?? defaults.minDamage,
+            critMultiplier: critMultiplier ?? defaults.critMultiplier,
+            maxCritChance: maxCritChance ?? defaults.maxCritChance,
+            maxDodgeChance: maxDodgeChance ?? defaults.maxDodgeChance,
+            rogueDodgeBonus: rogueDodgeBonus ?? defaults.rogueDodgeBonus,
+            tankDamageReduction: tankDamageReduction ?? defaults.tankDamageReduction,
+            damageVariance: damageVariance ?? defaults.damageVariance,
+            poisonArmorPenetration: poisonArmorPenetration ?? defaults.poisonArmorPenetration,
+            critPerLuk: critPerLuk ?? defaults.critPerLuk,
+            critPerAgi: critPerAgi ?? defaults.critPerAgi,
+            dodgePerAgi: dodgePerAgi ?? defaults.dodgePerAgi,
+            dodgePerLuk: dodgePerLuk ?? defaults.dodgePerLuk,
+            chaMissPerPoint: chaMissPerPoint ?? defaults.chaMissPerPoint,
+            chaMissCap: chaMissCap ?? defaults.chaMissCap,
+            rogueExecuteHpThreshold: rogueExecuteHpThreshold ?? defaults.rogueExecuteHpThreshold,
+            rogueExecuteDamageBonus: rogueExecuteDamageBonus ?? defaults.rogueExecuteDamageBonus
+        )
+    }
+}
+
+private struct BattlePrepareStaminaPayload: Decodable {
+    let current: Int
+    let cost: Int
+    let hasFreePvp: Bool
+    let freePvpRemaining: Int
+}
+
+private struct PvpPrepareResponse: Decodable {
+    let battleTicketId: String
+    let battleSeed: Int
+    let playerStats: BattleFighterStatsPayload
+    let enemyStats: BattleFighterStatsPayload
+    let combatConfig: BattleCombatConfigPayload
+    let stamina: BattlePrepareStaminaPayload
+    let currentHp: Int?
+    let maxHp: Int?
+
+    func toPrepareData() -> BattlePrepareData {
+        BattlePrepareData(
+            battleTicketId: battleTicketId,
+            battleSeed: battleSeed,
+            playerStats: playerStats.toFighterStats(),
+            enemyStats: enemyStats.toFighterStats(),
+            combatConfig: combatConfig.toCombatConfig(),
+            staminaInfo: BattlePrepareData.StaminaInfo(
+                current: stamina.current,
+                cost: stamina.cost,
+                hasFreePvp: stamina.hasFreePvp,
+                freePvpRemaining: stamina.freePvpRemaining
+            ),
+            serverCurrentHp: currentHp,
+            serverMaxHp: maxHp
+        )
+    }
+}
+
+private struct PvpResolveRequest: Encodable {
+    let characterId: String
+    let opponentId: String
+    let battleTicketId: String
+    let battleSeed: Int
+    let clientWinnerId: String
+    let revengeId: String?
+}
+
+struct DurabilityChangeSnapshot: Codable {
+    let id: String
+    let name: String
+    let durabilityBefore: Int
+    let durabilityAfter: Int
+}
+
+private struct PvpResolveResultPayload: Decodable {
+    let goldReward: Int
+    let xpReward: Int
+    let ratingChange: Int
+    let firstWinBonus: Bool
+    let leveledUp: Bool
+    let newLevel: Int?
+    let statPointsAwarded: Int?
+    let passivePointsAwarded: Int?
+}
+
+private struct PvpResolveStaminaPayload: Decodable {
+    let current: Int
+    let max: Int
+}
+
+private struct PvpResolvePostCombatHpPayload: Decodable {
+    let player: Int?
+    let enemy: Int?
+    let max: Int?
+}
+
+private struct PvpResolveResponse: Decodable {
+    let verified: Bool
+    let clientMatches: Bool?
+    let serverWinnerId: String
+    let result: PvpResolveResultPayload
+    let loot: [PendingLootItem]?
+    let stamina: PvpResolveStaminaPayload
+    let durabilityChanges: [DurabilityChangeSnapshot]?
+    let matchId: String?
+    let postCombatHp: PvpResolvePostCombatHpPayload?
+}
+
 /// Thread-safe cache for concurrent prepare calls
 private actor PrepareCacheStore {
     private var cache: [String: BattlePrepareData] = [:]
@@ -93,41 +362,15 @@ final class BattlePreloader {
         let task = Task<BattlePrepareData?, Never> { [weak self] in
             guard let self else { return nil }
             do {
-                var body: [String: Any] = ["character_id": charId]
-                if let revengeId { body["revenge_id"] = revengeId }
-                if let opponentId { body["opponent_id"] = opponentId }
-
-                let response = try await APIClient.shared.postRaw(
+                let response: PvpPrepareResponse = try await APIClient.shared.post(
                     APIEndpoints.pvpPrepare,
-                    body: body
+                    body: PvpPrepareRequest(
+                        characterId: charId,
+                        opponentId: opponentId,
+                        revengeId: revengeId
+                    )
                 )
-
-                guard let ticketId = response["battle_ticket_id"] as? String,
-                      let seed = response["battle_seed"] as? Int,
-                      let playerDict = response["player_stats"] as? [String: Any],
-                      let enemyDict = response["enemy_stats"] as? [String: Any] else {
-                    await cacheStore.removeInFlight(cacheKey)
-                    return nil
-                }
-
-                let configDict = response["combat_config"] as? [String: Any] ?? [:]
-                let staminaDict = response["stamina"] as? [String: Any] ?? [:]
-
-                let data = BattlePrepareData(
-                    battleTicketId: ticketId,
-                    battleSeed: seed,
-                    playerStats: FighterStats(from: playerDict),
-                    enemyStats: FighterStats(from: enemyDict),
-                    combatConfig: CombatConfig(from: configDict),
-                    staminaInfo: BattlePrepareData.StaminaInfo(
-                        current: staminaDict["current"] as? Int ?? 0,
-                        cost: staminaDict["cost"] as? Int ?? 0,
-                        hasFreePvp: staminaDict["has_free_pvp"] as? Bool ?? false,
-                        freePvpRemaining: staminaDict["free_pvp_remaining"] as? Int ?? 0
-                    ),
-                    serverCurrentHp: response["current_hp"] as? Int,
-                    serverMaxHp: response["max_hp"] as? Int
-                )
+                let data = response.toPrepareData()
 
                 await cacheStore.set(cacheKey, data)
                 await cacheStore.removeInFlight(cacheKey)
@@ -191,44 +434,37 @@ final class BattlePreloader {
         guard let charId = appState.currentCharacter?.id else { return nil }
 
         do {
-            var body: [String: Any] = [
-                "character_id": charId,
-                "opponent_id": opponentId,
-                "battle_ticket_id": battleTicketId,
-                "battle_seed": battleSeed,
-                "client_winner_id": clientWinnerId
-            ]
-            if let revengeId { body["revenge_id"] = revengeId }
-            let response = try await APIClient.shared.postRaw(
+            let response: PvpResolveResponse = try await APIClient.shared.post(
                 APIEndpoints.pvpResolve,
-                body: body
+                body: PvpResolveRequest(
+                    characterId: charId,
+                    opponentId: opponentId,
+                    battleTicketId: battleTicketId,
+                    battleSeed: battleSeed,
+                    clientWinnerId: clientWinnerId,
+                    revengeId: revengeId
+                )
             )
 
-            let resultDict = response["result"] as? [String: Any] ?? [:]
-            let lootArray = response["loot"] as? [[String: Any]] ?? []
-            let staminaDict = response["stamina"] as? [String: Any] ?? [:]
-            let hpDict = response["post_combat_hp"] as? [String: Any] ?? [:]
-
-            let durabilityArray = response["durability_changes"] as? [[String: Any]] ?? []
-
             return ResolveResult(
-                verified: response["verified"] as? Bool ?? false,
-                clientMatches: response["client_matches"] as? Bool ?? true,
-                serverWinnerId: response["server_winner_id"] as? String ?? clientWinnerId,
-                goldReward: resultDict["gold_reward"] as? Int ?? 0,
-                xpReward: resultDict["xp_reward"] as? Int ?? 0,
-                ratingChange: resultDict["rating_change"] as? Int ?? 0,
-                firstWinBonus: resultDict["first_win_bonus"] as? Bool ?? false,
-                leveledUp: resultDict["leveled_up"] as? Bool ?? false,
-                newLevel: resultDict["new_level"] as? Int,
-                statPointsAwarded: resultDict["stat_points_awarded"] as? Int,
-                loot: lootArray,
-                staminaCurrent: staminaDict["current"] as? Int ?? 0,
-                staminaMax: staminaDict["max"] as? Int ?? 120,
-                matchId: response["matchId"] as? String,
-                durabilityDegraded: durabilityArray,
-                hpCurrent: hpDict["player"] as? Int,
-                hpMax: hpDict["max"] as? Int
+                verified: response.verified,
+                clientMatches: response.clientMatches ?? true,
+                serverWinnerId: response.serverWinnerId,
+                goldReward: response.result.goldReward,
+                xpReward: response.result.xpReward,
+                ratingChange: response.result.ratingChange,
+                firstWinBonus: response.result.firstWinBonus,
+                leveledUp: response.result.leveledUp,
+                newLevel: response.result.newLevel,
+                statPointsAwarded: response.result.statPointsAwarded,
+                passivePointsAwarded: response.result.passivePointsAwarded,
+                loot: response.loot ?? [],
+                staminaCurrent: response.stamina.current,
+                staminaMax: response.stamina.max,
+                matchId: response.matchId,
+                durabilityDegraded: response.durabilityChanges ?? [],
+                hpCurrent: response.postCombatHp?.player,
+                hpMax: response.postCombatHp?.max
             )
         } catch {
             // Resolve failure is non-fatal — server will reconcile
@@ -269,11 +505,12 @@ struct ResolveResult {
     let leveledUp: Bool
     let newLevel: Int?
     let statPointsAwarded: Int?
-    let loot: [[String: Any]]
+    let passivePointsAwarded: Int?
+    let loot: [PendingLootItem]
     let staminaCurrent: Int
     let staminaMax: Int
     let matchId: String?
-    let durabilityDegraded: [[String: Any]]
+    let durabilityDegraded: [DurabilityChangeSnapshot]
     let hpCurrent: Int?
     let hpMax: Int?
 }

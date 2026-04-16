@@ -114,6 +114,245 @@ struct MinigameBonusResult: Codable, Equatable {
     }
 }
 
+enum GoldMineSlotStatus: String, Codable {
+    case idle
+    case mining
+    case ready
+}
+
+struct GoldMineSlotStatsResponse: Codable, Equatable {
+    let totalGoldMined: Int
+    let sessionsCompleted: Int
+    let bestHaul: Int
+    let currentStreak: Int
+}
+
+struct GoldMineSlotResponse: Codable, Equatable {
+    var slotIndex: Int
+    var status: GoldMineSlotStatus
+    var sessionId: String?
+    var startedAt: String?
+    var endsAt: String?
+    var reward: Int?
+    var gemReward: Int?
+    var boosted: Bool?
+    var minigamePlayed: Bool?
+    var minigameSessionId: String?
+    var stats: GoldMineSlotStatsResponse?
+
+    init(
+        slotIndex: Int,
+        status: GoldMineSlotStatus,
+        sessionId: String?,
+        startedAt: String?,
+        endsAt: String?,
+        reward: Int?,
+        gemReward: Int?,
+        boosted: Bool?,
+        minigamePlayed: Bool?,
+        minigameSessionId: String?,
+        stats: GoldMineSlotStatsResponse?
+    ) {
+        self.slotIndex = slotIndex
+        self.status = status
+        self.sessionId = sessionId
+        self.startedAt = startedAt
+        self.endsAt = endsAt
+        self.reward = reward
+        self.gemReward = gemReward
+        self.boosted = boosted
+        self.minigamePlayed = minigamePlayed
+        self.minigameSessionId = minigameSessionId
+        self.stats = stats
+    }
+
+    var hasPlayedMinigame: Bool {
+        minigamePlayed ?? false
+    }
+
+    var hasInFlightMinigameSession: Bool {
+        guard let minigameSessionId else { return false }
+        return !minigameSessionId.isEmpty
+    }
+
+    var isBoosted: Bool {
+        boosted ?? false
+    }
+
+    func resolvedStatus(now: Date = Date()) -> GoldMineSlotStatus {
+        guard status == .mining, let endsAt else { return status }
+        guard let endDate = parseGoldMineISODate(endsAt) else { return status }
+        return endDate <= now ? .ready : status
+    }
+}
+
+struct GoldMineStatusResponse: Codable {
+    let slots: [GoldMineSlotResponse]
+    let maxSlots: Int
+}
+
+protocol GoldMineSlotsBridge {
+    var slots: [GoldMineSlotResponse] { get }
+}
+
+extension GoldMineSlotsBridge {
+}
+
+private func parseGoldMineISODate(_ raw: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = fractional.date(from: raw) {
+            return date
+        }
+
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: raw)
+}
+
+struct GoldMineSlotActionRequest: Encodable {
+    let characterId: String
+    let slotIndex: Int
+}
+
+struct GoldMineCharacterRequest: Encodable {
+    let characterId: String
+}
+
+struct GoldMineCollectAllRequest: Encodable {
+    let characterId: String
+    let pickedShaftKey: ShaftKey?
+}
+
+struct GoldMineSlotMinigameStartRequest: Encodable {
+    let characterId: String
+    let slotIndex: Int
+    let pickedShaftKey: ShaftKey?
+}
+
+struct GoldMineSlotMinigameSubmitRequest: Encodable {
+    let characterId: String
+    let slotIndex: Int?
+    let sessionId: String
+    let caughtCount: Int
+    let spawnedCount: Int
+    let goldClaimedInSession: Int
+    let gemsClaimedInSession: Int
+    let skipped: Bool
+}
+
+struct GoldMineStartResponse: Codable, GoldMineSlotsBridge {
+    let slots: [GoldMineSlotResponse]
+}
+
+struct GoldMineCollectResponse: Codable, GoldMineSlotsBridge {
+    let slots: [GoldMineSlotResponse]
+    let goldCollected: Int
+    let gemsCollected: Int
+    let gold: Int
+    let gems: Int
+    let activeShaft: ActiveShaft?
+}
+
+struct GoldMineCollectAllResponse: Codable, GoldMineSlotsBridge {
+    let slots: [GoldMineSlotResponse]
+    let goldCollected: Int
+    let gemsCollected: Int
+    let gold: Int?
+    let gems: Int?
+    let needsShaftPick: Bool?
+    let unlockedShafts: [ShaftKey]?
+    let activeShaft: ActiveShaft?
+    let unplayedReadySlotIndices: [Int]?
+}
+
+struct GoldMineSlotMinigameStartResponse: Codable, GoldMineSlotsBridge {
+    let needsShaftPick: Bool?
+    let unlockedShafts: [ShaftKey]?
+    let slots: [GoldMineSlotResponse]
+    let activeShaft: ActiveShaft?
+    let minigameSession: MinigameSessionInfo?
+}
+
+struct GoldMineBoostResponse: Codable, GoldMineSlotsBridge {
+    let slots: [GoldMineSlotResponse]
+    let gems: Int
+}
+
+struct GoldMineBuySlotResponse: Codable, GoldMineSlotsBridge {
+    let slots: [GoldMineSlotResponse]
+    let maxSlots: Int
+    let gems: Int
+}
+
+struct GoldMineSlotMinigameSubmitResponse: Codable, GoldMineSlotsBridge {
+    let bonusGold: Int
+    let bonusGems: Int
+    let gold: Int
+    let gems: Int
+    let slots: [GoldMineSlotResponse]
+}
+
+struct FortuneWheelStatusResponse: Codable {
+    let spinsToday: Int?
+    let spinsLimit: Int
+    let spinsRemaining: Int
+    let gold: Int?
+}
+
+struct FortuneWheelSpinRequest: Encodable {
+    let characterId: String
+    let betAmount: Int
+}
+
+struct FortuneWheelSectorResponse: Codable, Equatable {
+    let index: Int
+    let multiplier: Double
+    let label: String
+}
+
+struct FortuneWheelSpinResponse: Codable {
+    let won: Bool
+    let sectorIndex: Int
+    let multiplier: Double
+    let winAmount: Int
+    let gold: Int
+    let spinsToday: Int?
+    let spinsLimit: Int
+    let spinsRemaining: Int
+    let sectors: [FortuneWheelSectorResponse]?
+}
+
+struct ShellGameStatusResponse: Codable {
+    let playsRemaining: Int
+    let playsLimit: Int
+}
+
+struct ShellGameStartRequest: Encodable {
+    let characterId: String
+    let betAmount: Int
+}
+
+struct ShellGameStartResponse: Codable {
+    let sessionId: String
+    let betAmount: Int
+    let playsRemaining: Int
+    let playsLimit: Int
+}
+
+struct ShellGameGuessRequest: Encodable {
+    let characterId: String
+    let sessionId: String
+    let chosenCup: Int
+}
+
+struct ShellGameGuessResponse: Codable {
+    let won: Bool
+    let winningCup: Int
+    let winAmount: Int
+    let gold: Int
+}
+
 /// Outcome of a /collect-all call. Two branches: needs picker or success.
 enum CollectAllOutcome {
     case needsShaftPick(unlocked: [ShaftKey])

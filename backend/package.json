@@ -18,6 +18,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:fix:battle-pass-rewards": "tsx prisma/fix-battle-pass-rewards.ts",
+    "db:fix:referral-rewards": "tsx prisma/fix-referral-rewards.ts",
     "docs:balance": "tsx scripts/generate-balance-docs.ts",
     "docs:balance:check": "tsx scripts/generate-balance-docs.ts --check",
     "sim:economy": "tsx scripts/simulate-economy.ts",

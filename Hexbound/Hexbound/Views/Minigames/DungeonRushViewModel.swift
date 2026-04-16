@@ -114,7 +114,7 @@ final class DungeonRushViewModel {
     var rushComplete = false
 
     // Pending result to apply after combat animation returns
-    var pendingFightResult: [String: Any]?
+    var pendingFightResult: DungeonRushFightResponse?
 
     init(appState: AppState) {
         self.appState = appState
@@ -162,7 +162,7 @@ final class DungeonRushViewModel {
             errorMessage = "Failed to load dungeon rush. Please check your connection and try again."
             return
         }
-        if result["active"] as? Bool == true {
+        if result.active == true, (result.runId?.isEmpty == false) {
             applyStatusResult(result)
         }
     }
@@ -182,13 +182,14 @@ final class DungeonRushViewModel {
         }
 
         // Store loot before navigation
-        let lootItems = result["loot"] as? [[String: Any]] ?? []
+        let lootItems = result.loot ?? []
         if !lootItems.isEmpty {
-            appState.pendingLoot.append(contentsOf: lootItems)
+            appState.pendingLoot.append(contentsOf: lootItems.map(Self.pendingLootItem))
         }
 
         // Navigate to combat animation
-        if let combatData = parseCombatData(from: result) {
+        let combatData = result.combatData
+        if !combatData.combatLog.isEmpty {
             appState.combatData = combatData
             pendingFightResult = result
             appState.mainPath.append(AppRoute.combat)
@@ -219,17 +220,16 @@ final class DungeonRushViewModel {
         isLoading = false
         guard let result else { return }
 
-        // Parse shop items
-        if let items = result["items"] as? [[String: Any]] {
+        if let items = result.items {
             shopItems = items.map { item in
                 RushShopItem(
-                    slot: item["slot"] as? Int ?? 0,
-                    type: item["type"] as? String ?? "buff",
-                    name: item["name"] as? String ?? "",
-                    icon: item["icon"] as? String ?? "shoppingcart",
-                    description: item["description"] as? String ?? "",
-                    price: item["price"] as? Int ?? 0,
-                    purchased: item["purchased"] as? Bool ?? false
+                    slot: item.slot,
+                    type: item.type,
+                    name: item.name,
+                    icon: item.icon,
+                    description: item.description,
+                    price: item.price,
+                    purchased: item.purchased
                 )
             }
             showShop = true
@@ -260,7 +260,7 @@ final class DungeonRushViewModel {
         let result = await service.rushShopBuy(runId: runId, slot: slot)
         isProcessingShop = false
 
-        guard let result, result["purchased"] as? Bool == true else {
+        guard let result, result.purchased else {
             // Revert on failure
             shopItems = savedShopItems
             appState.currentCharacter?.gold = savedGold
@@ -269,14 +269,14 @@ final class DungeonRushViewModel {
         }
 
         // Sync with server values
-        currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
-        updateHpFromPercent(result)
-        parseBuffs(from: result["buffs"])
-        if let newGold = result["gold"] as? Int {
+        currentHpPercent = result.currentHpPercent
+        updateHpFromPercent(currentHpPercent)
+        buffs = (result.buffs ?? []).map(Self.mapBuff)
+        if let newGold = result.playerGold {
             appState.currentCharacter?.gold = newGold
         }
 
-        if let purchased = result["shopPurchased"] as? [Int] {
+        if let purchased = result.shopPurchased {
             shopItems = shopItems.map { item in
                 RushShopItem(
                     slot: item.slot, type: item.type, name: item.name,
@@ -337,6 +337,29 @@ final class DungeonRushViewModel {
         appState.pendingLoot = []
     }
 
+    private static func mapRoom(_ room: RushRoomSnapshot) -> RushRoom {
+        RushRoom(
+            index: room.index,
+            type: room.type,
+            resolved: room.resolved,
+            seed: room.seed
+        )
+    }
+
+    private static func mapBuff(_ buff: RushBuffSnapshot) -> RushBuff {
+        RushBuff(
+            id: buff.id,
+            name: buff.name,
+            stat: buff.stat,
+            value: buff.value,
+            icon: buff.icon
+        )
+    }
+
+    private static func pendingLootItem(_ item: CombatLootItem) -> PendingLootItem {
+        PendingLootItem(item)
+    }
+
     // MARK: - Dismiss Event/Treasure overlays
 
     func dismissEventResult() {
@@ -349,116 +372,87 @@ final class DungeonRushViewModel {
 
     // MARK: - Private: Parse Status (GET response)
 
-    private func applyStatusResult(_ result: [String: Any]) {
-        runId = result["run_id"] as? String ?? ""
+    private func applyStatusResult(_ result: DungeonRushStateResponse) {
+        runId = result.runId ?? ""
         isActive = true
         isGameOver = false
         rushComplete = false
 
-        // Parse rooms
-        if let rawRooms = result["rooms"] as? [[String: Any]] {
-            rooms = rawRooms.map { r in
-                RushRoom(
-                    index: r["index"] as? Int ?? 0,
-                    type: r["type"] as? String ?? "combat",
-                    resolved: r["resolved"] as? Bool ?? false,
-                    seed: r["seed"] as? Int ?? 0
-                )
-            }
-        }
+        rooms = (result.rooms ?? []).map(Self.mapRoom)
 
-        currentRoomIndex = result["currentRoomIndex"] as? Int ?? 0
-        totalRooms = result["totalRooms"] as? Int ?? 12
-        currentHpPercent = result["currentHpPercent"] as? Int ?? 100
-        updateHpFromPercent(result)
+        currentRoomIndex = result.currentRoomIndex ?? 0
+        totalRooms = result.totalRooms ?? 12
+        currentHpPercent = result.currentHpPercent ?? 100
+        updateHpFromPercent(currentHpPercent)
 
-        // Parse buffs
-        parseBuffs(from: result["buffs"])
+        buffs = (result.buffs ?? []).map(Self.mapBuff)
 
-        // Parse rewards
-        let rewards = result["rewards"] as? [String: Any]
-        accumulatedGold = rewards?["totalGold"] as? Int ?? 0
-        accumulatedXp = rewards?["totalXp"] as? Int ?? 0
+        accumulatedGold = result.rewards?.totalGold ?? 0
+        accumulatedXp = result.rewards?.totalXp ?? 0
 
-        // Parse enemy (status uses "currentEnemy" not "current_enemy")
-        if let enemy = result["currentEnemy"] as? [String: Any] {
-            enemyName = enemy["name"] as? String ?? "???"
-            enemyLevel = enemy["level"] as? Int ?? 1
+        if let enemy = result.currentEnemy {
+            enemyName = enemy.name
+            enemyLevel = enemy.level
         }
     }
 
     // MARK: - Private: Parse Start (POST response)
 
-    private func applyStartResult(_ result: [String: Any]) {
-        runId = result["run_id"] as? String ?? result["id"] as? String ?? ""
+    private func applyStartResult(_ result: DungeonRushStateResponse) {
+        runId = result.runId ?? ""
         isActive = true
         isGameOver = false
         rushComplete = false
 
-        // Parse rooms
-        if let rawRooms = result["rooms"] as? [[String: Any]] {
-            rooms = rawRooms.map { r in
-                RushRoom(
-                    index: r["index"] as? Int ?? 0,
-                    type: r["type"] as? String ?? "combat",
-                    resolved: r["resolved"] as? Bool ?? false,
-                    seed: r["seed"] as? Int ?? 0
-                )
-            }
-        }
+        rooms = (result.rooms ?? []).map(Self.mapRoom)
 
-        currentRoomIndex = result["currentRoomIndex"] as? Int ?? 0
-        totalRooms = result["totalRooms"] as? Int ?? 12
-        currentHpPercent = result["currentHpPercent"] as? Int ?? 100
-        updateHpFromPercent(result)
+        currentRoomIndex = result.currentRoomIndex ?? 0
+        totalRooms = result.totalRooms ?? 12
+        currentHpPercent = result.currentHpPercent ?? 100
+        updateHpFromPercent(currentHpPercent)
 
-        // Parse buffs
-        parseBuffs(from: result["buffs"])
+        buffs = (result.buffs ?? []).map(Self.mapBuff)
 
-        // Parse rewards
-        let rewards = result["rewards"] as? [String: Any]
-        accumulatedGold = rewards?["totalGold"] as? Int ?? 0
-        accumulatedXp = rewards?["totalXp"] as? Int ?? 0
+        accumulatedGold = result.rewards?.totalGold ?? 0
+        accumulatedXp = result.rewards?.totalXp ?? 0
 
         // Reset items count on fresh start
-        if result["resumed"] as? Bool != true {
+        if result.resumed != true {
             accumulatedItems = 0
             appState.pendingLoot = []
         }
 
-        // Parse enemy
-        if let enemy = result["current_enemy"] as? [String: Any] {
-            enemyName = enemy["name"] as? String ?? "???"
-            enemyLevel = enemy["level"] as? Int ?? 1
+        if let enemy = result.currentEnemy {
+            enemyName = enemy.name
+            enemyLevel = enemy.level
         }
     }
 
     // MARK: - Private: Parse Fight Result
 
-    private func applyFightResult(_ result: [String: Any]) {
-        let won = result["victory"] as? Bool ?? false
+    private func applyFightResult(_ result: DungeonRushFightResponse) {
+        let won = result.victory
         lastFightWon = won
 
         if won {
-            let rewards = result["rewards"] as? [String: Any]
-            accumulatedGold = rewards?["totalGold"] as? Int ?? accumulatedGold
-            accumulatedXp = rewards?["totalXp"] as? Int ?? accumulatedXp
+            accumulatedGold = result.rewards?.totalGold ?? accumulatedGold
+            accumulatedXp = result.rewards?.totalXp ?? accumulatedXp
             applyCharacterRewardState(from: result)
 
             // Count loot
-            if let lootItems = result["loot"] as? [[String: Any]], !lootItems.isEmpty {
+            if let lootItems = result.loot, !lootItems.isEmpty {
                 accumulatedItems += lootItems.count
             }
 
             // Update HP
-            currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
-            updateHpFromPercent(result)
+            currentHpPercent = result.currentHpPercent ?? currentHpPercent
+            updateHpFromPercent(currentHpPercent)
 
             // Update buffs
-            parseBuffs(from: result["buffs"])
+            buffs = (result.buffs ?? []).map(Self.mapBuff)
 
             // Check rush completion
-            if result["rushComplete"] as? Bool == true {
+            if result.rushComplete == true {
                 rushComplete = true
                 isGameOver = true
                 return
@@ -474,40 +468,29 @@ final class DungeonRushViewModel {
 
     // MARK: - Private: Parse Resolve Result
 
-    private func applyResolveResult(_ result: [String: Any]) {
-        let type = result["type"] as? String ?? ""
+    private func applyResolveResult(_ result: DungeonRushResolveResponse) {
+        let type = result.type ?? ""
 
         // Update HP and buffs
-        currentHpPercent = result["currentHpPercent"] as? Int ?? currentHpPercent
-        updateHpFromPercent(result)
-        parseBuffs(from: result["buffs"])
+        currentHpPercent = result.currentHpPercent ?? currentHpPercent
+        updateHpFromPercent(currentHpPercent)
+        buffs = (result.buffs ?? []).map(Self.mapBuff)
 
         // Update rewards
-        let rewards = result["rewards"] as? [String: Any]
-        accumulatedGold = rewards?["totalGold"] as? Int ?? accumulatedGold
-        accumulatedXp = rewards?["totalXp"] as? Int ?? accumulatedXp
+        accumulatedGold = result.rewards?.totalGold ?? accumulatedGold
+        accumulatedXp = result.rewards?.totalXp ?? accumulatedXp
         applyCharacterRewardState(from: result)
 
         switch type {
         case "treasure":
-            treasureGold = result["gold"] as? Int ?? 0
-            if let buffData = result["buffGranted"] as? [String: Any] {
-                treasureBuff = RushBuff(
-                    id: buffData["id"] as? String ?? "",
-                    name: buffData["name"] as? String ?? "",
-                    stat: buffData["stat"] as? String ?? "",
-                    value: buffData["value"] as? Int ?? 0,
-                    icon: buffData["icon"] as? String ?? ""
-                )
-            } else {
-                treasureBuff = nil
-            }
+            treasureGold = result.gold ?? 0
+            treasureBuff = result.buffGranted.map(Self.mapBuff)
             showTreasureResult = true
 
         case "event":
-            eventResultIcon = result["eventIcon"] as? String ?? "questionmark.circle"
-            eventResultTitle = result["eventName"] as? String ?? "Event"
-            eventResultDescription = result["description"] as? String ?? ""
+            eventResultIcon = result.eventIcon ?? "questionmark.circle"
+            eventResultTitle = result.eventName ?? "Event"
+            eventResultDescription = result.description ?? ""
             showEventResult = true
 
         default:
@@ -515,7 +498,7 @@ final class DungeonRushViewModel {
         }
 
         // Check completion
-        if result["rushComplete"] as? Bool == true {
+        if result.rushComplete == true {
             rushComplete = true
             isGameOver = true
             return
@@ -525,29 +508,26 @@ final class DungeonRushViewModel {
         advanceFromResult(result)
     }
 
-    private func applyCharacterRewardState(from result: [String: Any]) {
+    private func applyCharacterRewardState(from result: DungeonRushFightResponse) {
         guard let char = appState.currentCharacter else { return }
         let previousLevel = char.level
         var resolvedGold: Int?
         var resolvedXp: Int?
 
-        if let rewards = result["rewards"] as? [String: Any],
-           let goldDelta = rewards["gold"] as? Int,
-           goldDelta != 0 {
+        if let goldDelta = result.rewards?.gold, goldDelta != 0 {
             resolvedGold = char.gold + goldDelta
         }
 
-        if let currentXp = result["current_xp"] as? Int {
+        if let currentXp = result.currentXp {
             resolvedXp = currentXp
-        } else if let rewards = result["rewards"] as? [String: Any],
-                  let xpDelta = rewards["xp"] as? Int,
-                  xpDelta != 0 {
+        } else if let xpDelta = result.rewards?.xp, xpDelta != 0 {
             resolvedXp = (char.experience ?? 0) + xpDelta
         }
 
-        let leveledUp = result["leveled_up"] as? Bool ?? false
-        let newLevel = result["new_level"] as? Int
-        let statPointsAwarded = result["stat_points_awarded"] as? Int ?? 0
+        let leveledUp = result.leveledUp ?? result.result.leveledUp ?? false
+        let newLevel = result.newLevel ?? result.result.newLevel
+        let statPointsAwarded = result.statPointsAwarded ?? result.result.statPointsAwarded ?? 0
+        let passivePointsAwarded = result.passivePointsAwarded ?? result.result.passivePointsAwarded ?? 0
 
         appState.applyAuthoritativeRewardState(
             gold: resolvedGold,
@@ -555,15 +535,48 @@ final class DungeonRushViewModel {
             leveledUp: leveledUp,
             newLevel: newLevel,
             statPointsAwarded: statPointsAwarded,
+            passivePointsAwarded: passivePointsAwarded,
+            previousLevel: previousLevel
+        )
+    }
+
+    private func applyCharacterRewardState(from result: DungeonRushResolveResponse) {
+        guard let char = appState.currentCharacter else { return }
+        let previousLevel = char.level
+        var resolvedGold: Int?
+        var resolvedXp: Int?
+
+        if let goldDelta = result.rewards?.gold, goldDelta != 0 {
+            resolvedGold = char.gold + goldDelta
+        }
+
+        if let currentXp = result.currentXp {
+            resolvedXp = currentXp
+        } else if let xpDelta = result.rewards?.xp, xpDelta != 0 {
+            resolvedXp = (char.experience ?? 0) + xpDelta
+        }
+
+        let leveledUp = result.leveledUp ?? false
+        let newLevel = result.newLevel
+        let statPointsAwarded = result.statPointsAwarded ?? 0
+        let passivePointsAwarded = result.passivePointsAwarded ?? 0
+
+        appState.applyAuthoritativeRewardState(
+            gold: resolvedGold,
+            xp: resolvedXp,
+            leveledUp: leveledUp,
+            newLevel: newLevel,
+            statPointsAwarded: statPointsAwarded,
+            passivePointsAwarded: passivePointsAwarded,
             previousLevel: previousLevel
         )
     }
 
     // MARK: - Private: Advance to Next Room
 
-    private func advanceFromResult(_ result: [String: Any]) {
-        if let nextRoom = result["nextRoom"] as? [String: Any] {
-            let idx = nextRoom["index"] as? Int ?? (currentRoomIndex + 1)
+    private func advanceFromResult(_ result: DungeonRushFightResponse) {
+        if let nextRoom = result.nextRoom {
+            let idx = nextRoom.index
             currentRoomIndex = idx
 
             // Update room in local array
@@ -580,11 +593,40 @@ final class DungeonRushViewModel {
                 }
             }
 
-            let nextType = nextRoom["type"] as? String ?? "combat"
+            let nextType = nextRoom.type
             if nextType == "combat" || nextType == "elite" || nextType == "miniboss" {
-                if let nextEnemy = result["nextEnemy"] as? [String: Any] {
-                    enemyName = nextEnemy["name"] as? String ?? "???"
-                    enemyLevel = nextEnemy["level"] as? Int ?? currentFloor
+                if let nextEnemy = result.nextEnemy {
+                    enemyName = nextEnemy.name
+                    enemyLevel = nextEnemy.level
+                }
+            }
+        } else {
+            currentRoomIndex += 1
+        }
+    }
+
+    private func advanceFromResult(_ result: DungeonRushResolveResponse) {
+        if let nextRoom = result.nextRoom {
+            let idx = nextRoom.index
+            currentRoomIndex = idx
+
+            if idx < rooms.count && currentRoomIndex > 0 {
+                let prevIdx = currentRoomIndex - 1
+                if prevIdx < rooms.count {
+                    rooms[prevIdx] = RushRoom(
+                        index: rooms[prevIdx].index,
+                        type: rooms[prevIdx].type,
+                        resolved: true,
+                        seed: rooms[prevIdx].seed
+                    )
+                }
+            }
+
+            let nextType = nextRoom.type
+            if nextType == "combat" || nextType == "elite" || nextType == "miniboss" {
+                if let nextEnemy = result.nextEnemy {
+                    enemyName = nextEnemy.name
+                    enemyLevel = nextEnemy.level
                 }
             }
         } else {
@@ -594,63 +636,8 @@ final class DungeonRushViewModel {
 
     // MARK: - Private: Update HP from result
 
-    private func updateHpFromPercent(_ result: [String: Any]) {
-        // Prefer real HP values if backend provides them
-        if let hp = result["currentHp"] as? Int {
-            currentHp = hp
-        } else {
-            currentHp = maxHp * currentHpPercent / 100
-        }
-        if let mhp = result["maxHp"] as? Int {
-            maxHp = mhp
-        }
+    private func updateHpFromPercent(_ percent: Int) {
+        currentHp = maxHp * percent / 100
     }
 
-    // MARK: - Private: Parse Buffs
-
-    private func parseBuffs(from raw: Any?) {
-        guard let rawBuffs = raw as? [[String: Any]] else { return }
-        buffs = rawBuffs.map { b in
-            RushBuff(
-                id: b["id"] as? String ?? "",
-                name: b["name"] as? String ?? "",
-                stat: b["stat"] as? String ?? "",
-                value: b["value"] as? Int ?? 0,
-                icon: b["icon"] as? String ?? ""
-            )
-        }
-    }
-
-    // MARK: - Private: Parse Combat Data
-
-    private func parseCombatData(from response: [String: Any]) -> CombatData? {
-        guard response["player"] != nil, response["combat_log"] != nil, response["result"] != nil else {
-            #if DEBUG
-            let keys = Array(response.keys).sorted()
-            print("[DUNGEON-RUSH] parseCombatData: missing required keys. Available: \(keys)")
-            print("[DUNGEON-RUSH]   player=\(response["player"] != nil), combat_log=\(response["combat_log"] != nil), result=\(response["result"] != nil)")
-            #endif
-            return nil
-        }
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: response)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            let data = try decoder.decode(CombatData.self, from: jsonData)
-            #if DEBUG
-            print("[DUNGEON-RUSH] parseCombatData OK: \(data.combatLog.count) turns, isWin=\(data.result.isWin)")
-            #endif
-            return data
-        } catch {
-            #if DEBUG
-            print("[DUNGEON-RUSH] parseCombatData decode FAILED: \(error)")
-            // Print the raw JSON to help diagnose which field failed
-            if let jsonData = try? JSONSerialization.data(withJSONObject: response, options: .prettyPrinted),
-               let jsonString = String(data: jsonData, encoding: .utf8) {
-                print("[DUNGEON-RUSH] Raw response (first 2000 chars): \(String(jsonString.prefix(2000)))")
-            }
-            #endif
-            return nil
-        }
-    }
 }

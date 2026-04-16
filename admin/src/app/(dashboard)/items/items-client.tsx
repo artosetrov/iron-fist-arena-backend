@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,7 +43,6 @@ type Item = {
 
 export function ItemsClient({ items }: { items: Item[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterRarity, setFilterRarity] = useState<string>('all')
@@ -51,6 +50,7 @@ export function ItemsClient({ items }: { items: Item[] }) {
   const [deletingItem, setDeletingItem] = useState<Item | null>(null)
   const [previewItem, setPreviewItem] = useState<Item | null>(null)
   const [error, setError] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   function itemToFormData(item: Item): ItemFormData {
     const cfg = (item.upgradeConfig ?? {}) as Record<string, unknown>
@@ -101,21 +101,22 @@ export function ItemsClient({ items }: { items: Item[] }) {
 
   async function handleDelete() {
     if (!deletingItem) return
-    startTransition(async () => {
-      try {
-        const res = await fetch(`/api/items?id=${deletingItem.id}`, { method: 'DELETE' })
-        if (!res.ok) {
-          const data = await res.json()
-          setError(data.error || 'Failed to delete item')
-          return
-        }
-        setDeleteDialogOpen(false)
-        setDeletingItem(null)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/items?id=${deletingItem.id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Failed to delete item')
+        return
       }
-    })
+      setDeleteDialogOpen(false)
+      setDeletingItem(null)
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -299,11 +300,11 @@ export function ItemsClient({ items }: { items: Item[] }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

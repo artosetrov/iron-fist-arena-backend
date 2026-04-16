@@ -98,7 +98,57 @@
 - [[block-056-admin-quests-and-battle-pass-contract-alignment]] — admin quest-definition validation plus battle-pass reward contract parity, deletion fixes, and server-authoritative refresh cleanup
 - [[block-057-admin-achievements-runtime-parity]] — admin achievement-definition validation, corrected ranking seed thresholds, and live claim-runtime parity cleanup
 - [[block-058-admin-appearances-and-design-system-preview-consistency]] — admin appearance-skin contract enforcement plus design-system preview font-loading cleanup and dead-import removal
+- [[block-059-admin-design-system-residual-debt-and-warning-cleanup]] — residual design-system/admin warning cleanup plus async-state hardening in the liveops mail editor
+- [[block-060-admin-dungeon-map-and-editor-runtime-cleanup]] — dungeon map/editor cleanup for truthful save state, intentional preview image policy, and dead editor state removal
+- [[block-061-admin-live-editors-async-state-hardening]] — admin seasons/events/assets/dungeons cleanup for truthful async state and safer destructive operator flows
+- [[block-062-admin-players-items-async-state-hardening]] — admin players/items cleanup for truthful moderation, grant, delete, upload, and save lifecycles
+- [[block-063-admin-feature-flags-operator-feedback-hardening]] — admin feature flags cleanup for explicit toggle/save/delete feedback and row-scoped pending state
+- [[block-064-admin-config-and-balance-editor-async-state-hardening]] — admin settings/config/consumables/loot/balance cleanup for truthful live save state across row, bulk, and seed operations
+- [[block-065-admin-snapshots-and-item-balance-editor-async-state-hardening]] — admin snapshots and item-balance editor cleanup for truthful create/rollback/delete/save lifecycles
+- [[block-066-admin-skills-and-passives-editor-async-state-hardening]] — admin skills/passives cleanup for truthful create/update/delete editor state across nodes, connections, and skills
+- [[block-067-admin-generic-table-shell-mutation-hardening]] — generic admin CRUD table shell cleanup for thrown-error safety and clearer navigation-vs-mutation state
+- [[block-068-admin-achievements-and-item-balance-operator-feedback]] — admin achievements/item-balance cleanup for quieter failure paths and explicit quick-validation feedback
+- [[block-069-admin-residual-transition-and-copy-cleanup]] — admin residual cleanup for a leftover feature-flag refresh helper and leaked internal dashboard TODO copy
+- [[block-070-admin-events-api-auth-gap]] — admin events API cleanup for missing auth guards on list/create/update/delete handlers
+- [[block-071-ios-hub-daily-login-and-levelup-contract-cleanup]] — iOS residual cleanup for mock battle-pass hub data, incorrect daily-login HP potion icons, and non-authoritative level-up ceremony rows
+- [[block-072-progression-passive-points-contract-parity]] — backend-to-iOS progression contract parity for passive-point awards across reward claims, combat resolves, dungeon victories, and the level-up ceremony
+- [[block-073-tutorial-scripted-fight-contract-and-victory-parity]] — tutorial scripted-fight contract normalization, onboarding victory reward truth, and regression coverage for the preload/resolve API boundary
+- [[block-074-tutorial-referral-rate-limit-and-storage-parity]] — tutorial referral rate-limit repair, canonical referral storage, mixed legacy/canonical count parity, and focused route regression coverage
+- [[block-075-referral-qualification-rewards-and-idempotency]] — referral qualification payout implementation, idempotent claim persistence, and shared progression-hook rollout
+- [[block-076-referral-reward-backfill-tooling]] — referral reward backfill tooling, dry-run/apply repair safety, and mixed legacy/canonical historical payout reconciliation
+- [[block-077-ios-referral-and-tavern-typed-contract-cleanup]] — iOS referral settings plus Fortune Wheel and Shell Game migration off raw JSON onto typed request/response contracts
+- [[block-078-ios-tutorial-manager-typed-contract-cleanup]] — iOS tutorial manager migration off raw tutorial dictionaries plus hub/city-map tutorial quest consumer parity and reward-toast contract repair
+- [[block-079-ios-dungeon-list-and-progress-typed-contracts]] — iOS dungeon catalog/progress migration off raw dictionaries plus typed active-run resume and hub prefetch parity
+- [[block-080-ios-dungeon-combat-and-rush-entry-typed-contracts]] — iOS dungeon start/fight plus rush status/start/fight migration onto typed contracts and typed combat handoff
+- [[block-081-ios-dungeon-rush-resolve-and-shop-typed-contracts]] — iOS dungeon rush resolve and shop-buy migration onto typed contracts plus authoritative shop gold sync
+- [[block-082-ios-pending-loot-typed-presentation-contract]] — iOS shared pending-loot migration off raw dictionaries plus typed arena/dungeon/rush reward presentation parity
+- [[block-083-ios-character-service-typed-contract-cleanup]] — iOS character service migration off raw JSON for live load/stat/stance flows plus explicit handling for the dead training route
+- [[block-084-ios-character-list-typed-envelope-parity]] — iOS auth/bootstrap and character-select migration onto a shared typed character-list envelope with legacy fallback kept in one place
+- [[block-085-ios-game-init-typed-bootstrap-and-cache-parity]] — iOS unified game bootstrap migration off raw JSON plus typed daily-login/user snapshots and startup inventory parity for consumables
+- [[block-086-ios-pvp-service-typed-list-contracts]] — iOS PvP opponents, revenge list, and match-history migration off raw JSON onto typed response envelopes
+- [[block-087-ios-tutorial-service-typed-scripted-fight-contracts]] — iOS scripted tutorial-fight preload/resolve migration off raw dictionaries onto typed onboarding DTOs
+- [[block-088-ios-social-and-challenge-action-typed-contracts]] — iOS social friend actions, friendship-status lookup, and challenge decline/cancel migration off raw post bodies onto typed contracts
+- [[block-089-ios-stash-transfer-typed-contracts]] — iOS stash deposit/withdraw migration off raw transfer bodies onto typed request/response contracts
+- [[block-090-ios-auth-service-and-account-delete-typed-contracts]] — iOS email auth, guest login, forgot-password, and settings account deletion migration off raw JSON onto typed envelopes
+- [[block-091-ios-oauth-signin-and-guest-upgrade-typed-contracts]] — iOS Apple/Google sign-in plus guest email/OAuth upgrade migration onto the shared typed auth session envelope
+- [[block-092-ios-onboarding-name-and-character-create-typed-contracts]] — iOS onboarding name availability and character creation migration off raw JSON onto typed request/response contracts
+- [[block-093-ios-shop-service-typed-purchase-and-repair-contracts]] — iOS shop purchase, consumable buy, gems buy, repair, and upgrade migration off raw JSON onto typed contracts
+- [[block-094-ios-inventory-service-sell-use-expand-typed-contracts]] — iOS inventory sell, consumable use, and bag expansion migration off raw mutation dictionaries onto typed contracts
+- [[block-095-ios-battle-preloader-typed-pvp-contracts]] — iOS arena prepare/resolve migration onto typed PvP contracts plus typed durability degradation snapshots for post-fight UI
+- [[block-096-ios-appearance-editor-typed-save-contract]] — iOS appearance editor migration off raw patch bodies and manual `Character` JSON re-decoding
+- [[block-097-ios-dungeon-rush-abandon-and-gold-mine-status-typed-contracts]] — iOS dungeon rush abandon plus hub/gold-mine status reads migration onto typed contracts with one narrow cache bridge
+- [[block-098-ios-gold-mine-action-typed-contracts]] — iOS Gold Mine action flows migration off raw mutations onto typed contracts across collect, collect-all, boosts, slot purchase, and shaft minigame actions
+- [[block-099-ios-editor-layout-save-typed-contracts]] — iOS debug editor layout-save flows migration onto typed contracts for dungeon-map and hub editors
+- [[block-100-ios-game-config-daily-login-parse-bridge-cleanup]] — iOS game-config cleanup removing the daily-login reward JSON round-trip from cache parsing
+- [[block-101-ios-interactive-combat-reconcile-payload-bridge-cleanup]] — iOS interactive combat cleanup removing the recoverable reconcile JSON round-trip for `OUT_OF_CONSUMABLE` actives payloads
+- [[block-102-ios-network-infrastructure-raw-surface-retirement]] — iOS networking/auth infrastructure cleanup retiring dead raw helper APIs and moving Supabase auth flows onto typed DTOs
+- [[block-103-ios-gold-mine-typed-state-and-cache-parity]] — iOS Gold Mine state/cache migration off raw slot dictionaries onto typed slot models across cache, hub badges, hints, and the live Gold Mine screen
+- [[block-104-ios-battle-preloader-combat-engine-typed-handoff]] — iOS arena combat cleanup removing the last internal typed-to-dictionary handoff between `BattlePreloader` and `CombatEngine`
+- [[block-105-ios-typed-error-body-and-combat-model-bridge-cleanup]] — iOS typed error-body decoding for recoverable combat/minigame/referral flows plus removal of the dead raw pending-loot bridge
+- [[block-106-ios-cache-raw-bridge-retirement-and-feature-flag-bool-parity]] — iOS cache cleanup removing dead raw quest/layout bridges and narrowing bootstrap feature flags to the live bool contract
+- [[block-107-ios-dead-model-parse-bridge-cleanup]] — iOS dead Gold Mine/dungeon raw model parser cleanup plus validation of the last remaining daily-login cache compatibility edge
+- [[block-108-ios-intentional-raw-boundaries-and-dead-apiresponse-removal]] — iOS cleanup removing the dead raw `GameConfig`/`APIResponse` tail and documenting the remaining intentional networking/keychain raw boundaries
 
 ---
 
-*90 in-scope wiki files | 88 wiki pages (13 systems, 11 decisions, 3 entities, 60 audit, 1 schema) + index/log | Last updated: 2026-04-15*
+*140 in-scope wiki files | 138 wiki pages (13 systems, 11 decisions, 3 entities, 108 audit, 1 schema) + index/log | Last updated: 2026-04-16*

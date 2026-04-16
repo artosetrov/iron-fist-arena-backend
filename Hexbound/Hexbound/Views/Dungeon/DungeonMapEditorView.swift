@@ -250,9 +250,9 @@ struct DungeonMapEditorView: View {
 
         // 2. Try to persist to server
         do {
-            let _ = try await APIClient.shared.postRaw(
+            let _: AdminLayoutSaveResponse = try await APIClient.shared.post(
                 APIEndpoints.adminDungeonMapLayout,
-                body: ["layout": layout]
+                body: AdminLayoutSaveRequest(layout: layout)
             )
             showToast("Saved to server!")
         } catch {

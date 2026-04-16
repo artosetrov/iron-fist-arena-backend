@@ -567,7 +567,8 @@ final class CombatViewModel {
                 firstWinBonus: resolve.firstWinBonus,
                 leveledUp: resolve.leveledUp,
                 newLevel: resolve.newLevel,
-                statPointsAwarded: resolve.statPointsAwarded
+                statPointsAwarded: resolve.statPointsAwarded,
+                passivePointsAwarded: resolve.passivePointsAwarded
             )
             appState.combatResult = CombatData(
                 player: combatData.player,

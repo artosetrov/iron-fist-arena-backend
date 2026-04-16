@@ -6,6 +6,79 @@ private struct ShopItemsResponse: Codable {
     let characterLevel: Int?
 }
 
+private struct ShopCurrencySnapshot: Decodable {
+    let gold: Int?
+    let gems: Int?
+}
+
+private struct ShopBuyRequest: Encodable {
+    let characterId: String
+    let itemCatalogId: String
+}
+
+private struct ShopBuyResponse: Decodable {
+    let gold: Int?
+    let gems: Int?
+    let character: ShopCurrencySnapshot?
+}
+
+private struct ShopBuyConsumableRequest: Encodable {
+    let characterId: String
+    let consumableType: String
+    let quantity: Int
+}
+
+private struct ShopBuyConsumableResponse: Decodable {
+    let gold: Int?
+    let gems: Int?
+    let character: ShopCurrencySnapshot?
+}
+
+private struct ShopBuyGemsRequest: Encodable {
+    let characterId: String
+    let catalogId: String
+}
+
+private struct ShopBuyGemsResponse: Decodable {
+    let gold: Int
+    let gems: Int
+}
+
+private struct ShopRepairRequest: Encodable {
+    let characterId: String
+    let inventoryId: String
+}
+
+private struct ShopRepairItemSnapshot: Decodable {
+    let durability: Int
+    let maxDurability: Int
+}
+
+private struct ShopRepairResponse: Decodable {
+    let inventoryItem: ShopRepairItemSnapshot
+    let repairCost: Int
+    let gold: Int?
+    let gems: Int?
+    let character: ShopCurrencySnapshot?
+}
+
+private struct ShopUpgradeRequest: Encodable {
+    let characterId: String
+    let inventoryId: String
+    let useProtection: Bool
+}
+
+private struct ShopUpgradeResponse: Decodable {
+    let success: Bool
+    let newLevel: Int
+    let levelLost: Bool
+    let protectionUsed: Bool
+    let upgradeCost: Int
+    let gold: Int?
+    let gems: Int?
+    let character: ShopCurrencySnapshot?
+}
+
 @MainActor
 final class ShopService {
     private let appState: AppState
@@ -39,13 +112,9 @@ final class ShopService {
     func buy(catalogId: String) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "item_catalog_id": catalogId
-            ]
-            let response = try await APIClient.shared.postRaw(
+            let response: ShopBuyResponse = try await APIClient.shared.post(
                 APIEndpoints.shopBuy,
-                body: body
+                body: ShopBuyRequest(characterId: charId, itemCatalogId: catalogId)
             )
             // Update character currency from response
             updateCharacter(from: response)
@@ -70,14 +139,13 @@ final class ShopService {
     func buyConsumable(consumableType: String, quantity: Int = 1) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "consumable_type": consumableType,
-                "quantity": quantity
-            ]
-            let response = try await APIClient.shared.postRaw(
+            let response: ShopBuyConsumableResponse = try await APIClient.shared.post(
                 APIEndpoints.shopBuyConsumable,
-                body: body
+                body: ShopBuyConsumableRequest(
+                    characterId: charId,
+                    consumableType: consumableType,
+                    quantity: quantity
+                )
             )
             updateCharacter(from: response)
             // BUG-58: consumable purchase now tracks gold_spent on the server —
@@ -105,13 +173,9 @@ final class ShopService {
     func buyGems(catalogId: String) async -> Bool {
         guard let charId = appState.currentCharacter?.id else { return false }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "catalog_id": catalogId
-            ]
-            let response = try await APIClient.shared.postRaw(
+            let response: ShopBuyGemsResponse = try await APIClient.shared.post(
                 APIEndpoints.shopBuyGems,
-                body: body
+                body: ShopBuyGemsRequest(characterId: charId, catalogId: catalogId)
             )
             // Flat response: { gold, gems, goldSpent, gemsReceived, catalogId }
             updateCharacter(from: response)
@@ -163,27 +227,16 @@ final class ShopService {
     func repair(inventoryId: String) async -> RepairResult? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "inventory_id": inventoryId
-            ]
-            let response = try await APIClient.shared.postRaw(APIEndpoints.shopRepair, body: body)
-            let repairCost = response["repairCost"] as? Int ?? 0
-            // Handle nested `{ character: { gold, gems } }` shape from /shop/repair
-            let repairCurrency = (response["character"] as? [String: Any]) ?? response
-            let gold = repairCurrency["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
-            let gems = repairCurrency["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
-            let inventoryItem = response["inventoryItem"] as? [String: Any] ?? [:]
-            let newDurability = inventoryItem["durability"] as? Int ?? 0
-            let maxDurability = inventoryItem["maxDurability"] as? Int ?? 0
-            if var char = appState.currentCharacter {
-                char.gold = gold
-                char.gems = gems
-                appState.currentCharacter = char
-            }
+            let response: ShopRepairResponse = try await APIClient.shared.post(
+                APIEndpoints.shopRepair,
+                body: ShopRepairRequest(characterId: charId, inventoryId: inventoryId)
+            )
+            let (gold, gems) = resolvedCurrency(fromGold: response.gold, gems: response.gems, nested: response.character)
+            applyCharacterCurrency(gold: gold, gems: gems)
             return RepairResult(
-                repairCost: repairCost, gold: gold, gems: gems,
-                newDurability: newDurability, maxDurability: maxDurability
+                repairCost: response.repairCost, gold: gold, gems: gems,
+                newDurability: response.inventoryItem.durability,
+                maxDurability: response.inventoryItem.maxDurability
             )
         } catch let error as APIError {
             if case .clientError(_, let message, _) = error {
@@ -213,30 +266,20 @@ final class ShopService {
     func upgrade(inventoryId: String, useProtection: Bool) async -> UpgradeResult? {
         guard let charId = appState.currentCharacter?.id else { return nil }
         do {
-            let body: [String: Any] = [
-                "character_id": charId,
-                "inventory_id": inventoryId,
-                "use_protection": useProtection
-            ]
-            let response = try await APIClient.shared.postRaw(APIEndpoints.shopUpgrade, body: body)
-            let success = response["success"] as? Bool ?? false
-            let newLevel = response["newLevel"] as? Int ?? 0
-            let levelLost = response["level_lost"] as? Bool ?? false
-            let protectionUsed = response["protection_used"] as? Bool ?? false
-            let upgradeCost = response["upgradeCost"] as? Int ?? 0
-            // Handle nested `{ character: { gold, gems } }` shape from /shop/upgrade
-            let upgradeCurrency = (response["character"] as? [String: Any]) ?? response
-            let gold = upgradeCurrency["gold"] as? Int ?? (appState.currentCharacter?.gold ?? 0)
-            let gems = upgradeCurrency["gems"] as? Int ?? (appState.currentCharacter?.gems ?? 0)
-            if var char = appState.currentCharacter {
-                char.gold = gold
-                char.gems = gems
-                appState.currentCharacter = char
-            }
+            let response: ShopUpgradeResponse = try await APIClient.shared.post(
+                APIEndpoints.shopUpgrade,
+                body: ShopUpgradeRequest(
+                    characterId: charId,
+                    inventoryId: inventoryId,
+                    useProtection: useProtection
+                )
+            )
+            let (gold, gems) = resolvedCurrency(fromGold: response.gold, gems: response.gems, nested: response.character)
+            applyCharacterCurrency(gold: gold, gems: gems)
             appState.cachedInventory = nil // upgrade changed item stats
             return UpgradeResult(
-                success: success, newLevel: newLevel, levelLost: levelLost,
-                protectionUsed: protectionUsed, upgradeCost: upgradeCost,
+                success: response.success, newLevel: response.newLevel, levelLost: response.levelLost,
+                protectionUsed: response.protectionUsed, upgradeCost: response.upgradeCost,
                 gold: gold, gems: gems
             )
         } catch let error as APIError {
@@ -258,21 +301,38 @@ final class ShopService {
     /// Handles two response shapes:
     ///   - Flat:   `{ gold, gems, ... }`  (buy-gems, offers)
     ///   - Nested: `{ character: { gold, gems }, ... }`  (buy, buy-consumable, repair, upgrade)
-    private func updateCharacter(from response: [String: Any]) {
-        // Try nested shape first (most shop endpoints), fall back to flat
-        let currencySource: [String: Any]
-        if let nested = response["character"] as? [String: Any] {
-            currencySource = nested
-        } else {
-            currencySource = response
-        }
+    private func updateCharacter(from response: ShopBuyResponse) {
+        let (gold, gems) = resolvedCurrency(fromGold: response.gold, gems: response.gems, nested: response.character)
+        applyCharacterCurrency(gold: gold, gems: gems)
+        appState.cachedInventory = nil
+    }
 
+    private func updateCharacter(from response: ShopBuyConsumableResponse) {
+        let (gold, gems) = resolvedCurrency(fromGold: response.gold, gems: response.gems, nested: response.character)
+        applyCharacterCurrency(gold: gold, gems: gems)
+        appState.cachedInventory = nil
+    }
+
+    private func updateCharacter(from response: ShopBuyGemsResponse) {
+        applyCharacterCurrency(gold: response.gold, gems: response.gems)
+        appState.cachedInventory = nil
+    }
+
+    private func resolvedCurrency(
+        fromGold gold: Int?,
+        gems: Int?,
+        nested: ShopCurrencySnapshot?
+    ) -> (gold: Int, gems: Int) {
+        let resolvedGold = nested?.gold ?? gold ?? appState.currentCharacter?.gold ?? 0
+        let resolvedGems = nested?.gems ?? gems ?? appState.currentCharacter?.gems ?? 0
+        return (resolvedGold, resolvedGems)
+    }
+
+    private func applyCharacterCurrency(gold: Int, gems: Int) {
         if var char = appState.currentCharacter {
-            if let gold = currencySource["gold"] as? Int { char.gold = gold }
-            if let gems = currencySource["gems"] as? Int { char.gems = gems }
+            char.gold = gold
+            char.gems = gems
             appState.currentCharacter = char
-            // Invalidate inventory cache since items changed (new purchase)
-            appState.cachedInventory = nil
         }
     }
 }

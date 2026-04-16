@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  LayoutDashboard, Database, Users, Swords, Package, Trophy,
+  LayoutDashboard, Database, Users, Swords, Trophy,
   Calendar, Sliders, Scroll, ImageIcon, Settings, Shield, Dice3,
   Coins, ScrollText, Castle, Zap, GitBranch, Scale, Gauge, Palette,
   FlaskConical, Archive, Gift, Award, Mail, Flag, ShoppingBag, Bell,

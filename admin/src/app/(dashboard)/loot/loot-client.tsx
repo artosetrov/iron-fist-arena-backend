@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateConfigsBatch } from '@/actions/config'
 import { Button } from '@/components/ui/button'
@@ -48,7 +48,6 @@ export function LootClient({
   rarityDistribution: ConfigValue[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [drops, setDrops] = useState<Record<string, number>>(
     Object.fromEntries(dropChances.map((d) => [d.key, typeof d.value === 'number' ? d.value : Number(d.value)]))
   )
@@ -57,6 +56,7 @@ export function LootClient({
   )
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [savingSection, setSavingSection] = useState<'drops' | 'rarities' | null>(null)
 
   const raritySum = useMemo(() => {
     return Object.values(rarities).reduce((sum, v) => sum + v, 0)
@@ -75,17 +75,18 @@ export function LootClient({
   async function handleSaveDrops() {
     setError('')
     setMessage('')
-    startTransition(async () => {
-      try {
-        await updateConfigsBatch(
-          Object.entries(drops).map(([key, value]) => ({ key, value }))
-        )
-        setMessage('Drop chances saved successfully.')
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
-      }
-    })
+    setSavingSection('drops')
+    try {
+      await updateConfigsBatch(
+        Object.entries(drops).map(([key, value]) => ({ key, value }))
+      )
+      setMessage('Drop chances saved successfully.')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSavingSection(null)
+    }
   }
 
   async function handleSaveRarities() {
@@ -95,17 +96,18 @@ export function LootClient({
     }
     setError('')
     setMessage('')
-    startTransition(async () => {
-      try {
-        await updateConfigsBatch(
-          Object.entries(rarities).map(([key, value]) => ({ key, value }))
-        )
-        setMessage('Rarity distribution saved successfully.')
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
-      }
-    })
+    setSavingSection('rarities')
+    try {
+      await updateConfigsBatch(
+        Object.entries(rarities).map(([key, value]) => ({ key, value }))
+      )
+      setMessage('Rarity distribution saved successfully.')
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSavingSection(null)
+    }
   }
 
   return (
@@ -170,9 +172,9 @@ export function LootClient({
               })}
               <Separator />
               <div className="flex justify-end">
-                <Button onClick={handleSaveDrops} disabled={isPending}>
+                <Button onClick={handleSaveDrops} disabled={savingSection !== null}>
                   <Save className="mr-2 h-4 w-4" />
-                  {isPending ? 'Saving...' : 'Save Drop Chances'}
+                  {savingSection === 'drops' ? 'Saving...' : 'Save Drop Chances'}
                 </Button>
               </div>
             </>
@@ -259,9 +261,9 @@ export function LootClient({
                 <p className="text-sm text-muted-foreground">
                   Total: <span className={raritySumValid ? 'text-green-400' : 'text-amber-400'}>{raritySum}%</span>
                 </p>
-                <Button onClick={handleSaveRarities} disabled={isPending || !raritySumValid}>
+                <Button onClick={handleSaveRarities} disabled={savingSection !== null || !raritySumValid}>
                   <Save className="mr-2 h-4 w-4" />
-                  {isPending ? 'Saving...' : 'Save Rarity Distribution'}
+                  {savingSection === 'rarities' ? 'Saving...' : 'Save Rarity Distribution'}
                 </Button>
               </div>
             </>
