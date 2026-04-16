@@ -14,7 +14,7 @@ export default async function ConfigEditorPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Balance Config Editor</h1>
         <p className="text-muted-foreground">
-          Edit all item balance parameters. Changes take effect immediately via config cache.
+          Edit all item balance parameters. Saves now go through the canonical backend admin surface.
         </p>
       </div>
       <ConfigEditorClient
@@ -23,7 +23,6 @@ export default async function ConfigEditorPage() {
           value: c.value,
           description: c.description,
         }))}
-        adminId={admin.id}
       />
     </div>
   )

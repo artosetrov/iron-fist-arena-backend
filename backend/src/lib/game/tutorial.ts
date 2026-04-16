@@ -1,3 +1,5 @@
+import type { ConsumableType, PrismaClient } from '@prisma/client'
+
 /**
  * Tutorial & Onboarding — constants, quest definitions, and helper functions.
  *
@@ -101,26 +103,28 @@ export function isBuildingUnlocked(buildingKey: string, characterLevel: number):
  */
 export function getBuildingsUnlockedAt(characterLevel: number): string[] {
   return Object.entries(BUILDING_UNLOCK_LEVELS)
-    .filter(([_, level]) => level === characterLevel)
-    .map(([key, _]) => key)
+    .filter((entry) => entry[1] === characterLevel)
+    .map((entry) => entry[0])
     .sort()
 }
 
 // ── NPC Quest definitions ─────────────────────────────────────────────
+export interface TutorialQuestRewards {
+  gold?: number
+  item_catalog_id?: string
+  consumable_type?: ConsumableType
+  consumable_amount?: number
+  instant_mine?: boolean
+  bp_levels?: number
+}
+
 export interface TutorialQuestDef {
   id: string
   unlockLevel: number
   title: string
   npcMessage: string
   target: number
-  rewards: {
-    gold?: number
-    item_catalog_id?: string
-    consumable_type?: string
-    consumable_amount?: number
-    instant_mine?: boolean
-    bp_levels?: number
-  }
+  rewards: TutorialQuestRewards
 }
 
 export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
@@ -196,7 +200,7 @@ export const TUTORIAL_QUESTS: TutorialQuestDef[] = [
  * OUTSIDE the main transaction (same pattern as updateDailyQuestProgress).
  */
 export async function updateTutorialQuestProgress(
-  prisma: import('@prisma/client').PrismaClient,
+  prisma: PrismaClient,
   characterId: string,
   questId: string,
   increment: number = 1,

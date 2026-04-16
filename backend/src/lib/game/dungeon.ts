@@ -150,7 +150,7 @@ const VARIETY_ROOM_SCHEDULE: Record<number, RoomType[]> = {
   8: ['rest', 'merchant'],         // Floor 9: last stop before final boss
 };
 
-function generateVarietyRoom(floor: number, dungeonId: string): DungeonRoom | null {
+function generateVarietyRoom(floor: number): DungeonRoom | null {
   const options = VARIETY_ROOM_SCHEDULE[floor];
   if (!options) return null;
 
@@ -267,7 +267,7 @@ export function generateDungeonFloor(
   const bossIndex = Math.max(0, floor - 1);
 
   // Check for variety room (non-combat floors)
-  const varietyRoom = generateVarietyRoom(bossIndex, dungeonId);
+  const varietyRoom = generateVarietyRoom(bossIndex);
   if (varietyRoom) {
     return {
       enemies: [],
@@ -302,6 +302,17 @@ export async function generateDungeonFloorFromDB(
 ): Promise<DungeonFloor> {
   const diffMult = DIFFICULTY_MULTIPLIERS[difficulty] ?? 1.0;
   const bossIndex = Math.max(0, floor - 1);
+
+  // Keep DB-backed dungeons behaviorally aligned with the hardcoded generator:
+  // scheduled variety floors must short-circuit before any boss lookup.
+  const varietyRoom = generateVarietyRoom(bossIndex);
+  if (varietyRoom) {
+    return {
+      enemies: [],
+      isBoss: false,
+      room: varietyRoom,
+    };
+  }
 
   // Try DB first: find dungeon by slug, get boss at floor_number
   try {

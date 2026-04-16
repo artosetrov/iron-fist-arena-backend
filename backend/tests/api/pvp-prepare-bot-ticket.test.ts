@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
+import { createBotBattleTicketId } from '@/lib/game/bot-ticket'
 
 const {
   mockGetAuthUser,
@@ -99,6 +101,48 @@ vi.mock('@/lib/game/balance', () => ({
 import { POST } from '@/app/api/pvp/prepare/route'
 
 const originalSecret = process.env.BOT_TICKET_SECRET
+const playerCombatStats = {
+  id: 'char-1',
+  name: 'Hero',
+  class: 'warrior',
+  level: 10,
+  avatar: 'hero.png',
+  str: 12,
+  agi: 8,
+  vit: 9,
+  end: 10,
+  int: 3,
+  wis: 4,
+  luk: 5,
+  cha: 5,
+  maxHp: 100,
+  armor: 15,
+  magicResist: 6,
+  combatStance: 'balanced',
+  equippedSkills: [],
+  passiveBonuses: null,
+}
+const botCombatStats = {
+  id: 'bot-training',
+  name: 'Training Bot',
+  class: 'tank',
+  level: 9,
+  avatar: 'bot.png',
+  str: 10,
+  agi: 6,
+  vit: 10,
+  end: 10,
+  int: 2,
+  wis: 2,
+  luk: 2,
+  cha: 1,
+  maxHp: 95,
+  armor: 12,
+  magicResist: 4,
+  combatStance: 'defense',
+  equippedSkills: [],
+  passiveBonuses: null,
+}
 
 describe('POST /api/pvp/prepare bot tickets', () => {
   beforeEach(() => {
@@ -126,8 +170,8 @@ describe('POST /api/pvp/prepare bot tickets', () => {
       currentHp: 100,
       lastHpUpdate: new Date('2026-04-13T12:00:00.000Z'),
     })
-    mockLoadCombatCharacter.mockResolvedValue({ id: 'char-1' })
-    mockGenerateBotCombatStats.mockReturnValue({ id: 'bot-training' })
+    mockLoadCombatCharacter.mockResolvedValue(playerCombatStats)
+    mockGenerateBotCombatStats.mockReturnValue(botCombatStats)
   })
 
   afterEach(() => {
@@ -139,7 +183,7 @@ describe('POST /api/pvp/prepare bot tickets', () => {
   })
 
   it('does not issue bot battle tickets without BOT_TICKET_SECRET', async () => {
-    const request = new Request('http://localhost/api/pvp/prepare', {
+    const request = makeNextRequest('http://localhost/api/pvp/prepare', {
       method: 'POST',
       body: JSON.stringify({
         character_id: 'char-1',
@@ -147,10 +191,41 @@ describe('POST /api/pvp/prepare bot tickets', () => {
       }),
     })
 
-    const response = await POST(request as never)
+    const response = await POST(request)
     const body = await response.json()
 
     expect(response.status).toBe(503)
     expect(body).toEqual({ error: 'Bot fights are temporarily unavailable.' })
+  })
+
+  it('issues a hashed bot battle ticket when BOT_TICKET_SECRET is configured', async () => {
+    process.env.BOT_TICKET_SECRET = 'test-bot-ticket-secret'
+    vi.spyOn(Math, 'random').mockReturnValue(0.123456789)
+
+    const request = makeNextRequest('http://localhost/api/pvp/prepare', {
+      method: 'POST',
+      body: JSON.stringify({
+        character_id: 'char-1',
+        opponent_id: 'bot-training',
+      }),
+    })
+
+    const response = await POST(request)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.is_bot_fight).toBe(true)
+    expect(body.player_stats.id).toBe('char-1')
+    expect(body.enemy_stats.id).toBe('bot-training')
+    expect(body.stamina).toMatchObject({
+      cost: 0,
+      has_free_pvp: true,
+      free_pvp_remaining: 3,
+    })
+    expect(body.battle_ticket_id).toBe(
+      createBotBattleTicketId('char-1', 'bot-training', body.battle_seed),
+    )
+
+    vi.restoreAllMocks()
   })
 })

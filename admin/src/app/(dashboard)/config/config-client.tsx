@@ -40,7 +40,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   general: 'General',
 }
 
-export function ConfigClient({ configs, adminId }: { configs: ConfigItem[]; adminId: string }) {
+export function ConfigClient({ configs }: { configs: ConfigItem[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editedValues, setEditedValues] = useState<Record<string, string>>({})
@@ -100,7 +100,7 @@ export function ConfigClient({ configs, adminId }: { configs: ConfigItem[]; admi
 
     startTransition(async () => {
       try {
-        await updateConfig(config.key, parsedValue, adminId)
+        await updateConfig(config.key, parsedValue)
         setSavedKeys((prev) => new Set(prev).add(config.key))
         setEditedValues((prev) => {
           const next = { ...prev }

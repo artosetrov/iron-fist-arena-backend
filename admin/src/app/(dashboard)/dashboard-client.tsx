@@ -1,8 +1,8 @@
 'use client'
 
 import {
-  Users, Swords, Coins, Gem, AlertTriangle, Activity,
-  Scale, Castle, Scroll, ShoppingBag, Sliders, Shield,
+  Users, Swords, Coins, AlertTriangle,
+  Scale, Castle, Scroll, ShoppingBag, Sliders,
 } from 'lucide-react'
 import {
   KpiGrid, SectionHeader, EconomyCharts, PvpCharts,

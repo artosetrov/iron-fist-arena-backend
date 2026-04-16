@@ -103,7 +103,24 @@ Verify any enum values used match the actual backend enums:
 - **ItemRarity**: `common`, `uncommon`, `rare`, `epic`, `legendary`
 - **DamageType**: `physical`, `magical`, `true_damage`, `poison`
 
-### 6. File Hygiene
+### 6. Shared Lib Module Contracts (CRITICAL — 2026-04-15)
+
+**Test mock drift** is the top source of CI-green-but-CI-red states (Vercel passes, GitHub Actions fails).
+
+- When a shared game lib (e.g. `src/lib/game/premium.ts`, `src/lib/game/reward-grants.ts`) gains new exports, ALL test files that mock that module **must** be updated simultaneously.
+- **Grep for stale mocks:** `grep -rn "@/lib/game/<module>" backend/tests/ --include="*.ts"` — check each mock's `vi.mock(...)` shape against the real module exports.
+- **Incident (2026-04-15 block-029):** `premium.ts` added `PREMIUM_ENTITLEMENT_USER_SELECT`. Both `pvp-resolve.test.ts` and `dungeon-rush-resolve.test.ts` mocked `@/lib/game/premium` without it → 500 inside tests → CI red while Vercel was green.
+- **Rule:** After adding any export to a shared lib, always run: `grep -rn "vi.mock.*<module>" backend/tests/ --include="*.ts"` and update every matching mock.
+
+**Reward type widening → Vercel build failure** is the top backend type bug pattern after the shared `RewardGrantEntry` contract was introduced.
+
+- `RewardGrantEntry` type is: `{ type: 'gold' | 'gems' | 'xp' | 'item' | 'consumable'; id?: string | null; quantity: number }`.
+- Route-local helpers that return `{ type: string; ... }[]` will fail TypeScript when passed to `grantRewardEntries(...)`.
+- **Scanner pattern:** `grep -rn "type: string" backend/src/app/api/shop/ --include="*.ts"` — flag any reward-shaped object using a raw `string` type instead of the shared union.
+- **Incident (2026-04-15 block-028):** `shop/contraband` `generateLoot()` returned `{ type: string }[]` → Vercel build blocked.
+- **Fix pattern:** `import type { RewardGrantEntry } from '@/lib/game/reward-grants'` and annotate the helper return type explicitly.
+
+### 7. File Hygiene
 
 - **No files with spaces or " 2" in names.** macOS sometimes creates these duplicates. Delete them.
 - **No orphaned imports.** Unused imports should be removed.

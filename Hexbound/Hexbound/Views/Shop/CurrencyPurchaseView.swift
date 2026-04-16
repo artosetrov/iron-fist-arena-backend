@@ -279,7 +279,7 @@ struct CurrencyPurchaseView: View {
                     transactionId: String(transaction.id),
                     receiptData: String(transaction.id)
                 )
-                let _: IAPVerifyResponse = try await APIClient.shared.post("/api/iap/verify", body: body)
+                let _: IAPVerifyResponse = try await APIClient.shared.post(APIEndpoints.iapVerify, body: body)
 
                 await MainActor.run {
                     withAnimation {
@@ -316,7 +316,7 @@ struct CurrencyPurchaseView: View {
                     transactionId: String(transaction.id),
                     receiptData: String(transaction.id)
                 )
-                let _: IAPVerifyResponse = try await APIClient.shared.post("/api/iap/verify", body: body)
+                let _: IAPVerifyResponse = try await APIClient.shared.post(APIEndpoints.iapVerify, body: body)
 
                 await MainActor.run {
                     withAnimation {

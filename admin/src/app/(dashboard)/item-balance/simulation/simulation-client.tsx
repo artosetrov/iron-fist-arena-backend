@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,13 +31,9 @@ const RUN_TYPE_LABELS: Record<string, string> = {
 
 export function SimulationClient({
   history,
-  adminId,
 }: {
   history: SimHistory[]
-  adminId: string
 }) {
-  const router = useRouter()
-
   // --- Combat Sim State ---
   const [classA, setClassA] = useState('warrior')
   const [classB, setClassB] = useState('rogue')

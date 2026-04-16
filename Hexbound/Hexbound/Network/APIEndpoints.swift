@@ -137,7 +137,6 @@ enum APIEndpoints {
 
     // MARK: - IAP
     static let iapVerify = "/api/iap/verify"
-    static let iapRestore = "/api/iap/restore"
     static let iapProducts = "/api/iap/products"
 
     // MARK: - Passives (Talents)

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
 
 const {
   mockGetAuthUser,
@@ -171,18 +172,13 @@ vi.mock('@/lib/game/npc-bots', () => ({
   generateBotCombatStats: mockGenerateBotCombatStats,
 }))
 
-vi.mock('@/lib/game/premium', () => ({
-  PREMIUM_ENTITLEMENT_USER_SELECT: {
-    premiumUntil: true,
-    premiumSubscription: {
-      select: {
-        expiresAt: true,
-        status: true,
-      },
-    },
-  },
-  goldBonusMultiplier: mockGoldBonusMultiplier,
-}))
+vi.mock('@/lib/game/premium', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/game/premium')>()
+  return {
+    ...actual,
+    goldBonusMultiplier: mockGoldBonusMultiplier,
+  }
+})
 
 vi.mock('@/lib/cache', () => ({
   cacheDeletePrefix: mockCacheDeletePrefix,
@@ -192,7 +188,139 @@ vi.mock('@/lib/cache', () => ({
 
 import { POST } from '@/app/api/pvp/resolve/route'
 
+type PvpResolveTx = {
+  $queryRawUnsafe: ReturnType<typeof vi.fn>
+  character: {
+    update: ReturnType<typeof vi.fn>
+  }
+  user: {
+    update: ReturnType<typeof vi.fn>
+  }
+  pvpMatch: {
+    create: ReturnType<typeof vi.fn>
+  }
+  revengeQueue: {
+    update: ReturnType<typeof vi.fn>
+  }
+  pvpBattleTicket: {
+    update: ReturnType<typeof vi.fn>
+  }
+}
+
+const defaultRequestBody = {
+  character_id: 'char-1',
+  opponent_id: 'char-2',
+  battle_seed: 12345,
+  battle_ticket_id: 'ticket-1',
+  client_winner_id: 'char-1',
+}
+const originalBotTicketSecret = process.env.BOT_TICKET_SECRET
+
+function seedCombatCharacters(requestCount = 1) {
+  mockLoadCombatCharacter.mockReset()
+  for (let index = 0; index < requestCount; index += 1) {
+    mockLoadCombatCharacter
+      .mockResolvedValueOnce({ id: 'char-1', maxHp: 100 })
+      .mockResolvedValueOnce({ id: 'char-2', maxHp: 100 })
+  }
+}
+
+function createPvpResolveTx(
+  battleState: { ticketConsumed: boolean; matchCount: number },
+  options?: {
+    ticketOverrides?: Partial<{
+      character_id: string
+      opponent_id: string
+      revenge_id: string | null
+      battle_seed: number
+      expires_at: Date
+      consumed_at: Date | null
+    }>
+    lockedRowOverrides?: Partial<{
+      current_stamina: number
+      max_stamina: number
+      last_stamina_update: Date
+      free_pvp_today: number
+      free_pvp_date: Date | null
+    }>
+  },
+): PvpResolveTx {
+  const ticketRow = {
+    character_id: 'char-1',
+    opponent_id: 'char-2',
+    revenge_id: null,
+    battle_seed: 12345,
+    expires_at: new Date('2099-01-01T00:00:00.000Z'),
+    consumed_at: battleState.ticketConsumed ? new Date('2026-03-12T00:00:00.000Z') : null,
+    ...options?.ticketOverrides,
+  }
+
+  const lockedRow = {
+    current_stamina: 120,
+    max_stamina: 120,
+    last_stamina_update: new Date('2026-03-12T00:00:00.000Z'),
+    free_pvp_today: 0,
+    free_pvp_date: null,
+    ...options?.lockedRowOverrides,
+  }
+
+  return {
+    $queryRawUnsafe: vi.fn(async (sql: string) => {
+      if (sql.includes('pvp_battle_tickets')) {
+        return [
+          {
+            id: 'ticket-1',
+            ...ticketRow,
+          },
+        ]
+      }
+
+      return [
+        {
+          id: 'char-1',
+          ...lockedRow,
+        },
+      ]
+    }),
+    character: {
+      update: vi.fn(async ({ where }: { where: { id: string } }) => ({
+        id: where.id,
+        maxStamina: 120,
+      })),
+    },
+    user: {
+      update: vi.fn(async ({ where }: { where: { id: string } }) => ({
+        id: where.id,
+        gold: 1000,
+      })),
+    },
+    pvpMatch: {
+      create: vi.fn(async () => {
+        battleState.matchCount += 1
+        return { id: `match-${battleState.matchCount}` }
+      }),
+    },
+    revengeQueue: {
+      update: vi.fn(),
+    },
+    pvpBattleTicket: {
+      update: vi.fn(async () => {
+        battleState.ticketConsumed = true
+        return { id: 'ticket-1' }
+      }),
+    },
+  }
+}
+
 describe('POST /api/pvp/resolve', () => {
+  afterEach(() => {
+    if (originalBotTicketSecret === undefined) {
+      delete process.env.BOT_TICKET_SECRET
+    } else {
+      process.env.BOT_TICKET_SECRET = originalBotTicketSecret
+    }
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -200,9 +328,7 @@ describe('POST /api/pvp/resolve', () => {
     mockIsNpcBot.mockReturnValue(false)
     mockGoldBonusMultiplier.mockReturnValue(1)
     mockCalculateCurrentStamina.mockReturnValue({ stamina: 120, updated: false })
-    mockLoadCombatCharacter
-      .mockResolvedValueOnce({ id: 'char-1', maxHp: 100 })
-      .mockResolvedValueOnce({ id: 'char-2', maxHp: 100 })
+    seedCombatCharacters(1)
     mockRunCombat.mockReturnValue({
       winnerId: 'char-1',
       loserId: 'char-2',
@@ -258,7 +384,7 @@ describe('POST /api/pvp/resolve', () => {
       pvpLosses: 0,
       pvpWinStreak: 0,
       pvpLossStreak: 0,
-      user: { premiumUntil: null }, // W3.D5 — Premium Forever multiplier input
+      user: { premiumUntil: null, premiumSubscription: null }, // Keep this aligned with the shared premium selector contract.
     }
 
     const defender = {
@@ -280,91 +406,19 @@ describe('POST /api/pvp/resolve', () => {
       ticketConsumed: false,
       matchCount: 0,
     }
+    const makeTx = () => createPvpResolveTx(battleState)
 
-    // Two $queryRawUnsafe calls inside the transaction:
-    //   1) lock pvp_battle_tickets row
-    //   2) lock characters row for stamina re-validation
-    // We detect which is which by inspecting the SQL passed as the first arg.
-    const makeTx = () => ({
-      $queryRawUnsafe: vi.fn(async (sql: string) => {
-        if (sql.includes('pvp_battle_tickets')) {
-          return [
-            {
-              id: 'ticket-1',
-              character_id: 'char-1',
-              opponent_id: 'char-2',
-              revenge_id: null,
-              battle_seed: 12345,
-              expires_at: new Date('2099-01-01T00:00:00.000Z'),
-              consumed_at: battleState.ticketConsumed ? new Date('2026-03-12T00:00:00.000Z') : null,
-            },
-          ]
-        }
-        // characters lock row
-        return [
-          {
-            id: 'char-1',
-            current_stamina: 120,
-            max_stamina: 120,
-            last_stamina_update: new Date('2026-03-12T00:00:00.000Z'),
-            free_pvp_today: 0,
-            free_pvp_date: null,
-          },
-        ]
-      }),
-      character: {
-        update: vi.fn(async ({ where }: { where: { id: string } }) => ({
-          id: where.id,
-          maxStamina: 120,
-        })),
-      },
-      user: {
-        update: vi.fn(async ({ where }: { where: { id: string } }) => ({
-          id: where.id,
-          gold: 1000,
-        })),
-      },
-      pvpMatch: {
-        create: vi.fn(async () => {
-          battleState.matchCount += 1
-          return { id: `match-${battleState.matchCount}` }
-        }),
-      },
-      revengeQueue: {
-        update: vi.fn(),
-      },
-      pvpBattleTicket: {
-        update: vi.fn(async () => {
-          battleState.ticketConsumed = true
-          return { id: 'ticket-1' }
-        }),
-      },
-    })
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: PvpResolveTx) => Promise<unknown>) => callback(makeTx()),
+    )
 
-    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(makeTx()))
-
-    const requestBody = {
-      character_id: 'char-1',
-      opponent_id: 'char-2',
-      battle_seed: 12345,
-      battle_ticket_id: 'ticket-1',
-      client_winner_id: 'char-1',
-    }
-
-    // loadCombatCharacter is called twice per resolve (attacker, defender),
-    // so reset the mock for the second request too.
-    mockLoadCombatCharacter.mockReset()
-    mockLoadCombatCharacter
-      .mockResolvedValueOnce({ id: 'char-1', maxHp: 100 })
-      .mockResolvedValueOnce({ id: 'char-2', maxHp: 100 })
-      .mockResolvedValueOnce({ id: 'char-1', maxHp: 100 })
-      .mockResolvedValueOnce({ id: 'char-2', maxHp: 100 })
+    seedCombatCharacters(2)
 
     const firstResponse = await POST(
-      new Request('http://localhost/api/pvp/resolve', {
+      makeNextRequest('http://localhost/api/pvp/resolve', {
         method: 'POST',
-        body: JSON.stringify(requestBody),
-      }) as any,
+        body: JSON.stringify(defaultRequestBody),
+      }),
     )
 
     expect(firstResponse.status).toBe(200)
@@ -372,10 +426,10 @@ describe('POST /api/pvp/resolve', () => {
     expect(battleState.matchCount).toBe(1)
 
     const secondResponse = await POST(
-      new Request('http://localhost/api/pvp/resolve', {
+      makeNextRequest('http://localhost/api/pvp/resolve', {
         method: 'POST',
-        body: JSON.stringify(requestBody),
-      }) as any,
+        body: JSON.stringify(defaultRequestBody),
+      }),
     )
 
     expect(secondResponse.status).toBe(409)
@@ -383,5 +437,146 @@ describe('POST /api/pvp/resolve', () => {
       error: 'This battle was already resolved.',
     })
     expect(battleState.matchCount).toBe(1)
+  })
+
+  it('returns the authoritative server result when the client reports the wrong winner', async () => {
+    const battleState = {
+      ticketConsumed: false,
+      matchCount: 0,
+    }
+    const tx = createPvpResolveTx(battleState)
+
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: PvpResolveTx) => Promise<unknown>) => callback(tx),
+    )
+
+    seedCombatCharacters(1)
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/pvp/resolve', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...defaultRequestBody,
+          client_winner_id: 'char-2',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      verified: true,
+      server_winner_id: 'char-1',
+      client_matches: false,
+      result: {
+        is_win: true,
+        winner_id: 'char-1',
+        gold_reward: 100,
+        xp_reward: 40,
+        first_win_bonus: true,
+      },
+      stamina: {
+        current: 120,
+        max: 120,
+      },
+      matchId: 'match-1',
+    })
+    expect(mockCacheDeletePrefix).toHaveBeenCalledWith('leaderboard:')
+    expect(mockUpdateDailyQuestProgress).toHaveBeenCalledWith(prismaMock, 'char-1', 'pvp_wins')
+    expect(mockAwardBattlePassXp).toHaveBeenCalledWith(prismaMock, 'char-1', 20)
+    expect(mockCreateBattleResultMail).toHaveBeenCalled()
+  })
+
+  it('rejects the resolve when the locked character row no longer has enough stamina', async () => {
+    const battleState = {
+      ticketConsumed: false,
+      matchCount: 0,
+    }
+    const tx = createPvpResolveTx(battleState, {
+      lockedRowOverrides: {
+        current_stamina: 5,
+        free_pvp_today: 3,
+        free_pvp_date: new Date(),
+      },
+    })
+
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: PvpResolveTx) => Promise<unknown>) => callback(tx),
+    )
+
+    mockCalculateCurrentStamina
+      .mockReturnValueOnce({ stamina: 120, updated: false })
+      .mockReturnValueOnce({ stamina: 5, updated: false })
+    seedCombatCharacters(1)
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/pvp/resolve', {
+        method: 'POST',
+        body: JSON.stringify(defaultRequestBody),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Not enough stamina',
+      required: 0,
+    })
+    expect(tx.pvpMatch.create).not.toHaveBeenCalled()
+    expect(tx.pvpBattleTicket.update).not.toHaveBeenCalled()
+    expect(mockAwardBattlePassXp).not.toHaveBeenCalled()
+  })
+
+  it('rejects mismatched battle ticket payloads before creating the match', async () => {
+    const battleState = {
+      ticketConsumed: false,
+      matchCount: 0,
+    }
+    const tx = createPvpResolveTx(battleState, {
+      ticketOverrides: {
+        opponent_id: 'char-999',
+      },
+    })
+
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: PvpResolveTx) => Promise<unknown>) => callback(tx),
+    )
+
+    seedCombatCharacters(1)
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/pvp/resolve', {
+        method: 'POST',
+        body: JSON.stringify(defaultRequestBody),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Battle preparation does not match this resolve request.',
+    })
+    expect(tx.pvpMatch.create).not.toHaveBeenCalled()
+    expect(tx.pvpBattleTicket.update).not.toHaveBeenCalled()
+  })
+
+  it('rejects invalid bot battle tickets before running the bot fight', async () => {
+    mockIsNpcBot.mockReturnValue(true)
+    process.env.BOT_TICKET_SECRET = 'test-bot-ticket-secret'
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/pvp/resolve', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...defaultRequestBody,
+          opponent_id: 'bot-training',
+          battle_ticket_id: 'invalid-ticket',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Invalid bot battle ticket.',
+    })
+    expect(mockLoadCombatCharacter).not.toHaveBeenCalled()
+    expect(prismaMock.$transaction).not.toHaveBeenCalled()
   })
 })

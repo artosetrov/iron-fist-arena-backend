@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     })
 
     // If gear-filtered results are too few, widen to level-only (fallback)
-    let candidates = rawOpponents
+    const candidates = [...rawOpponents]
     if (candidates.length < MAX_OPPONENTS) {
       const fallback = await prisma.character.findMany({
         where: {

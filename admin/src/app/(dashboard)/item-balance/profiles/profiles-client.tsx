@@ -2,11 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateBalanceProfile } from '@/actions/item-balance'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Save, Check, X, Pencil } from 'lucide-react'
 
@@ -34,10 +32,8 @@ const STAT_COLORS: Record<string, string> = {
 
 export function ProfilesClient({
   profiles,
-  adminId,
 }: {
   profiles: Profile[]
-  adminId: string
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -45,6 +41,8 @@ export function ProfilesClient({
   const [editWeights, setEditWeights] = useState<Record<string, number>>({})
   const [editPower, setEditPower] = useState(1.0)
   const [savedId, setSavedId] = useState<string | null>(null)
+  const [savingId, setSavingId] = useState<string | null>(null)
+  const [message, setMessage] = useState('')
 
   function startEdit(profile: Profile) {
     setEditingId(profile.id)
@@ -58,24 +56,42 @@ export function ProfilesClient({
 
   async function saveProfile(profile: Profile) {
     try {
-      await updateBalanceProfile(
-        profile.itemType,
-        editWeights,
-        editPower,
-        adminId,
-        profile.description ?? undefined,
-      )
+      setSavingId(profile.id)
+      const res = await fetch('/api/admin/item-balance/profiles', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          itemType: profile.itemType,
+          statWeights: editWeights,
+          powerWeight: editPower,
+          description: profile.description ?? undefined,
+        }),
+      })
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to save profile' }))
+        setMessage(error.error ?? `Failed to save ${profile.itemType}`)
+        return
+      }
       setEditingId(null)
       setSavedId(profile.id)
       setTimeout(() => setSavedId(null), 2000)
+      setMessage('')
       startTransition(() => router.refresh())
     } catch {
-      // silent fail
+      setMessage(`Failed to save ${profile.itemType}`)
+    } finally {
+      setSavingId(null)
     }
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4">
+      {message && (
+        <div className="bg-red-500/10 text-red-600 rounded-md p-3 text-sm">{message}</div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {profiles.map((profile) => {
         const isEditing = editingId === profile.id
         const weights = isEditing ? editWeights : profile.statWeights
@@ -91,10 +107,10 @@ export function ProfilesClient({
                 </div>
                 {isEditing ? (
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                    <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={savingId === profile.id || isPending}>
                       <X className="h-3 w-3" />
                     </Button>
-                    <Button size="sm" onClick={() => saveProfile(profile)}>
+                    <Button size="sm" onClick={() => saveProfile(profile)} disabled={savingId === profile.id || isPending}>
                       <Save className="h-3 w-3" />
                     </Button>
                   </div>
@@ -177,6 +193,7 @@ export function ProfilesClient({
           No item balance profiles found. Run the balance seed script first.
         </div>
       )}
+      </div>
     </div>
   )
 }

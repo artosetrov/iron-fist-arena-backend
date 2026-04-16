@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateConfig } from '@/actions/config'
+import { updateConfigsBatch } from '@/actions/config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -43,11 +43,9 @@ const RARITY_COLORS: Record<string, string> = {
 export function LootClient({
   dropChances,
   rarityDistribution,
-  adminId,
 }: {
   dropChances: ConfigValue[]
   rarityDistribution: ConfigValue[]
-  adminId: string
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -79,9 +77,9 @@ export function LootClient({
     setMessage('')
     startTransition(async () => {
       try {
-        for (const [key, value] of Object.entries(drops)) {
-          await updateConfig(key, value, adminId)
-        }
+        await updateConfigsBatch(
+          Object.entries(drops).map(([key, value]) => ({ key, value }))
+        )
         setMessage('Drop chances saved successfully.')
         router.refresh()
       } catch (err) {
@@ -99,9 +97,9 @@ export function LootClient({
     setMessage('')
     startTransition(async () => {
       try {
-        for (const [key, value] of Object.entries(rarities)) {
-          await updateConfig(key, value, adminId)
-        }
+        await updateConfigsBatch(
+          Object.entries(rarities).map(([key, value]) => ({ key, value }))
+        )
         setMessage('Rarity distribution saved successfully.')
         router.refresh()
       } catch (err) {

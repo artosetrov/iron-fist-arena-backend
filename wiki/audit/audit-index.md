@@ -13,7 +13,7 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 ## Inventory
 
 - [[project-file-inventory]] — complete file list by top-level block
-- In-scope files: 4799
+- In-scope files: 4856
 - Excluded: `node_modules/`, `.next/`, `.git/`, generated local caches, ignored dev artifacts
 
 ## Audit Blocks
@@ -49,6 +49,35 @@ This audit tracks every project-owned file in small logical blocks. Scope is Git
 | 027 | [[block-027-shop-legacy-client-surface-and-pricing-docs]] — dead iOS legacy potion-purchase client path cleanup plus explicit pricing-policy docs alignment | Fixed; backend legacy route retirement decision still pending |
 | 028 | [[block-028-backend-contraband-reward-contract-build-fix]] — backend contraband reward typing parity with shared reward grants after production build failure | Fixed |
 | 029 | [[block-029-backend-ci-premium-mock-drift-tests]] — backend GitHub CI failure caused by stale premium mocks and outdated reward-transaction test shape | Fixed |
+| 030 | [[block-030-backend-ci-contract-hardening-and-actions-upgrade]] — backend CI hardening via safer premium partial mocks and GitHub Actions upgrade off deprecated v4 actions | Fixed |
+| 031 | [[block-031-backend-route-tests-transaction-and-premium-fixtures]] — backend route-test fixture cleanup for premium shape parity and typed transaction mocks | Fixed |
+| 032 | [[block-032-backend-api-tests-nextrequest-helper]] — backend API test-boundary cleanup via shared NextRequest helper and adjacent fixture typing | Fixed |
+| 033 | [[block-033-backend-api-tests-request-cast-elimination]] — backend API test cleanup finishing the migration off remaining `Request as any` casts in live route tests | Fixed |
+| 034 | [[block-034-backend-auth-bot-minigame-guardrail-tests]] — backend auth, bot-ticket, shell-game, and stamina-refill test coverage for runtime guard rails introduced after earlier economy and bot-ticket changes | Fixed |
+| 035 | [[block-035-backend-battle-pass-claim-test-contracts]] — backend battle-pass claim test alignment with current reward-grant, level-gate, and cache-invalidation runtime contracts | Fixed |
+| 036 | [[block-036-backend-dungeon-rush-resolve-test-contracts]] — backend dungeon-rush resolve test alignment with current reward-grant and post-level-up cache-invalidation contracts | Fixed |
+| 037 | [[block-037-backend-pvp-resolve-test-contracts]] — backend PvP resolve test alignment with current anti-cheat, battle-ticket, bot-ticket, and locked-stamina runtime contracts | Fixed |
+| 038 | [[block-038-backend-utility-routes-and-character-warning-cleanup]] — backend utility/deprecated routes plus character appearance/respec warning cleanup and runtime notes | Fixed |
+| 039 | [[block-039-backend-rush-start-shop-race-hardening]] — backend Dungeon Rush start/shop race hardening plus adjacent start/match/shop dead-code cleanup | Fixed |
+| 040 | [[block-040-backend-iap-receipt-idempotency-and-webhook-contracts]] — backend Apple IAP receipt idempotency, webhook contract cleanup, and focused route tests | Fixed |
+| 041 | [[block-041-iap-compatibility-aliases-restore-and-ios-endpoints]] — IAP restore/verify compatibility aliases, iOS endpoint-catalog drift cleanup, and API reference clarification | Fixed |
+| 042 | [[block-042-backend-inventory-mail-quest-contract-hardening]] — backend inventory equip/unequip transaction hardening, mail rate-limit repair, daily quest typing cleanup, and focused route tests | Fixed |
+| 043 | [[block-043-backend-shell-game-transaction-and-session-hardening]] — backend shell-game start/guess hardening for daily-limit locking, session-state validation, and focused route tests | Fixed |
+| 044 | [[block-044-backend-social-contracts-and-runtime-hardening]] — backend social challenges/messages/friends/relationship contract typing, duel XP persistence, locked send guards, and focused route tests | Fixed |
+| 045 | [[block-045-backend-tutorial-achievement-and-weekly-contracts]] — backend tutorial quest contract hardening, achievement catalog/runtime metadata fixes, and weekly-challenge helper typing/tests | Fixed |
+| 046 | [[block-046-backend-feature-flags-progression-and-runtime-cleanup]] — backend feature-flag environment enforcement, progression helper typing, combat helper cleanup, and push broadcast typing hardening | Fixed |
+| 047 | [[block-047-backend-dungeon-item-balance-live-config-hardening]] — backend DB-dungeon variety parity, item-balance config sanitization/cache hardening, and live-config cleanup | Fixed |
+| 048 | [[block-048-admin-item-balance-backend-proxy-alignment]] — admin item-balance API proxy alignment, canonical backend saves/simulations, and dead duplicate runtime removal | Fixed |
+| 049 | [[block-049-admin-config-canonical-route-and-consumables-live-sync]] — canonical backend admin config route, shared config-cache invalidation, admin action reroute, and atomic consumables live save | Fixed |
+| 050 | [[block-050-admin-skills-passives-proxy-alignment]] — admin skills/passives same-origin proxy alignment and removal of browser-side token/base-URL shims | Fixed |
+| 051 | [[block-051-admin-active-config-editors-consistency]] — admin balance/config/loot/daily-login editor consistency after the canonical admin-config write path migration | Fixed |
+| 052 | [[block-052-admin-balance-schema-parity-and-auth-hardening]] — admin balance schema parity with seeded live config plus auth/read-side cleanup for generic config access | Fixed |
+| 053 | [[block-053-admin-snapshots-restore-runtime-hardening]] — admin snapshot rollback migration onto canonical backend restore, cache invalidation hardening, and snapshots UI cleanup | Fixed |
+| 054 | [[block-054-admin-settings-role-guards-and-feature-flag-contracts]] — admin role-change guard rails, typed feature-flag contracts, and adjacent dashboard/economy warning cleanup | Fixed |
+| 055 | [[block-055-admin-push-and-shop-offer-contract-hardening]] — admin push auth/targeting hardening plus typed shop-offer contracts and client cleanup | Fixed |
+| 056 | [[block-056-admin-quests-and-battle-pass-contract-alignment]] — admin quest-definition validation plus battle-pass reward contract parity, deletion fixes, and server-authoritative refresh cleanup | Fixed |
+| 057 | [[block-057-admin-achievements-runtime-parity]] — admin achievement-definition validation, corrected ranking seed thresholds, and live claim-runtime parity cleanup | Fixed |
+| 058 | [[block-058-admin-appearances-and-design-system-preview-consistency]] — admin appearance-skin contract enforcement plus design-system preview font-loading cleanup and dead-import removal | Fixed |
 
 ## Status Legend
 

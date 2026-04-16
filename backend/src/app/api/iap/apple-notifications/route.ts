@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     // Compute next state based on notification type.
     // Apple docs: https://developer.apple.com/documentation/appstoreservernotifications/notificationtype
-    let updates: {
+    const updates: {
       expiresAt?: Date
       latestTransactionId?: string
       status?: 'active' | 'grace_period' | 'expired' | 'refunded'

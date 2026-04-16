@@ -129,9 +129,6 @@ async function buildSimCharacter(params: {
 function analyzeCombat(
   result: CombatResult,
   idA: string,
-  idB: string,
-  maxHpA: number,
-  maxHpB: number,
 ): {
   winner: 'A' | 'B'
   turns: number
@@ -226,7 +223,7 @@ export async function simulateCombat(
 
   for (let i = 0; i < iterations; i++) {
     const result = await runCombat(charA, charB)
-    const analysis = analyzeCombat(result, 'sim_a', 'sim_b', charA.maxHp, charB.maxHp)
+    const analysis = analyzeCombat(result, 'sim_a')
 
     if (analysis.winner === 'A') winsA++
     totalTurns += analysis.turns

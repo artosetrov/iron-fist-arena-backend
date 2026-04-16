@@ -30,6 +30,16 @@ interface DailyLoginReward {
   itemId?: string
 }
 
+const DEFAULT_DAILY_LOGIN_REWARDS: DailyLoginReward[] = [
+  { type: 'gold', amount: 200 },
+  { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },
+  { type: 'gold', amount: 500 },
+  { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },
+  { type: 'gold', amount: 1000 },
+  { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },
+  { type: 'gems', amount: 5 },
+]
+
 interface DailyLoginClientProps {
   rewards: DailyLoginReward[]
 }
@@ -50,16 +60,6 @@ export function DailyLoginClient({ rewards: initialRewards }: DailyLoginClientPr
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  const defaultRewards = [
-    { type: 'gold' as const, amount: 200 },
-    { type: 'consumable' as const, amount: 1, itemId: 'stamina_potion_small' },
-    { type: 'gold' as const, amount: 500 },
-    { type: 'consumable' as const, amount: 2, itemId: 'stamina_potion_small' },
-    { type: 'gold' as const, amount: 1000 },
-    { type: 'consumable' as const, amount: 1, itemId: 'stamina_potion_large' },
-    { type: 'gems' as const, amount: 5 },
-  ]
-
   const handleOpenEdit = (day: number) => {
     setEditingDay(day)
     setEditForm(rewards[day] || { type: 'gold', amount: 0 })
@@ -75,11 +75,11 @@ export function DailyLoginClient({ rewards: initialRewards }: DailyLoginClientPr
 
     setIsLoading(true)
     try {
-      // updateConfig is a server action and will handle auth
       await updateConfig('daily_login_rewards', newRewards)
       toast({ title: 'Success', description: `Day ${editingDay + 1} reward updated` })
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to update reward'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
       // Revert change
       setRewards(rewards)
     } finally {
@@ -88,19 +88,19 @@ export function DailyLoginClient({ rewards: initialRewards }: DailyLoginClientPr
   }, [editingDay, editForm, rewards, toast])
 
   const handleReset = useCallback(async () => {
-    setRewards(defaultRewards)
+    setRewards(DEFAULT_DAILY_LOGIN_REWARDS)
     setIsLoading(true)
     try {
-      // updateConfig is a server action and will handle auth
-      await updateConfig('daily_login_rewards', defaultRewards)
+      await updateConfig('daily_login_rewards', DEFAULT_DAILY_LOGIN_REWARDS)
       toast({ title: 'Success', description: 'Daily login rewards reset to defaults' })
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to reset rewards'
+      toast({ title: 'Error', description: message, variant: 'destructive' })
       setRewards(rewards)
     } finally {
       setIsLoading(false)
     }
-  }, [defaultRewards, rewards, toast])
+  }, [rewards, toast])
 
   const getRewardDisplay = (reward: DailyLoginReward): string => {
     if (reward.type === 'gold') return `${reward.amount} Gold`
@@ -155,7 +155,7 @@ export function DailyLoginClient({ rewards: initialRewards }: DailyLoginClientPr
                       <Label>Reward Type</Label>
                       <Select
                         value={editForm.type}
-                        onValueChange={(value: any) => {
+                        onValueChange={(value: DailyLoginReward['type']) => {
                           const newForm = { ...editForm, type: value }
                           if (value === 'consumable' && !newForm.itemId) {
                             newForm.itemId = 'stamina_potion_small'

@@ -18,7 +18,7 @@ export default async function SnapshotsPage() {
         </p>
       </div>
       <SnapshotsClient
-        snapshots={snapshots.map((s: any) => ({
+        snapshots={snapshots.map((s) => ({
           id: s.id,
           name: s.name,
           description: s.description,
@@ -26,7 +26,6 @@ export default async function SnapshotsPage() {
           createdAt: s.createdAt.toISOString(),
           configCount: Array.isArray(s.configs) ? s.configs.length : 0,
         }))}
-        adminId={admin.id}
       />
     </div>
   )

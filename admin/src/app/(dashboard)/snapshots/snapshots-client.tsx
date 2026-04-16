@@ -6,15 +6,13 @@ import {
   createConfigSnapshot,
   rollbackToSnapshot,
   deleteConfigSnapshot,
-  getConfigSnapshot,
 } from '@/actions/snapshots'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Save, Trash2, RotateCcw, Plus, AlertCircle, CheckCircle2 } from 'lucide-react'
 
@@ -27,7 +25,7 @@ type Snapshot = {
   configCount: number
 }
 
-export function SnapshotsClient({ snapshots, adminId }: { snapshots: Snapshot[]; adminId: string }) {
+export function SnapshotsClient({ snapshots }: { snapshots: Snapshot[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [snapshotName, setSnapshotName] = useState('')
@@ -37,8 +35,6 @@ export function SnapshotsClient({ snapshots, adminId }: { snapshots: Snapshot[];
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [rollbackConfirm, setRollbackConfirm] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
-  const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null)
-  const [snapshotDetails, setSnapshotDetails] = useState<Record<string, any>>({})
 
   function handleCreateSnapshot() {
     if (!snapshotName.trim()) {
@@ -93,30 +89,6 @@ export function SnapshotsClient({ snapshots, adminId }: { snapshots: Snapshot[];
         setError(err instanceof Error ? err.message : 'Failed to delete snapshot')
       }
     })
-  }
-
-  async function handleExpand(snapshotId: string) {
-    if (expandedSnapshot === snapshotId) {
-      setExpandedSnapshot(null)
-    } else {
-      try {
-        const snapshot = await getConfigSnapshot(snapshotId)
-        if (snapshot) {
-          setSnapshotDetails((prev) => ({
-            ...prev,
-            [snapshotId]: snapshot,
-          }))
-        }
-        setExpandedSnapshot(snapshotId)
-      } catch (err) {
-        setError('Failed to load snapshot details')
-      }
-    }
-  }
-
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString)
-    return date.toLocaleString()
   }
 
   const getShortDate = (isoString: string) => {

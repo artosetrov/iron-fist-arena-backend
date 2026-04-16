@@ -47,7 +47,8 @@ type PassiveConnection = {
 
 // --- Constants ---
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const PASSIVES_API = '/api/admin/passives'
+const PASSIVE_CONNECTIONS_API = '/api/admin/passives/connections'
 
 const BONUS_TYPES = [
   'flat_stat',
@@ -95,11 +96,6 @@ const emptyNodeForm = {
 }
 
 // --- Helpers ---
-
-function getToken(): string {
-  const match = document.cookie.match(/(?:^|;\s*)admin-token=([^;]*)/)
-  return match ? decodeURIComponent(match[1]) : ''
-}
 
 function formatBonusType(bt: string): string {
   return bt.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -180,12 +176,6 @@ export function PassivesClient({
     e.preventDefault()
     setNodeError('')
 
-    const token = getToken()
-    if (!token) {
-      setNodeError('Not authenticated. Please log in again.')
-      return
-    }
-
     const payload: Record<string, unknown> = {
       node_key: nodeForm.nodeKey,
       name: nodeForm.name,
@@ -209,11 +199,10 @@ export function PassivesClient({
 
     startTransition(async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/passives`, {
+        const res = await fetch(PASSIVES_API, {
           method: editingNode ? 'PUT' : 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         })
@@ -232,17 +221,11 @@ export function PassivesClient({
 
   async function handleDeleteNode() {
     if (!deletingNode) return
-    const token = getToken()
-    if (!token) {
-      setNodeError('Not authenticated. Please log in again.')
-      return
-    }
 
     startTransition(async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/passives?id=${deletingNode.id}`, {
+        const res = await fetch(`${PASSIVES_API}?id=${deletingNode.id}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
@@ -280,19 +263,12 @@ export function PassivesClient({
       return
     }
 
-    const token = getToken()
-    if (!token) {
-      setConnError('Not authenticated. Please log in again.')
-      return
-    }
-
     startTransition(async () => {
       try {
-        const res = await fetch(`${API_URL}/api/admin/passives/connections`, {
+        const res = await fetch(PASSIVE_CONNECTIONS_API, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             from_id: connFromId,
@@ -314,21 +290,12 @@ export function PassivesClient({
 
   async function handleDeleteConn() {
     if (!deletingConn) return
-    const token = getToken()
-    if (!token) {
-      setConnError('Not authenticated. Please log in again.')
-      return
-    }
 
     startTransition(async () => {
       try {
-        const res = await fetch(
-          `${API_URL}/api/admin/passives/connections?id=${deletingConn.id}`,
-          {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
+        const res = await fetch(`${PASSIVE_CONNECTIONS_API}?id=${deletingConn.id}`, {
+          method: 'DELETE',
+        })
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))
           setConnError(data.error || `Failed to delete connection (${res.status})`)

@@ -26,7 +26,6 @@ export default async function SimulationPage() {
           summary: h.summary,
           createdAt: h.createdAt.toISOString(),
         }))}
-        adminId={admin.id}
       />
     </div>
   )

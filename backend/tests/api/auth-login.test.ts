@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
 
 const {
   mockCreateAdminClient,
@@ -50,10 +51,10 @@ describe('POST /api/auth/login', () => {
     mockRateLimit.mockResolvedValue(true)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/login', {
+      makeNextRequest('http://localhost/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -66,10 +67,10 @@ describe('POST /api/auth/login', () => {
     mockRateLimit.mockResolvedValue(true)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/login', {
+      makeNextRequest('http://localhost/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email: 'user@example.com' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -82,10 +83,10 @@ describe('POST /api/auth/login', () => {
     mockRateLimit.mockResolvedValue(false)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/login', {
+      makeNextRequest('http://localhost/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email: 'user@example.com', password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(429)
@@ -96,19 +97,17 @@ describe('POST /api/auth/login', () => {
 
   it('returns 401 when Supabase rejects credentials', async () => {
     mockRateLimit.mockResolvedValue(true)
-    const { supabaseClientMock } = vi.hoisted(() => ({
-      supabaseClientMock: mockCreateAdminClient(),
-    }))
-    supabaseClientMock.auth.signInWithPassword.mockResolvedValue({
+    const supabaseClient = mockCreateAdminClient()
+    supabaseClient.auth.signInWithPassword.mockResolvedValue({
       data: { session: null },
       error: { message: 'Invalid login credentials' },
     })
 
     const response = await POST(
-      new Request('http://localhost/api/auth/login', {
+      makeNextRequest('http://localhost/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email: 'user@example.com', password: 'wrong' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(401)
@@ -146,10 +145,10 @@ describe('POST /api/auth/login', () => {
     })
 
     const response = await POST(
-      new Request('http://localhost/api/auth/login', {
+      makeNextRequest('http://localhost/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email: 'user@example.com', password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(200)
@@ -214,10 +213,10 @@ describe('POST /api/auth/login', () => {
     })
 
     const response = await POST(
-      new Request('http://localhost/api/auth/login', {
+      makeNextRequest('http://localhost/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email: 'user@example.com', password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(200)

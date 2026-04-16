@@ -44,14 +44,12 @@ const RUN_TYPE_COLORS: Record<string, string> = {
 export function BalanceDashboardClient({
   summary,
   recentSims,
-  adminId,
 }: {
   summary: BalanceSummary
   recentSims: SimRun[]
-  adminId: string
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [validating, setValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<{
     totalItems: number

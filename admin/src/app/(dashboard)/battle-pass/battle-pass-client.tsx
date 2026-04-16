@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Trash2, Plus, Wand2, Gift } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -21,35 +23,62 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import {
-  createBattlePassReward,
-  updateBattlePassReward,
-  deleteBattlePassReward,
   bulkCreateBattlePassRewards,
+  createBattlePassReward,
+  deleteBattlePassReward,
+  getBattlePassRewards,
+  updateBattlePassReward,
 } from '@/actions/battle-pass-rewards'
-import { Trash2, Plus, Wand2, Gift } from 'lucide-react'
-import { toast } from 'sonner'
+import {
+  BATTLE_PASS_REWARD_TYPES,
+  battlePassRewardTypeRequiresId,
+  type BattlePassRewardRecord,
+  type BattlePassRewardType,
+  type SeasonRecord,
+} from '@/lib/battle-pass-rewards'
 
-type Season = {
-  id: string
-  number: number
-  theme: string | null
-}
+type BattlePassReward = BattlePassRewardRecord
+type Season = SeasonRecord
 
-type BattlePassReward = {
-  id: string
-  seasonId: string
-  bpLevel: number
-  isPremium: boolean
-  rewardType: string
-  rewardId: string | null
-  rewardAmount: number
-  season: Season
-}
+type EditingField = 'rewardType' | 'rewardAmount' | 'rewardId'
 
 type EditingState = {
   rewardId: string
-  field: 'rewardType' | 'rewardAmount'
+  field: EditingField
   value: string | number
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Request failed'
+}
+
+function sortRewards(rewards: BattlePassReward[]): BattlePassReward[] {
+  return [...rewards].sort((left, right) => {
+    if (left.seasonId !== right.seasonId) {
+      return left.seasonId.localeCompare(right.seasonId)
+    }
+
+    if (left.bpLevel !== right.bpLevel) {
+      return left.bpLevel - right.bpLevel
+    }
+
+    return Number(left.isPremium) - Number(right.isPremium)
+  })
+}
+
+function parseOptionalRewardId(value: string): string | undefined {
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function parseRewardTypeForIdRequirement(
+  value: string
+): BattlePassRewardType | null {
+  if (BATTLE_PASS_REWARD_TYPES.includes(value as BattlePassRewardType)) {
+    return value as BattlePassRewardType
+  }
+
+  return null
 }
 
 export function BattlePassClient({
@@ -59,7 +88,9 @@ export function BattlePassClient({
   rewards: BattlePassReward[]
   seasons: Season[]
 }) {
-  const [rewards, setRewards] = useState<BattlePassReward[]>(initialRewards)
+  const [rewards, setRewards] = useState<BattlePassReward[]>(
+    sortRewards(initialRewards)
+  )
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>(
     seasons[0]?.id || ''
   )
@@ -70,64 +101,94 @@ export function BattlePassClient({
   const [isLoading, setIsLoading] = useState(false)
 
   const seasonRewards = useMemo(() => {
-    return rewards.filter((r) => r.seasonId === selectedSeasonId)
+    return rewards.filter((reward) => reward.seasonId === selectedSeasonId)
   }, [rewards, selectedSeasonId])
 
-  const selectedSeason = seasons.find((s) => s.id === selectedSeasonId)
+  const selectedSeason = seasons.find((season) => season.id === selectedSeasonId)
 
-  // Group rewards by level
   const rewardsByLevel = useMemo(() => {
     const map = new Map<number, { free?: BattlePassReward; premium?: BattlePassReward }>()
-    seasonRewards.forEach((r) => {
-      const level = r.bpLevel
-      if (!map.has(level)) map.set(level, {})
-      if (r.isPremium) {
-        map.get(level)!.premium = r
-      } else {
-        map.get(level)!.free = r
+
+    for (const reward of seasonRewards) {
+      if (!map.has(reward.bpLevel)) {
+        map.set(reward.bpLevel, {})
       }
-    })
+
+      const levelRewards = map.get(reward.bpLevel)
+      if (!levelRewards) continue
+
+      if (reward.isPremium) {
+        levelRewards.premium = reward
+      } else {
+        levelRewards.free = reward
+      }
+    }
+
     return Array.from(map.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([level, rewards]) => ({ level, ...rewards }))
+      .sort((left, right) => left[0] - right[0])
+      .map(([level, levelRewards]) => ({ level, ...levelRewards }))
   }, [seasonRewards])
+
+  const refreshSeasonRewards = async (seasonId: string) => {
+    const refreshed = await getBattlePassRewards(seasonId)
+    setRewards((current) =>
+      sortRewards([
+        ...current.filter((reward) => reward.seasonId !== seasonId),
+        ...(refreshed as BattlePassReward[]),
+      ])
+    )
+  }
 
   const handleAddReward = async (data: {
     bpLevel: number
     isPremium: boolean
-    rewardType: string
+    rewardType: BattlePassRewardType
+    rewardId?: string
     rewardAmount: number
   }) => {
+    if (!selectedSeasonId) {
+      toast.error('Select a season first')
+      return
+    }
+
     setIsLoading(true)
     try {
-      const newReward = await createBattlePassReward({
+      await createBattlePassReward({
         seasonId: selectedSeasonId,
         ...data,
       })
-      const selectedSeason = seasons.find((s) => s.id === selectedSeasonId)
-      setRewards((prev) => [...prev, { ...newReward, season: selectedSeason! } as BattlePassReward])
+      await refreshSeasonRewards(selectedSeasonId)
       setIsAddOpen(false)
       toast.success('Reward created')
     } catch (error) {
-      toast.error(String(error))
+      toast.error(getErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleUpdateReward = async (rewardId: string, field: string, value: unknown) => {
+  const handleUpdateReward = async (
+    rewardId: string,
+    field: EditingField,
+    value: string | number
+  ) => {
+    if (!selectedSeasonId) {
+      toast.error('Select a season first')
+      return
+    }
+
     setIsLoading(true)
     try {
-      const updated = await updateBattlePassReward(rewardId, {
-        [field]: value,
-      } as never)
-      setRewards((prev) =>
-        prev.map((r) => (r.id === rewardId ? { ...r, [field]: value } : r))
-      )
+      await updateBattlePassReward(rewardId, {
+        ...(field === 'rewardType' && { rewardType: String(value) }),
+        ...(field === 'rewardAmount' && { rewardAmount: Number(value) }),
+        ...(field === 'rewardId' && { rewardId: String(value) }),
+      })
+      await refreshSeasonRewards(selectedSeasonId)
       setEditing(null)
       toast.success('Reward updated')
     } catch (error) {
-      toast.error(String(error))
+      toast.error(getErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
@@ -135,20 +196,30 @@ export function BattlePassClient({
 
   const handleDeleteReward = async (rewardId: string) => {
     if (!confirm('Delete this reward?')) return
+    if (!selectedSeasonId) {
+      toast.error('Select a season first')
+      return
+    }
+
     setIsLoading(true)
     try {
       await deleteBattlePassReward(rewardId)
-      setRewards((prev) => prev.filter((r) => r.id !== rewardId))
+      await refreshSeasonRewards(selectedSeasonId)
       toast.success('Reward deleted')
     } catch (error) {
-      toast.error(String(error))
+      toast.error(getErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleBulkCreate = async () => {
-    const level = parseInt(bulkMaxLevel, 10)
+    if (!selectedSeasonId) {
+      toast.error('Select a season first')
+      return
+    }
+
+    const level = Number.parseInt(bulkMaxLevel, 10)
     if (!level || level < 1) {
       toast.error('Invalid max level')
       return
@@ -156,13 +227,12 @@ export function BattlePassClient({
 
     setIsLoading(true)
     try {
-      const result = await bulkCreateBattlePassRewards(selectedSeasonId, level)
-      // Refresh rewards
-      const updated = rewards.filter((r) => r.seasonId !== selectedSeasonId)
-      // We need to refetch, so just toggle and refetch
-      window.location.reload()
+      await bulkCreateBattlePassRewards(selectedSeasonId, level)
+      await refreshSeasonRewards(selectedSeasonId)
+      setIsBulkOpen(false)
+      toast.success('Default rewards generated')
     } catch (error) {
-      toast.error(String(error))
+      toast.error(getErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
@@ -170,30 +240,34 @@ export function BattlePassClient({
 
   return (
     <div className="space-y-6">
-      {/* Season Selector */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <label className="text-sm font-medium text-muted-foreground">Season</label>
+              <label className="text-sm font-medium text-muted-foreground">
+                Season
+              </label>
               <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {seasons.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.theme || `Season ${s.number}`}
+                  {seasons.map((season) => (
+                    <SelectItem key={season.id} value={season.id}>
+                      {season.theme || `Season ${season.number}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Bulk Create Dialog */}
             <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="mt-6">
+                <Button
+                  variant="outline"
+                  className="mt-6"
+                  disabled={!selectedSeasonId}
+                >
                   <Wand2 className="mr-2 h-4 w-4" />
                   Generate Default Rewards
                 </Button>
@@ -202,8 +276,8 @@ export function BattlePassClient({
                 <DialogHeader>
                   <DialogTitle>Generate Default Rewards</DialogTitle>
                   <DialogDescription>
-                    Create default free and premium rewards for all levels up to the
-                    specified maximum. Existing rewards will be skipped.
+                    Create default free and premium rewards for all levels up to
+                    the specified maximum. Existing rewards will be skipped.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -212,14 +286,14 @@ export function BattlePassClient({
                     <Input
                       type="number"
                       value={bulkMaxLevel}
-                      onChange={(e) => setBulkMaxLevel(e.target.value)}
+                      onChange={(event) => setBulkMaxLevel(event.target.value)}
                       min="1"
                       max="500"
                     />
                   </div>
                   <Button
                     onClick={handleBulkCreate}
-                    disabled={isLoading}
+                    disabled={isLoading || !selectedSeasonId}
                     className="w-full"
                   >
                     Generate
@@ -228,10 +302,9 @@ export function BattlePassClient({
               </DialogContent>
             </Dialog>
 
-            {/* Add Reward Dialog */}
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
-                <Button className="mt-6">
+                <Button className="mt-6" disabled={!selectedSeasonId}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Reward
                 </Button>
@@ -240,22 +313,17 @@ export function BattlePassClient({
                 <DialogHeader>
                   <DialogTitle>Add Reward</DialogTitle>
                 </DialogHeader>
-                <AddRewardForm
-                  onSubmit={handleAddReward}
-                  isLoading={isLoading}
-                  existingLevels={seasonRewards.map((r) => r.bpLevel)}
-                />
+                <AddRewardForm onSubmit={handleAddReward} isLoading={isLoading} />
               </DialogContent>
             </Dialog>
           </div>
         </CardContent>
       </Card>
 
-      {/* Summary Card */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">
-            {selectedSeason?.theme || `Season ${selectedSeason?.number}`} - Rewards
+            {selectedSeason?.theme || `Season ${selectedSeason?.number}`} Rewards
           </CardTitle>
           <Gift className="h-4 w-4 text-amber-400" />
         </CardHeader>
@@ -267,12 +335,11 @@ export function BattlePassClient({
         </CardContent>
       </Card>
 
-      {/* Rewards Table */}
-      <div className="rounded-lg border border-border overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground w-20">
+              <th className="w-20 px-4 py-3 text-left font-medium text-muted-foreground">
                 Level
               </th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">
@@ -281,17 +348,17 @@ export function BattlePassClient({
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                 Premium Reward
               </th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground w-20">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody>
             {rewardsByLevel.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                  No rewards configured. Use "Generate Default Rewards" or "Add Reward" to
-                  get started.
+                <td
+                  colSpan={3}
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
+                  No rewards configured. Use `Generate Default Rewards` or `Add
+                  Reward` to get started.
                 </td>
               </tr>
             ) : (
@@ -312,7 +379,7 @@ export function BattlePassClient({
                         isLoading={isLoading}
                       />
                     ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -326,19 +393,7 @@ export function BattlePassClient({
                         isLoading={isLoading}
                       />
                     ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {free && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteReward(free.id)}
-                        disabled={isLoading}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-400" />
-                      </Button>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                 </tr>
@@ -362,40 +417,51 @@ function RewardCell({
   reward: BattlePassReward
   editing: EditingState | null
   onEdit: (state: EditingState | null) => void
-  onUpdate: (rewardId: string, field: string, value: unknown) => Promise<void>
+  onUpdate: (
+    rewardId: string,
+    field: EditingField,
+    value: string | number
+  ) => Promise<void>
   onDelete: (rewardId: string) => Promise<void>
   isLoading: boolean
 }) {
-  const isEditingType = editing?.rewardId === reward.id && editing?.field === 'rewardType'
+  const isEditingType =
+    editing?.rewardId === reward.id && editing.field === 'rewardType'
   const isEditingAmount =
-    editing?.rewardId === reward.id && editing?.field === 'rewardAmount'
+    editing?.rewardId === reward.id && editing.field === 'rewardAmount'
+  const isEditingRewardId =
+    editing?.rewardId === reward.id && editing.field === 'rewardId'
+  const rewardType = parseRewardTypeForIdRequirement(reward.rewardType)
+  const rewardIdRequired = rewardType
+    ? battlePassRewardTypeRequiresId(rewardType)
+    : false
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {isEditingType ? (
-          <Input
-            autoFocus
-            value={editing.value}
-            onChange={(e) =>
+          <Select
+            value={String(editing.value)}
+            onValueChange={(value) => {
               onEdit({
                 rewardId: reward.id,
                 field: 'rewardType',
-                value: e.target.value,
+                value,
               })
-            }
-            onBlur={() => {
-              onUpdate(reward.id, 'rewardType', editing.value)
+              void onUpdate(reward.id, 'rewardType', value)
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                onUpdate(reward.id, 'rewardType', editing.value)
-              } else if (e.key === 'Escape') {
-                onEdit(null)
-              }
-            }}
-            className="h-7 w-20 text-xs"
-          />
+          >
+            <SelectTrigger className="h-7 w-[150px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BATTLE_PASS_REWARD_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : (
           <Badge
             variant="outline"
@@ -417,28 +483,30 @@ function RewardCell({
             autoFocus
             type="number"
             value={editing.value}
-            onChange={(e) =>
+            min="1"
+            onChange={(event) =>
               onEdit({
                 rewardId: reward.id,
                 field: 'rewardAmount',
-                value: parseInt(e.target.value, 10) || 0,
+                value: Number.parseInt(event.target.value, 10) || 0,
               })
             }
             onBlur={() => {
-              onUpdate(reward.id, 'rewardAmount', editing.value)
+              void onUpdate(reward.id, 'rewardAmount', editing.value)
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                onUpdate(reward.id, 'rewardAmount', editing.value)
-              } else if (e.key === 'Escape') {
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                void onUpdate(reward.id, 'rewardAmount', editing.value)
+              } else if (event.key === 'Escape') {
                 onEdit(null)
               }
             }}
-            className="h-7 w-16 text-xs"
+            className="h-7 w-20 text-xs"
           />
         ) : (
-          <span
-            className="text-xs cursor-pointer hover:underline"
+          <button
+            type="button"
+            className="text-xs hover:underline"
             onClick={() =>
               onEdit({
                 rewardId: reward.id,
@@ -448,7 +516,63 @@ function RewardCell({
             }
           >
             ×{reward.rewardAmount}
-          </span>
+          </button>
+        )}
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void onDelete(reward.id)}
+          disabled={isLoading}
+          className="h-7 px-2"
+        >
+          <Trash2 className="h-4 w-4 text-red-400" />
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Reward ID</span>
+        {isEditingRewardId ? (
+          <Input
+            autoFocus
+            value={String(editing.value)}
+            onChange={(event) =>
+              onEdit({
+                rewardId: reward.id,
+                field: 'rewardId',
+                value: event.target.value,
+              })
+            }
+            onBlur={() => {
+              void onUpdate(reward.id, 'rewardId', String(editing.value))
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                void onUpdate(reward.id, 'rewardId', String(editing.value))
+              } else if (event.key === 'Escape') {
+                onEdit(null)
+              }
+            }}
+            className="h-7 w-[180px] text-xs"
+          />
+        ) : (
+          <button
+            type="button"
+            className={`truncate text-left ${
+              rewardIdRequired && !reward.rewardId
+                ? 'text-red-500 hover:underline'
+                : 'text-muted-foreground hover:underline'
+            }`}
+            onClick={() =>
+              onEdit({
+                rewardId: reward.id,
+                field: 'rewardId',
+                value: reward.rewardId ?? '',
+              })
+            }
+          >
+            {reward.rewardId ?? (rewardIdRequired ? 'Set required reward ID' : 'No reward ID')}
+          </button>
         )}
       </div>
     </div>
@@ -458,26 +582,27 @@ function RewardCell({
 function AddRewardForm({
   onSubmit,
   isLoading,
-  existingLevels,
 }: {
   onSubmit: (data: {
     bpLevel: number
     isPremium: boolean
-    rewardType: string
+    rewardType: BattlePassRewardType
+    rewardId?: string
     rewardAmount: number
   }) => Promise<void>
   isLoading: boolean
-  existingLevels: number[]
 }) {
   const [level, setLevel] = useState('1')
   const [isPremium, setIsPremium] = useState(false)
-  const [rewardType, setRewardType] = useState('gold')
+  const [rewardType, setRewardType] = useState<BattlePassRewardType>('gold')
+  const [rewardId, setRewardId] = useState('')
   const [amount, setAmount] = useState('100')
+  const requiresRewardId = battlePassRewardTypeRequiresId(rewardType)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const numLevel = parseInt(level, 10)
-    const numAmount = parseInt(amount, 10)
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const numLevel = Number.parseInt(level, 10)
+    const numAmount = Number.parseInt(amount, 10)
 
     if (!numLevel || numAmount < 1) {
       toast.error('Invalid input')
@@ -488,6 +613,7 @@ function AddRewardForm({
       bpLevel: numLevel,
       isPremium,
       rewardType,
+      rewardId: parseOptionalRewardId(rewardId),
       rewardAmount: numAmount,
     })
   }
@@ -499,7 +625,7 @@ function AddRewardForm({
         <Input
           type="number"
           value={level}
-          onChange={(e) => setLevel(e.target.value)}
+          onChange={(event) => setLevel(event.target.value)}
           min="1"
           max="500"
         />
@@ -509,7 +635,7 @@ function AddRewardForm({
         <label className="text-sm font-medium">Track</label>
         <Select
           value={isPremium ? 'premium' : 'free'}
-          onValueChange={(v) => setIsPremium(v === 'premium')}
+          onValueChange={(value) => setIsPremium(value === 'premium')}
         >
           <SelectTrigger>
             <SelectValue />
@@ -523,18 +649,41 @@ function AddRewardForm({
 
       <div>
         <label className="text-sm font-medium">Reward Type</label>
-        <Select value={rewardType} onValueChange={setRewardType}>
+        <Select
+          value={rewardType}
+          onValueChange={(value) => {
+            setRewardType(value as BattlePassRewardType)
+            if (
+              !battlePassRewardTypeRequiresId(value as BattlePassRewardType)
+            ) {
+              setRewardId('')
+            }
+          }}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="gold">Gold</SelectItem>
-            <SelectItem value="gems">Gems</SelectItem>
-            <SelectItem value="xp">XP</SelectItem>
-            <SelectItem value="cosmetic">Cosmetic</SelectItem>
-            <SelectItem value="chest">Chest</SelectItem>
+            {BATTLE_PASS_REWARD_TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Reward ID</label>
+        <Input
+          value={rewardId}
+          onChange={(event) => setRewardId(event.target.value)}
+          placeholder={
+            requiresRewardId
+              ? 'Required for this reward type'
+              : 'Optional for this reward type'
+          }
+        />
       </div>
 
       <div>
@@ -542,7 +691,7 @@ function AddRewardForm({
         <Input
           type="number"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(event) => setAmount(event.target.value)}
           min="1"
         />
       </div>

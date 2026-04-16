@@ -17,8 +17,6 @@ const ORIGIN_BONUSES: Record<CharacterOrigin, Partial<Record<string, number>>> =
 }
 
 const BASE_STAT_VALUE = 10
-const STAT_POINTS_PER_LEVEL = 3
-const INITIAL_STAT_POINTS = 5
 const RESPEC_GEM_COST = 50
 
 // POST — Respec (reset) all base stats to initial values, refund stat points. Costs gems.

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -56,8 +55,7 @@ const RARITY_COLORS: Record<string, string> = {
   legendary: 'bg-orange-500/10 text-orange-600',
 }
 
-export function ValidationClient({ adminId }: { adminId: string }) {
-  const router = useRouter()
+export function ValidationClient() {
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<ValidationResult | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)

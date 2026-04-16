@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
 
 const {
   mockGetAuthUser,
@@ -47,6 +48,16 @@ vi.mock('@/lib/game/live-config', () => ({
 
 import { POST } from '@/app/api/stamina/refill/route'
 
+type StaminaRefillTx = {
+  $queryRawUnsafe: ReturnType<typeof vi.fn>
+  user?: {
+    update: ReturnType<typeof vi.fn>
+  }
+  character?: {
+    update: ReturnType<typeof vi.fn>
+  }
+}
+
 describe('POST /api/stamina/refill', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -66,10 +77,10 @@ describe('POST /api/stamina/refill', () => {
     mockGetAuthUser.mockResolvedValue(null)
 
     const response = await POST(
-      new Request('http://localhost/api/stamina/refill', {
+      makeNextRequest('http://localhost/api/stamina/refill', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(401)
@@ -98,13 +109,15 @@ describe('POST /api/stamina/refill', () => {
         ]),
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
 
     const response = await POST(
-      new Request('http://localhost/api/stamina/refill', {
+      makeNextRequest('http://localhost/api/stamina/refill', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -133,13 +146,15 @@ describe('POST /api/stamina/refill', () => {
         ]),
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
 
     const response = await POST(
-      new Request('http://localhost/api/stamina/refill', {
+      makeNextRequest('http://localhost/api/stamina/refill', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -180,13 +195,15 @@ describe('POST /api/stamina/refill', () => {
       },
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
 
     const response = await POST(
-      new Request('http://localhost/api/stamina/refill', {
+      makeNextRequest('http://localhost/api/stamina/refill', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(200)
@@ -215,6 +232,104 @@ describe('POST /api/stamina/refill', () => {
     })
   })
 
+  it('applies the escalating gem cost on the second refill of the same day', async () => {
+    mockCalculateCurrentStamina.mockResolvedValue({
+      stamina: 60,
+      updated: true,
+    })
+
+    const today = new Date()
+    const tx = {
+      $queryRawUnsafe: vi.fn()
+        .mockResolvedValueOnce([{ id: 'user-1', gems: 100 }])
+        .mockResolvedValueOnce([
+          {
+            id: 'char-1',
+            user_id: 'user-1',
+            current_stamina: 60,
+            max_stamina: 120,
+            last_stamina_update: today,
+            stamina_refills_today: 1,
+            stamina_refills_date: today,
+          },
+        ]),
+      user: {
+        update: vi.fn(async () => ({ id: 'user-1', gems: 20 })),
+      },
+      character: {
+        update: vi.fn(async () => ({
+          id: 'char-1',
+          currentStamina: 120,
+          lastStaminaUpdate: today,
+        })),
+      },
+    }
+
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/stamina/refill', {
+        method: 'POST',
+        body: JSON.stringify({ character_id: 'char-1' }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      gems_spent: 80,
+      gems_remaining: 20,
+      refill_index: 2,
+      daily_cap: 4,
+    })
+    expect(tx.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { gems: { decrement: 80 } },
+    })
+  })
+
+  it('returns 429 when the daily refill cap is reached', async () => {
+    mockCalculateCurrentStamina.mockResolvedValue({
+      stamina: 60,
+      updated: true,
+    })
+
+    const today = new Date()
+    const tx = {
+      $queryRawUnsafe: vi.fn()
+        .mockResolvedValueOnce([{ id: 'user-1', gems: 1000 }])
+        .mockResolvedValueOnce([
+          {
+            id: 'char-1',
+            user_id: 'user-1',
+            current_stamina: 60,
+            max_stamina: 120,
+            last_stamina_update: today,
+            stamina_refills_today: 4,
+            stamina_refills_date: today,
+          },
+        ]),
+    }
+
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/stamina/refill', {
+        method: 'POST',
+        body: JSON.stringify({ character_id: 'char-1' }),
+      }),
+    )
+
+    expect(response.status).toBe(429)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Daily refill cap reached',
+      cap: 4,
+    })
+  })
+
   it('verifies character ownership before refill', async () => {
     mockCalculateCurrentStamina.mockResolvedValue({
       stamina: 60,
@@ -235,13 +350,15 @@ describe('POST /api/stamina/refill', () => {
         ]),
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
 
     const response = await POST(
-      new Request('http://localhost/api/stamina/refill', {
+      makeNextRequest('http://localhost/api/stamina/refill', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(403)
@@ -257,13 +374,15 @@ describe('POST /api/stamina/refill', () => {
         .mockResolvedValueOnce([]), // Character not found
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback) => callback(tx))
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: StaminaRefillTx) => Promise<unknown>) => callback(tx),
+    )
 
     const response = await POST(
-      new Request('http://localhost/api/stamina/refill', {
+      makeNextRequest('http://localhost/api/stamina/refill', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'nonexistent-char' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(404)

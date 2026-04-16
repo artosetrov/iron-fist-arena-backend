@@ -10,9 +10,9 @@ updated: 2026-04-15
 
 Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache artifacts are listed as exclusions and are not audited file-by-file unless they are committed project files.
 
-- Tracked files: 4760
-- Untracked project-owned files: 39
-- In-scope files listed here: 4799
+- Tracked files: 4792
+- Untracked project-owned files: 64
+- In-scope files listed here: 4856
 
 ## Excluded Generated / Vendor Areas
 
@@ -32,8 +32,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - .github: 1
 - .skills: 17
 - [root]: 27
-- admin: 203
-- backend: 336
+- admin: 217
+- backend: 354
 - Buildings: 21
 - docs: 170
 - figma-assets: 333
@@ -46,7 +46,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - scripts: 10
 - sounds: 33
 - User: 1059
-- wiki: 61
+- wiki: 90
 
 ## File List By Block
 
@@ -252,7 +252,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - terms.html
 - UI_RESPONSIVENESS_AUDIT.md
 
-### admin (203)
+### admin (217)
 
 - admin/.gitignore
 - admin/ADMIN_MOBILE_UX_AUDIT.md
@@ -388,11 +388,16 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/app/(dashboard)/tables/[tableName]/table-client.tsx
 - admin/src/app/(dashboard)/tables/page.tsx
 - admin/src/app/api/admin/item-balance/apply-suggestions/route.ts
+- admin/src/app/api/admin/item-balance/config/route.ts _(untracked)_
+- admin/src/app/api/admin/item-balance/profiles/route.ts _(untracked)_
 - admin/src/app/api/admin/item-balance/simulate/combat/route.ts
 - admin/src/app/api/admin/item-balance/simulate/item-impact/route.ts
 - admin/src/app/api/admin/item-balance/simulate/matchups/route.ts
 - admin/src/app/api/admin/item-balance/suggest/route.ts
 - admin/src/app/api/admin/item-balance/validate/route.ts
+- admin/src/app/api/admin/passives/connections/route.ts _(untracked)_
+- admin/src/app/api/admin/passives/route.ts _(untracked)_
+- admin/src/app/api/admin/skills/route.ts _(untracked)_
 - admin/src/app/api/auth/login/route.ts
 - admin/src/app/api/auth/logout/route.ts
 - admin/src/app/api/dungeon-map-layout/route.ts
@@ -443,14 +448,23 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/src/hooks/use-toast.ts
 - admin/src/lib/audit-log.ts
 - admin/src/lib/auth.ts
+- admin/src/lib/achievement-definitions.ts _(untracked)_
+- admin/src/lib/appearance-skins.ts _(untracked)_
+- admin/src/lib/battle-pass-rewards.ts _(untracked)_
+- admin/src/lib/backend-admin.ts _(untracked)_
+- admin/src/lib/backend-api.ts _(untracked)_
 - admin/src/lib/combat-sim.ts
 - admin/src/lib/design-tokens.json
 - admin/src/lib/ds-figma-map.json
+- admin/src/lib/feature-flags.ts _(untracked)_
 - admin/src/lib/item-constants.ts
 - admin/src/lib/item-image-resolver.ts
 - admin/src/lib/item-validator.ts
 - admin/src/lib/prisma.ts
+- admin/src/lib/push-campaigns.ts _(untracked)_
+- admin/src/lib/quest-definitions.ts _(untracked)_
 - admin/src/lib/schema-introspection.ts
+- admin/src/lib/shop-offers.ts _(untracked)_
 - admin/src/lib/supabase.ts
 - admin/src/lib/utils.ts
 - admin/src/types/dashboard.ts
@@ -458,7 +472,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - admin/tsconfig.json
 - admin/vercel.json
 
-### backend (326)
+### backend (354)
 
 - backend/.env.example
 - backend/.gitignore
@@ -524,6 +538,8 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/src/app/api/admin/achievements/route.ts
 - backend/src/app/api/admin/ban/route.ts
 - backend/src/app/api/admin/characters/route.ts
+- backend/src/app/api/admin/config/route.ts _(untracked)_
+- backend/src/app/api/admin/config/restore/route.ts _(untracked)_
 - backend/src/app/api/admin/design-tokens/route.ts
 - backend/src/app/api/admin/dungeon-map-layout/route.ts
 - backend/src/app/api/admin/economy/route.ts
@@ -770,21 +786,39 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - backend/tests/api/auth-login.test.ts
 - backend/tests/api/auth-register.test.ts
 - backend/tests/api/battle-pass-claim.test.ts
+- backend/tests/api/admin-config.test.ts _(untracked)_
+- backend/tests/api/admin-config-restore.test.ts _(untracked)_
 - backend/tests/api/dungeon-rush-resolve.test.ts
+- backend/tests/api/iap-apple-notifications.test.ts _(untracked)_
+- backend/tests/api/iap-restore-purchases.test.ts _(untracked)_
+- backend/tests/api/iap-verify-receipt.test.ts _(untracked)_
+- backend/tests/api/inventory-equip.test.ts _(untracked)_
 - backend/tests/api/inventory-sell.test.ts
+- backend/tests/api/inventory-unequip.test.ts _(untracked)_
+- backend/tests/api/mail-list.test.ts _(untracked)_
 - backend/tests/api/pvp-prepare-bot-ticket.test.ts
 - backend/tests/api/pvp-resolve.test.ts
+- backend/tests/api/social-challenges.test.ts _(untracked)_
+- backend/tests/api/social-messages.test.ts _(untracked)_
+- backend/tests/api/shell-game-guess.test.ts _(untracked)_
 - backend/tests/api/shell-game-play-deprecated.test.ts
 - backend/tests/api/shell-game-start.test.ts
+- backend/tests/api/tutorial-quest.test.ts _(untracked)_
 - backend/tests/api/shop-buy.test.ts
 - backend/tests/api/stamina-refill.test.ts
+- backend/tests/helpers/next-request.ts _(untracked)_
+- backend/tests/lib/achievement-catalog.test.ts _(untracked)_
+- backend/tests/lib/feature-flags.test.ts _(untracked)_
 - backend/tests/economy/sink-ratio.test.ts
 - backend/tests/lib/balance-gold.test.ts
 - backend/tests/lib/bot-ticket.test.ts
 - backend/tests/lib/cache.test.ts
 - backend/tests/lib/cha-miss.test.ts
 - backend/tests/lib/daily-counter.test.ts
+- backend/tests/lib/dungeon.test.ts _(untracked)_
 - backend/tests/lib/elo.test.ts
+- backend/tests/lib/item-balance.test.ts _(untracked)_
+- backend/tests/lib/progression.test.ts _(untracked)_
 - backend/tests/lib/rate-limit.test.ts
 - backend/tests/lib/rogue-execute.test.ts
 - backend/tests/lib/stamina-refill-dr.test.ts
@@ -4845,7 +4879,7 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - User/Weel/image 96.png
 - User/Weel/image 97.png
 
-### wiki (57)
+### wiki (89)
 
 - wiki/audit/audit-index.md
 - wiki/audit/block-001-root-files.md
@@ -4877,6 +4911,35 @@ Scope: Git-tracked files plus untracked project-owned files. Vendor/build/cache 
 - wiki/audit/block-027-shop-legacy-client-surface-and-pricing-docs.md _(untracked)_
 - wiki/audit/block-028-backend-contraband-reward-contract-build-fix.md _(untracked)_
 - wiki/audit/block-029-backend-ci-premium-mock-drift-tests.md _(untracked)_
+- wiki/audit/block-030-backend-ci-contract-hardening-and-actions-upgrade.md _(untracked)_
+- wiki/audit/block-031-backend-route-tests-transaction-and-premium-fixtures.md _(untracked)_
+- wiki/audit/block-032-backend-api-tests-nextrequest-helper.md _(untracked)_
+- wiki/audit/block-033-backend-api-tests-request-cast-elimination.md _(untracked)_
+- wiki/audit/block-034-backend-auth-bot-minigame-guardrail-tests.md _(untracked)_
+- wiki/audit/block-035-backend-battle-pass-claim-test-contracts.md _(untracked)_
+- wiki/audit/block-036-backend-dungeon-rush-resolve-test-contracts.md _(untracked)_
+- wiki/audit/block-037-backend-pvp-resolve-test-contracts.md _(untracked)_
+- wiki/audit/block-038-backend-utility-routes-and-character-warning-cleanup.md _(untracked)_
+- wiki/audit/block-039-backend-rush-start-shop-race-hardening.md _(untracked)_
+- wiki/audit/block-040-backend-iap-receipt-idempotency-and-webhook-contracts.md _(untracked)_
+- wiki/audit/block-041-iap-compatibility-aliases-restore-and-ios-endpoints.md _(untracked)_
+- wiki/audit/block-042-backend-inventory-mail-quest-contract-hardening.md _(untracked)_
+- wiki/audit/block-043-backend-shell-game-transaction-and-session-hardening.md _(untracked)_
+- wiki/audit/block-044-backend-social-contracts-and-runtime-hardening.md _(untracked)_
+- wiki/audit/block-045-backend-tutorial-achievement-and-weekly-contracts.md _(untracked)_
+- wiki/audit/block-046-backend-feature-flags-progression-and-runtime-cleanup.md _(untracked)_
+- wiki/audit/block-047-backend-dungeon-item-balance-live-config-hardening.md _(untracked)_
+- wiki/audit/block-048-admin-item-balance-backend-proxy-alignment.md _(untracked)_
+- wiki/audit/block-049-admin-config-canonical-route-and-consumables-live-sync.md _(untracked)_
+- wiki/audit/block-050-admin-skills-passives-proxy-alignment.md _(untracked)_
+- wiki/audit/block-051-admin-active-config-editors-consistency.md _(untracked)_
+- wiki/audit/block-052-admin-balance-schema-parity-and-auth-hardening.md _(untracked)_
+- wiki/audit/block-053-admin-snapshots-restore-runtime-hardening.md _(untracked)_
+- wiki/audit/block-054-admin-settings-role-guards-and-feature-flag-contracts.md _(untracked)_
+- wiki/audit/block-055-admin-push-and-shop-offer-contract-hardening.md _(untracked)_
+- wiki/audit/block-056-admin-quests-and-battle-pass-contract-alignment.md _(untracked)_
+- wiki/audit/block-057-admin-achievements-runtime-parity.md _(untracked)_
+- wiki/audit/block-058-admin-appearances-and-design-system-preview-consistency.md _(untracked)_
 - wiki/audit/project-file-inventory.md
 - wiki/decisions/balance-audit-findings.md
 - wiki/decisions/bug-patterns.md

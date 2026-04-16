@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 /**
  * POST /api/minigames/shell-game/play
@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * Keeping this route as 410 prevents older clients or scripted callers from
  * bypassing the locked two-step session flow and daily-limit accounting.
  */
-export async function POST(_req: NextRequest) {
+export async function POST() {
   return NextResponse.json(
     {
       error: 'This endpoint is deprecated. Use POST /api/minigames/shell-game/start and POST /api/minigames/shell-game/guess instead.',

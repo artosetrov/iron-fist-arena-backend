@@ -27,7 +27,7 @@ import { LoadingOverlayAllVariants } from './figma-components/loading-overlay'
 // Fallback for remaining domain components
 import { ItemCardPreviews } from './ds-components'
 import {
-  HeroWidgetPreviews, StanceDisplayPreviews, ArenaOpponentCardPreviews,
+  ArenaOpponentCardPreviews,
   BattleResultCardPreviews, LeaderboardRowPreviews, PvPStatsWidgetPreviews,
   DungeonBossCardPreviews, AchievementCardPreviews, ActiveQuestBannerPreviews,
   BPRewardNodePreviews, InboxRowPreviews, NPCGuideWidgetPreviews,
@@ -185,10 +185,6 @@ function TypographyTab() {
           </p>
         </div>
       ))}
-
-      {/* Load Oswald */}
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
     </div>
   )
 }
@@ -322,10 +318,6 @@ function ComponentsTab() {
       <p className="text-sm text-[#A0A0B0]">
         33 component sets, 130+ variants. Live web previews using DS tokens.
       </p>
-
-      {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
-
       {sections.map((section) => (
         <div
           key={section.name}

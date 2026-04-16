@@ -10,8 +10,6 @@ import { BOT_TICKET_SECRET_MISSING, createBotBattleTicketId } from '@/lib/game/b
 import {
   getStaminaConfig,
   getCombatConfig,
-  getGoldRewardsConfig,
-  getXpRewardsConfig,
 } from '@/lib/game/live-config'
 import { STANCE_ZONES } from '@/lib/game/balance'
 

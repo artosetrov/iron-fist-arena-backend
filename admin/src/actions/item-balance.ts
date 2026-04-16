@@ -12,78 +12,12 @@ export async function getBalanceConfigs() {
   })
 }
 
-export async function updateBalanceConfig(key: string, value: unknown, adminId: string) {
-  const admin = await getAdminUser()
-  if (!admin) throw new Error('Unauthorized')
-  if (!key.startsWith('item_balance.')) {
-    throw new Error('key must start with item_balance.')
-  }
-
-  const config = await prisma.gameConfig.upsert({
-    where: { key },
-    update: { value: value as never, updatedBy: adminId },
-    create: {
-      key,
-      value: value as never,
-      category: 'item_balance',
-      updatedBy: adminId,
-    },
-  })
-
-  await prisma.adminLog.create({
-    data: {
-      adminId,
-      action: 'update_balance_config',
-      details: { key, value } as never,
-    },
-  })
-
-  return config
-}
-
 export async function getBalanceProfiles() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
   return prisma.itemBalanceProfile.findMany({
     orderBy: { itemType: 'asc' },
   })
-}
-
-export async function updateBalanceProfile(
-  itemType: string,
-  statWeights: Record<string, number>,
-  powerWeight: number,
-  adminId: string,
-  description?: string,
-) {
-  const admin = await getAdminUser()
-  if (!admin) throw new Error('Unauthorized')
-  const profile = await prisma.itemBalanceProfile.upsert({
-    where: { itemType: itemType as never },
-    update: {
-      statWeights: statWeights as never,
-      powerWeight,
-      description: description ?? null,
-      updatedBy: adminId,
-    },
-    create: {
-      itemType: itemType as never,
-      statWeights: statWeights as never,
-      powerWeight,
-      description: description ?? null,
-      updatedBy: adminId,
-    },
-  })
-
-  await prisma.adminLog.create({
-    data: {
-      adminId,
-      action: 'update_balance_profile',
-      details: { itemType, statWeights, powerWeight } as never,
-    },
-  })
-
-  return profile
 }
 
 export async function getSimulationHistory(runType?: string, limit = 20) {

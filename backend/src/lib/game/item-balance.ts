@@ -34,9 +34,64 @@ interface StatRange {
 }
 
 interface ClassDamageScaling {
-  stat: string
+  stat: StatKey
   multiplier: number
   levelBonus: number
+}
+
+const STAT_KEYS: readonly StatKey[] = ['str', 'agi', 'vit', 'end', 'int', 'wis', 'luk', 'cha']
+const ITEM_BALANCE_PROFILE_CACHE_TTL_MS = 60_000
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isStatKey(value: string): value is StatKey {
+  return (STAT_KEYS as readonly string[]).includes(value)
+}
+
+function sanitizeStatWeights(
+  raw: unknown,
+  fallback: Record<string, number>,
+): Record<string, number> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ...fallback }
+  }
+
+  const sanitized = Object.entries(raw).reduce<Record<string, number>>((acc, [key, value]) => {
+    if (isStatKey(key) && isFiniteNumber(value) && value > 0) {
+      acc[key] = value
+    }
+    return acc
+  }, {})
+
+  return Object.keys(sanitized).length > 0 ? sanitized : { ...fallback }
+}
+
+function sanitizePowerWeight(value: unknown): number {
+  return isFiniteNumber(value) && value > 0 ? value : 1.0
+}
+
+function sanitizeClassDamageScalingEntry(
+  raw: unknown,
+  fallback: ClassDamageScaling,
+): ClassDamageScaling {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return fallback
+  }
+
+  const candidate = raw as Partial<Record<keyof ClassDamageScaling, unknown>>
+  return {
+    stat: typeof candidate.stat === 'string' && isStatKey(candidate.stat)
+      ? candidate.stat
+      : fallback.stat,
+    multiplier: isFiniteNumber(candidate.multiplier) && candidate.multiplier > 0
+      ? candidate.multiplier
+      : fallback.multiplier,
+    levelBonus: isFiniteNumber(candidate.levelBonus) && candidate.levelBonus >= 0
+      ? candidate.levelBonus
+      : fallback.levelBonus,
+  }
 }
 
 // --- Fallback defaults (match current hardcoded values) ---
@@ -88,13 +143,30 @@ const DEFAULT_ITEM_TYPE_WEIGHTS: Record<string, Record<string, number>> = {
 interface CachedProfile {
   powerWeight: number
   statWeights: Record<string, number>
+  expiresAt: number
 }
 const _itemBalanceProfileCache = new Map<string, CachedProfile>()
 
-async function getItemBalanceProfile(itemType: string): Promise<CachedProfile | null> {
-  if (_itemBalanceProfileCache.has(itemType)) {
-    return _itemBalanceProfileCache.get(itemType)!
+export function invalidateItemBalanceProfileCache(itemType?: string): void {
+  if (itemType) {
+    _itemBalanceProfileCache.delete(itemType)
+    return
   }
+  _itemBalanceProfileCache.clear()
+}
+
+async function getItemBalanceProfile(itemType: string): Promise<CachedProfile | null> {
+  const now = Date.now()
+  const cached = _itemBalanceProfileCache.get(itemType)
+  if (cached && cached.expiresAt > now) {
+    return cached
+  }
+  if (cached) {
+    _itemBalanceProfileCache.delete(itemType)
+  }
+
+  const fallbackWeights = DEFAULT_ITEM_TYPE_WEIGHTS[itemType] ?? { str: 1.0 }
+
   try {
     const profile = await prisma.itemBalanceProfile.findFirst({
       where: { itemType: itemType as never },
@@ -102,8 +174,9 @@ async function getItemBalanceProfile(itemType: string): Promise<CachedProfile | 
     })
     if (profile) {
       const cached: CachedProfile = {
-        powerWeight: profile.powerWeight,
-        statWeights: profile.statWeights as Record<string, number>,
+        powerWeight: sanitizePowerWeight(profile.powerWeight),
+        statWeights: sanitizeStatWeights(profile.statWeights, fallbackWeights),
+        expiresAt: now + ITEM_BALANCE_PROFILE_CACHE_TTL_MS,
       }
       _itemBalanceProfileCache.set(itemType, cached)
       return cached
@@ -254,17 +327,10 @@ export async function generateBalancedBaseStats(
   }
 
   // Get item type stat weights from ItemBalanceProfile
-  let statWeights: Record<string, number>
-  try {
-    const profile = await prisma.itemBalanceProfile.findFirst({
-      where: { itemType: itemType as never },
-    })
-    statWeights = profile
-      ? (profile.statWeights as Record<string, number>)
-      : (DEFAULT_ITEM_TYPE_WEIGHTS[itemType] ?? { str: 1.0 })
-  } catch {
-    statWeights = DEFAULT_ITEM_TYPE_WEIGHTS[itemType] ?? { str: 1.0 }
-  }
+  const profile = await getItemBalanceProfile(itemType)
+  const statWeights = profile
+    ? profile.statWeights
+    : (DEFAULT_ITEM_TYPE_WEIGHTS[itemType] ?? { str: 1.0 })
 
   // Generate stats based on weights
   const stats: Record<string, number> = {}
@@ -420,11 +486,20 @@ export async function calculateDerivedStatsFromConfig(
 export async function getClassDamageFormula(
   characterClass: string,
 ): Promise<ClassDamageScaling> {
-  const scaling = await getGameConfig<Record<string, ClassDamageScaling>>(
+  const scaling = await getGameConfig<Record<string, unknown>>(
     'item_balance.class_damage_scaling',
     DEFAULT_CLASS_DAMAGE_SCALING,
   )
-  return scaling[characterClass] ?? DEFAULT_CLASS_DAMAGE_SCALING.warrior
+  const fallback = DEFAULT_CLASS_DAMAGE_SCALING[characterClass] ?? DEFAULT_CLASS_DAMAGE_SCALING.warrior
+
+  if (!scaling || typeof scaling !== 'object' || Array.isArray(scaling)) {
+    return fallback
+  }
+
+  return sanitizeClassDamageScalingEntry(
+    scaling[characterClass],
+    fallback,
+  )
 }
 
 // --- Drop Tuning ---

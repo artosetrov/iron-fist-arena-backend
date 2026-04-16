@@ -9,6 +9,8 @@ import { rateLimit } from '@/lib/rate-limit'
 const MIN_BET = 50
 const MAX_BET = 1000
 
+type ShellGameStartError = Error & { code?: 'INSUFFICIENT_GOLD' | 'DAILY_LIMIT_REACHED' }
+
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -50,34 +52,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Daily limit: max 20 shell games per day
     const today = new Date().toISOString().split('T')[0]
-    const todayGames = await prisma.minigameSession.count({
-      where: {
-        characterId: character_id,
-        gameType: 'shell_game',
-        createdAt: { gte: new Date(today) },
-      },
-    })
-    if (todayGames >= 20) {
-      return NextResponse.json(
-        { error: 'Daily shell game limit reached (20/day)' },
-        { status: 429 }
-      )
-    }
 
     // Generate the secret shell server-side. Do not return this from /start;
     // the reveal happens only after /guess so clients cannot pre-read wins.
     const correctShell = randomInt(0, 3)
 
     // Lock the user row, re-check gold, then deduct + create session atomically
-    let session: Awaited<ReturnType<typeof prisma.minigameSession.create>>
+    let sessionResult: {
+      session: Awaited<ReturnType<typeof prisma.minigameSession.create>>
+      playsRemaining: number
+    }
     try {
-      session = await prisma.$transaction(async (tx) => {
+      sessionResult = await prisma.$transaction(async (tx) => {
         const locked = await tx.$queryRaw<{ gold: number }[]>`
           SELECT gold FROM "users" WHERE id = ${user.id} FOR UPDATE
         `
         const currentGold = locked[0]?.gold ?? 0
+
+        // Daily limit belongs inside the same locked transaction as spend + create.
+        const todayGames = await tx.minigameSession.count({
+          where: {
+            characterId: character_id,
+            gameType: 'shell_game',
+            createdAt: { gte: new Date(today) },
+          },
+        })
+        if (todayGames >= 20) {
+          throw Object.assign(new Error('Daily shell game limit reached (20/day)'), {
+            code: 'DAILY_LIMIT_REACHED',
+          })
+        }
+
         if (currentGold < bet_amount) {
           throw Object.assign(new Error('Not enough gold'), { code: 'INSUFFICIENT_GOLD' })
         }
@@ -87,7 +93,7 @@ export async function POST(req: NextRequest) {
           data: { gold: { decrement: bet_amount } },
         })
 
-        return tx.minigameSession.create({
+        const session = await tx.minigameSession.create({
           data: {
             characterId: character_id,
             gameType: 'shell_game',
@@ -96,12 +102,24 @@ export async function POST(req: NextRequest) {
             status: 'active',
           },
         })
+
+        return {
+          session,
+          playsRemaining: Math.max(0, 20 - todayGames - 1),
+        }
       }, { isolationLevel: 'Serializable' })
-    } catch (err: any) {
-      if (err.code === 'INSUFFICIENT_GOLD') {
+    } catch (error) {
+      const shellGameError = error as ShellGameStartError
+      if (shellGameError.code === 'DAILY_LIMIT_REACHED') {
+        return NextResponse.json(
+          { error: 'Daily shell game limit reached (20/day)' },
+          { status: 429 }
+        )
+      }
+      if (shellGameError.code === 'INSUFFICIENT_GOLD') {
         return NextResponse.json({ error: 'Not enough gold' }, { status: 400 })
       }
-      throw err
+      throw error
     }
 
     // Update daily + weekly quest progress for gold spent
@@ -112,9 +130,9 @@ export async function POST(req: NextRequest) {
     ])
 
     return NextResponse.json({
-      session_id: session.id,
-      bet_amount: session.betAmount,
-      plays_remaining: Math.max(0, 20 - todayGames - 1),
+      session_id: sessionResult.session.id,
+      bet_amount: sessionResult.session.betAmount,
+      plays_remaining: sessionResult.playsRemaining,
       plays_limit: 20,
     })
   } catch (error) {

@@ -99,8 +99,8 @@ export async function GET(req: NextRequest) {
         lastBattleAt: pvpMatches.length > 0 ? pvpMatches[0].playedAt : null,
       },
     })
-  } catch (err: any) {
-    console.error('GET /api/social/relationship error:', err)
+  } catch (error) {
+    console.error('GET /api/social/relationship error:', error)
     return NextResponse.json({ error: 'Failed to fetch relationship' }, { status: 500 })
   }
 }

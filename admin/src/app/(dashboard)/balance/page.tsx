@@ -14,13 +14,12 @@ export default async function BalancePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Game Balance</h1>
         <p className="text-muted-foreground">
-          Manage all game balance parameters. {configs.length} values configured.
+          Manage primary live balance tuning surfaces. Specialized potion values stay on
+          Consumables, and raw fallback keys remain available in Live Config. {configs.length}{' '}
+          values loaded.
         </p>
       </div>
-      <BalanceClient
-        configs={JSON.parse(JSON.stringify(configs))}
-        adminId={admin.id}
-      />
+      <BalanceClient configs={JSON.parse(JSON.stringify(configs))} />
     </div>
   )
 }

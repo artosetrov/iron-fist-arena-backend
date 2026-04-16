@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
 
 const {
   mockCreateAdminClient,
@@ -49,10 +50,10 @@ describe('POST /api/auth/register', () => {
     mockRateLimit.mockResolvedValue(true)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -65,10 +66,10 @@ describe('POST /api/auth/register', () => {
     mockRateLimit.mockResolvedValue(true)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email: 'newuser@example.com' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -81,10 +82,10 @@ describe('POST /api/auth/register', () => {
     mockRateLimit.mockResolvedValue(true)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email: 'newuser@example.com', password: '12345' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -93,14 +94,30 @@ describe('POST /api/auth/register', () => {
     })
   })
 
+  it('returns 400 when email format is invalid', async () => {
+    mockRateLimit.mockResolvedValue(true)
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: 'not-an-email', password: 'test123' }),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Invalid email format',
+    })
+  })
+
   it('returns 429 when rate limited', async () => {
     mockRateLimit.mockResolvedValue(false)
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email: 'newuser@example.com', password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(429)
@@ -119,10 +136,10 @@ describe('POST /api/auth/register', () => {
     })
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email: 'existing@example.com', password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(409)
@@ -165,14 +182,14 @@ describe('POST /api/auth/register', () => {
     })
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({
           email: 'newuser@example.com',
           password: 'test123',
           username: 'newuser',
         }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(200)
@@ -234,10 +251,10 @@ describe('POST /api/auth/register', () => {
     })
 
     const response = await POST(
-      new Request('http://localhost/api/auth/register', {
+      makeNextRequest('http://localhost/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ email: 'nouser@example.com', password: 'test123' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(200)

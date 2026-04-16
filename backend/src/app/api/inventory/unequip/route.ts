@@ -63,23 +63,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Item is not equipped' }, { status: 400 })
     }
 
-    // Unequip the item
-    await prisma.equipmentInventory.update({
-      where: { id: inventory_id },
-      data: {
-        isEquipped: false,
-        equippedSlot: null,
-      },
+    await prisma.$transaction(async (tx) => {
+      // Keep the stat recompute in the same transaction as the unequip write.
+      // Otherwise the item state can commit and then bubble a false 500 later.
+      await tx.equipmentInventory.update({
+        where: { id: inventory_id },
+        data: {
+          isEquipped: false,
+          equippedSlot: null,
+        },
+      })
+
+      await recalculateDerivedStats(character_id, tx)
     })
 
-    // Recalculate derived stats + invalidate caches — in parallel.
+    // Invalidate caches after the unequip + stat recompute transaction commits.
     // BUG-62 (2026-04-11): inventory fetch moved into the shared
     // `buildInventoryResponse` helper so equip/unequip return the same
     // full snapshot shape as GET /api/inventory (equipment + consumables
     // + inventorySlots). The client used to merge a consumable-less
     // response and silently lost potions.
     await Promise.all([
-      recalculateDerivedStats(character_id),
       invalidateSkillCache(character_id),
       invalidatePassiveCache(character_id),
     ])

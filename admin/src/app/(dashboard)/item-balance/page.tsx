@@ -31,7 +31,6 @@ export default async function ItemBalancePage() {
           summary: s.summary,
           createdAt: s.createdAt.toISOString(),
         }))}
-        adminId={admin.id}
       />
     </div>
   )

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import type { DirectMessage } from '@prisma/client'
 
 const MAX_MESSAGES_PER_DAY = 50
 const MESSAGE_RATE_LIMIT_SECONDS = 3
@@ -16,6 +17,80 @@ const QUICK_MESSAGES: Record<string, string> = {
   haha: 'Haha!',
   wow: 'Wow!',
   oops: 'Oops!',
+}
+
+type MessagesBody = {
+  target_id?: string
+  content?: string
+  quick_id?: string
+  sender_id?: string
+}
+
+type ConversationEntry = {
+  otherCharacterId: string
+  lastMessage: Pick<DirectMessage, 'content' | 'createdAt' | 'isRead' | 'senderId'>
+  unreadCount: number
+}
+
+function isMessagesError(error: unknown, code: string): boolean {
+  return error instanceof Error && error.message === code
+}
+
+async function createDirectMessageWithGuards(args: {
+  senderId: string
+  receiverId: string
+  content: string
+  isQuick: boolean
+  quickId?: string
+}) {
+  const { senderId, receiverId, content, isQuick, quickId } = args
+  const now = new Date()
+  const todayStart = new Date()
+  todayStart.setUTCHours(0, 0, 0, 0)
+
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRawUnsafe<Array<{ id: string }>>(
+      'SELECT id FROM characters WHERE id = $1 FOR UPDATE',
+      senderId,
+    )
+
+    const [sentToday, lastMessage] = await Promise.all([
+      tx.directMessage.count({
+        where: {
+          senderId,
+          createdAt: { gte: todayStart },
+        },
+      }),
+      tx.directMessage.findFirst({
+        where: { senderId },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+    if (sentToday >= MAX_MESSAGES_PER_DAY) {
+      throw new Error('DAILY_LIMIT_REACHED')
+    }
+
+    if (lastMessage) {
+      const secondsSinceLastMessage = (now.getTime() - lastMessage.createdAt.getTime()) / 1000
+      if (secondsSinceLastMessage < MESSAGE_RATE_LIMIT_SECONDS) {
+        throw new Error('MESSAGE_RATE_LIMITED')
+      }
+    }
+
+    const expiresAt = new Date(now.getTime() + MESSAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+
+    return tx.directMessage.create({
+      data: {
+        senderId,
+        receiverId,
+        content,
+        isQuick,
+        quickId: quickId ?? null,
+        expiresAt,
+      },
+    })
+  })
 }
 
 /**
@@ -101,7 +176,7 @@ export async function GET(req: NextRequest) {
     })
 
     // Group by conversation partner (the "other" character)
-    const conversationMap = new Map<string, any>()
+    const conversationMap = new Map<string, ConversationEntry>()
 
     for (const msg of allMessages) {
       const otherCharId = msg.senderId === characterId ? msg.receiverId : msg.senderId
@@ -113,6 +188,7 @@ export async function GET(req: NextRequest) {
         })
       }
       const conv = conversationMap.get(otherCharId)
+      if (!conv) continue
       if (!conv.lastMessage) {
         conv.lastMessage = msg
       }
@@ -164,8 +240,8 @@ export async function GET(req: NextRequest) {
         unreadCount: conv.unreadCount,
       })),
     })
-  } catch (err: any) {
-    console.error('GET /api/social/messages error:', err)
+  } catch (error) {
+    console.error('GET /api/social/messages error:', error)
     return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
   }
 }
@@ -204,13 +280,13 @@ export async function POST(req: NextRequest) {
       default:
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
     }
-  } catch (err: any) {
-    console.error('POST /api/social/messages error:', err)
+  } catch (error) {
+    console.error('POST /api/social/messages error:', error)
     return NextResponse.json({ error: 'Failed to process message' }, { status: 500 })
   }
 }
 
-async function handleSend(senderId: string, body: any) {
+async function handleSend(senderId: string, body: MessagesBody) {
   const { target_id, content } = body
 
   if (!target_id) {
@@ -255,52 +331,29 @@ async function handleSend(senderId: string, body: any) {
     return NextResponse.json({ error: 'Cannot send message to this player' }, { status: 403 })
   }
 
-  const now = new Date()
-  const todayStart = new Date()
-  todayStart.setUTCHours(0, 0, 0, 0)
-
-  // Check daily limit
-  const sentToday = await prisma.directMessage.count({
-    where: {
+  let message: DirectMessage
+  try {
+    message = await createDirectMessageWithGuards({
       senderId,
-      createdAt: { gte: todayStart },
-    },
-  })
-  if (sentToday >= MAX_MESSAGES_PER_DAY) {
-    return NextResponse.json(
-      { error: `Daily message limit reached (${MAX_MESSAGES_PER_DAY})` },
-      { status: 429 }
-    )
-  }
-
-  // Check rate limit (3 seconds between messages)
-  const lastMessage = await prisma.directMessage.findFirst({
-    where: { senderId },
-    orderBy: { createdAt: 'desc' },
-    take: 1,
-  })
-  if (lastMessage) {
-    const secondsSinceLastMessage = (now.getTime() - lastMessage.createdAt.getTime()) / 1000
-    if (secondsSinceLastMessage < MESSAGE_RATE_LIMIT_SECONDS) {
+      receiverId: target_id,
+      content,
+      isQuick: false,
+    })
+  } catch (error) {
+    if (isMessagesError(error, 'DAILY_LIMIT_REACHED')) {
+      return NextResponse.json(
+        { error: `Daily message limit reached (${MAX_MESSAGES_PER_DAY})` },
+        { status: 429 }
+      )
+    }
+    if (isMessagesError(error, 'MESSAGE_RATE_LIMITED')) {
       return NextResponse.json(
         { error: `Rate limited. Wait ${MESSAGE_RATE_LIMIT_SECONDS} seconds between messages` },
         { status: 429 }
       )
     }
+    throw error
   }
-
-  // Create message
-  const expiresAt = new Date(now.getTime() + MESSAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
-
-  const message = await prisma.directMessage.create({
-    data: {
-      senderId,
-      receiverId: target_id,
-      content,
-      isQuick: false,
-      expiresAt,
-    },
-  })
 
   return NextResponse.json({
     message: {
@@ -311,7 +364,7 @@ async function handleSend(senderId: string, body: any) {
   })
 }
 
-async function handleSendQuick(senderId: string, body: any) {
+async function handleSendQuick(senderId: string, body: MessagesBody) {
   const { target_id, quick_id } = body
 
   if (!target_id) {
@@ -356,54 +409,31 @@ async function handleSendQuick(senderId: string, body: any) {
     return NextResponse.json({ error: 'Cannot send message to this player' }, { status: 403 })
   }
 
-  const now = new Date()
-  const todayStart = new Date()
-  todayStart.setUTCHours(0, 0, 0, 0)
-
-  // Check daily limit
-  const sentToday = await prisma.directMessage.count({
-    where: {
-      senderId,
-      createdAt: { gte: todayStart },
-    },
-  })
-  if (sentToday >= MAX_MESSAGES_PER_DAY) {
-    return NextResponse.json(
-      { error: `Daily message limit reached (${MAX_MESSAGES_PER_DAY})` },
-      { status: 429 }
-    )
-  }
-
-  // Check rate limit
-  const lastMessage = await prisma.directMessage.findFirst({
-    where: { senderId },
-    orderBy: { createdAt: 'desc' },
-    take: 1,
-  })
-  if (lastMessage) {
-    const secondsSinceLastMessage = (now.getTime() - lastMessage.createdAt.getTime()) / 1000
-    if (secondsSinceLastMessage < MESSAGE_RATE_LIMIT_SECONDS) {
-      return NextResponse.json(
-        { error: `Rate limited. Wait ${MESSAGE_RATE_LIMIT_SECONDS} seconds between messages` },
-        { status: 429 }
-      )
-    }
-  }
-
-  // Create quick message
-  const expiresAt = new Date(now.getTime() + MESSAGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
   const content = QUICK_MESSAGES[quick_id]
-
-  const message = await prisma.directMessage.create({
-    data: {
+  let message: DirectMessage
+  try {
+    message = await createDirectMessageWithGuards({
       senderId,
       receiverId: target_id,
       content,
       isQuick: true,
       quickId: quick_id,
-      expiresAt,
-    },
-  })
+    })
+  } catch (error) {
+    if (isMessagesError(error, 'DAILY_LIMIT_REACHED')) {
+      return NextResponse.json(
+        { error: `Daily message limit reached (${MAX_MESSAGES_PER_DAY})` },
+        { status: 429 }
+      )
+    }
+    if (isMessagesError(error, 'MESSAGE_RATE_LIMITED')) {
+      return NextResponse.json(
+        { error: `Rate limited. Wait ${MESSAGE_RATE_LIMIT_SECONDS} seconds between messages` },
+        { status: 429 }
+      )
+    }
+    throw error
+  }
 
   return NextResponse.json({
     message: {
@@ -415,7 +445,7 @@ async function handleSendQuick(senderId: string, body: any) {
   })
 }
 
-async function handleMarkRead(characterId: string, body: any) {
+async function handleMarkRead(characterId: string, body: MessagesBody) {
   const { sender_id } = body
 
   if (!sender_id) {

@@ -1,21 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { QuestType } from '@prisma/client'
+import { DailyQuest, QuestType } from '@prisma/client'
 import { invalidatePassiveCache, invalidateSkillCache } from '@/lib/game/combat-loader'
 import { awardBattlePassXp } from '@/lib/game/battle-pass'
 import { getBattlePassConfig } from '@/lib/game/live-config'
 import { grantRewardEntries } from '@/lib/game/reward-grants'
 
-// Quest generation config (fallback)
-const QUEST_POOL: {
+type QuestPoolEntry = {
   questType: QuestType
   minTarget: number
   maxTarget: number
   rewardGold: number
   rewardXp: number
   rewardGems: number
-}[] = [
+}
+
+type QuestMetaEntry = {
+  title: string
+  description: (target: number) => string
+  icon: string
+}
+
+type QuestMetaMap = Record<QuestType, QuestMetaEntry>
+
+type QuestViewRow = Pick<
+  DailyQuest,
+  'id' | 'questType' | 'target' | 'progress' | 'completed' | 'rewardGold' | 'rewardXp' | 'rewardGems'
+>
+
+type LockedDailyQuestRow = {
+  id: string
+  character_id: string
+  progress: number
+  target: number
+  completed: boolean
+  reward_gold: number
+  reward_xp: number
+  reward_gems: number
+}
+
+// Quest generation config (fallback)
+const QUEST_POOL: QuestPoolEntry[] = [
   { questType: 'pvp_wins', minTarget: 2, maxTarget: 5, rewardGold: 300, rewardXp: 150, rewardGems: 0 },
   { questType: 'dungeons_complete', minTarget: 1, maxTarget: 3, rewardGold: 250, rewardXp: 200, rewardGems: 0 },
   { questType: 'gold_spent', minTarget: 500, maxTarget: 2000, rewardGold: 0, rewardXp: 100, rewardGems: 5 },
@@ -26,7 +52,7 @@ const QUEST_POOL: {
 ]
 
 // Human-readable quest metadata by type (fallback)
-const QUEST_META: Record<QuestType, { title: string; description: (target: number) => string; icon: string }> = {
+const QUEST_META: QuestMetaMap = {
   pvp_wins: { title: 'Warrior', description: (t) => `Win ${t} PvP battles`, icon: 'building-arena' },
   dungeons_complete: { title: 'Dungeon Crawler', description: (t) => `Complete ${t} dungeons`, icon: 'building-dungeon' },
   gold_spent: { title: 'Big Spender', description: (t) => `Spend ${t} gold`, icon: 'building-shop' },
@@ -36,36 +62,51 @@ const QUEST_META: Record<QuestType, { title: string; description: (target: numbe
   gold_mine_collect: { title: 'Gold Miner', description: (t) => `Collect from gold mine ${t} times`, icon: 'building-gold-mine' },
 }
 
-async function getQuestPool() {
+function isQuestType(value: string): value is QuestType {
+  return value in QUEST_META
+}
+
+async function getQuestPool(): Promise<QuestPoolEntry[]> {
   try {
     const defs = await prisma.questDefinition.findMany({ where: { active: true } })
     if (defs.length > 0) {
-      return defs.map((d: any) => ({
-        questType: d.questType as QuestType,
-        minTarget: d.minTarget,
-        maxTarget: d.maxTarget,
-        rewardGold: d.rewardGold,
-        rewardXp: d.rewardXp,
-        rewardGems: d.rewardGems,
-      }))
+      const mappedDefs = defs.flatMap<QuestPoolEntry>((definition) => {
+        if (!isQuestType(definition.questType)) return []
+        return [{
+          questType: definition.questType,
+          minTarget: definition.minTarget,
+          maxTarget: definition.maxTarget,
+          rewardGold: definition.rewardGold,
+          rewardXp: definition.rewardXp,
+          rewardGems: definition.rewardGems,
+        }]
+      })
+
+      if (mappedDefs.length > 0) return mappedDefs
     }
   } catch {}
   return QUEST_POOL
 }
 
-async function getQuestMeta(): Promise<Record<QuestType, { title: string; description: (target: number) => string; icon: string }>> {
+async function getQuestMeta(): Promise<QuestMetaMap> {
   try {
     const defs = await prisma.questDefinition.findMany({ where: { active: true } })
     if (defs.length > 0) {
-      const meta: Record<string, { title: string; description: (target: number) => string; icon: string }> = {}
-      for (const d of defs as any[]) {
-        meta[d.questType] = {
-          title: d.title,
-          description: (t: number) => d.description.includes('${t}') ? d.description.replace('${t}', String(t)) : `${d.description} (${t})`,
-          icon: d.icon,
+      const meta: Partial<QuestMetaMap> = {}
+      for (const definition of defs) {
+        if (!isQuestType(definition.questType)) continue
+
+        meta[definition.questType] = {
+          title: definition.title,
+          description: (target: number) =>
+            definition.description.includes('${t}')
+              ? definition.description.replace('${t}', String(target))
+              : `${definition.description} (${target})`,
+          icon: definition.icon,
         }
       }
-      return meta as Record<QuestType, { title: string; description: (target: number) => string; icon: string }>
+
+      return { ...QUEST_META, ...meta }
     }
   } catch {}
   return QUEST_META
@@ -85,24 +126,24 @@ function pickRandom<T>(arr: T[], count: number): T[] {
 }
 
 function formatQuest(
-  q: any,
-  meta: Record<QuestType, { title: string; description: (target: number) => string; icon: string }>
+  quest: QuestViewRow,
+  meta: QuestMetaMap
 ) {
-  const questType = q.questType as QuestType
+  const questType = quest.questType
   const questMeta = meta[questType] || QUEST_META[questType]
   return {
-    id: q.id,
-    type: q.questType,
+    id: quest.id,
+    type: quest.questType,
     title: questMeta.title,
-    description: questMeta.description(q.target),
+    description: questMeta.description(quest.target),
     icon: questMeta.icon,
-    target: q.target,
-    progress: q.progress,
-    completed: q.progress >= q.target,
-    reward_claimed: q.completed, // DB `completed` = reward was claimed
-    reward_gold: q.rewardGold,
-    reward_xp: q.rewardXp,
-    reward_gems: q.rewardGems,
+    target: quest.target,
+    progress: quest.progress,
+    completed: quest.progress >= quest.target,
+    reward_claimed: quest.completed, // DB `completed` = reward was claimed
+    reward_gold: quest.rewardGold,
+    reward_xp: quest.rewardXp,
+    reward_gems: quest.rewardGems,
   }
 }
 
@@ -143,13 +184,13 @@ export async function GET(req: NextRequest) {
 
     if (quests.length === 0) {
       const selected = pickRandom(questPool, 3)
-      const createData = selected.map((q: any) => ({
+      const createData = selected.map((quest) => ({
         characterId,
-        questType: q.questType,
-        target: randomInt(q.minTarget, q.maxTarget),
-        rewardGold: q.rewardGold,
-        rewardXp: q.rewardXp,
-        rewardGems: q.rewardGems,
+        questType: quest.questType,
+        target: randomInt(quest.minTarget, quest.maxTarget),
+        rewardGold: quest.rewardGold,
+        rewardXp: quest.rewardXp,
+        rewardGems: quest.rewardGems,
         day: today,
       }))
       await prisma.dailyQuest.createMany({ data: createData })
@@ -164,7 +205,7 @@ export async function GET(req: NextRequest) {
       character.dailyBonusDate.toISOString().slice(0, 10) === today
 
     return NextResponse.json({
-      quests: quests.map((q: any) => formatQuest(q, questMeta)),
+      quests: quests.map((quest) => formatQuest(quest, questMeta)),
       day: today,
       daily_bonus_claimed: dailyBonusClaimed,
     })
@@ -205,7 +246,7 @@ export async function POST(req: NextRequest) {
         // Set lock timeout to prevent indefinite hangs on concurrent claims
         await tx.$executeRawUnsafe(`SET LOCAL lock_timeout = '5s'`)
         // Lock the quest row with FOR UPDATE (table mapped to "daily_quests", columns are snake_case)
-        const rows = await tx.$queryRawUnsafe<any[]>(
+        const rows = await tx.$queryRawUnsafe<LockedDailyQuestRow[]>(
           `SELECT * FROM "daily_quests" WHERE "id" = $1 FOR UPDATE`,
           quest_id
         )
@@ -257,11 +298,13 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-  } catch (error: any) {
-    if (error.message === 'QUEST_NOT_FOUND') return NextResponse.json({ error: 'Quest not found' }, { status: 404 })
-    if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    if (error.message === 'NOT_COMPLETED') return NextResponse.json({ error: 'Quest not completed yet' }, { status: 400 })
-    if (error.message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Reward already claimed' }, { status: 400 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+
+    if (message === 'QUEST_NOT_FOUND') return NextResponse.json({ error: 'Quest not found' }, { status: 404 })
+    if (message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (message === 'NOT_COMPLETED') return NextResponse.json({ error: 'Quest not completed yet' }, { status: 400 })
+    if (message === 'ALREADY_CLAIMED') return NextResponse.json({ error: 'Reward already claimed' }, { status: 400 })
     console.error('quest claim error:', error)
     return NextResponse.json({ error: 'Failed to process quest' }, { status: 500 })
   }

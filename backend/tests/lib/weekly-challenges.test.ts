@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   buildWeeklyChallenges,
   isoWeekOf,
+  updateWeeklyChallengeProgress,
   WEEKLY_CHALLENGE_POOL,
 } from '../../src/lib/game/weekly-challenges'
 import { BP_WEEKLY } from '../../src/lib/game/balance'
@@ -173,6 +174,24 @@ describe('weekly-challenges.ts — W3.D5 BAL-06', () => {
         expect(t.maxTarget).toBeGreaterThanOrEqual(t.minTarget)
         expect(t.weight).toBeGreaterThanOrEqual(0)
       }
+    })
+  })
+
+  describe('updateWeeklyChallengeProgress', () => {
+    it('writes the current ISO week and goal type through the raw SQL helper', async () => {
+      const executor = {
+        $executeRawUnsafe: vi.fn(async () => 1),
+      }
+
+      await updateWeeklyChallengeProgress(executor, 'char-1', 'pvp_wins', 2)
+
+      expect(executor.$executeRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE "weekly_challenge_progress"'),
+        2,
+        'char-1',
+        isoWeekOf(),
+        'pvp_wins',
+      )
     })
   })
 })

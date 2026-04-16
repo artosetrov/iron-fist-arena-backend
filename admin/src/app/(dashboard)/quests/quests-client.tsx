@@ -30,25 +30,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { createQuestDefinition, updateQuestDefinition, deleteQuestDefinition, seedQuestDefinitions, getQuestDefinitions } from '@/actions/quest-definitions'
+import {
+  createQuestDefinition,
+  updateQuestDefinition,
+  deleteQuestDefinition,
+  seedQuestDefinitions,
+  getQuestDefinitions,
+} from '@/actions/quest-definitions'
 import { useToast } from '@/hooks/use-toast'
-
-interface QuestDefinition {
-  id: string
-  questType: string
-  title: string
-  description: string
-  icon: string
-  minTarget: number
-  maxTarget: number
-  rewardGold: number
-  rewardXp: number
-  rewardGems: number
-  active: boolean
-}
+import type { QuestDefinitionRecord } from '@/lib/quest-definitions'
 
 interface QuestsClientProps {
-  initialQuests: QuestDefinition[]
+  initialQuests: QuestDefinitionRecord[]
 }
 
 export function QuestsClient({ initialQuests }: QuestsClientProps) {
@@ -71,7 +64,7 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
     rewardGems: 0,
   })
 
-  const handleOpenDialog = (quest?: QuestDefinition) => {
+  const handleOpenDialog = (quest?: QuestDefinitionRecord) => {
     if (quest) {
       setFormData({
         questType: quest.questType,
@@ -102,6 +95,17 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
     setIsOpen(true)
   }
 
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Request failed'
+
+  const sortQuests = (items: QuestDefinitionRecord[]) =>
+    [...items].sort((left, right) => left.questType.localeCompare(right.questType))
+
+  const parseWholeNumberInput = (value: string) => {
+    const parsed = Number.parseInt(value, 10)
+    return Number.isInteger(parsed) ? parsed : 0
+  }
+
   const handleSave = async () => {
     if (!formData.questType || !formData.title || !formData.description) {
       toast({ title: 'Error', description: 'Quest Type, Title, and Description are required', variant: 'destructive' })
@@ -111,7 +115,6 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
     setIsLoading(true)
     try {
       if (editingId) {
-        const existing = quests.find(q => q.id === editingId)
         const updated = await updateQuestDefinition(editingId, {
           title: formData.title,
           description: formData.description,
@@ -122,7 +125,9 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
           rewardXp: formData.rewardXp,
           rewardGems: formData.rewardGems,
         })
-        setQuests(quests.map(q => q.id === editingId ? updated : q))
+        setQuests((current) =>
+          sortQuests(current.map((quest) => (quest.id === editingId ? updated : quest)))
+        )
         toast({ title: 'Success', description: 'Quest updated' })
       } else {
         const created = await createQuestDefinition({
@@ -136,12 +141,12 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
           rewardXp: formData.rewardXp,
           rewardGems: formData.rewardGems,
         })
-        setQuests([...quests, created])
+        setQuests((current) => sortQuests([...current, created]))
         toast({ title: 'Success', description: 'Quest created' })
       }
       setIsOpen(false)
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } catch (error) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -152,11 +157,11 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
     setIsLoading(true)
     try {
       await deleteQuestDefinition(deleteId)
-      setQuests(quests.filter(q => q.id !== deleteId))
+      setQuests((current) => current.filter((quest) => quest.id !== deleteId))
       toast({ title: 'Success', description: 'Quest deleted' })
       setDeleteId(null)
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } catch (error) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -167,10 +172,30 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
     try {
       await seedQuestDefinitions()
       const newQuests = await getQuestDefinitions()
-      setQuests(newQuests)
+      setQuests(sortQuests(newQuests))
       toast({ title: 'Success', description: 'Quest definitions seeded' })
-    } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } catch (error) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleToggleActive = async (quest: QuestDefinitionRecord) => {
+    setIsLoading(true)
+    try {
+      const updated = await updateQuestDefinition(quest.id, {
+        active: !quest.active,
+      })
+      setQuests((current) =>
+        sortQuests(current.map((item) => (item.id === quest.id ? updated : item)))
+      )
+      toast({
+        title: 'Success',
+        description: updated.active ? 'Quest activated' : 'Quest deactivated',
+      })
+    } catch (error) {
+      toast({ title: 'Error', description: getErrorMessage(error), variant: 'destructive' })
     } finally {
       setIsLoading(false)
     }
@@ -227,7 +252,13 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
                   <Input
                     type="number"
                     value={formData.minTarget}
-                    onChange={(e) => setFormData({ ...formData, minTarget: parseInt(e.target.value) || 0 })}
+                    min="1"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        minTarget: parseWholeNumberInput(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -235,7 +266,13 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
                   <Input
                     type="number"
                     value={formData.maxTarget}
-                    onChange={(e) => setFormData({ ...formData, maxTarget: parseInt(e.target.value) || 0 })}
+                    min="1"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        maxTarget: parseWholeNumberInput(e.target.value),
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -245,7 +282,13 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
                   <Input
                     type="number"
                     value={formData.rewardGold}
-                    onChange={(e) => setFormData({ ...formData, rewardGold: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rewardGold: parseWholeNumberInput(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -253,7 +296,13 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
                   <Input
                     type="number"
                     value={formData.rewardXp}
-                    onChange={(e) => setFormData({ ...formData, rewardXp: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rewardXp: parseWholeNumberInput(e.target.value),
+                      })
+                    }
                   />
                 </div>
                 <div>
@@ -261,7 +310,13 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
                   <Input
                     type="number"
                     value={formData.rewardGems}
-                    onChange={(e) => setFormData({ ...formData, rewardGems: parseInt(e.target.value) || 0 })}
+                    min="0"
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        rewardGems: parseWholeNumberInput(e.target.value),
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -312,6 +367,14 @@ export function QuestsClient({ initialQuests }: QuestsClientProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="space-x-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleToggleActive(quest)}
+                      disabled={isLoading}
+                    >
+                      {quest.active ? 'Deactivate' : 'Activate'}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

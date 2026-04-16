@@ -1,7 +1,25 @@
 'use server'
 
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
+import { callBackendAdminJson } from '@/lib/backend-admin'
+
+type SnapshotConfigEntry = {
+  key: string
+  value: Prisma.JsonValue
+  category: string
+  description: string | null
+}
+
+type SnapshotListItem = {
+  id: string
+  name: string
+  description: string | null
+  createdBy: string
+  createdAt: Date
+  configs: Prisma.JsonValue
+}
 
 /** Take a snapshot of the current config state */
 export async function createConfigSnapshot(name: string, description?: string) {
@@ -17,44 +35,46 @@ export async function createConfigSnapshot(name: string, description?: string) {
     description: c.description,
   }))
 
-  const snapshot = await prisma.configSnapshot.create({
-    data: {
-      name,
-      description,
-      configs: configData as never,
-      createdBy: admin.id,
-    },
-  })
+  return prisma.$transaction(async (tx) => {
+    const snapshot = await tx.configSnapshot.create({
+      data: {
+        name,
+        description,
+        configs: configData as never,
+        createdBy: admin.id,
+      },
+    })
 
-  await prisma.adminLog.create({
-    data: {
-      adminId: admin.id,
-      action: 'create_config_snapshot',
-      target: snapshot.id,
-      details: { name, configCount: configData.length } as never,
-    },
-  })
+    await tx.adminLog.create({
+      data: {
+        adminId: admin.id,
+        action: 'create_config_snapshot',
+        target: snapshot.id,
+        details: { name, configCount: configData.length } as never,
+      },
+    })
 
-  return snapshot
+    return snapshot
+  })
 }
 
 /** List all snapshots, newest first */
-export async function listConfigSnapshots() {
+export async function listConfigSnapshots(): Promise<SnapshotListItem[]> {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
   return prisma.configSnapshot.findMany({
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      createdBy: true,
+      createdAt: true,
+      configs: true,
+    },
     orderBy: { createdAt: 'desc' },
     take: 50,
   })
-}
-
-/** Get a single snapshot with full config data */
-export async function getConfigSnapshot(id: string) {
-  const admin = await getAdminUser()
-  if (!admin) throw new Error('Unauthorized')
-
-  return prisma.configSnapshot.findUnique({ where: { id } })
 }
 
 /** Rollback to a specific snapshot — replaces all current configs */
@@ -65,57 +85,25 @@ export async function rollbackToSnapshot(snapshotId: string) {
   const snapshot = await prisma.configSnapshot.findUnique({ where: { id: snapshotId } })
   if (!snapshot) throw new Error('Snapshot not found')
 
-  const configData = snapshot.configs as Array<{
-    key: string
-    value: unknown
-    category: string
-    description: string | null
-  }>
-
-  // Auto-save current state before rollback
-  const currentConfigs = await prisma.gameConfig.findMany()
-  await prisma.configSnapshot.create({
-    data: {
-      name: `Auto-backup before rollback to "${snapshot.name}"`,
-      description: `Automatic backup created before rolling back to snapshot ${snapshotId}`,
-      configs: currentConfigs.map(c => ({
-        key: c.key,
-        value: c.value,
-        category: c.category,
-        description: c.description,
-      })) as never,
-      createdBy: admin.id,
-    },
-  })
-
-  // Delete all current configs and replace with snapshot
-  await prisma.gameConfig.deleteMany()
-
-  for (const config of configData) {
-    await prisma.gameConfig.create({
-      data: {
-        key: config.key,
-        value: config.value as never,
-        category: config.category,
-        description: config.description,
-        updatedBy: admin.id,
-      },
-    })
+  const configData = Array.isArray(snapshot.configs) ? (snapshot.configs as SnapshotConfigEntry[]) : null
+  if (!configData || !configData.every((config) => config && typeof config.key === 'string' && typeof config.category === 'string')) {
+    throw new Error('Snapshot payload is invalid')
   }
 
-  await prisma.adminLog.create({
-    data: {
-      adminId: admin.id,
-      action: 'rollback_config',
-      target: snapshotId,
-      details: {
-        snapshotName: snapshot.name,
-        configCount: configData.length,
-      } as never,
-    },
+  return callBackendAdminJson<{
+    success: true
+    restoredCount: number
+    backupCreated: boolean
+    backupId: string | null
+  }>('/api/admin/config/restore', {
+    method: 'POST',
+    body: JSON.stringify({
+      snapshotId,
+      snapshotName: snapshot.name,
+      configs: configData,
+      createBackup: true,
+    }),
   })
-
-  return { success: true, restoredCount: configData.length }
 }
 
 /** Delete a snapshot */
@@ -123,14 +111,16 @@ export async function deleteConfigSnapshot(id: string) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  await prisma.configSnapshot.delete({ where: { id } })
+  await prisma.$transaction(async (tx) => {
+    await tx.configSnapshot.delete({ where: { id } })
 
-  await prisma.adminLog.create({
-    data: {
-      adminId: admin.id,
-      action: 'delete_config_snapshot',
-      target: id,
-    },
+    await tx.adminLog.create({
+      data: {
+        adminId: admin.id,
+        action: 'delete_config_snapshot',
+        target: id,
+      },
+    })
   })
 
   return { success: true }

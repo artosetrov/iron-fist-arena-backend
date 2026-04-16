@@ -18,7 +18,6 @@ export function DSWagerButton({ state = 'Default' }: WagerButtonProps) {
 export function WagerButtonAllVariants() {
   return (
     <div className="flex gap-3 items-center">
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
       <div><p className="text-xs text-[#6B6B80] mb-1">Default</p><DSWagerButton state="Default" /></div>
       <div><p className="text-xs text-[#6B6B80] mb-1">Selected</p><DSWagerButton state="Selected" /></div>
       <div><p className="text-xs text-[#6B6B80] mb-1">Disabled</p><DSWagerButton state="Disabled" /></div>

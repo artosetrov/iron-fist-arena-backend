@@ -131,6 +131,20 @@ grep -n 'get.*Config()' <file> | grep -v 'await' | grep -v '//'
 
 This is a surface scan — flag obvious violations. Deep review is swift-review's job.
 
+### 5b. Test Mock Parity (if shared game lib changed — 2026-04-15)
+
+When any file in `backend/src/lib/game/` gains a new export, grep tests for mocks of that module and verify parity:
+
+```bash
+# Find test files that mock a shared lib module
+grep -rn "vi.mock.*@/lib/game/<module>" backend/tests/ --include="*.ts"
+# Compare real exports vs mocked exports — they must match
+```
+
+**Incident (2026-04-15 block-029):** `premium.ts` added `PREMIUM_ENTITLEMENT_USER_SELECT`. Vercel build went green; GitHub Actions vitest stayed red because two test files mocked `@/lib/game/premium` without the new export. The fix was a mechanical 2-line addition per test file.
+
+**Rule:** Adding an export to any `src/lib/game/*.ts` file MUST be accompanied by updating all test mocks for that module in the same commit. No exceptions.
+
 ### 6. Documentation Updates
 
 If behavior/schema/API/screens changed, check:

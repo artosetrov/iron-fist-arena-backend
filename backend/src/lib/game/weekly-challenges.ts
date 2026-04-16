@@ -227,6 +227,10 @@ export interface GeneratedWeeklyChallenge {
   readonly description: string
 }
 
+interface WeeklyChallengeProgressExecutor {
+  $executeRawUnsafe(query: string, ...args: unknown[]): Promise<number>
+}
+
 /**
  * Return the canonical 5 challenges for the given ISO week.
  * Pure function — same isoWeek always produces the same output.
@@ -286,7 +290,7 @@ function niceStep(value: number, min: number): number {
  * is fine — if they never opened it, there's nothing to progress yet.
  */
 export async function updateWeeklyChallengeProgress(
-  prisma: { $executeRawUnsafe: (...args: any[]) => Promise<number> },
+  prisma: WeeklyChallengeProgressExecutor,
   characterId: string,
   goalType: QuestType,
   increment: number = 1,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthAdmin, forbiddenResponse } from '@/lib/auth-admin'
 import { prisma } from '@/lib/prisma'
+import { invalidateItemBalanceProfileCache } from '@/lib/game/item-balance'
 
 /**
  * GET /api/admin/item-balance/profiles
@@ -53,6 +54,8 @@ export async function PUT(req: NextRequest) {
         updatedBy: user.id,
       },
     })
+
+    invalidateItemBalanceProfileCache(itemType)
 
     await prisma.adminLog.create({
       data: {

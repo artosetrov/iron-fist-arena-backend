@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
+import { callBackendAdminJson } from '@/lib/backend-admin'
 
 export async function getBalanceConfigs() {
   const admin = await getAdminUser()
@@ -10,7 +11,8 @@ export async function getBalanceConfigs() {
   const balanceCategories = [
     'stamina', 'gold_rewards', 'xp_rewards', 'first_win_bonus',
     'drop_chances', 'rarity_distribution', 'elo', 'pvp_ranks', 'combat',
-    'win_streak', 'matchmaking', 'prestige', 'upgrade',
+    'win_streak', 'loss_streak', 'matchmaking', 'prestige', 'upgrade',
+    'training_xp_dr', 'stamina_refill_dr', 'charisma', 'repair',
     'battle_pass', 'hp_regen', 'skills', 'passives',
     'gem_costs', 'inventory',
   ]
@@ -23,7 +25,6 @@ export async function getBalanceConfigs() {
 
 export async function batchUpdateBalanceConfigs(
   updates: { key: string; value: unknown }[],
-  adminId: string
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
@@ -40,38 +41,23 @@ export async function batchUpdateBalanceConfigs(
           category: c.category,
           description: c.description,
         })) as never,
-        createdBy: adminId,
+        createdBy: admin.id,
       },
     })
   }
 
-  const results = []
-
-  for (const { key, value } of updates) {
-    // Determine category from key prefix
-    const dotIdx = key.indexOf('.')
-    const category = dotIdx > 0 ? key.substring(0, dotIdx) : 'general'
-
-    const config = await prisma.gameConfig.upsert({
-      where: { key },
-      update: {
-        value: value as never,
-        updatedBy: adminId,
-      },
-      create: {
-        key,
-        value: value as never,
-        category,
-        updatedBy: adminId,
-      },
-    })
-    results.push(config)
-  }
+  const response = await callBackendAdminJson<{ updated?: number; configs?: unknown[]; total?: number }>(
+    '/api/admin/config',
+    {
+      method: 'POST',
+      body: JSON.stringify({ updates }),
+    },
+  )
 
   // Single audit log for the batch
   await prisma.adminLog.create({
     data: {
-      adminId,
+      adminId: admin.id,
       action: 'batch_update_balance',
       target: `${updates.length} configs`,
       details: {
@@ -81,10 +67,10 @@ export async function batchUpdateBalanceConfigs(
     },
   })
 
-  return { updated: results.length }
+  return { updated: response.updated ?? response.configs?.length ?? response.total ?? updates.length }
 }
 
-export async function resetBalanceToDefaults(keys: string[], adminId: string) {
+export async function resetBalanceToDefaults(keys: string[]) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
@@ -100,19 +86,22 @@ export async function resetBalanceToDefaults(keys: string[], adminId: string) {
           category: c.category,
           description: c.description,
         })) as never,
-        createdBy: adminId,
+        createdBy: admin.id,
       },
     })
   }
 
-  // Delete the specified keys so they revert to code defaults
-  await prisma.gameConfig.deleteMany({
-    where: { key: { in: keys } },
-  })
+  await Promise.all(
+    keys.map((key) =>
+      callBackendAdminJson<{ success: true }>(`/api/admin/config?key=${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+      })
+    )
+  )
 
   await prisma.adminLog.create({
     data: {
-      adminId,
+      adminId: admin.id,
       action: 'reset_balance_defaults',
       target: `${keys.length} configs`,
       details: { keys } as never,

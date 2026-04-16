@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { rateLimit, shopRateLimit } from '@/lib/rate-limit'
-import { GEM_PACKS, getGemPack, isGemPackCatalogId } from '@/lib/game/gem-packs'
+import { GEM_PACKS, getGemPack } from '@/lib/game/gem-packs'
 
 /**
  * POST /api/shop/buy-gems

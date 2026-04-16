@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getStaminaConfig } from '@/lib/game/live-config'
-import { generateDungeonFloor, getDungeonBossCount, generateDungeonFloorFromDB, getDungeonBossCountFromDB } from '@/lib/game/dungeon'
+import { generateDungeonFloorFromDB, getDungeonBossCountFromDB } from '@/lib/game/dungeon'
 import { calculateCurrentStamina } from '@/lib/game/stamina'
 import { rateLimit } from '@/lib/rate-limit'
 

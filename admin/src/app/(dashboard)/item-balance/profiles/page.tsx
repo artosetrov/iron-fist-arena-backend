@@ -26,7 +26,6 @@ export default async function ProfilesPage() {
           description: p.description,
           updatedAt: p.updatedAt.toISOString(),
         }))}
-        adminId={admin.id}
       />
     </div>
   )

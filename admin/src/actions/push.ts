@@ -1,27 +1,87 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import {
+  parseOptionalScheduledAt,
+  parsePushTargetType,
+  sanitizePushCampaignData,
+  sanitizePushCampaignTargetFilter,
+  type JsonValue,
+  type PushCampaignTargetFilter,
+  type PushTargetType,
+} from '@/lib/push-campaigns'
 
 type CreateCampaignInput = {
   title: string
   body: string
-  data?: Record<string, any>
-  targetType?: string
-  targetFilter?: Record<string, any>
+  data?: unknown
+  targetType?: unknown
+  targetFilter?: unknown
   scheduledAt?: string | null
 }
 
-// ---------------------------------------------------------------------------
-// Campaigns CRUD
-// ---------------------------------------------------------------------------
+type NormalizedCampaignInput = {
+  title: string
+  body: string
+  data: JsonValue | null
+  targetType: PushTargetType
+  targetFilter: PushCampaignTargetFilter | null
+  scheduledAt: Date | null
+}
+
+async function requireAdminUser() {
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
+  return admin
+}
+
+function toNullableJsonInput(value: JsonValue | null): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  return value === null ? Prisma.DbNull : value as Prisma.InputJsonValue
+}
+
+function normalizeCampaignInput(input: CreateCampaignInput): NormalizedCampaignInput {
+  const title = input.title?.trim()
+  const body = input.body?.trim()
+
+  if (!title) throw new Error('Campaign title is required')
+  if (!body) throw new Error('Campaign body is required')
+
+  const targetType = input.targetType !== undefined
+    ? parsePushTargetType(input.targetType)
+    : 'broadcast'
+
+  return {
+    title,
+    body,
+    data: sanitizePushCampaignData(input.data),
+    targetType,
+    targetFilter: sanitizePushCampaignTargetFilter(targetType, input.targetFilter),
+    scheduledAt: parseOptionalScheduledAt(input.scheduledAt),
+  }
+}
+
+function buildCharacterWhere(filter: PushCampaignTargetFilter | null): Prisma.CharacterWhereInput {
+  if (!filter) return {}
+
+  return {
+    ...(filter.minLevel !== undefined && {
+      level: {
+        ...(filter.minLevel !== undefined && { gte: filter.minLevel }),
+        ...(filter.maxLevel !== undefined && { lte: filter.maxLevel }),
+      },
+    }),
+    ...(filter.minLevel === undefined && filter.maxLevel !== undefined && {
+      level: { lte: filter.maxLevel },
+    }),
+    ...(filter.class && { class: filter.class }),
+  }
+}
 
 export async function listCampaigns() {
-  await getAdminUser()
+  await requireAdminUser()
+
   return prisma.pushCampaign.findMany({
     orderBy: { createdAt: 'desc' },
     take: 100,
@@ -29,70 +89,63 @@ export async function listCampaigns() {
 }
 
 export async function createCampaign(input: CreateCampaignInput) {
-  const admin = await getAdminUser()
-  if (!admin) throw new Error('Unauthorized')
+  const admin = await requireAdminUser()
+  const normalized = normalizeCampaignInput(input)
+
   return prisma.pushCampaign.create({
     data: {
-      title: input.title,
-      body: input.body,
-      data: input.data ?? undefined,
-      targetType: input.targetType ?? 'broadcast',
-      targetFilter: input.targetFilter ?? undefined,
-      scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+      title: normalized.title,
+      body: normalized.body,
+      data: toNullableJsonInput(normalized.data),
+      targetType: normalized.targetType,
+      targetFilter: toNullableJsonInput(normalized.targetFilter as JsonValue | null),
+      scheduledAt: normalized.scheduledAt,
       createdBy: admin.email ?? admin.id,
     },
   })
 }
 
 export async function deleteCampaign(id: string) {
-  await getAdminUser()
+  await requireAdminUser()
   return prisma.pushCampaign.delete({ where: { id } })
 }
 
-/**
- * "Send" a campaign — in real prod this would call the backend push API.
- * For admin panel, we update status and simulate the send.
- * In production, this should call a backend endpoint that does the actual APNS sends.
- */
 export async function sendCampaign(id: string) {
-  await getAdminUser()
+  await requireAdminUser()
 
   const campaign = await prisma.pushCampaign.findUnique({ where: { id } })
   if (!campaign) throw new Error('Campaign not found')
   if (campaign.status === 'sent') throw new Error('Already sent')
 
-  // Count target tokens
-  const filter = campaign.targetFilter as {
-    minLevel?: number; maxLevel?: number; class?: string; userIds?: string[]
-  } | null
+  const targetType = parsePushTargetType(campaign.targetType)
+  const filter = sanitizePushCampaignTargetFilter(targetType, campaign.targetFilter)
 
   let tokenCount = 0
 
-  if (campaign.targetType === 'user' && filter?.userIds?.length) {
+  if (targetType === 'user') {
+    if (!filter?.userIds?.length) {
+      throw new Error('User-targeted campaign is missing user IDs')
+    }
     tokenCount = await prisma.pushToken.count({
       where: { userId: { in: filter.userIds }, isActive: true },
     })
-  } else if (campaign.targetType === 'segment' && filter) {
-    const charWhere: any = {}
-    if (filter.minLevel) charWhere.level = { gte: filter.minLevel }
-    if (filter.maxLevel) charWhere.level = { ...charWhere.level, lte: filter.maxLevel }
-    if (filter.class) charWhere.class = filter.class
-
-    const chars = await prisma.character.findMany({
-      where: charWhere,
+  } else if (targetType === 'segment') {
+    const characters = await prisma.character.findMany({
+      where: buildCharacterWhere(filter),
       select: { userId: true },
       distinct: ['userId'],
     })
-    const userIds = chars.map(c => c.userId)
-    tokenCount = await prisma.pushToken.count({
-      where: { userId: { in: userIds }, isActive: true },
-    })
+
+    const userIds = characters.map((character) => character.userId)
+    if (userIds.length > 0) {
+      tokenCount = await prisma.pushToken.count({
+        where: { userId: { in: userIds }, isActive: true },
+      })
+    }
   } else {
-    // broadcast
     tokenCount = await prisma.pushToken.count({ where: { isActive: true } })
   }
 
-  // Mark as sent (actual sending would happen via backend push service)
   await prisma.pushCampaign.update({
     where: { id },
     data: {
@@ -105,12 +158,8 @@ export async function sendCampaign(id: string) {
   return { tokenCount }
 }
 
-// ---------------------------------------------------------------------------
-// Stats
-// ---------------------------------------------------------------------------
-
 export async function getPushStats() {
-  await getAdminUser()
+  await requireAdminUser()
 
   const [
     totalTokens,
@@ -141,12 +190,9 @@ export async function getPushStats() {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Recent logs
-// ---------------------------------------------------------------------------
-
 export async function getRecentLogs(limit = 50) {
-  await getAdminUser()
+  await requireAdminUser()
+
   return prisma.pushLog.findMany({
     orderBy: { createdAt: 'desc' },
     take: limit,

@@ -80,8 +80,8 @@ const BALANCE_TABS: TabDef[] = [
         title: 'Critical Hit Formula',
         description: 'Crit chance = LUK \u00d7 CritPerLuk + AGI \u00d7 CritPerAgi',
         fields: [
-          { key: 'combat.crit_per_luk', label: 'Crit per LUK', description: 'Crit chance % gained per LUK point', defaultValue: 0.7, unit: '%/pt', step: 0.05, min: 0 },
-          { key: 'combat.crit_per_agi', label: 'Crit per AGI', description: 'Crit chance % gained per AGI point', defaultValue: 0.15, unit: '%/pt', step: 0.05, min: 0 },
+          { key: 'combat.crit_per_luk', label: 'Crit per LUK', description: 'Crit chance % gained per LUK point', defaultValue: 0.6, unit: '%/pt', step: 0.05, min: 0 },
+          { key: 'combat.crit_per_agi', label: 'Crit per AGI', description: 'Crit chance % gained per AGI point', defaultValue: 0.2, unit: '%/pt', step: 0.05, min: 0 },
           { key: 'combat.max_crit_chance', label: 'Max Crit Chance', description: 'Hard cap on critical hit chance', defaultValue: 50, unit: '%', step: 1, min: 0, max: 100 },
         ],
       },
@@ -154,9 +154,36 @@ const BALANCE_TABS: TabDef[] = [
         title: 'Win Streak Bonuses',
         description: 'Gold bonus multipliers based on consecutive wins',
         fields: [
-          { key: 'win_streak.3_bonus', label: '3-Win Streak', description: 'Gold bonus at 3 consecutive wins', defaultValue: 0.2, unit: '+%', step: 0.05, min: 0 },
-          { key: 'win_streak.5_bonus', label: '5-Win Streak', description: 'Gold bonus at 5 consecutive wins', defaultValue: 0.5, unit: '+%', step: 0.05, min: 0 },
-          { key: 'win_streak.8_bonus', label: '8+ Win Streak', description: 'Gold bonus at 8+ consecutive wins', defaultValue: 1.0, unit: '+%', step: 0.1, min: 0 },
+          { key: 'win_streak.3_bonus', label: '3-Win Streak', description: 'Gold bonus at 3 consecutive wins', defaultValue: 0.15, unit: '+%', step: 0.05, min: 0 },
+          { key: 'win_streak.5_bonus', label: '5-Win Streak', description: 'Gold bonus at 5 consecutive wins', defaultValue: 0.3, unit: '+%', step: 0.05, min: 0 },
+          { key: 'win_streak.8_bonus', label: '8+ Win Streak', description: 'Gold bonus at 8+ consecutive wins', defaultValue: 0.5, unit: '+%', step: 0.1, min: 0 },
+        ],
+      },
+      {
+        id: 'loss_streak',
+        title: 'Loss Streak Recovery',
+        description: 'Recovery multipliers for players on a losing streak',
+        fields: [
+          { key: 'loss_streak.3_bonus', label: '3-Loss Streak', description: 'Recovery bonus at 3 consecutive losses', defaultValue: 0.2, unit: '+%', step: 0.05, min: 0 },
+          { key: 'loss_streak.5_bonus', label: '5-Loss Streak', description: 'Recovery bonus at 5 consecutive losses', defaultValue: 0.35, unit: '+%', step: 0.05, min: 0 },
+          { key: 'loss_streak.7_bonus', label: '7+ Loss Streak', description: 'Recovery bonus at 7+ consecutive losses', defaultValue: 0.5, unit: '+%', step: 0.05, min: 0 },
+        ],
+      },
+      {
+        id: 'charisma',
+        title: 'Charisma Economy Guardrails',
+        description: 'Cap for the gold-bonus side of CHA after the combat rework',
+        fields: [
+          { key: 'cha.gold_bonus_cap', label: 'Gold Bonus Cap', description: 'Maximum multiplier returned by the charisma gold bonus helper', defaultValue: 0.8, unit: 'x', step: 0.05, min: 0 },
+        ],
+      },
+      {
+        id: 'repair',
+        title: 'Repair Costs',
+        description: 'Primary gold sink for damaged gear upkeep',
+        fields: [
+          { key: 'repair.base_cost', label: 'Base Repair Cost', description: 'Base gold cost per item repair', defaultValue: 120, unit: 'gold', step: 10, min: 0 },
+          { key: 'repair.per_level', label: 'Repair Cost/Level', description: 'Additional gold cost per item level', defaultValue: 20, unit: 'gold', step: 5, min: 0 },
         ],
       },
       {
@@ -227,6 +254,38 @@ const BALANCE_TABS: TabDef[] = [
           { key: 'prestige.max_level', label: 'Max Level', description: 'Maximum character level before prestige', defaultValue: 50, step: 1, min: 1 },
           { key: 'prestige.stat_bonus_per_prestige', label: 'Stat Bonus/Prestige', description: 'Stat bonus per prestige level (0.05 = 5%)', defaultValue: 0.05, unit: 'x', step: 0.01, min: 0 },
           { key: 'prestige.stat_points_per_level', label: 'Stat Pts/Level', description: 'Stat points awarded per level up', defaultValue: 3, unit: 'pts', step: 1, min: 1 },
+        ],
+      },
+      {
+        id: 'pvp_ranks',
+        title: 'PvP Rank Thresholds',
+        description: 'ELO thresholds that define visible ladder tiers',
+        fields: [
+          { key: 'pvp_ranks.bronze', label: 'Bronze', description: 'Minimum ELO for Bronze', defaultValue: 0, step: 50, min: 0 },
+          { key: 'pvp_ranks.silver', label: 'Silver', description: 'Minimum ELO for Silver', defaultValue: 750, step: 50, min: 0 },
+          { key: 'pvp_ranks.gold', label: 'Gold', description: 'Minimum ELO for Gold', defaultValue: 1500, step: 50, min: 0 },
+          { key: 'pvp_ranks.platinum', label: 'Platinum', description: 'Minimum ELO for Platinum', defaultValue: 2250, step: 50, min: 0 },
+          { key: 'pvp_ranks.diamond', label: 'Diamond', description: 'Minimum ELO for Diamond', defaultValue: 3000, step: 50, min: 0 },
+          { key: 'pvp_ranks.master', label: 'Master', description: 'Minimum ELO for Master', defaultValue: 3750, step: 50, min: 0 },
+          { key: 'pvp_ranks.grandmaster', label: 'Grandmaster', description: 'Minimum ELO for Grandmaster', defaultValue: 4250, step: 50, min: 0 },
+        ],
+      },
+      {
+        id: 'training_xp_dr',
+        title: 'Training XP Diminishing Returns',
+        description: 'Daily soft cap for dungeon and training XP farming',
+        fields: [
+          { key: 'training_xp_dr.full_xp_clears', label: 'Full XP Clears', description: 'Number of daily clears that award 100% XP', defaultValue: 6, step: 1, min: 0 },
+          { key: 'training_xp_dr.half_xp_clears', label: 'Half XP Clears', description: 'Additional clears that award 50% XP before the floor kicks in', defaultValue: 6, step: 1, min: 0 },
+          { key: 'training_xp_dr.floor_multiplier', label: 'XP Floor Multiplier', description: 'Minimum XP multiplier after the half-XP window', defaultValue: 0.1, unit: 'x', step: 0.05, min: 0, max: 1 },
+        ],
+      },
+      {
+        id: 'stamina_refill_dr',
+        title: 'Stamina Refill Diminishing Returns',
+        description: 'Daily cap plus escalating gem multipliers for repeated refills',
+        fields: [
+          { key: 'stamina_refill_dr.daily_cap', label: 'Daily Refill Cap', description: 'Maximum gem-based stamina refills per day', defaultValue: 4, step: 1, min: 0 },
         ],
       },
     ],
@@ -319,6 +378,8 @@ const BALANCE_TABS: TabDef[] = [
 // Upgrade chances special field (array stored as single config key)
 const UPGRADE_KEY = 'upgrade_chances'
 const UPGRADE_DEFAULTS = [100, 100, 100, 100, 100, 80, 60, 40, 25, 15]
+const STAMINA_REFILL_MULTIPLIERS_KEY = 'stamina_refill_dr.cost_multipliers'
+const STAMINA_REFILL_MULTIPLIERS_DEFAULTS = [1, 1.5, 2.5, 4]
 
 // Build a flat map of all field defaults
 const ALL_DEFAULTS = new Map<string, number>()
@@ -336,15 +397,14 @@ for (const tab of BALANCE_TABS) {
 
 export function BalanceClient({
   configs,
-  adminId,
 }: {
   configs: ConfigItem[]
-  adminId: string
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [editedValues, setEditedValues] = useState<Record<string, string>>({})
   const [editedUpgrades, setEditedUpgrades] = useState<number[] | null>(null)
+  const [editedRefillMultipliers, setEditedRefillMultipliers] = useState<number[] | null>(null)
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set())
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -358,7 +418,10 @@ export function BalanceClient({
   }, [configs])
 
   // Count unsaved changes
-  const changeCount = Object.keys(editedValues).length + (editedUpgrades ? 1 : 0)
+  const changeCount =
+    Object.keys(editedValues).length +
+    (editedUpgrades ? 1 : 0) +
+    (editedRefillMultipliers ? 1 : 0)
 
   // Get current value for a field (edited > db > default)
   const getValue = useCallback(
@@ -378,6 +441,13 @@ export function BalanceClient({
     if (dbConfig && Array.isArray(dbConfig.value)) return dbConfig.value as number[]
     return [...UPGRADE_DEFAULTS]
   }, [editedUpgrades, configMap])
+
+  const getStaminaRefillMultipliers = useCallback((): number[] => {
+    if (editedRefillMultipliers) return editedRefillMultipliers
+    const dbConfig = configMap.get(STAMINA_REFILL_MULTIPLIERS_KEY)
+    if (dbConfig && Array.isArray(dbConfig.value)) return dbConfig.value as number[]
+    return [...STAMINA_REFILL_MULTIPLIERS_DEFAULTS]
+  }, [editedRefillMultipliers, configMap])
 
   // Check if a value differs from its default
   function isModified(key: string, defaultValue: number): boolean {
@@ -409,6 +479,19 @@ export function BalanceClient({
     setSuccessMsg('')
   }
 
+  function handleStaminaRefillMultiplierChange(index: number, value: number) {
+    const current = getStaminaRefillMultipliers()
+    const updated = [...current]
+    updated[index] = value
+    setEditedRefillMultipliers(updated)
+    setSavedKeys((prev) => {
+      const next = new Set(prev)
+      next.delete(STAMINA_REFILL_MULTIPLIERS_KEY)
+      return next
+    })
+    setSuccessMsg('')
+  }
+
   function handleResetField(key: string, defaultValue: number) {
     setEditedValues((prev) => ({ ...prev, [key]: String(defaultValue) }))
     setSuccessMsg('')
@@ -429,7 +512,7 @@ export function BalanceClient({
     setError('')
     startTransition(async () => {
       try {
-        await updateConfig(key, parsedValue, adminId)
+        await updateConfig(key, parsedValue)
         setSavedKeys((prev) => new Set(prev).add(key))
         setEditedValues((prev) => {
           const next = { ...prev }
@@ -461,16 +544,21 @@ export function BalanceClient({
       updates.push({ key: UPGRADE_KEY, value: editedUpgrades })
     }
 
+    if (editedRefillMultipliers) {
+      updates.push({ key: STAMINA_REFILL_MULTIPLIERS_KEY, value: editedRefillMultipliers })
+    }
+
     if (updates.length === 0) return
 
     setError('')
     setSuccessMsg('')
     startTransition(async () => {
       try {
-        await batchUpdateBalanceConfigs(updates, adminId)
+        await batchUpdateBalanceConfigs(updates)
         setSavedKeys(new Set(updates.map((u) => u.key)))
         setEditedValues({})
         setEditedUpgrades(null)
+        setEditedRefillMultipliers(null)
         setSuccessMsg(`Saved ${updates.length} balance value${updates.length > 1 ? 's' : ''}`)
         router.refresh()
       } catch (err) {
@@ -483,6 +571,7 @@ export function BalanceClient({
   function handleDiscardAll() {
     setEditedValues({})
     setEditedUpgrades(null)
+    setEditedRefillMultipliers(null)
     setSuccessMsg('')
   }
 
@@ -504,10 +593,10 @@ export function BalanceClient({
   // Calculate rarity sum for validation
   function getRaritySum(): number {
     const keys = ['rarity_distribution.common', 'rarity_distribution.uncommon', 'rarity_distribution.rare', 'rarity_distribution.epic', 'rarity_distribution.legendary']
-    return keys.reduce((sum, key) => {
-      const field = BALANCE_TABS[1].sections[5].fields.find((f) => f.key === key)
-      return sum + Number(getValue(key, field?.defaultValue ?? 0))
-    }, 0)
+    return keys.reduce(
+      (sum, key) => sum + Number(getValue(key, ALL_DEFAULTS.get(key) ?? 0)),
+      0,
+    )
   }
 
   // Calculate stamina regen time
@@ -597,7 +686,6 @@ export function BalanceClient({
   function renderUpgradeChances() {
     const chances = getUpgradeChances()
     const hasEdit = editedUpgrades !== null
-    const isSaved = savedKeys.has(UPGRADE_KEY)
 
     return (
       <Card>
@@ -656,6 +744,59 @@ export function BalanceClient({
     )
   }
 
+  function renderStaminaRefillMultipliers() {
+    const multipliers = getStaminaRefillMultipliers()
+    const hasEdit = editedRefillMultipliers !== null
+    const isSaved = savedKeys.has(STAMINA_REFILL_MULTIPLIERS_KEY)
+
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Stamina Refill Cost Multipliers</CardTitle>
+              <CardDescription className="text-xs mt-1">
+                Escalating gem cost multipliers for refill 1 through 4.
+              </CardDescription>
+            </div>
+            {hasEdit ? (
+              <Badge variant="default" className="text-xs">
+                modified
+              </Badge>
+            ) : isSaved ? (
+              <Badge variant="outline" className="text-xs text-green-400 border-green-500/30">
+                saved
+              </Badge>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {multipliers.map((multiplier, idx) => (
+              <div key={idx} className="rounded-lg border p-2 text-center">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Refill {idx + 1}</p>
+                <Input
+                  type="number"
+                  value={multiplier}
+                  onChange={(e) =>
+                    handleStaminaRefillMultiplierChange(
+                      idx,
+                      Math.max(0, Number(e.target.value)),
+                    )
+                  }
+                  min={0}
+                  step={0.1}
+                  className="text-center font-mono text-sm h-8"
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">x base cost</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   // --- Render section ---
   function renderSection(section: SectionDef) {
     return (
@@ -699,7 +840,7 @@ export function BalanceClient({
   const totalFields = BALANCE_TABS.reduce(
     (sum, tab) => sum + tab.sections.reduce((s, sec) => s + sec.fields.length, 0),
     0
-  ) + 1 // +1 for upgrade_chances
+  ) + 2 // +1 for upgrade_chances, +1 for stamina_refill_dr.cost_multipliers
 
   const configuredCount = configs.length
   const raritySum = getRaritySum()
@@ -713,9 +854,12 @@ export function BalanceClient({
         <div>
           <p className="font-medium">Reference Configuration</p>
           <p className="text-xs text-blue-400/80 mt-0.5">
-            These values are stored in the GameConfig table. The game backend currently reads from
-            hardcoded constants (<code className="px-1 py-0.5 bg-blue-500/20 rounded text-[11px]">balance.ts</code>).
-            After making changes here, update the backend code to apply them to production.
+            These values are stored in the GameConfig table. Many live gameplay systems already read
+            them directly, while some legacy or derived paths still fall back to code defaults in{' '}
+            <code className="px-1 py-0.5 bg-blue-500/20 rounded text-[11px]">balance.ts</code>.
+            Treat this as the main balance surface for combat, progression, ladder, and repair
+            tuning. Potion price/effect values still live on the Consumables screen, and raw
+            fallback keys remain visible in Live Config.
           </p>
         </div>
       </div>
@@ -800,7 +944,12 @@ export function BalanceClient({
           <TabsContent key={tab.id} value={tab.id} className="mt-4 space-y-4">
             {tab.sections.map(renderSection)}
             {/* Show upgrade chances in Progression tab */}
-            {tab.id === 'progression' && renderUpgradeChances()}
+            {tab.id === 'progression' && (
+              <>
+                {renderUpgradeChances()}
+                {renderStaminaRefillMultipliers()}
+              </>
+            )}
           </TabsContent>
         ))}
       </Tabs>

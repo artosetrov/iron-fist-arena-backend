@@ -84,7 +84,6 @@ const ALL_SIZES: CurrencyDisplaySize[] = ['Standard', 'Compact', 'Mini']
 export function CurrencyDisplayAllVariants() {
   return (
     <>
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <div className="flex flex-col gap-[24px] p-[24px]">
         <h2 className="font-['Oswald'] text-[22px] text-[#ffd700] uppercase tracking-[2px] mb-[8px]">
           Currency Display — All Sizes

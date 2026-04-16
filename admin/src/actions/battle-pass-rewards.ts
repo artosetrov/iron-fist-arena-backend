@@ -1,8 +1,10 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
+import { sanitizeBattlePassRewardInput } from '@/lib/battle-pass-rewards'
 
 export async function getBattlePassRewards(seasonId?: string) {
   const admin = await getAdminUser()
@@ -33,13 +35,15 @@ export async function createBattlePassReward(data: {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const reward = await prisma.battlePassReward.create({ data })
+  const payload = sanitizeBattlePassRewardInput(data)
+  const reward = await prisma.battlePassReward.create({ data: payload })
 
   auditLog(admin, 'create_bp_reward', `bp-reward/${reward.id}`, {
-    seasonId: data.seasonId,
-    bpLevel: data.bpLevel,
-    isPremium: data.isPremium,
-    rewardType: data.rewardType,
+    seasonId: payload.seasonId,
+    bpLevel: payload.bpLevel,
+    isPremium: payload.isPremium,
+    rewardType: payload.rewardType,
+    rewardId: payload.rewardId,
   })
 
   return reward
@@ -56,17 +60,29 @@ export async function updateBattlePassReward(
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
+  const existing = await prisma.battlePassReward.findUnique({
+    where: { id },
+  })
+
+  if (!existing) {
+    throw new Error('Battle Pass reward not found')
+  }
+
+  const payload = sanitizeBattlePassRewardInput(data, existing)
   const reward = await prisma.battlePassReward.update({
     where: { id },
     data: {
-      ...(data.rewardType !== undefined && { rewardType: data.rewardType }),
-      ...(data.rewardId !== undefined && { rewardId: data.rewardId }),
-      ...(data.rewardAmount !== undefined && { rewardAmount: data.rewardAmount }),
+      rewardType: payload.rewardType,
+      rewardId: payload.rewardId,
+      rewardAmount: payload.rewardAmount,
     },
   })
 
   auditLog(admin, 'update_bp_reward', `bp-reward/${id}`, {
     updatedFields: Object.keys(data),
+    rewardType: payload.rewardType,
+    rewardId: payload.rewardId,
+    rewardAmount: payload.rewardAmount,
   })
 
   return reward
@@ -98,26 +114,34 @@ export async function bulkCreateBattlePassRewards(
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
+  if (!seasonId.trim()) throw new Error('Season is required')
+  if (!Number.isInteger(maxLevel) || maxLevel < 1) {
+    throw new Error('Max level must be a positive integer')
+  }
 
   // Generate default rewards for all levels
-  const rewards = []
+  const rewards: Array<ReturnType<typeof sanitizeBattlePassRewardInput>> = []
   for (let level = 1; level <= maxLevel; level++) {
     // Free track
-    rewards.push({
-      seasonId,
-      bpLevel: level,
-      isPremium: false,
-      rewardType: level % 5 === 0 ? 'gems' : 'gold',
-      rewardAmount: level % 5 === 0 ? 1 : 100 * level,
-    })
+    rewards.push(
+      sanitizeBattlePassRewardInput({
+        seasonId,
+        bpLevel: level,
+        isPremium: false,
+        rewardType: level % 5 === 0 ? 'gems' : 'gold',
+        rewardAmount: level % 5 === 0 ? 1 : 100 * level,
+      })
+    )
     // Premium track
-    rewards.push({
-      seasonId,
-      bpLevel: level,
-      isPremium: true,
-      rewardType: level % 5 === 0 ? 'gems' : 'gold',
-      rewardAmount: level % 5 === 0 ? 3 : 200 * level,
-    })
+    rewards.push(
+      sanitizeBattlePassRewardInput({
+        seasonId,
+        bpLevel: level,
+        isPremium: true,
+        rewardType: level % 5 === 0 ? 'gems' : 'gold',
+        rewardAmount: level % 5 === 0 ? 3 : 200 * level,
+      })
+    )
   }
 
   // Only create rewards that don't already exist
@@ -126,8 +150,15 @@ export async function bulkCreateBattlePassRewards(
     try {
       await prisma.battlePassReward.create({ data: r })
       created++
-    } catch {
-      // Unique constraint violation = already exists, skip
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        continue
+      }
+
+      throw error
     }
   }
 

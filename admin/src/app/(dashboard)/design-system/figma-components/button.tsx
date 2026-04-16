@@ -129,7 +129,6 @@ export function ButtonAllVariants() {
 
   return (
     <div>
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
       <div className="grid grid-cols-3 gap-4">
         {/* Column headers */}
         <p className="text-xs text-[#6B6B80] text-center">Default</p>

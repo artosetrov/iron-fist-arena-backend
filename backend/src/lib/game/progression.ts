@@ -9,6 +9,31 @@ import { updateMultipleAchievements } from './achievements';
 // Re-export for convenience
 export { xpForLevel };
 
+type LevelUpCharacterSnapshot = {
+  currentXp: number
+  level: number
+}
+
+type LevelUpCharacterReader = {
+  findUnique(args: {
+    where: { id: string }
+    select: { currentXp: true; level: true }
+  }): Promise<LevelUpCharacterSnapshot | null>
+  update(args: {
+    where: { id: string }
+    data: {
+      level: number
+      currentXp: number
+      statPointsAvailable: { increment: number }
+      passivePointsAvailable: { increment: number }
+    }
+  }): Promise<unknown>
+}
+
+type LevelUpExecutor = {
+  character: LevelUpCharacterReader
+}
+
 // --- Apply Level Up (DB helper) ---
 
 /**
@@ -19,7 +44,7 @@ export { xpForLevel };
  * @returns LevelUpResult or null if character not found
  */
 export async function applyLevelUp(
-  tx: { character: { findUnique: Function; update: Function } },
+  tx: LevelUpExecutor,
   characterId: string,
 ): Promise<LevelUpResult | null> {
   const character = await tx.character.findUnique({
@@ -62,8 +87,8 @@ export async function applyLevelUp(
         description: m.reward.description,
       }));
     }
-  } catch (e) {
-    console.error('Achievement/milestone tracking error (level-up):', e);
+  } catch (error: unknown) {
+    console.error('Achievement/milestone tracking error (level-up):', error);
   }
 
   return result;

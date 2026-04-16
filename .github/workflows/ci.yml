@@ -26,9 +26,9 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -47,9 +47,9 @@ jobs:
       run:
         working-directory: admin
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -63,7 +63,7 @@ jobs:
     name: Prisma Schema & Migration Drift Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check backend/admin schemas match
         run: diff backend/prisma/schema.prisma admin/prisma/schema.prisma || (echo "Prisma schemas out of sync!" && exit 1)
       - name: Check Prisma migration drift

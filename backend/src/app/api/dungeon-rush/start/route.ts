@@ -6,7 +6,6 @@ import { calculateCurrentStamina } from '@/lib/game/stamina'
 import {
   createInitialRushState,
   generateRushEnemy,
-  generateShopItems,
   TOTAL_RUSH_ROOMS,
   type RushState,
 } from '@/lib/game/dungeon-rush'
@@ -32,53 +31,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check for active rush run BEFORE the transaction (read-only, no TOCTOU concern)
-    const activeRun = await prisma.dungeonRun.findFirst({
-      where: {
-        characterId: character_id,
-        difficulty: 'rush',
-      },
-    })
-    if (activeRun) {
-      const state = activeRun.state as unknown as RushState
-
-      // Legacy run without new room system — delete and start fresh
-      if (!state.rooms || !Array.isArray(state.rooms)) {
-        await prisma.dungeonRun.delete({ where: { id: activeRun.id } })
-        // Fall through to create a new rush below
-      } else {
-        const currentRoom = state.rooms[state.currentRoomIndex]
-        const enemy = (currentRoom && (currentRoom.type === 'combat' || currentRoom.type === 'elite' || currentRoom.type === 'miniboss'))
-          ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
-          : undefined
-
-        return NextResponse.json({
-          run_id: activeRun.id,
-          current_floor: activeRun.currentFloor,
-          current_enemy: enemy
-            ? { name: enemy.name, level: enemy.level }
-            : undefined,
-          resumed: true,
-          // New room system data
-          rooms: state.rooms,
-          currentRoomIndex: state.currentRoomIndex,
-          buffs: state.buffs ?? [],
-          artifacts: (state.artifacts ?? []).map((a: { id: string; name: string; description: string; icon: string }) => ({ id: a.id, name: a.name, description: a.description, icon: a.icon })),
-          pendingArtifactChoices: state.pendingArtifactChoices
-            ? state.pendingArtifactChoices.map((a: { id: string; name: string; description: string; icon: string }) => ({ id: a.id, name: a.name, description: a.description, icon: a.icon }))
-            : null,
-          currentHpPercent: state.currentHpPercent ?? 100,
-          totalRooms: TOTAL_RUSH_ROOMS,
-          rewards: {
-            totalGold: state.totalGoldEarned ?? 0,
-            totalXp: state.totalXpEarned ?? 0,
-            floorsCleared: state.floorsCleared ?? 0,
-          },
-        })
-      }
-    }
-
-    // TOCTOU-safe: character lookup + stamina check + deduction in a single transaction with FOR UPDATE
     const result = await prisma.$transaction(async (tx) => {
       const [character] = await tx.$queryRawUnsafe<Array<{id: string; user_id: string; current_stamina: number; max_stamina: number; last_stamina_update: Date | null}>>(
         `SELECT id, user_id, current_stamina, max_stamina, last_stamina_update FROM characters WHERE id = $1 FOR UPDATE`,
@@ -87,7 +39,35 @@ export async function POST(req: NextRequest) {
       if (!character) throw new Error('NOT_FOUND')
       if (character.user_id !== user.id) throw new Error('FORBIDDEN')
 
-      // Check stamina (account for time-based regeneration)
+      const activeRun = await tx.dungeonRun.findFirst({
+        where: {
+          characterId: character_id,
+          difficulty: 'rush',
+        },
+      })
+
+      if (activeRun) {
+        const state = activeRun.state as RushState | null
+        if (!state?.rooms || !Array.isArray(state.rooms)) {
+          await tx.dungeonRun.delete({ where: { id: activeRun.id } })
+        } else {
+          const currentRoom = state.rooms[state.currentRoomIndex]
+          const enemy = currentRoom && ['combat', 'elite', 'miniboss'].includes(currentRoom.type)
+            ? generateRushEnemy(currentRoom.index, currentRoom.type, currentRoom.seed)
+            : undefined
+
+          return {
+            resumed: true as const,
+            runId: activeRun.id,
+            currentFloor: activeRun.currentFloor,
+            currentEnemy: enemy
+              ? { name: enemy.name, level: enemy.level }
+              : undefined,
+            state,
+          }
+        }
+      }
+
       const staminaResult = await calculateCurrentStamina(
         character.current_stamina,
         character.max_stamina,
@@ -107,30 +87,67 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      return { currentStamina }
-    })
+      const rushState = createInitialRushState()
+      const firstRoom = rushState.rooms[0]
+      const firstEnemy = generateRushEnemy(firstRoom.index, firstRoom.type, firstRoom.seed)
 
-    // Create fresh rush state with 12 rooms
-    const rushState = createInitialRushState()
-    const firstRoom = rushState.rooms[0]
-    const firstEnemy = generateRushEnemy(firstRoom.index, firstRoom.type, firstRoom.seed)
+      const run = await tx.dungeonRun.create({
+        data: {
+          characterId: character_id,
+          difficulty: 'rush',
+          currentFloor: 1,
+          seed: Math.floor(Math.random() * 2147483647),
+          state: JSON.parse(JSON.stringify(rushState)),
+        },
+      })
 
-    const run = await prisma.dungeonRun.create({
-      data: {
-        characterId: character_id,
-        difficulty: 'rush',
+      return {
+        resumed: false as const,
+        runId: run.id,
         currentFloor: 1,
-        seed: Math.floor(Math.random() * 2147483647),
-        state: JSON.parse(JSON.stringify(rushState)),
-      },
+        currentEnemy: { name: firstEnemy.name, level: firstEnemy.level },
+        state: rushState,
+      }
     })
+
+    if (result.resumed) {
+      return NextResponse.json({
+        run_id: result.runId,
+        current_floor: result.currentFloor,
+        current_enemy: result.currentEnemy,
+        resumed: true,
+        rooms: result.state.rooms,
+        currentRoomIndex: result.state.currentRoomIndex,
+        buffs: result.state.buffs ?? [],
+        artifacts: (result.state.artifacts ?? []).map((artifact) => ({
+          id: artifact.id,
+          name: artifact.name,
+          description: artifact.description,
+          icon: artifact.icon,
+        })),
+        pendingArtifactChoices: result.state.pendingArtifactChoices
+          ? result.state.pendingArtifactChoices.map((artifact) => ({
+              id: artifact.id,
+              name: artifact.name,
+              description: artifact.description,
+              icon: artifact.icon,
+            }))
+          : null,
+        currentHpPercent: result.state.currentHpPercent ?? 100,
+        totalRooms: TOTAL_RUSH_ROOMS,
+        rewards: {
+          totalGold: result.state.totalGoldEarned ?? 0,
+          totalXp: result.state.totalXpEarned ?? 0,
+          floorsCleared: result.state.floorsCleared ?? 0,
+        },
+      })
+    }
 
     return NextResponse.json({
-      run_id: run.id,
+      run_id: result.runId,
       current_floor: 1,
-      current_enemy: { name: firstEnemy.name, level: firstEnemy.level },
-      // New room system data
-      rooms: rushState.rooms,
+      current_enemy: result.currentEnemy,
+      rooms: result.state.rooms,
       currentRoomIndex: 0,
       buffs: [],
       currentHpPercent: 100,

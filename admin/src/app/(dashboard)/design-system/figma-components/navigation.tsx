@@ -37,7 +37,6 @@ export function DSNavigation({ type = 'Nav Grid' }: NavigationProps) {
 export function NavigationAllVariants() {
   return (
     <div className="flex flex-col gap-4">
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
       <div>
         <p className="text-xs text-[#6B6B80] mb-2">Nav Grid</p>
         <DSNavigation type="Nav Grid" />

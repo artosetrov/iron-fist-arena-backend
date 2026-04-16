@@ -311,3 +311,282 @@ Completed a focused GitHub Actions failure fix:
 - **Fixes:** reproduced the GitHub-only failure locally, confirmed the workflow itself was fine, added the missing `PREMIUM_ENTITLEMENT_USER_SELECT` export to the `premium` mocks in `pvp-resolve` and `dungeon-rush-resolve` tests, and updated the rush test transaction mock to match the shared `grantRewardEntries(...)` contract
 - **Verification:** `npx vitest run tests/api/pvp-resolve.test.ts tests/api/dungeon-rush-resolve.test.ts` passes, full `npx vitest run` passes in `backend/` (`26/26` files, `236/236` tests), `npm run docs:balance:check` passes, `npx next build` passes in `admin/`, `python3 scripts/check_schema_drift.py` passes, backend/admin Prisma schemas match, and `npm run build` passes in `backend/`
 - **Inventory refresh:** updated current counts to 4799 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 030 backend CI contract hardening and actions upgrade
+
+Completed the follow-up hardening pass on the same CI surface:
+- **Created:** `[[block-030-backend-ci-contract-hardening-and-actions-upgrade]]`
+- **Files audited:** 4 CI/test/runtime contract files
+- **Fixes:** converted the premium mocks in `pvp-resolve` and `dungeon-rush-resolve` tests from fragile full mocks to partial `importOriginal` mocks so future `premium.ts` exports do not break CI again, aligned the rush test fixture shape with the shared premium selector, and upgraded GitHub workflow actions from `actions/checkout@v4` / `actions/setup-node@v4` to `@v5` to remove current deprecation warnings
+- **Verification:** full local CI-equivalent passes after the hardening: backend `vitest`, backend `docs:balance:check`, backend `npm run build`, admin `next build`, backend/admin Prisma schema diff, and schema drift check all succeed
+- **Inventory refresh:** updated current counts to 4800 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 031 backend route tests transaction and premium fixtures
+
+Completed the next backend test-fixture cleanup block:
+- **Created:** `[[block-031-backend-route-tests-transaction-and-premium-fixtures]]`
+- **Files audited:** 5 backend API route tests
+- **Fixes:** aligned `pvp-resolve` premium fixture data with the shared entitlement selector, replaced several route transaction callback mocks typed as `any` with concrete local transaction types, and tightened the `shop-buy` inventory fixture shape so the helper no longer hides returned inventory data behind `any`
+- **Verification:** `npx vitest run` passes in `backend/` (`26/26` files, `236/236` tests) and `git diff --check` passes after the cleanup
+- **Inventory refresh:** updated current counts to 4801 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 032 backend API tests NextRequest helper
+
+Completed the next route-boundary test cleanup block:
+- **Created:** `[[block-032-backend-api-tests-nextrequest-helper]]`
+- **Files audited:** 7 backend API tests plus 1 shared test helper
+- **Fixes:** added `backend/tests/helpers/next-request.ts` to build real `NextRequest` objects for route tests, moved touched auth/stamina/minigame/battle-pass tests off repeated `Request as any` casts, and typed the adjacent `stamina-refill` / `shell-game-start` transaction callback fixtures while touching those files
+- **Verification:** targeted backend Vitest for the touched files passes, full backend `npx vitest run` passes (`26/26` files, `236/236` tests), and `git diff --check` passes after the helper/test cleanup
+- **Inventory refresh:** updated current counts to 4803 in-scope files and added the new helper plus audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 033 backend API tests request cast elimination
+
+Completed the next route-boundary cleanup follow-up:
+- **Created:** `[[block-033-backend-api-tests-request-cast-elimination]]`
+- **Files audited:** 5 backend API route tests
+- **Fixes:** moved the remaining touched live API tests (`shop-buy`, `inventory-sell`, `pvp-resolve`, `dungeon-rush-resolve`, `pvp-prepare-bot-ticket`) onto the shared `makeNextRequest(...)` helper so they no longer rely on `Request as any` or `as never` at the handler boundary
+- **Verification:** `rg` no longer finds the old request-cast pattern in this API test slice, targeted backend Vitest passes for the touched files, full backend `npx vitest run` passes (`26/26` files, `236/236` tests), and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4804 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 034 backend auth bot minigame guardrail tests
+
+Completed the next backend API test-quality block:
+- **Created:** `[[block-034-backend-auth-bot-minigame-guardrail-tests]]`
+- **Files audited:** 5 backend API route tests plus the adjacent auth/PvP/minigame/stamina runtime routes
+- **Fixes:** removed the odd inline `vi.hoisted(...)` fixture access from `auth-login`, added direct invalid-email coverage to `auth-register`, added the missing bot-ticket happy-path assertion to `pvp-prepare-bot-ticket`, added shell-game daily-limit and insufficient-gold guard-rail tests, and added stamina-refill diminishing-returns plus daily-cap coverage
+- **Verification:** targeted backend Vitest for the touched files passes, full backend `npx vitest run` passes, and `git diff --check` passes
+- **Inventory refresh:** refreshed the current inventory from `git ls-files`, landing at 4797 in-scope files, and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 035 backend battle pass claim test contracts
+
+Completed the next battle-pass contract test block:
+- **Created:** `[[block-035-backend-battle-pass-claim-test-contracts]]`
+- **Files audited:** 1 backend API route test plus the adjacent battle-pass claim route
+- **Fixes:** removed the stale `applyLevelUp` mock from the test, aligned the file with the real shared `grantRewardEntries(...)` and cache invalidator collaborators, and added focused coverage for the level gate, no-claimable state, invalid reward-config rollback, and leveled-up success path
+- **Verification:** targeted Vitest for `battle-pass-claim.test.ts` passes, full backend `npx vitest run` passes, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4798 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 036 backend dungeon rush resolve test contracts
+
+Completed the next resolve-route contract cleanup block:
+- **Created:** `[[block-036-backend-dungeon-rush-resolve-test-contracts]]`
+- **Files audited:** 1 backend API route test plus the adjacent dungeon-rush resolve route
+- **Fixes:** removed the stale `getBattlePassConfig` test mock, aligned the file with the current shared `grantRewardEntries(...)` boundary, updated the replay test to assert no double-grant through the shared reward helper, and added a success-path test for leveled-up reward resolution plus combat-cache invalidation
+- **Verification:** targeted Vitest for `dungeon-rush-resolve.test.ts` passes, full backend `npx vitest run` passes, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4799 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 037 backend pvp resolve test contracts
+
+Completed the next PvP resolve contract test block:
+- **Created:** `[[block-037-backend-pvp-resolve-test-contracts]]`
+- **Files audited:** 1 backend API route test plus the adjacent PvP resolve route
+- **Fixes:** expanded the file beyond replay protection to cover authoritative client/server winner mismatch handling, locked-row stamina TOCTOU rejection, battle-ticket mismatch rejection, and invalid bot-ticket guarding, while keeping the transaction helper local to this file per the current audit rule
+- **Verification:** targeted Vitest for `pvp-resolve.test.ts` passes, full backend `npx vitest run` passes, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4800 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 038 backend utility routes and character warning cleanup
+
+Completed the next backend runtime warning-cleanup block:
+- **Created:** `[[block-038-backend-utility-routes-and-character-warning-cleanup]]`
+- **Files audited:** 7 backend runtime routes
+- **Fixes:** removed dead locals and unused request parameters from the touched utility/deprecated routes, aligned the appearance change error text from “race” to “origin”, and documented the two remaining runtime concerns discovered in `appearance` and `respec-stats`
+- **Verification:** targeted backend `eslint` on the touched files passes and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4801 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 039 backend rush start shop race hardening
+
+Completed the next backend runtime hardening block:
+- **Created:** `[[block-039-backend-rush-start-shop-race-hardening]]`
+- **Files audited:** 6 backend runtime routes plus the shared dungeon-run lock helper
+- **Fixes:** moved active-rush detection in `dungeon-rush/start` under the character-row lock to prevent duplicate parallel run creation, moved `dungeon-rush/shop-buy` room/slot validation and state update under a locked run transaction to prevent double-charging stale slot purchases, and removed adjacent dead imports/mutable locals in `dungeons/start`, `pvp/find-match`, `pvp/prepare`, and `shop/buy-gems`
+- **Verification:** targeted backend `eslint` on the touched files passes and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4802 in-scope files and added the new audit page to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 040 backend IAP receipt idempotency and webhook contracts
+
+Completed the next backend IAP block:
+- **Created:** `[[block-040-backend-iap-receipt-idempotency-and-webhook-contracts]]`
+- **Files audited:** 2 live backend IAP routes plus 2 new focused API test files
+- **Fixes:** hardened `verify-receipt` so a concurrent duplicate `transactionId` collision now returns the same `409 Transaction already processed` response as the pre-check path instead of a generic `500`, replaced the route’s `any[]` transaction list with typed Prisma promises, cleaned the mutable `updates` warning in `apple-notifications`, and added focused route tests for receipt idempotency, subscription seeding, webhook renewal, and safe no-op handling when the local subscription row does not exist yet
+- **Verification:** targeted IAP Vitest passes, full backend `npx vitest run` passes (`28/28` files, `255/255` tests), backend `npm run build` passes, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4805 in-scope files and added the new audit page plus two IAP API tests to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 041 IAP compatibility aliases restore and iOS endpoints
+
+Completed the next IAP compatibility/documentation block:
+- **Created:** `[[block-041-iap-compatibility-aliases-restore-and-ios-endpoints]]`
+- **Files audited:** 3 backend IAP compatibility routes/tests, 3 iOS storefront endpoint files, and the backend API reference page
+- **Fixes:** added restore-route coverage including the legacy `/api/iap/restore` alias, added a live alias regression test for `/api/iap/verify`, switched current iOS purchase flows off raw `"/api/iap/verify"` strings onto `APIEndpoints.iapVerify`, removed dead `APIEndpoints.iapRestore`, and clarified canonical vs compatibility IAP routes in `API_REFERENCE.md`
+- **Verification:** targeted backend IAP Vitest passes (`9/9` tests across the touched suites), `xcodebuild` for `Hexbound` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4807 in-scope files and added the new audit page plus the restore-route API test to `[[project-file-inventory]]`
+
+## [2026-04-15] audit | Block 042 inventory mail and quest contract hardening
+
+Completed the next backend runtime cleanup block:
+- **Created:** `[[block-042-backend-inventory-mail-quest-contract-hardening]]`
+- **Files audited:** 9 backend/runtime/test files
+- **Fixes:** moved derived-stat recomputation inside the live `inventory/equip` and `inventory/unequip` transactions so committed equipment mutations no longer bubble false `500`s afterward, corrected `mail:list` to use the documented 60-second rate-limit window instead of 60 ms, replaced explicit `any` casts in the mail route, typed the remaining live quest-definition and locked-row shapes in `quests/daily/route.ts`, and added focused route tests for the new transaction and rate-limit invariants
+- **Verification:** targeted backend ESLint passes, targeted inventory/mail `vitest` passes, full backend `npx vitest run` passes (`32/32` files, `262/262` tests), `npm run build` in `backend` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4811 in-scope files and `73 in-scope wiki files / 71 wiki pages`
+- **Open decisions:** continue into the remaining warning-heavy backend routes (`social/*`, `shell-game/*`, helper debt) and add deeper concurrency tests if the inventory mutation layer is refactored again
+
+## [2026-04-15] audit | Block 043 shell game transaction and session hardening
+
+Completed the next backend minigame block:
+- **Created:** `[[block-043-backend-shell-game-transaction-and-session-hardening]]`
+- **Files audited:** 5 backend/runtime/test files
+- **Fixes:** moved the shell-game daily play-limit check inside the locked serializable `/start` transaction so parallel starts cannot overshoot the 20/day cap, tightened `guess` session-state parsing instead of trusting blind JSON casts, replaced the remaining shell-game `any` error branch, and added focused route tests for the live guess path plus the new transaction-local limit guard
+- **Verification:** targeted shell-game ESLint passes, targeted shell-game `vitest` passes, full backend `npx vitest run` passes (`33/33` files, `265/265` tests), `npm run build` in `backend` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4813 in-scope files and `74 in-scope wiki files / 72 wiki pages`
+- **Open decisions:** proceed into `social/*` next, and only consider extracting shared minigame lock/session helpers after the remaining minigame routes are audited file by file
+
+## [2026-04-15] audit | Block 044 backend social contracts and runtime hardening
+
+Completed the next backend social block:
+- **Created:** `[[block-044-backend-social-contracts-and-runtime-hardening]]`
+- **Files audited:** 4 live backend social routes plus 2 focused API test files
+- **Fixes:** moved direct-message send guard checks under a sender-row lock so daily-cap and anti-spam validation cannot drift under concurrency, finished the challenge accept contract by persisting duel XP inside the final locked transaction and mapping stale-state lock errors to stable `404/403/409/410` responses instead of generic `500`s, and removed the remaining loose typing in the adjacent friends/relationship route surfaces
+- **Verification:** targeted backend ESLint passes, targeted social `vitest` passes, full backend `npx vitest run` passes (`35/35` files, `269/269` tests), backend `npm run build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4816 in-scope files and `75 in-scope wiki files / 73 wiki pages`
+- **Open decisions:** keep transaction helpers local until the file-by-file audit is complete, then reassess whether the social routes should be split into smaller runtime modules
+
+## [2026-04-15] audit | Block 045 tutorial achievement and weekly contracts
+
+Completed the next backend contract-cleanup block:
+- **Created:** `[[block-045-backend-tutorial-achievement-and-weekly-contracts]]`
+- **Files audited:** 5 backend/runtime files plus 3 focused test files
+- **Fixes:** mapped tutorial quest sentinel errors to stable HTTP responses instead of generic `500`s, rejected invalid tutorial progress amounts before opening a transaction, typed tutorial reward definitions with canonical consumable types, prevented silent item-reward drops when a configured catalog item is missing, filtered unsupported DB achievement reward types out of the runtime catalog, corrected the live Diamond/Grandmaster achievement descriptions to the current thresholds, and tightened the weekly-challenge raw SQL helper typing with direct regression coverage
+- **Verification:** targeted backend ESLint passes, targeted `vitest` passes, full backend `npx vitest run` passes (`37/37` files, `275/275` tests), backend `npm run build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4819 in-scope files and `76 in-scope wiki files / 74 wiki pages`
+- **Open decisions:** tutorial quest reward types `instant_mine` and `bp_levels` are still declared but not granted by the live claim runtime, and achievement cosmetic reward support (`title/frame`) still needs a runtime policy decision before more DB-defined rewards ship
+
+## [2026-04-15] audit | Block 046 feature flags progression and runtime cleanup
+
+Completed the next backend helper/runtime block:
+- **Created:** `[[block-046-backend-feature-flags-progression-and-runtime-cleanup]]`
+- **Files audited:** 5 backend helper/runtime files plus 2 focused lib test files
+- **Fixes:** enforced feature-flag `environment` at runtime for the first time (including Vercel preview → `staging` mapping), replaced weak feature-flag targeting/value typing, narrowed the `applyLevelUp` transaction contract, removed dead combat helper state that was only creating warning noise, and hardened push broadcast filtering/error handling so Prisma-typed build paths stop failing on `any`/union misuse
+- **Verification:** targeted backend ESLint passes, targeted `vitest` passes, full backend `npx vitest run` passes (`39/39` files, `279/279` tests), backend `npm run build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4822 in-scope files and `77 in-scope wiki files / 75 wiki pages`
+- **Open decisions:** Android push still has no real FCM send path, so `push/send.ts` remains only partially product-ready outside iOS
+
+## [2026-04-15] audit | Block 047 dungeon item balance and live config hardening
+
+Completed the next backend helper/runtime block:
+- **Created:** `[[block-047-backend-dungeon-item-balance-live-config-hardening]]`
+- **Files audited:** 4 backend helper/runtime files plus 2 focused lib test files
+- **Fixes:** restored DB-dungeon parity by applying scheduled variety-room generation before any Prisma boss lookup, sanitized `ItemBalanceProfile.statWeights` and `item_balance.class_damage_scaling` before runtime use, added bounded TTL plus in-process invalidation to the item-balance profile cache, removed the stale `STANCE_ZONES` import from `live-config`, and added focused lib tests to lock these contracts down
+- **Verification:** targeted backend ESLint passes, targeted `vitest` passes, full backend `npx vitest run` passes (`41/41` files, `284/284` tests), backend `npm run build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4825 in-scope files and `78 in-scope wiki files / 76 wiki pages`
+- **Open decisions:** the separate admin app still updates item-balance profiles from another process, so profile freshness is now bounded by TTL unless we later add cross-process cache invalidation
+
+## [2026-04-15] audit | Block 048 admin item balance backend proxy alignment
+
+Completed the next admin/runtime alignment block:
+- **Created:** `[[block-048-admin-item-balance-backend-proxy-alignment]]`
+- **Files audited:** 9 admin item-balance API routes, 5 dashboard/page/client files, 1 shared backend-proxy helper, and the surviving item-balance read-side action file
+- **Fixes:** moved the live admin item-balance API surface onto thin authenticated proxies to the canonical backend admin routes, switched config/profile saves off local mutation actions and onto those proxy routes, surfaced real save errors in the profile editor instead of swallowing them, removed stale `adminId` plumbing from touched item-balance UI shells, deleted the dead duplicate `admin` runtimes (`item-validator.ts`, `combat-sim.ts`), and removed now-unused mutation actions from `admin/src/actions/item-balance.ts`
+- **Verification:** targeted admin ESLint passes, `npx next build` in `admin` succeeds, `rg` confirms there are no remaining live callers of `updateBalanceConfig()` / `updateBalanceProfile()`, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4829 in-scope files and `79 in-scope wiki files / 77 wiki pages`
+- **Open decisions:** read-side item-balance pages still query Prisma directly through admin actions; that is acceptable today, but strict backend-read parity may still be worth considering later if these views become contract-sensitive
+
+## [2026-04-15] audit | Block 049 admin config canonical route and consumables live sync
+
+Completed the next admin/config runtime block:
+- **Created:** `[[block-049-admin-config-canonical-route-and-consumables-live-sync]]`
+- **Files audited:** 4 backend config/runtime files, 1 focused backend route test, 2 admin config helper/action files, and the consumables admin UI
+- **Fixes:** added a canonical backend `/api/admin/config` write surface with batch seeding and shared config-cache invalidation, moved admin `updateConfig()` and `seedDefaultConfigs()` writes off direct Prisma mutation and onto that backend route, added atomic `updateConfigsBatch()` for grouped saves, corrected the consumables screen so it no longer lies about runtime `GameConfig` support, and converted consumables “Save All” to a single live batch write instead of 12 sequential partial writes
+- **Verification:** targeted backend and admin ESLint pass, focused backend `vitest` for `admin-config` passes, full backend `npx vitest run` passes (`42/42` files, `286/286` tests), backend `npm run build` succeeds, admin `npx next build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4833 in-scope files and `80 in-scope wiki files / 78 wiki pages`
+- **Open decisions:** `skills` and `passives` admin editors are still on direct browser→backend fetches with manual token parsing, so they remain the next proxy-alignment block
+
+## [2026-04-15] audit | Block 050 admin skills and passives proxy alignment
+
+Completed the next admin/runtime alignment block:
+- **Created:** `[[block-050-admin-skills-passives-proxy-alignment]]`
+- **Files audited:** 3 new admin proxy API routes, 2 existing dashboard editor clients, and the adjacent read-side page shells
+- **Fixes:** added same-origin admin proxy routes for `skills`, `passives`, and passive `connections`, moved both editors off direct browser→backend mutation calls, removed manual browser `admin-token` parsing and duplicated backend base-URL helpers from the clients, and deleted the dead `skills-client` URL branch that built the same endpoint both ways
+- **Verification:** targeted admin ESLint passes, `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4837 in-scope files and `81 in-scope wiki files / 79 wiki pages`
+- **Open decisions:** read-side page hydration for `skills` and `passives` still goes straight to Prisma on the admin side, which is acceptable today but may be worth proxy-aligning later if those views become contract-sensitive too
+
+## [2026-04-15] audit | Block 051 admin active config editors consistency
+
+Completed the next admin/config consistency block:
+- **Created:** `[[block-051-admin-active-config-editors-consistency]]`
+- **Files audited:** 9 admin action/page/client files across `balance`, `loot`, `config`, and `daily-login`
+- **Fixes:** rerouted balance batch writes and resets through the canonical backend admin-config route while keeping local snapshots/logs, converted loot save flows from sequential per-key writes to atomic batch config writes, removed stale `adminId` prop plumbing from the touched editors, stabilized the shared daily-login defaults, tightened local client typing in the daily-login editor, and corrected stale balance-screen copy that still described the pre-migration backend contract
+- **Verification:** targeted admin ESLint passes, `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4838 in-scope files and `82 in-scope wiki files / 80 wiki pages`
+- **Open decisions:** the curated balance screen still needed a parity pass against canonical seeded defaults and live category coverage, which becomes the next block
+
+## [2026-04-15] audit | Block 052 admin balance schema parity and auth hardening
+
+Completed the next admin balance-alignment block:
+- **Created:** `[[block-052-admin-balance-schema-parity-and-auth-hardening]]`
+- **Files audited:** 4 admin action/page/client files covering generic config reads plus the curated balance dashboard
+- **Fixes:** added the missing admin auth guard to `getConfig()`, removed the dead `updateConfig(..., adminId)` parameter, expanded the balance read allowlist to include live `pvp_ranks`, `training_xp_dr`, `stamina_refill_dr`, `loss_streak`, `charisma`, and `repair` categories, corrected stale hardcoded balance defaults, added a dedicated editor for `stamina_refill_dr.cost_multipliers`, and rewrote balance-page copy so it no longer overclaims ownership of specialized consumable config
+- **Verification:** targeted admin ESLint passes, `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4839 in-scope files and `83 in-scope wiki files / 81 wiki pages`
+- **Open decisions:** `snapshots` and a few other admin read-side surfaces still query Prisma directly; that remains acceptable today, but they are the next likely consistency pass
+
+## [2026-04-15] audit | Block 053 admin snapshots restore runtime hardening
+
+Completed the next admin/runtime safety block:
+- **Created:** `[[block-053-admin-snapshots-restore-runtime-hardening]]`
+- **Files audited:** 1 new backend restore route, 1 focused backend route test, 1 admin snapshot action file, and the 2 dashboard snapshot page/client files
+- **Fixes:** moved snapshot rollback off direct admin-side Prisma mutation and onto a canonical backend restore route with transaction-backed full replace, pre-restore auto-backup, duplicate-key validation, and live config cache invalidation; wrapped snapshot create/delete with their admin-log writes in transactions; removed weak `any` mapping, dead `adminId` plumbing, and abandoned expand/details state from the snapshots UI
+- **Verification:** targeted backend ESLint passes, targeted backend `vitest` for `admin-config` and `admin-config-restore` passes (`4/4` tests), backend `npm run build` succeeds, targeted admin ESLint passes, admin `npx next build` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4842 in-scope files and `84 in-scope wiki files / 82 wiki pages`
+- **Open decisions:** snapshot list/read hydration still uses direct Prisma on the admin side, which is acceptable today; the next likely admin pass is `settings` / `dashboard` / other read-heavy pages with older direct Prisma shapes and warning-heavy UI debt
+
+## [2026-04-15] audit | Block 054 admin settings role guards and feature-flag contracts
+
+Completed the next admin integrity block:
+- **Created:** `[[block-054-admin-settings-role-guards-and-feature-flag-contracts]]`
+- **Files audited:** 1 admin role-mutation route, 1 settings client, 1 new shared feature-flag helper, 1 feature-flag action file, 1 feature-flag editor client, and 3 adjacent dashboard/economy cleanup files
+- **Fixes:** hardened the admin role-change API against self-demotion and last-admin lockout under transaction, added audit logging for successful role changes, introduced a shared feature-flag parsing/normalization helper for `flagType`, `environment`, `targeting`, tags, and JSON value handling, moved both the feature-flag UI and server actions onto that single contract, restored explicit support for legacy `segment` flags as targeted booleans, and removed touched warning noise from `settings`, `dashboard`, and `economy`
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4844 in-scope files and `85 in-scope wiki files / 83 wiki pages`
+- **Open decisions:** admin read-shells still hydrate directly from Prisma-backed actions, which is acceptable for now; the larger remaining admin warning backlog is now concentrated in `push`, `shop-offers`, `quests`, `battle-pass`, and design-system/demo files
+
+## [2026-04-15] audit | Block 055 admin push and shop-offer contract hardening
+
+Completed the next admin contract block:
+- **Created:** `[[block-055-admin-push-and-shop-offer-contract-hardening]]`
+- **Files audited:** 2 new shared admin helper files, 2 admin action files, and the 2 corresponding dashboard editor clients for `push` and `offers`
+- **Fixes:** closed an auth hole in `push` actions by requiring an authenticated admin for every read/write path, prevented malformed `user` push campaigns from falling through to the broadcast send path, normalized push targeting/data/schedule parsing through a shared helper, added typed offer/content validation for live shop bundles, blocked malformed price windows/level windows/schedule windows in `shop-offers`, and removed the touched `any`/dead-import noise from both editor clients
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4847 in-scope files and `86 in-scope wiki files / 84 wiki pages`
+- **Open decisions:** the next admin warning backlog is now concentrated in `quests`, `battle-pass`, `design-system`, and a few demo/media-heavy surfaces rather than the higher-risk push/shop mutation paths
+
+## [2026-04-15] audit | Block 057 admin achievements runtime parity
+
+Completed the next admin content/runtime-alignment block:
+- **Created:** `[[block-057-admin-achievements-runtime-parity]]`
+- **Files audited:** 1 new shared admin helper, 1 achievement-definition action file, 1 achievements dashboard client, and 2 backend achievement runtime reference files
+- **Fixes:** added shared validation/normalization for achievement definitions, removed weak `data as never` audit payloads, corrected stale admin seed thresholds for `rank_diamond` and `rank_grandmaster`, aligned the admin achievements editor to the live reward-claim-safe reward set (`gold/gems/xp`), removed the dead `rewardId` editor path from the UI, and replaced `alert()`-style operator feedback with toast-based success/error handling
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4854 in-scope files and `89 in-scope wiki files / 87 wiki pages`
+- **Open decisions:** backend achievement catalog metadata can still represent `title/frame` while the live claim helper grants only `gold/gems/xp`; this block contained the drift at the admin authoring layer, but the deeper runtime/catalog decision still remains
+
+## [2026-04-15] audit | Block 058 admin appearances and design-system preview consistency
+
+Completed the next admin editor/design-system block:
+- **Created:** `[[block-058-admin-appearances-and-design-system-preview-consistency]]`
+- **Files audited:** 1 new shared admin helper, 2 appearances admin files, 2 runtime-reference files from backend/iOS, the admin root layout, the design-system dashboard client, and 12 Figma preview wrapper components
+- **Fixes:** added shared normalization/validation for appearance-skin writes, enforced transactional single-default behavior per `origin + gender`, forced default skins to stay free, blocked deletion of default skins that would break fallback avatar behavior, replaced stale `useTransition` remnants with explicit submit/delete state in the appearances UI, moved operator feedback onto toasts, loaded `Oswald` once in the admin root via `next/font/google`, and removed component-level Google font `<link>` tags plus dead preview imports from the design-system page
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4856 in-scope files and `90 in-scope wiki files / 88 wiki pages`
+- **Open decisions:** `design-system/ds-components-2.tsx` still contains likely-deprecated preview exports and `figma-components/divider.tsx` still carries its own small warning cleanup tail for a later block
+
+## [2026-04-15] audit | Block 056 admin quests and battle-pass alignment
+
+Completed the next live admin content block:
+- **Created:** `[[block-056-admin-quests-and-battle-pass-contract-alignment]]`
+- **Restored:** missing on-disk `[[block-032-backend-api-tests-nextrequest-helper]]` page so the wiki matches the audit index again
+- **Files audited:** 6 admin quest/battle-pass files plus 1 backend claim-route reference file
+- **Fixes:** routed quest-definition create/update/seed through shared normalization and range/reward validation, replaced weak quest client error/numeric handling, added a safe activate/deactivate control, aligned admin battle-pass reward types to the live backend-supported set, added `rewardId` create/edit support, narrowed bulk generation error swallowing to duplicate-only cases, replaced `window.location.reload()` with authoritative reward refetch, and fixed the table so both free and premium rewards are deletable
+- **Verification:** targeted admin ESLint passes, full `npx next build` in `admin` succeeds, and `git diff --check` passes
+- **Inventory refresh:** updated current counts to 4851 in-scope files and `88 in-scope wiki files / 86 wiki pages`
+- **Open decisions:** battle-pass inline editing is now contract-safe, but a more guided `rewardType -> rewardId` transition UX would still be a nice operator upgrade later

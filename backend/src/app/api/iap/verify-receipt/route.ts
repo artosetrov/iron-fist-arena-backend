@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { IAP_PRODUCTS } from '@/lib/game/balance'
 import { verifyAppleTransaction } from '@/lib/apple-iap'
+
+function isDuplicateTransactionError(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+    return false
+  }
+
+  const target = error.meta?.target
+  if (typeof target === 'string') {
+    return target.includes('transaction_id') || target.includes('transactionId')
+  }
+
+  if (Array.isArray(target)) {
+    return target.some(
+      (entry) =>
+        typeof entry === 'string' &&
+        (entry.includes('transaction_id') || entry.includes('transactionId'))
+    )
+  }
+
+  return false
+}
 
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
@@ -116,19 +138,21 @@ export async function POST(req: NextRequest) {
     }
 
     // Execute all operations in a single transaction
-    const operations: any[] = [
+    const createIapTransaction = prisma.iapTransaction.create({
+      data: {
+        userId: user.id,
+        productId: product_id,
+        transactionId: transaction_id,
+        receiptData: receipt_data,
+        gemsAwarded: product.gems,
+        status: 'verified',
+        verifiedAt: now,
+      },
+    })
+
+    const operations: [typeof createIapTransaction, ...Prisma.PrismaPromise<unknown>[]] = [
       // 1. Record the IAP transaction
-      prisma.iapTransaction.create({
-        data: {
-          userId: user.id,
-          productId: product_id,
-          transactionId: transaction_id,
-          receiptData: receipt_data,
-          gemsAwarded: product.gems,
-          status: 'verified',
-          verifiedAt: now,
-        },
-      }),
+      createIapTransaction,
     ]
 
     // 2. Update user (gems, premium)
@@ -267,6 +291,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
+    if (isDuplicateTransactionError(error)) {
+      return NextResponse.json(
+        { error: 'Transaction already processed' },
+        { status: 409 }
+      )
+    }
+
     console.error('iap verify-receipt error:', error)
     return NextResponse.json(
       { error: 'Failed to verify receipt' },

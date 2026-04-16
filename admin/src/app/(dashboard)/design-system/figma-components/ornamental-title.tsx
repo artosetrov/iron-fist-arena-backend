@@ -34,7 +34,6 @@ export function DSOrnamentalTitle({ style = 'Screen Title' }: OrnamentalTitlePro
 export function OrnamentalTitleAllVariants() {
   return (
     <div className="flex flex-col gap-6">
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
       <div><p className="text-xs text-[#6B6B80] mb-2">Screen Title</p><DSOrnamentalTitle style="Screen Title" /></div>
       <div><p className="text-xs text-[#6B6B80] mb-2">Section Header</p><DSOrnamentalTitle style="Section Header" /></div>
     </div>

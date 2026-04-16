@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
 import type {
   DashboardData, KpiItem, DashboardAlert,
-  EconomySnapshot, PvpSnapshot, PlayerSnapshot, SystemHealth, TimeSeriesPoint,
+  EconomySnapshot, PvpSnapshot, PlayerSnapshot, SystemHealth,
 } from '@/types/dashboard'
 
 function startOfDay(d: Date): Date {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { invalidateGameConfigCache } from '@/lib/game/config'
 import {
   STAMINA,
   GOLD_REWARDS,
@@ -98,6 +99,8 @@ export async function POST(req: NextRequest) {
         updatedBy: user.id,
       },
     })
+
+    await invalidateGameConfigCache([key])
 
     return NextResponse.json({ config })
   } catch (error) {

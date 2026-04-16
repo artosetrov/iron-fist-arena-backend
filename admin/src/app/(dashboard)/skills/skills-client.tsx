@@ -69,16 +69,7 @@ const emptyForm = {
   isActive: true,
 }
 
-function getToken() {
-  return document.cookie
-    .split('; ')
-    .find((c) => c.startsWith('admin-token='))
-    ?.split('=')[1]
-}
-
-function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-}
+const SKILLS_API = '/api/admin/skills'
 
 function formatLabel(value: string) {
   return value
@@ -183,16 +174,10 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
 
     startTransition(async () => {
       try {
-        const token = getToken()
-        const apiUrl = getApiUrl()
-        const url = editingSkill
-          ? `${apiUrl}/api/admin/skills`
-          : `${apiUrl}/api/admin/skills`
-        const res = await fetch(url, {
+        const res = await fetch(SKILLS_API, {
           method: editingSkill ? 'PUT' : 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(
             editingSkill ? { id: editingSkill.id, ...payload } : payload
@@ -215,13 +200,8 @@ export function SkillsClient({ skills }: { skills: Skill[] }) {
     if (!deletingSkill) return
     startTransition(async () => {
       try {
-        const token = getToken()
-        const apiUrl = getApiUrl()
-        const res = await fetch(`${apiUrl}/api/admin/skills?id=${deletingSkill.id}`, {
+        const res = await fetch(`${SKILLS_API}?id=${deletingSkill.id}`, {
           method: 'DELETE',
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
         })
         if (!res.ok) {
           const data = await res.json().catch(() => ({}))

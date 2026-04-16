@@ -1,15 +1,29 @@
+import type { CharacterClass, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 type PushPayload = {
   title: string
   body: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 }
 
 type SendResult = {
   sent: number
   failed: number
   errors: string[]
+}
+
+type PushBroadcastFilter = {
+  minLevel?: number
+  maxLevel?: number
+  class?: CharacterClass
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return 'Unknown error'
 }
 
 /**
@@ -48,9 +62,9 @@ export async function sendPushToUsers(
         failed++
         await logPush(campaignId, t.userId, t.token, payload, 'failed', 'Send returned false')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       failed++
-      const errMsg = error?.message ?? 'Unknown error'
+      const errMsg = getErrorMessage(error)
       errors.push(`${t.userId}: ${errMsg}`)
       await logPush(campaignId, t.userId, t.token, payload, 'failed', errMsg)
 
@@ -74,12 +88,14 @@ export async function sendPushToUsers(
 export async function sendPushBroadcast(
   payload: PushPayload,
   campaignId?: string,
-  filter?: { minLevel?: number; maxLevel?: number; class?: string }
+  filter?: PushBroadcastFilter
 ): Promise<SendResult> {
   // Build character filter to find matching userIds
-  const charWhere: any = {}
-  if (filter?.minLevel) charWhere.level = { ...charWhere.level, gte: filter.minLevel }
-  if (filter?.maxLevel) charWhere.level = { ...charWhere.level, lte: filter.maxLevel }
+  const charWhere: Prisma.CharacterWhereInput = {}
+  const levelFilter: Prisma.IntFilter = {}
+  if (filter?.minLevel !== undefined) levelFilter.gte = filter.minLevel
+  if (filter?.maxLevel !== undefined) levelFilter.lte = filter.maxLevel
+  if (Object.keys(levelFilter).length > 0) charWhere.level = levelFilter
   if (filter?.class) charWhere.class = filter.class
 
   const hasFilter = Object.keys(charWhere).length > 0
@@ -182,10 +198,10 @@ async function sendAPNS(token: string, payload: PushPayload): Promise<boolean> {
 
     if (response.status === 200) return true
 
-    const errorBody = await response.json().catch(() => ({}))
-    const reason = (errorBody as any)?.reason ?? `HTTP ${response.status}`
+    const errorBody = await response.json().catch((): { reason?: string } => ({}))
+    const reason = typeof errorBody.reason === 'string' ? errorBody.reason : `HTTP ${response.status}`
     throw new Error(reason)
-  } catch (error: any) {
+  } catch (error: unknown) {
     throw error
   }
 }

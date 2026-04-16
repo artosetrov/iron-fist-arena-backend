@@ -219,10 +219,10 @@
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | GET | /iap/products | Yes | IAP catalog |
-| POST | /iap/verify-receipt | Yes | Verify Apple receipt |
-| POST | /iap/verify | Yes | Verify transaction |
-| POST | /iap/restore-purchases | Yes | Restore purchases |
-| POST | /iap/restore | Yes | Restore (alt) |
+| POST | /iap/verify-receipt | Yes | Verify Apple receipt (canonical backend route) |
+| POST | /iap/verify | Yes | Verify Apple receipt (compatibility alias used by current iOS client) |
+| POST | /iap/restore-purchases | Yes | Return verified purchase history (canonical restore surface) |
+| POST | /iap/restore | Yes | Restore purchases (compatibility alias) |
 
 ## Push Notifications
 

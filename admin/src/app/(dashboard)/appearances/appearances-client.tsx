@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { createAppearance, updateAppearance, deleteAppearance } from '@/actions/appearances'
 import { uploadAsset } from '@/actions/assets'
 import { Button } from '@/components/ui/button'
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog'
@@ -17,6 +18,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Plus, Pencil, Trash2, Upload, ImageIcon, Coins } from 'lucide-react'
+import {
+  APPEARANCE_GENDERS,
+  APPEARANCE_ORIGINS,
+  APPEARANCE_RARITIES,
+} from '@/lib/appearance-skins'
 
 type Skin = {
   id: string
@@ -34,9 +40,9 @@ type Skin = {
   createdAt: string
 }
 
-const ORIGINS = ['human', 'orc', 'skeleton', 'demon', 'dogfolk'] as const
-const GENDERS = ['male', 'female'] as const
-const RARITIES = ['common', 'rare', 'epic', 'legendary'] as const
+const ORIGINS = [...APPEARANCE_ORIGINS]
+const GENDERS = [...APPEARANCE_GENDERS]
+const RARITIES = [...APPEARANCE_RARITIES]
 
 const RARITY_COLORS: Record<string, string> = {
   common: 'bg-zinc-600/20 text-zinc-400 border-zinc-600',
@@ -73,7 +79,6 @@ const emptyForm = {
 
 export function AppearancesClient({ skins }: { skins: Skin[] }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [editingSkin, setEditingSkin] = useState<Skin | null>(null)
@@ -81,9 +86,19 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [filterOrigin, setFilterOrigin] = useState<string>('all')
   const [filterGender, setFilterGender] = useState<string>('all')
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Request failed'
+
+  const parseWholeNumberInput = (value: string) => {
+    const parsed = Number.parseInt(value, 10)
+    return Number.isInteger(parsed) ? parsed : 0
+  }
 
   const filteredSkins = skins.filter((s) => {
     if (filterOrigin !== 'all' && s.origin !== filterOrigin) return false
@@ -141,8 +156,11 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
       formData.append('file', file)
       const result = await uploadAsset('assets', uploadPath, formData)
       setForm((prev) => ({ ...prev, imageUrl: result.publicUrl }))
+      toast.success('Image uploaded')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      const message = getErrorMessage(err)
+      setError(message)
+      toast.error(message)
     } finally {
       setUploading(false)
     }
@@ -161,47 +179,55 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
       return
     }
 
-    startTransition(async () => {
-      try {
-        const payload = {
-          skinKey: form.skinKey.trim(),
-          name: form.name.trim(),
-          origin: form.origin as 'human' | 'orc' | 'skeleton' | 'demon' | 'dogfolk',
-          gender: form.gender as 'male' | 'female',
-          rarity: form.rarity,
-          priceGold: form.priceGold,
-          priceGems: form.priceGems,
-          imageUrl: form.imageUrl || null,
-          imageKey: form.skinKey.trim() || null,
-          isDefault: form.isDefault,
-          sortOrder: form.sortOrder,
-        }
-
-        if (editingSkin) {
-          await updateAppearance(editingSkin.id, payload)
-        } else {
-          await createAppearance(payload)
-        }
-        setDialogOpen(false)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to save')
+    setSubmitting(true)
+    try {
+      const payload = {
+        skinKey: form.skinKey.trim(),
+        name: form.name.trim(),
+        origin: form.origin,
+        gender: form.gender,
+        rarity: form.rarity,
+        priceGold: form.isDefault ? 0 : form.priceGold,
+        priceGems: form.isDefault ? 0 : form.priceGems,
+        imageUrl: form.imageUrl || null,
+        imageKey: form.skinKey.trim() || null,
+        isDefault: form.isDefault,
+        sortOrder: form.sortOrder,
       }
-    })
+
+      if (editingSkin) {
+        await updateAppearance(editingSkin.id, payload)
+      } else {
+        await createAppearance(payload)
+      }
+      setDialogOpen(false)
+      toast.success(editingSkin ? 'Skin updated' : 'Skin created')
+      router.refresh()
+    } catch (err) {
+      const message = getErrorMessage(err)
+      setError(message)
+      toast.error(message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleDelete() {
     if (!deletingSkin) return
-    startTransition(async () => {
-      try {
-        await deleteAppearance(deletingSkin.id)
-        setDeleteDialogOpen(false)
-        setDeletingSkin(null)
-        router.refresh()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete')
-      }
-    })
+    setDeleting(true)
+    try {
+      await deleteAppearance(deletingSkin.id)
+      setDeleteDialogOpen(false)
+      setDeletingSkin(null)
+      toast.success('Skin deleted')
+      router.refresh()
+    } catch (err) {
+      const message = getErrorMessage(err)
+      setError(message)
+      toast.error(message)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   function capitalize(s: string) {
@@ -425,7 +451,10 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
                   type="number"
                   min={0}
                   value={form.priceGold}
-                  onChange={(e) => setForm({ ...form, priceGold: parseInt(e.target.value) || 0 })}
+                  disabled={form.isDefault}
+                  onChange={(e) =>
+                    setForm({ ...form, priceGold: parseWholeNumberInput(e.target.value) })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -435,7 +464,10 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
                   type="number"
                   min={0}
                   value={form.priceGems}
-                  onChange={(e) => setForm({ ...form, priceGems: parseInt(e.target.value) || 0 })}
+                  disabled={form.isDefault}
+                  onChange={(e) =>
+                    setForm({ ...form, priceGems: parseWholeNumberInput(e.target.value) })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -444,7 +476,9 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
                   id="sortOrder"
                   type="number"
                   value={form.sortOrder}
-                  onChange={(e) => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setForm({ ...form, sortOrder: parseWholeNumberInput(e.target.value) })
+                  }
                 />
               </div>
             </div>
@@ -452,10 +486,20 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
             <div className="flex items-center gap-3">
               <Switch
                 checked={form.isDefault}
-                onCheckedChange={(v) => setForm({ ...form, isDefault: v })}
+                onCheckedChange={(v) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isDefault: v,
+                    ...(v ? { priceGold: 0, priceGems: 0 } : {}),
+                  }))
+                }
               />
-              <Label>Default skin (free for new characters)</Label>
+              <Label>Default skin (free for new characters of this origin and gender)</Label>
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Only one default skin should exist per origin and gender pair. Saving a new default will replace the previous one.
+            </p>
 
             {/* Image Upload */}
             <div className="space-y-2">
@@ -518,8 +562,8 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPending || uploading}>
-                {isPending ? 'Saving...' : editingSkin ? 'Update Skin' : 'Create Skin'}
+              <Button type="submit" disabled={submitting || uploading}>
+                {submitting ? 'Saving...' : editingSkin ? 'Update Skin' : 'Create Skin'}
               </Button>
             </div>
           </form>
@@ -537,8 +581,8 @@ export function AppearancesClient({ skins }: { skins: Skin[] }) {
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isPending}>
-              {isPending ? 'Deleting...' : 'Delete'}
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
         </DialogContent>

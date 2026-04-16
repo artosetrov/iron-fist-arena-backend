@@ -119,7 +119,7 @@ export async function PATCH(
         const maxHp = calculateMaxHp(newStats.vit, newStats.end)
 
         // Deduct gold from user, not character
-        const updatedUser = await tx.user.update({
+        await tx.user.update({
           where: { id: user.id },
           data: { gold: { decrement: APPEARANCE_CHANGE_COST } },
         })
@@ -147,7 +147,7 @@ export async function PATCH(
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold (100 required to change race)' }, { status: 400 })
+      if (error.message === 'NOT_ENOUGH_GOLD') return NextResponse.json({ error: 'Not enough gold (100 required to change origin)' }, { status: 400 })
       if (error.message === 'INVALID_AVATAR') return NextResponse.json({ error: 'Avatar does not match selected gender' }, { status: 400 })
     }
     console.error('appearance change error:', error)

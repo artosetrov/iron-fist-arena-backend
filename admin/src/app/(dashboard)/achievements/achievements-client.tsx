@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle, DialogTrigger,
+  DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -23,6 +24,11 @@ import {
   deleteAchievementDefinition,
   seedAchievementDefinitions,
 } from '@/actions/achievement-definitions'
+import {
+  ACHIEVEMENT_CATEGORIES,
+  ACHIEVEMENT_REWARD_TYPES,
+  type AchievementDefinitionRecord,
+} from '@/lib/achievement-definitions'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,19 +47,7 @@ type OverallStats = {
   overallCompletionRate: number
 }
 
-type AchievementDef = {
-  id: string
-  key: string
-  title: string
-  description: string
-  category: string
-  target: number
-  rewardType: string
-  rewardAmount: number
-  rewardId: string | null
-  icon: string | null
-  active: boolean
-  sortOrder: number
+type AchievementDef = AchievementDefinitionRecord & {
   createdAt: Date
   updatedAt: Date
 }
@@ -66,7 +60,6 @@ type FormData = {
   target: string
   rewardType: string
   rewardAmount: string
-  rewardId: string
   icon: string
   sortOrder: string
 }
@@ -74,15 +67,11 @@ type FormData = {
 const EMPTY_FORM: FormData = {
   key: '', title: '', description: '', category: '',
   target: '1', rewardType: 'gold', rewardAmount: '100',
-  rewardId: '', icon: '', sortOrder: '0',
+  icon: '', sortOrder: '0',
 }
 
-const CATEGORIES = [
-  'pvp', 'revenge', 'progression', 'prestige', 'equipment',
-  'dungeon', 'economy', 'minigame', 'ranking', 'daily',
-]
-
-const REWARD_TYPES = ['gold', 'gems', 'xp', 'item']
+const CATEGORIES = [...ACHIEVEMENT_CATEGORIES]
+const REWARD_TYPES = [...ACHIEVEMENT_REWARD_TYPES]
 
 const CATEGORY_COLORS: Record<string, string> = {
   pvp: 'bg-red-900/40 text-red-300 border-red-700/50',
@@ -111,7 +100,6 @@ export function AchievementsClient({
   definitions: AchievementDef[]
 }) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [tab, setTab] = useState<'definitions' | 'stats'>('definitions')
@@ -128,7 +116,14 @@ export function AchievementsClient({
 
   // ---- helpers ----
 
-  const refresh = () => startTransition(() => router.refresh())
+  const refresh = () => router.refresh()
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Request failed'
+
+  const parseWholeNumber = (value: string) => {
+    const parsed = Number.parseInt(value, 10)
+    return Number.isInteger(parsed) ? parsed : 0
+  }
 
   const updateField = (field: keyof FormData, value: string) =>
     setForm((f) => ({ ...f, [field]: value }))
@@ -149,7 +144,6 @@ export function AchievementsClient({
       target: String(def.target),
       rewardType: def.rewardType,
       rewardAmount: String(def.rewardAmount),
-      rewardId: def.rewardId ?? '',
       icon: def.icon ?? '',
       sortOrder: String(def.sortOrder),
     })
@@ -169,32 +163,31 @@ export function AchievementsClient({
           title: form.title,
           description: form.description,
           category: form.category,
-          target: parseInt(form.target, 10),
+          target: parseWholeNumber(form.target),
           rewardType: form.rewardType,
-          rewardAmount: parseInt(form.rewardAmount, 10),
-          rewardId: form.rewardId || null,
+          rewardAmount: parseWholeNumber(form.rewardAmount),
           icon: form.icon || null,
-          sortOrder: parseInt(form.sortOrder, 10),
+          sortOrder: parseWholeNumber(form.sortOrder),
         })
       } else {
         await createAchievementDefinition({
-          key: form.key.toLowerCase().replace(/\s+/g, '_'),
+          key: form.key,
           title: form.title,
           description: form.description,
           category: form.category,
-          target: parseInt(form.target, 10),
+          target: parseWholeNumber(form.target),
           rewardType: form.rewardType,
-          rewardAmount: parseInt(form.rewardAmount, 10),
-          rewardId: form.rewardId || undefined,
+          rewardAmount: parseWholeNumber(form.rewardAmount),
           icon: form.icon || undefined,
-          sortOrder: parseInt(form.sortOrder, 10),
+          sortOrder: parseWholeNumber(form.sortOrder),
         })
       }
       setDialogOpen(false)
+      toast.success(editingDef ? 'Achievement updated' : 'Achievement created')
       refresh()
-    } catch (e) {
-      console.error(e)
-      alert(e instanceof Error ? e.message : 'Save failed')
+    } catch (error) {
+      console.error(error)
+      toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
     }
@@ -207,10 +200,11 @@ export function AchievementsClient({
       await deleteAchievementDefinition(deletingDef.id)
       setDeleteDialogOpen(false)
       setDeletingDef(null)
+      toast.success('Achievement deleted')
       refresh()
-    } catch (e) {
-      console.error(e)
-      alert(e instanceof Error ? e.message : 'Delete failed')
+    } catch (error) {
+      console.error(error)
+      toast.error(getErrorMessage(error))
     } finally {
       setSaving(false)
     }
@@ -219,9 +213,11 @@ export function AchievementsClient({
   const handleToggleActive = async (def: AchievementDef) => {
     try {
       await updateAchievementDefinition(def.id, { active: !def.active })
+      toast.success(def.active ? 'Achievement deactivated' : 'Achievement activated')
       refresh()
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
+      toast.error(getErrorMessage(error))
     }
   }
 
@@ -231,10 +227,13 @@ export function AchievementsClient({
     try {
       const result = await seedAchievementDefinitions()
       setSeedResult(`Created ${result.created}, skipped ${result.skipped} (total ${result.total})`)
+      toast.success('Achievement definitions seeded')
       refresh()
-    } catch (e) {
-      console.error(e)
-      setSeedResult(e instanceof Error ? e.message : 'Seed failed')
+    } catch (error) {
+      console.error(error)
+      const message = getErrorMessage(error)
+      setSeedResult(message)
+      toast.error(message)
     } finally {
       setSeeding(false)
     }
@@ -583,6 +582,7 @@ export function AchievementsClient({
                 <Input
                   type="number"
                   value={form.target}
+                  min="1"
                   onChange={(e) => updateField('target', e.target.value)}
                 />
               </div>
@@ -606,20 +606,13 @@ export function AchievementsClient({
                 <Input
                   type="number"
                   value={form.rewardAmount}
+                  min="1"
                   onChange={(e) => updateField('rewardAmount', e.target.value)}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="grid gap-1.5">
-                <label className="text-sm font-medium">Reward ID</label>
-                <Input
-                  placeholder="item_id (optional)"
-                  value={form.rewardId}
-                  onChange={(e) => updateField('rewardId', e.target.value)}
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-1.5">
                 <label className="text-sm font-medium">Icon</label>
                 <Input
@@ -633,10 +626,15 @@ export function AchievementsClient({
                 <Input
                   type="number"
                   value={form.sortOrder}
+                  min="0"
                   onChange={(e) => updateField('sortOrder', e.target.value)}
                 />
               </div>
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Live achievement reward claims currently support gold, gems, and XP only.
+            </p>
           </div>
 
           <DialogFooter>

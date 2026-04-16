@@ -4,8 +4,6 @@ import { prisma } from '@/lib/prisma'
 
 const MAX_FRIENDS = 50
 const MAX_REQUESTS_PER_DAY = 20
-const REQUEST_COOLDOWN_HOURS = 24
-const REQUEST_EXPIRY_DAYS = 7
 
 /**
  * GET /api/social/friends?character_id=xxx
@@ -59,29 +57,29 @@ export async function GET(req: NextRequest) {
     // Build friends list (accepted from both directions)
     const friends = [
       ...sentFriendships
-        .filter((f: any) => f.status === 'accepted')
-        .map((f: any) => ({ ...f.friend, friendshipId: f.id })),
+        .filter((friendship) => friendship.status === 'accepted')
+        .map((friendship) => ({ ...friendship.friend, friendshipId: friendship.id })),
       ...receivedFriendships
-        .filter((f: any) => f.status === 'accepted')
-        .map((f: any) => ({ ...f.user, friendshipId: f.id })),
+        .filter((friendship) => friendship.status === 'accepted')
+        .map((friendship) => ({ ...friendship.user, friendshipId: friendship.id })),
     ]
 
     // Pending requests RECEIVED (others sent to me)
     const incomingRequests = receivedFriendships
-      .filter((f: any) => f.status === 'pending')
-      .map((f: any) => ({
-        friendshipId: f.id,
-        ...f.user,
-        requestedAt: f.createdAt,
+      .filter((friendship) => friendship.status === 'pending')
+      .map((friendship) => ({
+        friendshipId: friendship.id,
+        ...friendship.user,
+        requestedAt: friendship.createdAt,
       }))
 
     // Pending requests SENT (I sent to others)
     const outgoingRequests = sentFriendships
-      .filter((f: any) => f.status === 'pending')
-      .map((f: any) => ({
-        friendshipId: f.id,
-        ...f.friend,
-        requestedAt: f.createdAt,
+      .filter((friendship) => friendship.status === 'pending')
+      .map((friendship) => ({
+        friendshipId: friendship.id,
+        ...friendship.friend,
+        requestedAt: friendship.createdAt,
       }))
 
     // Blocked users
@@ -98,7 +96,7 @@ export async function GET(req: NextRequest) {
       friends,
       incomingRequests,
       outgoingRequests,
-      blockedUsers: blocked.map((b: any) => ({ friendshipId: b.id, ...b.friend })),
+      blockedUsers: blocked.map((friendship) => ({ friendshipId: friendship.id, ...friendship.friend })),
       count: friends.length,
       maxFriends: MAX_FRIENDS,
     })

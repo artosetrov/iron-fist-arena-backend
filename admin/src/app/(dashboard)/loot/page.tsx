@@ -33,11 +33,7 @@ export default async function LootPage() {
           Configure item drop chances and rarity distribution weights.
         </p>
       </div>
-      <LootClient
-        dropChances={dropChances}
-        rarityDistribution={rarityDistribution}
-        adminId={admin.id}
-      />
+      <LootClient dropChances={dropChances} rarityDistribution={rarityDistribution} />
     </div>
   )
 }

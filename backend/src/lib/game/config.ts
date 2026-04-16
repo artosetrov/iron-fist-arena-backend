@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { cacheGet, cacheSet } from '@/lib/cache'
+import { cacheDelete, cacheDeletePrefix, cacheGet, cacheSet } from '@/lib/cache'
 
 const CONFIG_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
@@ -51,4 +51,13 @@ export async function getGameConfigs(
   } catch {
     return keys
   }
+}
+
+export async function invalidateGameConfigCache(keys: readonly string[] = []): Promise<void> {
+  const uniqueKeys = [...new Set(keys.filter(Boolean))]
+
+  await Promise.all([
+    ...uniqueKeys.map((key) => cacheDelete(`gameconfig:${key}`)),
+    cacheDeletePrefix('gameconfig:batch:'),
+  ])
 }

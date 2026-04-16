@@ -25,8 +25,8 @@ const ACHIEVEMENT_DISPLAY: Record<string, { title: string; description: string }
   // Ranking
   rank_silver:      { title: 'Silver Rank',       description: 'Achieve Silver rank (1,200 rating)' },
   rank_gold:        { title: 'Gold Rank',         description: 'Achieve Gold rank (1,500 rating)' },
-  rank_diamond:     { title: 'Diamond Rank',      description: 'Achieve Diamond rank (1,800 rating)' },
-  rank_grandmaster: { title: 'Grandmaster',       description: 'Achieve Grandmaster rank (2,200 rating)' },
+  rank_diamond:     { title: 'Diamond Rank',      description: 'Achieve Diamond rank (3,000 rating)' },
+  rank_grandmaster: { title: 'Grandmaster',       description: 'Achieve Grandmaster rank (4,250 rating)' },
 }
 
 /** Fallback: convert achievement key to a readable title. */

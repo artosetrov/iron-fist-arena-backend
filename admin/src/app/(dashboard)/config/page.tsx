@@ -17,10 +17,7 @@ export default async function ConfigPage() {
           Manage game configuration values in real-time. {configs.length} config keys.
         </p>
       </div>
-      <ConfigClient
-        configs={JSON.parse(JSON.stringify(configs))}
-        adminId={admin.id}
-      />
+      <ConfigClient configs={JSON.parse(JSON.stringify(configs))} />
     </div>
   )
 }

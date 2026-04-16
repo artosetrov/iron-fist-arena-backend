@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateConfig } from '@/actions/config'
+import { updateConfigsBatch } from '@/actions/config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -30,7 +30,7 @@ type ConfigEntry = {
   description: string | null
 }
 
-// Hardcoded backend defaults — shown as reference if no GameConfig override exists
+// Canonical backend fallback values — used only when no GameConfig override exists yet.
 const BACKEND_DEFAULTS = {
   prices: {
     stamina_potion_small: 100,
@@ -127,20 +127,15 @@ export function ConsumablesClient({
           updates.push({ key: `consumable.hp_restore_percent.${consumableKey}`, value: percent })
         }
 
-        for (const u of updates) {
-          await updateConfig(u.key, u.value)
-        }
+        await updateConfigsBatch(updates)
 
-        setMessage('All consumable configs saved successfully.')
+        setMessage('All consumable configs saved and pushed live successfully.')
         router.refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to save')
       }
     })
   }
-
-  const staminaPotions = items.filter((i) => i.catalogId.startsWith('stamina_potion'))
-  const healthPotions = items.filter((i) => i.catalogId.startsWith('health_potion'))
 
   return (
     <div className="space-y-6">
@@ -158,8 +153,10 @@ export function ConsumablesClient({
       <div className="rounded-md bg-amber-600/10 border border-amber-600/30 px-4 py-3 text-sm text-amber-400 flex items-start gap-2">
         <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
         <div>
-          <strong>Note:</strong> The backend currently reads consumable prices and effects from hardcoded constants.
-          Save values here to GameConfig — then update the backend routes to read from GameConfig for these to take effect.
+          <strong>Note:</strong> The backend shop and consumable runtime already read these{' '}
+          <code className="rounded bg-amber-600/10 px-1 py-0.5 text-[11px]">GameConfig</code>{' '}
+          keys live. The numbers below are fallback values only when an override has not been
+          saved yet.
         </div>
       </div>
 

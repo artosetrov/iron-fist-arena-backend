@@ -27,6 +27,59 @@ const CHALLENGE_EXPIRY_HOURS = 24
 const MAX_CHALLENGES_PER_DAY = 10
 const CHALLENGE_GOLD_MULTIPLIER = 1.2
 
+type ChallengeAction = 'send' | 'accept' | 'decline'
+
+type ChallengesBody = {
+  character_id?: string
+  action?: ChallengeAction
+  target_id?: string
+  message?: string
+  challenge_id?: string
+}
+
+type ChallengeActor = {
+  id: string
+  userId: string
+  currentStamina: number
+  maxStamina: number
+  lastStaminaUpdate: Date | null
+  pvpRating: number
+  pvpCalibrationGames: number
+  freePvpToday: number
+  freePvpDate: Date | null
+  firstWinToday: boolean
+  firstWinDate: Date | null
+  highestPvpRank: number
+  cha: number
+  luk: number
+  level: number
+  characterName: string
+  class: string
+  pvpWins: number
+  pvpLosses: number
+  pvpWinStreak: number
+  pvpLossStreak: number
+  currentHp: number
+  avatar: string | null
+}
+
+type ChallengeSendBody = Pick<ChallengesBody, 'target_id' | 'message'>
+type ChallengeDecisionBody = Pick<ChallengesBody, 'challenge_id'>
+
+interface LockedChallengeRow {
+  id: string
+  defenderId: string
+  status: string
+  expiresAt: Date
+}
+
+function isChallengeError(
+  error: unknown,
+  code: 'CHALLENGE_NOT_FOUND' | 'CHALLENGE_FORBIDDEN' | 'CHALLENGE_NOT_PENDING' | 'CHALLENGE_EXPIRED',
+): error is Error {
+  return error instanceof Error && error.message === code
+}
+
 /**
  * GET /api/social/challenges?character_id=xxx
  * Returns pending + recent challenges for the character.
@@ -146,35 +199,35 @@ export async function GET(req: NextRequest) {
     })
 
     return NextResponse.json({
-      incoming: incoming.map((c: any) => ({
-        id: c.id,
-        challenger: c.challenger,
-        message: c.message,
-        goldWager: c.goldWager,
-        createdAt: c.createdAt,
-        expiresAt: c.expiresAt,
+      incoming: incoming.map((challenge) => ({
+        id: challenge.id,
+        challenger: challenge.challenger,
+        message: challenge.message,
+        goldWager: challenge.goldWager,
+        createdAt: challenge.createdAt,
+        expiresAt: challenge.expiresAt,
       })),
-      outgoing: outgoing.map((c: any) => ({
-        id: c.id,
-        defender: c.defender,
-        status: c.status,
-        message: c.message,
-        goldWager: c.goldWager,
-        createdAt: c.createdAt,
-        respondedAt: c.respondedAt,
+      outgoing: outgoing.map((challenge) => ({
+        id: challenge.id,
+        defender: challenge.defender,
+        status: challenge.status,
+        message: challenge.message,
+        goldWager: challenge.goldWager,
+        createdAt: challenge.createdAt,
+        respondedAt: challenge.respondedAt,
       })),
-      completed: completed.map((c: any) => ({
-        id: c.id,
-        challenger: c.challenger,
-        defender: c.defender,
-        winnerId: c.match?.winnerId,
-        goldReward: c.match?.goldReward ?? 0,
-        xpReward: c.match?.xpReward ?? 0,
-        completedAt: c.completedAt,
+      completed: completed.map((challenge) => ({
+        id: challenge.id,
+        challenger: challenge.challenger,
+        defender: challenge.defender,
+        winnerId: challenge.match?.winnerId,
+        goldReward: challenge.match?.goldReward ?? 0,
+        xpReward: challenge.match?.xpReward ?? 0,
+        completedAt: challenge.completedAt,
       })),
     })
-  } catch (err: any) {
-    console.error('get challenges error:', err)
+  } catch (error) {
+    console.error('get challenges error:', error)
     return NextResponse.json({ error: 'Failed to fetch challenges' }, { status: 500 })
   }
 }
@@ -189,7 +242,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const body = await req.json()
+    const body = await req.json() as ChallengesBody
     const { character_id, action } = body
 
     if (!character_id || !action) {
@@ -237,13 +290,13 @@ export async function POST(req: NextRequest) {
       default:
         return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 })
     }
-  } catch (err: any) {
-    console.error('challenge action error:', err)
+  } catch (error) {
+    console.error('challenge action error:', error)
     return NextResponse.json({ error: 'Failed to process challenge' }, { status: 500 })
   }
 }
 
-async function handleSend(character: any, body: any) {
+async function handleSend(character: ChallengeActor, body: ChallengeSendBody) {
   const { target_id, message } = body
   if (!target_id) {
     return NextResponse.json({ error: 'target_id is required' }, { status: 400 })
@@ -304,7 +357,7 @@ async function handleSend(character: any, body: any) {
   const staminaResult = await calculateCurrentStamina(
     character.currentStamina,
     character.maxStamina,
-    character.lastStaminaUpdate
+    character.lastStaminaUpdate ?? new Date()
   )
   const currentStamina = staminaResult.stamina
   const staminaCost = STAMINA.PVP_COST
@@ -360,7 +413,7 @@ async function handleSend(character: any, body: any) {
   })
 }
 
-async function handleAccept(character: any, body: any) {
+async function handleAccept(character: ChallengeActor, body: ChallengeDecisionBody) {
   const { challenge_id } = body
   if (!challenge_id) {
     return NextResponse.json({ error: 'challenge_id is required' }, { status: 400 })
@@ -385,12 +438,6 @@ async function handleAccept(character: any, body: any) {
     await prisma.challenge.update({ where: { id: challenge_id }, data: { status: 'expired' } })
     return NextResponse.json({ error: 'Challenge has expired' }, { status: 410 })
   }
-
-  // Mark as accepted
-  await prisma.challenge.update({
-    where: { id: challenge_id },
-    data: { status: 'accepted', respondedAt: new Date() },
-  })
 
   // --- Run the fight (reuse combat engine) ---
   const [GOLD_REWARDS, XP_REWARDS] = await Promise.all([
@@ -482,79 +529,110 @@ async function handleAccept(character: any, body: any) {
   // Persist HP
   const winnerFinalHp = Math.max(combatResult.finalHp[winnerId] ?? 0, 0)
   const loserFinalHp = Math.max(combatResult.finalHp[loserId] ?? 0, 0)
+  const resolvedAt = new Date()
 
-  // Create PvpMatch + update characters + complete challenge — all in transaction
-  const [pvpMatch] = await prisma.$transaction([
-    prisma.pvpMatch.create({
-      data: {
-        player1Id: challenge.challengerId,
-        player2Id: character.id,
-        player1RatingBefore: challengerWon ? winner.pvpRating : loser.pvpRating,
-        player1RatingAfter: challengerWon ? newWinnerRating : newLoserRating,
-        player2RatingBefore: challengerWon ? loser.pvpRating : winner.pvpRating,
-        player2RatingAfter: challengerWon ? newLoserRating : newWinnerRating,
-        winnerId,
-        loserId,
-        combatLog: JSON.parse(JSON.stringify(combatResult.turns)),
-        matchDuration: 0,
-        turnsTaken: combatResult.totalTurns,
-        goldReward: winnerGold,
-        xpReward: winnerXp,
-        matchType: 'challenge',
-        isRevenge: false,
-      },
-    }),
-    // Update winner
-    prisma.character.update({
-      where: { id: winnerId },
-      data: {
-        pvpRating: newWinnerRating,
-        pvpWins: { increment: 1 },
-        pvpWinStreak: { increment: 1 },
-        pvpLossStreak: 0,
-        pvpCalibrationGames: { increment: 1 },
-        highestPvpRank: Math.max(winner.highestPvpRank, newWinnerRating),
-        currentHp: Math.max(1, winnerFinalHp),
-        lastHpUpdate: new Date(),
-      },
-    }),
-    // Update loser
-    prisma.character.update({
-      where: { id: loserId },
-      data: {
-        pvpRating: newLoserRating,
-        pvpLosses: { increment: 1 },
-        pvpLossStreak: { increment: 1 },
-        pvpWinStreak: 0,
-        pvpCalibrationGames: { increment: 1 },
-        currentHp: Math.max(1, loserFinalHp),
-        lastHpUpdate: new Date(),
-      },
-    }),
-    // Gold rewards on user level
-    prisma.user.update({
-      where: { id: winner.userId },
-      data: { gold: { increment: winnerGold } },
-    }),
-    prisma.user.update({
-      where: { id: loser.userId },
-      data: { gold: { increment: loserGold } },
-    }),
-    // Complete the challenge
-    prisma.challenge.update({
-      where: { id: challenge_id },
-      data: {
-        status: 'completed',
-        completedAt: new Date(),
-      },
-    }),
-  ])
+  // Create PvpMatch + update characters + complete challenge — all in one locked transaction.
+  let pvpMatch
+  try {
+    pvpMatch = await prisma.$transaction(async (tx) => {
+      const [lockedChallenge] = await tx.$queryRawUnsafe<LockedChallengeRow[]>(
+        `SELECT id, defender_id AS "defenderId", status, expires_at AS "expiresAt"
+         FROM challenges
+         WHERE id = $1
+         FOR UPDATE`,
+        challenge_id,
+      )
 
-  // Update matchId (after transaction — match ID now available)
-  await prisma.challenge.update({
-    where: { id: challenge_id },
-    data: { matchId: pvpMatch.id },
-  })
+      if (!lockedChallenge) throw new Error('CHALLENGE_NOT_FOUND')
+      if (lockedChallenge.defenderId !== character.id) throw new Error('CHALLENGE_FORBIDDEN')
+      if (lockedChallenge.status !== 'pending') throw new Error('CHALLENGE_NOT_PENDING')
+      if (lockedChallenge.expiresAt < resolvedAt) throw new Error('CHALLENGE_EXPIRED')
+
+      const pvpMatch = await tx.pvpMatch.create({
+        data: {
+          player1Id: challenge.challengerId,
+          player2Id: character.id,
+          player1RatingBefore: challengerWon ? winner.pvpRating : loser.pvpRating,
+          player1RatingAfter: challengerWon ? newWinnerRating : newLoserRating,
+          player2RatingBefore: challengerWon ? loser.pvpRating : winner.pvpRating,
+          player2RatingAfter: challengerWon ? newLoserRating : newWinnerRating,
+          winnerId,
+          loserId,
+          combatLog: JSON.parse(JSON.stringify(combatResult.turns)),
+          matchDuration: 0,
+          turnsTaken: combatResult.totalTurns,
+          goldReward: winnerGold,
+          xpReward: winnerXp,
+          matchType: 'challenge',
+          isRevenge: false,
+        },
+      })
+
+      await tx.character.update({
+        where: { id: winnerId },
+        data: {
+          pvpRating: newWinnerRating,
+          pvpWins: { increment: 1 },
+          pvpWinStreak: { increment: 1 },
+          pvpLossStreak: 0,
+          pvpCalibrationGames: { increment: 1 },
+          highestPvpRank: Math.max(winner.highestPvpRank, newWinnerRating),
+          currentHp: Math.max(1, winnerFinalHp),
+          currentXp: { increment: winnerXp },
+          lastHpUpdate: resolvedAt,
+        },
+      })
+
+      await tx.character.update({
+        where: { id: loserId },
+        data: {
+          pvpRating: newLoserRating,
+          pvpLosses: { increment: 1 },
+          pvpLossStreak: { increment: 1 },
+          pvpWinStreak: 0,
+          pvpCalibrationGames: { increment: 1 },
+          currentHp: Math.max(1, loserFinalHp),
+          currentXp: { increment: loserXp },
+          lastHpUpdate: resolvedAt,
+        },
+      })
+
+      await tx.user.update({
+        where: { id: winner.userId },
+        data: { gold: { increment: winnerGold } },
+      })
+      await tx.user.update({
+        where: { id: loser.userId },
+        data: { gold: { increment: loserGold } },
+      })
+
+      await tx.challenge.update({
+        where: { id: challenge_id },
+        data: {
+          status: 'completed',
+          respondedAt: resolvedAt,
+          completedAt: resolvedAt,
+          matchId: pvpMatch.id,
+        },
+      })
+
+      return pvpMatch
+    })
+  } catch (error) {
+    if (isChallengeError(error, 'CHALLENGE_NOT_FOUND')) {
+      return NextResponse.json({ error: 'Challenge not found' }, { status: 404 })
+    }
+    if (isChallengeError(error, 'CHALLENGE_FORBIDDEN')) {
+      return NextResponse.json({ error: 'This challenge is not for you' }, { status: 403 })
+    }
+    if (isChallengeError(error, 'CHALLENGE_NOT_PENDING')) {
+      return NextResponse.json({ error: 'Challenge is no longer pending' }, { status: 409 })
+    }
+    if (isChallengeError(error, 'CHALLENGE_EXPIRED')) {
+      return NextResponse.json({ error: 'Challenge has expired' }, { status: 410 })
+    }
+    throw error
+  }
 
   // Post-combat async side effects
   Promise.allSettled([
@@ -588,7 +666,7 @@ async function handleAccept(character: any, body: any) {
       loserGold,
       loserXp,
     }),
-  ]).catch((err: any) => console.error('duel post-combat side effects error:', err))
+  ]).catch((error: unknown) => console.error('duel post-combat side effects error:', error))
 
   // Build response with combat data for the accepter (defender)
   const defenderWon = !challengerWon
@@ -633,7 +711,7 @@ async function handleAccept(character: any, body: any) {
   })
 }
 
-async function handleDecline(character: any, body: any) {
+async function handleDecline(character: ChallengeActor, body: ChallengeDecisionBody) {
   const { challenge_id } = body
   if (!challenge_id) {
     return NextResponse.json({ error: 'challenge_id is required' }, { status: 400 })

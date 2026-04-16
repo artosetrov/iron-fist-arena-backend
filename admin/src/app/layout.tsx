@@ -1,11 +1,16 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Oswald } from 'next/font/google'
 import { ToastProvider } from '@/components/ui/toast'
 import './globals.css'
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+})
+
+const oswald = Oswald({
+  subsets: ['latin'],
+  variable: '--font-oswald',
 })
 
 export const viewport: Viewport = {
@@ -26,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${oswald.variable} font-sans antialiased`}>
         <ToastProvider>
           {children}
         </ToastProvider>

@@ -3,7 +3,7 @@
 // baseDamage now reads class scaling from GameConfig via item-balance engine.
 // =============================================================================
 
-import { COMBAT, STANCE_ZONES, BATTLE_FATIGUE, type BodyZone } from './balance';
+import { STANCE_ZONES, BATTLE_FATIGUE, type BodyZone } from './balance';
 import { getCombatConfig } from './live-config';
 import { getClassDamageFormula } from './item-balance';
 import {
@@ -233,9 +233,6 @@ interface CombatConfigData {
   ROGUE_EXECUTE_HP_THRESHOLD: number;
   ROGUE_EXECUTE_DAMAGE_BONUS: number;
 }
-
-// Cached combat config
-let _cachedCombatConfig: CombatConfigData | null = null;
 
 function reduceDamageByType(
   raw: number,
@@ -523,11 +520,10 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
   // Load class damage config and combat config once per combat
   await loadClassDamageConfig();
   const config = await getCombatConfig();
-  _cachedCombatConfig = config;
 
   const rng: SeededRng = seed != null ? createSeededRng(seed) : (() => Math.random());
-  let hpA = attacker.currentHp ?? attacker.maxHp;
-  let hpD = defender.currentHp ?? defender.maxHp;
+  const hpA = attacker.currentHp ?? attacker.maxHp;
+  const hpD = defender.currentHp ?? defender.maxHp;
 
   const turns: Turn[] = [];
 
@@ -591,7 +587,6 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
 
   for (let t = 1; t <= config.MAX_TURNS; t++) {
     // --- Mid-battle stance rotation (every 3 turns) ---
-    let stanceSwitched = false;
     if (t > 1 && (t - 1) % STANCE_ROTATION_INTERVAL === 0) {
       // Rotate zones: head→chest→legs→head
       const rotateZone = (z: BodyZone): BodyZone => {
@@ -603,7 +598,6 @@ export async function runCombat(attacker: CharacterStats, defender: CharacterSta
       // Recompute stance modifiers with new zones
       stanceFirst = computeStanceModifiers(zoneFirst, zoneSecond);
       stanceSecond = computeStanceModifiers(zoneSecond, zoneFirst);
-      stanceSwitched = true;
     }
 
     // --- First character attacks second ---
@@ -721,7 +715,6 @@ export interface SingleStrikeResult {
 export async function resolveSingleStrike(input: SingleStrikeInput): Promise<SingleStrikeResult> {
   await loadClassDamageConfig();
   const config = await getCombatConfig();
-  _cachedCombatConfig = config;
 
   const rng = createSeededRng(input.seed);
 

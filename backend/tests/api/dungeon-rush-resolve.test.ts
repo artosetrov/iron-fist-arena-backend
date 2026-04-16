@@ -1,23 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
 
 const {
   mockGetAuthUser,
   mockRateLimit,
-  mockGetBattlePassConfig,
   mockIncrementGuildChallenge,
   mockGoldBonusMultiplier,
+  mockGrantRewardEntries,
+  mockInvalidatePassiveCache,
+  mockInvalidateSkillCache,
   prismaMock,
 } = vi.hoisted(() => ({
   mockGetAuthUser: vi.fn(),
   mockRateLimit: vi.fn(() => true),
-  mockGetBattlePassConfig: vi.fn(async () => ({
-    BP_XP_PER_PVP: 20,
-    BP_XP_PER_DUNGEON_FLOOR: 30,
-    BP_XP_PER_QUEST: 50,
-    BP_XP_PER_ACHIEVEMENT: 100,
-  })),
   mockIncrementGuildChallenge: vi.fn(async () => undefined),
   mockGoldBonusMultiplier: vi.fn(() => 1),
+  mockGrantRewardEntries: vi.fn(),
+  mockInvalidatePassiveCache: vi.fn(),
+  mockInvalidateSkillCache: vi.fn(),
   prismaMock: {
     character: {
       findFirst: vi.fn(),
@@ -46,26 +46,26 @@ vi.mock('@/lib/game/balance', () => ({
   chaGoldBonus: (value: number) => value,
 }))
 
-vi.mock('@/lib/game/live-config', () => ({
-  getBattlePassConfig: mockGetBattlePassConfig,
-}))
-
 vi.mock('@/lib/game/guild-challenge', () => ({
   incrementGuildChallenge: mockIncrementGuildChallenge,
 }))
 
-vi.mock('@/lib/game/premium', () => ({
-  PREMIUM_ENTITLEMENT_USER_SELECT: {
-    premiumUntil: true,
-    premiumSubscription: {
-      select: {
-        expiresAt: true,
-        status: true,
-      },
-    },
-  },
-  goldBonusMultiplier: mockGoldBonusMultiplier,
+vi.mock('@/lib/game/reward-grants', () => ({
+  grantRewardEntries: mockGrantRewardEntries,
 }))
+
+vi.mock('@/lib/game/combat-loader', () => ({
+  invalidatePassiveCache: mockInvalidatePassiveCache,
+  invalidateSkillCache: mockInvalidateSkillCache,
+}))
+
+vi.mock('@/lib/game/premium', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/game/premium')>()
+  return {
+    ...actual,
+    goldBonusMultiplier: mockGoldBonusMultiplier,
+  }
+})
 
 import { POST } from '@/app/api/dungeon-rush/resolve/route'
 
@@ -74,6 +74,18 @@ describe('POST /api/dungeon-rush/resolve', () => {
     vi.clearAllMocks()
     mockGetAuthUser.mockResolvedValue({ id: 'user-1' })
     mockGoldBonusMultiplier.mockReturnValue(1)
+    mockGrantRewardEntries.mockResolvedValue({
+      gold: 650,
+      gems: 0,
+      xp: 0,
+      levelUpResult: {
+        leveledUp: false,
+        newLevel: 1,
+        remainingXp: 0,
+        statPointsAwarded: 0,
+        passivePointsAwarded: 0,
+      },
+    })
   })
 
   it('rejects stale room resolves after the room has already been consumed under lock', async () => {
@@ -99,20 +111,11 @@ describe('POST /api/dungeon-rush/resolve', () => {
       state: structuredClone(staleState),
     }
 
-    // Account-level gold moved from Character → User in the
-    // `20260409_migrate_gold_to_account_level` migration. The route now writes
-    // to `tx.user.update` instead of `tx.character.update` for gold.
-    const playerState = {
-      gold: 500,
-      xp: 0,
-    }
-
     prismaMock.character.findFirst.mockResolvedValue({
       id: 'char-1',
       cha: 10,
-      // W3.D5 — route selects `user: { select: { premiumUntil: true } }`
-      // to feed into `goldBonusMultiplier`.
-      user: { premiumUntil: null },
+      // Keep this aligned with the shared premium selector contract.
+      user: { premiumUntil: null, premiumSubscription: null },
     })
 
     // Always return the original unresolved snapshot to simulate a retried request
@@ -141,23 +144,17 @@ describe('POST /api/dungeon-rush/resolve', () => {
       character: {
         findUnique: vi.fn(async () => ({
           inventorySlots: 20,
-          currentXp: playerState.xp,
+          currentXp: 0,
           level: 1,
         })),
-        update: vi.fn(async ({ data }: { data: { currentXp?: { increment: number } } }) => {
-          playerState.xp += data.currentXp?.increment ?? 0
-          return { id: 'char-1' }
-        }),
+        update: vi.fn(async () => ({ id: 'char-1' })),
       },
       user: {
         findUnique: vi.fn(async () => ({
-          gold: playerState.gold,
+          gold: 500,
           gems: 0,
         })),
-        update: vi.fn(async ({ data }: { data: { gold?: { increment: number } } }) => {
-          playerState.gold += data.gold?.increment ?? 0
-          return { id: 'user-1', gold: playerState.gold }
-        }),
+        update: vi.fn(async () => ({ id: 'user-1', gold: 500 })),
       },
       dungeonRun: {
         delete: vi.fn(),
@@ -169,38 +166,134 @@ describe('POST /api/dungeon-rush/resolve', () => {
       },
     }
 
-    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx),
+    )
 
-    const request = new Request('http://localhost/api/dungeon-rush/resolve', {
+    const request = makeNextRequest('http://localhost/api/dungeon-rush/resolve', {
       method: 'POST',
       body: JSON.stringify({
         character_id: 'char-1',
         run_id: 'run-1',
       }),
-    }) as any
+    })
 
     const firstResponse = await POST(request)
     expect(firstResponse.status).toBe(200)
-    expect(playerState.gold).toBeGreaterThan(500)
     expect(liveRun.state.currentRoomIndex).toBe(1)
-    expect(tx.user.update).toHaveBeenCalledTimes(1)
+    expect(mockGrantRewardEntries).toHaveBeenCalledTimes(1)
 
     const secondResponse = await POST(
-      new Request('http://localhost/api/dungeon-rush/resolve', {
+      makeNextRequest('http://localhost/api/dungeon-rush/resolve', {
         method: 'POST',
         body: JSON.stringify({
           character_id: 'char-1',
           run_id: 'run-1',
         }),
-      }) as any,
+      }),
     )
 
     expect(secondResponse.status).toBe(409)
     await expect(secondResponse.json()).resolves.toMatchObject({
       error: 'This dungeon rush room was already resolved. Refresh and continue.',
     })
-    expect(playerState.gold).toBeGreaterThan(500)
-    // Gold was incremented exactly once despite two resolve attempts.
-    expect(tx.user.update).toHaveBeenCalledTimes(1)
+    expect(mockGrantRewardEntries).toHaveBeenCalledTimes(1)
+  })
+
+  it('invalidates combat caches after a leveled-up room reward grant', async () => {
+    mockGrantRewardEntries.mockResolvedValue({
+      gold: 650,
+      gems: 0,
+      xp: 120,
+      levelUpResult: {
+        leveledUp: true,
+        newLevel: 2,
+        remainingXp: 20,
+        statPointsAwarded: 5,
+        passivePointsAwarded: 1,
+      },
+    })
+
+    const liveRun = {
+      id: 'run-1',
+      characterId: 'char-1',
+      difficulty: 'rush',
+      currentFloor: 1,
+      state: {
+        rooms: [
+          { index: 0, type: 'treasure', resolved: false, seed: 11 },
+          { index: 1, type: 'event', resolved: false, seed: 22 },
+        ],
+        currentRoomIndex: 0,
+        buffs: [],
+        currentHpPercent: 100,
+        shopPurchased: [],
+        floorsCleared: 0,
+        totalGoldEarned: 0,
+        totalXpEarned: 0,
+        artifacts: [],
+      },
+    }
+
+    prismaMock.character.findFirst.mockResolvedValue({
+      id: 'char-1',
+      cha: 10,
+      user: { premiumUntil: null, premiumSubscription: null },
+    })
+    prismaMock.dungeonRun.findFirst.mockResolvedValue(structuredClone(liveRun))
+
+    const tx = {
+      $queryRaw: vi.fn(async () => []),
+      $queryRawUnsafe: vi.fn(async () => [
+        {
+          id: liveRun.id,
+          characterId: liveRun.characterId,
+          dungeonId: 'training_camp',
+          difficulty: liveRun.difficulty,
+          currentFloor: liveRun.currentFloor,
+          state: structuredClone(liveRun.state),
+        },
+      ]),
+      dungeonRun: {
+        delete: vi.fn(),
+        update: vi.fn(async () => ({ id: liveRun.id })),
+      },
+    }
+
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (innerTx: typeof tx) => Promise<unknown>) => callback(tx),
+    )
+
+    const response = await POST(
+      makeNextRequest('http://localhost/api/dungeon-rush/resolve', {
+        method: 'POST',
+        body: JSON.stringify({
+          character_id: 'char-1',
+          run_id: 'run-1',
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      rushComplete: false,
+      leveled_up: true,
+      new_level: 2,
+      stat_points_awarded: 5,
+    })
+    expect(mockGrantRewardEntries).toHaveBeenCalledWith(tx, {
+      userId: 'user-1',
+      characterId: 'char-1',
+      rewards: expect.arrayContaining([
+        expect.objectContaining({ type: 'gold' }),
+      ]),
+    })
+    expect(mockIncrementGuildChallenge).toHaveBeenCalledWith(
+      prismaMock,
+      'gold_earned',
+      expect.any(Number),
+    )
+    expect(mockInvalidateSkillCache).toHaveBeenCalledWith('char-1')
+    expect(mockInvalidatePassiveCache).toHaveBeenCalledWith('char-1')
   })
 })

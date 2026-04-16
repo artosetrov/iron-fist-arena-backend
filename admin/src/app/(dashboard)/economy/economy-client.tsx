@@ -1,6 +1,4 @@
 'use client'
-
-import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -8,8 +6,8 @@ import {
   Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
 } from '@/components/ui/table'
 import {
-  Coins, Gem, TrendingUp, ShoppingBag, Users, BarChart3,
-  AlertTriangle, Crown, Swords,
+  Coins, Gem, TrendingUp, ShoppingBag, BarChart3,
+  AlertTriangle, Swords,
 } from 'lucide-react'
 import Link from 'next/link'
 

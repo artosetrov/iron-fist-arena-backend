@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
+import { callBackendAdminJson } from '@/lib/backend-admin'
 
 export async function getAllConfigs() {
   const admin = await getAdminUser()
@@ -12,44 +13,42 @@ export async function getAllConfigs() {
 }
 
 export async function getConfig(key: string) {
+  const admin = await getAdminUser()
+  if (!admin) throw new Error('Unauthorized')
   const config = await prisma.gameConfig.findUnique({ where: { key } })
   return config?.value ?? null
 }
 
-export async function updateConfig(key: string, value: unknown, adminId?: string) {
-  const admin = adminId ? { id: adminId } : await getAdminUser()
-  if (!admin) throw new Error('Unauthorized')
-
-  const config = await prisma.gameConfig.upsert({
-    where: { key },
-    update: {
-      value: value as never,
-      updatedBy: admin.id,
-    },
-    create: {
-      key,
-      value: value as never,
-      category: 'general',
-      updatedBy: admin.id,
-    },
+export async function updateConfig(key: string, value: unknown) {
+  const response = await callBackendAdminJson<{ config: unknown }>('/api/admin/config', {
+    method: 'PUT',
+    body: JSON.stringify({ key, value }),
   })
 
-  await prisma.adminLog.create({
-    data: {
-      adminId: admin.id,
-      action: 'update_config',
-      target: key,
-      details: { value } as never,
-    },
+  return response.config
+}
+
+export async function updateConfigsBatch(
+  updates: { key: string; value: unknown; category?: string; description?: string | null }[],
+) {
+  const response = await callBackendAdminJson<{
+    configs: unknown[]
+    created: number
+    skipped: number
+    total: number
+  }>('/api/admin/config', {
+    method: 'POST',
+    body: JSON.stringify({ updates }),
   })
 
-  return config
+  return response
 }
 
 export async function deleteConfig(key: string) {
-  const admin = await getAdminUser()
-  if (!admin) throw new Error('Unauthorized')
-  await prisma.gameConfig.delete({ where: { key } })
+  await callBackendAdminJson<{ success: true }>(
+    `/api/admin/config?key=${encodeURIComponent(key)}`,
+    { method: 'DELETE' },
+  )
   return { success: true }
 }
 
@@ -221,25 +220,16 @@ export async function seedDefaultConfigs() {
     { key: 'inventory.max_expansions', value: 3, category: 'inventory', description: 'Maximum number of inventory expansions' },
   ]
 
-  let created = 0
-  let skipped = 0
-
-  for (const cfg of defaults) {
-    const existing = await prisma.gameConfig.findUnique({ where: { key: cfg.key } })
-    if (existing) {
-      skipped++
-      continue
-    }
-    await prisma.gameConfig.create({
-      data: {
-        key: cfg.key,
-        value: cfg.value as never,
-        category: cfg.category,
-        description: cfg.description,
-      },
-    })
-    created++
-  }
-
-  return { created, skipped, total: defaults.length }
+  return callBackendAdminJson<{
+    configs: unknown[]
+    created: number
+    skipped: number
+    total: number
+  }>('/api/admin/config', {
+    method: 'POST',
+    body: JSON.stringify({
+      skipExisting: true,
+      updates: defaults,
+    }),
+  })
 }

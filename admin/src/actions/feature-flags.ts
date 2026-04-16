@@ -1,39 +1,141 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
+import {
+  FEATURE_FLAG_ENVIRONMENTS,
+  getDefaultFeatureFlagValue,
+  normalizeFeatureFlagKey,
+  normalizeFeatureFlagTags,
+  parseFeatureFlagEnvironment,
+  parseFeatureFlagType,
+  sanitizeFeatureFlagTargeting,
+  sanitizeFeatureFlagValue,
+  type FeatureFlagEnvironment,
+  type FeatureFlagType,
+  type JsonValue,
+} from '@/lib/feature-flags'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type CreateFlagInput = {
-  key: string
-  title: string
+type FeatureFlagMutationInput = {
+  key?: string
+  title?: string
   description?: string
-  flagType?: string   // boolean | percentage | segment | json
-  value?: any
-  targeting?: any
+  flagType?: unknown
+  value?: unknown
+  targeting?: unknown
   isActive?: boolean
-  environment?: string
-  tags?: string[]
+  environment?: unknown
+  tags?: unknown
 }
 
-type UpdateFlagInput = Partial<Omit<CreateFlagInput, 'key'>> & { isActive?: boolean }
+type CreateFlagInput = FeatureFlagMutationInput & {
+  key: string
+  title: string
+}
 
-// ---------------------------------------------------------------------------
-// CRUD
-// ---------------------------------------------------------------------------
+type UpdateFlagInput = Omit<FeatureFlagMutationInput, 'key'>
+
+type NormalizedFeatureFlagPayload = {
+  title: string
+  description: string | null
+  flagType: FeatureFlagType
+  value: JsonValue
+  targeting: JsonValue | null
+  isActive: boolean
+  environment: FeatureFlagEnvironment
+  tags: string[]
+}
+
+type DefaultFlagSeed = {
+  key: string
+  title: string
+  description: string
+  flagType: FeatureFlagType
+  value: JsonValue
+  isActive?: boolean
+}
+
+function toNullableJsonInput(value: JsonValue | null): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput {
+  return value === null ? Prisma.DbNull : value as Prisma.InputJsonValue
+}
+
+function normalizePayload(
+  input: FeatureFlagMutationInput,
+  existing?: {
+    title: string
+    description: string | null
+    flagType: string
+    value: Prisma.JsonValue
+    targeting: Prisma.JsonValue | null
+    isActive: boolean
+    environment: string
+    tags: string[]
+  }
+): NormalizedFeatureFlagPayload {
+  const title = input.title?.trim() ?? existing?.title?.trim() ?? ''
+  if (!title) throw new Error('title is required')
+
+  const flagType = input.flagType !== undefined
+    ? parseFeatureFlagType(input.flagType)
+    : parseFeatureFlagType(existing?.flagType ?? 'boolean')
+
+  const description = input.description !== undefined
+    ? input.description.trim() || null
+    : existing?.description ?? null
+
+  const value = input.value !== undefined
+    ? sanitizeFeatureFlagValue(flagType, input.value)
+    : existing?.value !== undefined && existing.value !== null
+      ? sanitizeFeatureFlagValue(flagType, existing.value)
+      : getDefaultFeatureFlagValue(flagType)
+
+  const targeting = input.targeting !== undefined
+    ? sanitizeFeatureFlagTargeting(input.targeting)
+    : sanitizeFeatureFlagTargeting(existing?.targeting ?? null)
+
+  const environment = input.environment !== undefined
+    ? parseFeatureFlagEnvironment(input.environment)
+    : parseFeatureFlagEnvironment(existing?.environment ?? 'all')
+
+  const tags = input.tags !== undefined
+    ? normalizeFeatureFlagTags(input.tags)
+    : normalizeFeatureFlagTags(existing?.tags ?? [])
+
+  return {
+    title,
+    description,
+    flagType,
+    value,
+    targeting,
+    isActive: input.isActive ?? existing?.isActive ?? false,
+    environment,
+    tags,
+  }
+}
+
+async function logAction(adminId: string, action: string, target?: string, details?: JsonValue) {
+  try {
+    await prisma.adminLog.create({
+      data: {
+        adminId,
+        action,
+        target,
+        ...(details !== undefined && { details: details as Prisma.InputJsonValue }),
+      },
+    })
+  } catch {
+    console.error('[audit] failed to log:', action, target)
+  }
+}
 
 export async function listFeatureFlags() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const flags = await prisma.featureFlag.findMany({
+  return prisma.featureFlag.findMany({
     orderBy: [{ isActive: 'desc' }, { key: 'asc' }],
   })
-
-  return flags
 }
 
 export async function getFeatureFlag(id: string) {
@@ -47,30 +149,34 @@ export async function createFeatureFlag(data: CreateFlagInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  if (!data.key || !data.title) throw new Error('key and title are required')
-
-  // Normalize key to snake_case
-  const key = data.key.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_')
+  const key = normalizeFeatureFlagKey(data.key)
+  if (!key) throw new Error('key is required')
 
   const existing = await prisma.featureFlag.findUnique({ where: { key } })
   if (existing) throw new Error(`Flag "${key}" already exists`)
 
+  const payload = normalizePayload(data)
+
   const flag = await prisma.featureFlag.create({
     data: {
       key,
-      title: data.title,
-      description: data.description ?? null,
-      flagType: data.flagType ?? 'boolean',
-      value: data.value ?? true,
-      targeting: data.targeting ?? null,
-      isActive: data.isActive ?? false,
-      environment: data.environment ?? 'all',
-      tags: data.tags ?? [],
+      title: payload.title,
+      description: payload.description,
+      flagType: payload.flagType,
+      value: payload.value as Prisma.InputJsonValue,
+      targeting: toNullableJsonInput(payload.targeting),
+      isActive: payload.isActive,
+      environment: payload.environment,
+      tags: payload.tags,
       createdBy: admin.id,
     },
   })
 
-  await logAction(admin.id, 'feature_flag.create', flag.key, { flagType: flag.flagType })
+  await logAction(admin.id, 'feature_flag.create', flag.key, {
+    flagType: flag.flagType,
+    environment: flag.environment,
+    isActive: flag.isActive,
+  })
 
   return flag
 }
@@ -79,21 +185,45 @@ export async function updateFeatureFlag(id: string, data: UpdateFlagInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const flag = await prisma.featureFlag.update({
+  const current = await prisma.featureFlag.findUnique({
     where: { id },
-    data: {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.flagType !== undefined && { flagType: data.flagType }),
-      ...(data.value !== undefined && { value: data.value }),
-      ...(data.targeting !== undefined && { targeting: data.targeting }),
-      ...(data.isActive !== undefined && { isActive: data.isActive }),
-      ...(data.environment !== undefined && { environment: data.environment }),
-      ...(data.tags !== undefined && { tags: data.tags }),
+    select: {
+      id: true,
+      key: true,
+      title: true,
+      description: true,
+      flagType: true,
+      value: true,
+      targeting: true,
+      isActive: true,
+      environment: true,
+      tags: true,
     },
   })
 
-  await logAction(admin.id, 'feature_flag.update', flag.key, { isActive: flag.isActive })
+  if (!current) throw new Error('Flag not found')
+
+  const payload = normalizePayload(data, current)
+
+  const flag = await prisma.featureFlag.update({
+    where: { id },
+    data: {
+      title: payload.title,
+      description: payload.description,
+      flagType: payload.flagType,
+      value: payload.value as Prisma.InputJsonValue,
+      targeting: toNullableJsonInput(payload.targeting),
+      isActive: payload.isActive,
+      environment: payload.environment,
+      tags: payload.tags,
+    },
+  })
+
+  await logAction(admin.id, 'feature_flag.update', flag.key, {
+    flagType: flag.flagType,
+    environment: flag.environment,
+    isActive: flag.isActive,
+  })
 
   return flag
 }
@@ -129,10 +259,6 @@ export async function deleteFeatureFlag(id: string) {
   return flag
 }
 
-// ---------------------------------------------------------------------------
-// Stats
-// ---------------------------------------------------------------------------
-
 export async function getFeatureFlagStats() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
@@ -147,15 +273,11 @@ export async function getFeatureFlagStats() {
   return { total, active, inactive: total - active, booleanCount, percentageCount }
 }
 
-// ---------------------------------------------------------------------------
-// Seed common flags
-// ---------------------------------------------------------------------------
-
 export async function seedDefaultFlags() {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const defaults = [
+  const defaults: DefaultFlagSeed[] = [
     { key: 'maintenance_mode', title: 'Maintenance Mode', description: 'Show maintenance screen to all players', flagType: 'boolean', value: false },
     { key: 'pvp_enabled', title: 'PvP Enabled', description: 'Kill switch for PvP matchmaking', flagType: 'boolean', value: true, isActive: true },
     { key: 'dungeon_rush_enabled', title: 'Dungeon Rush Enabled', description: 'Enable/disable dungeon rush mode', flagType: 'boolean', value: true, isActive: true },
@@ -170,18 +292,23 @@ export async function seedDefaultFlags() {
 
   let created = 0
   let skipped = 0
-  for (const d of defaults) {
-    const exists = await prisma.featureFlag.findUnique({ where: { key: d.key } })
-    if (exists) { skipped++; continue }
+
+  for (const definition of defaults) {
+    const exists = await prisma.featureFlag.findUnique({ where: { key: definition.key } })
+    if (exists) {
+      skipped++
+      continue
+    }
+
     await prisma.featureFlag.create({
       data: {
-        key: d.key,
-        title: d.title,
-        description: d.description ?? null,
-        flagType: d.flagType ?? 'boolean',
-        value: d.value ?? true,
-        isActive: d.isActive ?? false,
-        environment: 'all',
+        key: definition.key,
+        title: definition.title,
+        description: definition.description,
+        flagType: definition.flagType,
+        value: definition.value as Prisma.InputJsonValue,
+        isActive: definition.isActive ?? false,
+        environment: FEATURE_FLAG_ENVIRONMENTS[0],
         tags: [],
         createdBy: admin.id,
       },
@@ -190,18 +317,4 @@ export async function seedDefaultFlags() {
   }
 
   return { created, skipped, total: defaults.length }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-async function logAction(adminId: string, action: string, target?: string, details?: any) {
-  try {
-    await prisma.adminLog.create({
-      data: { adminId: adminId, action, target, details },
-    })
-  } catch {
-    console.error('[audit] failed to log:', action, target)
-  }
 }

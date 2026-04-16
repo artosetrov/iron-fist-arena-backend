@@ -7,19 +7,20 @@ interface DailyLoginReward {
   itemId?: string
 }
 
+const DEFAULT_DAILY_LOGIN_REWARDS: DailyLoginReward[] = [
+  { type: 'gold', amount: 200 },
+  { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },
+  { type: 'gold', amount: 500 },
+  { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },
+  { type: 'gold', amount: 1000 },
+  { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },
+  { type: 'gems', amount: 5 },
+]
+
 export default async function DailyLoginPage() {
   const rewards = await getConfig('daily_login_rewards')
-  const defaultRewards: DailyLoginReward[] = [
-    { type: 'gold', amount: 200 },
-    { type: 'consumable', amount: 1, itemId: 'stamina_potion_small' },
-    { type: 'gold', amount: 500 },
-    { type: 'consumable', amount: 2, itemId: 'stamina_potion_small' },
-    { type: 'gold', amount: 1000 },
-    { type: 'consumable', amount: 1, itemId: 'stamina_potion_large' },
-    { type: 'gems', amount: 5 },
-  ]
 
-  const rewardsData = (rewards as DailyLoginReward[] | null) ?? defaultRewards
+  const rewardsData = (rewards as DailyLoginReward[] | null) ?? DEFAULT_DAILY_LOGIN_REWARDS
 
   return (
     <div className="space-y-6">

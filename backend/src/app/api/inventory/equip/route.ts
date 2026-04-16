@@ -26,6 +26,24 @@ const ITEM_TYPE_TO_SLOTS: Partial<Record<ItemType, EquippedSlot[]>> = {
   ring:      ['ring', 'ring2'],       // dual ring slots
 }
 
+interface LockedInventoryRow {
+  id: string
+  characterId: string
+  isEquipped: boolean
+  equippedSlot: EquippedSlot | null
+  durability: number
+  itemType: ItemType
+  itemLevel: number
+  classRestriction: string | null
+  catalogId: string
+}
+
+interface LockedEquippedRow {
+  id: string
+  equippedSlot: EquippedSlot | null
+  itemId: string
+}
+
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -73,7 +91,7 @@ export async function POST(req: NextRequest) {
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
       // Step 2: Lock the target inventory item with FOR UPDATE
-      const lockedItems = await tx.$queryRawUnsafe<any[]>(
+      const lockedItems = await tx.$queryRawUnsafe<LockedInventoryRow[]>(
         `SELECT ei.id, ei.character_id AS "characterId", ei.is_equipped AS "isEquipped",
                 ei.equipped_slot AS "equippedSlot", ei.durability,
                 i.item_type AS "itemType", i.item_level AS "itemLevel",
@@ -104,7 +122,7 @@ export async function POST(req: NextRequest) {
       if (inventoryItem.isEquipped && inventoryItem.equippedSlot) throw new Error('ALREADY_EQUIPPED')
 
       // Step 3: Lock ALL equipped items for this character (prevents double-slot)
-      const equippedRows = await tx.$queryRawUnsafe<any[]>(
+      const equippedRows = await tx.$queryRawUnsafe<LockedEquippedRow[]>(
         `SELECT id, equipped_slot AS "equippedSlot", item_id AS "itemId"
          FROM equipment_inventory
          WHERE character_id = $1 AND is_equipped = true
@@ -112,7 +130,9 @@ export async function POST(req: NextRequest) {
         charId
       )
 
-      const occupiedSlots = new Set(equippedRows.map((r: any) => r.equippedSlot))
+      const occupiedSlots = new Set(
+        equippedRows.flatMap((row) => (row.equippedSlot ? [row.equippedSlot] : []))
+      )
 
       // Find first empty slot, or fall back to priority slot
       let slot: EquippedSlot | null = null
@@ -133,7 +153,7 @@ export async function POST(req: NextRequest) {
       let mainHandIsTwoHanded = false
       if (slot === 'relic' && inventoryItem.itemType === 'weapon') {
         // Check main hand from already-locked equippedRows
-        const mainHandRow = equippedRows.find((r: any) => r.equippedSlot === 'weapon')
+        const mainHandRow = equippedRows.find((row) => row.equippedSlot === 'weapon')
         if (mainHandRow) {
           // Need catalog info for the main hand item
           const mainHandInfo = await tx.equipmentInventory.findUnique({
@@ -191,33 +211,38 @@ export async function POST(req: NextRequest) {
           equippedSlot: slot as EquippedSlot,
         },
       })
+
+      // Keep the derived-stat write in the same transaction as the equipment mutation.
+      // Without this, the equip could commit and then return 500 if stat recompute failed.
+      await recalculateDerivedStats(charId, tx)
     })
 
-    // Recalculate derived stats + invalidate caches — in parallel.
+    // Invalidate caches after the equip + stat recompute transaction commits.
     // BUG-62 (2026-04-11): inventory fetch moved into the shared
     // `buildInventoryResponse` helper so equip/unequip return the same
     // full snapshot shape as GET /api/inventory (equipment + consumables
     // + inventorySlots). The client used to merge a consumable-less
     // response and silently lost potions.
     await Promise.all([
-      recalculateDerivedStats(charId),
       invalidateSkillCache(charId),
       invalidatePassiveCache(charId),
     ])
 
     const inventoryResponse = await buildInventoryResponse(charId)
     return NextResponse.json(inventoryResponse)
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+
     // Sentinel errors from interactive transaction → granular HTTP responses
-    if (error.message === 'CHARACTER_NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
-    if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    if (error.message === 'ITEM_NOT_FOUND') return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 })
-    if (error.message === 'ITEM_NOT_OWNED') return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
-    if (error.message === 'ITEM_BROKEN') return NextResponse.json({ error: 'Cannot equip a broken item. Repair it first.' }, { status: 400 })
-    if (error.message === 'LEVEL_TOO_LOW') return NextResponse.json({ error: 'Character level too low for this item' }, { status: 400 })
-    if (error.message === 'CLASS_RESTRICTED') return NextResponse.json({ error: 'This item is class-restricted' }, { status: 400 })
-    if (error.message === 'NOT_EQUIPPABLE') return NextResponse.json({ error: 'Item cannot be equipped' }, { status: 400 })
-    if (error.message === 'ALREADY_EQUIPPED') {
+    if (message === 'CHARACTER_NOT_FOUND') return NextResponse.json({ error: 'Character not found' }, { status: 404 })
+    if (message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (message === 'ITEM_NOT_FOUND') return NextResponse.json({ error: 'Inventory item not found' }, { status: 404 })
+    if (message === 'ITEM_NOT_OWNED') return NextResponse.json({ error: 'Item does not belong to this character' }, { status: 403 })
+    if (message === 'ITEM_BROKEN') return NextResponse.json({ error: 'Cannot equip a broken item. Repair it first.' }, { status: 400 })
+    if (message === 'LEVEL_TOO_LOW') return NextResponse.json({ error: 'Character level too low for this item' }, { status: 400 })
+    if (message === 'CLASS_RESTRICTED') return NextResponse.json({ error: 'This item is class-restricted' }, { status: 400 })
+    if (message === 'NOT_EQUIPPABLE') return NextResponse.json({ error: 'Item cannot be equipped' }, { status: 400 })
+    if (message === 'ALREADY_EQUIPPED') {
       // BUG-62: return the full inventory snapshot (HTTP 200) instead of
       // just `{ message }`. Previously the client parsed this as a failure
       // (no `equipment` key → nil) and rolled back its optimistic state,

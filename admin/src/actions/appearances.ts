@@ -3,7 +3,10 @@
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
 import { auditLog } from '@/lib/audit-log'
-import type { CharacterGender, CharacterOrigin } from '@prisma/client'
+import {
+  sanitizeAppearanceSkinInput,
+  type AppearanceSkinInput,
+} from '@/lib/appearance-skins'
 
 export async function getAppearances() {
   const admin = await getAdminUser()
@@ -13,42 +16,43 @@ export async function getAppearances() {
   })
 }
 
-export async function createAppearance(data: {
-  skinKey: string
-  name: string
-  origin: CharacterOrigin
-  gender: CharacterGender
-  rarity: string
-  priceGold: number
-  priceGems: number
-  imageUrl?: string | null
-  imageKey?: string | null
-  isDefault: boolean
-  sortOrder: number
-}) {
+export async function createAppearance(data: AppearanceSkinInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const skin = await prisma.appearanceSkin.create({
-    data: {
-      skinKey: data.skinKey,
-      name: data.name,
-      origin: data.origin,
-      gender: data.gender,
-      rarity: data.rarity,
-      priceGold: data.priceGold,
-      priceGems: data.priceGems,
-      imageUrl: data.imageUrl ?? null,
-      imageKey: data.imageKey ?? data.skinKey,
-      isDefault: data.isDefault,
-      sortOrder: data.sortOrder,
-    },
+  const payload = sanitizeAppearanceSkinInput(data)
+  const existing = await prisma.appearanceSkin.findUnique({
+    where: { skinKey: payload.skinKey },
+    select: { id: true },
+  })
+
+  if (existing) {
+    throw new Error('Skin Key already exists')
+  }
+
+  const skin = await prisma.$transaction(async (tx) => {
+    if (payload.isDefault) {
+      await tx.appearanceSkin.updateMany({
+        where: {
+          origin: payload.origin,
+          gender: payload.gender,
+          isDefault: true,
+        },
+        data: { isDefault: false },
+      })
+    }
+
+    return tx.appearanceSkin.create({
+      data: payload,
+    })
   })
 
   auditLog(admin, 'create_appearance', `appearance/${skin.id}`, {
-    skinKey: data.skinKey,
-    name: data.name,
-    gender: data.gender,
+    skinKey: payload.skinKey,
+    name: payload.name,
+    origin: payload.origin,
+    gender: payload.gender,
+    isDefault: payload.isDefault,
   })
 
   return skin
@@ -56,43 +60,54 @@ export async function createAppearance(data: {
 
 export async function updateAppearance(
   id: string,
-  data: {
-    skinKey?: string
-    name?: string
-    origin?: CharacterOrigin
-    gender?: CharacterGender
-    rarity?: string
-    priceGold?: number
-    priceGems?: number
-    imageUrl?: string | null
-    imageKey?: string | null
-    isDefault?: boolean
-    sortOrder?: number
-  }
+  data: AppearanceSkinInput
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const updateData: Record<string, unknown> = {}
-  if (data.skinKey !== undefined) updateData.skinKey = data.skinKey
-  if (data.name !== undefined) updateData.name = data.name
-  if (data.origin !== undefined) updateData.origin = data.origin
-  if (data.gender !== undefined) updateData.gender = data.gender
-  if (data.rarity !== undefined) updateData.rarity = data.rarity
-  if (data.priceGold !== undefined) updateData.priceGold = data.priceGold
-  if (data.priceGems !== undefined) updateData.priceGems = data.priceGems
-  if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl
-  if (data.imageKey !== undefined) updateData.imageKey = data.imageKey
-  if (data.isDefault !== undefined) updateData.isDefault = data.isDefault
-  if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder
-
-  const updated = await prisma.appearanceSkin.update({
+  const existing = await prisma.appearanceSkin.findUnique({
     where: { id },
-    data: updateData,
+  })
+
+  if (!existing) {
+    throw new Error('Appearance not found')
+  }
+
+  const payload = sanitizeAppearanceSkinInput(data, existing)
+  const conflicting = await prisma.appearanceSkin.findUnique({
+    where: { skinKey: payload.skinKey },
+    select: { id: true },
+  })
+
+  if (conflicting && conflicting.id !== id) {
+    throw new Error('Skin Key already exists')
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    if (payload.isDefault) {
+      await tx.appearanceSkin.updateMany({
+        where: {
+          origin: payload.origin,
+          gender: payload.gender,
+          isDefault: true,
+          NOT: { id },
+        },
+        data: { isDefault: false },
+      })
+    }
+
+    return tx.appearanceSkin.update({
+      where: { id },
+      data: payload,
+    })
   })
 
   auditLog(admin, 'update_appearance', `appearance/${id}`, {
-    updatedFields: Object.keys(updateData),
+    skinKey: payload.skinKey,
+    origin: payload.origin,
+    gender: payload.gender,
+    isDefault: payload.isDefault,
+    updatedFields: Object.keys(data),
   })
 
   return updated
@@ -104,8 +119,12 @@ export async function deleteAppearance(id: string) {
 
   const skin = await prisma.appearanceSkin.findUnique({
     where: { id },
-    select: { skinKey: true, name: true },
+    select: { skinKey: true, name: true, isDefault: true },
   })
+
+  if (skin?.isDefault) {
+    throw new Error('Default skins cannot be deleted. Assign another default first.')
+  }
 
   await prisma.appearanceSkin.delete({ where: { id } })
 

@@ -26,7 +26,6 @@ export function DSStateView({ type = 'Empty Inventory' }: StateViewProps) {
 export function StateViewAllVariants() {
   return (
     <div className="grid grid-cols-2 gap-4">
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
       <DSStateView type="Empty Inventory" />
       <DSStateView type="No Quests" />
       <DSStateView type="Network Error" />

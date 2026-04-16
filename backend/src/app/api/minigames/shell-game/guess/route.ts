@@ -6,6 +6,29 @@ import { updateWeeklyChallengeProgress } from '@/lib/game/weekly-challenges'
 import { updateTutorialQuestProgress } from '@/lib/game/tutorial'
 import { rateLimit } from '@/lib/rate-limit'
 
+interface LockedShellGameSessionRow {
+  id: string
+  character_id: string
+  status: string
+  secret_data: unknown
+  bet_amount: number
+}
+
+interface ShellGameSecretData {
+  correctShell: number
+}
+
+function parseShellGameSecretData(secretData: unknown): ShellGameSecretData | null {
+  if (!secretData || typeof secretData !== 'object') return null
+
+  const correctShell = (secretData as { correctShell?: unknown }).correctShell
+  if (typeof correctShell !== 'number' || !Number.isInteger(correctShell) || correctShell < 0 || correctShell > 2) {
+    return null
+  }
+
+  return { correctShell }
+}
+
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -38,10 +61,7 @@ export async function POST(req: NextRequest) {
     // Use interactive transaction with row-level lock to prevent double-guess
     const result = await prisma.$transaction(async (tx) => {
       // Lock the session row for update
-      const [sessionRow] = await tx.$queryRawUnsafe<Array<{
-        id: string; character_id: string; status: string;
-        secret_data: any; bet_amount: number;
-      }>>(
+      const [sessionRow] = await tx.$queryRawUnsafe<LockedShellGameSessionRow[]>(
         `SELECT id, character_id, status, secret_data, bet_amount FROM minigame_sessions WHERE id = $1 FOR UPDATE`,
         session_id
       )
@@ -57,7 +77,9 @@ export async function POST(req: NextRequest) {
       if (!character) throw new Error('NOT_FOUND')
       if (character.userId !== user.id) throw new Error('FORBIDDEN')
 
-      const secretData = sessionRow.secret_data as { correctShell: number }
+      const secretData = parseShellGameSecretData(sessionRow.secret_data)
+      if (!secretData) throw new Error('INVALID_SESSION_STATE')
+
       const won = chosen_cup === secretData.correctShell
       const win_amount = won ? sessionRow.bet_amount * 2 : 0
 
@@ -109,6 +131,9 @@ export async function POST(req: NextRequest) {
       if (error.message === 'NOT_FOUND') return NextResponse.json({ error: 'Session not found' }, { status: 404 })
       if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       if (error.message === 'NOT_ACTIVE') return NextResponse.json({ error: 'Session is no longer active' }, { status: 400 })
+      if (error.message === 'INVALID_SESSION_STATE') {
+        return NextResponse.json({ error: 'Session state is invalid' }, { status: 500 })
+      }
     }
     console.error('shell-game guess error:', error)
     return NextResponse.json(

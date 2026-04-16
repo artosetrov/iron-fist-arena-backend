@@ -2,11 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateBalanceConfig } from '@/actions/item-balance'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Save, Check } from 'lucide-react'
 
@@ -35,23 +33,14 @@ function getTabForKey(key: string): string {
   return 'power'
 }
 
-function formatLabel(key: string): string {
-  return key
-    .replace('item_balance.', '')
-    .split('_')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
-}
-
 export function ConfigEditorClient({
   configs,
-  adminId,
 }: {
   configs: ConfigEntry[]
-  adminId: string
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [savingKey, setSavingKey] = useState<string | null>(null)
   const [editValues, setEditValues] = useState<Record<string, string>>(
     Object.fromEntries(
       configs.map((c) => [
@@ -85,7 +74,18 @@ export function ConfigEditorClient({
     }
 
     try {
-      await updateBalanceConfig(key, parsedValue, adminId)
+      setSavingKey(key)
+      const res = await fetch('/api/admin/item-balance/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ key, value: parsedValue }),
+      })
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: 'Failed to save config' }))
+        setMessage(error.error ?? `Failed to save ${key}`)
+        return
+      }
       setSavedKeys((prev) => new Set([...prev, key]))
       setTimeout(() => setSavedKeys((prev) => {
         const next = new Set(prev)
@@ -94,8 +94,10 @@ export function ConfigEditorClient({
       }), 2000)
       setMessage('')
       startTransition(() => router.refresh())
-    } catch (err) {
+    } catch {
       setMessage(`Failed to save ${key}`)
+    } finally {
+      setSavingKey(null)
     }
   }
 
@@ -143,7 +145,7 @@ export function ConfigEditorClient({
                       size="sm"
                       variant={savedKeys.has(config.key) ? 'default' : 'outline'}
                       onClick={() => saveConfig(config.key)}
-                      disabled={isPending}
+                      disabled={isPending || savingKey === config.key}
                     >
                       {savedKeys.has(config.key) ? (
                         <><Check className="h-3 w-3 mr-1" /> Saved</>

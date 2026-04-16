@@ -14,7 +14,7 @@ export default async function ValidationPage() {
           Detect overpowered, underpowered, or broken items and apply balance suggestions.
         </p>
       </div>
-      <ValidationClient adminId={admin.id} />
+      <ValidationClient />
     </div>
   )
 }

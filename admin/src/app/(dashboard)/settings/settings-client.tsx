@@ -6,11 +6,10 @@ import { seedDefaultConfigs } from '@/actions/config'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Database, Users, RefreshCw, CheckCircle, XCircle, Shield } from 'lucide-react'
+import { Database, RefreshCw, CheckCircle, XCircle, Shield } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 type AdminUser = {

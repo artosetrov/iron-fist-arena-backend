@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     // Rate limit
     const rateLimitKey = `mail:list:${user.id}`;
-    const isAllowed = await rateLimit(rateLimitKey, 30, 60); // 30 requests per minute
+    const isAllowed = await rateLimit(rateLimitKey, 30, 60_000); // 30 requests per minute
     if (!isAllowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded' },
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    const messages = mailRecipients.map((recipient: any) => ({
+    const messages = mailRecipients.map((recipient) => ({
       id: recipient.id,
       messageId: recipient.messageId,
       subject: recipient.message.subject,
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
       total,
       page,
       limit,
-      unread_count: mailRecipients.filter((r: any) => !r.isRead).length,
+      unread_count: mailRecipients.filter((recipient) => !recipient.isRead).length,
     });
   } catch (error) {
     console.error('Mail list error:', error);

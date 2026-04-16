@@ -1,7 +1,12 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
+import {
+  sanitizeQuestDefinitionInput,
+  type QuestDefinitionInput,
+} from '@/lib/quest-definitions'
 
 export async function getQuestDefinitions() {
   const admin = await getAdminUser()
@@ -11,22 +16,22 @@ export async function getQuestDefinitions() {
   })
 }
 
-export async function createQuestDefinition(data: {
-  questType: string
-  title: string
-  description: string
-  icon?: string
-  minTarget: number
-  maxTarget: number
-  rewardGold: number
-  rewardXp: number
-  rewardGems: number
-}) {
+export async function createQuestDefinition(data: QuestDefinitionInput) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
+  const payload = sanitizeQuestDefinitionInput(data)
+  const existing = await prisma.questDefinition.findUnique({
+    where: { questType: payload.questType },
+    select: { id: true },
+  })
+
+  if (existing) {
+    throw new Error('Quest type already exists')
+  }
+
   const def = await prisma.questDefinition.create({
-    data,
+    data: payload,
   })
 
   await prisma.adminLog.create({
@@ -34,7 +39,7 @@ export async function createQuestDefinition(data: {
       adminId: admin.id,
       action: 'create_quest_definition',
       target: def.questType,
-      details: data as never,
+      details: payload as Prisma.InputJsonValue,
     },
   })
 
@@ -43,29 +48,45 @@ export async function createQuestDefinition(data: {
 
 export async function updateQuestDefinition(
   id: string,
-  data: {
-    title?: string
-    description?: string
-    icon?: string
-    minTarget?: number
-    maxTarget?: number
-    rewardGold?: number
-    rewardXp?: number
-    rewardGems?: number
-    active?: boolean
-  }
+  data: QuestDefinitionInput
 ) {
   const admin = await getAdminUser()
   if (!admin) throw new Error('Unauthorized')
 
-  const def = await prisma.questDefinition.update({ where: { id }, data })
+  const existing = await prisma.questDefinition.findUnique({
+    where: { id },
+  })
+
+  if (!existing) {
+    throw new Error('Quest definition not found')
+  }
+
+  const payload = sanitizeQuestDefinitionInput(data, existing)
+
+  const def = await prisma.questDefinition.update({
+    where: { id },
+    data: {
+      title: payload.title,
+      description: payload.description,
+      icon: payload.icon,
+      minTarget: payload.minTarget,
+      maxTarget: payload.maxTarget,
+      rewardGold: payload.rewardGold,
+      rewardXp: payload.rewardXp,
+      rewardGems: payload.rewardGems,
+      active: payload.active,
+    },
+  })
 
   await prisma.adminLog.create({
     data: {
       adminId: admin.id,
       action: 'update_quest_definition',
       target: def.questType,
-      details: data as never,
+      details: {
+        id,
+        ...payload,
+      } as Prisma.InputJsonValue,
     },
   })
 
@@ -165,18 +186,32 @@ export async function seedQuestDefinitions() {
   let created = 0,
     skipped = 0
   for (const item of catalog) {
+    const payload = sanitizeQuestDefinitionInput(item)
     const existing = await prisma.questDefinition.findUnique({
-      where: { questType: item.questType },
+      where: { questType: payload.questType },
     })
     if (existing) {
       skipped++
       continue
     }
     await prisma.questDefinition.create({
-      data: item,
+      data: payload,
     })
     created++
   }
+
+  await prisma.adminLog.create({
+    data: {
+      adminId: admin.id,
+      action: 'seed_quest_definitions',
+      target: 'quest-definitions',
+      details: {
+        created,
+        skipped,
+        total: catalog.length,
+      } as Prisma.InputJsonValue,
+    },
+  })
 
   return { created, skipped, total: catalog.length }
 }

@@ -44,7 +44,6 @@ export function CardAllVariants() {
   const styles: Array<CardProps['style']> = ['Panel', 'Panel Highlight', 'Info', 'Modal', 'Rarity Common', 'Rarity Uncommon', 'Rarity Rare', 'Rarity Epic', 'Rarity Legendary']
   return (
     <div>
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet" />
       <div className="grid grid-cols-3 gap-4">
         {styles.map(s => (
           <DSCard key={s} style={s} />

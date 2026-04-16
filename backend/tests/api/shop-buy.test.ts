@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeNextRequest } from '../helpers/next-request'
 
 const {
   mockGetAuthUser,
@@ -63,7 +64,21 @@ function makeTx(overrides: {
   character?: { userId: string; inventorySlots: number } | null
   inventoryCount?: number
   updatedUser?: { gold: number; gems: number }
-  inventoryItem?: any
+  inventoryItem?: {
+    id: string
+    characterId: string
+    itemId: string
+    upgradeLevel: number
+    durability: number
+    maxDurability: number
+    isEquipped: boolean
+    item: {
+      id: string
+      catalogId: string
+      buyPrice: number
+      sellPrice: number
+    }
+  } | null
 }) {
   const {
     userRow = null,
@@ -88,6 +103,14 @@ function makeTx(overrides: {
   }
 }
 
+type ShopBuyTx = ReturnType<typeof makeTx>
+
+function mockTransaction(tx: ShopBuyTx) {
+  prismaMock.$transaction.mockImplementation(
+    async (callback: (innerTx: ShopBuyTx) => Promise<unknown>) => callback(tx),
+  )
+}
+
 describe('POST /api/shop/buy', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -102,10 +125,10 @@ describe('POST /api/shop/buy', () => {
     mockGetAuthUser.mockResolvedValue(null)
 
     const response = await POST(
-      new Request('http://localhost/api/shop/buy', {
+      makeNextRequest('http://localhost/api/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1', item_catalog_id: 'item-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(401)
@@ -118,10 +141,10 @@ describe('POST /api/shop/buy', () => {
     prismaMock.item.findUnique.mockResolvedValue(null)
 
     const response = await POST(
-      new Request('http://localhost/api/shop/buy', {
+      makeNextRequest('http://localhost/api/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1', item_catalog_id: 'nonexistent-item' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(404)
@@ -142,13 +165,13 @@ describe('POST /api/shop/buy', () => {
       userRow: { id: 'user-1', gold: 500, gems: 0 }, // Not enough for 1000
       character: { userId: 'user-1', inventorySlots: 20 },
     })
-    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
+    mockTransaction(tx)
 
     const response = await POST(
-      new Request('http://localhost/api/shop/buy', {
+      makeNextRequest('http://localhost/api/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1', item_catalog_id: 'sword-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(400)
@@ -170,13 +193,13 @@ describe('POST /api/shop/buy', () => {
       character: { userId: 'user-1', inventorySlots: 20 },
       inventoryCount: 20, // Full
     })
-    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
+    mockTransaction(tx)
 
     const response = await POST(
-      new Request('http://localhost/api/shop/buy', {
+      makeNextRequest('http://localhost/api/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1', item_catalog_id: 'sword-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(409)
@@ -213,13 +236,13 @@ describe('POST /api/shop/buy', () => {
       updatedUser: { gold: 500, gems: 100 }, // 1000 - 500
       inventoryItem,
     })
-    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
+    mockTransaction(tx)
 
     const response = await POST(
-      new Request('http://localhost/api/shop/buy', {
+      makeNextRequest('http://localhost/api/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1', item_catalog_id: 'sword-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(200)
@@ -259,13 +282,13 @@ describe('POST /api/shop/buy', () => {
       userRow: { id: 'user-1', gold: 1000, gems: 0 },
       character: { userId: 'different-user', inventorySlots: 20 }, // Not the current user
     })
-    prismaMock.$transaction.mockImplementation(async (callback: any) => callback(tx))
+    mockTransaction(tx)
 
     const response = await POST(
-      new Request('http://localhost/api/shop/buy', {
+      makeNextRequest('http://localhost/api/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ character_id: 'char-1', item_catalog_id: 'sword-1' }),
-      }) as any,
+      }),
     )
 
     expect(response.status).toBe(403)

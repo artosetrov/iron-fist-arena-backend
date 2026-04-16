@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { IAP_PRODUCTS } from '@/lib/game/balance'
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     // Filter out products with enabled === false (Economy v3: flat gold packs + premium_forever
     // are disabled for new purchases but kept in catalog to honor existing entitlements).

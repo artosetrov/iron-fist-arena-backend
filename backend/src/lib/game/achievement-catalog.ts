@@ -2,10 +2,14 @@
 // achievement-catalog.ts — All achievement definitions
 // =============================================================================
 
+import type { AchievementDefinition } from '@prisma/client'
+
+export type AchievementRewardType = 'gold' | 'gems' | 'xp' | 'title' | 'frame'
+
 export interface AchievementDef {
   target: number;
   category: string;
-  rewardType: string;
+  rewardType: AchievementRewardType;
   rewardAmount: number;
   rewardId?: string;
 }
@@ -156,6 +160,37 @@ export function getAchievementsByCategory(category: string): [string, Achievemen
   );
 }
 
+function isAchievementRewardType(value: string): value is AchievementRewardType {
+  return value === 'gold'
+    || value === 'gems'
+    || value === 'xp'
+    || value === 'title'
+    || value === 'frame'
+}
+
+export function buildAchievementCatalogFromDefinitions(
+  defs: Pick<AchievementDefinition, 'key' | 'target' | 'category' | 'rewardType' | 'rewardAmount' | 'rewardId'>[],
+): Record<string, AchievementDef> {
+  const catalog: Record<string, AchievementDef> = {}
+
+  for (const def of defs) {
+    if (!isAchievementRewardType(def.rewardType)) {
+      console.warn(`[achievement-catalog] skipping unsupported reward type "${def.rewardType}" for key "${def.key}"`)
+      continue
+    }
+
+    catalog[def.key] = {
+      target: def.target,
+      category: def.category,
+      rewardType: def.rewardType,
+      rewardAmount: def.rewardAmount,
+      rewardId: def.rewardId ?? undefined,
+    }
+  }
+
+  return catalog
+}
+
 /**
  * Load achievement catalog from DB (AchievementDefinition table).
  * Falls back to hardcoded ACHIEVEMENT_CATALOG if DB is empty or unavailable.
@@ -163,21 +198,15 @@ export function getAchievementsByCategory(category: string): [string, Achievemen
 export async function getAchievementCatalog(): Promise<Record<string, AchievementDef>> {
   try {
     const { prisma } = await import('@/lib/prisma');
-    const defs = await (prisma as any).achievementDefinition.findMany({
+    const defs = await prisma.achievementDefinition.findMany({
       where: { active: true },
     });
+
     if (defs.length > 0) {
-      const catalog: Record<string, AchievementDef> = {};
-      for (const def of defs) {
-        catalog[def.key] = {
-          target: def.target,
-          category: def.category,
-          rewardType: def.rewardType,
-          rewardAmount: def.rewardAmount,
-          rewardId: def.rewardId ?? undefined,
-        };
+      const catalog = buildAchievementCatalogFromDefinitions(defs)
+      if (Object.keys(catalog).length > 0) {
+        return catalog
       }
-      return catalog;
     }
   } catch {
     // DB not available or model not yet migrated — fall back
